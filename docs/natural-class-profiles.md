@@ -4180,11 +4180,12 @@ as replaced and the Answer rules.
 
 ## Blocked / questions for the operator
 
-**The loop is stopped by the re-record rule, since 2026-10-07.** Outside commit 6bdb96d66
-("Stop spawning Ishalgen's two new-class trainers twice", the fix of CP-34's finding, made
-in a separate task) changes every trace. The full gate at HEAD 50db7f2d4, run gate-a1 of
-item rerecord-6bdb96d66 (run/cp/rerecord-6bdb96d66/gate-a1/verdict.json): all seven scopes
-differ from their baselines, and every journey ran to its end.
+**The re-record rule stopped the loop on 2026-10-07; CP-Q23 is answered and the loop runs
+again.** Outside commit 6bdb96d66 ("Stop spawning Ishalgen's two new-class trainers twice",
+the fix of CP-34's finding, made in a separate task) changes every trace. The full gate at
+HEAD 50db7f2d4, run gate-a1 of item rerecord-6bdb96d66
+(run/cp/rerecord-6bdb96d66/gate-a1/verdict.json): all seven scopes differ from their
+baselines, and every journey ran to its end.
 
 - What differs: ten fewer objects are made at world start, so every object id made later
   is ten lower, and the two extra trainers are no longer seen. p, m and b first differ at
@@ -4198,6 +4199,26 @@ differ from their baselines, and every journey ran to its end.
   6bdb96d66?** The loop's recommendation is to re-record now, before CP-29a, so that
   CP-29a's list of differences shows gear picks and not object ids. CP-29a then re-records
   once more, as CP-Q22 allows. No item is taken until an Answer line stands here.
+  Answer (2026-10-07): "Resume the loop, the carat you spawned to fix the trainers has
+  been fixed." The fix stays, so the baselines are re-recorded at HEAD. This is the loop's
+  reading of the answer: reverting would undo the fix the operator names as done.
+- **Re-recorded on 2026-10-07 at be9837cd8** (be9837cd862a0f791bf32fef0c18f35955f4beef),
+  item rerecord-23e370c6f, run record-a1, with -Record -ReRecord on a clean tree
+  (run/cp/rerecord-23e370c6f/record-a1/verdict.json): verdict pass, all seven scopes
+  repeat in their two passes. HEAD holds a second outside commit, 23e370c6f ("Put
+  Ishalgen's two new-class trainers back on their Java 4.8 spots"), and be9837cd8, which
+  is docs only; the record run is the full gate at HEAD for both.
+  - The old rows were recorded at 200ec4c24 (p, c) and 5ffbac512 (m, b, l1, hm, ax). Every
+    row now carries be9837cd8, which is the baseline sha of the re-record rule and of the
+    guard of rule (c) from here on. The old traces stay under run/cp/baseline/ in their
+    two folders and in the second copy.
+  - Records: p 35,789 (was 35,811), m 123,046 (was 123,112), b 128,869 (was 128,937);
+    l1 30,693, c 96,166, hm 39,564 and ax 15,762, as before. m is two records shorter than
+    in gate-a1, which ran before the trainers moved.
+  - All 21 step counts of every row equal the old row's. Only the record totals of p, m
+    and b moved, and each row's line, replay, environment and ignore list are unchanged.
+  - New digests: p d30f444e..., m 7d665ec0..., b 666ac960..., l1 de1137ed..., c f284becb...,
+    hm 67286f62..., ax 824c178d....
 
 No item is listed here as blocked.
 
@@ -4756,3 +4777,9 @@ report what was done, what is blocked and what you need from me.
   50db7f2d4 (run/cp/rerecord-6bdb96d66/gate-a1): all seven scopes differ, every journey ran,
   and all 21 step counts equal the baselines'. CP-Q23 asks the operator: re-record at HEAD or
   revert. CP-29a is unblocked and waits behind it.
+- 2026-10-07 — Operator: CP-Q23 answered ("Resume the loop", the trainer fix stays). Outside
+  commits since the stop: 23e370c6f (both trainers back on their Java spots) and be9837cd8
+  (docs). Loop: the seven baselines re-recorded at be9837cd8, item rerecord-23e370c6f, run
+  record-a1: pass, every scope repeats. p 35,789, m 123,046, b 128,869, l1 30,693, c 96,166,
+  hm 39,564, ax 15,762 records; all 21 step counts of each row equal the old row's. The
+  baseline sha is be9837cd8. Docs and evidence only: no bundle run. Next by rule (h): CP-29a.

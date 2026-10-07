@@ -8,7 +8,7 @@
         "CapitalStage": "start"
       },
       "snapshot": null,
-      "commit": "200ec4c2408dbc58b675daf1bcc4e03c4eabc47a",
+      "commit": "be9837cd862a0f791bf32fef0c18f35955f4beef",
       "environment": {
         "AION_SIM_SEED": "1",
         "NA_HELP_ITEMS": null,
@@ -16,10 +16,10 @@
         "AION_SIM_PROCESS_KEY": null
       },
       "ignore": [],
-      "records": 35811,
-      "sha256": "df5ad770ee208e33705322fd87088b1babdfdd4bdd3d3531a555179ed95b9ed5",
+      "records": 35789,
+      "sha256": "d30f444e0a84bbebabadb17890519cbb1a7276f08631c15618c52390dfa95fca",
       "counts": {
-        "records": 35812,
+        "records": 35790,
         "deaths": 0,
         "reviveSteps": 0,
         "retreats": 2,
@@ -48,7 +48,7 @@
       "line": "priest-cleric",
       "replay": {},
       "snapshot": null,
-      "commit": "5ffbac5120727f265466fc407766e57bc9d154ad",
+      "commit": "be9837cd862a0f791bf32fef0c18f35955f4beef",
       "environment": {
         "AION_SIM_SEED": "1",
         "NA_HELP_ITEMS": null,
@@ -56,10 +56,10 @@
         "AION_SIM_PROCESS_KEY": null
       },
       "ignore": [],
-      "records": 123112,
-      "sha256": "bd264337d998ffc3fdae5897ea10d8cbeef88558dc6c1d88f674103ece27a196",
+      "records": 123046,
+      "sha256": "7d665ec0073e4b76a1a59668438f970f5239af4138259539243e608f897337d5",
       "counts": {
-        "records": 123113,
+        "records": 123047,
         "deaths": 1,
         "reviveSteps": 1,
         "retreats": 1,
@@ -90,7 +90,7 @@
         "Bridge": true
       },
       "snapshot": null,
-      "commit": "5ffbac5120727f265466fc407766e57bc9d154ad",
+      "commit": "be9837cd862a0f791bf32fef0c18f35955f4beef",
       "environment": {
         "AION_SIM_SEED": "1",
         "NA_HELP_ITEMS": null,
@@ -98,10 +98,10 @@
         "AION_SIM_PROCESS_KEY": null
       },
       "ignore": [],
-      "records": 128937,
-      "sha256": "7247e6389d7f2bea493ddd2635aa4eb8c262658751e40fcebfd2cf4abecb1bca",
+      "records": 128869,
+      "sha256": "666ac9607838862bbef97d7b2a0540ce255ff34b5da03bc54fa6e67f3831a4ce",
       "counts": {
-        "records": 128938,
+        "records": 128870,
         "deaths": 0,
         "reviveSteps": 0,
         "retreats": 3,
@@ -135,7 +135,7 @@
         "LaterCapital": true
       },
       "snapshot": "altgard",
-      "commit": "5ffbac5120727f265466fc407766e57bc9d154ad",
+      "commit": "be9837cd862a0f791bf32fef0c18f35955f4beef",
       "environment": {
         "AION_SIM_SEED": "1",
         "NA_HELP_ITEMS": null,
@@ -144,7 +144,7 @@
       },
       "ignore": [],
       "records": 30693,
-      "sha256": "f5dd15e9a3c1c2620feefc574f9ed498df433d60345ca3bc22cb698fceb06074",
+      "sha256": "de1137ed4a8e607d9257a919b3cac37370e5c3164c0bebd5ca42b566ce9b6e15",
       "counts": {
         "records": 30694,
         "deaths": 0,
@@ -179,7 +179,7 @@
         "From": "altgard-rc-l3"
       },
       "snapshot": "altgard-rc-l3",
-      "commit": "200ec4c2408dbc58b675daf1bcc4e03c4eabc47a",
+      "commit": "be9837cd862a0f791bf32fef0c18f35955f4beef",
       "environment": {
         "AION_SIM_SEED": "1",
         "NA_HELP_ITEMS": null,
@@ -188,7 +188,7 @@
       },
       "ignore": [],
       "records": 96166,
-      "sha256": "fce0e6a7c27ad4d85cf42687e4d7b0aacbc77455c1387b61153f8f042a6d35cc",
+      "sha256": "f284becb073398e12e9365ed3398c45c2912296e74000dcbbfb261919b36bacb",
       "counts": {
         "records": 96167,
         "deaths": 1,
@@ -223,7 +223,7 @@
         "From": "altgard-coingear"
       },
       "snapshot": "altgard-coingear",
-      "commit": "5ffbac5120727f265466fc407766e57bc9d154ad",
+      "commit": "be9837cd862a0f791bf32fef0c18f35955f4beef",
       "environment": {
         "AION_SIM_SEED": "1",
         "NA_HELP_ITEMS": null,
@@ -232,7 +232,7 @@
       },
       "ignore": [],
       "records": 39564,
-      "sha256": "aaadd6e3329a728c242aa4b77c1b10483703516b6a5e579c2084bbfc84d961ca",
+      "sha256": "67286f622d6da88d1d55cf3d8d2d41013c3eb3007279414186f8d5d9a1982b91",
       "counts": {
         "records": 39565,
         "deaths": 1,
@@ -267,7 +267,7 @@
         "From": "altgard-rc-complete-s1"
       },
       "snapshot": "altgard-rc-complete-s1",
-      "commit": "5ffbac5120727f265466fc407766e57bc9d154ad",
+      "commit": "be9837cd862a0f791bf32fef0c18f35955f4beef",
       "environment": {
         "AION_SIM_SEED": "1",
         "NA_HELP_ITEMS": null,
@@ -276,7 +276,7 @@
       },
       "ignore": [],
       "records": 15762,
-      "sha256": "e4d1aa17104f26ea8c4090ec9d0e5266ec6979d59452b2af0a8b30345d2f9db5",
+      "sha256": "824c178d9968f1bb8058b1184a494050953c3928d23ce42feb080f474784f0b4",
       "counts": {
         "records": 15763,
         "deaths": 0,
