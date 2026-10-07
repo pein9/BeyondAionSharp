@@ -3030,7 +3030,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       item id, not the Karmic Staff. It is written only when the check fails.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,814 with 16 skipped),
       and Fast passes (run cp30-fast). Fast does not run CAPITAL-ASMO, as the item says.
-- [ ] **CP-31 - Class choice on a prepared character: Cleric and Chanter rows.** Depends:
+- [x] **CP-31 - Class choice on a prepared character: Cleric and Chanter rows.** Depends:
   CP-30
   - Work: First allocate SIM probe accounts. No id is known to be free: ids 77-82 belong to
     the gear scenarios (SimT/SimulationGearScenarioTests.cs:34) and 91-94 to the geo
@@ -3061,6 +3061,58 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     the same order (quest_data.xml:9351-9354). That a Chanter reads the second list is
     proven by reading the code
     (src/Aion.GameServer/Model/Templates/QuestTemplate.cs:184-187), not by the probe.
+  - 2026-10-07: done. Probe run probe-a1, rows cleric and chanter, first attempt: both
+    pass (run/cp/CP-31/probe-a1.log; the command is AION_SIM_DB_INTEGRATION=1
+    CP_PROBE_ROWS=cleric,chanter dotnet test tests/Aion.Simulation.Tests --filter
+    "FullyQualifiedName~NaturalClassChoiceProbe"). Guard run guard-a1, set p: verdict pass
+    (run/cp/CP-31/guard-a1/verdict.json), 35,811 records, identical to its baseline.
+    - **The probe accounts are 98 and 100.** Every session construction under
+      tests/Aion.Simulation.Tests was read, computed ids included (the L0 actors take 1 to
+      the scenario's bot count, combat 17-35, the quest plans 39 and 40, gathering 42 and
+      43, cooking 47-50, social 62-76, gear 77-82, geo displacement 91-94, lifecycle 101 on).
+      No accepted id was found free, so the two ids below 256 that the fixture did not
+      accept were added to its list (SimT/SimulationWorldFixture.cs, with the comment). A
+      SIM account must be fresh ("Fresh simulation account ... already has a character")
+      and each test process has its own schema, so a probe plays two rows to a process:
+      **a later probe with more rows (CP-34's six, CP-67's nine) runs them in several
+      filtered processes.** The names are Asimpickcleric (98) and Asimpickchanter (100).
+    - **Java, read first.** _2008Ascension.java:153-154: SETPRO13 sets CHANTER at var 6.
+      quest_data.xml: Q2009's priest_selectable_reward and chanter_selectable_reward each
+      hold 100100495 then 101500498. _2904DispatchtoAltgard.java:22 and 73-76: the handler
+      registers on quest completion and starts itself by the default rule when Q2009
+      completes; lines 43-52: Doman's SETPRO1 moves var 0 to 1 and closes the dialog; the
+      turn-in at Meiyer comes after. SkillLearnService.java: only skill 30001 is removed
+      on a level change; a mastery that a new one replaces in the skill tree is not
+      removed, in Java as in C#.
+    - **SimT/SimulationNaturalClassChoiceProbe.cs** is new: the gated theory
+      NaturalClassChoiceProbe, a partial of SimulationFastScenarioTests. A row runs only
+      when CP_PROBE_ROWS names it. It reuses SimCapitalDriver and the scenario of CP-30,
+      with the row's bridge from NaturalAscensionContract.ForChoice and the short
+      endpoint. It adds no manifest id; e2e/scenarios.json is untouched.
+    - **What the probe prepared.** The character is created by packets as a Priest. The
+      test then sets it to level 9 and places it by Munin (the scenario's own setup step,
+      as CAPITAL-ASMO does). Every step after that is a client action. No director command
+      is used.
+    - **The chanter row** (account 100): SETPRO13 gave class CHANTER, id 11, on the server
+      and in the client's view; the character is a Daeva at level 10; the six level-9
+      masteries 46, 48, 49, 50, 89 and 106 are on the server and in the skill list the
+      client was sent; Q2008 and Q2009 are complete; the Karmic Staff 101500498 is in the
+      inventory, paid by SELECTED_QUEST_REWARD2, and the server template's list for a
+      Chanter at Q2009 holds it at that place; Q2009's reward group is 3, the one that
+      starts Q2904; Q2904 was at START/0 after the ceremony and is at START/1 after Doman;
+      all four quest movies were played and answered; the log policy is clean, with
+      protocol warnings and the audit log set to fail. The pick is CP-Q7's default; this
+      is its first use.
+    - **The cleric row** (account 98) passes on the same route with SETPRO14, class id 10
+      and priest_selectable_reward.
+    - **Seen on the way.** Both characters still hold the Priest's four masteries 39, 40,
+      41 and 103 beside the six new ones. That is Java's behavior (above). It settles
+      finding (b) of CP-29: a table's expected mastery ids, which leave out the replaced
+      ones, are a subset of what the server keeps.
+    - The step labels the driver prints say "choose-cleric" for the chanter row too; they
+      are the scenario's fixed labels (CP-30).
+    - Bundle: the seven pre-commit checks pass and Fast passes (run cp31-fast).
+      Aion.GameServer.Tests was not run: tests/Aion.Bots did not change.
 - [ ] **CP-32 - Chanter line and profile.** Depends: CP-21, CP-23, CP-24, CP-27, CP-29
   - Work: Add line priest-chanter with the Priest line's account and name, and
     Sc/Classes/NaturalChanterProfile.cs: the Priest catalog through the Priest adapter and
@@ -4437,3 +4489,8 @@ report what was done, what is blocked and what you need from me.
   and has the short endpoint stopAtDispatchStart. CAPITAL-ASMO passes alone, 12 steps
   (run/cp/CP-30/capital-a1). Guard guard-a1, set p: identical. Seven checks, 4,814 with 16 skipped
   and Fast (cp30-fast) pass. Next by rule (h): CP-31.
+- 2026-10-07 — Loop: CP-31 done. The probe accounts are 98 and 100, added to the fixture; two rows
+  to a process. NaturalClassChoiceProbe, rows cleric and chanter, passes on the first attempt
+  (run/cp/CP-31/probe-a1.log): SETPRO13 gives a Chanter, id 11, with the six masteries, the
+  Karmic Staff from its own list, and Q2904 at START/1 after Doman. Guard guard-a1, set p:
+  identical. Seven checks and Fast (cp31-fast) pass. Next by rule (h): CP-32.

@@ -201,8 +201,12 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			// 228 is RC-11's native zone entry under the recorded blocked approach layout.
 			// 229 is RC-11's recorded cleared campaign-area / remembered-danger probe.
 			// 230 is RC-11's ordinary owned staff equip before the frozen coin loadout.
+			// 98 and 100 are the class-profile probes' two accounts (CP-31, docs/natural-class-profiles.md): the class-choice
+			// probe's cleric row plays on 98 and its chanter row on 100. They were the last two ids below 256 that the fixture
+			// did not accept; every other accepted id has a test. A later probe with more than two rows runs them two to a
+			// process, because an account must be fresh and each process has its own schema.
 			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 100)).Concat(Enumerable.Range(201, 27)).Concat(Enumerable.Range(240, 5))
-				.Concat(new[] { 95, 96, 97, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 })
+				.Concat(new[] { 95, 96, 97, 98, 100, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 })
 				.ToDictionary(id => id, id => new SimulationLoginAccount($"sim-player-{id}", AccessLevel: 0));
 			accounts[99] = new("director", AccessLevel: 9);
 			services.RemoveAll<LoginServerFacade>();
