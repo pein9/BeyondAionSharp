@@ -41,6 +41,12 @@ import audit_missing_adds as A  # noqa: E402
 from client_npc_names import npc_names  # noqa: E402
 from extract_client_waypoints import map_ids_by_world  # noqa: E402
 
+#: (map, npc) this port keeps at Java's 4.8 spot although 5.8 retail has moved it more than the five
+#: metres the overlap check reaches. Retail's gated placement is the same npc, so it is marked as one
+#: this port already spawns; otherwise the npc stands at both spots. Ishalgen's two new-class trainers
+#: are 33 m and 39 m from retail's spots (maintainer, 2026-10-07: keep the Java 4.8 locations).
+KEPT_AT_JAVA_SPOT = {(220010000, 801218), (220010000, 801219)}
+
 INFO_RE = re.compile(r"<condition_info\b([^>]*)>(.*?)</condition_info>", re.S)
 NPC_RE = re.compile(r"<npc\b[^>]*>(.*?)</npc>", re.S)
 
@@ -126,8 +132,9 @@ def main() -> int:
                     skipped_unmapped += 1
                     continue
                 here = existing.get((map_id, npc_id), [])
-                overlaps = any(abs(ox - float(spot[0].group(1))) < 5
-                               and abs(oy - float(spot[1].group(1))) < 5 for ox, oy in here)
+                overlaps = (map_id, npc_id) in KEPT_AT_JAVA_SPOT or any(
+                    abs(ox - float(spot[0].group(1))) < 5
+                    and abs(oy - float(spot[1].group(1))) < 5 for ox, oy in here)
                 rows.append((map_id, world.parent.name, npc_id,
                              float(spot[0].group(1)), float(spot[1].group(1)), float(spot[2].group(1)),
                              int(float(heading.group(1))) if heading else 0,
@@ -144,7 +151,8 @@ def main() -> int:
     print(f"{len(rows)} portable gated placements across {len(per)} worlds -> {args.out}")
     print(f"    {skipped_unknown} name an npc this port has no template for, and are dropped")
     print(f"    {skipped_unmapped} are in {len(unmapped_worlds)} worlds world_maps.xml does not name")
-    print(f"    {sum(1 for r in rows if r[9] == 'TRUE')} already exist within 5m in our static spawns")
+    print(f"    {sum(1 for r in rows if r[9] == 'TRUE')} already exist in our static spawns"
+          f" (within 5m, or kept at Java's spot)")
     if skipped_unnamed:
         print(f"    {skipped_unnamed} carry no name at all")
     for world, count in per.most_common(6):

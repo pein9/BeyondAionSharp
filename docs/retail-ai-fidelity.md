@@ -41593,6 +41593,23 @@ never ran it. The table depends on this port's static spawns as well as on the d
 a spawn file is edited. `WORLD_EXTRACTORS` and `STRING_EXTRACTORS` are declared the same way and are
 still not run.
 
+### The same day: both trainers go back to Java's 4.8 spots
+
+The maintainer's decision, 2026-10-07: "fix just the two trainers to revert back to Java 4.8 locations."
+The 5.8 data was meant to remove bad duplicate spawns from the 4.8 data in Ishalgen and part of Altgard,
+not to move npcs.
+
+- `220010000_Ishalgen.xml`: 801218 is at (567.48, 2458.46, 278.24896), heading 100, and 801219 at
+  (577.75, 2461.42, 278.625), heading 90. Both entries equal Java's again.
+- `natural-class-lines.json` carries the same two positions for Q2132.
+- Retail's gated placements are now 33 m and 39 m away, outside the 5 m check, so the extractor names
+  the pair in `KEPT_AT_JAVA_SPOT` and marks them as already spawned. The generated file is the same as
+  after the first fix: the counts stay 6,802, 14,290 and 617.
+
+The CP-34 probe sees one object for each at Java's spot, and a fresh census has each once per channel.
+The Java geo golden was regenerated (`scripts/parity/regen-geo-golden.ps1`): six height rows moved
+with the two spots, and Java finds the ground under both.
+
 ### The count, from a started SIM world
 
 Every Npc of a freshly started SIM world was listed (110,263 objects on 41 maps, 272 gated groups
@@ -41628,3 +41645,35 @@ Each may be one npc that retail moved (two copies here) or one that retail has t
 changed: choosing between Java's spot and retail's is a decision for each npc, with the server
 running. Eighteen more npc ids have several static spawns and gated placements too; those are
 ordinary creatures and look like added spawns, not copies.
+
+### What the gated table puts in a fresh world, for the maintainer's review
+
+The maintainer had not expected 5.8 placements outside Ishalgen and Altgard. The gated table is where
+they come from: it is loaded on every non-instance map at world start. In channel 1 of the fresh SIM
+world it places 258 objects on 14 maps (262 over all channels):
+
+| Map | Objects | What |
+|---|---|---|
+| Enshar 220080000 | 115 | 67 creatures behind `directpotal_p1/p2 == 1`, 20 petrified jotun behind `directpotal_i == 1`, three world-raid bosses (219998 to 220000) with 25 of 702548 |
+| Cygnea 210070000 | 67 | 20 gatorback skilex, 20 stygian mist npcs, three world-raid bosses (220001 to 220003) with 24 of 702548 |
+| Eltnen 210020000 | 20 | 13 Elyos field guns 831338, 6 of 219618, Rogan 800509 |
+| Beluslan 220040000 | 14 | 7 Asmodian field guns 831339, abyss gate 700565, Draupnir Cave back exit 730070, 5 creatures |
+| Brusthonin 220050000 | 12 | ten undead npc ids behind `DirectPortalDest_41 == 0` |
+| Levinshor 600100000 | 9 | 235174 and 235177 behind `v01..v11 == 1` |
+| Kaisinel Academy, Marchutan Priory | 4 each | the eight named npcs above |
+| Transidium Annex 400030000 | 4 | four staging-area npcs 804106 to 804112 |
+| Heiron 210040000 | 3 | abyss gate 700360, 219100, one fanged worg |
+| Reshanta 400010000 | 3 | Varina, Kanzat, rift 700551 |
+| Pandaemonium, Inggison, Ishalgen | 1 each | Peja 832827, 215735, Rian 801034 |
+
+- 191 of the 262 stand behind a gate that reads `== 1`. They are there because a retail pattern writes
+  the counter when its npc wakes: 804819 writes `directpotal_p1`, `directpotal_p2` and `directpotal_i`
+  (`WakeVariables.cs`). All three world raids and all three portal waves are up at once, from start.
+  Whether retail runs them together, or one at a time on a schedule, is not known.
+- Rian 801034 is the Fast Track npc whose Ishalgen spawn is commented out in Java and in this port.
+  The gate adds him in every channel at (573.956, 2416.837, 284.301), 5.6 m above the village floor.
+- The 46 guestbloom merchants in Oriel and Pernon stand on gated spots but are Java's own town spawns.
+  The extractor does not read town spawns, so their rows are not marked; they would double if anything
+  ever wrote the `HLFP_ID_TOWN_*` and `HDFP_ID_TOWN_*` counters.
+- Instances get their gated groups when they are created (63 instance maps have some). No instance
+  exists in a fresh world, so none of that is counted here.

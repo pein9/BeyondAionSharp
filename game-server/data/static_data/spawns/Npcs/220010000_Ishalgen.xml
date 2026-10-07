@@ -1322,7 +1322,7 @@
 		</spawn>
 		<!-- Sona -->
 		<spawn npc_id="801219" respawn_time="295">
-			<spot x="555.431" y="2429.317" z="278.350" h="8"/>
+			<spot x="577.75" y="2461.42" z="278.625" h="90"/>
 		</spawn>
 		<!-- Sprigg Fighter -->
 		<spawn npc_id="210727" respawn_time="140">
@@ -1787,7 +1787,7 @@
 		</spawn>
 		<!-- Wild Wilhelm -->
 		<spawn npc_id="801218" respawn_time="295">
-			<spot x="556.129" y="2426.967" z="278.500" h="8"/>
+			<spot x="567.48" y="2458.46" z="278.24896" h="100"/>
 		</spawn>
 		<!-- Wiokan -->
 		<spawn npc_id="203528" respawn_time="295">

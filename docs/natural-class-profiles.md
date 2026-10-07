@@ -3355,6 +3355,12 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       all 21 step counts equal the baseline's. The other scopes were not run. The
       re-record rule of section 8 applies: the operator chooses between re-recording at
       HEAD and reverting.
+      **Later the same day, by the operator's word, both trainers went back to their Java
+      4.8 spots:** 801218 at (567.48, 2458.46, 278.249) and 801219 at (577.75, 2461.42,
+      278.625). The class-lines file carries these positions, and retail's gated copies
+      stay skipped. The engineer and artist rows see one object each at the new spots. This
+      is a second outside commit that changes traces: any re-record should be taken at or
+      after it.
     - Bundle: the seven pre-commit checks pass and Fast passes (run cp34-fast).
       Aion.GameServer.Tests was not run: tests/Aion.Bots did not change.
 - [ ] **CP-35 - A skill catalog generated from the shipped data, and the profile

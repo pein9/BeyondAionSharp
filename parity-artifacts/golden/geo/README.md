@@ -53,6 +53,12 @@ walker inputs. The Java generator produced 4,275 points; the C# geo parity test
 passed. The current `starter-queries.jsonl` SHA256 is
 `58290e09b3fc307f5acd947231c08bd3f7147c7a20fc2dea3713a0a775fed427`.
 
+Regenerated on 2026-10-07 after Ishalgen's two new-class trainers (801218, 801219) went back
+to their Java 4.8 spots. Only that XML input hash and the six height rows of the two spots
+changed; Java finds the ground at 278.214 and 278.625. Points and counts are unchanged. The
+current `starter-queries.jsonl` SHA256 is
+`2a138bc57877fb83c79580688e81b0fd04eda47159d1625e5c18679934cfb764`.
+
 ## Regenerate locally
 
 `pwsh -NoProfile -File scripts/parity/regen-geo-golden.ps1` does all of the below and runs the

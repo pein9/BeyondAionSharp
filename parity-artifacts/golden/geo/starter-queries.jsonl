@@ -15070,9 +15070,9 @@
 {"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot950","map":220010000,"origin":[710.132,2161.8,250.867],"range":2.0,"slope":false,"expected":250.86674}
 {"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot950","map":220010000,"origin":[710.132,2161.8,250.867],"range":50.0,"slope":false,"expected":250.86674}
 {"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot950","map":220010000,"origin":[710.132,2161.8,250.867],"range":2.0,"slope":true,"expected":250.86674}
-{"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot951","map":220010000,"origin":[555.431,2429.317,278.35],"range":2.0,"slope":false,"expected":278.34656}
-{"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot951","map":220010000,"origin":[555.431,2429.317,278.35],"range":50.0,"slope":false,"expected":278.34656}
-{"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot951","map":220010000,"origin":[555.431,2429.317,278.35],"range":2.0,"slope":true,"expected":278.34656}
+{"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot951","map":220010000,"origin":[577.75,2461.42,278.625],"range":2.0,"slope":false,"expected":278.625}
+{"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot951","map":220010000,"origin":[577.75,2461.42,278.625],"range":50.0,"slope":false,"expected":278.625}
+{"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot951","map":220010000,"origin":[577.75,2461.42,278.625],"range":2.0,"slope":true,"expected":278.625}
 {"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot952","map":220010000,"origin":[138.062,2648.87,305.875],"range":2.0,"slope":false,"expected":305.875}
 {"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot952","map":220010000,"origin":[138.062,2648.87,305.875],"range":50.0,"slope":false,"expected":305.875}
 {"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot952","map":220010000,"origin":[138.062,2648.87,305.875],"range":2.0,"slope":true,"expected":305.875}
@@ -17407,9 +17407,9 @@
 {"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot1289","map":220010000,"origin":[939.607,2197.28,257.716],"range":2.0,"slope":false,"expected":257.71545}
 {"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot1289","map":220010000,"origin":[939.607,2197.28,257.716],"range":50.0,"slope":false,"expected":257.71545}
 {"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot1289","map":220010000,"origin":[939.607,2197.28,257.716],"range":2.0,"slope":true,"expected":257.71545}
-{"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot1290","map":220010000,"origin":[556.129,2426.967,278.5],"range":2.0,"slope":false,"expected":278.5}
-{"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot1290","map":220010000,"origin":[556.129,2426.967,278.5],"range":50.0,"slope":false,"expected":278.5}
-{"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot1290","map":220010000,"origin":[556.129,2426.967,278.5],"range":2.0,"slope":true,"expected":278.5}
+{"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot1290","map":220010000,"origin":[567.48,2458.46,278.24896],"range":2.0,"slope":false,"expected":278.21375}
+{"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot1290","map":220010000,"origin":[567.48,2458.46,278.24896],"range":50.0,"slope":false,"expected":278.21375}
+{"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot1290","map":220010000,"origin":[567.48,2458.46,278.24896],"range":2.0,"slope":true,"expected":278.21375}
 {"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot1291","map":220010000,"origin":[571.895,2461.99,278.5],"range":2.0,"slope":false,"expected":278.5}
 {"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot1291","map":220010000,"origin":[571.895,2461.99,278.5],"range":50.0,"slope":false,"expected":278.5}
 {"kind":"z","source":"data/static_data/spawns/Npcs/220010000_Ishalgen.xml:map0:spot1291","map":220010000,"origin":[571.895,2461.99,278.5],"range":2.0,"slope":true,"expected":278.5}

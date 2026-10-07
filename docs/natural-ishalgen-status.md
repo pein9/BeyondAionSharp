@@ -488,8 +488,10 @@ marked as overlaps and skipped by the current gated loader. (Correction,
 both rows still read `overlaps_static = FALSE` and the gated copies kept
 standing at the 5.8 Z above the moved static ones. The suspended pair in the
 screenshot was most likely those gated copies. The rows are marked since
-2026-10-07; see `docs/retail-ai-fidelity.md`, "Two Ishalgen trainers stood
-twice".) No other NPC
+2026-10-07, and on the same day the maintainer had both trainers put back on
+their Java 4.8 spots, (567.48, 2458.46) and (577.75, 2461.42); the gated
+copies stay skipped. See `docs/retail-ai-fidelity.md`, "Two Ishalgen
+trainers stood twice".) No other NPC
 spots or group settings changed. The candidate passed the spawn XSD, nearby
 spawn check, and byte-idempotence check. The running game server was not
 restarted; the user's next rebuilt container needs an in-game visual check.

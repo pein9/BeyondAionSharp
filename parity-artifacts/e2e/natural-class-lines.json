@@ -51,7 +51,7 @@
     {
       "class": "ENGINEER",
       "classId": 12,
-      "newSkill": { "var": 5, "rewardGroup": 4, "trainerNpcId": 801218, "trainerPosition": [556.129, 2426.967, 278.5], "talkRange": 6, "pageId": 2375 },
+      "newSkill": { "var": 5, "rewardGroup": 4, "trainerNpcId": 801218, "trainerPosition": [567.48, 2458.46, 278.249], "talkRange": 6, "pageId": 2375 },
       "classPage": { "pageId": 3569, "clientPage": "select8_3", "clientActions": ["SETPRO15", "SETPRO17"] },
       "ceremony": { "var": 50, "rewardGroup": 4, "preceptorNpcId": 801220, "preceptorPosition": [1438.09, 1431.82, 178.0], "talkRange": 6, "pageId": 3398 },
       "masteries": [{ "skillId": 40, "kind": "armor", "unlocks": "CLOTHES" }, { "skillId": 41, "kind": "armor", "unlocks": "LEATHER" }, { "skillId": 103, "kind": "armor", "unlocks": "ROBE" }, { "skillId": 112, "kind": "weapon", "unlocks": "GUN" }]
@@ -59,7 +59,7 @@
     {
       "class": "ARTIST",
       "classId": 15,
-      "newSkill": { "var": 6, "rewardGroup": 5, "trainerNpcId": 801219, "trainerPosition": [555.431, 2429.317, 278.35], "talkRange": 6, "pageId": 2716 },
+      "newSkill": { "var": 6, "rewardGroup": 5, "trainerNpcId": 801219, "trainerPosition": [577.75, 2461.42, 278.625], "talkRange": 6, "pageId": 2716 },
       "classPage": { "pageId": 3910, "clientPage": "select9_3", "clientActions": ["SETPRO16"] },
       "ceremony": { "var": 60, "rewardGroup": 5, "preceptorNpcId": 801221, "preceptorPosition": [1438.14, 1444.51, 178.0], "talkRange": 6, "pageId": 3739 },
       "masteries": [{ "skillId": 40, "kind": "armor", "unlocks": "CLOTHES" }, { "skillId": 103, "kind": "armor", "unlocks": "ROBE" }, { "skillId": 114, "kind": "weapon", "unlocks": "HARP" }]
