@@ -1001,7 +1001,8 @@ dispatch Q29071 have never been run by a bot.
 17. The 26 Ishalgen plans are outside the plan-drift test and one reader found their NPC
     anchors stale against current spawn data. They are not regenerated (the Priest baseline
     would move), so new classes inherit the same anchors.
-18. Stop boundaries with status 5 have never been used; the only boundary in the files is
+18. (Answered by CP-10 on 2026-10-07: the stop at 2132:5:0 fired on the Priest and wrote
+    resume-receipt.json.) Stop boundaries with status 5 have never been used; the only boundary in the files is
     2007:3:6. The code says they fire (J:553, 601; QuestService.cs:86-87). CP-10 plays one
     on the Priest before any class run leans on it, and it is found and fixed there if it
     does not fire. The fallback is the new -StopAfterQuest switch. It writes no
@@ -1788,7 +1789,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       coin-purchase-receipt. The gate compares the trace, not the counts, so nothing is
       unprotected; the number in the baseline row is low.
     - Evidence only: the seven pre-commit checks pass, no Fast run.
-- [ ] **CP-10 - A status-5 stop writes its receipt: the Priest stopped at Q2132.** Depends:
+- [x] **CP-10 - A status-5 stop writes its receipt: the Priest stopped at Q2132.** Depends:
   CP-09
   - Work: No code change is expected. Stop boundaries with status 5 have never been used
     (hazard 18), and every class checkpoint and class scope leans on one. Run
@@ -1803,6 +1804,30 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     This stop has no fallback: -StopAfterQuest exists only for Q2004 to Q2007 (J:141-142).
   - Proof: One contained run under run/cp/CP-10/<run-id>: resume-receipt.json is written,
     and its checkpoint holds 2132 in CompletedQuestIds.
+  - 2026-10-07: done on the first attempt, with no code change. Run stop-a1 at commit
+    a6fa1f0b4, on a clean tree: sim-snapshot.ps1 -Action Replay -StopAt 2132:5:0 -Item
+    CP-10 -Run stop-a1 passed (run/cp/CP-10/stop-a1/replay.json: passed, schema dropped,
+    environment NI08_STOP_AT=2132:5:0 and nothing else).
+    - **The stop fired and wrote its receipt.** run/cp/CP-10/stop-a1/resume-receipt.json
+      exists. Its checkpoint holds CompletedQuestIds 2000, 2001, 2002, 2100, 2101, 2102,
+      2103, 2104 and 2132, and Q2132 reads status 5, step 0, complete count 1. The last
+      trace records are the turn-in itself: SM_QUEST_ACTION with questId 2132, status 5,
+      stepAndFlags 0, at game time 14 min 36 s. The run stopped there and played nothing
+      after it.
+    - The character at the stop: a Priest of level 6 at Aldelle Village (554, 2404), not
+      dead, full HP and MP, bound at the village obelisk (585, 2467), 2,337 Kinah. The
+      next quest the planner names is Q2003. Q2003 to Q2006 are in the journal at status
+      3 and Q2007 is locked (status 6), as Java's QuestStatus has them (START 3, REWARD
+      4, COMPLETE 5, LOCKED 6).
+    - The run in numbers: 11,545 trace records, 9 s of test time, 32 s with the schema.
+      No death and no retreat; 1 pull plan, 2 between-fight heals, 3 life potions, 2
+      Running scrolls, 1 speed scroll, 1 bind (the village), 3 help items supplied at
+      run start (help-items.json: 30 Major Life Potions, 30 Lesser Anti-Shock Scrolls,
+      20 Greater Running Scrolls).
+    - Hazard 18 is answered: a status-5 boundary fires and writes the receipt. CP-44 and
+      the class checkpoints of CP-50 on can lean on it. The guard run of gate p+m was
+      not needed, because nothing was changed.
+    - Evidence only: the seven pre-commit checks pass, no Fast run.
 
 ### B. The class seam, with the Priest and Cleric moved onto it unchanged
 
@@ -3484,3 +3509,7 @@ report what was done, what is blocked and what you need from me.
   item's scope against it found no Proof line to edit. Logged: the counts mode misses the
   Abyss-entry leg's coin-armor purchases (7 in ax). The baseline sha stays 200ec4c24.
   Evidence only; seven checks. Phase A is one item from done. Next by rule (h): CP-10.
+- 2026-10-07 — Loop: CP-10 done on the first attempt, no code change. Run stop-a1 at
+  a6fa1f0b4: the Priest stopped at 2132:5:0 at level 6 in Aldelle Village, 14 min 36 s of
+  game time, and resume-receipt.json holds 2132 in CompletedQuestIds. Hazard 18 is answered.
+  Evidence only; seven checks. Phase A is done. Next by rule (h): CP-11.
