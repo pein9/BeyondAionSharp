@@ -4174,7 +4174,26 @@ as replaced and the Answer rules.
 
 ## Blocked / questions for the operator
 
-Nothing is blocked: no item is listed here as blocked, and rule (h) passes over none.
+**The loop is stopped by the re-record rule, since 2026-10-07.** Outside commit 6bdb96d66
+("Stop spawning Ishalgen's two new-class trainers twice", the fix of CP-34's finding, made
+in a separate task) changes every trace. The full gate at HEAD 50db7f2d4, run gate-a1 of
+item rerecord-6bdb96d66 (run/cp/rerecord-6bdb96d66/gate-a1/verdict.json): all seven scopes
+differ from their baselines, and every journey ran to its end.
+
+- What differs: ten fewer objects are made at world start, so every object id made later
+  is ten lower, and the two extra trainers are no longer seen. p, m and b first differ at
+  record 1, in fields.objectId, and are shorter: 35,789 records against 35,811, 123,048
+  against 123,112 and 128,869 against 128,937. l1, c, hm and ax start from snapshots and
+  keep their record counts (30,693, 96,166, 39,564, 15,762); they first differ at records
+  1,937, 125, 2,387 and 486, in an object id or an item list.
+- What does not differ: all 21 step counts of the comparer are equal to the baseline's in
+  every scope. Only the record totals of p, m and b moved.
+- **The operator decides (CP-Q23): re-record the seven baselines at HEAD, or revert
+  6bdb96d66?** The loop's recommendation is to re-record now, before CP-29a, so that
+  CP-29a's list of differences shows gear picks and not object ids. CP-29a then re-records
+  once more, as CP-Q22 allows. No item is taken until an Answer line stands here.
+
+No item is listed here as blocked.
 
 - **CP-Q22** (asked 2026-10-07 for CP-29a: may the seven Priest and Cleric baselines be
   re-recorded once, after the differences are listed, when the Priest and the Cleric move
@@ -4726,3 +4745,8 @@ report what was done, what is blocked and what you need from me.
   the spellbook; Warrior types chain, then plate, Templar sword and shield, Gladiator the
   two-handed sword. No class gets a branch of its own: where the table cannot say it, the
   table is widened. The loop is holding builds while another session edits this tree.
+- 2026-10-07 — Loop stopped by the re-record rule. Outside commit 6bdb96d66 (the trainer fix)
+  shifts every object id by ten and removes the two extra trainers from view. Full gate at
+  50db7f2d4 (run/cp/rerecord-6bdb96d66/gate-a1): all seven scopes differ, every journey ran,
+  and all 21 step counts equal the baselines'. CP-Q23 asks the operator: re-record at HEAD or
+  revert. CP-29a is unblocked and waits behind it.
