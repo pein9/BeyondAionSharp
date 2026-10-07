@@ -26,6 +26,13 @@ public sealed record NaturalClassLine(string Id, PlayerClass Starter, PlayerClas
 		: All.FirstOrDefault(line => line.Id == id) ?? throw new ArgumentException(
 			$"Unknown natural class line '{id}'. Known lines: {string.Join(", ", All.Select(line => line.Id))}.", nameof(id));
 
+	/// <summary>CP-20: the starter as step labels name it (<c>priest</c>). A character keeps this name in labels after its
+	/// class change, as the Priest who became a Cleric always did.</summary>
+	public string StarterLabel => Starter.ToString().ToLowerInvariant();
+
+	/// <summary>The starter as messages name it (<c>Priest</c>).</summary>
+	public string StarterName => char.ToUpperInvariant(StarterLabel[0]) + StarterLabel[1..];
+
 	/// <summary>The class is one this line's character can be: its starter or its second class.</summary>
 	public bool Holds(PlayerClass playerClass) => playerClass == Starter || playerClass == Second;
 }

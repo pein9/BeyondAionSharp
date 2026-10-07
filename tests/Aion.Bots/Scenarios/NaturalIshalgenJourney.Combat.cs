@@ -175,7 +175,7 @@ public sealed partial class NaturalIshalgenJourney
 
 		private async Task<bool> FightAsync(int target, CancellationToken token, BotPosition? retreatAnchor, int? attackHistoryStart)
 		{
-			if (InCombat) throw new InvalidOperationException("Natural Priest combat cannot nest another fight.");
+			if (InCombat) throw new InvalidOperationException($"Natural {classLine.StarterName} combat cannot nest another fight.");
 			int attemptId = ++combatAttemptId;
 			int revivesBefore = revives;
 			InCombat = true;
@@ -509,7 +509,7 @@ public sealed partial class NaturalIshalgenJourney
 					default: throw new InvalidDataException($"Natural combat cannot act: {choice.Action}: {choice.Reason}");
 				}
 			}
-			throw new InvalidDataException($"Natural Priest exceeded {MaximumCombatActions} actions without a client-observed NPC kill.");
+			throw new InvalidDataException($"Natural {classLine.StarterName} exceeded {MaximumCombatActions} actions without a client-observed NPC kill.");
 
 			string? LocalizedName(int id) => world.Objects.TryGetValue(id, out BotKnownObject? known) && known.TemplateId is int kind
 				? runtime.Data.NpcDataDh.GetNpcTemplate(kind)?.GetL10n() : null;
@@ -1010,7 +1010,7 @@ public sealed partial class NaturalIshalgenJourney
 				string nearby = string.Join(", ", navigator.Observe().Npcs
 					.Where(npc => Distance(npc.Position, session.CurrentPosition) < 30)
 					.Select(npc => $"{npc.TemplateId}/{npc.ObjectId}:{Distance(npc.Position, session.CurrentPosition):F1}m"));
-				throw new InvalidDataException($"Natural Priest exceeded {MaximumRevives} ordinary bind revives; " +
+				throw new InvalidDataException($"Natural {classLine.StarterName} exceeded {MaximumRevives} ordinary bind revives; " +
 					$"level={session.Api.World.Level}, " +
 					$"target={engagedTarget}, position={session.CurrentPosition}, nearby={nearby}; " +
 					$"trace={string.Join(" | ", lastCombatTrace)}.");

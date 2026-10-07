@@ -158,6 +158,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		var dashboard = runtime.Dashboard;
 		NaturalIshalgenContract contract = NaturalIshalgenContract.LoadDefault();
 		NaturalCapitalContract capitalContract = NaturalCapitalContract.LoadDefault();
+		// CP-20: what the server decides for the line's starter (the Q2132 var and trainer).
+		NaturalStarterClass starterFacts = NaturalClassLineContract.LoadDefault().Starter(ClassLine.Starter);
 		NaturalJourneyCheckpoint? checkpoint = null;
 		NaturalCoinGearProgress? coinGearProgress = null;
 		NaturalHaramelProgress? haramelProgress = null;
@@ -323,7 +325,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			BotNavigationGraph graph = BotNavigationGraphFactory.Build(runtime.Data, altgardNpcs.Concat(new[] {
 				203500, 203504, 203501, 203502, 203516, 203518,
 				203519, 203534, 790002, 210377, 210378, 700045, 203538,
-				203539, 210592, 700047, 203550, 210402, 210403, 203530, 203535, 203551, 203547,
+				203539, 210592, 700047, 203550, 210402, 210403, starterFacts.NewSkill.TrainerNpcId, 203535, 203551, 203547,
 				203540, 210395, 210396, 210750, 700095,
 				203552, 203554, 700085, 700086, 700087, 203517,
 				203533, 210734, 203514, 203543, 203532, 203531, 700128,
@@ -5325,7 +5327,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				{
 					NaturalNavigationResult approach = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(
 						contract.MapId, templateId, anchor.Position, combat.ClassProfile.Ranges.SpawnApproachRange, navigator,
-						"priest-spell-range-target", token);
+						$"{ClassLine.StarterLabel}-spell-range-target", token);
 					if (!approach.Arrived)
 					{
 						reasons.Add(approach.Reason);
@@ -5392,7 +5394,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							contract.MapId, templateId, anchor.Position, navigator, token);
 						if (combat.ReviveCount > revivesBefore)
 							throw new NaturalGuardedObjectiveRevivedException(
-								$"Priest revived while approaching guarded NPC {templateId} from {anchor.Position}.");
+								$"{ClassLine.StarterName} revived while approaching guarded NPC {templateId} from {anchor.Position}.");
 						if (result.Arrived && result.TargetObjectId is int objectId) return objectId;
 						reasons.Add(result.Reason);
 						if (result.Reason is not ("No collision-checked route to the current destination." or
@@ -5401,7 +5403,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						bool guardKilled = await TryClearObservedBlockerAsync(anchor.Position);
 						if (combat.ReviveCount > revivesBefore)
 							throw new NaturalGuardedObjectiveRevivedException(
-								$"Priest revived while clearing guarded NPC {templateId} from {anchor.Position}.");
+								$"{ClassLine.StarterName} revived while clearing guarded NPC {templateId} from {anchor.Position}.");
 						if (!guardKilled) break;
 						session.TraceDiagnostic("return-corridor-guard-cleared", new Dictionary<string, object?>
 						{
@@ -5638,7 +5640,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					if (killed) navigator.UnavailableObjects.Add(attacker);
 					else return true; // combat decided otherwise (retreat); let the caller re-plan
 				}
-				throw new InvalidDataException("Priest could not clear engaged attackers before resting or pulling.");
+				throw new InvalidDataException($"{ClassLine.StarterName} could not clear engaged attackers before resting or pulling.");
 			}
 
 			async Task LootQuestItemsAroundAsync(CancellationToken lootToken)
@@ -6327,7 +6329,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				// This is an ordinary player cast, not a setup or GM teleport.
 				const int returnSkillId = 243;
 				Require.True(session.Api.World.Skills.TryGetValue(returnSkillId, out BotSkill? learned),
-					"The Priest did not observe the auto-learned Return skill.");
+					$"The {ClassLine.StarterName} did not observe the auto-learned Return skill.");
 				// CP-07: with a bind at an Ishalgen hub a fallback can fire beside the bound obelisk. Return would land where
 				// the bot stands, which is no way out of anything, so it is not cast. Ishalgen only: on every other map the
 				// helper is what it was.
@@ -6425,7 +6427,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				session.AcceptTeleportPosition();
 				Require.Equal(returnMap, session.Api.World.MapId);
 				Require.True(Distance(origin, session.CurrentPosition) > 30,
-					"Return completed but did not move the Priest out of the checked-route pocket.");
+					$"Return completed but did not move the {ClassLine.StarterName} out of the checked-route pocket.");
 				session.TraceDiagnostic("natural-return-completed", new Dictionary<string, object?>
 				{
 					["skillId"] = returnSkillId,
@@ -6444,7 +6446,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					session.Api.World.Inventory.Values.Select(item => item.ItemId));
 				int rewardIndex = inventory.ChooseReward(2100, session.Api.World.Level,
 					session.Api.World.Inventory.Values);
-				Require.True(rewardIndex >= 0, "Q2100 should present a selectable reward to the natural Priest.");
+				Require.True(rewardIndex >= 0, $"Q2100 should present a selectable reward to the natural {ClassLine.StarterName}.");
 				await FinishStandardQuestAsync(session, ulgorn, 2100, token,
 					DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex);
 				Require.Equal(5, session.Api.World.Quests[2100].Status);
@@ -6504,7 +6506,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				}
 				Require.Equal(4, session.Api.World.Quests[2001].Status);
 				boromer = await ApproachShippedSpawnAsync(203518);
-				session.BeginStep("ni07-q2001-finish", "claim-priest-appropriate-campaign-reward");
+				session.BeginStep("ni07-q2001-finish", $"claim-{ClassLine.StarterLabel}-appropriate-campaign-reward");
 				string root = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "../.."));
 				var inventory = NaturalIshalgenInventoryPolicy.Load(root,
 					session.Api.World.Inventory.Values.Select(item => item.ItemId));
@@ -6565,7 +6567,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					for (int kill = 0, attempt = 0; QuestVar(2002) < 10 && attempt < 21; attempt++)
 					{
 						session.BeginStep($"ni07-q2002-kill-{kill + 1}-try-{attempt + 1}",
-							"pull-client-observed-sprigg-from-priest-spell-range");
+							$"pull-client-observed-sprigg-from-{ClassLine.StarterLabel}-spell-range");
 						await RestSafelyAsync(token);
 						await session.SynchronizeAsync(token);
 						NaturalNavigationObject[] observed = navigator.Observe().Npcs.ToArray();
@@ -6731,7 +6733,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					await session.SynchronizeAsync(token);
 					Require.Equal(4, session.Api.World.Quests[2002].Status);
 				}
-				session.BeginStep("ni07-q2002-finish", "return-to-ulgorn-and-claim-priest-reward");
+				session.BeginStep("ni07-q2002-finish", $"return-to-ulgorn-and-claim-{ClassLine.StarterLabel}-reward");
 				await ApproachShippedSpawnAsync(203534); // Retrace the walked route through Dabi and Nobekk.
 				await ApproachShippedSpawnAsync(203519);
 				int ulgorn = await ApproachShippedSpawnAsync(203516);
@@ -6811,10 +6813,11 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 
 			async Task CompleteNewSkillAsync()
 			{
+				// Java _2132ANewSkill sets the var by starter class at the level change and answers only that class's trainer.
 				await WaitForQuestStatusAsync(session, 2132, 4, token);
-				Require.Equal(4, session.Api.World.Quests[2132].StepAndFlags);
-				session.BeginStep("ni07-q2132-finish", "walk-to-priest-trainer-for-auto-learned-skill-quest");
-				int trainer = await ApproachShippedSpawnAsync(203530);
+				Require.Equal(starterFacts.NewSkill.Var, session.Api.World.Quests[2132].StepAndFlags);
+				session.BeginStep("ni07-q2132-finish", $"walk-to-{ClassLine.StarterLabel}-trainer-for-auto-learned-skill-quest");
+				int trainer = await ApproachShippedSpawnAsync(starterFacts.NewSkill.TrainerNpcId);
 				await FinishStandardQuestAsync(session, trainer, 2132, token);
 				Require.Contains(2132, session.Api.World.CompletedQuestIds);
 			}
@@ -6912,7 +6915,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						for (int attempt = 1; attempt <= 4 && !killed; attempt++)
 						{
 							session.BeginStep($"ni07-q2004-kill-{kill + 1}-try-{attempt}",
-								"fight-munins-cube-target-from-priest-spell-range");
+								$"fight-munins-cube-target-from-{ClassLine.StarterLabel}-spell-range");
 							await RestSafelyAsync(token);
 							int target = await ApproachShippedCombatSpawnAsync(210402);
 							killed = await combat.TryKillAsync(target, token, muninRefuge);
@@ -6924,7 +6927,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								Require.True(regroup.Arrived, regroup.Reason);
 							}
 						}
-						Require.True(killed, $"Q2004 cube target {kill + 1} survived four ordinary Priest pulls.");
+						Require.True(killed, $"Q2004 cube target {kill + 1} survived four ordinary {ClassLine.StarterName} pulls.");
 						await RestSafelyAsync(token);
 					}
 					Require.Equal(6, session.Api.World.Quests[2004].StepAndFlags);
@@ -7238,7 +7241,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								if (Distance(session.CurrentPosition, firingEdge[^1]) > 1)
 								{
 									navigator.Record(new NaturalNavigationEvent(navigator.Events.Count + 1,
-										"line-of-sight-flank", "planned", "Checked short ground move to Priest spell range " +
+										"line-of-sight-flank", "planned", $"Checked short ground move to {ClassLine.StarterName} spell range " +
 										"outside other client-observed aggro circles.", contract.MapId, blocker.Npc.TemplateId,
 										session.CurrentPosition, firingEdge[^1], blocker.Npc.ObjectId, 0, 0, firingEdge));
 									await navigator.MoveAsync(firingEdge, token);
@@ -7466,7 +7469,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					Require.True(ItemCount(session.Api.World, 182203006) == 3,
 						$"Q2005 needs three earned Odella; observed {ItemCount(session.Api.World, 182203006)}. " +
 						string.Join(" | ", searchNotes));
-					session.BeginStep("ni07-q2005-mijou-finish", "show-odella-and-claim-priest-reward");
+					session.BeginStep("ni07-q2005-mijou-finish", $"show-odella-and-claim-{ClassLine.StarterLabel}-reward");
 					mijou = await ApproachShippedSpawnAsync(203540);
 					await OpenQuestDialogAsync(mijou, 2005);
 					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(mijou,
@@ -7582,7 +7585,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					await session.SynchronizeAsync(token);
 					Require.Equal(4, session.Api.World.Quests[2006].Status);
 				}
-				session.BeginStep("ni07-q2006-ulgorn-reward", "return-to-ulgorn-and-claim-priest-reward");
+				session.BeginStep("ni07-q2006-ulgorn-reward", $"return-to-ulgorn-and-claim-{ClassLine.StarterLabel}-reward");
 				if (easternRoadIngressStart is BotPosition && easternRoadIngress.Length > 0)
 				{
 					NaturalNavigationResult easternReturn = await NaturalIshalgenNavigator.RetraceIngressAsync(
@@ -7775,7 +7778,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					session.AcceptTeleportPosition();
 					Require.Equal(4, session.Api.World.Quests[2007].Status);
 				}
-				session.BeginStep("ni07-q2007-ulgorn-reward", "claim-priest-reward-after-quest-transport");
+				session.BeginStep("ni07-q2007-ulgorn-reward", $"claim-{ClassLine.StarterLabel}-reward-after-quest-transport");
 				int ulgorn = await ApproachShippedSpawnAsync(203516);
 				string root = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "../.."));
 				var inventory = NaturalIshalgenInventoryPolicy.Load(root,

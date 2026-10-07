@@ -2330,13 +2330,38 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - No Java was read: the item relies on no server behavior it did not already rely on.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,719 with 16 skipped),
       and Fast passes (run cp19-fast). The guard of rule (c), gate p, is in the proof run.
-- [ ] **CP-20 - Q2132, the trainer and class names from the line.** Depends: CP-01, CP-19
+- [x] **CP-20 - Q2132, the trainer and class names from the line.** Depends: CP-01, CP-19
   - Work: Q2132 (J:6689-6697) takes its var, trainer and step label from the class-line
     contract (Priest: var 4, npc 203530, the same label bytes). The navigation graph NPC
     list (J:311-320) adds the line's trainer. Step and message strings on the 1-9 path that
     name the class take the name from the line, byte-identical for the Priest; the parsed
     trace keys pull-plan and defend-before-pull are not renamed.
   - Proof: Neutral gate, set m.
+  - 2026-10-07: done. Gate run gate-a1, set p+m (the proof set and the guard in one run):
+    verdict pass (run/cp/CP-20/gate-a1/verdict.json). p: 35,811 records and m: 123,112,
+    each identical to its baseline, so every step label of the 41 quests kept its bytes.
+    - **Java read first:** _2132ANewSkill sets the var by the starter class at the level
+      change (Warrior 1, Scout 2, Mage 3, Priest 4, Engineer 5, Artist 6) and answers
+      only that class's trainer (203527 to 203530, 801218, 801219). The class-line
+      contract of CP-01 holds both for every starter.
+    - **Q2132** reads its var and its trainer from the contract's row for the line's
+      starter, loaded once at the start of the run, and the navigation graph's NPC list
+      names that trainer where it named 203530. For the Priest: var 4 and 203530.
+    - **The class name comes from the line.** NaturalClassLine gains StarterLabel
+      (priest) and StarterName (Priest). The journey's strings that named the class use
+      them: nine step labels (the Q2001, Q2002, Q2005, Q2006 and Q2007 reward claims,
+      the trainer walk, the Sprigg pull, the cube fight and the shipped-spawn search
+      label), one traced plan reason in Q2005, and ten messages of refusals and
+      requirements, three of them in the combat class. A character keeps its starter's
+      name in these after its class change, as the Cleric of a bridge run always did.
+    - **Not renamed:** the trace keys pull-plan and defend-before-pull; the two rest
+      texts, which CP-17 pinned; and strings outside the journey that name the Priest
+      (the patrol baseline's reason, the static policy's version and reasons, the
+      inventory reason best-usable-priest-upgrade, the NI-01 identity scenario). The
+      gear reason belongs to CP-22; the others are the Priest line's own and no other
+      line reaches them.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,719 with 16 skipped),
+      and Fast passes (run cp20-fast). The guard of rule (c), gate p, is in the proof run.
 - [ ] **CP-21 - Campaign ranges and readiness thresholds from the profile.** Depends: CP-20
   - Work: The Ishalgen campaign's range literals (the Q2002 Sprigg hunt at 22 and 25 m,
     J:6433-6510; Q2004 and Q2005 at 23 and 25 m, J:6794, 6896-6913, 7093, 7127) and its
@@ -3894,3 +3919,7 @@ report what was done, what is blocked and what you need from me.
   stand-off with today's numbers; walk-in and weapon-range styles are defined, not played.
   Gate gate-a1, set p+m+c: identical. The pin test has 47 rows asserted, 11 pending (CP-21).
   Seven checks, 4,719 with 16 skipped and Fast (cp19-fast) pass. Next by rule (h): CP-20.
+- 2026-10-07 — Loop: CP-20 done. Q2132 takes its var and trainer from the class-line
+  contract and the graph names the line's trainer; the journey's step labels and messages
+  take the class name from the line (priest, Priest). Gate gate-a1, set p+m: identical.
+  Seven checks, 4,719 with 16 skipped and Fast (cp20-fast) pass. Next by rule (h): CP-21.

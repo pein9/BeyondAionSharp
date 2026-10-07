@@ -234,6 +234,11 @@ public sealed class NaturalClassProfileTests
 		foreach (string unknown in new[] { "warrior", "Priest-Cleric", "priest-cleric ", "cleric" })
 			Assert.Contains($"'{unknown}'", Assert.Throws<ArgumentException>(() => NaturalClassLine.Parse(unknown)).Message, StringComparison.Ordinal);
 		Assert.True(line.Holds(PlayerClass.PRIEST) && line.Holds(PlayerClass.CLERIC));
+		// CP-20: how step labels and messages name the line's starter. The second class never changes the name.
+		Assert.Equal(("priest", "Priest"), (line.StarterLabel, line.StarterName));
+		var engineer = new NaturalClassLine("engineer", PlayerClass.ENGINEER, null, 0, "none");
+		Assert.Equal(("engineer", "Engineer"), (engineer.StarterLabel, engineer.StarterName));
+		Assert.Equal("walk-to-priest-trainer-for-auto-learned-skill-quest", $"walk-to-{line.StarterLabel}-trainer-for-auto-learned-skill-quest");
 		Assert.False(line.Holds(PlayerClass.CHANTER) || line.Holds(PlayerClass.WARRIOR));
 	}
 
@@ -248,6 +253,9 @@ public sealed class NaturalClassProfileTests
 				Assert.Contains(contract.SecondClassesOf(line.Starter), row => row.PlayerClass == second);
 			Assert.Matches("^[A-Z][a-z]+$", line.CharacterName);
 		}
+		// CP-20: Q2132 for the accepted line, as the journey reads it (Java _2132ANewSkill: var 4, trainer 203530).
+		NaturalStarterNewSkill newSkill = contract.Starter(NaturalClassLine.Default.Starter).NewSkill;
+		Assert.Equal((4, 203530), (newSkill.Var, newSkill.TrainerNpcId));
 	}
 
 	private static IEnumerable<NaturalCombatObservation> Sweep(int level, int maxHp, int maxMp, int[] learnedIds)
