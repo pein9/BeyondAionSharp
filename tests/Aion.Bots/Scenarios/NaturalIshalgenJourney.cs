@@ -41,6 +41,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	private const float ZoneMargin = 3f;
 	// AG-07: an Altgard leg walks its road toward an approach from farther than this, and leaves the last stretch to the navigator.
 	private const float FarApproachMetres = 100f, FarApproachStop = 40f;
+	/// <summary>CP-07: the obelisks of Ishalgen's two quest hubs, Aldelle Village and the outpost (bind_points.xml calls it
+	/// Anturoon Crossing), and how near the outpost obelisk counts as standing at the outpost.</summary>
+	private const int IshalgenVillageObelisk = 700063, IshalgenOutpostObelisk = 700064;
+	private const float IshalgenOutpostRadius = 100f;
 
 	private static BotPosition GroundRoadGoal(BotNavigationGeometry geometry, int map, BotPosition destination) =>
 		geometry.GroundAround(map, destination, [3f, 5f, 8f, 12f]).FirstOrDefault() is { } ground && ground != default
@@ -316,7 +320,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				203552, 203554, 700085, 700086, 700087, 203517,
 				203533, 210734, 203514, 203543, 203532, 203531, 700128,
 					210363, 210367, 210369, 700124, 700093,
-					700063, 203513, 203545, 203679}),
+					700063, 700064, 203513, 203545, 203679}),
 				geometry);
 			var navigator = new NaturalJourneyNavigator(session, graph, geometry, runtime, options.StopOnDeath)
 			{
@@ -821,6 +825,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							await AcceptAllAtCurrentHubAsync();
 						}
 					}
+					await BindAtIshalgenHubIfNeededAsync(questId);
 					switch (questId)
 					{
 						case 2101: await CompleteQ2101Async(); break;
@@ -4893,22 +4898,70 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await combat.BuffOurselfAsync(NaturalHelpTrigger.TravelLeg, token, Distance(session.CurrentPosition, destination));
 			}
 
-			async Task BindAtAldelleIfNeededAsync()
+			// The hub optimizer's village bind (NI07_OPTIMIZE_HUBS). CP-07: the same helper as the default route's binds.
+			Task BindAtAldelleIfNeededAsync() => BindAtIshalgenObeliskIfNeededAsync(IshalgenVillageObelisk, "aldelle");
+
+			BotPosition IshalgenObeliskPosition(int obeliskId) =>
+				graph.GetMap(contract.MapId)!.Waypoints.First(waypoint => waypoint.TemplateId == obeliskId).Position;
+
+			// CP-07 (CP-Q21, the operator, 2026-10-07): "We should have been binding in Ishalgen the whole time, at each quest
+			// hub (the village and the outpost), and soul heal as discussed." Before a quest of the village hub is worked the
+			// bot binds at the village obelisk, and before a quest of the outpost's two hubs (mijou and anturoon) at the
+			// outpost obelisk. Every line does, and so does the Cleric who returns to finish Ishalgen. Quests of the other
+			// hubs bind nowhere. Only the two binds are taken from the hub optimizer: no pickup order, no work groups and no
+			// hub flight.
+			async Task BindAtIshalgenHubIfNeededAsync(int questId)
 			{
-				if (session.Api.World.ObeliskBindPoint is { MapId: 220010000 } bound &&
-					Distance(bound.Position, new BotPosition(587.688f, 2467.1f, 278.788f, 0)) < 20)
+				if (session.Api.World.MapId != contract.MapId || session.Api.World.IsDead) return;
+				switch (NaturalIshalgenHubPolicy.ForQuest(questId)?.Name)
+				{
+					case "aldelle": await BindAtIshalgenObeliskIfNeededAsync(IshalgenVillageObelisk, "aldelle"); break;
+					case "mijou" or "anturoon": await BindAtIshalgenObeliskIfNeededAsync(IshalgenOutpostObelisk, "outpost"); break;
+				}
+			}
+
+			async Task BindAtIshalgenObeliskIfNeededAsync(int obeliskId, string hub)
+			{
+				BotWorldModel world = session.Api.World;
+				BotPosition obeliskAt = IshalgenObeliskPosition(obeliskId);
+				BotBindPoint? bound = world.ObeliskBindPoint is { MapId: 220010000 } registered ? registered : null;
+				// Java ResurrectAI refuses a second bind within 20 m of the present bind point; the client sees it the same way.
+				if (bound != null && Distance(bound.Position, obeliskAt) < NaturalServicePolicy.SameObeliskRadius) return;
+				// Each bind is made once. Work that goes back to the village after the outpost bind does not move the bind back.
+				// A character that never bound still shows a bind point, the map's first spawn point (Java sends it at login),
+				// so only a bind at the outpost obelisk counts here.
+				if (obeliskId == IshalgenVillageObelisk && bound != null &&
+					Distance(bound.Position, IshalgenObeliskPosition(IshalgenOutpostObelisk)) < NaturalServicePolicy.SameObeliskRadius) return;
+				// The fee is the bind point's price as shipped (Java BindPointTemplate): 43 Kinah at the village, 134 at the outpost.
+				int fee = runtime.Data.BindPointDataDh.GetBindPointTemplate(obeliskId)?.GetPrice() ?? int.MaxValue;
+				if (world.Kinah < fee)
+				{
+					session.TraceDiagnostic("ishalgen-hub-bind-skipped", new Dictionary<string, object?>
+					{
+						["hub"] = hub, ["obelisk"] = obeliskId, ["fee"] = fee, ["kinah"] = world.Kinah,
+						["reason"] = "The purse does not cover the fee.",
+					});
 					return;
-				int fee = runtime.Data.BindPointDataDh.GetBindPointTemplate(700063)?.GetPrice() ?? int.MaxValue;
-				if (session.Api.World.Kinah < fee) return;
-				session.BeginStep("ni07-bind-aldelle", "register-ordinary-aldele-obelisk");
-				int obelisk = await ApproachShippedSpawnAsync(700063);
+				}
+				session.BeginStep($"ni07-bind-{hub}", "bind-at-the-working-hubs-obelisk");
+				// The outpost is reached by the eastern road, as its first quest reaches it; the direct valley line is blocked.
+				if (obeliskId == IshalgenOutpostObelisk && Distance(session.CurrentPosition, obeliskAt) > IshalgenOutpostRadius)
+					await WalkEasternRoadToDerotAsync();
+				int obelisk = await ApproachShippedSpawnAsync(obeliskId);
 				// NA-08: the map-agnostic bind step (the Altgard Fortress bind uses it too).
-				BotPosition obeliskPosition = session.Api.World.Objects[obelisk].Position;
+				BotPosition obeliskPosition = world.Objects[obelisk].Position;
 				NaturalServiceOutcome bindOutcome = await new NaturalServiceSteps(session).BindAsync(obelisk, obeliskPosition,
 					contract.MapId, fee, acceptRange: 5, token);
 				Require.True(bindOutcome.IsDone, bindOutcome.Reason);
-				Require.True(session.Api.World.ObeliskBindPoint is { MapId: 220010000 } registered &&
-					Distance(registered.Position, session.CurrentPosition) < 20);
+				Require.True(world.ObeliskBindPoint is { MapId: 220010000 } now &&
+					Distance(now.Position, obeliskPosition) < NaturalServicePolicy.SameObeliskRadius,
+					$"The client did not observe the bind point at the {hub} obelisk.");
+				session.TraceDiagnostic("ishalgen-hub-bind", new Dictionary<string, object?>
+				{
+					["hub"] = hub, ["obelisk"] = obeliskId, ["fee"] = fee, ["kinah"] = world.Kinah,
+					["bindPoint"] = world.ObeliskBindPoint!.Position,
+					["fromObelisk"] = Distance(world.ObeliskBindPoint.Position, obeliskPosition),
+				});
 			}
 
 			async Task UseFasterTravelAsync(BotPosition destination, bool forceHubFlight = false)
@@ -6180,6 +6233,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 			async Task WalkEasternRoadToDerotAsync()
 			{
+				// CP-07: bound at the outpost, a revive or a Return lands beside Derot. The road is for a bot that landed at the
+				// map's first spawn point or at the village; one already at the outpost only walks the last metres.
+				if (session.Api.World.MapId == contract.MapId &&
+					Distance(session.CurrentPosition, IshalgenObeliskPosition(IshalgenOutpostObelisk)) <= IshalgenOutpostRadius)
+				{
+					session.TraceDiagnostic("eastern-road-skipped-at-outpost", new Dictionary<string, object?> { ["position"] = session.CurrentPosition });
+					await ApproachShippedSpawnAsync(203539);
+					return;
+				}
 				BotPosition roadStart = session.CurrentPosition;
 				int historyStart = navigator.Events.Count;
 				if (Distance(session.CurrentPosition, new BotPosition(571.0388f, 2787.342f, 299.875f, 0)) < 80)
@@ -6237,6 +6299,18 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				const int returnSkillId = 243;
 				Require.True(session.Api.World.Skills.TryGetValue(returnSkillId, out BotSkill? learned),
 					"The Priest did not observe the auto-learned Return skill.");
+				// CP-07: with a bind at an Ishalgen hub a fallback can fire beside the bound obelisk. Return would land where
+				// the bot stands, which is no way out of anything, so it is not cast. Ishalgen only: on every other map the
+				// helper is what it was.
+				if (session.Api.World.MapId == contract.MapId && session.Api.World.ObeliskBindPoint is { MapId: 220010000 } beside &&
+					Distance(session.CurrentPosition, beside.Position) <= 30)
+				{
+					session.TraceDiagnostic("natural-return-skipped-at-bind", new Dictionary<string, object?>
+					{
+						["position"] = session.CurrentPosition, ["bindPosition"] = beside.Position,
+					});
+					return;
+				}
 				session.BeginStep("ni07-natural-return", "cast-learned-return-after-checked-route-blocked");
 				// NA-27 (LIVE): a monster can kill the bot on the very walk whose failure asked for Return, and Java refuses
 				// a dead player's cast (CM_CASTSPELL: STR_SKILL_CANT_CAST, DEAD). A bind revive lands at the same bind

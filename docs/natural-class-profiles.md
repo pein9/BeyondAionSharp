@@ -1033,7 +1033,16 @@ old tier, as the supply rule says of an old tier
     back to Aldelle and out again. The
     soul heal after a hub revive has not been run in Ishalgen: Soul Healers 203512 and
     203680 are not in the navigation graph's NPC list, and a template missing from that
-    list may make the approach helper throw (hazard 15). CP-07 finds out.
+    list may make the approach helper throw (hazard 15). CP-07 finds out. (It found out
+    on 2026-10-07: the revive at the outpost and the soul heal at Rusalka 203680 ran in
+    both attempts, with no entry in the list. The village's Soul Healer was not used: no
+    death fell while the bind was there.)
+30. The kill loop can spend its whole budget on monsters that are walking home (CP-07,
+    attempt 1): after a retreat from three attackers in Q2128, six attempts ended within
+    30 s, each one to three seconds after its pull, with the target reported as returned.
+    The run then failed with "not killed in 6 non-retreat attempts". It is logged, not
+    fixed. A same-seed replay repeats it or not as a whole, so it does not threaten a
+    baseline that was recorded; it can fail a first run of a changed route.
 
 ## CP checklist
 
@@ -1477,7 +1486,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       owns; and the LIVE Priest gets the same level 1-9 changes.
     - Bundle: seven pre-commit checks pass, Aion.GameServer.Tests passes, and Fast passes
       all 11 scenario gates (run cp06-fast). The logs are in run/cp/CP-06/checks/.
-- [ ] **CP-07 - Bind at each Ishalgen quest hub.** Depends: CP-03, CP-06
+- [x] **CP-07 - Bind at each Ishalgen quest hub.** Depends: CP-03, CP-06
   - Work: This item too changes the accepted Priest line's levels 1-9 on purpose (the
     operator, 2026-10-07: "We should have been binding in Ishalgen the whole time, at each
     quest hub (the village and the outpost), and soul heal as discussed."). It depends on
@@ -1522,6 +1531,62 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     the trace, the village's with its fee of 43 Kinah and the outpost's with 134, each
     followed by a client-observed bind point within 20 m of its obelisk, and the run
     reaches the Munin stop.
+  - 2026-10-07: done on the second attempt. Run m-a2 (run/cp/CP-07/m-a2/, scope m, seed 1,
+    a fresh Priest, bridge off) passed in 5 min 20 s and reached the Munin stop at game
+    time 3 h 14 min: level 9, all 41 quests, Q2008 untouched, bound at the outpost.
+    - **The village bind:** at 0 h 04 min, before Q2100, at obelisk 700063 for 43 Kinah
+      (2,380 to 2,337); the client's bind point is 2.3 m from the obelisk.
+    - **The outpost bind:** at 0 h 18 min, before Q2003, at obelisk 700064 for 134 Kinah
+      (2,337 to 2,203); the bind point is 1.2 m from the obelisk. The bot walked the
+      eastern road there once, and Q2003's own walk was then skipped.
+    - **The death:** one, at the violet generator of Q2007 at 1 h 10 min. The Priest
+      revived at the outpost bind, and the death rule soul healed at Rusalka 203680 beside
+      it: 287 XP back for 71 Kinah. Neither Soul Healer needed an entry in the navigation
+      graph's NPC list. No death fell before the village bind, so a revive at the map's
+      first spawn point is not shown.
+    - **Q2129's Return branch ran.** At the reward claim of Q2129, at 3 h 05 min, the bot
+      cast Return from (659, 904) and landed at the outpost bind. It was the run's only
+      Return.
+    - **Kinah left at Munin:** 40,342. The CP-06 run ended with 40,590; the difference of
+      248 is the two fees and the soul heal (43 + 134 + 71).
+    - Counts of m-a2: 123,113 records, 1 death, 1 retreat, 7 emergency decisions, 15
+      between-fight heals, 148 pull plans, 69 life potions, 3 shield scrolls, 20 Running
+      scrolls, 2 binds, 1 soul heal.
+    - **Attempt 1 (run/cp/CP-07/m-a1/, kept) failed** with "NPC 210391 was not killed in 6
+      non-retreat attempts" in Q2128. It showed two things. First, a fault in the new
+      helper: the village bind was never made. The client shows a bind point from the
+      first login, because Java sends the map's first spawn point when the character has
+      none (TeleportService.sendObeliskBindPoint), and the helper took that for a bind
+      that must not be moved back. The one small change of rule (e): only a bind at the
+      outpost obelisk holds the village bind back. Second, a finding that is logged and
+      not fixed: after a retreat from three attackers, the kill loop spent its six
+      attempts in 30 s on monsters that were walking home ("combat-target-returned" one
+      to three seconds after each pull). It did not happen in m-a2 or in the CP-06 run.
+      Attempt 1 also had its death at the same generator, the same revive at the outpost
+      and the same soul heal, and two Returns that landed at the outpost bind.
+    - **What was built.** BindAtIshalgenHubIfNeededAsync runs in the decision loop before
+      a quest's own steps: a quest of the hub aldelle binds at 700063, a quest of mijou or
+      anturoon at 700064, any other quest nowhere. It is one helper for both obelisks,
+      built from BindAtAldelleIfNeededAsync, which now calls it. It is not gated by level
+      or class, so the Cleric who returns to finish Ishalgen binds the same way. A bind is
+      skipped only when the purse does not cover the fee, and the skip is traced
+      (ishalgen-hub-bind-skipped). Obelisk 700064 joined the navigation graph's NPC list.
+    - **Routing.** Every revive and Return site of the "Every line" note goes through
+      WalkEasternRoadToDerotAsync, so the edit is one: within 100 m of the outpost obelisk
+      the road is skipped and the bot walks to Derot. A bot that landed at the spawn point
+      or at the village still walks the road. Q2007's two tests for "within 400 m of the
+      spawn point" needed no edit: at the outpost they are false, which is the right
+      answer. UseLearnedReturnToBindAsync does not cast when the bot stands within 30 m
+      of its bind on the Ishalgen map; on every other map it is what it was. The death
+      rule is not edited.
+    - One site is left as it was and is not reached on this route: when no walked history
+      of the eastern road survives, Q2006's reward step casts Return, which now lands at
+      the outpost and not near Ulgorn.
+    - Tests: UT/NaturalIshalgenHubBindTests is new and passes 5 of 5 (the two fees, the
+      Soul Healer the death rule finds beside each obelisk and none at the spawn point,
+      and which hubs the obelisks serve).
+    - Bundle: seven pre-commit checks pass, Aion.GameServer.Tests passes, and Fast passes
+      all 11 scenario gates (run cp07-fast). The logs are in run/cp/CP-07/checks/.
 - [ ] **CP-08 - Record baselines p and c, twice.** Depends: CP-04, CP-07
   - Work: No file under src or tests changes. CP-05, CP-06 and CP-07 are ticked, so these
     baselines hold the Priest's new levels 1-9: the help kit and both Ishalgen binds. They
@@ -3215,3 +3280,12 @@ report what was done, what is blocked and what you need from me.
   decisions 14 to 0, between-fight heals 30 to 12. One point for the operator before CP-08:
   the Priest drinks the Major potion at 90% HP. Bundle: seven checks, Aion.GameServer.Tests
   4,690 passed, Fast 11 gates (cp06-fast). Next by rule (h): CP-07, the Ishalgen binds.
+- 2026-10-07 — Loop: CP-07 done on the second attempt. Every line binds at the village obelisk
+  (43 Kinah) and at the outpost obelisk (134 Kinah), each before the first quest of its hub.
+  Run m-a2 (scope m) passed in 5 min 20 s to the Munin stop: both binds in the trace, one death
+  revived at the outpost and soul healed at Rusalka for 71 Kinah, Q2129's Return branch ran,
+  40,342 Kinah left. Attempt 1 failed and is kept: the client shows a bind point before any
+  bind, which had held the village bind back (the one small fix); and a kill budget ran out on
+  monsters walking home in Q2128 (hazard 30, logged). Bundle: seven checks,
+  Aion.GameServer.Tests 4,695 passed, Fast 11 gates (cp07-fast). The Priest's levels 1-9 are
+  now as the baselines will record them. Next by rule (h): CP-08.
