@@ -6,14 +6,16 @@ param(
 	[string]$DatabaseName,
 	[string]$ContainerName = 'aion-mysql',
 	[string]$RootPassword = 'aion',
-	[int]$HostPort = 3306
+	[int]$HostPort = 3306,
+	# The docker command. sim-snapshot.ps1 passes its own, so its contract test reaches this script through a fake.
+	[string]$Docker = 'docker'
 )
 
 $ErrorActionPreference = 'Stop'
 
 function Invoke-Docker {
 	param([string[]]$Arguments)
-	& docker @Arguments
+	& $Docker @Arguments
 	if ($LASTEXITCODE -ne 0) {
 		throw "docker $($Arguments -join ' ') exited with $LASTEXITCODE"
 	}
@@ -39,10 +41,10 @@ if ($DatabaseName.Length -gt 64) {
 }
 
 Invoke-Docker -Arguments @('info') *> $null
-$existing = ((& docker ps -a --filter "name=^/$ContainerName$" --format '{{.Names}}' | Out-String).Trim())
+$existing = ((& $Docker ps -a --filter "name=^/$ContainerName$" --format '{{.Names}}' | Out-String).Trim())
 if ($Action -eq 'Drop') {
 	if ($existing -eq $ContainerName) {
-		$running = ((& docker ps --filter "name=^/$ContainerName$" --format '{{.Names}}' | Out-String).Trim())
+		$running = ((& $Docker ps --filter "name=^/$ContainerName$" --format '{{.Names}}' | Out-String).Trim())
 		if ($running -ne $ContainerName) { Invoke-Docker -Arguments @('start', $ContainerName) *> $null }
 		Invoke-Docker -Arguments @('exec', '-e', "MYSQL_PWD=$RootPassword", $ContainerName, 'mysql', '-uroot', '-e', "DROP DATABASE IF EXISTS ``$DatabaseName``;") *> $null
 	}
@@ -50,7 +52,7 @@ if ($Action -eq 'Drop') {
 }
 
 if ($existing -eq $ContainerName) {
-	$running = ((& docker ps --filter "name=^/$ContainerName$" --format '{{.Names}}' | Out-String).Trim())
+	$running = ((& $Docker ps --filter "name=^/$ContainerName$" --format '{{.Names}}' | Out-String).Trim())
 	if ($running -ne $ContainerName) { Invoke-Docker -Arguments @('start', $ContainerName) *> $null }
 } else {
 	Invoke-Docker -Arguments @('run', '--name', $ContainerName, '-e', "MYSQL_ROOT_PASSWORD=$RootPassword", '-e', 'MYSQL_ROOT_HOST=%', '-p', "${HostPort}:3306", '-d', 'mysql:8.4') *> $null
@@ -58,7 +60,7 @@ if ($existing -eq $ContainerName) {
 
 $deadline = (Get-Date).AddSeconds(90)
 do {
-	& docker exec -e "MYSQL_PWD=$RootPassword" $ContainerName mysqladmin ping -h 127.0.0.1 -P 3306 --protocol=tcp -uroot --silent *> $null
+	& $Docker exec -e "MYSQL_PWD=$RootPassword" $ContainerName mysqladmin ping -h 127.0.0.1 -P 3306 --protocol=tcp -uroot --silent *> $null
 	if ($LASTEXITCODE -eq 0) { break }
 	Start-Sleep -Seconds 1
 } while ((Get-Date) -lt $deadline)
@@ -68,7 +70,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # Open never resets data. The NI-08 orchestrator owns creation and final cleanup.
 if ($Action -eq 'Open') {
-	$count = (& docker exec -e "MYSQL_PWD=$RootPassword" $ContainerName mysql -uroot -N -e "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name='$DatabaseName';" | Out-String).Trim()
+	$count = (& $Docker exec -e "MYSQL_PWD=$RootPassword" $ContainerName mysql -uroot -N -e "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name='$DatabaseName';" | Out-String).Trim()
 	if ($LASTEXITCODE -ne 0 -or $count -ne '1') { throw "Retained simulation database does not exist: $DatabaseName" }
 	[ordered]@{ database=$DatabaseName; host='127.0.0.1'; port=$HostPort; user='root'; password=$RootPassword; container=$ContainerName } | ConvertTo-Json -Compress
 	return

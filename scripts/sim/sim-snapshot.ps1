@@ -21,12 +21,18 @@
 #   Verify:  restore, resume the retained character once and require the journey endpoint to be reached again
 #            (for `munin`: 41 quests, level 9 at Munin, Q2008 START/0), then drop the schema.
 #   Drop:    drop one owned snapshot schema.
+#   Replay:  play one scope and capture nothing (docs/natural-class-profiles.md, CP-03). The schema is a fresh owned one,
+#            or a restored snapshot when the scope starts from one (-AltgardLeg1, -CapitalStage first, or -From alone,
+#            which resumes the snapshot on its own environment). The scope switches are Capture's. -StopAt
+#            <questId:status:packedVars> stops at a checkpoint and -StopAfterQuest <2004..2007> after a campaign quest.
+#            The evidence goes to run/cp/<Item>/<Run>/, nothing is written under run/snapshots, and the schema is
+#            dropped whether the run passes or fails. A working tree with uncommitted changes is allowed and recorded.
 #
 # Snapshots are only ever made by natural play and are never edited. Every restore is a fresh copy because the
 # Ascension class choice is irreversible. Only aion_gs_sim_ni08_* schemas on the development MySQL are touched.
 param(
 	[Parameter(Mandatory)]
-	[ValidateSet('Capture', 'Restore', 'Verify', 'Drop')]
+	[ValidateSet('Capture', 'Restore', 'Verify', 'Drop', 'Replay')]
 	[string]$Action,
 	[ValidatePattern('^[a-z0-9][a-z0-9-]*$')]
 	[string]$Name,
@@ -48,6 +54,15 @@ param(
 	[string]$CapitalStage,
 	[ValidatePattern('^\d+:[34]:\d+$')]
 	[string]$CapitalRelogAt,
+	# Replay only: the stop boundary NI08_STOP_AT; a completed quest reads as status 5 with packed vars 0.
+	[ValidatePattern('^\d+:\d+:\d+$')]
+	[string]$StopAt,
+	[ValidateSet(2004, 2005, 2006, 2007)]
+	[int]$StopAfterQuest,
+	# Replay only: the checklist item the run belongs to, and where its evidence folder is made.
+	[ValidatePattern('^[A-Za-z0-9][A-Za-z0-9-]*$')]
+	[string]$Item,
+	[string]$ReplayRoot,
 	[switch]$NoBuild
 )
 
@@ -56,16 +71,22 @@ Set-StrictMode -Version Latest
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 if (-not $SnapshotRoot) { $SnapshotRoot = Join-Path $repoRoot 'run/snapshots' }
 $ownedPattern = '^aion_gs_sim_ni08_[a-z0-9_]+$'
-if ($CapitalStage -and ($Bridge -or $AltgardLeg1 -or $Action -ne 'Capture')) {
+$playsScope = $Action -in @('Capture', 'Replay')
+if ($CapitalStage -and ($Bridge -or $AltgardLeg1 -or -not $playsScope)) {
 	throw 'CapitalStage is a contained Capture scope and cannot be combined with Bridge or AltgardLeg1.'
 }
 if ($CapitalRelogAt -and $CapitalStage -ne 'first') { throw 'CapitalRelogAt requires CapitalStage first.' }
-if ($ContinuousJourney -and ($Action -ne 'Capture' -or $Bridge -or $AltgardLeg1 -or $CapitalStage -or -not $LaterCapital)) {
+if ($ContinuousJourney -and (-not $playsScope -or $Bridge -or $AltgardLeg1 -or $CapitalStage -or -not $LaterCapital)) {
 	throw 'ContinuousJourney requires a revised fresh Capture with LaterCapital and no other starting scope.'
 }
-if ($LaterCapital -and ($Action -ne 'Capture' -or $CapitalStage -or (-not $Bridge -and -not $AltgardLeg1 -and -not $ContinuousJourney))) {
+if ($LaterCapital -and (-not $playsScope -or $CapitalStage -or (-not $Bridge -and -not $AltgardLeg1 -and -not $ContinuousJourney))) {
 	throw 'LaterCapital requires a bridge or Altgard Capture, without a contained capital checkpoint.'
 }
+if ($Action -ne 'Replay' -and ($StopAt -or $StopAfterQuest -or $Item -or $ReplayRoot)) {
+	throw 'StopAt, StopAfterQuest, Item and ReplayRoot belong to Replay.'
+}
+# Read here: inside a function $PSBoundParameters is the function's own.
+$fromGiven = $PSBoundParameters.ContainsKey('From')
 
 function Invoke-Docker([string[]]$Arguments) {
 	& $Docker @Arguments
@@ -89,7 +110,10 @@ function Invoke-NaturalJourney([string]$Db, [string]$RunId, [string]$Evidence, [
 		'AION_SIM_SEED', 'AION_NI07_COMBAT_DIR', 'NI07_FULL_JOURNEY', 'NI08_STOP_AT', 'NI08_RELOG_AT', 'NI08_RESUME_CHARACTER',
 		'NA_ASCENSION', 'AF_ALTGARD', 'AF_ONLY', 'AF_CG_RECEIPTS', 'AF_HM_PROGRESS', 'PC_CAPITAL', 'RC_CAPITAL',
 		'NI07_STOP_AFTER_Q2004', 'NI07_STOP_AFTER_Q2005', 'NI07_STOP_AFTER_Q2006', 'NI07_STOP_AFTER_Q2007', 'NI07_STOP_ON_DEATH', 'NI07_OPTIMIZE_HUBS',
-		'AX_ARENA_FIRST_TRY', 'AX_RING_FIRST_TRY')
+		'AX_ARENA_FIRST_TRY', 'AX_RING_FIRST_TRY',
+		# CP-03: an inherited NA_HELP_ITEMS=0 would turn the help supply off, and the other two would move the bot
+		# monitor or the SIM process key. Cleared, the supply is on and the monitor is at its default port.
+		'NA_HELP_ITEMS', 'AION_BOT_DASHBOARD_PORT', 'AION_SIM_PROCESS_KEY')
 	$prior = @{}
 	foreach ($variable in $names) {
 		$prior[$variable] = [Environment]::GetEnvironmentVariable($variable)
@@ -282,7 +306,7 @@ try {
 					if ($CapitalRelogAt) { $extra.NI08_RELOG_AT = $CapitalRelogAt }
 				} else {
 					$db = New-OwnedDatabaseName
-					& pwsh -NoProfile -File (Join-Path $PSScriptRoot 'new-sim-db.ps1') -Action Create -DatabaseName $db | Out-Null
+					& pwsh -NoProfile -File (Join-Path $PSScriptRoot 'new-sim-db.ps1') -Action Create -DatabaseName $db -Docker $Docker | Out-Null
 					if ($LASTEXITCODE -ne 0) { throw 'Could not create the owned capital capture schema.' }
 				}
 				try {
@@ -369,7 +393,7 @@ try {
 				break
 			}
 			$db = New-OwnedDatabaseName
-			& pwsh -NoProfile -File (Join-Path $PSScriptRoot 'new-sim-db.ps1') -Action Create -DatabaseName $db | Out-Null
+			& pwsh -NoProfile -File (Join-Path $PSScriptRoot 'new-sim-db.ps1') -Action Create -DatabaseName $db -Docker $Docker | Out-Null
 			if ($LASTEXITCODE -ne 0) { throw 'Could not create the owned capture schema.' }
 			try {
 				$prefixExtra = if ($Bridge) { @{ NA_ASCENSION = '1' } } else { @{} }
@@ -443,6 +467,76 @@ try {
 				if ($ContinuousJourney) {
 					@{ database=$db; owned=$true; dropped=$true } | ConvertTo-Json |
 						Set-Content -LiteralPath (Join-Path $evidence 'schema-cleanup.json')
+				}
+			}
+		}
+		'Replay' {
+			if (-not $Item) { throw 'Replay needs -Item, the checklist item its evidence belongs to.' }
+			if ($Name) { throw 'Replay captures nothing and takes no -Name; the snapshot to start from is -From.' }
+			if ($CapitalRelogAt) { throw 'CapitalRelogAt belongs to the capital capture.' }
+			if ($StopAt -and $StopAfterQuest) { throw 'StopAt and StopAfterQuest are two different stops; give one.' }
+			if (-not $Run) { $Run = 'replay-' + (Get-Date -Format 'yyyyMMdd-HHmmss') }
+			if ($Run -notmatch '^[A-Za-z0-9][A-Za-z0-9-]*$') { throw "Replay run id must be letters, digits and dashes: $Run" }
+			if (-not $ReplayRoot) { $ReplayRoot = Join-Path $repoRoot 'run/cp' }
+			$evidence = Join-Path (Join-Path $ReplayRoot $Item) $Run
+			if (Test-Path -LiteralPath $evidence) { throw "Replay evidence already exists: $evidence. Choose a new -Run." }
+			# A scope that starts from a snapshot: an Altgard leg, the capital first pass, or -From by itself, which
+			# resumes the snapshot on the environment its Restore prints. Every other scope creates its character.
+			$restores = $AltgardLeg1 -or $CapitalStage -eq 'first' -or $fromGiven
+			if ($restores -and ($Bridge -or $ContinuousJourney -or $CapitalStage -eq 'start')) {
+				throw 'This scope creates its own character and cannot start from a snapshot; leave out -From.'
+			}
+			if (-not $NoBuild) {
+				& dotnet build (Join-Path $repoRoot 'tests/Aion.Simulation.Tests') -v quiet *> $null
+				if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
+			}
+			$extra = @{}
+			$base = $null
+			$receipt = $null
+			if ($restores) {
+				$base = Restore-Snapshot $From
+				$db = $base.database
+				if ($AltgardLeg1) { $extra = Get-LegEnvironment $base.environment $Leg }
+				else { foreach ($key in $base.environment.Keys) { $extra[$key] = $base.environment[$key] } }
+			} else {
+				$db = New-OwnedDatabaseName
+				& pwsh -NoProfile -File (Join-Path $PSScriptRoot 'new-sim-db.ps1') -Action Create -DatabaseName $db -Docker $Docker | Out-Null
+				if ($LASTEXITCODE -ne 0) { throw 'Could not create the owned replay schema.' }
+			}
+			try {
+				if ($CapitalStage) { $extra.NA_ASCENSION = '1'; $extra.PC_CAPITAL = $CapitalStage }
+				if ($Bridge) { $extra.NA_ASCENSION = '1' }
+				if ($ContinuousJourney) { $extra.NA_ASCENSION = '1'; $extra.AF_ALTGARD = 'all' }
+				if ($LaterCapital) { $extra.RC_CAPITAL = '1' }
+				if ($StopAt) { $extra.NI08_STOP_AT = $StopAt }
+				if ($StopAfterQuest) { $extra["NI07_STOP_AFTER_Q$StopAfterQuest"] = '1' }
+				New-Item -ItemType Directory -Force -Path $evidence | Out-Null
+				if ($ContinuousJourney) {
+					@{ database=$db; owned=$true; createdFresh=$true; restored=$false; elapsedMillis=0 } |
+						ConvertTo-Json | Set-Content -LiteralPath (Join-Path $evidence 'schema-provenance.json')
+				}
+				$receiptPath = Join-Path $evidence 'replay.json'
+				$receipt = [ordered]@{
+					schemaVersion = 1; item = $Item; run = $Run; seed = $Seed
+					from = $(if ($restores) { $From } else { $null })
+					characterId = $(if ($restores) { $base.characterId } else { $null })
+					environment = [ordered]@{}
+					gitSha = (& git -C $repoRoot rev-parse HEAD).Trim()
+					uncommitted = @(& git -C $repoRoot status --porcelain -- src tests game-server parity-artifacts scripts/sim)
+					startedUtc = (Get-Date).ToUniversalTime().ToString('o')
+					database = $db; passed = $false; schemaDropped = $false
+				}
+				foreach ($key in ($extra.Keys | Sort-Object)) { $receipt.environment[$key] = [string]$extra[$key] }
+				$receipt | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $receiptPath -Encoding utf8
+				Invoke-NaturalJourney $db $Run $evidence $extra
+				$receipt.passed = $true
+				Write-Host "Replayed $Item run $Run; nothing was captured. Evidence: $evidence"
+			}
+			finally {
+				Remove-OwnedDatabase $db
+				if ($receipt) {
+					$receipt.schemaDropped = $true
+					$receipt | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $receiptPath -Encoding utf8
 				}
 			}
 		}

@@ -1142,7 +1142,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - Bundle: seven pre-commit checks pass, scripts/sim/test-sim-snapshot.ps1 and the new
       test pass, and Fast passes all 11 scenario gates (run cp02-fast). The logs are in
       run/cp/CP-02/checks/.
-- [ ] **CP-03 - Replay without capture.** Depends: CP-00
+- [x] **CP-03 - Replay without capture.** Depends: CP-00
   - Work: CP-Q3 was answered on 2026-10-07, so this item is not blocked.
     scripts/sim/sim-snapshot.ps1 gains -Action Replay: a fresh owned schema through
     new-sim-db.ps1 (as Capture makes one at lines 284-285) or Restore-Snapshot for -From,
@@ -1169,6 +1169,38 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     and b use it) and -From (Restore-Snapshot): Replay writes no snapshot directory, writes
     its evidence under run/cp/<item>/<run>/, drops the schema on success and on failure, and
     a historical Restore prints exactly what it prints today.
+  - 2026-10-07: done. scripts/sim/sim-snapshot.ps1 has -Action Replay, and
+    scripts/sim/new-sim-db.ps1 takes -Docker, which sim-snapshot.ps1 passes through. pwsh
+    -NoProfile -File scripts/sim/test-sim-snapshot.ps1 passes with the new cases
+    (run/cp/CP-03/proof-test-sim-snapshot.log), against the fake Docker and a fake dotnet:
+    - the fresh form for scope m, scope p (-CapitalStage start), scope b (-Bridge
+      -LaterCapital), -StopAt 2132:5:0 and -StopAfterQuest 2004; and the restored form for
+      -From munin alone and for -AltgardLeg1 -Leg l12 -From a mock endpoint;
+    - each plays on an owned schema, sends its evidence to <ReplayRoot>/<Item>/<Run>/, ends
+      with DROP DATABASE of that schema, runs no mysqldump and leaves the snapshot root as
+      it was; a failed journey, fresh or restored, still drops the schema and keeps its
+      evidence with a receipt that says passed false;
+    - the journey gets no NA_HELP_ITEMS, AION_BOT_DASHBOARD_PORT or AION_SIM_PROCESS_KEY
+      from a parent that sets all three, and the parent gets them back;
+    - a historical Restore prints the same five properties and the same three environment
+      names; thirteen refusals touch no MySQL.
+    Two deliberate breakages of the script (no drop in Replay; NA_HELP_ITEMS not cleared)
+    each failed the test, and the script was put back.
+    - What Replay does beyond the Work line, so later items can lean on it: -From by itself
+      resumes the snapshot on the environment its Restore prints; -ReplayRoot moves the
+      evidence root (the test uses it; the default is run/cp); an evidence folder that
+      exists is refused, so two attempts never share one; and a working tree with
+      uncommitted changes is allowed, because CP-06 and CP-07 prove their change before
+      they commit it. The receipt replay.json records the scope's environment, the git sha
+      and the uncommitted paths.
+    - Capture and Verify go through the same runner, so they too now clear NA_HELP_ITEMS,
+      AION_BOT_DASHBOARD_PORT and AION_SIM_PROCESS_KEY. With them cleared the help supply
+      is on and the bot monitor is at its default port, 17880.
+    - No journey was played for this item. With the real Docker, new-sim-db.ps1 created a
+      throwaway schema (61 tables) and sim-snapshot.ps1 -Action Drop removed it; no
+      aion_gs_sim_ni08_* schema is left. CP-06 is the first real Replay.
+    - Bundle: seven pre-commit checks pass, both script tests pass, and Fast passes all 11
+      scenario gates (run cp03-fast). The logs are in run/cp/CP-03/checks/.
 - [ ] **CP-04 - The neutral gate script.** Depends: CP-02, CP-03
   - Work: Add scripts/sim/run-neutral-gate.ps1 -Set <names> [-Record] [-Item <id>] [-Run
     <id>]: build once, run each scope through Replay with --no-build, compare each trace
@@ -2961,3 +2993,11 @@ report what was done, what is blocked and what you need from me.
   the operator, to be decided before CP-08. Bundle: seven checks, both script tests, Fast 11
   gates (cp02-fast). No baseline exists yet, so the re-record rule did not apply. Next by
   rule (h): CP-03.
+- 2026-10-07 — Loop: CP-03 done. sim-snapshot.ps1 has -Action Replay: one scope on a fresh or a
+  restored owned schema, evidence under run/cp/<item>/<run>/, nothing captured, the schema
+  always dropped; -StopAt takes status 5. new-sim-db.ps1 takes -Docker. The shared runner now
+  clears NA_HELP_ITEMS, AION_BOT_DASHBOARD_PORT and AION_SIM_PROCESS_KEY for Capture and
+  Verify too. Proof: test-sim-snapshot.ps1 with the Replay cases. No journey was played; CP-06
+  is the first real Replay. Bundle: seven checks, both script tests, Fast 11 gates
+  (cp03-fast). No baseline exists yet, so the re-record rule did not apply. Next by rule (h):
+  CP-04.
