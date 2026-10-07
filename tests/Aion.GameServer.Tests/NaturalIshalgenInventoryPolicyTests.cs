@@ -26,32 +26,6 @@ public sealed class NaturalIshalgenInventoryPolicyTests
 	});
 
 	[Fact]
-	public void TheCeremonyListAndTheDispatchQuestAreTheLinesBridges()
-	{
-		// CP-26: the policy reads the class-reward list and the dispatch quest from the line's bridge. The accepted line's
-		// is the reviewed one; a Chanter line reads chanter_selectable_reward, which holds the same two items, and keeps
-		// the staff; a line that takes no second class keeps the reviewed bridge and never reaches its quests.
-		string root = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "../.."));
-		int[] ids = [100100025, 101500498, 100100495, 162000053];
-		var accepted = NaturalIshalgenInventoryPolicy.Load(root, ids, Aion.Bots.Scenarios.Classes.NaturalClassLine.PriestCleric);
-		var chanter = NaturalIshalgenInventoryPolicy.Load(root, ids, new("test-priest-chanter",
-			Aion.GameServer.Model.PlayerClass.PRIEST, Aion.GameServer.Model.PlayerClass.CHANTER, 0, "Unused"));
-		var warrior = NaturalIshalgenInventoryPolicy.Load(root, ids, new("test-warrior", Aion.GameServer.Model.PlayerClass.WARRIOR, null, 0, "Unused"));
-		foreach (NaturalIshalgenInventoryPolicy policy in new[] { Bridge.Value, accepted, chanter, warrior })
-		{
-			Assert.Equal(1, policy.ChooseReward(2009, 9, []));
-			Assert.All(new[] { 2008, 2904, 24010 }, quest => Assert.Equal(-1, policy.ChooseReward(quest, 10, [])));
-		}
-		XElement ceremony = XDocument.Load(Path.Combine(root, "game-server/data/static_data/quest_data/quest_data.xml")).Root!
-			.Elements("quest").Single(quest => (int)quest.Attribute("id")! == 2009);
-		foreach (string list in new[] { "priest_selectable_reward", "chanter_selectable_reward" })
-			Assert.Equal(new[] { 100100495, 101500498 }, ceremony.Elements(list).Select(node => (int)node.Attribute("item_id")!));
-		// A pair whose list does not offer the reviewed pick cannot load its policy until its pick is named.
-		Assert.Throws<InvalidDataException>(() => NaturalIshalgenInventoryPolicy.Load(root, ids, new("test-warrior-templar",
-			Aion.GameServer.Model.PlayerClass.WARRIOR, Aion.GameServer.Model.PlayerClass.TEMPLAR, 0, "Unused")));
-	}
-
-	[Fact]
 	public void TheCeremonyRewardIsTheOperatorsStaffAndTheBridgeTurnInsHaveNoChoice()
 	{
 		// quest_data.xml Q2009 priest_selectable_reward: Karmic Warhammer, then Karmic Staff (OD-5).
@@ -127,8 +101,6 @@ public sealed class NaturalIshalgenInventoryPolicyTests
 	{
 		var world = new BotWorldModel();
 		Assert.False(NaturalIshalgenInventoryPolicy.IsCleric(world));
-		// CP-23: an unobserved class is the line's starter, so the accepted line decides by the Priest's rules.
-		Assert.Same(Aion.Bots.Scenarios.Classes.NaturalGearRules.Priest, Bridge.Value.GearRules(world));
 		world.Apply(Packet<Aion.GameServer.Network.Aion.ServerPackets.SM_STATS_INFO>(("objectId", 7), ("level", (ushort)10),
 			("expNeeded", 900L), ("expRecoverable", 0L), ("expShown", 500L), ("maxHp", 669), ("currentHp", 669), ("maxMp", 1200),
 			("currentMp", 1200), ("maxDp", (ushort)4000), ("dp", (ushort)0), ("maxFp", 60), ("currentFp", 60)));
@@ -136,31 +108,6 @@ public sealed class NaturalIshalgenInventoryPolicyTests
 			("heading", (byte)0), ("name", "Asimnjour"), ("state", (ushort)0), ("race", (byte)1),
 			("playerClass", Aion.GameServer.Model.PlayerClassExtensions.GetClassId(Aion.GameServer.Model.PlayerClass.CLERIC))));
 		Assert.True(NaturalIshalgenInventoryPolicy.IsCleric(world));
-		// CP-23: Decide(world) takes the observed class's gear rules.
-		Assert.Same(Aion.Bots.Scenarios.Classes.NaturalGearRules.Cleric, Bridge.Value.GearRules(world));
-		BotInventoryItem[] bag = [Item(1, 100100025, equipped: 1), Item(2, 101500498)];
-		Assert.Equal(Bridge.Value.Decide(bag, 10, 27, cleric: true).Decisions,
-			Bridge.Value.Decide(bag, 10, 27, Bridge.Value.GearRules(world)).Decisions);
-	}
-
-	[Fact]
-	public void TheRewardChoiceIsScoredByTheRulesItIsGivenAndByThePriestsByDefault()
-	{
-		// CP-23: the accepted line's profiles both name the Priest's rules, so every accepted pick stays as it was.
-		Assert.Same(Aion.Bots.Scenarios.Classes.NaturalGearRules.Priest, Aion.Bots.Scenarios.Classes.NaturalPriestProfile.Priest.RewardGear);
-		Assert.Same(Aion.Bots.Scenarios.Classes.NaturalGearRules.Priest, Aion.Bots.Scenarios.Classes.NaturalPriestProfile.Cleric.RewardGear);
-		int differences = 0;
-		foreach (int quest in Enumerable.Range(2000, 1000))
-		for (int level = 1; level <= 26; level++)
-		{
-			int byDefault = Bridge.Value.ChooseReward(quest, level, []);
-			Assert.Equal(byDefault, Bridge.Value.ChooseReward(quest, level, [], Aion.Bots.Scenarios.Classes.NaturalGearRules.Priest));
-			if (Bridge.Value.ChooseReward(quest, level, [], Aion.Bots.Scenarios.Classes.NaturalGearRules.Cleric) != byDefault) differences++;
-		}
-		// Another class's rules do pick differently somewhere: the input is used.
-		Assert.True(differences > 0);
-		// The ceremony pick is a contract pin whatever the rules.
-		Assert.Equal(Bridge.Value.ChooseReward(2009, 10, []), Bridge.Value.ChooseReward(2009, 10, [], Aion.Bots.Scenarios.Classes.NaturalGearRules.Cleric));
 	}
 
 	private static Aion.Bots.Protocol.DecodedBotServerPacket Packet<T>(params (string Name, object? Value)[] fields) =>

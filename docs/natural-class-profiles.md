@@ -469,6 +469,23 @@ of the two wins where they differ.
   another unblocked item" is rules (h) and (i). Its "NA-21's mechanism" is the help-item
   supply of that document and keeps its NA id; it is not CP-21. Here the SIM host supplies
   the approved help items of every class line.
+- (n) No new unit tests (the operator, 2026-10-07: "stop writing tests, they are mostly a
+  waste of time right now and waste of tokens. Remove any tests also unless you deem any
+  one of them absolutely necessary."). This rule outranks every Proof line below that names
+  a unit test: such an item is proven by the build, the bundle of rule (b) and its gate
+  set, its probe or its journey. An item with none of those is proven by the build and the
+  bundle, and by the first item that uses its code in a run. The existing tests are run,
+  not extended. A gated SIM probe is a run on a prepared character, not a unit test, and
+  stays the way to see server behavior before a journey reaches it. Kept from this plan,
+  as necessary: UT/NaturalClassLineContractTests (the one check that the hand-written
+  e2e/natural-class-lines.json still matches the shipped data and the handlers after an
+  upstream port), and the two tool tests scripts/sim/test-sim-snapshot.ps1 and
+  scripts/sim/trace/test_compare_traces.py (they check the snapshot tool and the comparer
+  that every gate verdict rests on). Removed on 2026-10-07: the twelve other test files
+  this plan added (the pin test, the golden gear test with e2e/natural-gear-golden.txt, and
+  the tests of the profile, rest, movement, gear, restock, seam, hub bind and help kit),
+  and the methods it added to seven older test files. Text below that cites one of them is
+  history. CP-41's pin-test check is void.
 
 ## What a class profile supplies
 
@@ -2984,6 +3001,26 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       type over a level-8 piece of a lower type.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,814 with 16 skipped),
       and Fast passes (run cp29-fast). The guard of rule (c), gate p, is in the gate run.
+- [ ] **CP-29a - The Priest and the Cleric on the table gear rules.** Depends: CP-29
+  - Work: The operator, 2026-10-07: "I'd like the Priest/Cleric to be no different from the
+    others. Nothing special except of course what needs to be different (playstyle,
+    mechanics, etc)." This replaces the last sentence of CP-29's Work. Give the Priest and
+    the Cleric a NaturalClassGearTable each and build NaturalGearRules.Priest and .Cleric
+    from them, as every other class's rules are built. The Priest: MACE, magical. The
+    Cleric: STAFF before MACE, magical, so the operator's staff rule (AX-Q1: always a
+    staff, the one with the most magic boost) becomes the table's weapon order and not a
+    branch of its own. Then remove what only the two old rule sets use: HandRuleGroup and
+    the staff branch of the equipment check, the class-blind reward choice, and the
+    accessory branches that the table's holds replace. What stays different is data, not
+    code: the two tables, the Cleric's supplies (the approved help items of OD-13), and
+    the legs' own protected items (coin gear, Haramel), which are leg rules. The Cleric's
+    shield waits for the off-hand mode of CP-68, as the Warrior's does; until then the
+    staff fills both hands, as it does today.
+  - Proof: Neutral gate, set all. A changed pick changes a trace, so differing scopes are
+    expected. List each scope's first difference in this item. The Priest and Cleric
+    scopes are then re-recorded once, with the operator's word (CP-Q22), and the loop
+    prompt's sentence that the journey plays exactly as CP-08 and CP-09 recorded it counts
+    from the new baselines.
 - [x] **CP-30 - Parameterize the capital scenario by the contract.** Depends: CP-08, CP-25
   - Work: This item edits an existing scenario file, so it waits for the first baselines
     (CP-08). Parameterize CapitalAscensionScenario.RunAsmodianAsync by the contract: the
@@ -3978,7 +4015,17 @@ as replaced and the Answer rules.
 
 ## Blocked / questions for the operator
 
-Nothing is blocked: no item is listed here as blocked, and rule (h) passes over none.
+One item is blocked, and rule (h) passes over it:
+
+- **CP-29a** (the Priest and the Cleric on the table gear rules) waits for **CP-Q22**. The
+  operator asked for the change on 2026-10-07 and said to do it when convenient. Question:
+  the change will very likely alter some of the Priest's and the Cleric's gear and reward
+  picks (today's Priest rule has no armor type order, and its reward choice is class-blind),
+  and each altered pick makes a neutral-gate scope differ. May the seven Priest and Cleric
+  baselines be re-recorded once for this item, after the differences are listed? No default:
+  the item waits for an Answer line here. "Yes" lets the loop take CP-29a at its next pick.
+
+Before that entry, nothing had been blocked since CP-Q3 was answered.
 CP-08's first record run failed in scope p on 2026-10-07; by rule (i) that became lettered
 item CP-07a, which stands in CP-08's Depends, so CP-08 waits for it and is not listed
 here. CP-03
@@ -4494,3 +4541,9 @@ report what was done, what is blocked and what you need from me.
   (run/cp/CP-31/probe-a1.log): SETPRO13 gives a Chanter, id 11, with the six masteries, the
   Karmic Staff from its own list, and Q2904 at START/1 after Doman. Guard guard-a1, set p:
   identical. Seven checks and Fast (cp31-fast) pass. Next by rule (h): CP-32.
+- 2026-10-07 — Operator, mid-run: (1) the Priest and the Cleric are to use the table gear rules
+  like every other class; item CP-29a is written after CP-29 and waits under Blocked for
+  CP-Q22, the word on re-recording the Priest and Cleric baselines. (2) No new unit tests,
+  and the plan's tests removed unless necessary: rule (n). Twelve test files and the golden
+  gear file are removed, seven older test files are back at their text from before the plan,
+  and three tests are kept. The build and the remaining Aion.GameServer.Tests pass (4,676 with 16 skipped).

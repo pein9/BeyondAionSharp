@@ -120,12 +120,6 @@ public sealed class BotNavMeshTests
 		Assert.NotEmpty(ranged);
 		Assert.True(Distance(ranged[^1], new BotPosition(40, 5, 10, 0)) <= 20);
 		Assert.True(geometry.HasLineOfSight(MapId, ranged[^1], new BotPosition(40, 5, 10, 0)));
-		// CP-18: the range is an input, 20 m by default; a shorter reach ends nearer the target.
-		Assert.Equal(ranged, geometry.FindRangedApproachPath(MapId, start, new BotPosition(40, 5, 10, 0), [], range: 20));
-		var nearer = geometry.FindRangedApproachPath(MapId, start, new BotPosition(40, 5, 10, 0), [], range: 8);
-		Assert.NotEmpty(nearer);
-		Assert.True(Distance(nearer[^1], new BotPosition(40, 5, 10, 0)) <= 8);
-		Assert.True(geometry.HasLineOfSight(MapId, nearer[^1], new BotPosition(40, 5, 10, 0)));
 	}
 
 	[Fact]

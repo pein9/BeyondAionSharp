@@ -139,26 +139,6 @@ public sealed class NaturalIshalgenDecisionLoopTests
 		Assert.False(NaturalIshalgenHubPolicy.MayReorder(depart));
 	}
 
-	[Fact]
-	public void TheIshalgenReturnStaysTheClericsAndNamesTheClassItRefuses()
-	{
-		// CP-27: a level-10 Chanter back from the ceremony is blocked, with the reason that names it.
-		var returned = Observe(level: 10, completed: [2008, 2009, 2101], active: [new(2001, 3, 1, 0, null)]);
-		NaturalDecision chanter = NaturalIshalgenDecisionEngine.Decide(Contract, returned with { PlayerClass = 11 }, 1, earlyAscension: true);
-		Assert.Equal(("returned-class", "blocked", "The Ishalgen return after the ceremony needs the Cleric; the character is CHANTER."),
-			(chanter.SelectedAction, chanter.Outcome, chanter.Reason));
-		Assert.Equal("The Ishalgen return after the ceremony needs the Cleric; the character is TEMPLAR.",
-			NaturalIshalgenDecisionEngine.Decide(Contract, returned with { PlayerClass = 2 }, 1, earlyAscension: true).Reason);
-		// The Cleric goes on, and the other refusals read as before.
-		Assert.Equal("continue-quest", NaturalIshalgenDecisionEngine.Decide(Contract, returned with { PlayerClass = 10 }, 1, earlyAscension: true).SelectedAction);
-		Assert.Equal(("pre-ascension-level", "Observed level 10; the journey must stop below level 10."),
-			(NaturalIshalgenDecisionEngine.Decide(Contract, returned with { PlayerClass = 11 }, 1).SelectedAction,
-				NaturalIshalgenDecisionEngine.Decide(Contract, returned with { PlayerClass = 11 }, 1).Reason));
-		Assert.Equal("pre-ascension-level", NaturalIshalgenDecisionEngine.Decide(Contract, returned, 1, earlyAscension: true).SelectedAction);
-		Assert.Equal("pre-ascension-level", NaturalIshalgenDecisionEngine.Decide(Contract,
-			returned with { PlayerClass = 11, CompletedQuestIds = new HashSet<int> { 2008 } }, 1, earlyAscension: true).SelectedAction);
-	}
-
 	[Theory]
 	[InlineData(null, true, true)]
 	[InlineData((byte)3, true, true)]

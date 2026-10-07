@@ -62,26 +62,6 @@ public sealed class NaturalCapitalDecisionEngineTests
 	}
 
 	[Fact]
-	public void TheCapitalPassStaysTheClericsAndNamesTheClassItRefuses()
-	{
-		// CP-27: a level-10 Chanter with the ceremony done is blocked, with the reason that names it.
-		var state = State([2912], [(2912, 3, 1)]);
-		NaturalCapitalDecision chanter = Decide(state with { ClassId = PlayerClass.CHANTER.GetClassId() });
-		Assert.Equal(("blocked", "The capital pass requires the completed level-10 Cleric ceremony; the character is CHANTER."),
-			(chanter.Action, chanter.Reason));
-		Assert.Equal("The capital pass requires the completed level-10 Cleric ceremony; the character is TEMPLAR.",
-			Decide(state with { ClassId = PlayerClass.TEMPLAR.GetClassId() }).Reason);
-		Assert.Equal("The capital pass requires the completed level-10 Cleric ceremony; the character is unknown class 250.",
-			Decide(state with { ClassId = 250 }).Reason);
-		// A Cleric short of the ceremony reads as before.
-		Assert.Equal(("blocked", "The capital pass requires the completed level-10 Cleric ceremony."),
-			(Decide(state with { Level = 9 }).Action, Decide(state with { Level = 9 }).Reason));
-		Assert.Equal("The capital pass requires the completed level-10 Cleric ceremony.",
-			Decide(state with { CompletedQuestIds = new HashSet<int> { 2008 } }).Reason);
-		Assert.NotEqual("blocked", Decide(state).Action);
-	}
-
-	[Fact]
 	public void DeathRecoveryKeepsPriorityOverIdentityAndMapGates()
 	{
 		var state = State([2912], [(2912, 3, 1)], map: 220010000);
