@@ -29,7 +29,12 @@ public static class NaturalInventoryCheck
 		var genderLimit = template.GetUseLimits()?.GetGenderPermitted();
 		return new NaturalGearInfo(template.GetItemSlot(), template.GetRequiredLevel(playerClass), template.GetLevel(),
 			(template.GetRace() == Race.PC_ALL || template.GetRace() == race) && (genderLimit == null || genderLimit == Gender.MALE),
-			template.GetItemGroup().ToString(), template.GetWeaponStats()?.GetBoostMagicalSkill() ?? 0);
+			template.GetItemGroup().ToString(), template.GetWeaponStats()?.GetBoostMagicalSkill() ?? 0,
+			// CP-29: what a table rule's physical stat reads; the flat physical-attack lines of the tooltip, without conditions.
+			template.GetWeaponStats()?.GetMinDamage() ?? 0, template.GetWeaponStats()?.GetMaxDamage() ?? 0,
+			template.GetModifiers()?.Where(modifier => modifier.GetName() == Aion.GameServer.Model.Stats.Container.StatEnum.PHYSICAL_ATTACK &&
+				modifier.GetType() == typeof(Aion.GameServer.Model.Stats.Calc.Functions.StatAddFunction) && !modifier.HasConditions())
+				.Sum(modifier => modifier.GetValue()) ?? 0);
 	}
 
 	/// <summary>Wear what <see cref="NaturalGearPolicy.SelectUpgrades"/> picks from <paramref name="wearable"/>. The server

@@ -2877,7 +2877,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
 
 ### C. The Chanter branch at Ascension
 
-- [ ] **CP-29 - Table gear and reward rule, for every class but the Priest and the Cleric.**
+- [x] **CP-29 - Table gear and reward rule, for every class but the Priest and the Cleric.**
   Depends: CP-01, CP-22
   - Work: It sits here, before the Chanter items, because the Chanter is its first user:
     CP-32 ranks the two ceremony weapons with the stat this item defines. Java first:
@@ -2902,6 +2902,88 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     protected supply is marked sell; and the physical stat as CP-Q7 defines it ranks the
     two Karmic ceremony weapons (by the default, per swing, the staff's mean of 73 is above
     the warhammer's 55 plus 7).
+  - 2026-10-07: done. UT/NaturalClassGearRuleTests is new and passes, 16 tests. Gate run
+    gate-a1, set all: verdict pass (run/cp/CP-29/gate-a1/verdict.json). All seven scopes are identical to their baselines: p 35,811 records, m 123,112, b 128,937, l1 30,693, c 96,166, hm 39,564 and ax 15,762.
+    The item asks for the unit test only. The gate was run over every kept scope because
+    the equipment check, the keep-or-sell plan and the reward choice are shared by every
+    leg.
+    - **Java, read first.** Equipment.java:85-115 (C# twin Equipment.cs:63-105, 333-346):
+      an item is refused without a mastery skill of its group
+      (checkAvailableEquipSkills, lines 323-334), without a level in the class's column of
+      the restrict row (ItemTemplate.getRequiredLevel, 0 reads as never), above the
+      restrict_max level, or for another race. SkillData.getMasterySkills gives the skills
+      by weapon group, by armor type and for the shield; a group with no mastery skill is
+      free. Every starter has the robe mastery 103 and the clothes mastery 40.
+    - **Sc/Classes/NaturalClassGearTable.cs** is new. A table is five hand-written facts:
+      the class, the weapon groups it holds, the stat that ranks a weapon, the armor types
+      it wears, best first, and its consumable order. Rules(contract) reads the class's
+      mastery rows from the class-line contract (for a second class its starter's rows
+      with its own) and returns NaturalGearRules. A table that names a group or a type the
+      class has no mastery for is refused by name.
+    - **The defaults of the five starters (CP-Q10).** Warrior: SWORD or MACE by the
+      physical stat; CHAIN, LEATHER, ROBE, CLOTHES. Scout: DAGGER, physical; LEATHER, ROBE,
+      CLOTHES. Mage: SPELLBOOK, magical; ROBE, CLOTHES. Engineer: GUN, magical; LEATHER,
+      ROBE, CLOTHES. Artist: HARP, magical; ROBE, CLOTHES. Each holds one weapon and
+      nothing in the off hand, and each takes a life elixir, then a mana elixir, then a
+      power shard at a consumable reward. The order of robe and clothes below a class's
+      own type is this item's choice; no shipped reward decides it.
+    - **The one score.** A weapon of the class's groups: physical is minimum plus maximum
+      damage plus twice the flat physical-attack bonus (twice the per-swing value of
+      CP-Q7, so it stays whole), then item level; magical is magic boost, then maximum
+      damage. Armor: the type's place in the class's order, then item level. An accessory:
+      item level. NaturalItem gains PhysicalAttack, read from the template's unconditional
+      PHYSICAL_ATTACK lines, and the tooltip view gains the weapon's damage and the same
+      bonus, so the plan and the equipment check compute the same number.
+    - **The equipment check** (NaturalGearPolicy.SelectUpgrades) under a table rule: a
+      candidate of a group the class has no mastery for is dropped before the server is
+      asked; the hand takes the best weapon of the class's groups when it beats the held
+      one; nothing goes in the off hand; every other slot is ranked by the score. Under
+      the Priest's and the Cleric's rules it ranks by item level and asks, as before.
+    - **Keep or sell** under a table rule adds two holds: every accessory
+      (accessory-kept; the equipment check wears accessories by item level), and gear for
+      a later level that beats the slot's best (gear-for-later). So "no wearable item is
+      marked sell" is read as: what is sold is something the class will never wear, or
+      something another owned item of its slot beats or equals. A replaced starter weapon
+      is still sold as surplus-gear.
+    - **The reward choice** under a table rule: a weapon of the class's groups that beats
+      the held one, then armor of its types that beats the worn piece, an item for a later
+      level counted; with no upgrade offered, the class's own gear before another class's,
+      then the consumable order, then the sale price.
+    - **The picks at the ten class-dependent rewards**, as the test plays them from the
+      starter kit. Q2100, Q2002, Q2134: Warrior the three maces (100100024, 100100493,
+      100100025; 50, 60 and 74 by the stat against the swords' 46, 56 and 70); Scout the
+      daggers (100200125, 100200604, 100200126); Mage the spellbooks (100600047,
+      100600531, 100600048); Engineer the pistols (101800194, 101800505, 101800195);
+      Artist the harps (102000207, 102000522, 102000208). Q2001, Q2005, Q2006, Q2007,
+      Q2129: Warrior chain (114500766, 113500762, 114500767, 110501156, 111500751); Scout
+      and Engineer leather (114300804, 113300791, 114300805, 110301182, 111300768); Mage
+      and Artist robe (114100794, 113100773, 114100795, 110101250, 111100763). Q2117 and
+      Q2124: the Minor Life Elixir 162000052 for all five. At Q2100 the Warrior takes the
+      mace and never the shield 115000024, also when it already holds the mace.
+    - **Supplies.** The six life potions and elixirs and the items of the level 1-9 kit.
+      The bandage 169300002 is not one and is sold at a vendor visit.
+    - **Proof, UT/NaturalClassGearRuleTests.** The five defaults; for each starter, what
+      Wears says for every item group equals the server's mastery rule over the class's
+      level-1 mastery skills (SkillData.GetMasterySkills on the shipped skill data); the
+      ten rewards played in level order for each starter, each pick the class's weapon
+      group, top armor type or the life elixir, with the keep-or-sell plan checked after
+      every pick and every equip; the Warrior at Q2100; a level-7 Mage takes Q2134's
+      level-8 spellbook and holds it until level 8; the two Karmic weapons load as 58-88
+      and 44-66 plus 7, and a Chanter table ranks the staff first (146 against 124); the
+      plan's score equals the tooltip's for every gear item of the test; the equipment
+      check for a Warrior, a Mage and a Scout, against the same bag without a rule; the
+      refusals. The Priest's and the Cleric's rules are shown not to be tables.
+    - **Findings, not fixed.** (a) The starter mana potion 162000007 and the Minor Mana
+      Elixir are not supplies under a table rule, because the item names the life potions
+      and the kit only, so a vendor visit sells them. The Priest's rules keep 162000007. A
+      caster's profile item should decide this before its first vendor visit. (b) A
+      second class's expected mastery ids drop the starter masteries the new ones replace
+      (the Chanter: 40, 46, 48, 49, 50, 89, 106). No run has shown yet that the server
+      removes a replaced mastery from the skill list. CP-32 uses it first. (c) Armor type
+      comes before item level, as the item says: a class keeps a level-4 piece of its own
+      type over a level-8 piece of a lower type.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,814 with 16 skipped),
+      and Fast passes (run cp29-fast). The guard of rule (c), gate p, is in the gate run.
 - [ ] **CP-30 - Parameterize the capital scenario by the contract.** Depends: CP-08, CP-25
   - Work: This item edits an existing scenario file, so it waits for the first baselines
     (CP-08). Parameterize CapitalAscensionScenario.RunAsmodianAsync by the contract: the
@@ -4316,3 +4398,9 @@ report what was done, what is blocked and what you need from me.
   accepted line's snapshots, restores and receipts are unchanged. test-sim-snapshot.ps1
   passes with the new cases; guard guard-a1, set p: identical. Seven checks and Fast
   (cp28-fast) pass. Phase B, the class seam, is complete. Next by rule (h): CP-29.
+- 2026-10-07 — Loop: CP-29 done. Sc/Classes/NaturalClassGearTable.cs gives every class but the
+  Priest and the Cleric gear rules in table form: wearable groups from the mastery rows, one
+  score for the equipment check, keep or sell and the reward choice, no off hand. The five
+  starters' defaults and their picks at the ten class-dependent rewards are written into the
+  item. UT/NaturalClassGearRuleTests, 16 tests. Gate gate-a1, set all: identical. Seven
+  checks, 4,814 with 16 skipped and Fast (cp29-fast) pass. Next by rule (h): CP-30.

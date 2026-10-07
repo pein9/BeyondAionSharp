@@ -12,7 +12,7 @@ namespace Aion.Bots.Scenarios;
 /// <param name="RestrictMax">The template's restrict_max row, or empty: the last level each class may wear it at.</param>
 public sealed record NaturalItem(int Id, string Group, int[] Restrict, int[] RestrictMax, string Race,
 	int Price, int Quality, int MinimumDamage, int MaximumDamage, int MagicBoost, int Mask,
-	int ItemLevel = 0, int ExtraInventory = 0)
+	int ItemLevel = 0, int ExtraInventory = 0, int PhysicalAttack = 0)
 {
 	/// <summary>The level this class may wear the item at; 0 when the row does not reach its column.</summary>
 	public int RequiredLevelFor(PlayerClass playerClass) =>
@@ -154,7 +154,10 @@ public sealed class NaturalIshalgenInventoryPolicy
 				Quality((string?)element.Attribute("quality")), (int?)weapon?.Attribute("min_damage") ?? 0,
 				(int?)weapon?.Attribute("max_damage") ?? 0, (int?)weapon?.Attribute("boost_magical_skill") ?? 0,
 				(int?)element.Attribute("mask") ?? 0, (int?)element.Attribute("level") ?? 0,
-				(int?)element.Element("inventory")?.Attribute("id") ?? 0);
+				(int?)element.Element("inventory")?.Attribute("id") ?? 0,
+				// CP-29: the flat physical-attack lines of the template, without conditions.
+				element.Element("modifiers")?.Elements("add").Where(add => (string?)add.Attribute("name") == "PHYSICAL_ATTACK" &&
+					add.Element("conditions") == null).Sum(add => (int?)add.Attribute("value") ?? 0) ?? 0);
 			if (catalog.Count == needed.Count) break;
 		}
 		return new(catalog, questItems, rewards, bridgeSupplies, (bridge.CeremonyReward.QuestId, bridge.CeremonyReward.ItemId),
@@ -201,6 +204,10 @@ public sealed class NaturalIshalgenInventoryPolicy
 			.GroupBy(item => rules.Slot(items[item.ItemId]))
 			.ToDictionary(group => group.Key!, group => group.OrderByDescending(item => rules.Score(items[item.ItemId]))
 				.ThenBy(item => item.ObjectId).First().ObjectId);
+		// CP-29: what the best wearable item of a slot scores. A rule in table form holds a better item of that slot until
+		// the character has the level for it.
+		long BestScore(string? slot) => slot != null && best.TryGetValue(slot, out int objectId)
+			? rules.Score(items[observed.First(item => item.ObjectId == objectId).ItemId]) : long.MinValue;
 		var decisions = new List<NaturalInventoryDecision>();
 		foreach (BotInventoryItem item in observed.OrderBy(item => item.ObjectId))
 		{
@@ -218,6 +225,11 @@ public sealed class NaturalIshalgenInventoryPolicy
 			else if (later && template.IsAccessory && (item.ItemMask & 4) != 0 && template.Sellable) (action, reason) = ("sell", "surplus-accessory");
 			else if (best.TryGetValue(rules.Slot(template) ?? "", out int winner) && winner == item.ObjectId)
 				(action, reason) = ("equip", rules.EquipReason);
+			// CP-29: a rule in table form never sells what the class will wear. The equipment check wears an accessory by
+			// item level, so the rule keeps every accessory; gear for a later level is kept while it beats the slot's best.
+			else if (rules.IsTable && template.IsAccessory) (action, reason) = ("hold", "accessory-kept");
+			else if (rules.IsTable && template.RequiredLevelFor(rules.Class) > level && rules.UsableNowOrLater(template, level) &&
+				rules.Score(template) > BestScore(rules.Slot(template))) (action, reason) = ("hold", "gear-for-later");
 			else if (rules.Supplies.Contains(item.ItemId) || later && bridgeSupplies.Contains(item.ItemId)) (action, reason) = ("hold", "combat-supply");
 			else if ((item.ItemMask & 4) == 0 || !template.Sellable) (action, reason) = ("hold", "not-sellable");
 			else (action, reason) = ("sell", rules.IsGear(template) ? "surplus-gear" : "unneeded-or-unusable");
@@ -240,6 +252,7 @@ public sealed class NaturalIshalgenInventoryPolicy
 		if (!rewards.TryGetValue(questId, out int[]? choices) || choices.Length == 0) return -1;
 		// The accepted line's choice is class-blind, as it always was: the Priest's rules score it for the Cleric too.
 		NaturalGearRules rules = rewardRules ?? NaturalGearRules.Priest;
+		if (rules.IsTable) return ChooseTableReward(choices, level, inventory, rules);
 		var owned = inventory.Where(item => items.TryGetValue(item.ItemId, out var template) && rules.Usable(template, level))
 			.GroupBy(item => rules.Slot(items[item.ItemId]))
 			.ToDictionary(group => group.Key!, group => group.Max(item => rules.Score(items[item.ItemId])));
@@ -248,6 +261,35 @@ public sealed class NaturalIshalgenInventoryPolicy
 				&& rules.Score(item) > owned.GetValueOrDefault(rules.Slot(item)!) ? rules.Score(item) : 0)
 			.ThenByDescending(choice => items.TryGetValue(choice.id, out NaturalItem? item) && item.Sellable
 				? item.Price : 0)
+			.ThenBy(choice => choice.index).First().index;
+	}
+
+	/// <summary>
+	/// CP-29: the reward choice of a rule in table form. A weapon of the class's groups that beats the held one comes
+	/// first, then armor of its types that beats the worn piece; an item for a later level counts, because the rule keeps
+	/// it. With no upgrade offered, the class's own gear is still preferred to another class's, then a consumable by the
+	/// rule's order, then the sale price as before.
+	/// </summary>
+	private int ChooseTableReward(int[] choices, int level, IEnumerable<BotInventoryItem> inventory, NaturalGearRules rules)
+	{
+		var owned = inventory.Where(item => items.TryGetValue(item.ItemId, out var template) && rules.UsableNowOrLater(template, level))
+			.GroupBy(item => rules.Slot(items[item.ItemId]))
+			.ToDictionary(group => group.Key!, group => group.Max(item => rules.Score(items[item.ItemId])));
+		bool Wearable(int id, out NaturalItem item) => items.TryGetValue(id, out item!) && rules.UsableNowOrLater(item, level);
+		bool Upgrade(int id, out NaturalItem item) => Wearable(id, out item) &&
+			rules.Score(item) > owned.GetValueOrDefault(rules.Slot(item)!, long.MinValue);
+		int ConsumablePlace(int id)
+		{
+			for (int index = 0; index < rules.ConsumableOrder.Count; index++)
+				if (rules.ConsumableOrder[index] == id) return index;
+			return int.MaxValue;
+		}
+		return choices.Select((id, index) => (id, index))
+			.OrderByDescending(choice => Upgrade(choice.id, out NaturalItem item) && rules.Slot(item) == "WEAPON")
+			.ThenByDescending(choice => Upgrade(choice.id, out NaturalItem item) ? rules.Score(item) : long.MinValue)
+			.ThenByDescending(choice => Wearable(choice.id, out NaturalItem item) ? rules.Score(item) : long.MinValue)
+			.ThenBy(choice => ConsumablePlace(choice.id))
+			.ThenByDescending(choice => items.TryGetValue(choice.id, out NaturalItem? item) && item.Sellable ? item.Price : 0)
 			.ThenBy(choice => choice.index).First().index;
 	}
 

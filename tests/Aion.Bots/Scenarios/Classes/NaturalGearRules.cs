@@ -1,5 +1,6 @@
 using Aion.Bots.World;
 using Aion.GameServer.Model;
+using Aion.GameServer.Model.Templates.Items.Enums;
 
 namespace Aion.Bots.Scenarios.Classes;
 
@@ -48,6 +49,22 @@ public sealed class NaturalGearRules
 	/// <summary>The catalog whose skills must be observed as learned by their level.</summary>
 	public NaturalPriestSkill[] SkillCatalog { get; init; } = [];
 
+	/// <summary>CP-29: what the class's mastery skills let it wear (weapon groups, armor types, <c>SHIELD</c>), for a rule
+	/// in table form (<see cref="NaturalClassGearTable"/>). Null for the Priest's and the Cleric's rules, which ask the
+	/// server and remember what it refused.</summary>
+	public IReadOnlySet<string>? MasteryUnlocks { get; init; }
+
+	/// <summary>The rule is in table form: it filters what the class cannot wear, ranks the equipment check by its own
+	/// score, keeps what the class will wear at a later level and its accessories, and prefers the class's gear at a
+	/// reward.</summary>
+	public bool IsTable => MasteryUnlocks != null;
+
+	/// <summary>A table rule's <see cref="Score"/> over the client's tooltip view of an item, for the equipment check.</summary>
+	public Func<NaturalGearInfo, long>? UpgradeScore { get; init; }
+
+	/// <summary>A table rule's pick among consumables at a reward, best first.</summary>
+	public IReadOnlyList<int> ConsumableOrder { get; init; } = [];
+
 	public bool IsGear(NaturalItem item) => GearGroups.Contains(item.Group);
 
 	/// <summary>The slot name gear of one kind competes for; null for what is not gear.</summary>
@@ -64,6 +81,31 @@ public sealed class NaturalGearRules
 		int required = item.RequiredLevelFor(Class), maximum = item.MaximumLevelFor(Class);
 		return IsGear(item) && item.Quality > 0 && required > 0 && (HighestRequiredLevel is not int cap || required <= cap) &&
 			required <= level && (maximum == 0 || level <= maximum) && item.Race is ("PC_ALL" or "ASMODIANS");
+	}
+
+	/// <summary>
+	/// CP-29: the class has the mastery skill the server asks for before it lets an item of this group be worn (Java
+	/// Equipment.checkAvailableEquipSkills): the group needs none, or the class's mastery rows unlock it. Always true for a
+	/// rule that is not in table form.
+	/// </summary>
+	public bool Wears(string? group)
+	{
+		if (MasteryUnlocks == null) return true;
+		if (!Enum.TryParse(group, out ItemGroup parsed)) return false;
+		if (!parsed.RequiresMastery()) return true;
+		if (parsed == ItemGroup.SHIELD) return MasteryUnlocks.Contains("SHIELD");
+		if (parsed.GetEquipType() == EquipType.WEAPON) return MasteryUnlocks.Contains(group!);
+		ItemSubType type = parsed.GetItemSubType();
+		return type == ItemSubType.ALL_ARMOR || MasteryUnlocks.Contains(type.ToString());
+	}
+
+	/// <summary>The class may wear the item at this level or will at a later one: <see cref="Usable"/> without the
+	/// character's level as a floor.</summary>
+	public bool UsableNowOrLater(NaturalItem item, int level)
+	{
+		int required = item.RequiredLevelFor(Class), maximum = item.MaximumLevelFor(Class);
+		return IsGear(item) && Wears(item.Group) && item.Quality > 0 && required > 0 && (HighestRequiredLevel is not int cap || required <= cap) &&
+			(maximum == 0 || level <= maximum) && item.Race is ("PC_ALL" or "ASMODIANS");
 	}
 
 	/// <summary>The class's level 1 skills and every catalog skill up to this level are in the observed skill list.</summary>
