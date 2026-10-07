@@ -2455,7 +2455,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - No Java was read: the item relies on no server behavior it did not already rely on.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,725 with 16 skipped),
       and Fast passes (run cp22-fast). The guard of rule (c), gate p, is in the proof run.
-- [ ] **CP-23 - The journey's reward, sell and equip sites use the observed class's gear
+- [x] **CP-23 - The journey's reward, sell and equip sites use the observed class's gear
   rules.** Depends: CP-15, CP-22
   - Work: Decide(world) resolves the rules from the observed class in place of
     IsCleric(world) (Sc/NaturalIshalgenInventoryPolicy.cs:167-173), so its callers do not
@@ -2478,6 +2478,36 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     m+c+ax: the sell decisions then rest on the golden test only, and the doc says so. If
     CP-09 dropped ax, the set goes without it: the coin-armor purchases and the staff rule
     then rest on the golden test only, and the doc says so.
+  - 2026-10-07: done. Gate run gate-a1, set p+m+b+c+ax (the proof set and the guard in one
+    run): verdict pass (run/cp/CP-23/gate-a1/verdict.json). p: 35,811 records, m: 123,112,
+    b: 128,937, c: 96,166 and ax: 15,762, each identical to its baseline. The golden gear
+    test stays green.
+    - **Decide(world)** takes the gear rules of the observed class, by the policy's class
+      line, in place of the Cleric test. The policy's Load gained an optional line, the
+      accepted one by default, and the journey's seven loads that lead to Decide(world)
+      pass the run's line. NaturalCoinGearSteps, the two LiveBots scenarios and the SIM
+      tests did not change. An unobserved class decides by the line's starter.
+    - **ChooseReward** takes the rules it scores by as an optional last parameter, the
+      Priest's by default. The journey's seven calls pass the profile's new RewardGear.
+      Both profiles of the accepted line name the Priest's rules there, so the Cleric's
+      picks on the Altgard legs are scored as before. The ceremony pick stays a contract
+      pin whatever the rules.
+    - **EquipUpgradesAsync** reads the tooltip for the class of the observed profile's
+      gear rules and hands the rules to NaturalInventoryCheck.EquipAsync, which passes
+      them to SelectUpgrades for the hand rule.
+    - **CP-Q13 runs on its default.** NaturalClassLine.ChecksGearAfterIshalgenTurnIns is
+      true for every line but priest-cleric, and the quest dispatch runs the equipment
+      check after a completed quest for such a line. No such line exists yet, so this
+      branch has not run; the first run that reaches it is the Chanter's or the Warrior's.
+    - Unit tests added: the observed class picks the rules (Priest when unobserved, Cleric
+      when observed), the reward choice equals the old one by default and with the
+      Priest's rules over 1,000 quest ids at 26 levels and differs somewhere with the
+      Cleric's, and the line's switch for CP-Q13.
+    - The same refusal as in CP-15 applies here: an observed class outside the line stops
+      Decide(world) by name, where it used to decide by the Priest's rules.
+    - No Java was read: the item relies on no server behavior it did not already rely on.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,726 with 16 skipped),
+      and Fast passes (run cp23-fast). The guard of rule (c), gate p, is in the proof run.
 - [ ] **CP-24 - Restock table per profile: potions only.** Depends: CP-09, CP-15
   - Work: Data first: both Ishalgen restock vendors carry trade lists 264 and 721
     (npc_trade_list.xml:375-378, 2209-2212). List 721 holds the Minor Life Elixir the Priest
@@ -3997,3 +4027,8 @@ report what was done, what is blocked and what you need from me.
   carries the whole restrict row, and the staff rule reads its group from the rules. The
   golden gear test is green without an edit. Gate gate-a1, set p+m+b+c+ax: identical. Seven
   checks, 4,725 with 16 skipped and Fast (cp22-fast) pass. Next by rule (h): CP-23.
+- 2026-10-07 — Loop: CP-23 done. Decide(world) takes the observed class's gear rules by the
+  policy's line, ChooseReward takes the profile's reward rules (the Priest's for both classes
+  of the accepted line), and the equipment check describes gear by the same rules. CP-Q13's
+  default is wired and has not run yet. Gate gate-a1, set p+m+b+c+ax: identical. Seven
+  checks, 4,726 with 16 skipped and Fast (cp23-fast) pass. Next by rule (h): CP-24.

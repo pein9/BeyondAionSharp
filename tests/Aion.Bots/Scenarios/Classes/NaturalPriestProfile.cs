@@ -53,6 +53,7 @@ public static class NaturalPriestProfile
 		Movement = PriestLineMovement,
 		Campaign = PriestLineCampaign,
 		Gear = NaturalGearRules.Priest,
+		RewardGear = NaturalGearRules.Priest,
 	};
 
 	public static NaturalClassProfile Cleric { get; } = new()
@@ -73,6 +74,8 @@ public static class NaturalPriestProfile
 		Movement = PriestLineMovement,
 		Campaign = PriestLineCampaign,
 		Gear = NaturalGearRules.Cleric,
+		// Class-blind, as it always was: the Altgard legs' accepted picks were scored by the Priest's rules.
+		RewardGear = NaturalGearRules.Priest,
 	};
 
 	/// <summary>Calls the static policy with the class's catalog and the run's parameters, and reports the run's policy id.</summary>

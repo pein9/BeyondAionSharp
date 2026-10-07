@@ -1,4 +1,5 @@
 using Aion.Bots.Protocol;
+using Aion.Bots.Scenarios.Classes;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.Templates.Items;
@@ -33,13 +34,14 @@ public static class NaturalInventoryCheck
 
 	/// <summary>Wear what <see cref="NaturalGearPolicy.SelectUpgrades"/> picks from <paramref name="wearable"/>. The server
 	/// still checks every equip; an item it refuses joins <paramref name="refused"/> and is never asked for again.</summary>
+	/// <param name="rules">CP-23: the class's gear rules, for the hand rule; the Priest line's when not given.</param>
 	public static async Task<IReadOnlyList<NaturalGearUpgrade>> EquipAsync(INaturalJourneySession session, IEnumerable<BotInventoryItem> wearable,
-		Func<int, NaturalGearInfo?> describe, long offHandSlots, HashSet<int> refused, CancellationToken token)
+		Func<int, NaturalGearInfo?> describe, long offHandSlots, HashSet<int> refused, CancellationToken token, NaturalGearRules? rules = null)
 	{
 		BotWorldModel world = session.Api.World;
 		var worn = new List<NaturalGearUpgrade>();
 		if (world.IsDead) return worn;
-		foreach (NaturalGearUpgrade upgrade in NaturalGearPolicy.SelectUpgrades(wearable, world.Level, describe, offHandSlots, refused))
+		foreach (NaturalGearUpgrade upgrade in NaturalGearPolicy.SelectUpgrades(wearable, world.Level, describe, offHandSlots, refused, rules))
 		{
 			await session.SendPacketAsync(session.Api.Equip(0, upgrade.Slot, upgrade.ObjectId), token);
 			await session.SynchronizeAsync(token);

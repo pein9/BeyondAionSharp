@@ -70,18 +70,21 @@ public sealed class NaturalIshalgenInventoryPolicy
 	/// <summary>The Ascension bridge's protected items (its contract): supplies of every rule set from Ascension on.</summary>
 	private readonly HashSet<int> bridgeSupplies;
 	private readonly (int QuestId, int ItemId) ceremony;
+	private readonly NaturalClassLine line;
 
 	private NaturalIshalgenInventoryPolicy(IReadOnlyDictionary<int, NaturalItem> items, HashSet<int> questItems,
-		IReadOnlyDictionary<int, int[]> rewards, HashSet<int> bridgeSupplies, (int, int) ceremony)
+		IReadOnlyDictionary<int, int[]> rewards, HashSet<int> bridgeSupplies, (int, int) ceremony, NaturalClassLine line)
 	{
 		this.items = items;
 		this.questItems = questItems;
 		this.rewards = rewards;
 		this.bridgeSupplies = bridgeSupplies;
 		this.ceremony = ceremony;
+		this.line = line;
 	}
 
-	public static NaturalIshalgenInventoryPolicy Load(string root, IEnumerable<int> observedItemIds)
+	/// <param name="line">CP-23: the class line of the character whose inventory is decided; the accepted line when not given.</param>
+	public static NaturalIshalgenInventoryPolicy Load(string root, IEnumerable<int> observedItemIds, NaturalClassLine? line = null)
 	{
 		var contract = NaturalIshalgenContract.Load(Path.Combine(root, "parity-artifacts/e2e/natural-ishalgen-contract.json"));
 		var questIds = contract.Quests.Select(quest => quest.Id).ToHashSet();
@@ -149,13 +152,19 @@ public sealed class NaturalIshalgenInventoryPolicy
 				(int?)element.Element("inventory")?.Attribute("id") ?? 0);
 			if (catalog.Count == needed.Count) break;
 		}
-		return new(catalog, questItems, rewards, bridgeSupplies, (bridge.CeremonyReward.QuestId, bridge.CeremonyReward.ItemId));
+		return new(catalog, questItems, rewards, bridgeSupplies, (bridge.CeremonyReward.QuestId, bridge.CeremonyReward.ItemId),
+			line ?? NaturalClassLine.Default);
 	}
 
 	/// <param name="questNeeded">AK-08: items an open quest still needs (Q2292's rings): never sold.</param>
 	public NaturalInventoryPlan Decide(BotWorldModel world, IReadOnlySet<int>? questNeeded = null, NaturalCoinGear? coinGear = null,
 		NaturalHaramel? haramel = null) => Decide(world.Inventory.Values,
-		world.Level, world.CubeExpansion?.Capacity ?? 27, IsCleric(world), questNeeded, coinGear, haramel);
+		world.Level, world.CubeExpansion?.Capacity ?? 27, GearRules(world), questNeeded, coinGear, haramel);
+
+	/// <summary>CP-23: the gear rules of the class the client observes, by the policy's class line. An unobserved class
+	/// is the line's starter.</summary>
+	public NaturalGearRules GearRules(BotWorldModel world) => NaturalClassProfiles.For(
+		world.SelfObjectId is int self && world.Objects.TryGetValue(self, out BotKnownObject? known) ? known.PlayerClass : null, line).Gear;
 
 	/// <summary>The client-observed class of the player: Cleric after Ascension (D25), else the Priest rules.</summary>
 	public static bool IsCleric(BotWorldModel world) => world.SelfObjectId is int self &&
@@ -216,14 +225,16 @@ public sealed class NaturalIshalgenInventoryPolicy
 	private int Occupied(IEnumerable<BotInventoryItem> observed) => observed.Count(item => item.Details.EquippedSlot.GetValueOrDefault() == 0 &&
 		(!items.TryGetValue(item.ItemId, out NaturalItem? template) || template.InMainCube));
 
-	public int ChooseReward(int questId, int level, IEnumerable<BotInventoryItem> inventory)
+	/// <param name="rewardRules">CP-23: the rules the choices are scored by (the profile's
+	/// <see cref="NaturalClassProfile.RewardGear"/>); the Priest's when not given.</param>
+	public int ChooseReward(int questId, int level, IEnumerable<BotInventoryItem> inventory, NaturalGearRules? rewardRules = null)
 	{
 		// The ceremony weapon is the operator's choice (OD-5: the Karmic Staff), not a score.
 		if (questId == ceremony.QuestId && rewards.TryGetValue(questId, out int[]? list))
 			return Array.IndexOf(list, ceremony.ItemId);
 		if (!rewards.TryGetValue(questId, out int[]? choices) || choices.Length == 0) return -1;
-		// CP-22: the choice is class-blind, as it always was: the Priest's rules score it for the Cleric too.
-		NaturalGearRules rules = NaturalGearRules.Priest;
+		// The accepted line's choice is class-blind, as it always was: the Priest's rules score it for the Cleric too.
+		NaturalGearRules rules = rewardRules ?? NaturalGearRules.Priest;
 		var owned = inventory.Where(item => items.TryGetValue(item.ItemId, out var template) && rules.Usable(template, level))
 			.GroupBy(item => rules.Slot(items[item.ItemId]))
 			.ToDictionary(group => group.Key!, group => group.Max(item => rules.Score(items[item.ItemId])));

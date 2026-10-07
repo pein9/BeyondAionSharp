@@ -101,6 +101,8 @@ public sealed class NaturalIshalgenInventoryPolicyTests
 	{
 		var world = new BotWorldModel();
 		Assert.False(NaturalIshalgenInventoryPolicy.IsCleric(world));
+		// CP-23: an unobserved class is the line's starter, so the accepted line decides by the Priest's rules.
+		Assert.Same(Aion.Bots.Scenarios.Classes.NaturalGearRules.Priest, Bridge.Value.GearRules(world));
 		world.Apply(Packet<Aion.GameServer.Network.Aion.ServerPackets.SM_STATS_INFO>(("objectId", 7), ("level", (ushort)10),
 			("expNeeded", 900L), ("expRecoverable", 0L), ("expShown", 500L), ("maxHp", 669), ("currentHp", 669), ("maxMp", 1200),
 			("currentMp", 1200), ("maxDp", (ushort)4000), ("dp", (ushort)0), ("maxFp", 60), ("currentFp", 60)));
@@ -108,6 +110,31 @@ public sealed class NaturalIshalgenInventoryPolicyTests
 			("heading", (byte)0), ("name", "Asimnjour"), ("state", (ushort)0), ("race", (byte)1),
 			("playerClass", Aion.GameServer.Model.PlayerClassExtensions.GetClassId(Aion.GameServer.Model.PlayerClass.CLERIC))));
 		Assert.True(NaturalIshalgenInventoryPolicy.IsCleric(world));
+		// CP-23: Decide(world) takes the observed class's gear rules.
+		Assert.Same(Aion.Bots.Scenarios.Classes.NaturalGearRules.Cleric, Bridge.Value.GearRules(world));
+		BotInventoryItem[] bag = [Item(1, 100100025, equipped: 1), Item(2, 101500498)];
+		Assert.Equal(Bridge.Value.Decide(bag, 10, 27, cleric: true).Decisions,
+			Bridge.Value.Decide(bag, 10, 27, Bridge.Value.GearRules(world)).Decisions);
+	}
+
+	[Fact]
+	public void TheRewardChoiceIsScoredByTheRulesItIsGivenAndByThePriestsByDefault()
+	{
+		// CP-23: the accepted line's profiles both name the Priest's rules, so every accepted pick stays as it was.
+		Assert.Same(Aion.Bots.Scenarios.Classes.NaturalGearRules.Priest, Aion.Bots.Scenarios.Classes.NaturalPriestProfile.Priest.RewardGear);
+		Assert.Same(Aion.Bots.Scenarios.Classes.NaturalGearRules.Priest, Aion.Bots.Scenarios.Classes.NaturalPriestProfile.Cleric.RewardGear);
+		int differences = 0;
+		foreach (int quest in Enumerable.Range(2000, 1000))
+		for (int level = 1; level <= 26; level++)
+		{
+			int byDefault = Bridge.Value.ChooseReward(quest, level, []);
+			Assert.Equal(byDefault, Bridge.Value.ChooseReward(quest, level, [], Aion.Bots.Scenarios.Classes.NaturalGearRules.Priest));
+			if (Bridge.Value.ChooseReward(quest, level, [], Aion.Bots.Scenarios.Classes.NaturalGearRules.Cleric) != byDefault) differences++;
+		}
+		// Another class's rules do pick differently somewhere: the input is used.
+		Assert.True(differences > 0);
+		// The ceremony pick is a contract pin whatever the rules.
+		Assert.Equal(Bridge.Value.ChooseReward(2009, 10, []), Bridge.Value.ChooseReward(2009, 10, [], Aion.Bots.Scenarios.Classes.NaturalGearRules.Cleric));
 	}
 
 	private static Aion.Bots.Protocol.DecodedBotServerPacket Packet<T>(params (string Name, object? Value)[] fields) =>

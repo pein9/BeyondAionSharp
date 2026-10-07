@@ -33,6 +33,11 @@ public sealed record NaturalClassLine(string Id, PlayerClass Starter, PlayerClas
 	/// <summary>The starter as messages name it (<c>Priest</c>).</summary>
 	public string StarterName => char.ToUpperInvariant(StarterLabel[0]) + StarterLabel[1..];
 
+	/// <summary>CP-23 (CP-Q13, on its default): every line but the accepted one runs the equipment check after each
+	/// completed Ishalgen quest. The accepted line keeps its check points, at the end of a rest, so its trace stays as
+	/// recorded.</summary>
+	public bool ChecksGearAfterIshalgenTurnIns => Id != "priest-cleric";
+
 	/// <summary>The class is one this line's character can be: its starter or its second class.</summary>
 	public bool Holds(PlayerClass playerClass) => playerClass == Starter || playerClass == Second;
 }

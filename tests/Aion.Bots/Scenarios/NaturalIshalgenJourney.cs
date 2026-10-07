@@ -434,9 +434,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				if (world.IsDead) return [];
 				// NA-09: the observed class and race decide what can be worn; after Ascension the Cleric's new
 				// masteries (chain, shield, staff) make items the Priest was refused wearable, so refusals reset.
+				// CP-23: the gear rules of the observed class say which class the tooltip is read for.
 				BotKnownObject? self = world.SelfObjectId is int selfId ? world.Objects.GetValueOrDefault(selfId) : null;
-				var playerClass = self?.PlayerClass is byte classId
-					? PlayerClassExtensions.GetPlayerClassById(classId, true) ?? ClassLine.Starter : ClassLine.Starter;
+				NaturalGearRules gear = combat.ClassProfile.Gear;
+				var playerClass = gear.Class;
 				var race = self?.Race is byte raceId ? (Race)raceId : Race.ASMODIANS;
 				if (playerClass != gearClass)
 				{
@@ -451,7 +452,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					world.Inventory.Values.Where(item => !questNeeded.Contains(item.ItemId) && (altgardLeg?.Haramel == null ||
 						item.Details.EquippedSlot.GetValueOrDefault() != 0 || NaturalHaramel.CanUpgradeGroup(
 							runtime.Data.ItemDataDh.GetItemTemplate(item.ItemId)?.GetItemGroup().ToString()))),
-					Describe, (long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF, refusedGear, gearToken);
+					Describe, (long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF, refusedGear, gearToken, gear);
 			}
 			combat.MaintainInventoryAsync = MaintainInventoryAsync;
 			// Every aggressive spawn spot, plus every step of a patrol's route (a walker stands anywhere on it).
@@ -489,7 +490,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					long totalStock = NaturalIshalgenPotionPolicy.TotalHealingCount(world.Inventory.Values);
 					string root = runtime.RepoRoot;
 					var inventoryPolicy = NaturalIshalgenInventoryPolicy.Load(root,
-						world.Inventory.Values.Select(item => item.ItemId));
+						world.Inventory.Values.Select(item => item.ItemId), ClassLine);
 					NaturalInventoryPlan plan = inventoryPolicy.Decide(world, QuestNeededItems(), altgardLeg?.CoinGear, altgardLeg?.Haramel);
 					long basePrice = runtime.Data.ItemDataDh
 						.GetItemTemplate(NaturalIshalgenPotionPolicy.VendorLifeElixirId).GetPrice();
@@ -874,6 +875,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						}
 						break;
 					}
+					// CP-23 (CP-Q13): a new class line runs the equipment check after each completed quest. The accepted line
+					// keeps its check points, at the end of a rest.
+					if (ClassLine.ChecksGearAfterIshalgenTurnIns && session.Api.World.CompletedQuestIds.Contains(questId))
+						await EquipUpgradesAsync(token);
 					if (questId == 2004 && stopAfterQ2004 || questId == 2005 && stopAfterQ2005 ||
 						questId == 2006 && stopAfterQ2006 || questId == 2007 && stopAfterQ2007)
 					{
@@ -1765,7 +1770,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					session.BeginStep("ax-inventory-check", trigger);
 					NaturalInventoryCheckResult checkedNow = await NaturalInventoryCheck.RunAsync(session, trigger, scope.Inventory, EquipUpgradesAsync,
 						runtime.Data.ItemDataDh.GetItemTemplate,
-						() => NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId))
+						() => NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId), ClassLine)
 							.Decide(world, QuestNeededItems()).FreeSlots, token);
 					opened.AddRange(checkedNow.Opened);
 					discarded.AddRange(checkedNow.Discarded);
@@ -2521,7 +2526,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					}
 				};
 				int? FreeCubeSlots() => leg.Town?.VendorNpcId == null ? null
-					: NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, session.Api.World.Inventory.Values.Select(item => item.ItemId))
+					: NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, session.Api.World.Inventory.Values.Select(item => item.ItemId), ClassLine)
 						.Decide(session.Api.World, QuestNeededItems(), leg.CoinGear, leg.Haramel).FreeSlots;
 				async Task SaveCoinProgressAsync() => await File.WriteAllTextAsync(
 					Path.Combine(Path.GetDirectoryName(combatTracePath)!, "coin-gear-progress.json"),
@@ -2824,7 +2829,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							int item = int.Parse(next.StepKey!);
 							await EnsureOnGroundAsync();
 							var inventory = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot,
-								session.Api.World.Inventory.Values.Select(i => i.ItemId).Concat(gear.ProtectedItemIds));
+								session.Api.World.Inventory.Values.Select(i => i.ItemId).Concat(gear.ProtectedItemIds), ClassLine);
 							var shopping = new NaturalCoinGearSteps(session, runtime.Data, gear, inventory);
 							if (next.Action == "coin-purchase")
 							{
@@ -3130,7 +3135,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							await EquipUpgradesAsync(token);
 							await session.SynchronizeAsync(token);
 							BotWorldModel world = session.Api.World;
-							NaturalInventoryPlan plan = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId))
+							NaturalInventoryPlan plan = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId), ClassLine)
 								.Decide(world, QuestNeededItems(), leg.CoinGear, leg.Haramel);
 							var sales = plan.Sales.Select(sale => new NaturalSale(sale.ObjectId, sale.ItemId, sale.Count)).ToList();
 							int vendor = await ApproachShippedSpawnAsync(leg.Town!.VendorNpcId!.Value);
@@ -4531,7 +4536,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					Require.True(!observed.Skills.ContainsKey(gear.ForbiddenStigmaSkillId), "Keep the stigma reward sealed.");
 					NaturalCoinGearSteps.VerifyRetainedLoadout(observed, coinIncomingLoadout);
 					NaturalInventoryPlan bag = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot,
-						observed.Inventory.Values.Select(i => i.ItemId)).Decide(observed, QuestNeededItems(), gear);
+						observed.Inventory.Values.Select(i => i.ItemId), ClassLine).Decide(observed, QuestNeededItems(), gear);
 					NaturalAltgardDecision endpoint = NaturalAltgardDecisionEngine.Decide(leg,
 						NaturalAltgardObservation.Observe(observed, session.CurrentPosition, session.Api.Timing.Now, bag.FreeSlots, coinGearProgress, haramelProgress, HaramelNow()),
 						NaturalTemplateObjective.From(altgardPlans), 1);
@@ -4690,7 +4695,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				Require.True(!bridge.Shop.BuysGear, "The bridge never buys gear (OD-7).");
 				Require.True(bridge.Shop.Purchases.All(p => runtime.Data.ItemDataDh.GetItemTemplate(p.ItemId).GetItemSlot() == 0),
 					"A bridge purchase would be equipment.");
-				var plan = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(i => i.ItemId)).Decide(world);
+				var plan = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(i => i.ItemId), ClassLine).Decide(world);
 				var sales = plan.Sales.Select(sale => new NaturalSale(sale.ObjectId, sale.ItemId, sale.Count)).ToList();
 				BotPosition VendorAt(int npc) => runtime.Data.SpawnsDh.GetSpawnsByWorldId(bridge.Bind.MapId)
 					.Where(group => group.GetNpcId() == npc).SelectMany(group => group.GetSpawnTemplates())
@@ -6446,7 +6451,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				var inventory = NaturalIshalgenInventoryPolicy.Load(root,
 					session.Api.World.Inventory.Values.Select(item => item.ItemId));
 				int rewardIndex = inventory.ChooseReward(2100, session.Api.World.Level,
-					session.Api.World.Inventory.Values);
+					session.Api.World.Inventory.Values, combat.ClassProfile.RewardGear);
 				Require.True(rewardIndex >= 0, $"Q2100 should present a selectable reward to the natural {ClassLine.StarterName}.");
 				await FinishStandardQuestAsync(session, ulgorn, 2100, token,
 					DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex);
@@ -6512,7 +6517,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				var inventory = NaturalIshalgenInventoryPolicy.Load(root,
 					session.Api.World.Inventory.Values.Select(item => item.ItemId));
 				int rewardIndex = inventory.ChooseReward(2001, session.Api.World.Level,
-					session.Api.World.Inventory.Values);
+					session.Api.World.Inventory.Values, combat.ClassProfile.RewardGear);
 				Require.True(rewardIndex >= 0);
 				await FinishStandardQuestAsync(session, boromer, 2001, token,
 					DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex);
@@ -6743,7 +6748,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				var inventory = NaturalIshalgenInventoryPolicy.Load(root,
 					session.Api.World.Inventory.Values.Select(item => item.ItemId));
 				int rewardIndex = inventory.ChooseReward(2002, session.Api.World.Level,
-					session.Api.World.Inventory.Values);
+					session.Api.World.Inventory.Values, combat.ClassProfile.RewardGear);
 				Require.True(rewardIndex >= 0);
 				await NaturalDialogProtocol.OpenAsync(session, ulgorn, token);
 				await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
@@ -7485,7 +7490,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				var inventory = NaturalIshalgenInventoryPolicy.Load(root,
 					session.Api.World.Inventory.Values.Select(item => item.ItemId));
 				int rewardIndex = inventory.ChooseReward(2005, session.Api.World.Level,
-					session.Api.World.Inventory.Values);
+					session.Api.World.Inventory.Values, combat.ClassProfile.RewardGear);
 				Require.True(rewardIndex >= 0);
 				await FinishStandardQuestAsync(session, mijou, 2005, token,
 					DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex);
@@ -7608,7 +7613,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				var inventory = NaturalIshalgenInventoryPolicy.Load(root,
 					session.Api.World.Inventory.Values.Select(item => item.ItemId));
 				int rewardIndex = inventory.ChooseReward(2006, session.Api.World.Level,
-					session.Api.World.Inventory.Values);
+					session.Api.World.Inventory.Values, combat.ClassProfile.RewardGear);
 				Require.True(rewardIndex >= 0);
 				await FinishStandardQuestAsync(session, ulgorn, 2006, token,
 					DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex);
@@ -7787,7 +7792,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				var inventory = NaturalIshalgenInventoryPolicy.Load(root,
 					session.Api.World.Inventory.Values.Select(item => item.ItemId));
 				int rewardIndex = inventory.ChooseReward(2007, session.Api.World.Level,
-					session.Api.World.Inventory.Values);
+					session.Api.World.Inventory.Values, combat.ClassProfile.RewardGear);
 				Require.True(rewardIndex >= 0);
 				await FinishStandardQuestAsync(session, ulgorn, 2007, token,
 					DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex);
@@ -8153,7 +8158,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								var inventory = NaturalIshalgenInventoryPolicy.Load(root,
 									session.Api.World.Inventory.Values.Select(item => item.ItemId));
 								int rewardIndex = inventory.ChooseReward(plan.Id, session.Api.World.Level,
-									session.Api.World.Inventory.Values);
+									session.Api.World.Inventory.Values, combat.ClassProfile.RewardGear);
 								Require.True(rewardIndex >= 0);
 								rewardAction = DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex;
 							}

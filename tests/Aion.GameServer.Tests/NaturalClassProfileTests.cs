@@ -133,7 +133,7 @@ public sealed class NaturalClassProfileTests
 		Class = profile.Class, Skills = profile.Skills, Excluded = profile.Excluded, Combat = profile.Combat,
 		HelpItems = profile.HelpItems, Upkeep = profile.Upkeep, PatrolRule = profile.PatrolRule, RangedHold = hold, Rest = profile.Rest,
 		Ranges = ranges ?? profile.Ranges, Readiness = profile.Readiness, Movement = profile.Movement, Campaign = profile.Campaign,
-		Gear = profile.Gear,
+		Gear = profile.Gear, RewardGear = profile.RewardGear,
 	};
 
 	[Fact]
@@ -254,6 +254,10 @@ public sealed class NaturalClassProfileTests
 		Assert.True(line.Holds(PlayerClass.PRIEST) && line.Holds(PlayerClass.CLERIC));
 		// CP-20: how step labels and messages name the line's starter. The second class never changes the name.
 		Assert.Equal(("priest", "Priest"), (line.StarterLabel, line.StarterName));
+		// CP-23 (CP-Q13): only the accepted line keeps its equipment check points.
+		Assert.False(line.ChecksGearAfterIshalgenTurnIns);
+		Assert.True(new NaturalClassLine("warrior", PlayerClass.WARRIOR, null, 0, "none").ChecksGearAfterIshalgenTurnIns);
+		Assert.True(new NaturalClassLine("priest-chanter", PlayerClass.PRIEST, PlayerClass.CHANTER, 0, "none").ChecksGearAfterIshalgenTurnIns);
 		var engineer = new NaturalClassLine("engineer", PlayerClass.ENGINEER, null, 0, "none");
 		Assert.Equal(("engineer", "Engineer"), (engineer.StarterLabel, engineer.StarterName));
 		Assert.Equal("walk-to-priest-trainer-for-auto-learned-skill-quest", $"walk-to-{line.StarterLabel}-trainer-for-auto-learned-skill-quest");
