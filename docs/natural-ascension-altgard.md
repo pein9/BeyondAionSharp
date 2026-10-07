@@ -181,6 +181,8 @@ Cleric; OD-16 supersedes the late Ascension order for fresh leveling.
 | OD-15 | Which speed scroll stays up: Courage (attack speed) or Awakening (casting speed)? | **Awakening** for the Cleric. The two scrolls **replace each other** (both use effect id 30184), so only one can be up. Awakening shortens the casts of Smite, Healing Light and Earth's Wrath; Courage mostly speeds up the staff swing. The bot never uses Courage. | Decided 2026-09-28 |
 | OD-16 | When to ascend? | **Immediately at level 9:** prioritize Q2008 and Q2009, choose Cleric, receive/equip the Karmic Staff and use learned regular skills. Return naturally to Ishalgen and finish its retained 41 quests before Q2904/Altgard. Preserve recovery budgets and record deaths. Stigmas still require unlocked slots, an owned stone and ordinary socketing; no early stigma is supplied. Existing snapshots and Priest-only diagnostics remain historical. | Decided 2026-10-04 |
 
+**OD-13, widened 2026-10-07 (D39):** help items are now supplied to every class line and from level 1, not to the Cleric from level 10 only. The Cleric's list from level 10 on stays as approved above. The level 1-9 kit and the operator's words are in [natural-class-profiles.md](natural-class-profiles.md) (CP-Q12, CP-05).
+
 ### OD-16 implementation and proof
 
 - [x] **EA-01 — Early ceremony and return.** Share the route in SIM/LIVE, retain unfinished

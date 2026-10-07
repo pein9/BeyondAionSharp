@@ -1,0 +1,2875 @@
+# Natural class profiles: the class seam, the Chanter branch, and levels 1-9 for every starter
+
+Status: planning only, 2026-10-06. Nothing in this document is implemented. It answers the
+operator's question "how generic is what we have", fixes the design of the class seam, and
+gives the CP checklist that a loop works one item at a time. Line numbers are those of
+commit `b45b72a43`.
+
+The plan was drawn from a read-only review of the bot on 2026-10-06: fifteen readers over
+the journey, the combat and pull code, gear, contracts, harness, rules, the shipped level
+1-9 skill data and quest 2008; three independent plans; three judges; and three critics,
+whose blocker and major findings are already folded in. Line references were checked by the
+reviewers and a sample was checked again by hand. They move with every edit, so each item
+finds its site by the name quoted with it. A fact check and a loop-fit review followed on
+the same day. Their findings are folded in too, and the checklist was renumbered once,
+before any item was started.
+
+On 2026-10-07 the operator read the plan and answered. The answers stand under Operator
+decisions. They turn help items on for every class line, rule out bandages, add a bind at
+each Ishalgen quest hub and settle the Warrior's Q2100 pick. Three items were added for
+them (CP-05 to CP-07) and the checklist was renumbered a second time, again before any item
+was started. Nothing is blocked.
+
+## The request
+
+The operator, 2026-10-06: "OK, so now the next goal is to be able to create Class profiles
+and not just have a Cleric. So, how generic is what we have, where we have reusable core
+'run the bot' but can use a new combat rotation or other rules for survivability? Some
+things like the quest list, ordering, inventory, etc, can be reused probably. But skills,
+recovery, when to hit potions or 'what stat is the chooser for gear' will have to be
+class-specific. Also, we can approach this where we already have a 'Priest' class that can
+get to Ascension, so a Chanter would just diverge at that point instead of being scoped just
+to Cleric. SO along those lines, we can create a '1-9' to Munin class select for the other
+types. We can go ahead and knock out any other starter-class types 1-9 profiles and rules.
+But I bet we would need to do a bit of prep work refactoring what we have to be reusable?"
+
+## Short names used here
+
+| Short | Means |
+|---|---|
+| `J` | `tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs` |
+| `Sc/` | `tests/Aion.Bots/Scenarios/` |
+| `Nav/` | `tests/Aion.Bots/Navigation/` |
+| `UT/` | `tests/Aion.GameServer.Tests/` |
+| `SimT/` | `tests/Aion.Simulation.Tests/` |
+| `e2e/` | `parity-artifacts/e2e/` |
+| `JAVA/` | `../aion-server/game-server/` (branch `4.8`) |
+| line | one character's path: `priest-cleric`, `priest-chanter`, `warrior`, `scout`, `mage`, `engineer`, `artist` |
+| profile | how one class plays: skills, recovery, pull, gear |
+| neutral gate | a same-seed replay whose trace must equal a recorded baseline |
+
+## How generic is what we have
+
+**Short answer.** What we have is generic in mechanism and Priest and Cleric in rule. The
+split in the request is right: there is a reusable "run the bot" core, and skills, recovery,
+potion use and the gear stat are the class part. Three more things belong to the class part:
+how the bot pulls, how it moves inside a fight, and the auto-attack. Prep work does come
+first, but it is smaller than the size of the journey file suggests.
+
+**Already reusable, with no class logic in it**
+
+- The bot core: creating a character of any class, target, swing, cast and item use
+  (`tests/Aion.Bots/Api/BotApi.cs`), the cast protocol, and hit timing for sixteen weapon
+  motions.
+- Navigation and the travel planner (apart from the Priest's spell-range constants, see
+  CP-18), retreat and rest-spot geometry, and the death rule.
+- The fight-loop shell, the cast step (apart from its weapon-motion lookup, see the table
+  below) and cooldown tracking.
+- The Ishalgen decision loop, the 41-quest contract with its 26 plans, the template-quest
+  executor and the hand-written quest executors (apart from Q2132's Priest trainer and var,
+  and the campaign's Priest range literals; see CP-20 and CP-21).
+- Hub pickup, gathering, the vendor protocol, bind and Return.
+- Checkpoints, relog and stop boundaries, and snapshot Capture, Restore and Verify.
+- The "1-9 to Munin" endpoint itself. With the bridge off, the journey ends at level 9 with
+  Q2008 at START/0, standing at Munin, and that code has no class check (`J:1010-1027`).
+
+**The server needs nothing**
+
+- Java's Q2008 handler maps SETPRO7 to SETPRO17 to all eleven second classes
+  (`JAVA/data/handlers/quest/ascension/_2008Ascension.java:141-162`).
+- Q2132 "A New Skill" and Q2009 branch on the starting class, and six dispatch quests exist.
+- None of the 41 Ishalgen quests is class-gated.
+- The skill sweep already passes every starter skill row in SIM.
+
+**Where the class knowledge sits today**
+
+- Two hand-typed skill tables, behind a switch that gives every class but the Cleric the
+  Priest's table (`Sc/NaturalClericSkills.cs:93-94`).
+- The fight rule `NaturalPriestCombatPolicy.Decide`, and the rest rule in `RestAsync`.
+- The pull: a stand-off at 22 m.
+- The gear and reward scores, with the Cleric's staff rule.
+- The identity rules, which accept a Priest and a Cleric and nothing else.
+- Contract literals: SETPRO14, Q2904, the Karmic Staff. Journey literals: the Priest trainer
+  203530 and var 4 (J:314, 6691-6694).
+- About a dozen reads of `IsCleric` in the journey. Four of them keep help items from every
+  class but the Cleric: the supply (J:1505), the shield scroll (J:9130), the mana potion
+  (J:9132) and the scrolls of the buff check (J:9596). Every band of the approved list
+  starts at level 10 or later (`Sc/NaturalHelpItemAllowlist.cs:22-37`). CP-05 and CP-06
+  change that first, by the operator's decision of 2026-10-07.
+
+**The costly part is structure, not class logic.** `RunAsync` is one method of about 8,400
+lines whose local functions share about 45 mutable locals. This plan does not split it. The
+Priest becomes a Cleric inside one run, so the profile has to be looked up from the observed
+class at every decision, and the existing closures can do that. Only the two self-contained
+nested classes, the combat class and the navigator, are lifted into their own files, as a
+pure move.
+
+**What each class needs**
+
+- **Chanter:** the smallest step. On the server it differs from the Cleric by SETPRO13,
+  class id 11 and the name of a reward list. It reuses the whole Priest run to Munin. Every
+  leg after the ceremony is Cleric data, so it stops there.
+- **Mage and Artist:** they fit the present ranged pull at 22 m, with their own skills and
+  recovery.
+- **Engineer:** its skills reach as far as its pistol (20 m), so it pulls at 18 m.
+- **Warrior and Scout:** a walk-in pull, weapon swings as the filler between skills, and
+  recovery without a heal.
+- **Recovery without a heal** is less unknown than it looked. Only the Priest (level 1) and
+  the Artist (level 5) learn a heal. Every class starts with the same 100 life potions, the
+  help kit keeps a better one in stock (CP-05), and Java restores (level + 3) x 8 x
+  Health/100 HP every 6 s while sitting (Health: Warrior 110, Scout and Engineer 100, Priest
+  and Artist 95, Mage 90). So a class without a heal drinks a life potion when its HP is
+  below the target and the potion is ready, and sits while the potion is on its delay. No
+  bandage is used: the operator ruled them out on 2026-10-07 (CP-Q11).
+
+**How "nothing changed" is proven.** No test asserts the journey's decisions today. Four
+logged pairs of same-seed runs had record-identical traces, so the plan first builds a trace
+comparer and a replay that captures nothing. Then three items change the Priest's levels 1-9
+on purpose, by the operator's decisions of 2026-10-07: the help kit, its use by the Priest,
+and the bind at each Ishalgen quest hub. Only after them are the baselines recorded, twice,
+so the baselines hold the new Priest play. Then today's numbers are pinned in a unit test,
+and only then does code move. No Priest or Cleric scope is ever recorded a second time.
+
+**So the order is:** eleven items in Phase A (CP-00 to CP-10), eight of proof tools and the
+three that change the Priest's levels 1-9 (CP-05 to CP-07); eighteen small items that put
+the Priest and Cleric behind the seam with no behavior change (CP-11 to CP-28); five for
+the Chanter, the first of which is the gear rule it shares with the new classes (CP-29 to
+CP-33); twelve that add what other classes need, check the finished refactor with a full
+gate and put a Warrior in the field before the seam is closed (CP-34 to CP-45). Then come
+four profile items (CP-46 to CP-49), seventeen items of Phase F (CP-50 to CP-66) and three
+to close (CP-67 to CP-69): 70 in all. After the seam a class costs one profile item proven
+by two probe rows, one or two checkpoint runs, a capture with its Verify, and its class
+scope recorded twice.
+
+**Where a class other than the Priest stops today**
+
+| What happens | Where |
+|---|---|
+| The identity check throws for any class but Priest and Cleric | `Sc/NaturalJourneyIdentityRules.cs:33-45` |
+| A cast throws for any weapon but mace or staff | `Sc/NaturalJourneyRuntime.cs:44-56` |
+| Resting throws when no heal is learned | `RestAsync` in `J` |
+| Q2132 "A New Skill" asks for the Priest trainer and var 4 | `J:6689-6697` |
+| A melee class waits out the fight loop's 1,000-action bound and then throws: inside 25 m the fight rule never walks to a target that will not come | `Sc/NaturalPriestCombatPolicy.cs:338-345`; the bound is `J:8978` and the throw `J:9333` |
+| It fights from the Priest's skill table | `Sc/NaturalClericSkills.cs:93-94` |
+| It keeps what it wears but sells unworn class gear as "unneeded-or-unusable", and it picks rewards by the Priest's rules: the mace (index 2) at Q2100 and Q2134, the cloth piece (index 0) at the armor quests | `Sc/NaturalIshalgenInventoryPolicy.cs`, fourteen call sites in `J` (six Decide, seven ChooseReward, one passed to NaturalCoinGearSteps at `J:2801`) |
+| A gun or spellbook class is walked up to melee | the fight loop's approach and obstacle handling in `J` |
+
+## Start and finish
+
+- **Start:** `main` at `b45b72a43`. The accepted line is the Asmodian Priest who becomes a
+  Cleric; its contracts, its forty snapshots and its endpoint `morheim-abyss-entry-s1` stay
+  as they are. The snapshot `munin` already holds a level-9 Priest standing at Munin with
+  Q2008 at START/0, before the Ascension quest is touched.
+- **Changed on purpose, once:** CP-05, CP-06 and CP-07 change how the accepted Priest line
+  plays levels 1-9, by the operator's decision of 2026-10-07. The Priest is supplied and
+  uses the level 1-9 help kit, and it binds at each Ishalgen quest hub. In a run with the
+  bridge on (scopes p and b) the Priest becomes a Cleric at level 9 and finishes Ishalgen as
+  a level-10 Cleric, so that Cleric plays Ishalgen with the same two binds and the hub
+  revive. The Cleric's kit and every leg from Altgard on are not changed. The old snapshot
+  `munin` and every other snapshot stay as they are; none is recaptured, and `munin` keeps
+  the Priest who played without the kit and
+  without a bind.
+- **Finish:** the class seam, with the Priest and Cleric on it and provably unchanged from
+  the baselines of CP-08 and CP-09; the Chanter chosen at Munin and preserved after the
+  Pandaemonium ceremony as `pandaemonium-chanter-start-s1`; and a Warrior, Scout, Mage,
+  Engineer and Artist each played from level 1 to Munin with Q2008 at START/0 and preserved
+  as `munin-<class>-s1` (or under the `-a2` name of rule (l), when a first capture was
+  rejected).
+- **Not in this plan:** anything past those endpoints. See [Out of scope](#out-of-scope).
+
+## The phases
+
+| Phase | Goal |
+|---|---|
+| A. Open the leg and build the proof tools (CP-00 to CP-10) | Commit the plan with decision D39 and the operator's answers, freeze the per-class server facts in one contract, and build what can say 'nothing changed': a trace comparer, a replay that captures nothing and the gate script. Then three items change the Priest's levels 1-9 by the operator's decision of 2026-10-07 (CP-05 to CP-07): the level 1-9 help kit, its use by the Priest, and the bind at each Ishalgen quest hub. Only then are the baselines recorded, twice, so they hold the new Priest play and no refactor item has moved code yet. Last, one contained run shows that a status-5 stop writes its receipt, before any class run leans on it. |
+| B. The class seam, with the Priest and Cleric moved onto it unchanged (CP-11 to CP-28) | Pin the numbers and the gear picks first, as they stand after CP-07, lift the two large nested classes (the navigator and the combat class) out as a pure move, add the class line and the class profile, and route every Priest and Cleric rule on the 1-9 and bridge path through them with exactly the values the baselines recorded. Each item is proven by a same-seed trace-identical replay of a scope that runs the touched code, or by a unit test where nothing calls the new code yet. |
+| C. The Chanter branch at Ascension (CP-29 to CP-33) | First the table gear rule, which the Chanter shares with the new classes. Then show on a prepared character that the server pays a Chanter, let the accepted Priest line choose SETPRO13 at Munin and preserve the result after the Pandaemonium ceremony. It depends on Phases A and B only, so a stalled Warrior cannot hold it up. |
+| D. What another class needs, and a Warrior in the field before the seam is closed (CP-34 to CP-45) | Add the generic pieces a non-Priest needs (generated catalog, table policy, rest without a heal, any weapon, chain and swing timing, walk-in pull), prove each neutral for the Priest and Cleric, and run the full gate over the finished refactor. Then make the class least like the Priest rest, fight and play its first quests. Only after that close the seam with the ratchet. |
+| E. Profiles for Mage, Artist, Engineer and Scout (CP-46 to CP-49) | One profile per class, each proven by two probe rows: first kills at level 1 on a character created by packets, and the follow-up or heal at the level it is learned. Every weapon type has fought through the bot before its long journey. |
+| F. Levels 1-9 to Munin, one preserved snapshot per class (CP-50 to CP-66) | Play each new starter through Ishalgen by natural play in bounded steps: a checkpoint at Q2004 for every class, a second at Q2007 for the first ranged and the first melee class, then the Munin capture, proven by restore and resume, and last the class scope recorded twice. |
+| G. Close-out (CP-67 to CP-69) | Run the other nine second classes through the class choice on prepared characters as evidence for the next plan, add the off-hand gear mode, and finish with the full gate and the closing status. |
+
+## The seam
+
+### The rule
+
+Pure decisions in the profile, one shared executor in the core. A profile never sends a
+packet; the core never names a class.
+
+### 1. Which character: the class line
+
+NaturalClassLine (new, public, Sc/Classes/NaturalClassLine.cs) with Id, Starter, Second (or
+none), SimAccountId and CharacterName. Ids: priest-cleric (the default: account 41,
+Asimnjour), priest-chanter, warrior, scout, mage, engineer, artist. Every line is a male
+Asmodian, as today, so there is no gender field. The line has ONE carrier:
+NaturalJourneyOptions.ClassLine, a last optional parameter of the public record at
+Sc/NaturalJourneyRuntime.cs:85-91. The journey hands it to the combat class it builds.
+INaturalJourneySession gains no member, so both session types (LiveBotSession in
+tools/Aion.LiveBots and SimulationL0Session in SimT/) and the 31 positional runtime
+constructions (30 `new NaturalJourneyRuntime(` and one target-typed `new(` at
+SimT/SimulationAltgardDestinyTravelTests.cs:81) compile unchanged. Later, CP-27 gives the
+SIM session type a line of its own, on the concrete type and not on the interface, for its
+relog check. The one journey test reads the new variable CP_CLASS. It is not called Profile:
+NaturalJourneyRuntime.Profile already means the configuration profile string.
+
+Where a line is defined: the lines are entries of one table in NaturalClassLine.cs. CP-14
+adds priest-cleric, and each class's first profile item adds its own line: CP-32 for the
+Chanter; CP-42, which adds the Warrior's line with the probe harness; and CP-46 to CP-49.
+The class-line contract file holds no line. From CP-28 on, sim-snapshot.ps1 holds the list
+of the seven ids and refuses any other; an id that the C# table does not hold yet fails in
+NaturalClassLine.Parse with a message that names it.
+
+### 2. How a class plays: the class profile
+
+NaturalClassProfile (new, public, Sc/Classes/), one per PlayerClass, looked up by
+NaturalClassProfiles.For(observed class id, line) at every decision and never fixed at
+construction, because the Priest becomes a Cleric inside one run. An unobserved class gives
+the line's starter (what Sc/NaturalClericSkills.cs:93-94 does today); a class outside the
+line throws. The Priest and Cleric profiles are adapters over the untouched static
+NaturalPriestCombatPolicy and today's rest rule, and report today's policy version
+(mauPolicy.Id). The Chanter profile reuses the Priest adapter. Every other class uses the
+table-driven NaturalRotationCombatPolicy with a policy version of its own, a skill catalog
+generated in memory from skill_tree.xml and skill_templates.xml (only roles and exclusions
+are hand-written) and the table gear rule. Rule tables are compiled C#, not JSON, and no
+generated kit file is checked in. The new types are public because NaturalJourneyOptions is
+public and Aion.Bots shows internals only to Aion.GameServer.Tests
+(tests/Aion.Bots/Aion.Bots.csproj:18).
+
+### 3. What the server decides per class: the class-line contract
+
+e2e/natural-class-lines.json (new, one javaReference, so an upstream port bumps one file)
+with loader Sc/Classes/NaturalClassLineContract.cs. e2e/natural-ascension-contract.json
+stays byte-identical; NaturalAscensionContract.ForLine and ForChoice(starter, second class)
+build any other pair's bridge in memory. The Ishalgen contract and its 26 plans stay shared
+and frozen. Its field initialClass PRIEST (e2e/natural-ishalgen-contract.json:7) stays; the
+bot loader does not read it, and the class-lines file is the authority for the class.
+
+### 4. Structure
+
+NaturalIshalgenJourney becomes a partial class and its two large nested classes,
+NaturalJourneyNavigator (J:8496) and NaturalJourneyCombat (J:8853), move, still private and
+nested, to Sc/NaturalIshalgenJourney.Navigator.cs and Sc/NaturalIshalgenJourney.Combat.cs.
+The eight nested exception classes, TemplatePhase and CapitalPayment (J:21-33) stay in the
+main file. RunAsync, its 45 captured locals, its leg runners, the three single-slot session
+hooks (BeforeSend, AfterSynchronize and ResolveForcedLanding) and the exception-based
+control flow stay as they are.
+
+### 5. Stays in the core, with no class input
+
+Api, World, Timing, Movement, Protocol; BotCastProtocol; navigation, travel planner and
+patrol learning; the fight-loop shell, CastAsync and cooldown tracking; retreat, rest-spot
+geometry, rest cadence and the death rule; the Ishalgen decision loop; the 19 hand-written
+quest executors and the template executor; hub pickup, gathering, the vendor protocol, the
+bind at the working hub's obelisk and Return; the help-item supply and its stock checks
+(what a kit holds at a level is the profile's); checkpoints, relog and stop boundaries;
+snapshot Capture, Restore and Verify.
+
+### 6. The leg gates stay Cleric-only
+
+the end-of-Ishalgen check (J:1006), the returned-Cleric test
+(Sc/NaturalIshalgenDecisionLoop.cs:83, evaluated inside every checkpoint), the capital pass
+(Sc/NaturalCapitalDecisionEngine.cs:42-45) and the later-leg requirements (J:1601,
+2373, 4540) keep refusing every class but the Cleric, with a message that names the class.
+Only the early-ceremony check (J:1398), the bridge talk and the identity classification
+(Sc/NaturalJourneyIdentityRules.cs:33-45, called from
+Sc/NaturalAscensionDecisionEngine.cs:80, the journey test and the SIM session's relog check)
+take the line's second class.
+
+### 7. Not renamed or moved
+
+NaturalPriestCombatPolicy.cs, NaturalClericSkills.cs, NaturalIshalgenJourney.cs,
+NaturalJourneyRuntime.cs, NaturalPullPlanner.cs and NaturalMauPolicyParameters.cs; the two
+NaturalJourneyStage names (they now mean before and after Ascension); the test method
+NaturalIshalgenPriestCompletesFrozenJourneyWithoutSetup; the parsed trace keys pull-plan and
+defend-before-pull; every Priest step and label string; every public member
+tools/Aion.LiveBots calls. The Mau freeze hashes five of these files by path
+(scripts/sim/freeze_mau_phase2.py:17-22). That freeze is historical for all of them: its
+scripts are not re-frozen and not run as checks.
+
+### 8. Proof tools and the neutral gate
+
+The tools, all new:
+
+- `scripts/sim/trace/compare_traces.py`: compares two traces record by record after dropping
+  the time stamp and run id. Its `--counts` mode says how many deaths, retreats, rests,
+  vendor buys and pulls a trace holds, so an item can name a scope that really runs what it
+  moves.
+- `scripts/sim/sim-snapshot.ps1 -Action Replay`: a fresh schema or a restored snapshot, one
+  scope played, the schema dropped, nothing captured. It takes `-StopAt`, `-StopAfterQuest`,
+  `-Item` and `-Run`, and writes its evidence under `run/cp/<item>/<run>/`. CP-28 adds
+  `-Class`.
+- `scripts/sim/run-neutral-gate.ps1`: replays the named scopes and compares each with its
+  baseline. One command, one verdict. With `-Record` it plays each named scope twice,
+  compares the two passes and writes the baseline rows once, at the end.
+- Baselines under `run/cp/baseline/<sha>/`, with their hashes and coverage counts committed
+  in `e2e/natural-neutral-baseline.json`. The baseline sha is the commit they were recorded
+  at. A second copy of the traces is kept beside the repository, in
+  `../BeyondAionSharp-cp-baseline/<sha>/`, as the Java checkout sits in `../aion-server`.
+- Gated SIM probes (the class-choice, trainer and starter probes). A gated row runs only
+  when the new variable `CP_PROBE_ROWS` names it, in a comma-separated list. A probe is run
+  alone like this: `AION_SIM_DB_INTEGRATION=1 CP_PROBE_ROWS=<rows> dotnet test
+  tests/Aion.Simulation.Tests --filter "FullyQualifiedName~<theory name>"`. The level-1
+  first-kill rows of CP-Q18 are not gated. "The director" in a probe means the SIM account
+  99, named director, with access level 9 (SimT/SimulationWorldFixture.cs:207). In a probe
+  it is the only GM input, and it never touches a journey. The one GM-style input in a
+  journey is the help-item supply, which the SIM host makes for the approved items of every
+  class line.
+
+Gate scopes, all seed 1:
+
+| Scope | What it plays | About |
+|---|---|---|
+| `p` | A fresh Priest with `NA_ASCENSION=1` and `PC_CAPITAL=start`: levels 1-9, the class choice and the ceremony. It holds no Cleric fight and few Priest branches | 1 minute |
+| `m` | A fresh Priest with the bridge off: all 41 quests to the Munin stop | 11 minutes |
+| `b` | The `-Bridge` scope: a fresh Priest with early Ascension to the bridge endpoint | 9 minutes |
+| `c` | Cleric leg `l4`, replayed from `altgard-rc-l3` | not measured |
+| `l1` | Leg 1 from `altgard` with `-LaterCapital` | not measured |
+| `hm` | Haramel leg `l12` from `altgard-coingear` | not measured |
+| `ax` | Abyss entry from `altgard-rc-complete-s1` | 1 minute |
+| `all` | `p`, `m`, `b`, `l1`, `c`, `hm` and `ax`: every Priest and Cleric scope that CP-08 and CP-09 kept | about half an hour |
+| class scope | `Replay -Class <line> -StopAt 2004:5:0`, one for each new starter: `mage`, `warrior`, `artist`, `engineer`, `scout`. The five are in the gate's table from the start, and each is turned on when its baseline is recorded (CP-53, CP-57, CP-60, CP-63, CP-66) | not measured |
+
+- The times of `p`, `m` and `b` were measured before CP-06 and CP-07 changed the Priest's
+  levels 1-9. CP-08 and CP-09 give the new ones.
+- The gate pins its environment and writes it beside each baseline: `NA_HELP_ITEMS` unset
+  for every line, because help items are on for every class line (Standing rules),
+  `AION_BOT_DASHBOARD_PORT` and `AION_SIM_PROCESS_KEY`. A run with `NA_HELP_ITEMS=0` is not
+  a gate run.
+- A passing candidate trace is deleted and only its verdict kept. A failing one is kept.
+- **Re-record rule.** Baselines belong to one commit, the baseline sha. Until CP-08 records
+  the first baselines there is none, and this rule does not apply. From then on, at the
+  start of every iteration, run `git log <baseline sha>..HEAD`. A commit from outside this
+  list is one whose message names no CP item. If such a commit touches `src`, `tests`,
+  `game-server` or `parity-artifacts`, run the full gate (set `all` and every recorded class
+  scope) at HEAD before taking an item. If every scope passes, log the commit and the
+  verdict in the Progress log and go on; an outside commit already logged with a passing
+  verdict is not checked again. If a scope fails, stop and report to the operator,
+  who decides between re-recording at HEAD and reverting the outside commit. The loop does
+  neither by itself, and it checks out no older commit: it makes no branch and no worktree
+  and does not move HEAD. When the operator chooses to re-record, the gate is run with
+  `-Record` at HEAD, both hashes are logged, and the baseline sha moves. An upstream port
+  must bump `javaReference` in `e2e/natural-class-lines.json` (CP-01's test asks for it).
+  That one edit to a file of this list by an outside commit is allowed, and the rule above
+  still applies to the commit.
+- **Full-gate failure.** When the full gate fails in CP-41 or CP-69, the item is not ticked.
+  Nothing is bisected by checking out older commits, for the same reason. The comparer's
+  first differing record names the step, and `git log` on the file that step runs names the
+  item that last changed it. The fix is a lettered item (rule (i)) that brings the old
+  behavior back, proven by the gate on the failing scope. If the first difference does not
+  point at one item, the loop stops and reports.
+
+### 9. Rules of this list
+
+Beside the loop protocol of docs/natural-ascension-altgard.md:2394-2440. Rule (m) says which
+of the two wins where they differ.
+
+- (a) One proof per item; one gate invocation with one verdict is one proof, and so is one
+  probe invocation that names several rows; unit tests an item writes as part of its work
+  run in the bundle.
+- (b) Bundle for every commit: the seven pre-commit checks (warning baseline, null loggers,
+  clock reads, custom quest drafts, fidelity, quest-plan compiler, retail quest inventory;
+  docs/natural-altgard-haramel.md:433-435); the Aion.GameServer.Tests project when the
+  commit touches tests/Aion.Bots; scripts/sim/test-sim-snapshot.ps1 and
+  test_compare_traces.py when it touches scripts/sim; Fast unless the commit is docs or
+  evidence only; never while a run holds the build outputs. CP-41 and CP-69 run the whole
+  list in CLAUDE.md.
+- (c) Guard, from CP-13 on: every commit that edits tests/Aion.Bots or the journey test also
+  runs gate p. The guard starts once CP-08 has recorded baseline p. CP-05, CP-06 and CP-07
+  edit tests/Aion.Bots before any baseline exists and are meant to change the Priest's play,
+  so the guard does not apply to them. CP-14 only adds files that nothing calls and changes
+  no existing file, so it needs no guard when it is worked before that. After that gate p is
+  never skipped. From the first class-scope recording on (CP-53), such a commit also runs
+  every recorded class scope. There is one exemption: a commit that changes only one class's
+  own profile file skips the other classes' scopes. That class's own scope is expected to
+  change, so the item re-records it by rule (j). The guard is not the item's proof.
+- (d) A capture item makes two commits: first the code commit with the bundle green, then
+  the capture and its Verify, then one evidence-only commit. Capture refuses a dirty tree
+  (scripts/sim/sim-snapshot.ps1:263-264), so the code cannot wait for the evidence. "One
+  commit per item" in this document means this: one commit for an item, and code then
+  evidence for a capture item. A capture item with no code change of its own makes only the
+  evidence commit. An item that re-records a class scope under rule (j) also makes two
+  commits: the code, then the re-recorded baseline file.
+- (e) Journey items: at most two attempts. A fix inside the item is one small change (a
+  profile number, a reward pick, one attempt-budget override with its reason). Anything
+  larger, and any second failure, goes under Blocked and becomes a lettered item by rule
+  (i), with its own single proof: the gate set of the item that introduced the code it edits
+  (rule (k)) plus the recorded class scopes when it touches shared code. Rule (j) covers a
+  class scope the fix is meant to change.
+- (f) A finding met while refactoring is logged, not fixed.
+- (g) Java is read first for any server behavior; natural play only; deaths are recorded
+  outcomes; GM setup only in probes on free accounts; help items on for every class line,
+  each kit written into this document as a manifest before its first use; no bandages;
+  snapshots only from committed code under new names; no existing snapshot is recaptured or
+  verified again; one commit per item on main (two for a capture item, rule (d)), with the
+  CP id in the commit message, no trailers, no push, never a branch or a worktree; say when
+  a run can be watched on the bot monitor at http://127.0.0.1:17880/.
+- (h) Pick rule. Take the first unchecked item that is not listed under Blocked and whose
+  Depends are all ticked. An item listed under Blocked is passed over until its entry is
+  removed. If no item can be taken, stop and report.
+- (i) Lettered items. A lettered item CP-NNx is written directly after its parent CP-NN,
+  with its own Depends and Proof lines. It is added to the parent's Depends, and that takes
+  the parent off Blocked. So the pick rule works the lettered item first and the parent
+  after it. The parent is then retried with a fresh two-attempt budget. Items that depend on
+  the parent need no edit: they wait for the parent, and the parent waits for the lettered
+  item. No existing id changes.
+- (j) Intended changes to a new class. An item that means to change how a new class plays
+  names the class scopes it will change, re-records those twice in the same item (the gate
+  with -Record) and logs both hashes. Priest and Cleric scopes (p, m, b, c, l1, hm and ax)
+  are never re-recorded that way. CP-05, CP-06 and CP-07 change the Priest on purpose, but
+  they come before the first baselines, so this rule is not bent for them.
+- (k) A fix to shared code made inside a probe or journey item re-runs the gate set of the
+  item that introduced that code, not only p. For example the rest executor came from CP-37,
+  the chain and swing code from CP-39 and the walk-in branch from CP-40, each proven on m+c.
+  That run is a guard, like rule (c)'s; the item's proof stays its own.
+- (l) Captures. Every capture attempt passes its own -Run, so two attempts never share an
+  evidence folder. An attempt whose run fails before the dump leaves no snapshot, and the
+  next attempt keeps the name. A capture that exists but fails its item's acceptance keeps
+  its name, is logged as rejected and is never deleted or overwritten. The second attempt is
+  then captured as <name>-a2 (precedent: altgard-rc-l1-a2), and later items use the accepted
+  name.
+- (m) Where the borrowed loop protocol of docs/natural-ascension-altgard.md and this
+  document differ, this document wins. The protocol's pick rule is rule (h). Its three
+  pre-commit checks and its Fast run "when an item changes server code" are rule (b). Its
+  "one run per OD-11" is CP-Q3. Its OD-3 is the Git standing rule. Its "full checklist for
+  NA-26" is run at CP-41 and CP-69; NA-26 names no item of this list. Its "move on to
+  another unblocked item" is rules (h) and (i). Its "NA-21's mechanism" is the help-item
+  supply of that document and keeps its NA id; it is not CP-21. Here the SIM host supplies
+  the approved help items of every class line.
+
+## What a class profile supplies
+
+- **Skills:** the catalog for the class. Numbers (level, raw range, add-weapon-range flag,
+  cast time, cooldown group, MP, chain category, required chain, chain time, self count,
+  weapon condition) are generated from skill_tree.xml and skill_templates.xml; the profile
+  hand-writes only each skill's role and the exclusions with their reasons. The Priest and
+  Cleric keep their frozen hand-typed tables.
+- **Combat policy:** the ordered attack lists for an adjacent target and for a target at
+  range, with opener and follow-up pairs, which skill is the pull and which the filler, and
+  the policy version written into every combat-decision record. For the Priest, Cleric and
+  Chanter this is an adapter over the static NaturalPriestCombatPolicy; for every other
+  class it is one rule table from which both Decide and CandidateActions are built.
+- **Chain discipline (table profiles):** a follow-up is cast at once after its opener and
+  only within its own chain time; no non-chain cast and no second opener goes between them,
+  because Java resets the chain on either (Skill.java:160-161; ChainCondition.java:61-63).
+- **Sustain in a fight:** the recovery ladder with HP triggers, which may be empty (own heal
+  where learned, defensive cooldown, timed potion), the emergency enter and exit
+  percentages, the potion threshold, whether and when a mana potion is drunk, the mana
+  reserve (only when a heal is learned) and the HP at which the shield scroll is used.
+- **Retreat:** the swarm limit, the flee thresholds, the control skill cast before leaving
+  or none, and the no-retreat mode for scripted fights (the ScriptedTrial flag, set today
+  for the Q2008 trial and the Q2947 arena).
+- **Upkeep:** a list of buffs kept up, each with when it is recast (before a pull, between
+  fights, while being hit) and the effect ids that prove it is active; the scroll family for
+  the shared slot (casting speed or attack speed), when the run-speed scroll is kept up, and
+  the DP skill or none. The Priest's list has one entry.
+- **Rest between fights:** how HP comes back (powder skill, own heal, or a life potion and
+  then sitting while the potion is on its delay), the HP and MP targets, the sit bound, and
+  the switch to the class's own heal once it is observed in the skill list. No profile uses
+  a bandage.
+- **Pull:** the style (stand-off, weapon-range stand-off or walk-in), the opening distance
+  (22 m or less, the planner's cap), the named per-site distances (today's 20, 22, 23, 25
+  and 30, and the 21 m standoff that NaturalCombatStandoff.Select derives as 25 - 3 - 1,
+  stay separate numbers), the conservative ranged hold, and the patrol wait rule with the
+  readiness record it reads.
+- **Movement inside a fight:** where an approach stops (weapon reach for a walk-in class,
+  the hold distance for a ranged one), what counts as adjacent, how far to close in after a
+  range refusal, and what to do after an obstacle refusal (close to melee for the Priest
+  line, find another sight line for a ranged class).
+- **Readiness:** the named HP and MP thresholds the shared helpers ask for (ready to pull,
+  rest between adds, before a named monster, before a use bar, during Return's cooldown,
+  before a timed quest).
+- **Auto-attack:** whether a swing is the filler between skills (Warrior, Scout) or the last
+  resort (casters, Engineer); the interval and reach come from the main-hand weapon.
+- **Gear:** wearable weapon groups and armor types from the class's mastery rows, the item
+  restrict column equal to the class id, preferred weapon groups and one defined ranking
+  stat (physical: mean weapon damage plus the flat physical-attack bonus, per swing;
+  magical: magic boost), the hand layout and off-hand mode, the armor type order, one score
+  for equip, keep, sell and reward choice, and the expected mastery ids.
+- **Rewards and supplies:** the pick at a class-dependent reward (weapon, armor type,
+  consumable order), contract pins as overrides, the protected supplies (the life potions
+  and the items of the help kit; bandages are not one), the restock table (item, threshold,
+  target, trade list) with a Kinah floor, and the help kit by level band, as its manifest
+  lists it.
+- **Not in the profile.** In the class-line contract (decided by the server): starter and
+  second class ids, Q2132 var and trainer, class-selection page, SETPRO action, Q2009 var,
+  reward group, preceptor and page, the reward list, the dispatch quest. Decided by the
+  operator, not the server: the SIM account and character name, which are in the class line
+  (the code record NaturalClassLine, not the contract file), and the ceremony pick (OD-5 for
+  the Cleric, question 7 for the Chanter), which is ceremonyReward.itemId in
+  e2e/natural-ascension-contract.json today and part of the bridge that ForChoice builds for
+  another line.
+
+## Standing rules
+
+These bind every item. They are the operator's rules for the natural bot as they stand on
+2026-10-07. The sources are CLAUDE.md, AGENTS.md (the bot monitor),
+`docs/natural-abyss-entry.md`, `docs/natural-ascension-altgard.md` (OD-7, OD-12, OD-13 and
+the loop protocol), `docs/natural-altgard-leveling.md` (the bind policy and the flight
+transporters), `docs/natural-altgard-haramel.md:433-435` (the seven checks) and
+`docs/e2e-player-simulation-plan.md` (D22, D23, D25). "Loot every kill" and "no subagents"
+are the operator's instructions and are first written down here. Three rules come from the
+operator's answers of 2026-10-07 and are quoted where they stand: help items for every
+line, no bandages, and the bind at each Ishalgen quest hub.
+
+- **Java first.** Read the Java (`../aion-server`, branch `4.8`) for every server behavior
+  an item relies on. Java wins; a retail correction needs a logged decision. No server or
+  data change is expected in this plan.
+- **Natural play.** No GM input in a journey, apart from the approved help items, which
+  every run lists in its help-items.json. They are on for every class line (see Help items
+  below). In SIM the host adds them on the server
+  (SimT/SimulationNaturalIshalgenJourneyTests.cs:95-102). GM setup is allowed only in probes
+  on free SIM accounts, and each probe says what it prepared.
+- **Deaths are outcomes, not failures.** So are retreats, lost timers and failed attempts.
+  They are recorded. The operator again on 2026-10-07: "Death is not failure."
+- **The death rule, for every class and level.** Whenever the bot dies it revives at the
+  obelisk it is bound to and soul heals at the nearest Soul Healer. With the hub bind below,
+  that is the working hub's obelisk and the Soul Healer beside it. In an instance it revives
+  in the instance and heals after the next obelisk resurrection. It is a rule of the bot,
+  not of a profile.
+- **Inventory check after every quest turn-in:** wear better gear, open reward containers,
+  discard what is to be discarded, check cube space. Question 13 decides how this applies in
+  Ishalgen.
+- **Gear is the profile's rule.** The Cleric's staff rule (the owned staff with the most
+  magic boost) stays the Cleric's. No gear is bought at levels 1-9. Each profile item writes
+  the class's weapon, armor and reward picks into its per-class note before the class's
+  first run.
+- **No level goals.** Levels come from quests. No hunting and no soul healing for a level.
+- **Loot every kill.**
+- **Hub bind and hub flight.** Bind at the working hub's obelisk everywhere, Ishalgen
+  included. The operator, 2026-10-07: "We should have been binding in Ishalgen the whole
+  time, at each quest hub (the village and the outpost), and soul heal as discussed." In
+  Ishalgen that is two binds, each on first arrival at the hub for work, for every line, the
+  Priest included: the village (Aldelle, obelisk 700063, fee 43 Kinah, Soul Healer Linevir
+  203512 beside it) and the outpost (obelisk 700064, fee 134 Kinah, Soul Healer Rusalka
+  203680 beside it). CP-07 builds it. Hub flight transporters are used from Altgard on. In
+  Ishalgen the hub flight stays off, as on the accepted route (NI07_OPTIMIZE_HUBS is unset):
+  the answer was about the bind.
+- **Help items** are on for every class line and every level, the Priest's levels 1-9
+  included. The operator, 2026-10-07: "help items on for everyone, and even change the
+  priest defaults! Get better healing potions, the shield scroll, greater running scroll.
+  Any consumable to make these more survivable and faster." The approved families at levels
+  1-9 are the best healing potion the level may use, the shield scroll, the Greater Running
+  Scroll, and any other consumable that makes the class more survivable or faster; the three
+  event scrolls and the mana potions a starter owns are among them. Each kit is written into
+  this document as a manifest before it is first used, as the coin-armor manifests were, and
+  every supplied item is listed in the run's help-items.json. The Cleric's kit from level 10
+  on stays as approved (OD-13). No run of this plan sets NA_HELP_ITEMS=0.
+- **Recovery without a heal: potions, no bandages.** The operator, 2026-10-07: "DO not use
+  bandages, just use Potions, rest when potion is on cooldown if needed". A class without a
+  heal drinks a life potion when its HP is below the target and the potion is ready, in a
+  fight and between fights. While the potion is on its delay it sits and rests if it needs
+  more HP. Bandage Heal 245 and the Bandage item are not used, not bought and not a
+  protected supply.
+- **Don't change earlier runs.** The accepted Priest and Cleric journey, its contracts and
+  its snapshots keep working. No existing snapshot is recaptured or verified again. One
+  change is made on purpose, by the operator's decision of 2026-10-07: CP-05, CP-06 and
+  CP-07 change how the accepted Priest line plays levels 1-9 (the help kit and the bind at
+  each Ishalgen quest hub). In a bridge run the level-10 Cleric finishes Ishalgen with the
+  same two binds and the hub revive. The Cleric's kit and every leg from Altgard on are not
+  changed, and the old snapshot `munin` and every other snapshot stay as they are.
+- **Snapshots** come only from committed code, under new names, and are never overwritten.
+- **Git.** One commit per item on `main`. A capture item makes two, the code commit and then
+  one evidence-only commit, and "one commit per item" means this (rule (d)). Only that
+  item's files, the CP id in the message, no co-author or attribution trailer, never a push,
+  never a branch, never a worktree, no subagents.
+- **Checks.** The seven pre-commit checks before every commit; Fast before any commit that
+  is not docs or evidence only; never while a run holds the build outputs. The warning
+  baseline is not raised and generated data is not hand-edited.
+- **SIM only, seed 1.** Every run in its own throwaway schema, nothing existing captured
+  over, no multi-seed batches (CP-Q3, answered 2026-10-07). No LIVE run and nothing on the
+  operator's `aion` stack. Say when a run can be watched on the bot monitor at
+  http://127.0.0.1:17880/.
+
+## Per-class notes
+
+### Every line: the level 1-9 help kit and the Ishalgen binds
+
+Two things are the same for every class line: the help kit at levels 1-9 and the bind at
+each Ishalgen quest hub. What follows was read in the code and the data on 2026-10-07.
+None of it was run.
+
+**The help kit.** CP-05 writes the manifest here, as a table, before any run uses it: per
+level band the item, what it is for, when it is used and how many are kept. It is not
+written yet. What the data and the code say today:
+
+- A consumable is gated by its `restrict` attribute, not by its item level. Java refuses an
+  item by class and by required level, both read from the restrict row
+  (JAVA/src/com/aionemu/gameserver/restrictions/PlayerRestrictions.java:327-336; C# twin
+  src/Aion.GameServer/Restrictions/PlayerRestrictions.cs:389-395). With no restrict
+  attribute the row is 1 for all seventeen classes
+  (JAVA/src/com/aionemu/gameserver/model/templates/item/ItemTemplate.java:34, 85). AX-01
+  found the same for scroll 164000079 (docs/natural-abyss-entry.md:343-345).
+- **Healing potion.** A life potion heals at once and then every 2 s for 20 s, with a 30 s
+  delay on group 11. In all: Minor 162000002 (the 100 a starter owns) 407 HP, Lesser
+  162000003 737, Life Potion 162000004 1,067, Greater 162000005 1,397 and Major 162000006
+  1,694. None of the five has a restrict (item_templates.xml:830724-830753). Fine 162000075
+  needs level 50. So the best one a level 1-9 character may use is the Major Life Potion.
+  The bot knows the tiers up to 162000004 only (Sc/NaturalIshalgenPotionPolicy.cs:8-20,
+  33-41).
+- **Shield scroll.** It is the Anti-Shock scroll: a 24 s shield, a 60 s delay, group 32.
+  Lesser 164000067 absorbs 158, plain 164000068 245, Greater 164000069 338 and Major
+  164000070 425. None of the four has a restrict (item_templates.xml:832739-832762). Fine
+  164000131 needs level 50.
+- **Greater Running Scroll** 164000076 uses skill 9960 at level 3: +30% run speed for 5
+  min, a 15 s delay, group 35, no restrict (item_templates.xml:832793-832798).
+- **What a starter owns.** Every starter has 100 Minor Life Potions, 100 Minor Mana Potions
+  162000007, 20 Bandages, and 50 each of the event scrolls Accelerox 164002116 (run speed),
+  Blitzopan 164002117 (attack speed) and Castafodin 164002118 (casting speed)
+  (player_initial_data.xml:5-22 for the Warrior; the other five lists hold the same). It
+  also has 12 Mercenary's Fruit Juice 160000001 (+2 natural HP healing for 15 min), 2 Lodas
+  Amulet III 169620005 (+20% XP for 2 h) and one Administrator's Boon pass 164002039 (no
+  death penalty for an hour).
+- **A finding for CP-05 to settle.** The three event scrolls use their skills at level 3
+  (item_templates.xml:835126-835143), and a stat change is the value plus the delta times
+  the skill level (src/Aion.GameServer/SkillEngine/Effect/BufEffect.cs:58; Java
+  BufEffect.java:74). By that reading Accelerox gives +30% run speed for 30 min, the same
+  percent as the Greater Running Scroll, and Castafodin 9% casting speed. The bot's catalog
+  and Appendix D.2 treat them as the Lesser tier's effect, +10% and +3%
+  (Sc/NaturalHelpItemPolicy.cs:69-71; docs/natural-ascension-altgard.md:2832-2836). One of
+  the two is wrong.
+- **Where help items are gated today.**
+  - Supply: TopUpHelpItemsAsync (J:1501-1526) returns unless the character is a Cleric
+    (J:1505). The bridge runner and the later legs call it, first at J:1047 and J:1060. The
+    Ishalgen decision loop (from J:724) never calls it.
+  - The supply plan and the refusal of an unapproved item both read one table,
+    NaturalHelpItemAllowlist.Approved (Sc/NaturalHelpItemAllowlist.cs:20-38, 78-84,
+    93-113). Every band in it starts at level 10 or later.
+  - Use: the shield scroll and the mana potion are offered to the Cleric only (J:9130,
+    9132), and the scroll part of BuffOurselfAsync returns for any other class (J:9596).
+  - Tier rules: the help policy picks a scroll only when its tier is at or below the
+    character's level, or level + 10 for the shield (Sc/NaturalHelpItemPolicy.cs:85, 102,
+    136, 160-163). The event scrolls count as tier 10 and the Lesser Anti-Shock as tier 20,
+    so below level 10 it picks nothing.
+  - The Running scroll is used only at the TravelLeg trigger, before a leg of 150 m or to
+    another map (Sc/NaturalHelpItemPolicy.cs:45, 101). Only two bridge sites send that
+    trigger (J:1114, 4863).
+  - The life potion has no class gate: the fight loop offers any owned one to the policy
+    (J:9126; Sc/NaturalIshalgenPotionPolicy.cs:33-41).
+  - The SIM host supplies an item only after NaturalHelpItemSupply.RequireApproved accepts
+    it (SimT/SimulationNaturalIshalgenJourneyTests.cs:71-72, 95-102). Three test files pin
+    the list and the policy: UT/NaturalHelpItemAllowlistTests.cs,
+    UT/NaturalHelpItemPolicyTests.cs and UT/NaturalHelpItemSupplyTests.cs.
+- **Defaults for the manifest**, where the operator's words leave room. Say so to change
+  one. The shield scroll is the Lesser Anti-Shock 164000067, the tier OD-13 approved for
+  levels 10-19, so the stock carries on into that band; up to the Major is usable. Stock
+  numbers follow OD-13's for the same families: potions to 30 when below 10, shield scrolls
+  to 30 when below 8, running scrolls to 20 when below 5. Use follows the Cleric's rules:
+  the shield scroll in a fight at 50% HP or below, the Running scroll before a leg of 150 m
+  or more or to another map (Sc/NaturalHelpItemPolicy.cs:45-46). The scroll for the shared
+  speed slot is the owned event scroll: Castafodin for a class that casts, Blitzopan for
+  the Warrior and the Scout; the profile names it. Three owned consumables are left out: the
+  fruit juice (2 HP of natural healing changes nothing a potion does not), the Lodas Amulet
+  (an XP boost; levels come from quests) and the Administrator's Boon (it removes the death
+  penalty, and the death rule's soul heal is the operator's stated rule).
+
+**The binds.**
+
+- Java: the obelisk asks the player to confirm and shows the price
+  (JAVA/data/handlers/ai/ResurrectAI.java:76, 106). On yes it needs the price in Kinah and
+  the player within 5 m (lines 83-89), stores the player's own position as the bind point
+  (91-96) and takes the price (97). It refuses a second bind within 20 m of the present
+  bind point (52-57). The price is the bind point's `price` attribute as it stands
+  (JAVA/src/com/aionemu/gameserver/model/templates/BindPointTemplate.java:21-34). The C#
+  twin is src/Aion.GameServer/Handlers/AI/ResurrectAI.cs.
+- Fees (bind_points/bind_points.xml:22-23): 43 Kinah at obelisk 700063, Aldelle Village,
+  and 134 Kinah at obelisk 700064, which that file calls Anturoon Crossing. That is 177
+  Kinah in all, from a purse that starts at 1,000.
+- Spawns (spawns/Npcs/220010000_Ishalgen.xml): obelisk 700063 at (587.7, 2467.1, 278.8)
+  (lines 1248-1250) with Soul Healer Linevir 203512 2.3 m from it (1167-1169); obelisk
+  700064 at (936.9, 1704.7, 259.5) (1252-1254) with Soul Healer Rusalka 203680 2.5 m from
+  it (1283-1285). Both healers carry title 350412 (npc_templates.xml:6701, 8989), which is
+  how the death rule finds a Soul Healer (Sc/NaturalServiceSteps.cs:40-52). Both obelisks
+  run the resurrect AI (npc_templates.xml:439832, 439837).
+- The bot's hub table (Sc/NaturalIshalgenHubPolicy.cs:35-49) calls the village `aldelle`,
+  centre (575, 2440). The outpost obelisk stands 6 m from the centre of the hub it calls
+  `mijou` (940, 1700). The hub `anturoon` (930, 1565) is 140 m from that obelisk and has
+  none of its own.
+- What exists: BindAtAldelleIfNeededAsync (J:4877-4893). It does nothing when the bot is
+  already bound within 20 m of the Aldelle obelisk, or when the purse does not cover the
+  fee. Otherwise it walks to 700063 and binds with NaturalServiceSteps.BindAsync, the step
+  the Altgard legs use. Its one caller is AcceptAllAtCurrentHubAsync (J:7824-7828), called
+  at J:756 and J:813, both only when options.OptimizeHubs is set. That option is
+  NI07_OPTIMIZE_HUBS=1 (SimT/SimulationNaturalIshalgenJourneyTests.cs:78), and the runners
+  clear the variable (scripts/sim/sim-snapshot.ps1:91). So the accepted route has never
+  bound in Ishalgen. Nothing binds at 700064, and the navigation graph's NPC list holds
+  700063 but not 700064 (J:311-320).
+- After a bind revive the death rule soul heals at the nearest Soul Healer within 30 m of
+  the revive point (J:8901-8933). With no bind, Java revives a player at the race's first
+  spawn point
+  (JAVA/src/com/aionemu/gameserver/services/teleport/TeleportService.java:362-383), which
+  for an Asmodian is (571, 2787) in Ishalgen (player_initial_data.xml:3). Ishalgen has two
+  Soul Healers, the two above, and neither is within 30 m of that point. So by this reading
+  the accepted route's deaths in Ishalgen have gone without a soul heal.
+- One branch becomes reachable with a bind in Ishalgen: Q2129's reward claim casts Return to
+  the bind when the bot is bound on the Ishalgen map and the travel policy prefers it
+  (J:7990-8004). It is not under the hub optimizer, and it has never run on the default
+  route.
+- The Ishalgen campaign's routing after a revive or a Return is written for the map's first
+  spawn point (571, 2787), and a bind at the outpost changes where both land.
+  WalkEasternRoadToDerotAsync (J:6161-6198) tests for that point at J:6165 and otherwise
+  walks to Nobekk 203519 by Aldelle first. It is called after every revive during outpost
+  work: J:6660-6673 (Q2003), RecoverMijouAfterReviveAsync J:6946-6952 (Q2005), J:7062-7064,
+  7168-7170, 7204-7206 and 7307-7309; J:7512 and 7523 test "within 400 m of the spawn
+  point". Four Return fallbacks already run on the default route and change their landing
+  point: J:6941 (Q2005), 7451 and 7476 (Q2006) and 7566 (Q2007), with the stranded Return at
+  J:5197. UseLearnedReturnToBindAsync also requires the cast to move the bot more than 30 m
+  (J:6304-6305), which can throw when a fallback fires beside the bound obelisk. CP-07
+  changes these sites; they are listed there. A death before the first village bind still
+  revives at the spawn point, with no Soul Healer within 30 m.
+
+### PRIEST and CLERIC (the accepted line, priest-cleric)
+
+They stay on their present code, with one change made on purpose before the baselines: at
+levels 1-9 the Priest gets and uses the help kit (CP-05, CP-06) and binds at both Ishalgen
+hubs (CP-07). The profile is an adapter over the static NaturalPriestCombatPolicy and the
+RestAsync rule, and their skill tables stay hand-typed and frozen
+(Sc/NaturalPriestCombatPolicy.cs:30-40; Sc/NaturalClericSkills.cs:24-94). Numbers that must
+not move after that, pinned by CP-11 before any code moves: heal at 55/70%, emergency 35 to
+45%, retreat at three attackers, pull at 22 m, rest by Healing Light below 90% HP, sit below
+50% MP until 80%, at most 12 quiet sits, restock at 5 potions up to 12, the staff rule.
+Server facts: trainer Kirhen 203530 with Q2132 var 4, class page 4080, SETPRO14, preceptor
+Lyfjaberga 204083 with Q2009 var 40, Karmic Staff 101500498, dispatch Q2904. Every leg gate
+keeps requiring the Cleric. Help items are on, as for every line; the Cleric's kit from
+level 10 on stays as OD-13 approved it. Known quirks are logged, not fixed: the combat
+objects rebuilt at J:2382 and 4550 lose MaintainInventoryAsync (assigned only at J:442), the
+swing counter overflows at turn 256 (J:9279), robe and leather tie on the gear score.
+
+### CHANTER (second class of PRIEST, line priest-chanter)
+
+Server delta from the Cleric, checked in Java: SETPRO13 (_2008Ascension.java:153-154), class
+id 11 and the list name chanter_selectable_reward; same class page 4080, same preceptor,
+same Q2904. It reuses the Priest line's whole run and identity and differs first at the
+class-choice send. Its profile is the Priest adapter over the Priest catalog with the Priest
+rest plan; every level-10 Chanter active is excluded with a reason. The two ceremony weapons
+rank differently by reading: Karmic Staff 58-88 at 2.0 s hits harder per swing; Karmic
+Warhammer 44-66 with +7 physical attack at 1.5 s does more per second and leaves the shield
+hand free (question 7). Help items are on, as for every line. Its levels 1-9 are the
+Priest's, with the level 1-9 kit. Five help-item bands start at level 10, and the allowlist
+is keyed by item and level, not class (Sc/NaturalHelpItemAllowlist.cs:22-37). So once the
+supply gate takes the line's classes, the level-up to 10 at the ceremony tops the Chanter up
+with the same level-10 bands as the Cleric, and the run lists them in help-items.json. It
+has no use for them before its stop; a Chanter kit of its own belongs to a later Chanter
+leg. It stops at the capital-start checkpoint (J:1400-1405); its snapshot restores with
+PC_CAPITAL=start, which re-checks the endpoint and stops (read in the code at J:408-410 and
+1396-1405, not run). It has no legs after the ceremony until the Altgard contracts are made
+class-aware.
+
+### WARRIOR
+
+Starter id 0; trainer Minu 203527 with Q2132 var 1; class page 3057; Gladiator (SETPRO7) and
+Templar (SETPRO8). Kit: Training Sword 100000094 (16-20, 1.4 s, 1.5 m) and chain; no heal
+and no ranged skill at 1-9. Its strikes add weapon range to a template range of 1
+(skill_templates.xml:48244), so they reach 2.5 m with the sword, inside the 3 m the bot
+calls adjacent today. Chain rule read in Java: Ferocious Strike 2864 opens W_CHAINA_1TH_1;
+Robust Blow 2877 and Rage 2903 both name it as their required step with time 3000; Rage may
+also follow Robust Blow inside Robust Blow's 3 s, because Java accepts a match on the
+previous chain skill (ChainCondition.java:40-46); Body Smash 2890 is another opener and
+resets the chain; any non-chain cast resets it too. At Q2100 the defined stat prefers
+Raider's Mace (20-30 at 1.5 s) to Raider's Sword (20-26 at 1.4 s); Q2100 is also the only
+Ishalgen quest that offers a shield. The Warrior takes the weapon there, not the shield
+(the operator, 2026-10-07: "Warrior does take weapon"). It recovers by life potion and by
+sitting while the potion is on its delay; it uses no bandage. It is the first class to rest
+and to fight in a probe (CP-42, CP-43) and to walk in during a journey (CP-44), and the
+second to reach Munin.
+
+### SCOUT
+
+Starter id 3; trainer Wiokan 203528 with var 2; class page 3398; Assassin (SETPRO9) and
+Ranger (SETPRO10). Kit: Training Dagger 100200112 (15-17, 1.2 s) and leather; no heal. Swift
+Edge 3182 opens SRA_CHAINA_1TH and Soul Slash 3223 follows it within 3 s. Devotion and
+Focused Evasion have no chain, so casting either between the two loses the follow-up;
+Devotion goes before the opener. Excluded with reasons: Surprise Attack 3196 (opens its own
+chain SRA_CHAINN_1TH, costs 13 MP, and its back damage needs a position the bot does not
+take), Counterattack 3209 (the bot does not see its own dodge) and Stealth 3222 (not usable
+in combat). It holds one dagger until CP-68 and the operator's answer. It journeys last and
+reuses the Warrior's melee fixes.
+
+### MAGE
+
+Starter id 6; trainer Jurwen 203529 with var 3; class page 3739; Sorcerer (SETPRO11) and
+Spirit Master (SETPRO12). Kit: Training Spellbook 100600034 and robe; the frailest starter
+and no heal. All six targeted actives reach 25 m (Stone Skin is self-cast); it pulls at 22 m
+so the planner's cap stays. Flame Bolt 1282 (opener M_CHAINA_1TH_1) then Blaze 1403 (time
+3000); Ice Chain 1363 then Frozen Shock 1226. Erosion, Root and Stone Skin have no chain, so
+none may be cast between an opener and its follow-up. Root 1328 has resistchance 10: every
+hit on the rooted monster removes it unless a 0-100 roll is below 10
+(RootEffect.java:47-53), so it is for a second attacker or a retreat only. Stone Skin 1155
+is upkeep (a 300 s shield for 130 MP). The 100 starter life potions have a 30 s delay, and
+so has every life potion the kit may supply; the vendor's Minor Life Elixir has 60 s on the
+same group (item_templates.xml:830724-830728, 831033-831037). Life and mana potions share
+that group, so the life potion goes first. It is the first to journey to Munin. The
+Warrior's short run to Q2132 (CP-44) is listed before it, but the Mage does not wait for
+it: if CP-44 is blocked, the Mage journeys first.
+
+### ENGINEER
+
+Starter id 12; trainer Wild Wilhelm 801218 with var 5; class page 3569; Gunner (SETPRO15)
+and Rider (SETPRO17), which are not contiguous. Kit: Pistol for Training 101800181 (magical
+fire 20-23, 1.8 s, 20 m, magic boost 20) and leather; no heal. Its attack skills add weapon
+range and have no template range (skill_templates.xml:29975, 35193), so they reach the
+pistol's 20 m and the profile pulls at 18 m. Gunshot 1957 is an opener with time 2000;
+Rapidfire 2142 has time 2000 and selfcount 2, so it may be cast twice, each within 2 s of
+the step before it. Direct Shot has no chain and resets one, so it is never cast between
+them. Pistols are ranked by magic boost. Its trainer, class page, preceptor 801220 and
+dispatch Q29070 have never been run by a bot. RIDER is missing from class_permitted on 178
+of the 197 quests that list GUNNER (for example Q2011 and Q2012); the other 19, Q29070 among
+them, list both. That is recorded, not touched.
+
+### ARTIST
+
+Starter id 15; trainer Sona 801219 with var 6; class page 3910; only Bard (SETPRO16). Kit:
+Harp for Training 102000194 (25 m) and robe. Every active skill needs a harp. Pulse 4408 is
+pull and filler at 22 m; Soothing Melody 4339 heals from level 5 (it is itself a chain
+opener, A_CHAINB_1TH; skill_templates.xml:73647), so recovery switches from the potion and
+the sit to its own heal when the skill is observed. Fiery Descant 4300 is a charge skill and
+is excluded. No follow-up is learned at 1-9, so chain resets cost it nothing. It is the
+closest to the Priest's survival model. Its trainer, class page, preceptor 801221 and
+dispatch Q29071 have never been run by a bot.
+
+## Hazards
+
+1. Trace identity at HEAD is unverified: the four record-identical pairs come from logs
+   dated 2026-09-28 to 2026-10-06. CP-08 and CP-09 record every scope twice to find out. If
+   p or c does not repeat, the loop stops; a decision projection is a weaker proof and needs
+   the operator's notice.
+2. A baseline scope may no longer pass on current code; b (the bridge route) and hm (Haramel
+   from altgard-coingear, the pre-RC line) are the oldest. CP-09 drops such a scope instead
+   of fixing it, which narrows what the full gate covers.
+3. Some code is reached by no scope: the Ishalgen vendor buy, the Cleric's in-fight mana
+   potion, and the environment-gated Mau course and Cleric encounter, which use the same
+   combat path and are in neither Fast nor any gate. These rest on unit tests, the pin test
+   and the golden gear test only. The fight-at-the-target block of PullAndKillAsync is
+   reached only by scope hm (six at-target records in the hm07 capture trace); if CP-09
+   drops hm, no scope reaches it. After CP-06 the Priest may drink a mana potion in scope m;
+   CP-09's counts say whether it does (CP-02's counts mode also counts potions drunk, shield
+   and speed scrolls used, help items supplied, binds and soul heals).
+4. The coverage statements in this plan come from a reviewer's counts in older traces (for
+   example 3 deaths and 5 retreats in the existing scope-m trace, and vendor buys only in
+   the bridge trace, at the Altgard shop stop, and in the Abyss-entry trace). CP-09 replaces
+   them with counts from the new baselines. Those older traces were played without the
+   level 1-9 kit. With a strong potion and a shield scroll the Priest may die, retreat and
+   rest much less in scopes p, m and b, so a scope may no longer run the code an item names
+   it for. CP-09 checks every later item's scope against the new counts and edits the Proof
+   line where it must.
+5. Baselines live under run/, which is git-ignored, and belong to one commit. If they are
+   lost, they are restored from the second copy beside the repository
+   (../BeyondAionSharp-cp-baseline). If main changes from outside this list, the re-record
+   rule of section 8 applies. Never prune run/cp/baseline or the second copy.
+6. Most line numbers come from the readers' map at commit b45b72a43; the ones this plan
+   leans on were rechecked. They shift with every edit. CP-05, CP-06 and CP-07 edit the
+   journey and the help-item files before any refactor item, so every J line quoted by a
+   later item is already a little off when that item starts. After CP-13, J:8496-10115
+   lives in two new files and the statics that follow (today J:10117-10332) move up by
+   about 1,620 lines. So each item finds its sites by name.
+7. The LIVE path is covered by none of the SIM proofs. tools/Aion.LiveBots builds with
+   warnings as errors and calls the Priest policy and Classify directly, so every public
+   member it uses keeps its signature, and the session interface gains no member. CP-06 and
+   CP-07 edit journey code the LIVE Priest runs too, so its levels 1-9 change with them; no
+   LIVE run is made in this plan, and the first LIVE run after it is where that is seen.
+8. Findings met while refactoring must not be fixed there: the rebuilt combat objects lose
+   MaintainInventoryAsync and their death history, the Priest's swing counter overflows at
+   turn 256, map 320010000 lists Hagen 205020. Fixing any of them changes the trace; they
+   are logged and decided after CP-45.
+9. Forty snapshots resume into current code. Receipt, checkpoint and snapshot.json formats
+   may gain optional fields only; a renamed or removed field breaks restores of accepted
+   endpoints.
+10. Whether a class without a heal survives Hatata (1,821 HP), the Q2007 generators and the
+    Q2005 stalkers is unknown. In a fight it has one life potion every 30 s and the shield
+    scroll every 60 s, and nothing else; between fights it sits while the potion is on its
+    delay. The help kit keeps a potion with the 30 s delay in stock, so the vendor elixir
+    and its 60 s delay matter only if the supply fails. The attempt budgets were sized on
+    Priest runs; deaths are outcomes, but an exhausted budget fails a run.
+11. A walk-in fight happens at the target's position, inside its neighbours' assist range,
+    so melee classes will take more adds than the Priest's 22 m stand-off. The walk-in is
+    first played in CP-44. The quest order comes from the decision engine and the frozen
+    contract, and it was tuned on the Priest. The hub order and safe work groups of
+    NaturalIshalgenHubPolicy are not used on this route (they run only with
+    NI07_OPTIMIZE_HUBS set), so there is no hub order to override. CP-07 takes only the
+    two binds from that code and leaves the rest of it off.
+12. Ishalgen code written for a ranged puller (the Sprigg stand-off, Q2005's firing-edge
+    search, fight-through) may need per-quest work for Warrior and Scout. The plan handles
+    it by lettered items (rule (i)), so the list can grow past 70.
+13. Auto-attack is weakly observed: SM_ATTACK_RESPONSE is not decoded, so a refused swing is
+    silent. Swings with a spellbook, pistol or harp at weapon reach have never been sent by
+    the natural bot.
+14. The Java chain rule was read, not played: no bot has cast a Warrior, Scout, Mage or
+    Engineer follow-up after its own opener. The skill sweep casts each follow-up with the
+    chain state set by the director (SimT/SimulationSkillSweepTests.cs:229-233). A wrongly
+    sequenced follow-up is refused without a message and shows as a cast-start timeout; the
+    leveled probe rows are where that is found. A potion is an item skill (SkillMethod.ITEM)
+    and does not reset a chain (Skill.java:131, 160-161); a cast with no chain category
+    does.
+15. Walking routes on the bot's navigation data to the five other trainers were not checked,
+    and a template id missing from the graph list may make the approach helper throw. The
+    CP-34 probe checks the handler and dialog, not the walk.
+16. The Engineer and Artist trainers, class pages, preceptors, weapon rewards and dispatch
+    quests have never been played by any bot. Their starter weapons have only cast skills:
+    scenario C11 casts Direct Shot 2219 and Pulse 4408 with the starter pistol and harp
+    (SimT/SimulationCombatScenarioTests.cs:479-490) and the skill sweep equips a gun or a
+    harp for its rows; the natural bot has never swung one (hazard 13). Which SETPRO buttons
+    the 4.8 client's class pages show was not checked, and the handler does not check the
+    action against the page. But ClassChangeService.setClass refuses a second class outside
+    the starter's own two (ClassChangeService.java:60-70), so a wrong button fails; it
+    cannot give a foreign class. A server defect found there is fixed Java-first under its
+    own lettered item.
+17. The 26 Ishalgen plans are outside the plan-drift test and one reader found their NPC
+    anchors stale against current spawn data. They are not regenerated (the Priest baseline
+    would move), so new classes inherit the same anchors.
+18. Stop boundaries with status 5 have never been used; the only boundary in the files is
+    2007:3:6. The code says they fire (J:553, 601; QuestService.cs:86-87). CP-10 plays one
+    on the Priest before any class run leans on it, and it is found and fixed there if it
+    does not fire. The fallback is the new -StopAfterQuest switch. It writes no
+    resume-receipt.json (J:854-861; only the NI08_STOP_AT stop at J:875-891 writes one). It
+    exists only for Q2004 to Q2007. And it has its own shorter deadline, sized on the
+    Priest: 6 minutes for Q2004, 8 for Q2005, 16 for Q2006 and 20 for Q2007, against 45
+    without it (SimT/SimulationNaturalIshalgenJourneyTests.cs:51-52). So on the fallback the
+    proof is the passing run and the trace, not a receipt, and the Q2132 stops of CP-10 and
+    CP-44 have no fallback.
+19. The Chanter snapshot's Verify depends on a path read in the code, not run: on a resumed
+    level-10 character in Pandaemonium EarlyAscensionNeeded is true and stage start stops
+    again. If it does not, the proof of CP-33 falls back to the capture receipt and a
+    Restore-only check, and the doc must say so.
+20. No SIM account id is known to be free. Ids 77-82 belong to the gear scenarios
+    (SimT/SimulationGearScenarioTests.cs:34) and 91-94 to the geo displacement scenarios
+    (SimT/SimulationGeoDisplacementScenarioTests.cs:30-33); an earlier grep missed them,
+    because the ids are picked by a ternary chain and by account + 1, not passed as one
+    plain literal. 101-112 belong to the character-lifecycle test, 151-200 are reserved by
+    D32, and ids above 255 cannot log in. CP-31 either finds free ids by reading every
+    session construction, computed ids included, or adds new ids to the fixture's list
+    (SimT/SimulationWorldFixture.cs:204-206).
+21. Proof runs, the bundle and Fast cannot overlap, and other processes on this machine use
+    the same build outputs. The gate builds once and runs with --no-build; a full gate holds
+    the outputs for about half an hour.
+22. Run volume is real: logged trace sizes are about 12 MB for p, 55 MB for the 41-quest
+    scope and 61 MB for leg 4. The gate deletes passing candidate traces; failed ones and
+    all class-run evidence accumulate under run/cp.
+23. The default endpoint plays all 41 quests at level 9 under the non-Daeva XP cap, the
+    order OD-16 replaced. The Munin snapshots are play-test evidence; a second-class leg
+    that started from one would start short of XP.
+24. Elixirs, the two Ishalgen bind fees (43 and 134 Kinah, 177 in all) and soul healing
+    after deaths draw on one purse that starts at 1,000 Kinah. Help items cost nothing: the
+    host supplies them. No bandage is bought. The Kinah floor in question 11 is a starting
+    number, not a measured budget, and it is for purchases: a bind is paid whenever the
+    purse covers its fee.
+25. Pending rows in the pin test could be forgotten. So CP-11 writes every pending row with
+    the id of the item that turns it on, CP-41 makes the test fail while any row is pending,
+    and no item may edit an expected value.
+26. CP-06 and CP-07 change the accepted Priest with no trace to compare against: the first
+    baselines are recorded after them, on purpose. So no gate can show that only levels 1-9
+    changed. What stands in for it: the three existing help-item test files stay green with
+    only the two level-9 expectations changed that CP-05 and CP-06 name (every assertion
+    about the Cleric's bands and tier rules from level 10 on stays), each of
+    the two items is proven by its own contained run of scope m, and scopes c, l1, hm and ax
+    start from snapshots that hold none of the level 1-9 kit.
+27. What is left of the level 1-9 kit at level 10 is owned stock. The bands stop supplying
+it. The leftover potions and shield scrolls are used up; the leftover Greater Running
+Scrolls stay unused until level 30 under the unchanged tier rule, and the running family
+steps down at level 10 (nothing supplied at 10-19). That is how the supply rule treats an
+old tier, as the supply rule says of an old tier
+    (Sc/NaturalHelpItemAllowlist.cs:66-69). In a fresh run through the bridge (scopes p and
+    b) the new Cleric still drinks what the Priest left. The Cleric snapshots hold none, so
+    the legs replayed from them do not see it. The kit also steps down at level 10: by the
+    reading of the per-class note the level 1-9 potion is the Major Life Potion (1,694 HP),
+    and the Cleric's level 10-19 band supplies the Minor (407 HP). CP-05 records that for
+    the operator and does not change the band.
+28. The event-scroll finding of the per-class notes is open: the data read says Accelerox
+    is +30% run speed and the bot's catalog says +10%. If the data read is right, the
+    Cleric's level 20-29 bands supply scrolls weaker than the event scrolls it owns. CP-05
+    settles the reading with a unit test and records the result for the operator. It does
+    not change the Cleric's bands.
+29. A bind in Ishalgen moves every bind revive from the first spawn point of the map to the
+    working hub, which changes the walk after each death, and it makes Q2129's Return branch
+    reachable for the first time on the default route (J:7990-8004). Both are meant, and
+    both need the routing edits that CP-07 lists: without them a revive at the outpost walks
+    back to Aldelle and out again. The
+    soul heal after a hub revive has not been run in Ishalgen: Soul Healers 203512 and
+    203680 are not in the navigation graph's NPC list, and a template missing from that
+    list may make the approach helper throw (hazard 15). CP-07 finds out.
+
+## CP checklist
+
+One item per loop iteration. Take the first unchecked item that is not listed under Blocked
+and whose Depends are all ticked (rule (h)). Each item has one proof of its own. A refactor
+item changes no behavior: no rename, no reordering, no fix. Three items are not refactor
+items: CP-05, CP-06 and CP-07 change the Priest's levels 1-9 on purpose, before the
+baselines. So in every item after them "today" means the code as CP-08 and CP-09 recorded
+it. The ids were renumbered twice, on 2026-10-06 and on 2026-10-07, both times before any
+item was started. From now on an inserted item gets a letter (rule (i)) and no id changes.
+
+### A. Open the leg and build the proof tools
+
+- [x] **CP-00 - Commit this plan.** Depends: None
+  - Work: This file, docs/natural-class-profiles.md, exists untracked and holds every
+    section it needs. Do not write it again. Check that it still has the house-style
+    sections of docs/natural-abyss-entry.md: dated Status, start and finish contract, a
+    Standing rules section (Java first; natural play; deaths are outcomes and the death
+    rule; loot every kill; the bind at the working hub's obelisk everywhere, Ishalgen
+    included, and hub flight transporters from Altgard on; help items for every class line;
+    potions and no bandages; no level goals; the inventory check; no gear bought; snapshots
+    only from committed code), per-class notes, hazards, the CP checklist, the operator
+    decisions with every answer or default, Blocked, Out of scope, a Progress log, and a
+    'Combined goal prompt' section holding the loop prompt (precedent
+    docs/natural-altgard-haramel.md:437-439). Seven answers already stand in it as Answer
+    lines: CP-Q1 and CP-Q8, taken from the request on 2026-10-06 and confirmed on
+    2026-10-07, and CP-Q3, CP-Q10, CP-Q11, CP-Q12 and CP-Q21, given on 2026-10-07. Add an
+    Answer line for anything the operator has answered since. Add decision row D39 beside
+    D38 (docs/e2e-player-simulation-plan.md:2715). It quotes the maintainer's request and
+    those answers, extends the natural-play rules of D22 and D23 to all six starters, and
+    records the three things the answers of 2026-10-07 change: help items for every class
+    line from level 1 (OD-13 approved them for the Cleric from level 10), no bandages, and
+    the bind at each Ishalgen quest hub with the change it makes to the accepted Priest
+    line's levels 1-9. Add a pointer row in CLAUDE.md and one line in
+    docs/natural-ntc-readiness.md. Two older documents state rules the answers of 2026-10-07
+    widened, so add one dated line to each that points here and changes nothing else: under
+    OD-13 in docs/natural-ascension-altgard.md (help items are now for every class line and
+    from level 1), and at the standing bind policy AB-Q5 in docs/natural-altgard-leveling.md
+    (the bind at the working hub now holds in Ishalgen too). Commit those six files and
+    stage nothing else: three
+    untracked docs/playtest-*.md files are in the tree and are not part of this.
+  - Proof: The commit itself: git show --stat HEAD lists exactly those six files, with the
+    seven pre-commit checks green (docs only, so no Fast run).
+  - 2026-10-07: done. The house-style sections were checked against
+    docs/natural-abyss-entry.md and all stand; no Answer line was added, because the
+    operator has answered nothing since the seven. D39 stands above D38 in
+    docs/e2e-player-simulation-plan.md, where the newest row goes. The pointer row is in
+    CLAUDE.md, and one dated line each is in docs/natural-ntc-readiness.md, under the
+    decision table that holds OD-13 in docs/natural-ascension-altgard.md (a table row
+    takes no line under it) and under the standing bind policy in
+    docs/natural-altgard-leveling.md. The seven pre-commit checks pass
+    (run/cp/CP-00/checks/, seven logs, each exit 0); docs only, so no Fast run. The commit
+    holds exactly these six files.
+- [ ] **CP-01 - Class-line contract for six starters and eleven second classes.** Depends:
+  CP-00
+  - Work: Java first: JAVA/data/handlers/quest/ishalgen/_2132ANewSkill.java:24-67,
+    ascension/_2008Ascension.java:136-162, _2009ACeremonyinPandaemonium, the six dispatch
+    handlers and src/com/aionemu/gameserver/services/ClassChangeService.java:60-107. Freeze
+    e2e/natural-class-lines.json with one javaReference and its loader
+    Sc/Classes/NaturalClassLineContract.cs. Per starter: class id, Q2132 var and trainer,
+    class-selection page, Q2009 var, reward group, preceptor and page, and the level-1
+    mastery ids with the weapon groups and armor types they unlock. Per second class: SETPRO
+    action, class id, parent, level-9 masteries, the *_selectable_reward list with its
+    items, the dispatch quest and its work item. Where the 4.8 client's dialog pages can be
+    read through tools/client-extract, note which SETPRO buttons pages 3057, 3398, 3739,
+    4080, 3569 and 3910 show; otherwise record that as unverified. The file holds server
+    facts only. It holds no line: SIM accounts and character names are in
+    NaturalClassLine.cs (CP-14). No bot code reads the file yet.
+  - Proof: Unit test UT/NaturalClassLineContractTests: one theory over the 6 starters and 11
+    second classes that recomputes every value from quest_data.xml, skill_tree.xml, the
+    Ishalgen and Pandaemonium spawn files and the C# handler source, requires the PRIEST and
+    CLERIC rows to equal e2e/natural-ascension-contract.json:35, 54-56, and requires
+    javaReference to equal lastCompletedJavaCommit in docs/upstream-port-state.json, the
+    field the other natural contract tests compare with (for example
+    UT/NaturalAscensionContractTests.cs:223).
+- [ ] **CP-02 - Trace comparer with coverage counts.** Depends: CP-00
+  - Work: Add scripts/sim/trace/compare_traces.py, reading through
+    scripts/sim/trace/trace_input.py: stream two .trace.jsonl files, drop ts and run, skip
+    the natural-run-context record, take an ignore list of field paths, print the index and
+    both sides of the first differing record plus both record counts, and exit 0 only when
+    identical. Add a --counts mode that prints, for one trace, how many deaths, revive
+    steps, retreats, rest sits, between-fight heals, vendor buys, pull plans, patrol waits,
+    emergency decisions and at-target pulls it holds, and how many life and mana potions
+    were drunk, shield scrolls and speed or running scrolls used, help items supplied, binds
+    made and soul heals done. No C# change.
+  - Proof: python scripts/sim/trace/test_compare_traces.py: fixtures for a pair identical
+    but for ts and run, one changed field, one missing record, two swapped records, and a
+    counts fixture.
+- [ ] **CP-03 - Replay without capture.** Depends: CP-00
+  - Work: CP-Q3 was answered on 2026-10-07, so this item is not blocked.
+    scripts/sim/sim-snapshot.ps1 gains -Action Replay: a fresh owned schema through
+    new-sim-db.ps1 (as Capture makes one at lines 284-285) or Restore-Snapshot for -From,
+    one scope's environment through Invoke-NaturalJourney into a new run directory, then the
+    schema is dropped. It writes nothing under run/snapshots. It accepts -CapitalStage,
+    -Bridge, -AltgardLeg1 with -Leg, -From, -LaterCapital, a new -StopAt (NI08_STOP_AT, as
+    questId:status:packedVars; status 5 must be accepted) and a new -StopAfterQuest
+    (NI07_STOP_AFTER_Q2004 to Q2007); the three Capture-only guards at lines 59, 63 and 66
+    are widened for Replay. It also takes -Item and -Run and writes its evidence under
+    run/cp/<item>/<run>/; without -Run it makes a run id from the time. With -StopAfterQuest
+    the journey test picks its own shorter deadline
+    (SimT/SimulationNaturalIshalgenJourneyTests.cs:51-52), and Replay does not change that.
+    Invoke-NaturalJourney's cleared list (lines 88-92) gains NA_HELP_ITEMS,
+    AION_BOT_DASHBOARD_PORT and AION_SIM_PROCESS_KEY, which run-natural-complete.ps1:17-21
+    already clears. With NA_HELP_ITEMS cleared the help supply is on, as the Standing rules
+    want it for every line. The fake Docker of the script test reaches only
+    sim-snapshot.ps1's own Invoke-Docker (its -Docker parameter); a fresh schema is made by
+    a child pwsh running new-sim-db.ps1, which calls the real docker and has no -Docker
+    parameter. So new-sim-db.ps1 gains a -Docker parameter that sim-snapshot.ps1 passes
+    through (or the test defines a pwsh function that stands in for it), so that the
+    fresh-schema Replay runs against the fake Docker.
+  - Proof: pwsh -NoProfile -File scripts/sim/test-sim-snapshot.ps1 with new cases against
+    the fake Docker and a fake dotnet, for both Replay forms, the fresh schema (scopes p, m
+    and b use it) and -From (Restore-Snapshot): Replay writes no snapshot directory, writes
+    its evidence under run/cp/<item>/<run>/, drops the schema on success and on failure, and
+    a historical Restore prints exactly what it prints today.
+- [ ] **CP-04 - The neutral gate script.** Depends: CP-02, CP-03
+  - Work: Add scripts/sim/run-neutral-gate.ps1 -Set <names> [-Record] [-Item <id>] [-Run
+    <id>]: build once, run each scope through Replay with --no-build, compare each trace
+    with its baseline, print one verdict and write verdict.json under run/cp/<item>/<run>/;
+    a passing candidate trace is deleted. The scope table at the top of the script is data.
+    It holds the seven Priest and Cleric scopes, set all (which includes p), and from the
+    start the five class scopes mage, warrior, artist, engineer and scout. A class scope is
+    off until its row stands in the baseline file, so recording one later changes no script
+    and its commit is evidence only. -Record refuses to start with uncommitted changes under
+    src, tests, game-server and parity-artifacts. It then plays each named scope twice
+    itself, compares the two passes, and writes e2e/natural-neutral-baseline.json once, at
+    the end, because that file is under parity-artifacts and an earlier write would make the
+    next pass refuse. It copies the recorded traces to run/cp/baseline/<sha>/ and to the
+    second copy in ../BeyondAionSharp-cp-baseline/<sha>/. The gate pins NA_HELP_ITEMS
+    (unset, for every line: help items are on), AION_BOT_DASHBOARD_PORT and
+    AION_SIM_PROCESS_KEY and writes them beside each baseline. Add both script tests
+    (scripts/sim/test-sim-snapshot.ps1 and scripts/sim/trace/test_compare_traces.py) to the
+    list in CLAUDE.md.
+  - Proof: pwsh -NoProfile -File scripts/sim/test-sim-snapshot.ps1 with gate cases against
+    the fake Docker and a fake dotnet: the gate's verdict is pass, fail and
+    refused-dirty-record in three fixture cases; -Record writes the baseline file once after
+    two identical passes and not at all after two different ones; and a class scope with no
+    baseline row is refused by name.
+- [ ] **CP-05 - The level 1-9 help kit: manifest and allowlist.** Depends: CP-00
+  - Work: The operator approved help items for every class line on 2026-10-07 (Standing
+    rules, CP-Q12). This item writes down what the kit is; nothing supplies or uses it
+    before CP-06. Read first: Sc/NaturalHelpItemAllowlist.cs and
+    Sc/NaturalHelpItemPolicy.cs; the supply and use sites in J (TopUpHelpItemsAsync, the
+    SupplyHelpItemAsync hook, the NaturalHelpTrigger sites and the IsCleric tests beside
+    them); OD-13 and Appendix D and D.2 of docs/natural-ascension-altgard.md (lines 179 and
+    2773-2879); and the item and skill data. Java first for the gate: a consumable is
+    refused by its restrict row, not by its item level
+    (JAVA/src/com/aionemu/gameserver/restrictions/PlayerRestrictions.java:327-336). The
+    note "Every line" under Per-class notes holds what was read on 2026-10-07; check each
+    line of it against the files before leaning on it. Then:
+    (1) Write the manifest into that note as a table. Per level band (levels 1-9 are one
+    band unless the data gives a reason to split it): the item, what it is for, when it is
+    used, and how many are kept (top up to N when fewer than M are owned). It holds the
+    best life potion a level 1-9 character may use by its restrict row, the shield scroll,
+    the Greater Running Scroll 164000076, the scroll for the shared speed slot, the mana
+    potion, and every other consumable a starter owns, each marked used or left out with
+    its reason. The defaults of that note apply where the operator's words leave room.
+    (2) Settle the event-scroll finding of that note in the unit test and write the result
+    into the doc.
+    (3) Extend the allowlist to levels 1-9 for every class line. The list is keyed by item
+    and level, not class, so one set of rows serves every line; which owned scroll a class
+    puts in the shared speed slot is its profile's choice. The level 1-9 rows go in a table
+    of their own beside NaturalHelpItemAllowlist.Approved, and the supply plan and
+    RequireApproved read both (Sc/NaturalHelpItemAllowlist.cs:78-84, 93-113). Approved
+    itself holds the Cleric's bands from level 10 on and is not edited.
+    (4) If a family of the level 1-9 kit is missing from the Cleric's bands from level 10
+    on, or weaker there, write that into the "Not blocking" list of the Blocked section, as
+    a finding for the operator. It blocks no item. Do not change the Cleric's bands or the
+    Cleric legs.
+    tools/Aion.LiveBots reads the allowlist (LiveNaturalHelpItemSupplier.cs) and must still
+    build; LIVE itself stays out of scope.
+  - Proof: Unit test UT/NaturalStarterHelpKitTests: it reads the manifest table from this
+    file and requires every supplied row to equal a level 1-9 row of the allowlist (id,
+    band, N and M) and the shipped data (the item exists; its item level, use skill, skill
+    level, use-delay group and delay match; its restrict row lets all six starter classes
+    use it at the band's first level); nothing else is approved below level 10; the potion
+    row is the life potion with the largest heal among those a level-1 character may use;
+    the running row is 164000076; and the event scrolls' speed is computed from the item's
+    skill level and the skill's delta. The three existing help-item test files
+    (UT/NaturalHelpItemAllowlistTests.cs, UT/NaturalHelpItemPolicyTests.cs and
+    UT/NaturalHelpItemSupplyTests.cs) run in the bundle. Two of their assertions state the
+    old default, nothing below level 10, which the operator replaced on 2026-10-07.
+    UT/NaturalHelpItemSupplyTests.cs:22 (the plan at level 9 is empty) is the one expected
+    value this item changes, to the level 1-9 kit. UT/NaturalHelpItemPolicyTests.cs:51 (no
+    shield scroll is picked at level 9) is changed by CP-06. No other expected value is
+    edited, and every assertion about level 10 and above stays.
+- [ ] **CP-06 - The Priest plays levels 1-9 with the kit.** Depends: CP-03, CP-05
+  - Work: This item changes the accepted Priest line's levels 1-9 on purpose (the operator,
+    2026-10-07: "even change the priest defaults!"). It is not a refactor. Open the gates
+    the "Every line" note lists, for the Priest at levels 1-9:
+    (1) Supply. The Cleric test in TopUpHelpItemsAsync (J:1505) lets the Priest through,
+    and the Ishalgen decision loop (from J:724) gains the stock checks the later legs have:
+    at run start, after each level-up, at a vendor visit and at a checkpoint.
+    (2) Use in a fight. The shield scroll and the mana potion are offered to the Priest too
+    (J:9130, 9132). The static NaturalPriestCombatPolicy already orders both
+    (Sc/NaturalPriestCombatPolicy.cs:234, 289-290) and is not edited.
+    (3) Use out of a fight. The scroll part of BuffOurselfAsync (J:9596) runs for the
+    Priest, and the Ishalgen walks send the TravelLeg trigger, so the Running scroll is used
+    before a long leg.
+    (4) Tier rules. At levels 1-9 the help policy picks what the manifest lists, by the
+    restrict gate. From level 10 on its picks stay as they are
+    (Sc/NaturalHelpItemPolicy.cs:85, 102, 136).
+    (5) The potion. SelectOwnedPotion, TotalHealingCount and HealingSkillIds
+    (Sc/NaturalIshalgenPotionPolicy.cs:20, 29-41) learn the manifest's potion, ahead of the
+    tiers they know.
+    (6) Keep. The Priest's keep-or-sell rule holds three supplies today and marks any other
+    sellable consumable "unneeded-or-unusable" (Sc/NaturalIshalgenInventoryPolicy.cs:70,
+    198-200). Add the manifest's items to what it holds, or the first vendor visit sells
+    the kit. The starter's 20 bandages stay unprotected.
+    The Cleric's supply, bands and picks from level 10 on do not change: in the three
+    existing help-item test files this item changes one expected value,
+    UT/NaturalHelpItemPolicyTests.cs:51 (at level 9 the shield scroll is now picked), and
+    every assertion about level 10 and above stays. The new Ishalgen stock checks of (1) run
+    only below level 10: a Cleric who returns to Ishalgen after an early ceremony is
+    supplied as today. The LIVE Priest gets the same level 1-9 changes, because the code is
+    shared; no LIVE run is made in this plan. What is left of the kit at
+    level 10 is owned stock and runs out (hazard 27). Every supplied item is written to
+    help-items.json, as today. No snapshot is recaptured, and `munin` stays as it is. Rule
+    (e) applies: two attempts at most, then Blocked.
+  - Proof: One contained run under run/cp/CP-06/<run-id>: sim-snapshot.ps1 -Action Replay
+    -Item CP-06 of scope m (a fresh Priest, bridge off, seed 1, to the Munin stop). The run
+    passes; help-items.json lists every supplied row of the manifest; and the trace shows
+    the kit's life potion drunk, the shield scroll used and the Running scroll used, each
+    at least once by a Priest below level 10. If the Priest's HP never falls to the shield
+    scroll's threshold, the lowest HP seen is reported and the item is not ticked.
+- [ ] **CP-07 - Bind at each Ishalgen quest hub.** Depends: CP-03, CP-06
+  - Work: This item too changes the accepted Priest line's levels 1-9 on purpose (the
+    operator, 2026-10-07: "We should have been binding in Ishalgen the whole time, at each
+    quest hub (the village and the outpost), and soul heal as discussed."). It depends on
+    CP-06 so that the two changes are proven one at a time. Java first: the bind and its
+    price (JAVA/data/handlers/ai/ResurrectAI.java:44-107;
+    JAVA/src/com/aionemu/gameserver/model/templates/BindPointTemplate.java:21-34) and where
+    a revive goes
+    (JAVA/src/com/aionemu/gameserver/services/teleport/TeleportService.java:362-383).
+    What exists today: BindAtAldelleIfNeededAsync (J:4877-4893) binds at the village
+    obelisk 700063. Its one caller is AcceptAllAtCurrentHubAsync (J:7824-7828), which is
+    called at J:756 and J:813, and both calls run only with NI07_OPTIMIZE_HUBS set. No
+    runner sets it, so the accepted route never binds in Ishalgen. The outpost bind does
+    not exist yet.
+    To do: for every line, bind at the village obelisk 700063 on the bot's first arrival at
+    the village for work, and at the outpost obelisk 700064 when the work moves there. The
+    outpost bind serves the two hubs the bot's table calls mijou and anturoon. Each bind is
+    made once: a later visit to the village does not move the bind back. Do it from the
+    Ishalgen decision loop with one helper for both obelisks, built from
+    BindAtAldelleIfNeededAsync. Do not turn on the rest of the hub optimizer: no hub pickup
+    order, no safe work groups, no hub flight. The pure lookups
+    NaturalIshalgenHubPolicy.At and ForQuest may be used to tell where the work is. The fee
+    is read from the bind point data: 43 Kinah at the village and 134 at the outpost
+    (bind_points/bind_points.xml:22-23), 177 in all. A bind is skipped only when the purse
+    does not cover the fee, as the helper does today, and the skip is traced. Add 700064
+    and the Soul Healers 203512 and 203680 to the navigation graph's NPC list (J:311-320)
+    if the walk to them needs it. Routing is part of this item's work, not a rule (e) fix.
+    The sites listed in the "Every line" note assume a revive or a Return at the first spawn
+    point. Once bound, each of them skips the eastern-road walk when the revive or the
+    Return landed at the outpost bind, and keeps it when it landed at the spawn point or at
+    the village; the Return helper's 30 m requirement (J:6304-6305) is met or the fallback
+    is not cast beside the bound obelisk. If these edits do not fit one iteration with the
+    bind, do the village bind here and write the outpost bind with its routing as lettered
+    item CP-07a. The death rule is not edited: after a death it now revives the bot at the
+    working hub and soul heals at the Soul Healer beside that
+    obelisk (Linevir 203512 at the village, Rusalka 203680 at the outpost). Read Q2129's
+    Return branch (J:7990-8004), which a bind in Ishalgen makes reachable, and write into
+    the doc whether it ran. Write into the doc both fees as paid, the Kinah left at Munin,
+    and, if the Priest died, where it revived and whether the soul heal ran; a run with no
+    death leaves that unshown, and the doc says so. Rule (e) applies.
+  - Proof: One contained run under run/cp/CP-07/<run-id>: sim-snapshot.ps1 -Action Replay
+    -Item CP-07 of scope m (a fresh Priest, bridge off, seed 1). Both binds are observed in
+    the trace, the village's with its fee of 43 Kinah and the outpost's with 134, each
+    followed by a client-observed bind point within 20 m of its obelisk, and the run
+    reaches the Munin stop.
+- [ ] **CP-08 - Record baselines p and c, twice.** Depends: CP-04, CP-07
+  - Work: No file under src or tests changes. CP-05, CP-06 and CP-07 are ticked, so these
+    baselines hold the Priest's new levels 1-9: the help kit and both Ishalgen binds. They
+    are recorded once, and rule (j) keeps them. On a clean tree, with nothing else using the
+    build outputs, run run-neutral-gate.ps1 -Set p+c -Record -Item CP-08: it plays p and c
+    twice each into run/cp/baseline/<sha>/ and keeps the second copy outside the repo, in
+    ../BeyondAionSharp-cp-baseline/<sha>/. Commit e2e/natural-neutral-baseline.json: scope,
+    pinned environment, snapshot, commit, record count, SHA-256 of the normalized trace and
+    the --counts row. If two passes of a scope differ, narrow the ignore list once; if they
+    still differ, stop the loop and report. A decision-projection comparer is a weaker proof
+    and becomes a lettered item under this one only after the operator is told.
+  - Proof: The record run: for p and for c, pass one and pass two are identical after
+    normalization (run/cp/CP-08/<run-id>/verdict.json).
+- [ ] **CP-09 - Record baselines m, b, l1, hm and ax, twice.** Depends: CP-07, CP-08
+  - Work: The same procedure for m, b, l1 (from altgard with -LaterCapital, as altgard-rc-l1
+    was captured), hm and ax, in one -Record run with -Item CP-09. Scopes m and b start from
+    a fresh Priest, so they hold the new levels 1-9 of CP-06 and CP-07; l1, hm and ax start
+    from Cleric snapshots and hold none of it. Scopes p and b are the first runs of CP-06
+    and CP-07 in the early-Ascension order, where the level-10 Cleric finishes Ishalgen with
+    the binds. If p or b fails at a bind, a hub revive, a Return or a kit step, it is not
+    dropped: the fault becomes a lettered item under CP-06 or CP-07. Any other scope that
+    does not pass or does not repeat at HEAD is written under Blocked and left out of every
+    set; nothing is fixed here. If m is lost, stop the loop and report, because the Ishalgen
+    items need it. From the counts rows, write into the doc which scope reaches which code
+    (deaths, retreats, sits, vendor buys, patrol waits, emergency decisions), so every later
+    item names a scope that runs what it moves. Where the counts show that a later item's
+    named scope does not run the code that item moves, edit that item's Proof line to a
+    scope that does, and log the edit in the Progress log. This check matters more than it
+    did: with the kit the Priest may die, retreat and rest much less than in the older
+    traces (hazard 4). The fallbacks already written into the Proof lines (for a dropped b,
+    hm or ax) need no edit.
+  - Proof: The record run: every scope kept is identical across its two passes
+    (run/cp/CP-09/<run-id>/verdict.json).
+- [ ] **CP-10 - A status-5 stop writes its receipt: the Priest stopped at Q2132.** Depends:
+  CP-09
+  - Work: No code change is expected. Stop boundaries with status 5 have never been used
+    (hazard 18), and every class checkpoint and class scope leans on one. Run
+    sim-snapshot.ps1 -Action Replay -StopAt 2132:5:0 -Item CP-10 on the default line,
+    priest-cleric (seed 1, bridge off, a fresh character, the 45-minute deadline). A
+    completed quest reads as status 5 with var 0 (J:553;
+    src/Aion.GameServer/Services/QuestService.cs:86-87), so the stop should fire once Q2132
+    is turned in, and the stop writes resume-receipt.json (J:875-891). If the boundary does
+    not fire, the cause is found and fixed here, before any class run leans on it. The fix
+    is one small change to the stop check; no baseline run sets NI08_STOP_AT, so gate p+m is
+    then run once as a guard and must stay identical. Two attempts at most, then Blocked.
+    This stop has no fallback: -StopAfterQuest exists only for Q2004 to Q2007 (J:141-142).
+  - Proof: One contained run under run/cp/CP-10/<run-id>: resume-receipt.json is written,
+    and its checkpoint holds 2132 in CompletedQuestIds.
+
+### B. The class seam, with the Priest and Cleric moved onto it unchanged
+
+- [ ] **CP-11 - Pin the Priest and Cleric numbers before any code moves.** Depends: CP-00,
+  CP-06, CP-07
+  - Work: It waits for CP-06 and CP-07, so it pins the numbers as those two items left
+    them. Add UT/NaturalClassSeamPinTests with a table of every number the seam will carry,
+    each with its source line. The lines quoted below are those of commit b45b72a43; CP-05,
+    CP-06 and CP-07 have edited the journey since, so the test records the lines it finds.
+    A row is in one of two states. Asserted now: a public constant or a default parameter
+    value, which the test can read today. Pending: a private constant or a literal inside a
+    method, which a test cannot read. A pending row lists the expected value and the id of
+    the one CP item that moves the number behind the profile, its owner. The owner turns the
+    row on by pointing it at the profile member, and it may not edit the expected value. No
+    pending row is made without an owner, and a number that no item of this list moves gets
+    no pending row. Where an owner moves a number whose row already asserts, it adds the
+    profile-side check to that row.
+    Rows asserted now, each with the item that adds its profile side: swarm 3 and heal 55/70
+    (Sc/NaturalPriestCombatPolicy.cs:92-110; they stay inside the static policy behind the
+    adapter, so no item moves them); emergency 35/45 (the same lines; CP-16); melee reach 3
+    (the same lines; CP-18); pull 22 (Nav/NaturalPullPlanner.cs:35; CP-18); the 23 of
+    NaturalFightThrough.FiringRange (Nav/NaturalFightThrough.cs:24; CP-18); the standoff's
+    three defaults 25, 3 and 1 (Nav/NaturalCombatStandoff.cs:23; CP-18); restock 5 and 12
+    (Sc/NaturalIshalgenPotionPolicy.cs:18-19; CP-24); and
+    NaturalMauPolicyParameters.Baseline (no item moves it). Pending rows, each with its
+    owner: rest heal below 90 (J:9695), sit below 50 until 80 (J:9650-9651) and 12 quiet
+    sits (J:9721), owner CP-17; the 20 of the router's private RangedRadius
+    (Nav/NavMesh/BotNavMeshRouter.cs:30) and of the grid fallback's arrivalRadius
+    (Nav/BotNavigationGeometry.cs:217), the journey's 23 m and 30 m literals
+    (J:5217-5274, 5976) and the readiness thresholds of the shared helpers (J:5457-5458,
+    5631, 8232-8233, 8269-8277), owner CP-18; the fight loop's 25 m route threshold (J:9284)
+    and its 10 m close-in (J:10040-10041), owner CP-19; the campaign's 22, 23 and 25 m
+    literals (J:6433-6510, 6794, 6896-6913, 7093, 7127) and its readiness thresholds
+    (J:6238, 7268, 7287, 7393, 7608-7610), owner CP-21. The 20 m rows stay because the code
+    holds those two literals. There is no 21 m row: a search of tests/Aion.Bots on
+    2026-10-06 found no stored 21, and the standoff's 21 m is derived from its three
+    defaults (25 - 3 - 1). The later-leg sites that CP-18 leaves alone get no row. Rows for
+    what CP-06 set, so the seam cannot lose it: asserted now, the help policy's public
+    numbers (the 20 s refresh window, the 150 m long leg and the shield scroll at 50% HP,
+    Sc/NaturalHelpItemPolicy.cs:44-46; no item moves them); pending, owner CP-16, the four
+    help-item gates as CP-06 left them (the supply, the shield scroll, the mana potion and
+    the scroll upkeep: on for the Priest at levels 1-9 and for the Cleric).
+  - Proof: Unit test UT/NaturalClassSeamPinTests: green on the bot code as CP-07 left it,
+    with the pending rows printed by name, each with its owner.
+- [ ] **CP-12 - Golden gear test, committed on unchanged code.** Depends: CP-09, CP-11
+  - Work: Write UT/NaturalGearGoldenTests and its golden file from the present code and
+    commit nothing else: for the Priest at levels 1-9 and the Cleric at 9-26, ChooseReward
+    for every quest with a selectable list; Decide over a fixed inventory of every reward
+    item plus every item id carried in the baseline traces of m, c and ax, the help kit's
+    items among them; and NaturalGearPolicy.SelectUpgrades through
+    NaturalInventoryCheck.Describe. It sits here, before the first refactor item that edits
+    bot code, so that the golden file is the behavior the baselines recorded.
+  - Proof: Unit test UT/NaturalGearGoldenTests: green in a commit that holds only the test
+    and its golden file.
+- [ ] **CP-13 - Lift the combat and navigator classes into their own files (pure move).**
+  Depends: CP-08, CP-11
+  - Work: Make NaturalIshalgenJourney partial (J:19). Cut NaturalJourneyNavigator
+    (J:8496-8852) into Sc/NaturalIshalgenJourney.Navigator.cs and NaturalJourneyCombat
+    (J:8853-10115) into Sc/NaturalIshalgenJourney.Combat.cs, still private nested classes,
+    so the exception at J:29 and the statics Distance, ItemCount and
+    PriorityForEngagedTarget (J:10249-10305) need no accessibility change. No rename, no
+    reordering, no fix. NaturalIshalgenJourney.cs keeps its path.
+  - Proof: Neutral gate, set p+c: both traces are identical to their CP-08 baselines.
+- [ ] **CP-14 - Seam types, with the Priest and the Cleric as the first two profiles.**
+  Depends: CP-11
+  - Work: Add, all public: Sc/Classes/NaturalClassLine.cs (the record, the table of lines
+    with priest-cleric as its first and default entry, Parse of CP_CLASS, which refuses an
+    id the table does not hold; each later profile item adds its line to this table),
+    NaturalClassProfile.cs with NaturalClassProfiles.For(observed class id, line)
+    (unobserved gives the line's starter; a class outside the line throws),
+    INaturalCombatPolicy.cs (Decide and CandidateActions, both taking the run's
+    NaturalMauPolicyParameters, and PolicyVersion) and NaturalPriestProfile.cs: the Priest
+    and Cleric profiles built from NaturalPriestSkills.All, NaturalClericSkills.All and
+    Excluded, with an adapter that calls the static NaturalPriestCombatPolicy unchanged.
+    Nothing calls the new types and no existing file changes.
+  - Proof: Unit test UT/NaturalClassProfileTests: the 576-state sweep of
+    UT/NaturalClericCombatPolicyTests.cs:355-376 through both adapters returns the same
+    action, skill, reason and checks from Decide and the same candidate list from
+    CandidateActions as the static policy; For gives the Priest profile for PRIEST and for
+    unobserved, the Cleric profile for CLERIC, and throws for the other fifteen class ids.
+- [ ] **CP-15 - Thread the line and the profile through the host and the fight loop.**
+  Depends: CP-13, CP-14
+  - Work: Add NaturalJourneyOptions.ClassLine as the last optional parameter
+    (Sc/NaturalJourneyRuntime.cs:85-91); the journey passes it to the combat constructor at
+    its four sites (J:107, 373, 2382, 4550); the session interface is not touched. The SIM
+    session's own relog check still classifies with the Priest line after this item
+    (SimT/SimulationFastScenarioTests.cs:1300); CP-27 makes it line-aware.
+    SimT/SimulationNaturalIshalgenJourneyTests.cs reads CP_CLASS and takes account, name,
+    created class, the resume name check, the class assertion and the creation step label
+    from the line (lines 44, 55, 111, 118, 124, 129, 136); the default line gives the same
+    bytes. In the combat class add ClassProfile, re-read from the observed class on every
+    use; Catalog (J:8947), the Decide and CandidateActions calls (J:9152-9155) and the
+    policyVersion fields (J:9165, 5689) go through it. The equipment fallback (J:423-426)
+    uses the line's starter. The natural-run-context record gains the line id only when it
+    is not the default. Add CP_CLASS to the cleared-variable lists in
+    sim-snapshot.ps1:88-92, run-natural-complete.ps1:17-25 and run-natural-resume.ps1:17-32.
+  - Proof: Neutral gate, set p+c. Set p alone stops right after the ceremony and holds no
+    Cleric fight, so it cannot show the Cleric catalog still resolves.
+- [ ] **CP-16 - Sustain, upkeep, help-item and patrol reads from the profile.** Depends:
+  CP-09, CP-15
+  - Work: Replace class tests and direct table reads in the fight-loop inputs with profile
+    members that return today's values: emergency enter and exit (J:9123-9124), shield
+    scroll (J:9130), mana potion (J:9132), the blessing and rejuvenation ids (J:9064-9065,
+    9125, 9148), the patrol readiness record (J:5783, 5790), the scroll part of
+    BuffOurselfAsync (J:9596), the help-item supply gate (J:1505), the patrol rule choice
+    (J:5636-5637, 5797; traced field names stay) and conservativeRangedHold as a pull rule
+    that options.OptimizeHubs still decides for the Priest line. MaintainBuffsAsync
+    (J:9543-9563) walks the profile's upkeep list; the Priest's list has one entry and
+    traces the same bytes. CP-06 opened four of these sites to the Priest: the supply gate,
+    the shield scroll, the mana potion and the scroll part of BuffOurselfAsync. The profile
+    members return what CP-06 left, on for the Priest at levels 1-9 and for the Cleric, and
+    the profile names its help kit by level band from the allowlist. A profile outside the
+    Priest line gets the Priest's patrol baseline unless question 14 says otherwise. The
+    scroll for the shared speed slot becomes an input of NaturalHelpItemPolicy.DecideBuffs
+    (Sc/NaturalHelpItemPolicy.cs:84-98), with today's family as its default, so the Priest
+    and Cleric stay neutral and the existing assertion that Blitzopan is never used
+    (UT/NaturalHelpItemPolicyTests.cs:176) stays true for them; add a unit row for a profile
+    that names the attack-speed scroll. Turn on the matching pin rows (emergency 35/45 and
+    the four help-item gates).
+  - Proof: Neutral gate, set m+c. Set m holds the emergency decisions and rest relocations
+    that set p lacks.
+- [ ] **CP-17 - Between-fight recovery as a rest plan.** Depends: CP-16
+  - Work: Extract the decisions of RestAsync (J:9634-9760) into a pure
+    NaturalRestRules.Decide(observation) on the profile that returns powder, cast-heal,
+    sit-for-mana, done or blocked, with a state-sweep unit test written against J:9650-9651,
+    9695 and 9721. The executor stays in the core: casting, NaturalRestCadence, defending
+    during a rest, revive, BuffOurselfAsync(AfterRest) and the MaintainInventoryAsync hook.
+    The Priest and Cleric plan is today's rule exactly, with the same two exception texts.
+    Turn on the matching pin rows (rest heal below 90, sit below 50 until 80, 12 quiet
+    sits).
+  - Proof: Neutral gate, set m+c.
+- [ ] **CP-18 - Engage ranges and readiness thresholds in the shared helpers.** Depends:
+  CP-17
+  - Work: Give the profile named distances and named thresholds and have the shared helpers
+    ask it: the NaturalPullPlanner.SpellRange uses at J:5510, 5956 and 8099, the 23 m and 30
+    m literals at J:5217-5274 and 5976 (the label priest-spell-range-target keeps its
+    bytes), the pull distance at J:5655-5674 (the Priest line still passes
+    mauPolicy.PullDistanceMeters), and the thresholds at J:5457-5458, 5631, 8232-8233 and
+    8269-8277. None of the three navigation helpers can be passed a range from the journey
+    today. So add an optional range parameter, defaulting to today's number, to
+    NaturalFightThrough.SelectNext (23, today the public constant FiringRange,
+    Nav/NaturalFightThrough.cs:24), NaturalCombatStandoff.NextSegment (25, forwarded to
+    Select, Nav/NaturalCombatStandoff.cs:11-23) and
+    BotNavigationGeometry.FindRangedApproachPath (20, forwarded to the router and to the
+    grid fallback's arrivalRadius, Nav/BotNavigationGeometry.cs:137-140, 214-217); the
+    journey passes the profile's values. These are public signatures, so each addition must
+    be optional. Move MeleeReach to shared combat geometry and keep the old constant as an
+    alias. Every site keeps its present number; 20, 22, 23, 25 and 30 are not folded
+    together, and the standoff's 21 m is derived (25 - 3 - 1), not stored, so its three
+    inputs keep their values. Later-leg sites are left alone, among them J:1947-1956 (the
+    Q2947 arena), 2457, 2894, 3058, 3073, 3391, 3755 and 4192. Turn on the matching pin rows
+    (the two 20 m literals, the journey's 23 m and 30 m literals, the shared helpers'
+    readiness thresholds, and the profile side of melee reach 3, pull 22, the 23 of
+    FiringRange and the standoff's 25, 3 and 1).
+  - Proof: Neutral gate, set m+c+hm. Scope hm is the only one that reaches the
+    fight-at-the-target block of PullAndKillAsync (J:8200-8244), where this item changes the
+    MeleeReach read (J:8206) and the thresholds at J:8232-8233. If CP-09 dropped hm, set
+    m+c, and the doc says that this block then rests on the pin test only.
+- [ ] **CP-19 - Movement inside a fight, by pull style.** Depends: CP-18
+  - Work: Add a pure helper the fight loop asks, with a unit test: where an approach stops
+    (today a ranged route beyond 25 m, then ApproachNpcAsync up to the target, J:9283-9304),
+    what counts as adjacent (J:9121-9122), how far to close in after NOT_ENOUGH_DISTANCE
+    (today melee reach minus 1 for a skill with range 3 or less, else 10 m, J:10040-10041),
+    and the answer to STR_SKILL_OBSTACLE (today close to melee, J:10046-10060). The Priest
+    and Cleric profile returns today's numbers. A ranged style will stop at its hold
+    distance and look for another sight line; a walk-in style will close to weapon reach;
+    neither is used yet. This item also gives the profile its pull style (stand-off,
+    weapon-range stand-off or walk-in), which CP-36 and CP-40 read. Turn on the matching pin
+    rows (the 25 m route threshold and the 10 m close-in).
+  - Proof: Neutral gate, set m+c.
+- [ ] **CP-20 - Q2132, the trainer and class names from the line.** Depends: CP-01, CP-19
+  - Work: Q2132 (J:6689-6697) takes its var, trainer and step label from the class-line
+    contract (Priest: var 4, npc 203530, the same label bytes). The navigation graph NPC
+    list (J:311-320) adds the line's trainer. Step and message strings on the 1-9 path that
+    name the class take the name from the line, byte-identical for the Priest; the parsed
+    trace keys pull-plan and defend-before-pull are not renamed.
+  - Proof: Neutral gate, set m.
+- [ ] **CP-21 - Campaign ranges and readiness thresholds from the profile.** Depends: CP-20
+  - Work: The Ishalgen campaign's range literals (the Q2002 Sprigg hunt at 22 and 25 m,
+    J:6433-6510; Q2004 and Q2005 at 23 and 25 m, J:6794, 6896-6913, 7093, 7127) and its
+    readiness thresholds (J:6238, 7268, 7287, 7393, 7608-7610) become named profile values
+    with today's numbers. No executor is restructured: the Sprigg hunt and Q2005's
+    firing-edge search keep their shape. Turn on the matching pin rows (the campaign's 22,
+    23 and 25 m literals and its readiness thresholds).
+  - Proof: Neutral gate, set m.
+- [ ] **CP-22 - Gear, keep-or-sell and reward scores behind one set of gear rules.**
+  Depends: CP-12, CP-14
+  - Work: Load the whole restrict row into NaturalItem and replace IsPriestGear and
+    IsClericGear, the two Decide branches, GearScore and ClericGearScore,
+    AutoLearnedPriestSkillsObserved and the two supply sets, the Priest's as CP-06 widened
+    it (Sc/NaturalIshalgenInventoryPolicy.cs:17-55, 70, 132-136, 167-265) and the staff-rule
+    test (Sc/NaturalGearPolicy.cs:61-78) with one path that takes NaturalGearRules. Existing
+    public members stay as wrappers; the Priest and Cleric rules keep both score formulas,
+    the staff rule and the expected masteries as they are. They also keep the reward choice
+    as it is: ChooseReward is class-blind today and scores every choice by the Priest's
+    UsableAt and GearScore, then price, for the Cleric too
+    (Sc/NaturalIshalgenInventoryPolicy.cs:246-261). The golden test stays green in the unit
+    run.
+  - Proof: Neutral gate, set m+b+c+ax. Scope b is the only one that sells by the gear rules
+    (the Altgard shop stop, whose Decide call is J:4667) and it also buys potions; ax holds
+    the coin-armor purchases and the staff rule. CP-09 records b, and CP-12 already depends
+    on CP-09. If CP-09 dropped b, set m+c+ax: the sell decisions then rest on the golden
+    test only, and the doc says so. If CP-09 dropped ax, the set goes without it: the
+    coin-armor purchases and the staff rule then rest on the golden test only, and the doc
+    says so.
+- [ ] **CP-23 - The journey's reward, sell and equip sites use the observed class's gear
+  rules.** Depends: CP-15, CP-22
+  - Work: Decide(world) resolves the rules from the observed class in place of
+    IsCleric(world) (Sc/NaturalIshalgenInventoryPolicy.cs:167-173), so its callers do not
+    change: six in J (477-479, 1743-1744, 2499-2500, 3108-3109, 4508-4509, 4667), and
+    Sc/NaturalCoinGearSteps.cs:59, two LiveBots scenarios and one SIM test; J:2801-2803
+    hands the policy itself to NaturalCoinGearSteps. ChooseReward takes a reward rule as an
+    input at its seven call sites (J:6322, 6388, 6618, 7358, 7481, 7660, 8026). For the
+    Priest and for the Cleric that rule is today's class-blind one: the Priest's UsableAt
+    and GearScore, then price, with the ceremony pick as a contract pin
+    (Sc/NaturalIshalgenInventoryPolicy.cs:246-261). J:8026 also runs for the Cleric on the
+    Altgard legs, so giving the Cleric its own rules there would change accepted picks. Only
+    lines outside priest-cleric get a reward rule from their own gear rules.
+    EquipUpgradesAsync (J:415-441) describes gear with the same rules. For lines other than
+    priest-cleric, and if question 13 is answered yes, the equipment check also runs after
+    each completed Ishalgen quest at the one dispatch point (J:816-853); the Priest line
+    keeps its present check points.
+  - Proof: Neutral gate, set m+b+c+ax. Scope b is the only one that sells by the gear rules
+    (the Altgard shop stop, whose Decide call is J:4667) and it also buys potions; ax holds
+    the coin-armor purchases and the staff rule. CP-09 records b. If CP-09 dropped b, set
+    m+c+ax: the sell decisions then rest on the golden test only, and the doc says so. If
+    CP-09 dropped ax, the set goes without it: the coin-armor purchases and the staff rule
+    then rest on the golden test only, and the doc says so.
+- [ ] **CP-24 - Restock table per profile: potions only.** Depends: CP-09, CP-15
+  - Work: Data first: both Ishalgen restock vendors carry trade lists 264 and 721
+    (npc_trade_list.xml:375-378, 2209-2212). List 721 holds the Minor Life Elixir the Priest
+    buys today. List 264 is the one that sells bandages
+    (goodslists/goodslists.xml:16765-16769), and it is not opened: the operator ruled
+    bandages out on 2026-10-07 (CP-Q11). Add pure NaturalRestockRules: per profile a table
+    of item, threshold, target and trade list, plus a Kinah floor. The Priest line's table
+    is today's rule (Minor Life Elixir 162000052, at 5 or fewer up to 12, list 721, no
+    floor; Sc/NaturalIshalgenPotionPolicy.cs:18-19, 50-57). MaintainInventoryAsync
+    (J:464-552) asks the rules what to buy and still opens list 721 only. It runs at the
+    end of every completed rest (J:9717-9718), so the Priest runs this code in every scope
+    with a rest, and the proof is a gate. Write UT/NaturalRestockRulesTests as part of the
+    work; it runs in the bundle: the Priest table reproduces NeedsRestock and
+    AffordablePurchaseCount over a grid of stock and Kinah, a table with a floor never
+    spends below it, and no table names list 264. This item adds the mechanism and the
+    Priest line's table. Each new class's table (elixirs with CP-Q11's numbers) is written
+    by that class's profile item. With the help kit on, the kit's potion is supplied, so a
+    vendor elixir is bought only when the stock still runs down between two stock checks.
+    Read the Priest's Kinah ledger from the m baseline, which CP-09 records, and write it
+    into the doc as the base for question 11's floor. Turn on the matching pin rows (restock
+    5 and 12).
+  - Proof: Neutral gate, set m: the Priest's restock decisions at every rest are unchanged.
+    No gate scope reaches an Ishalgen vendor buy, so the trade itself is first played in a
+    class journey; the doc says so.
+- [ ] **CP-25 - Identity rules by line, and the Ascension contract by line and by choice.**
+  Depends: CP-01, CP-08, CP-14
+  - Work: This item edits existing bot files, so it waits for the first baselines (CP-08).
+    Add NaturalJourneyIdentityRules.Classify(line, ...)
+    (Sc/NaturalJourneyIdentityRules.cs:33-45): before Ascension the line's starter at level
+    1-9 on maps 220010000, 320010000 and 320020000; after it the line's second class on the
+    bridge maps; the Convent and the leg-scoped maps stay tied to the Cleric. The existing
+    overloads delegate with the Priest line, so every present caller keeps today's result:
+    three call sites in tools/Aion.LiveBots (LiveNaturalIshalgenIdentityScenario.cs:111 and
+    131, LiveNaturalJourneySession.cs:69), Sc/NaturalIshalgenIdentityScenario.cs:141,
+    J:4612, and the five tests that assert a Chanter or Warrior refusal
+    (UT/NaturalJourneyIdentityRulesTests.cs:27-36,
+    NaturalAltgardHaramelContractTests.cs:202, NaturalAbyssEntryContractTests.cs:275,
+    NaturalAltgardLeg11ContractTests.cs:129 and, through the engine,
+    NaturalAscensionDecisionEngineTests.cs:119). Callers made line-aware later: the bridge
+    engine (Sc/NaturalAscensionDecisionEngine.cs:80, CP-26), and the SIM host
+    (SimT/SimulationNaturalIshalgenJourneyTests.cs:122, 135) and the SIM session relog
+    (SimT/SimulationFastScenarioTests.cs:1300), both in CP-27. Add
+    NaturalAscensionContract.ForLine and ForChoice(core, classLines, starter, second class),
+    which build a bridge in memory (class-choice action and page, Q2009 var, ceremony step
+    and pick, dispatch quest and steps, endpoint class, protected items) and expose the four
+    class-dependent steps by role. e2e/natural-ascension-contract.json is not edited and
+    nothing calls the new members yet.
+  - Proof: Unit test UT/NaturalClassLineSeamTests: Classify rows per line, accepted and
+    refused, with a line that has no second class refused after Ascension; ForLine for
+    priest-cleric equals the file-loaded contract record for record; the Chanter and the
+    Templar overlays' action, class id, list name, Q2009 var and dispatch quest are
+    recomputed from quest_data.xml and the handler source.
+- [ ] **CP-26 - The bridge reads the line's contract.** Depends: CP-09, CP-15, CP-25
+  - Work: The runner loads the line's contract once and passes it down: PlayBridgeTalkAsync
+    stops calling LoadDefault (J:4825, 4841-4851) and asserts the line's ceremony item;
+    ImplementedBridgeSteps (J:8477-8481), the engine's step keys and 2904 literals
+    (Sc/NaturalAscensionDecisionEngine.cs:97-154; J:1429-1430, 1446, 4720, 4757-4758) and
+    the ceremony list constant (Sc/NaturalIshalgenInventoryPolicy.cs:72, 121) use the role
+    lookups. The engine's own identity check (Sc/NaturalAscensionDecisionEngine.cs:80-83,
+    with the blocked "identity" stop at 85-89) classifies with the line, or with the
+    contract's second class. It runs on every bridge decision, in the ceremony-only bridge
+    too (J:1397 starts that bridge and J:1061 is its decision call), so without this a
+    Chanter is stopped at the first decision after SETPRO13. The default line keeps the
+    refusal that UT/NaturalAscensionDecisionEngineTests.cs:119 asserts. Add a unit row:
+    under priest-chanter the engine accepts a level-9 Chanter in Ataxiar (map 320020000) at
+    Q2008 REWARD. Reason and step strings stay byte-identical for the Cleric.
+  - Proof: Neutral gate, set p+b+c. If CP-09 dropped b, set p+c: p plays the class choice
+    and the ceremony; the dispatch-quest lookups (the Q2904 steps and literals) are then
+    covered by the CP-25 unit test only, and the doc says so. Scope p returns before the
+    Q2904 block (Sc/NaturalAscensionDecisionEngine.cs:132-135), and c plays none of it.
+- [ ] **CP-27 - Second-class checks by line; the Cleric-only leg gates stay.** Depends:
+  CP-26
+  - Work: The early-ceremony check (J:1398) uses the line's second class. Three SIM identity
+    checks become line-aware, which removes the first hard stops for another starter and for
+    the Chanter: the SIM host's two, on a resumed and on an entered character
+    (SimT/SimulationNaturalIshalgenJourneyTests.cs:122, 135), and the one inside the SIM
+    session, SimulationL0Session.ReloginExistingCharacterAsync
+    (SimT/SimulationFastScenarioTests.cs:1290-1304, the Classify call at 1300-1301). The
+    journey reaches that third check on every relog (J:903, 1370, 1612, 4451, 4630); J:1370
+    is the capital-stage stop, the Chanter's endpoint in CP-33. So SimulationL0Session takes
+    the class line as a constructor argument or a settable property on the concrete type,
+    set by the SIM host where it builds the session
+    (SimT/SimulationNaturalIshalgenJourneyTests.cs:54-56), and its relog check classifies
+    with it; the default line gives today's result. INaturalJourneySession still gains no
+    member. The LIVE session's relog check
+    (tools/Aion.LiveBots/LiveNaturalJourneySession.cs:69) stays on the Priest line. These
+    stay Cleric-only, each with a refusal text that names the class: the end-of-Ishalgen
+    check (J:1006), the returned-Cleric test (Sc/NaturalIshalgenDecisionLoop.cs:83), the
+    capital pass (Sc/NaturalCapitalDecisionEngine.cs:42-45) and J:1601, 2373 and 4540. A
+    line without a second class is refused at the bridge with a clear message. Unit rows: a
+    level-10 Chanter is blocked at the capital pass and at the Ishalgen return with the
+    stated reason.
+  - Proof: Neutral gate, set p+b+c (p+c if b was dropped).
+- [ ] **CP-28 - Snapshot tooling carries the class line.** Depends: CP-03, CP-15
+  - Work: scripts/sim/sim-snapshot.ps1 gains -Class <line id> for Capture and Replay. The
+    script holds the list of the seven line ids of this plan (priest-cleric, priest-chanter,
+    warrior, scout, mage, engineer, artist) and refuses any other. A line the C# table does
+    not hold yet fails later, in NaturalClassLine.Parse, with a message that names it.
+    Capture and Replay set CP_CLASS from it. Help items are on for every line, so no line
+    sets NA_HELP_ITEMS: the runner clears it (CP-03), and the supply is on unless that
+    variable is exactly 0 (Sc/NaturalHelpItemAllowlist.cs:76). A help-items.json is
+    expected evidence for every line. All three metadata writers (lines 303-311, 343-355,
+    420-431) record classLine only when it is not the default. Restore emits CP_CLASS only
+    when the snapshot recorded one, and it never emits NA_HELP_ITEMS. Verify takes its
+    environment from Restore. For a capital snapshot of a line that has no capital leg
+    Restore emits PC_CAPITAL=start in place of first (lines 222-225), so Verify re-checks
+    the endpoint and stops. The forty existing snapshots restore exactly as now.
+    scripts/sim/audit-natural-complete.py is left alone.
+  - Proof: pwsh -NoProfile -File scripts/sim/test-sim-snapshot.ps1 with new cases: a
+    historical restore gains no selector, a recorded line round-trips through Capture and
+    Restore, no Capture, Replay or Restore of any line sets NA_HELP_ITEMS, a Chanter capital
+    snapshot restores with PC_CAPITAL=start, an unknown line is refused.
+
+### C. The Chanter branch at Ascension
+
+- [ ] **CP-29 - Table gear and reward rule, for every class but the Priest and the Cleric.**
+  Depends: CP-01, CP-22
+  - Work: It sits here, before the Chanter items, because the Chanter is its first user:
+    CP-32 ranks the two ceremony weapons with the stat this item defines. Java first:
+    Equipment.java's equip checks (C# twin
+    src/Aion.GameServer/Model/GameObjects/Player/Equipment.cs:45-105, 333-346). Add the
+    table form of NaturalGearRules: wearable weapon groups and armor types read from the
+    class's mastery rows in the class-line contract; restrict column equal to the class id;
+    weapon by the profile's groups and one defined ranking stat (physical: the mean of
+    minimum and maximum damage plus the item's flat physical-attack bonus, per swing;
+    magical: magic boost, then maximum damage); armor by the profile's type order and then
+    item level; one score for equip, keep, sell and reward choice; off hand none. Candidates
+    the class cannot wear are filtered out before the server is asked, so a refused item no
+    longer blocks a wearable one. ChooseReward prefers the class's weapon group and armor
+    type, then the profile's consumable order. At Q2100 the Warrior's pick is a weapon, not
+    the shield (CP-Q10, answered 2026-10-07). The protected supplies are the life potions
+    and the items of the help kit; bandages are not among them. The Priest and the Cleric
+    keep the rules of CP-22 and never use the table form.
+  - Proof: Unit test UT/NaturalClassGearRuleTests: for each of the five new starters'
+    default rules, the pick at the ten class-dependent Ishalgen reward quests (2100, 2002,
+    2134, 2001, 2005, 2006, 2007, 2129, 2117, 2124) is the class's weapon group, armor type
+    or consumable, the Warrior's pick at Q2100 is a weapon, and no wearable item or
+    protected supply is marked sell; and the physical stat as CP-Q7 defines it ranks the
+    two Karmic ceremony weapons (by the default, per swing, the staff's mean of 73 is above
+    the warhammer's 55 plus 7).
+- [ ] **CP-30 - Parameterize the capital scenario by the contract.** Depends: CP-08, CP-25
+  - Work: This item edits an existing scenario file, so it waits for the first baselines
+    (CP-08). Parameterize CapitalAscensionScenario.RunAsmodianAsync by the contract: the
+    dispatch id (literal 2904 at Sc/CapitalAscensionScenario.Asmodian.cs:21), the class
+    check and its message (lines 107-108), the Q2009 var (literal 40 at line 133), the step
+    keys by role, and an optional short endpoint that stops when Doman's SETPRO1 has moved
+    the dispatch quest from var 0 to var 1 (after line 156, before the AIRLINE_SERVICE
+    teleport of the same step). With the default contract and no short endpoint the scenario
+    does what it does today. Fast does not run it: CAPITAL-ASMO is tier Full
+    (parity-artifacts/e2e/scenarios.json:738-740). So the existing scenario, run alone, is
+    this item's proof and not a second run beside one.
+  - Proof: The existing CAPITAL-ASMO scenario still passes. The full command is
+    AION_SIM_DB_INTEGRATION=1 AION_SIM_TIER=Full AION_SIM_SCENARIO=CAPITAL-ASMO
+    AION_E2E_RUN_DIR=<a new folder under run/cp/CP-30 that holds a run.json> dotnet test
+    tests/Aion.Simulation.Tests --filter
+    "FullyQualifiedName~ManifestScenariosRunInFixedProcessOrder" (the pattern of
+    docs/natural-ascension-altgard.md:2442-2445; run/na02/evidence-capital/run.json is an
+    example of the file, with the fields run, gitSha and configProfile).
+- [ ] **CP-31 - Class choice on a prepared character: Cleric and Chanter rows.** Depends:
+  CP-30
+  - Work: First allocate SIM probe accounts. No id is known to be free: ids 77-82 belong to
+    the gear scenarios (SimT/SimulationGearScenarioTests.cs:34) and 91-94 to the geo
+    displacement scenarios (SimT/SimulationGeoDisplacementScenarioTests.cs:30-33; 94 is also
+    used at SimT/SimulationNaturalRoadTests.cs:19). A grep for literals is not enough,
+    because several tests compute their ids (account + 1, 62 + i, 101 + index). So either
+    find free ids by reading every session construction, computed ids included, or add new
+    ids to the fixture's list (the pool expression at
+    SimT/SimulationWorldFixture.cs:204-206; 98 and 100 are not defined today, and ids above
+    255 cannot log in). Record the assignment in the comment at
+    SimT/SimulationWorldFixture.cs:176-203 and in the doc, and pick letters-only names. Java
+    first: SETPRO13 (_2008Ascension.java:153-154), chanter_selectable_reward
+    (quest_data.xml:9302-9357) and the Q2904 handler, which starts the quest itself when
+    Q2009 completes (_2904DispatchtoAltgard.java:73-76); Doman's SETPRO1 only moves var 0 to
+    1 (lines 43-52). Add the gated SIM theory NaturalClassChoiceProbe, a partial of
+    SimulationFastScenarioTests that reuses SimCapitalDriver and the scenario as CP-30
+    parameterized it, with its rows chosen by CP_PROBE_ROWS (section 8); it adds no manifest
+    id, so parity-artifacts/e2e/scenarios.json and the system matrix that
+    scripts/e2e/test-code-coverage.py:189-200 checks are untouched. The ceremony weapon the
+    chanter row takes is the pick of CP-Q7; its default, the Karmic Staff, applies while no
+    Answer line stands under it. This is the first item that uses that pick.
+  - Proof: SIM probe NaturalClassChoiceProbe, rows cleric and chanter: SETPRO13 gives class
+    id 11 and the six level-9 masteries, the chosen Karmic weapon is paid to a class-11
+    character and the server template's chanter_selectable_reward for Q2009 holds that item,
+    Q2904 starts at START/0 with the ceremony and reaches var 1 at Doman, and the cleric row
+    passes on the same parameterized route. The payout cannot tell the two lists apart: for
+    Q2009 priest_selectable_reward and chanter_selectable_reward hold the same two items in
+    the same order (quest_data.xml:9351-9354). That a Chanter reads the second list is
+    proven by reading the code
+    (src/Aion.GameServer/Model/Templates/QuestTemplate.cs:184-187), not by the probe.
+- [ ] **CP-32 - Chanter line and profile.** Depends: CP-21, CP-23, CP-24, CP-27, CP-29
+  - Work: Add line priest-chanter with the Priest line's account and name, and
+    Sc/Classes/NaturalChanterProfile.cs: the Priest catalog through the Priest adapter and
+    the Priest rest plan, because a Chanter keeps the Priest's learned skills; the Priest's
+    named distances and thresholds (CP-18, CP-21) and the Priest line's restock table
+    (CP-24); every level-10 Chanter active excluded with the reason that no Chanter leg
+    exists yet, the powder skills 246 and 249 among them; gear rules in the table form of
+    CP-29 that wear the chosen ceremony weapon by the stat of question 7, whose default
+    applies while no Answer line stands under it (the staff-by-magic-boost rule stays the
+    Cleric's). Help items are on, as for every line: at levels 1-9 the kit and its use are
+    the Priest's (CP-05, CP-06), and at level 10 the supply follows the allowlist's level-10
+    bands, which are keyed by level and not by class. The Chanter has no kit of its own
+    yet. Write both ceremony weapons' numbers into the doc: Karmic Warhammer 44-66 at 1.5 s
+    with +7 physical attack, Karmic Staff 58-88 at 2.0 s (item_templates.xml:21160-21164,
+    110046-110050).
+  - Proof: Unit test UT/NaturalChanterProfileTests: catalog ratchet to level 10 (every
+    auto-learned active is cast or excluded with a reason); identity accepts a level 9-10
+    Chanter on the bridge maps under priest-chanter and refuses it under priest-cleric and
+    on every leg-scoped map; the gear rules wear the chosen weapon; the help kit at levels
+    1-9 equals the Priest's.
+- [ ] **CP-33 - The Chanter diverges at Munin, preserved after the ceremony.** Depends:
+  CP-28, CP-31, CP-32
+  - Work: With the code committed and the bundle green, run sim-snapshot.ps1 -Action Capture
+    -CapitalStage start -Class priest-chanter -Name pandaemonium-chanter-start-s1 with its
+    own -Run: a fresh Priest plays as the accepted line does, sends SETPRO13 at Munin, takes
+    the ceremony reward and stops at the capital-start checkpoint (J:1400-1405). Record the
+    comparer's first difference from baseline p (it should be the class-choice send) and the
+    receipt. Acceptance, judged from the receipt before Verify: class id 11, level 10, Q2008
+    and Q2009 complete, the chosen weapon worn, Q2904 at START/0, and help-items.json lists
+    what was supplied. A capture that fails it is handled by rule (l): it keeps its name, is
+    logged as rejected, and the second attempt is captured as
+    pandaemonium-chanter-start-s1-a2. Then the evidence-only commit (rule (d)). Two attempts
+    at most, then Blocked. No class scope is recorded for the Chanter: its run is the
+    Priest's up to the class choice, and gate p guards that.
+  - Proof: sim-snapshot.ps1 -Action Verify -Name <the accepted name> passes: the restore
+    emits CP_CLASS=priest-chanter and PC_CAPITAL=start and no NA_HELP_ITEMS, the resumed
+    character is accepted as a level-10 Chanter, and capital-stage-completion.json is
+    verified again for stage start.
+
+### D. What another class needs, and a Warrior in the field before the seam is closed
+
+- [ ] **CP-34 - Q2132 at the six trainers, on prepared characters.** Depends: CP-01, CP-31
+  - Work: Java first: _2132ANewSkill.java:24-134 (register at 24-32, the level change that
+    sets the var and reward group at 35-67, and the dialog with the refusal and the pages at
+    72-134). Add the gated SIM theory NaturalNewSkillTrainerProbe, six rows on the probe
+    accounts that CP-31 allocated, chosen by CP_PROBE_ROWS: a character of each starter is
+    created by packets, raised to level 3 by the director (the level change starts Q2132 in
+    REWARD), and placed by the trainers. It is refused at another class's trainer and paid
+    at its own with the contract's var and page. It touches no journey code. A server defect
+    is fixed Java-first under its own lettered item.
+  - Proof: SIM probe NaturalNewSkillTrainerProbe: all six rows pass (Warrior at Minu 203527,
+    Scout at Wiokan 203528, Mage at Jurwen 203529, Priest at Kirhen 203530, Engineer at
+    801218, Artist at 801219).
+- [ ] **CP-35 - A skill catalog generated from the shipped data, and the profile
+  validator.** Depends: CP-08, CP-14
+  - Work: This item edits existing bot files, so it waits for the first baselines (CP-08).
+    Java first: skillengine/properties/FirstTargetRangeProperty.java:19-64,
+    model/ChainSkills.java:33-43, condition/ChainCondition.java:33-70 and
+    model/Skill.java:160-161 (a cast with no chain category resets the open chain). Extend
+    the skill record (Sc/NaturalPriestCombatPolicy.cs:7-21) with optional trailing fields:
+    target kind, cast millis, required weapon groups, add-weapon-range, self count,
+    activation, counter status, out-of-combat only. Chain time is not a new field: the
+    record already has ChainWindowMillis (line 9), and the generator fills it. Give
+    NaturalCombatObservation (Sc/NaturalPriestCombatPolicy.cs:58-68) two optional trailing
+    fields as well, the main-hand weapon's attack range and its attack speed. They default
+    to unset, no present caller passes them, and the Priest policy does not read them, so
+    nothing changes for the accepted line; CP-39 fills them in the journey. They are added
+    here because the table policy of CP-36 reads them. Add
+    NaturalSkillCatalog.Build(StaticData, PlayerClass, roles, excluded), in memory. Range
+    stays the raw template value; reach is range plus the main-hand weapon's attack range
+    when the add-weapon-range flag is set, computed at decision time from the weapon fields
+    of the observation. Add the validator every new profile must pass: each auto-learned
+    ACTIVE or CHARGE skill has one role or an exclusion with a reason; a follow-up has an
+    opener; counter, charge and out-of-combat skills are not in a rotation; no rotation line
+    puts a non-chain cast between an opener and its learned follow-up; gear groups lie
+    inside the class's masteries. The Priest and Cleric tables stay hand-typed and frozen.
+  - Proof: Unit test UT/NaturalSkillCatalogTests: the generator reproduces
+    NaturalPriestSkills.All and NaturalClericSkills.Cleric for the thirteen fields the
+    record has today (id, level, role, mana, range, cooldown id, cooldown, chain category,
+    required chain, chain window, DP cost, reagent id and reagent count; the role is
+    supplied), so Hallowed Strike 1614 keeps range 1 although it adds weapon range. The new
+    fields are asserted separately: the frozen hand-typed rows leave them at their defaults
+    while the shipped data fills them (add-weapon-range and a weapon condition on 1614, a 2
+    s cast on Healing Light), so whole-record equality cannot hold. The reach of Direct Shot
+    2219 is 20 m with pistol 101800181 and of Ferocious Strike 2864 is 2.5 m with sword
+    100000094; Surprise Attack 3196 is reported as a chain opener; the validator rejects one
+    fixture profile per rule.
+- [ ] **CP-36 - A table-driven combat policy for the new classes.** Depends: CP-19, CP-35
+  - Work: Add Sc/Classes/NaturalRotationCombatPolicy.cs implementing INaturalCombatPolicy
+    from one rule table per profile: ordered attack lists for adjacent and at range with
+    opener and follow-up pairs; an upkeep list; a recovery ladder that may be empty, with HP
+    percentages; a mana reserve only when a heal is learned; swarm and flee limits; an
+    optional control skill before a retreat; the Cornered flag for scripted fights;
+    auto-attack as filler or last resort, legal within the main-hand weapon's reach (the
+    weapon fields CP-35 put on the observation); and a movement answer by the pull style of
+    CP-19, so an unpulled target out of reach yields approach and never wait (the wait at
+    Sc/NaturalPriestCombatPolicy.cs:338-345, which today ends only when the fight loop's
+    1,000-action bound throws). Chain legality: a follow-up is cast only within its own
+    chain time after the step before it (question 17); another first-step opener or any
+    non-chain cast resets the chain; a self count allows a repeat, each within the step's
+    time. The chain state the policy reads holds the current and the previous chain
+    category, because Java accepts a required category that matches either
+    (ChainCondition.java:40-46): Rage after Robust Blow is legal that way, and a state with
+    one open category would never offer it. Decide and CandidateActions come from the same
+    table. The actions it can return include the shield scroll, the life potion and the mana
+    potion of the help kit, each with a fixture state in the unit test. The Priest, Cleric
+    and Chanter do not use it.
+  - Proof: Unit test UT/NaturalRotationCombatPolicyTests on synthetic profiles: across a
+    state sweep the chosen action is always a legal candidate; a walk-in profile approaches
+    an unpulled target; an empty ladder retreats at the flee limit; a ready follow-up is
+    chosen before any non-chain cast; every rotation and ladder line of the fixture is hit
+    by an example state.
+- [ ] **CP-37 - Rest without a heal: potion, then sit.** Depends: CP-17
+  - Work: The operator, 2026-10-07: "DO not use bandages, just use Potions, rest when potion
+    is on cooldown if needed". Java first, and written into the doc: sitting restores HP
+    every 6 s: (level + 3) x 8 x Health/100, cut to a whole number
+    (JAVA/src/com/aionemu/gameserver/model/stats/container/PlayerGameStats.java:312-318;
+    services/LifeStatsRestoreService.java:16). Health is 110 for the Warrior, 100 for the
+    Scout and Engineer, 95 for the Priest and Artist and 90 for the Mage, so a tick is 32 HP
+    at level 1 and 96 at level 9 only at Health 100. A life potion heals at once and then
+    every 2 s for 20 s. It has a 30 s delay on use-delay group 11, which the mana potions
+    share (item_templates.xml:830724-830759; skill_templates.xml:91905-91917). It is an
+    item use, so it resets no chain. Add a second pure NaturalRestRules plan by question
+    11's answer: when HP is below the HP target and a life potion is owned and ready, drink
+    it; while the potion is on its delay and HP is still below the target, sit to the HP
+    target, bounded like the mana sit; a mana target only for classes whose attacks need
+    mana; a switch to the class's own heal once it is observed in the skill list. The
+    potion is the one SelectOwnedPotion picks, so the kit's potion goes first. The plan has
+    no bandage step. Write a state-sweep unit test for the new plan as part of the work,
+    as CP-17 does for the Priest's plan; it runs in the bundle. The sweep goes over HP, MP,
+    life potions owned, the delay of group 11, whether a potion's heal is still running,
+    the quiet sits so far and whether the class's own heal is learned. It checks that the
+    plan never asks for a potion when none is owned, when the group is not ready or while a
+    potion's heal still runs; always ends in done or blocked inside the sit bound; sets a
+    mana target only for a class that has one; and picks the class's own heal once that
+    skill is in the list. Teach the rest executor the two new choices (drink a life potion,
+    sit for health), so it never throws for a class without a heal. The Priest line's plan
+    and code path do not change.
+  - Proof: Neutral gate, set m+c. The new plan's decisions are covered by the state-sweep
+    unit test; the executor's two new choices are first shown in play by CP-42.
+- [ ] **CP-38 - Casting with any weapon.** Depends: CP-15
+  - Work: Copy the ItemGroup to BotWeaponMotionType mapping of
+    SimT/SimulationSkillSweepTests.cs:349-363 into Aion.Bots and leave the sweep's own code
+    alone. CreateSpellCast (Sc/NaturalJourneyRuntime.cs:44-66) uses it and stops throwing
+    for anything but mace, staff or bare hands. It also reads the off hand, as the sweep
+    does at lines 359-360, so a dual-wielding Scout (Advanced Dual-Wielding I, skill 55,
+    from level 5) gets the TwoWeapon motion. The TwoGun case is copied with it, but no
+    starter reaches it at levels 1-9: the Engineer has no dual-wield skill, and the Gunner
+    learns skill 55 at level 10. Today's main-hand read (equipped slot 1 or 3,
+    Sc/NaturalJourneyRuntime.cs:48) does not match a shield or an off-hand weapon in slot 2,
+    so neither can break it. Race and gender stay Asmodian male. Write a unit theory over
+    every weapon group a starter or an Ishalgen reward can put in the main hand, with a
+    check that motion_times.xml has the rows.
+  - Proof: Neutral gate, set p+c: mace, staff and bare hands cast exactly as before.
+- [ ] **CP-39 - Chain timing, swing and reach for table profiles.** Depends: CP-19, CP-36,
+  CP-38
+  - Work: Java first: PlayerController's attack rules (C# twin
+    src/Aion.GameServer/Controllers/PlayerController.cs:391-429). For profiles on the table
+    policy of CP-36 only: chain bookkeeping by the catalog's chain time and self count in
+    place of the opener-never-expires rule (J:10090-10110), keeping the current and the
+    previous chain category as Java's ChainSkills does (ChainSkills.java:33-43), so a second
+    step such as Rage can follow another second step such as Robust Blow; swing interval and
+    reach from the main-hand weapon in place of the fixed 2500 ms (J:9277-9281); an attack
+    counter that wraps; the journey fills the two weapon fields that CP-35 added to the
+    combat observation, the main-hand weapon's range and speed; approach and close-in
+    through the movement helper of CP-19. The Priest line keeps its present swing and chain
+    code.
+  - Proof: Neutral gate, set m+c. This item edits the fight loop that CP-19 proves on m+c,
+    and p holds few of its branches. The new paths are first shown in play by CP-43.
+- [ ] **CP-40 - Walk-in pull for melee.** Depends: CP-19, CP-36
+  - Work: Java first: AggroEventHandler.java:19, 52, the assist rule the planner mirrors.
+    Add NaturalPullPlanner.WalkIn beside Plan (Nav/NaturalPullPlanner.cs:77-133) with unit
+    facts: stage outside every aggro circle, list what AddsAt says would join at the
+    target's position with melee reach (lines 58-69), nearest first, then close to reach.
+    Plan keeps its signature, its 22 m cap (lines 85-86) and its filter. MoveToPullSpotAsync
+    (J:5627-5775) picks the plan by the profile's pull style, which CP-19 added.
+    PullAndKillAsync (J:8164-8282) gets a new branch for a walk-in profile; its existing
+    fight-at-the-target block (J:8200-8244) is not moved or edited, because it leaves
+    through returns, continues and a break and only scope hm reaches it (six at-target
+    records in the hm07 capture trace; if CP-09 dropped hm, no gate scope reaches it). The
+    fight-through in-reach test (J:5955-5957) and the 2 s spell-range wait in
+    DefendAgainstEngagedAsync (J:5508-5517) branch on style.
+  - Proof: Neutral gate, set m+c: the ranged path is unchanged. The walk-in itself is first
+    played in CP-44.
+- [ ] **CP-41 - Full gate after the refactor.** Depends: CP-16, CP-17, CP-18, CP-19, CP-20,
+  CP-21, CP-22, CP-23, CP-24, CP-25, CP-26, CP-27, CP-28, CP-29, CP-37, CP-38, CP-39, CP-40
+  - Work: No bot code changes. Every refactor item that edits code the Priest or the Cleric
+    runs is ticked by now and no new class has fought yet (the Chanter line of CP-32 may
+    land later; gate p guards it and CP-69 compares every scope again), so a difference
+    found here belongs to the refactor alone. It does not wait for the Warrior: a stalled
+    Warrior must not keep l1 and hm from being compared. Make the pin test fail if any row
+    is still pending; every owner of a row is among this item's Depends. Run the whole check
+    list of CLAUDE.md once. If a scope differs, follow the full-gate failure rule of section
+    8; the item is not ticked until the gate passes.
+  - Proof: Neutral gate, set all: every scope kept in CP-08 and CP-09 is identical to its
+    baseline. Set all holds p, m, b, l1, c, hm and ax. Before the close-out l1 is compared
+    nowhere else, and hm only in CP-18.
+- [ ] **CP-42 - Starter probe harness, and the potion-and-sit rest shown in play.**
+  Depends: CP-05, CP-21, CP-24, CP-29, CP-31, CP-36, CP-37, CP-38
+  - Work: This is the first run of the rest executor of CP-37. A potion is an item use and
+    needs no weapon motion, but every later row of this harness casts with the class's own
+    weapon, which needs the mapping of CP-38. The rest is proven alone, so that a fault in
+    the rest is not mixed with a fault in the fight. Add line warrior (starter id 0, no
+    second class, the account and name of CP-Q19) and Sc/Classes/NaturalWarriorProfile.cs
+    with everything but the fight: the generated catalog; the potion-and-sit rest plan with
+    no mana target; potion and retreat by question 11; sword or mace by the physical stat,
+    with the weapon and not the shield at Q2100 (CP-Q10); chain armor; no off hand; the
+    help kit of CP-05, with Blitzopan in the shared speed slot unless the manifest says
+    otherwise (CP-16 gives the help policy the speed-slot family as an input); the life
+    potions and the kit's items protected, and the bandages not; the
+    named distances and thresholds of CP-18 and CP-21; and its restock table in the form of
+    CP-24 with question 11's numbers (elixirs from list 721, the Kinah floor). Its rule
+    table holds one line for now, the weapon swing, and every active skill carries the
+    exclusion reason "rotation added by CP-43", so the validator passes; no fight uses the
+    table before CP-43. Add SimT/SimulationNaturalStarterProbeTests.cs, a partial of
+    SimulationFastScenarioTests, with the theory NaturalStarterFieldProbe and the helpers
+    every later row uses: a character created by packets on a probe account that CP-31
+    allocated, the director's level change and HP cut, and the choice of rows by
+    CP_PROBE_ROWS. A probe supplies no kit: the potion it drinks is one of the 100 Minor
+    Life Potions a starter owns. Add a public entry beside RunObservedCombatAsync
+    (J:96-124) that runs the journey's ordinary rest and nothing else. A fix to the rest
+    executor made here follows rule (k): it came from CP-37, so gate m+c is run as the
+    guard.
+  - Proof: SIM probe NaturalStarterFieldProbe, row warrior-rest: a level-1 Warrior created
+    by packets rests twice, and before each rest the director halves its HP. The first
+    forced rest must show a life potion drunk. The director halves the HP again while the
+    potion's 30 s delay still runs, so no potion is ready: that second rest must show a sit
+    to the HP target and no potion. Neither rest throws.
+- [ ] **CP-43 - Warrior profile, with the kill and chain rows.** Depends: CP-21, CP-24,
+  CP-39, CP-40, CP-42
+  - Work: Finish Sc/Classes/NaturalWarriorProfile.cs and take out the temporary exclusions
+    of CP-42: walk-in pull; Ferocious Strike 2864/2865, then Robust Blow 2877/2878 within 3
+    s, then Rage 2903 when hurt. Robust Blow and Rage are both second steps of Ferocious
+    Strike's chain (precategory W_CHAINA_1TH_1; skill_templates.xml:48455, 48870). Rage may
+    also follow Robust Blow, because Java accepts a match on the previous chain skill
+    (ChainCondition.java:40-46), until Robust Blow's 3 s runs out (ChainSkills.java:42). So
+    the table policy must keep the current and the previous chain category (CP-36, CP-39); a
+    policy that keeps one open category, as the Priest's does (J:10106-10110), would never
+    offer Rage after Robust Blow. Body Smash 2890 only when no follow-up is ready, because
+    it is another opener and resets the chain; sword or mace swings as filler (a swing is
+    not a skill and resets nothing). The rest of the profile stands as CP-42 wrote it:
+    potion and retreat by question 11; sword or mace by the physical stat, chain armor, no
+    off hand; the help kit; the potion-and-sit rest plan with no mana target.
+    UT/NaturalWarriorProfileTests hold the catalog ratchet, the validator row and an example
+    for every rotation and ladder line. Add rows warrior-1 and warrior-7 to the probe file.
+    They are the first run of the chain and swing code of CP-39 and of the fight loop's
+    approach to weapon reach; a fix to either follows rule (k), with gate m+c as the guard.
+    If the probe's trace shows a swing the server refused in silence, decoding
+    SM_ATTACK_RESPONSE becomes a lettered item under this one (rule (i)).
+  - Proof: SIM probe NaturalStarterFieldProbe, rows warrior-1 and warrior-7. Row 1: a
+    level-1 Warrior created by packets kills three Sprigg Workers (210363, 143 HP) through
+    RunObservedCombatAsync (J:96-124) with Ferocious Strike and swings and never reaches the
+    1000-action bound. The rests between its kills are the ordinary ones; the forced rests
+    were shown by CP-42. Row 7: a director-leveled level-7 Warrior at half HP casts
+    Ferocious Strike, Robust Blow and Rage in that order, Rage inside Robust Blow's 3 s, on
+    one Fanged Karnif 210389 (478 HP, level 6) with no cast-start timeout. Karnif 210389 is
+    the one that spawns in Ishalgen; 210655 (577 HP) has a template but no spawn.
+- [ ] **CP-44 - Warrior to Q2132: the walk-in played in the journey.** Depends: CP-10,
+  CP-20, CP-21, CP-23, CP-24, CP-27, CP-28, CP-34, CP-41, CP-43
+  - Work: The maintainer's request asks for these fresh-create runs. It waits for the full
+    gate of CP-41, so no new class journeys on a refactor that is not yet checked. Run
+    sim-snapshot.ps1 -Action Replay -Class warrior -StopAt 2132:5:0 -Item CP-44 (seed 1,
+    bridge off, help items on, the 45-minute deadline). A completed quest reads as status 5
+    with var 0 (J:553; src/Aion.GameServer/Services/QuestService.cs:86-87) and the stop
+    writes resume-receipt.json (J:875-891); CP-10 showed this stop on the Priest. On the way
+    Q2132 is turned in at Minu 203527 with var 1, the Warrior is supplied its kit, and it
+    binds at the village when it arrives there for work. Rule (e) applies. If walk-in fights
+    draw adds, the body pull of question 15 is tried as a lettered item. This stop has no
+    fallback: -StopAfterQuest exists only for Q2004 to Q2007 (J:141-142), so if the status-5
+    stop does not land, the item goes under Blocked.
+  - Proof: One contained run under run/cp/CP-44/<run-id>: resume-receipt.json shows class id
+    0 and Ferocious Strike 2864 in the checkpoint's Skills, with Q2132 completed, and the
+    trace holds at least one pull-plan record of the walk-in style followed by a kill. The
+    ledger written into the doc says which kit items the Warrior used (the potion,
+    Blitzopan, the shield scroll) and the lowest HP seen; a kit item never used is named as
+    not shown. Class
+    id 0 alone is not enough: it is also what the receipt holds when the class was not
+    observed (Sc/NaturalJourneyCheckpoint.cs:12, 35).
+- [ ] **CP-45 - Seam closed: the class-literal ratchet.** Depends: CP-41, CP-42, CP-43,
+  CP-44
+  - Work: No bot code changes. Add UT/NaturalClassSeamRatchetTests with
+    e2e/natural-class-literals-baseline.json: per file under tests/Aion.Bots and
+    tools/Aion.LiveBots, the count of PlayerClass.PRIEST, PlayerClass.CLERIC, IsCleric,
+    NaturalPriestSkills., NaturalClericSkills. and NaturalPriestCombatPolicy. outside
+    Sc/Classes and the frozen policy files; it fails on any rise. It waits for the Warrior
+    items, so the counts are taken after a class unlike the Priest has rested, fought and
+    journeyed on the seam and its fixes are in. List every remaining literal with its reason
+    in the doc; the leg gates stay.
+  - Proof: Unit test UT/NaturalClassSeamRatchetTests: green at the counts recorded in the
+    baseline file, with one fixture case that shows it fails when a count rises.
+
+### E. Profiles for Mage, Artist, Engineer and Scout
+
+- [ ] **CP-46 - Mage profile.** Depends: CP-21, CP-24, CP-39, CP-42
+  - Work: Add line mage and Sc/Classes/NaturalMageProfile.cs: stand-off pull at 22 m (its
+    targeted skills reach 25 m, so the planner is unchanged); Flame Bolt 1282 then Blaze
+    1403, Ice Chain 1363 then Frozen Shock 1226, each follow-up at once; Erosion 1447 only
+    when no follow-up is ready; Stone Skin 1155 as upkeep before a pull (a 300 s shield for
+    130 MP), never inside a pair; Root 1328 only on a second attacker or before a retreat,
+    never on the monster being hit; ladder potion then retreat; no kiting; spellbook by
+    magic boost, robe; the potion-and-sit rest plan with the sit for mana; mana potions by
+    question 12; the help kit of CP-05, with Castafodin in the shared speed slot unless the
+    manifest says otherwise; the named distances and thresholds of CP-18 and CP-21 with its
+    own values; and its restock table in the form of CP-24 with question 11's numbers
+    (elixirs from list 721, the Kinah floor). UT/NaturalMageProfileTests: catalog ratchet,
+    validator row, an example for every rotation and ladder line at each level a skill
+    arrives, reward picks. It adds its rows to the starter probe file that CP-42 made, and
+    it uses the harness, the probe accounts and the proven rest of that item. A fix to
+    shared code follows rule (k).
+  - Proof: SIM probe NaturalStarterFieldProbe, rows mage-1 and mage-5. Row 1: a level-1 Mage
+    created by packets kills three Sprigg Workers with Flame Bolt from range; before each of
+    the two rests the director halves its HP. The first forced rest must show a life potion
+    drunk. The director halves the HP again while the potion's 30 s delay still runs, so no
+    potion is ready: that second rest must show a sit to the HP target and no potion. Row
+    5: a director-leveled level-5 Mage casts Flame Bolt then Blaze on one Fanged Karnif
+    210389 (478 HP, level 6) with no cast-start timeout. Karnif 210389 is the one that
+    spawns in Ishalgen (spawns/Npcs/220010000_Ishalgen.xml:474); 210655 (577 HP) has a
+    template but no spawn.
+- [ ] **CP-47 - Artist profile.** Depends: CP-21, CP-24, CP-46
+  - Work: Add line artist and Sc/Classes/NaturalArtistProfile.cs: stand-off at 22 m; Pulse
+    4408/4409 as pull and filler, Song of Ice 4221/4222, Soothing Melody 4339 as the heal
+    from level 5, so the ladder and the rest plan switch when the skill is observed in the
+    skill list, not by level; Fiery Descant 4300 excluded because it is a charge skill and
+    the bot has only the packet builder (tests/Aion.Bots/Protocol/GameClientPackets.cs:133);
+    harp by magic boost, robe. Every active skill needs a harp in the main hand, so the gear
+    rules never leave the main hand empty. Before level 5 it rests by potion and sit, as the
+    Mage does. The help kit, named distances, thresholds and the restock table as for the
+    Mage (CP-05, CP-18, CP-21, CP-24). Tests as for the Mage.
+  - Proof: SIM probe NaturalStarterFieldProbe, rows artist-1 and artist-5. Row 1: a level-1
+    Artist kills three Sprigg Workers with Pulse, with the two forced rests between kills as
+    in CP-46 (the first shows the life potion drunk, the second, inside the potion's delay,
+    the sit). Row 5: a director-leveled level-5 Artist at half HP heals itself with Soothing
+    Melody 4339 and then kills one Fanged Karnif 210389 (478 HP, level 6).
+- [ ] **CP-48 - Engineer profile.** Depends: CP-21, CP-24, CP-46
+  - Work: Add line engineer and Sc/Classes/NaturalEngineerProfile.cs: stand-off at 18 m,
+    inside the planner's bound and the pistol's 20 m; Direct Shot 2219/2220 as pull and
+    filler; Gunshot 1957/1958 then Rapidfire 2142 twice, each within 2 s of the step before
+    it, with no Direct Shot in between, because Direct Shot has no chain and would reset it;
+    Hot Shot 1942; Bullet Resistance 2168 on the ladder, never inside a chain; pistol by
+    magic boost (the training pistol is a magical weapon with magic boost 20,
+    item_templates.xml:137287-137288), leather; the potion-and-sit rest plan. Every named
+    distance of CP-18 and CP-21 is 20 m or less for this profile. The help kit and the
+    restock table as for the Mage (CP-05, CP-24); the profile names the scroll for its
+    shared speed slot from its own skills' cast times. Tests as for the Mage, plus: no gun
+    skill counts as melee, and after a range refusal the movement helper keeps the bot at
+    its hold distance.
+  - Proof: SIM probe NaturalStarterFieldProbe, rows engineer-1 and engineer-5. Row 1: a
+    level-1 Engineer kills three Sprigg Workers with Direct Shot from range with no
+    not-enough-distance refusal, with the two forced rests between kills as in CP-46 (the
+    first shows the life potion drunk, the second, inside the potion's delay, the sit). Row
+    5: a director-leveled level-5 Engineer casts Gunshot then Rapidfire twice on one
+    Vengeful Ghost 210593 (719 HP) with no cast-start timeout.
+- [ ] **CP-49 - Scout profile.** Depends: CP-21, CP-24, CP-43, CP-46
+  - Work: Add line scout and Sc/Classes/NaturalScoutProfile.cs: walk-in pull; Devotion 3235
+    before the opener; Swift Edge 3182/3183 then Soul Slash 3223 at once; Focused Evasion
+    3195 on the ladder, never between the two; dagger swings as filler; one dagger by the
+    physical stat, leather; the potion-and-sit rest plan; the help kit of CP-05, with
+    Blitzopan in the shared speed slot as for the Warrior. Excluded with reasons: Surprise
+    Attack 3196/3197 (from the front it does little for 13 MP, 16 MP at rank 2; it opens
+    its own chain SRA_CHAINN_1TH and so resets Swift Edge's, and its back damage needs a
+    position the bot does not take; skill_templates.xml:53968-53996), Counterattack 3209
+    (the bot does not observe its own dodge) and Stealth 3222 (not usable in combat). Named
+    distances, thresholds and the restock table as for the Mage (CP-18, CP-21, CP-24). It
+    reuses the approach to weapon reach and the swing that the Warrior proved in CP-43; the
+    walk-in pull itself is first played in CP-44. Tests as for the Mage.
+  - Proof: SIM probe NaturalStarterFieldProbe, rows scout-1 and scout-7. Row 1: a level-1
+    Scout walks in and kills three Sprigg Workers with Swift Edge and dagger swings, with
+    the two forced rests between kills as in CP-46 (the first shows the life potion drunk,
+    the second, inside the potion's delay, the sit). Row 7: a director-leveled level-7 Scout
+    casts Swift Edge then Soul Slash on one Fanged Karnif 210389 (478 HP, level 6) with no
+    cast-start timeout.
+
+### F. Levels 1-9 to Munin, one preserved snapshot per class
+
+- [ ] **CP-50 - Mage to the Q2004 checkpoint.** Depends: CP-10, CP-20, CP-21, CP-23, CP-24,
+  CP-27, CP-28, CP-34, CP-41, CP-46
+  - Work: It waits for the full gate of CP-41, like every class journey. Run
+    sim-snapshot.ps1 -Action Replay -Class mage -StopAt 2004:5:0 -Item CP-50 (seed 1, bridge
+    off, help items on, the 45-minute deadline). CP-10 showed on the Priest that a status-5
+    stop fires and writes its receipt. If the stop still does not land cleanly here, use
+    -StopAfterQuest 2004 and say so. That fallback writes no receipt, exists only for Q2004
+    to Q2007 and has its own shorter deadline, 6 minutes for Q2004, sized on the Priest; a
+    run that needs longer fails and counts as an attempt under rule (e). On the way the Mage
+    turns in Q2132 at Jurwen 203529 with var 3, is supplied its kit and binds at the hub it
+    works from. Rule (e) applies. Write the ledger into the doc: deaths with where each
+    revived and whether the soul heal ran, retreats, potions and scrolls used, help items
+    supplied, bind fees and Kinah.
+  - Proof: One contained run under run/cp/CP-50/<run-id>: resume-receipt.json shows class id
+    6 with Q2132 and Q2004 completed. On the -StopAfterQuest fallback no resume-receipt.json
+    is written (the return at J:854-861 only requires the quest completed; the receipt is
+    written only by the NI08_STOP_AT stop at J:875-891). The proof is then the passing run
+    (J:857 requires Q2004 completed) plus the trace's creation step and its Q2132 and Q2004
+    turn-in records. The same holds for the Q2004 and Q2007 checkpoints of the other
+    classes.
+- [ ] **CP-51 - Mage to the Q2007 checkpoint.** Depends: CP-50
+  - Work: Run Replay -Class mage -StopAt 2007:5:0 -Item CP-51. This passes the Q2005
+    stalkers and the Q2007 generators, the first fights whose attempt budgets were sized on
+    a class that heals itself. Rule (e) applies; a per-class override of one budget carries
+    its reason. The fallback is -StopAfterQuest 2007, with its own deadline of 20 minutes.
+  - Proof: One contained run under run/cp/CP-51/<run-id>: resume-receipt.json shows class id
+    6 with Q2005 and Q2007 completed. On the -StopAfterQuest fallback the proof is the
+    passing run plus the trace's creation step and its Q2005 and Q2007 turn-in records, as
+    in CP-50.
+- [ ] **CP-52 - Mage 1-9 at Munin, captured and verified as munin-mage-s1.** Depends: CP-51
+  - Work: With the code committed and the bundle green, run sim-snapshot.ps1 -Action Capture
+    -Class mage -Name munin-mage-s1 with its own -Run (bridge off, seed 1): all 41 quests,
+    level 9, Q2008 at START/0, standing at Munin (J:1010-1027). Acceptance beyond the
+    receipt, judged before Verify: completion.json shows a spellbook and robe pieces worn;
+    the trace sold no item the class can wear and no item of its help kit; help-items.json
+    lists what was supplied; and both Ishalgen binds are in the trace, or the skip of one is
+    traced with its reason. A capture that fails acceptance is handled by rule (l):
+    munin-mage-s1 keeps its name and is logged as rejected, and the second attempt is
+    captured as munin-mage-s1-a2. Write the ledger and the elapsed time into the doc, as in
+    CP-50. Then the evidence-only commit (rule (d)). Rule (e) applies. A class that ends the
+    41 quests below level 9 goes under Blocked; it never hunts for the level. The class
+    scope is recorded by the next item, not here.
+  - Proof: sim-snapshot.ps1 -Action Verify -Name <the accepted name> passes: the restore
+    emits CP_CLASS=mage and no NA_HELP_ITEMS, the resumed character is accepted as a level-9
+    Mage, and the endpoint is reached again.
+- [ ] **CP-53 - Record class scope mage, twice.** Depends: CP-52
+  - Work: No code changes. On a clean tree run run-neutral-gate.ps1 -Set mage -Record -Item
+    CP-53. The gate plays class scope mage (Replay -Class mage -StopAt 2004:5:0) twice,
+    compares the two passes and writes the scope's row into
+    e2e/natural-neutral-baseline.json. That turns the scope on for the guard of rule (c) and
+    for the final gate. Commit that file; the commit is evidence only. If this class's Q2004
+    checkpoint passed only on the -StopAfterQuest fallback, the class scope cannot be
+    recorded as defined: list this item under Blocked and report. If the two passes differ,
+    nothing is written: log the first differing record and list this item under Blocked. The
+    ignore list is not narrowed for a class scope, because the Priest and Cleric baselines
+    share it.
+  - Proof: The record run: the two passes of class scope mage are identical after
+    normalization (run/cp/CP-53/<run-id>/verdict.json).
+- [ ] **CP-54 - Warrior to the Q2004 checkpoint.** Depends: CP-45, CP-53
+  - Work: Run Replay -Class warrior -StopAt 2004:5:0 -Item CP-54. The Ishalgen code written
+    for a ranged puller is the likely blocker: ApproachShippedCombatSpawnAsync
+    (J:5217-5274), the Sprigg hunt (J:6433-6510), Q2004's approaches (J:6794) and
+    fight-through (J:5806-6159). Each one that stops the run asks the pull style at that one
+    site, with the Priest keeping its number, as its own lettered item, proven by the gate
+    set of the item that owns that site plus the recorded class scopes. Such a fix should
+    leave the Mage's scope identical; if it is meant to change a recorded class scope, rule
+    (j) applies. Rule (e) applies.
+  - Proof: One contained run under run/cp/CP-54/<run-id>: resume-receipt.json shows class id
+    0 and Ferocious Strike (2864, or its rank 2, 2865, learned at level 6) in the
+    checkpoint's Skills, with Q2004 completed. Class id 0 alone is not enough: it is also
+    what the receipt holds when the class was not observed
+    (Sc/NaturalJourneyCheckpoint.cs:12, 35). On the -StopAfterQuest fallback the proof is
+    the passing run plus the trace's creation step and its turn-in records, as in CP-50.
+- [ ] **CP-55 - Warrior to the Q2007 checkpoint.** Depends: CP-54
+  - Work: Run Replay -Class warrior -StopAt 2007:5:0 -Item CP-55. The stalker (Q2005) and
+    generator (Q2007) fights are the expected trouble for a melee class without a heal;
+    Q2005's firing-edge search (J:6896-6913) is fixed as a lettered item if it stops the
+    run. Rule (e) applies.
+  - Proof: One contained run under run/cp/CP-55/<run-id>: resume-receipt.json shows class id
+    0 and Ferocious Strike (2864, or its rank 2, 2865, learned at level 6) in the
+    checkpoint's Skills, with Q2005 and Q2007 completed. Class id 0 alone is not enough: it
+    is also what the receipt holds when the class was not observed
+    (Sc/NaturalJourneyCheckpoint.cs:12, 35). On the -StopAfterQuest fallback the proof is
+    the passing run plus the trace's creation step and its turn-in records, as in CP-50.
+- [ ] **CP-56 - Warrior 1-9 at Munin, captured and verified as munin-warrior-s1.** Depends:
+  CP-55
+  - Work: As CP-52 with -Class warrior -Name munin-warrior-s1. Acceptance: a sword or mace
+    and chain pieces worn, the weapon and not the shield taken at Q2100, nothing wearable
+    and nothing of the help kit sold, the help items listed and both binds traced. The
+    Hatata fight (Q2129) is the last expected trouble.
+  - Proof: sim-snapshot.ps1 -Action Verify -Name <the accepted name> passes: the restore
+    emits CP_CLASS=warrior and no NA_HELP_ITEMS, the resumed character is accepted as a
+    level-9 Warrior and the endpoint is reached again.
+- [ ] **CP-57 - Record class scope warrior, twice.** Depends: CP-56
+  - Work: As CP-53 with -Set warrior -Item CP-57.
+  - Proof: The record run: the two passes of class scope warrior are identical after
+    normalization (run/cp/CP-57/<run-id>/verdict.json).
+- [ ] **CP-58 - Artist to the Q2004 checkpoint.** Depends: CP-47, CP-53
+  - Work: Run Replay -Class artist -StopAt 2004:5:0 -Item CP-58. Trainer Sona 801219 (var 6)
+    and the harp rewards of Q2100, Q2002 and Q2134 have never been played by a bot; whatever
+    fails is logged and becomes its own lettered item, not widened here. Rule (e) applies.
+  - Proof: One contained run under run/cp/CP-58/<run-id>: resume-receipt.json shows class id
+    15 with Q2132 and Q2004 completed. On the -StopAfterQuest fallback the proof is the
+    passing run plus the trace's creation step and its turn-in records, as in CP-50.
+- [ ] **CP-59 - Artist 1-9 at Munin, captured and verified as munin-artist-s1.** Depends:
+  CP-58
+  - Work: As CP-52 with -Class artist -Name munin-artist-s1. Acceptance: a harp and robe
+    pieces worn, nothing wearable and nothing of the help kit sold, the help items listed
+    and both binds traced, and the rest plan seen to switch to Soothing Melody once it is
+    learned (level 5). If a second attempt fails, the quest where it stopped becomes a
+    lettered checkpoint
+    item.
+  - Proof: sim-snapshot.ps1 -Action Verify -Name <the accepted name> passes as a level-9
+    Artist, with CP_CLASS=artist and no NA_HELP_ITEMS emitted by the restore.
+- [ ] **CP-60 - Record class scope artist, twice.** Depends: CP-59
+  - Work: As CP-53 with -Set artist -Item CP-60.
+  - Proof: The record run: the two passes of class scope artist are identical after
+    normalization (run/cp/CP-60/<run-id>/verdict.json).
+- [ ] **CP-61 - Engineer to the Q2004 checkpoint.** Depends: CP-48, CP-53
+  - Work: Run Replay -Class engineer -StopAt 2004:5:0 -Item CP-61. Trainer Wild Wilhelm
+    801218 (var 5) and the pistol rewards have never been played by a bot. A site that still
+    stands the bot off beyond 20 m is fixed through its named profile distance, not by a new
+    literal. Rule (e) applies.
+  - Proof: One contained run under run/cp/CP-61/<run-id>: resume-receipt.json shows class id
+    12 with Q2132 and Q2004 completed. On the -StopAfterQuest fallback the proof is the
+    passing run plus the trace's creation step and its turn-in records, as in CP-50.
+- [ ] **CP-62 - Engineer 1-9 at Munin, captured and verified as munin-engineer-s1.**
+  Depends: CP-61
+  - Work: As CP-52 with -Class engineer -Name munin-engineer-s1. Acceptance: a pistol and
+    leather pieces worn, nothing wearable and nothing of the help kit sold, the help items
+    listed and both binds traced. If a second attempt fails, the quest where it stopped
+    becomes a lettered checkpoint item.
+  - Proof: sim-snapshot.ps1 -Action Verify -Name <the accepted name> passes as a level-9
+    Engineer, with CP_CLASS=engineer and no NA_HELP_ITEMS emitted by the restore.
+- [ ] **CP-63 - Record class scope engineer, twice.** Depends: CP-62
+  - Work: As CP-53 with -Set engineer -Item CP-63.
+  - Proof: The record run: the two passes of class scope engineer are identical after
+    normalization (run/cp/CP-63/<run-id>/verdict.json).
+- [ ] **CP-64 - Scout to the Q2004 checkpoint.** Depends: CP-49, CP-57
+  - Work: Run Replay -Class scout -StopAt 2004:5:0 -Item CP-64; Q2132 is turned in at Wiokan
+    203528 with var 2. It reuses every melee fix the Warrior needed; anything new is a
+    lettered item. Rule (e) applies.
+  - Proof: One contained run under run/cp/CP-64/<run-id>: resume-receipt.json shows class id
+    3 with Q2132 and Q2004 completed. On the -StopAfterQuest fallback the proof is the
+    passing run plus the trace's creation step and its turn-in records, as in CP-50.
+- [ ] **CP-65 - Scout 1-9 at Munin, captured and verified as munin-scout-s1.** Depends:
+  CP-64
+  - Work: As CP-52 with -Class scout -Name munin-scout-s1. Acceptance: a dagger and leather
+    pieces worn, nothing wearable and nothing of the help kit sold, the help items listed
+    and both binds traced. If a second attempt fails, the quest where it stopped becomes a
+    lettered checkpoint item.
+  - Proof: sim-snapshot.ps1 -Action Verify -Name <the accepted name> passes as a level-9
+    Scout, with CP_CLASS=scout and no NA_HELP_ITEMS emitted by the restore.
+- [ ] **CP-66 - Record class scope scout, twice.** Depends: CP-65
+  - Work: As CP-53 with -Set scout -Item CP-66.
+  - Proof: The record run: the two passes of class scope scout are identical after
+    normalization (run/cp/CP-66/<run-id>/verdict.json).
+
+### G. Close-out
+
+- [ ] **CP-67 - The other nine second classes through the class choice, on prepared
+  characters.** Depends: CP-31
+  - Work: Add nine rows to NaturalClassChoiceProbe, built with ForChoice: Gladiator
+    (SETPRO7), Templar (SETPRO8), Assassin (9), Ranger (10), Sorcerer (11), Spirit Master
+    (12), Gunner (15), Bard (16) and Rider (17), each with its class page, Q2009 var,
+    preceptor, reward list and dispatch quest from the class-line contract. The characters
+    are prepared by the director, hold their starter weapon and fight the trial inside the
+    scenario's existing swing bound; a row that cannot finish inside it is reported, not
+    widened in silence. Rows beyond the probe ids CP-31 allocated run in a second filtered
+    process. No journey code and no natural character is involved. It is the first run of
+    the Engineer and Artist pages, preceptors and dispatch quests by any bot and is evidence
+    for the next plan; a server defect is fixed Java-first under its own lettered item.
+  - Proof: SIM probe NaturalClassChoiceProbe: the nine new rows pass, each ending with the
+    chosen class id, the row's ceremony reward paid at its own preceptor and its own
+    dispatch quest started at START/0 by the ceremony and moved to var 1 at Doman 204191.
+    All six Asmodian dispatch handlers register the same quest-completed start and the same
+    Doman talk as Q2904's (JAVA/data/handlers/quest/ascension/_2901 to _2904, _29070 and
+    _29071, lines 23-25).
+- [ ] **CP-68 - Off hand: shield and second weapon in the gear rules.** Depends: CP-29,
+  CP-57, CP-66
+  - Work: Java first: Equipment.java's rules for shields and dual wield. The table gear rule
+    gains an off-hand mode: none, shield (Warrior, mastery 43 from level 1; Q2100 offers
+    shield 115000024, the only shield an Ishalgen quest offers) or second one-hand weapon
+    (Scout, only once skill 55 is observed at level 5). NaturalGearPolicy.SelectUpgrades
+    (Sc/NaturalGearPolicy.cs:76-93) fills the off hand by that mode. Question 10 is
+    answered (2026-10-07): the Warrior takes the weapon at Q2100, not the shield. So no
+    Depends line is edited, the mode is built after the Warrior and the Scout are at Munin,
+    and every profile keeps mode none; no snapshot is recaptured. Turning a mode on for a
+    class, the Scout's second dagger included, waits for the operator's word. The guard of
+    rule (c) runs with every class scope recorded so far, because SelectUpgrades is shared.
+    With mode none in every profile those scopes must stay identical; an item that later
+    turns a mode on for a class follows rule (j).
+  - Proof: Unit test UT/NaturalGearPolicyTests: new cases for sword plus shield and for
+    dagger plus dagger after skill 55; the staff-rule and Priest cases unchanged.
+- [ ] **CP-69 - Final gate and close-out.** Depends: CP-33, CP-45, CP-53, CP-57, CP-60,
+  CP-63, CP-66, CP-67, CP-68
+  - Work: No code. Run the whole check list of CLAUDE.md, then the full gate on the
+    committed tree with the five class scopes. Write the closing Status paragraph of
+    docs/natural-class-profiles.md: the six new snapshots under their accepted names, each
+    class's deaths and consumables, every lettered item, every rejected capture, the
+    findings logged and not fixed, and what each class needs before its second class. Update
+    docs/natural-ntc-readiness.md and list stray evidence directories for the operator. If a
+    scope differs, follow the full-gate failure rule of section 8.
+  - Proof: Neutral gate, set all plus the five class scopes: every scope is identical to its
+    baseline.
+
+## Operator decisions
+
+The request at the top of this document is the operator's direction for this plan.
+Twenty-one questions follow. Each has a recommended default.
+
+How an answer is recorded: an `Answer (date): ...` line under the question in this file,
+written by the operator, or by the loop quoting the operator's words. A question with no
+Answer line runs on its default. Seven answers are recorded now. CP-Q1 and CP-Q8 were taken
+from the request on 2026-10-06, and the operator confirmed them on 2026-10-07 ("Good").
+CP-Q3, CP-Q10, CP-Q11, CP-Q12 and CP-Q21 were answered on 2026-10-07, after the operator
+read the plan. Where an Answer disagrees with its question's Default, the Default is marked
+as replaced and the Answer rules.
+
+- **CP-Q1.** D25 authorizes one class, the Cleric, and supersedes the earlier Chanter note;
+  D22 and D23 set the natural-play rules for the Priest; D38 is the highest decision id. Do
+  you authorize, as D39: the class seam, a Priest-to-Chanter branch as far as the
+  Pandaemonium ceremony, and level 1-9 Ishalgen play for Warrior, Scout, Mage, Engineer and
+  Artist under the same natural-play rules?
+  - Default: Yes, as worded, in SIM only. Nothing past those endpoints, no LIVE identity, no
+    server change. CP-00 quotes your answer in the D39 row and adds one pointer row in
+    CLAUDE.md.
+  - Why it is asked: Earlier D rows record an explicit approval, and the loop rules allow no
+    natural play of another class without a logged decision.
+  - Answer (2026-10-06): Yes, from the request. It asks for the seam ("a bit of prep work
+    refactoring what we have to be reusable"), for the Chanter diverging at Ascension ("a
+    Chanter would just diverge at that point instead of being scoped just to Cleric") and
+    for levels 1-9 to Munin for the other starter classes ("knock out any other
+    starter-class types 1-9 profiles and rules"). SIM only is this plan's own limit, not the
+    operator's words. Confirmed 2026-10-07: the operator read this answer and said "Good".
+- **CP-Q2.** docs/natural-ntc-readiness.md:5 names Templar and Sorcerer profiles for an NTC
+  party as the next goal. Does this plan replace that goal or come before it?
+  - Default: It comes before it. Under answer (a) to question 8 the Templar and the Sorcerer
+    start from the Warrior and Mage profiles with a fresh run in the early-Ascension order,
+    not from the Munin snapshots; the readiness report gets one line that points here.
+  - Why it is asked: Nothing in the files says which goal leads. Mage and Warrior are
+    journeyed first for this reason.
+- **CP-Q3.** The loop rules say one run per development item, no earlier leg rerun without
+  need and no fresh-create run unless asked. This plan needs more: 14 baseline recordings
+  (seven scopes twice); about 57 gate-scope replays, 38 across seventeen gated items and 19
+  in the two full gates (seven scopes in CP-41, twelve in CP-69); the one-minute guard p on
+  about thirty commits; from the first class-scope recording on, every recorded class scope
+  again on each later commit that edits shared bot code (one such commit is planned, CP-68,
+  and every lettered fix adds one); up to 16 checkpoint replays in the eight checkpoint
+  items (CP-44, CP-50, CP-51, CP-54, CP-55, CP-58, CP-61 and CP-64), and the status-5 run
+  of CP-10; two contained runs of scope m, one for the Priest's kit and one for the Ishalgen
+  binds (CP-06 and CP-07), each with a second attempt at most; six captures with two
+  attempts each at most; six verifies; ten class-scope recordings (five scopes twice); one
+  Full-tier scenario run, CAPITAL-ASMO (CP-30); and nine probe items, each one filtered SIM
+  process (CP-31, CP-34, CP-42, CP-43, CP-46 to CP-49, CP-67). Approved?
+  - Default: none that the loop could use. The recommended answer was yes: SIM only, seed 1
+    only, every run in its own throwaway schema, nothing existing captured over, no
+    multi-seed batches, no LIVE runs. If you want strictly one run per item, say so: the
+    guard of rule (c) then becomes an item of its own after each commit it covers, and
+    question 4 decides whether a gate set of several scopes is split.
+  - Why it is asked: No automated test asserts the journey's decisions, so a same-seed
+    replay is the only proof that the Cleric still plays the same, and a 1-9 proof for a new
+    class is by nature a fresh-create run. You should approve the real number, not a smaller
+    one.
+  - Answer (2026-10-07): "Your recommended". That is yes: SIM only, seed 1 only, every run
+    in its own throwaway schema, nothing existing captured over, no multi-seed batches, no
+    LIVE runs. CP-03 is no longer blocked. The two contained runs of CP-06 and CP-07 were
+    added to the count the same day, for the decisions of the same message; they are runs
+    of the kind this answer approves. Say so if they should be counted differently.
+- **CP-Q4.** Does one gate invocation that names more than one scope (for example p+c or
+  m+b+c+ax) count as the item's one proof?
+  - Default: Yes: one command, one verdict, one evidence folder. If not, each such item is
+    split into a Priest-side and a Cleric-side item.
+  - Why it is asked: Set p holds no Cleric fight and few Priest branches, set m holds no
+    Cleric, and only b (the Altgard shop stop: a sale and 12 Lesser Life Elixirs bought) and
+    ax hold vendor buys; no scope reaches the Ishalgen vendor buy. So most seam items need
+    two to four scopes to prove they changed nothing.
+- **CP-Q5.** May other work commit to main while this list is worked: the three untracked
+  docs/playtest-*.md plans, server fixes, upstream ports?
+  - Default: Keep other bot plans paused until CP-45. A server fix or an upstream port may
+    land between CP items. The loop then follows the re-record rule of section 8: it runs
+    the full gate at HEAD, and if a scope fails it stops and asks you to choose between
+    re-recording at HEAD and reverting. An upstream port may bump javaReference in the
+    class-lines file.
+  - Why it is asked: Every gate compares with traces recorded at one commit. The first
+    outside commit that changes a trace fails every later gate until the baselines are
+    re-recorded.
+- **CP-Q6.** Where does the Chanter start and stop: (a) a fresh Priest through the existing
+  capital-start scope, about one minute, stopping after the Pandaemonium ceremony; or (b) a
+  restored copy of the old munin snapshot, which needs a new from-snapshot scope on the
+  older late-Ascension order?
+  - Default: (a). The new snapshot is pandaemonium-chanter-start-s1.
+  - Why it is asked: (a) uses only a scope proven on recent commits and adds no code to the
+    shared bridge path, and its trace should equal the Cleric baseline up to the
+    class-choice send. Everything after the ceremony uses Cleric-only decisions.
+- **CP-Q7.** Which ceremony weapon does a Chanter take from chanter_selectable_reward, and
+  how is 'physical attack' ranked? Per swing the Karmic Staff wins (58-88 at 2.0 s, mean
+  73); per second the Karmic Warhammer wins (44-66 plus 7 physical attack at 1.5 s, about 41
+  a second against 36) and leaves the shield hand free.
+  - Default: Rank physical weapons per swing (mean damage plus the flat physical-attack
+    bonus), for every class; so the Chanter takes the Karmic Staff. The staff-by-magic-boost
+    rule stays the Cleric's alone. CP-29 builds the stat, the probe of CP-31 is the first to
+    use the pick, and CP-32 writes both weapons' numbers into the doc before the run.
+  - Why it is asked: The same choice was an operator decision for the Cleric (OD-5),
+    PlayerClass.cs lists the Chanter as a physical class, and the two readings of the stat
+    pick different weapons, so the definition has to be yours.
+- **CP-Q8.** What is the 1-9 endpoint for the five new starters? (a) The existing Munin stop
+  with the bridge off: all 41 quests, level 9, Q2008 at START/0. This is the order OD-16
+  replaced: a non-Daeva is capped at 126,069 XP (level 9 starts at 82,982), so quest XP past
+  the cap is discarded. (b) A new stop at the first level 9 with Ishalgen quests pending,
+  the OD-16 branch point. (c) A new stop at Q2008 var 6, trial won and class page
+  unanswered, the one state past var 4 that the enter-world hook does not reset to 4
+  (_2008Ascension.cs:296); the die hook (lines 312-323) would still reset it on a death
+  inside the instance. The character stands inside the Ataxiar instance, resuming a snapshot
+  there is untested, and every starter must fight the trial.
+  - Default: (a), named munin-<class>-s1, and recorded as proof that the class can play all
+    of Ishalgen, not as the start of a second-class leg. A later second-class plan starts
+    with a fresh run in the early-Ascension order, as the Cleric's did; the Priest reaches
+    level 9 and the ceremony in about a minute of run time.
+  - Why it is asked: Your request says '1-9 to Munin class select', (a) exists and has no
+    class check, and it plays every Ishalgen quest with each class, which serves the
+    play-tested-server goal. Snapshots are never recaptured, so the endpoint has to be
+    settled before the first capture.
+  - Answer (2026-10-06): (a), from the request, which says "we can create a '1-9' to Munin
+    class select for the other types". The snapshots are named munin-<class>-s1. Confirmed
+    2026-10-07: the operator read this answer and said "Good".
+- **CP-Q9.** In what order are the starters done?
+  - Default: Fights: Warrior first (before the seam is closed), then Mage, Artist, Engineer,
+    Scout. Journeys: first the Warrior's short run to Q2132 (CP-44, before the seam is
+    closed), then the journeys to Munin in the order Mage, Warrior, Artist, Engineer, Scout.
+  - Why it is asked: The Warrior is least like the Priest, so it tests the seam before it is
+    frozen. Its short run to Q2132 is the first fresh-create journey of a new class, and it
+    meets the melee pull and recovery without a heal at once; that is the price of testing
+    the seam early. To Munin the Mage goes first because it reuses the proven ranged pull,
+    which separates recovery-without-a-heal problems from melee-pull problems over the long
+    run.
+- **CP-Q10.** Gear rule per starter, and the off hand. By the stat of question 7 a Warrior
+  takes Raider's Mace over Raider's Sword at Q2100; Q2100 is also the only Ishalgen quest
+  that offers a shield (115000024). Does the Warrior take a weapon or the shield there, and
+  does the Scout wield a second dagger from level 5?
+  - Default: Warrior: sword or mace by the physical stat, chain. Scout: dagger, leather.
+    Mage: spellbook by magic boost, robe. Engineer: pistol by magic boost, leather. Artist:
+    harp by magic boost, robe. At a reward choice take the weapon when it beats the held
+    one, otherwise the class's armor type. First snapshots: the weapon at Q2100, one dagger,
+    no off hand; CP-68 builds the off-hand mode afterwards. No gear is bought with Kinah.
+  - Why it is asked: AX-Q1 said other classes get their own weapon rule when their profiles
+    are planned. Under answer (a) to question 8 the Templar starts with a fresh run and
+    makes its own Q2100 pick, so leaving the shield out of the first Warrior run costs the
+    Templar nothing. If you answer 'shield', no item moves and no id changes. The loop's
+    first act on reading the Answer line is to edit four Depends lines and log the edit:
+    CP-68's becomes CP-29 alone, and CP-54's, CP-58's and CP-61's each gain CP-68. After
+    CP-53 the pick rule then goes to CP-67 and CP-68 and back to CP-54, so the off-hand item
+    runs before the Warrior's Q2004 checkpoint and the journey order of CP-Q9 holds. Those
+    three items then depend on an item listed after them; that is the one allowed exception
+    to the listed-earlier rule.
+  - Answer (2026-10-07): "Warrior does take weapon". The Warrior takes the weapon at Q2100,
+    not the shield. Everything else in the default stands: the picks per class, one dagger
+    for the Scout, no off hand in the first snapshots, CP-68 after them. The answer is not
+    'shield', so no Depends line is edited and the exception above is not used.
+- **CP-Q11.** Recovery for classes without a heal (Warrior, Scout, Mage, Engineer, and the
+  Artist before level 5). Between fights: (i) sit only, which Java makes workable (about 32
+  HP every 6 s at level 1 and 96 at level 9 for a class with Health 100; the Warrior gets a
+  tenth more and the Mage a tenth less), or (ii) bandage then sit, with bandages bought when
+  they run low. Also the potion threshold, retreat rule, restock numbers and a Kinah floor.
+  - Default (its between-fight half is replaced by the Answer; the rest stands): In a
+    fight: timed life potion at or below 75% HP; retreat at three attackers (Mage at two),
+    or at 25% HP while the potion is on its delay. Elixir restock stays at 5 or fewer up to
+    12; no purchase takes Kinah below 500. Q2117 and Q2124: take the Minor Life Elixir.
+    These are starting numbers, tuned from the first ledger and recorded in the doc; CP-24
+    reads the Priest's Munin ledger for the Kinah figure. Replaced by the Answer: option
+    (ii), with its Bandage Heal below 70% HP between fights and its bandage stock.
+  - Why it is asked: The Priest's numbers were sized for a class that also heals itself.
+    When it was asked, bandages looked like the between-fight heal: they are finite (20 at
+    the start, a few quest rewards) and the bot buys none. The vendor elixir has twice the
+    delay of the starter potion, and soul healing after a death draws on the same Kinah.
+  - Answer (2026-10-07): "DO not use bandages, just use Potions, rest when potion is on
+    cooldown if needed". No bandage is used, bought or kept as a supply, by any class.
+    Between fights a class without a heal drinks a life potion when its HP is below the 90%
+    target and the potion is ready, and sits to 90% while the potion is on its delay. In a
+    fight the default above stands: the potion at or below 75% HP and the retreat numbers.
+- **CP-Q12.** Mana for Mage and Artist, the three event scrolls every starter owns, and help
+  items: are the 100 starter mana potions drunk in a fight, and is anything else used at
+  levels 1-9?
+  - Default (its last part is replaced by the Answer; the rest stands): A mana potion in a
+    fight only when MP is below the main attack's cost and HP is above the life-potion
+    threshold, so the life potion wins the shared delay. Sit below 40% MP until 80% between
+    fights. Never buy mana potions at 1-9. Replaced by the Answer: the part that kept the
+    event scrolls and every help item from all lines but priest-cleric.
+  - Why it is asked: When it was asked, the Priest never drank mana potions (the gate is
+    IsCleric at J:9132), life and mana potions share one use-delay group, and the help list
+    had been approved for the Cleric only, with five of its bands starting at level 10.
+  - Answer (2026-10-07): "help items on for everyone, and even change the priest defaults!
+    Get better healing potions, the shield scroll, greater running scroll. Any consumable to
+    make these more survivable and faster." Help items are on for every class line, the
+    Priest's levels 1-9 included. "Any consumable" covers the three event scrolls and the
+    starter mana potions too: they are used. The mana-potion and sit numbers of the default
+    stand. CP-05 writes the kit down as a manifest and CP-06 turns it on for the Priest.
+- **CP-Q13.** The standing rule is an inventory check after every quest turn-in. In Ishalgen
+  the bot wears gear only at the end of a rest (J:9716-9718), and 'Don't change earlier
+  runs' was said about the accepted Priest and Cleric legs. Do the new class lines run the
+  equipment check after every Ishalgen turn-in?
+  - Default: Yes for every line but priest-cleric, switched by the line so the Priest's
+    trace stays identical (CP-23). The Priest line keeps its present check points.
+  - Why it is asked: A class with a different rest plan reaches the Priest's check points at
+    different times, and a new class's run is not an earlier run.
+- **CP-Q14.** Patrols in the way: OD-14 was answered for the Cleric only (wait 15 s up to
+  four times, then decide). What do the new classes do at levels 1-9?
+  - Default: The Priest's Ishalgen baseline: 3 s waits for the baseline number of cycles,
+    then the existing fallbacks. Revisit per class when it gets a leg past Munin.
+  - Why it is asked: No decision covers another class, and the Priest baseline is the only
+    patrol rule proven in Ishalgen.
+- **CP-Q15.** How does a melee class pull an aggressive monster: walk in and fight at its
+  position, or a body pull (step into its aggro circle from the staged spot, step back and
+  let it come)?
+  - Default: Walk in. The body pull is tried only if the Warrior's checkpoint runs show
+    walk-in fights drawing adds, as a lettered item (rule (i)).
+  - Why it is asked: The walk-in reuses the staging and adds logic the planner already has;
+    the body pull keeps the fight on the clean spot but is new behavior nobody has run.
+- **CP-Q16.** Skills left out of the first profiles: Artist Fiery Descant (a charge skill),
+  Scout Surprise Attack (back damage and its own chain), Counterattack (needs the bot to
+  observe its own dodge) and Stealth, any kiting for the Mage, Escape 302 for everyone; and
+  Mage Root is used only on a second attacker or before a retreat. Acceptable?
+  - Default: Yes, each excluded with its reason in the profile, as the Cleric's are. Revisit
+    after the Munin snapshots exist.
+  - Why it is asked: The validator requires every auto-learned active skill to be cast or
+    excluded with a reason, so each omission is visible. Root is settled by the data: nine
+    hits in ten break it.
+- **CP-Q17.** Follow-up timing: Java lets Robust Blow follow Ferocious Strike at any time,
+  because the opener carries no chain time. Should the bot use that, or cast a follow-up
+  only within the follow-up's own chain time (3 s) after the step before it?
+  - Default: Only within its own chain time. It is always legal on Java too.
+  - Why it is asked: Natural play means a human player's eligibility rules, and how long the
+    4.8 client keeps a follow-up lit is not in the repo. The stricter rule cannot be refused
+    by either.
+- **CP-Q18.** Should the per-class probes run in every Fast run or only when asked?
+  - Default: The five level-1 first-kill rows always on while each stays under about ten
+    seconds. The leveled rows, the Q2132 probe and the class-choice probe are gated and run
+    alone by filter.
+  - Why it is asked: Fast is the only automatic net for the new profiles, but no probe
+    account id is known to be free: 77-82 are the gear scenarios' accounts
+    (SimT/SimulationGearScenarioTests.cs:34) and 91-94 the geo-displacement scenarios'
+    (SimT/SimulationGeoDisplacementScenarioTests.cs:30-33). CP-31 either finds free ids by
+    reading every session construction, computed ids included, or adds new ids to the
+    fixture's list (SimT/SimulationWorldFixture.cs:204-206; 98 and 100 are not defined, and
+    ids above 255 cannot log in). Gated theories run alone in their own schema can share
+    ids. Section 8 names the variable that picks the gated rows and the command that runs
+    one probe alone.
+- **CP-Q19.** SIM identity: one account for every line, which character names, and are all
+  lines male?
+  - Default: Account 41 for every line, because each run owns its schema. Names: Asimnjour
+    for both Priest lines; Asimwar, Asimscout, Asimmage, Asimengi and Asimartist for the
+    others, checked against Java's character-name pattern before first use. All male, as
+    today. Snapshots: pandaemonium-chanter-start-s1 and munin-<class>-s1.
+  - Why it is asked: The resume check compares the character name, Java's name pattern
+    forbids digits, and male is fixed in three places in the bot today.
+- **CP-Q20.** The list has 70 items, above the preferred 35, because every item must fit one
+  iteration and carry one proof. Work it as one list, or in two batches?
+  - Default: One list, with two points where the loop reports and then goes on unless the
+    operator says otherwise: after CP-45 (the seam closed, with a Warrior in the field; the
+    Chanter capture CP-33 does not hold this point up, so the report says whether it is
+    ticked or blocked) and after CP-57 (Mage and Warrior at Munin, both class scopes
+    recorded). Artist, Engineer, Scout and the close-out can wait without leaving anything
+    half done.
+  - Why it is asked: The critique asked for splits (pin test first, gear in four steps,
+    bridge in two, checkpoint rungs per class). The loop-fit review added the status-5 item
+    and nine more splits (Replay and gate, scenario and probe, harness and Warrior profile,
+    full gate and ratchet, capture and class scope for five classes). Merging them back
+    would bring back items too large for one iteration.
+- **CP-Q21.** The standing rule is to bind at the working hub's obelisk and to use hub
+  flight transporters. In Ishalgen the accepted Priest route does neither: the bind
+  (BindAtAldelleIfNeededAsync, J:4877-4893) and the unforced hub flight (J:4897) run only
+  when NI07_OPTIMIZE_HUBS is set, and no runner sets it (scripts/sim/sim-snapshot.ps1:91
+  clears it). Should the new class lines bind at an Ishalgen obelisk?
+  - Default (replaced by the Answer; it no longer applies): No, with Ishalgen played on the
+    starting bind as the accepted Priest played it, because the recorded bind policy names
+    "every leg from Leg 4 on" (docs/natural-altgard-leveling.md:5379-5381).
+  - Why it is asked: The death rule sends a dead character to whichever obelisk it is bound
+    to, and every Ishalgen obelisk has a Soul Healer beside it. So the answer decides where
+    a class revives and whether it pays a bind fee. No CP item decided it when it was
+    asked; CP-07 now builds the answer.
+  - Answer (2026-10-07): "We should have been binding in Ishalgen the whole time, at each
+    quest hub (the village and the outpost), and soul heal as discussed. Death is not
+    failure." Yes, and for every line, the Priest included. The bot binds at the village
+    obelisk 700063 and at the outpost obelisk 700064, each on first arrival there for work.
+    After a death it revives at the working hub and soul heals at the Soul Healer beside
+    that obelisk: Linevir 203512 at the village, Rusalka 203680 at the outpost. This changes
+    the accepted Priest line's levels 1-9 on purpose. The answer says nothing about hub
+    flight, so in Ishalgen that stays off.
+
+## Blocked / questions for the operator
+
+Nothing is blocked: no item is listed here as blocked, and rule (h) passes over none. CP-03
+(Replay without capture) was listed until 2026-10-07, when the operator answered CP-Q3, the
+question about the number of runs ("Your recommended"). An item id named in the notes below
+is not a blocked item.
+
+Answered, nothing more wanted:
+
+- **CP-Q1** and **CP-Q8** carry Answer lines dated 2026-10-06, taken from the request: yes
+  to the seam, to the Chanter diverging at Ascension and to levels 1-9 to Munin for the
+  other starter classes; and endpoint (a), the existing Munin stop. The operator confirmed
+  both on 2026-10-07 ("Good").
+- **CP-Q3** (2026-10-07): the run counts are approved as recommended. SIM only, seed 1, a
+  throwaway schema for every run, nothing captured over, no multi-seed batches, no LIVE.
+- **CP-Q10** (2026-10-07): the Warrior takes the weapon at Q2100, not the shield.
+- **CP-Q11** (2026-10-07): no bandages. Potions, and a sit while the potion is on its
+  delay.
+- **CP-Q12** (2026-10-07): help items are on for every class line, the Priest's levels 1-9
+  included.
+- **CP-Q21** (2026-10-07): every line binds at each Ishalgen quest hub, the village and the
+  outpost, and soul heals there after a death.
+
+CP-00 logs all seven in decision D39 with the operator's words quoted. Say so if D39 should
+be worded differently or cover less.
+
+Not blocking. These points were set while the answers of 2026-10-07 were written into the
+plan, where the operator's words left room. They block no item. The loop works with them;
+say so to change one.
+
+- **The shield scroll's tier at levels 1-9.** Default: the Lesser Anti-Shock 164000067,
+  which absorbs 158. By its restrict row a level-1 character may use up to the Major
+  164000070, which absorbs 425.
+- **Stock and use follow OD-13's numbers:** potions to 30 when below 10, shield scrolls to
+  30 when below 8, running scrolls to 20 when below 5; the shield scroll at 50% HP, the
+  Running scroll before a leg of 150 m or more.
+- **The speed scroll per class.** Casting speed (Castafodin) for a class that casts, as
+  OD-15 chose for the Cleric; attack speed (Blitzopan) for the Warrior and the Scout.
+- **Three starter consumables are left out of the kit:** the fruit juice, the Lodas Amulet
+  (an XP boost) and the Administrator's Boon (no death penalty for an hour). The reasons
+  are in the "Every line" note.
+- **Between fights the potion is drunk below the 90% rest target,** the Priest's own rest
+  number. In a fight CP-Q11's 75% stands.
+- **Each Ishalgen bind is made once.** A later visit to the village, after the bind has
+  moved to the outpost, does not move it back.
+- **Hub flight in Ishalgen stays off.** The answer to CP-Q21 was about the bind.
+- **The Chanter at level 10** gets the same level-10 help bands as the Cleric, because the
+  list is keyed by level. It stops right after, so it uses none of them.
+- **The kit steps down at level 10** (hazard 27). The best potion a level 1-9 character
+  may use is the Major Life Potion; the Cleric's approved level 10-19 band supplies the
+  Minor. The Cleric's bands are not changed without the operator's word.
+- **The event-scroll finding** (hazard 28) may show that the Cleric's level 20-29 scroll
+  bands are weaker than the event scrolls it owns. CP-05 records what it finds here. It
+  does not change the Cleric's bands.
+
+Every other question runs on its default until an Answer line stands under it.
+
+## Out of scope
+
+- Not yet: splitting RunAsync into per-leg runners, or removing its 45 captured locals, the
+  three single-slot session hooks (BeforeSend, AfterSynchronize and ResolveForcedLanding)
+  and the exception-based control flow. Only the two self-contained nested classes move.
+- Not yet: anything past an endpoint. The Chanter stops after the Pandaemonium ceremony (no
+  capital first pass, no bridge to Altgard, no Altgard, Haramel or Abyss leg). The five new
+  starters stop at Munin with Q2008 untouched; no natural character of theirs fights the
+  trial or chooses a second class.
+- Not yet: second-class play. No Chanter rotation, no level-10 catalog, no Gladiator,
+  Templar, Assassin, Ranger, Sorcerer, Spirit Master, Gunner, Rider or Bard profile.
+- Not yet: making later-leg data class-aware (the Altgard and Abyss contracts, reward pins,
+  coin-gear and Haramel manifests, air combat with Smite, Hand of Reincarnation, the destiny
+  leg's stigma). Their Cleric requirements stay as refusing gates.
+- Not yet: moving the Priest's and Cleric's fight, rest or gear decisions onto the table
+  policy, or widening the frozen Mau bounds. They stay as code behind adapters.
+- Not yet: LIVE. The NI-09 and NI-10 identities, the attach runner and its PowerShell twin
+  stay Priest only.
+- Not yet: Elyos, and female characters. Runtime hostility is fixed to the Asmodian side
+  (Sc/NaturalJourneyRuntime.cs:37-38) and every line is male.
+- Not done at all: renaming files, types, the SIM test method, the NaturalJourneyStage
+  names, any parsed trace key or any Priest step string. Class names in strings come from
+  the line.
+- Not done at all: re-capturing or re-verifying any existing snapshot, regenerating the 26
+  Ishalgen plans, editing the frozen Ishalgen and Ascension contract files, or re-freezing
+  the Mau tools.
+- In scope since 2026-10-07: help items at levels 1-9 for every class line, the event
+  scrolls and mana potions a starter owns among them (CP-05, CP-06), and the bind at each
+  Ishalgen quest hub (CP-07).
+- Not yet: a class dimension in the allowlist, a help kit of its own past level 9 for any
+  class but the Cleric (the Chanter gets the Cleric's level-10 bands at the ceremony and
+  stops), stigma stones, skill books and buying gear.
+- Not done: changing the Cleric's help bands from level 10 on, or any Cleric leg. A finding
+  there is recorded for the operator.
+- Not done at all: bandages. Bandage Heal 245 is not cast, and no bandage is bought or kept
+  as a supply.
+- Not yet: the rest of the Ishalgen hub optimizer (hub pickup order, safe work groups, hub
+  flight). CP-07 takes only the two binds from it.
+- Not yet: charge skills (Artist Fiery Descant), Scout Surprise Attack, Counterattack and
+  Stealth, Mage kiting, Escape 302.
+- Not yet, unless a probe shows the need: decoding SM_ATTACK_RESPONSE, SM_TARGET_SELECTED,
+  SM_ABNORMAL_EFFECT or SM_ITEM_COOLDOWN. If the Warrior probe shows a silently refused
+  swing, the first becomes a lettered item under CP-43.
+- Not yet: a snapshot at the first level 9 or at Q2008 var 6. Those are (b) and (c) of
+  question 8, and its answer is (a).
+- Not yet: a per-class encounter tuning harness in the style of NA-23 or the Mau course. It
+  is built only if a class cannot finish Ishalgen without it.
+- Not done: a new manifest scenario id. The class-choice confidence runs are a gated probe,
+  so scenarios.json and the system matrix are untouched.
+- Not done: server and data changes. None is expected; the missing RIDER in class_permitted
+  on 178 of the 197 quests that list GUNNER is recorded, not touched.
+- Not done: multi-seed batches, two class runs side by side, the NTC party and its
+  controller.
+- Not done during the refactor: fixing the findings listed under Hazards (item 8) and in the
+  PRIEST and CLERIC note.
+- Not built: JSON rule sheets, checked-in generated kit files, and a class-choice capture
+  scope that starts from a Munin snapshot. Rule tables are C#, catalogs are generated in
+  memory, and the Chanter uses the existing capital-start scope.
+
+## Combined goal prompt
+
+The loop prompt for the session that implements this plan. Paste it after `/loop`.
+
+```text
+Work the CP checklist in docs/natural-class-profiles.md, one item per
+iteration.
+
+Repository: C:\Users\ryanf\Documents\GitHub\BeyondAionSharp, branch main.
+The accepted line is the Asmodian Priest who becomes a Cleric. Its contracts
+and snapshots stay as they are. Its levels 1-9 change once, on purpose, in
+CP-05 to CP-07 (the operator, 2026-10-07: the help kit and the bind at each
+Ishalgen quest hub). In a bridge run the level-10 Cleric finishes Ishalgen
+with the same binds. The Cleric's kit and every leg from Altgard on do not
+change. From
+the baselines of CP-08 and CP-09 on, the journey must play exactly as they
+recorded it.
+
+EACH ITERATION
+1. Orient. Read CLAUDE.md and AGENTS.md, then docs/natural-class-profiles.md:
+   The seam (with "Rules of this list"), Standing rules, Per-class notes,
+   Hazards, CP checklist, Operator decisions, Blocked / questions, and the
+   last Progress log lines. Follow "How to work this list (loop protocol)" in
+   docs/natural-ascension-altgard.md, with CP in place of NA. Where that
+   protocol and this document differ, this document wins (rule (m)): the
+   protocol's checks are rule (b), its one-run rule is CP-Q3, its OD-3 is the
+   Git standing rule, and its full checklist is run at CP-41 and CP-69.
+   Run git status. Check for running SIM or journey processes and the newest
+   run/ folders. Never build, run checks or start a run while another process
+   holds the build outputs. Then apply the re-record rule of "Proof tools and
+   the neutral gate": look at git log <baseline sha>..HEAD for a commit from
+   outside this list.
+2. Pick by rule (h): the first unchecked CP item that is not listed under
+   "Blocked / questions for the operator" and whose Depends are all ticked.
+   Nothing is blocked at the start: CP-Q3 was answered on 2026-10-07. A
+   question with no Answer line runs on its recorded default. CP-Q1, CP-Q3,
+   CP-Q8, CP-Q10, CP-Q11, CP-Q12 and CP-Q21 are answered, and an Answer
+   outranks its question's Default. If no item can be taken, stop and
+   report.
+3. Read the Java first (../aion-server, branch 4.8) for every server behavior
+   the item relies on. Java wins; a retail correction needs an approved
+   decision. No server or data change is expected in this plan.
+4. Do only that item. A refactor item changes no behavior: no rename, no
+   reordering, no fix. CP-05, CP-06 and CP-07 are not refactor items: they
+   change the Priest's levels 1-9 on purpose, before the baselines. A
+   finding met on the way is written into the doc, not fixed.
+5. Run the item's one proof. For a journey item: two attempts at most; a fix
+   inside the item is one small change (a profile number, a reward pick, one
+   attempt-budget override with its reason). Anything larger, and any
+   second failure, goes under Blocked and becomes a lettered item (rule
+   (i)): it is written directly after its parent with its own Depends and
+   Proof lines and added to the parent's Depends, which takes the parent off
+   Blocked; the parent is then retried with a fresh two-attempt budget. A
+   fix to shared code also re-runs the gate set of the item that introduced
+   that code (rule (k)). An item that means to change how a new class plays
+   re-records that class's scope twice (rule (j)); Priest and Cleric scopes
+   are never re-recorded that way. Keep failed evidence under run/cp/.
+6. Before committing, run the bundle of rule (b) in "Rules of this list": the
+   seven pre-commit checks one after another (check-warning-baseline,
+   check-null-loggers, check-clock-reads, check-custom-quest-drafts,
+   check_fidelity.py, test-quest-plan-compiler.py,
+   test-retail-quest-inventory.py); the Aion.GameServer.Tests project when
+   tests/Aion.Bots changed; the script tests when scripts/sim changed; and
+   scripts/e2e/run-fast.ps1 unless the commit is docs or evidence only. Once
+   CP-08 is ticked, and from CP-13 on, also run the guard of rule (c).
+7. Record: tick the box, add a dated evidence line with run ids and numbers,
+   and append one Progress log line.
+8. Commit on main: stage only the item's files, one commit per item,
+   imperative subject, the CP id and the evidence in the body, no co-author
+   or attribution trailer. Never push. A capture item makes two commits: the
+   code commit, then the capture and its Verify, then one evidence-only
+   commit (rule (d)).
+9. If an item needs an operator decision or exposes a defect shared with Java,
+   write it under "Blocked / questions for the operator" and pick again by
+   rule (h). If no item can be taken, stop the loop and report.
+
+OPERATOR RULES (every class and level)
+- Natural play: no GM input in a journey, apart from the approved help
+  items, which are on for every class line. GM setup only in probes on free
+  SIM accounts (CP-31 allocates them), and each probe says what it prepared.
+- Deaths, retreats, lost timers and failed attempts are recorded outcomes,
+  not test failures. Death is not failure.
+- The death rule is the bot's: whenever it dies it revives at the obelisk it
+  is bound to, the working hub's, and soul heals at the Soul Healer beside
+  it; in an instance it revives in the instance and heals after the next
+  obelisk resurrection.
+- Run the inventory check after every quest turn-in: wear better gear, open
+  reward containers, discard what is to be discarded, check cube space
+  (CP-Q13 for how it applies in Ishalgen).
+- Gear is decided by each class's profile. The Cleric keeps its staff rule.
+  The Warrior takes the weapon at Q2100, not the shield (CP-Q10). No gear is
+  bought at levels 1-9.
+- No level goals. Never hunt or soul heal for a level.
+- Loot every kill.
+- Bind at the working hub's obelisk everywhere, Ishalgen included: the
+  village (obelisk 700063) and the outpost (obelisk 700064), each on first
+  arrival there for work, for every line, the Priest included (CP-Q21,
+  CP-07). Use hub flight transporters from Altgard on; in Ishalgen the hub
+  flight stays off.
+- Help items are on for every class line and every level, the Priest's
+  levels 1-9 included: the best healing potion the level may use, the shield
+  scroll, the Greater Running Scroll, and any other consumable that makes
+  the class more survivable or faster (CP-Q12). Write each kit into the doc
+  as a manifest before its first use; every supplied item is listed in the
+  run's help-items.json. Never set NA_HELP_ITEMS=0. The Cleric's kit from
+  level 10 on stays as approved (OD-13). No stigma, no skill books.
+- No bandages. A class without a heal drinks a life potion when its HP is
+  below the target and the potion is ready, in a fight and between fights,
+  and sits while the potion is on its delay (CP-Q11).
+- Write a class's gear and reward picks into the doc before its first run.
+
+STANDING RULES
+- SIM only, seed 1. Fresh-create runs are part of this plan (CP-Q3, answered
+  2026-10-07); every run uses its own throwaway schema and drops it. No
+  multi-seed batches. No LIVE run. Do not touch the operator's aion stack.
+- Do not rename or move the files listed under "Not renamed or moved". Do not
+  edit the frozen Ishalgen and Ascension contract files or regenerate the
+  Ishalgen plans.
+- Capture snapshots only from committed code, under new names. Never
+  overwrite, recapture or re-verify an existing snapshot; the old snapshot
+  munin stays as it is. A capture that fails its acceptance keeps its name
+  and is logged as rejected; the second attempt is captured as <name>-a2
+  (rule (l)).
+- Never branch, use worktrees, spawn subagents or push. Never check out an
+  older commit. Do not hand-edit generated data or raise the warning baseline.
+- Keep the bot monitor at http://127.0.0.1:17880/ available during runs and
+  tell me when a run can be watched.
+- Re-record rule: if git log <baseline sha>..HEAD shows a commit from outside
+  this list under src, tests, game-server or parity-artifacts, run the full
+  gate at HEAD before taking an item. If a scope fails, stop and report: I
+  decide between re-recording at HEAD and reverting. An outside commit already
+  logged with a passing verdict is not checked again. An upstream port may
+  bump javaReference in the class-lines file.
+- Leave these untracked files alone: docs/playtest-aethertapping-plan.md,
+  docs/playtest-crafting-alchemy-cooking-plan.md,
+  docs/playtest-ground-essencetapping-plan.md.
+
+STOP when CP-69 is ticked, when no item can be taken, or when an item or a
+rule says stop and report (CP-08, CP-09, the re-record rule, the full-gate
+failure rule). The two natural pauses are after CP-45 (the seam closed, with
+a Warrior in the field; say whether the Chanter capture CP-33 is ticked or
+blocked) and after CP-57 (Mage and Warrior at Munin, both class scopes
+recorded): report there and go on unless I say otherwise. When you stop,
+report what was done, what is blocked and what you need from me.
+```
+
+## Progress log
+
+- 2026-10-06 — The plan was written from a read-only review of the bot (27 review agents:
+  fifteen readers, one merge, three plans, three judges, two synthesis passes and three
+  critics; nothing was built or run). No item is started. CP-00 commits this document.
+- 2026-10-06 — A fact check and a loop-fit review were applied to the plan. The checklist
+  was renumbered once and then ran from CP-00 to CP-66, 67 items (in the numbering of that
+  day); ids quoted from the first draft no longer apply. Answer lines were recorded for
+  CP-Q1 and CP-Q8 from the request. CP-Q3 was open, so CP-03 was listed under Blocked.
+  Still nothing is built or run.
+- 2026-10-07 — The operator read the plan and answered. Recorded as Answer lines: CP-Q3
+  ("Your recommended"), CP-Q10 (the Warrior takes the weapon at Q2100), CP-Q11 (no
+  bandages; potions, and a sit while the potion is on its delay), CP-Q12 (help items on
+  for every class line, the Priest's levels 1-9 included) and CP-Q21 (bind at each
+  Ishalgen quest hub, the village and the outpost, for every line). CP-Q1 and CP-Q8 were
+  confirmed ("Good"). Three items were added in Phase A, before the baselines: CP-05 (the
+  level 1-9 help kit: manifest and allowlist), CP-06 (the Priest plays levels 1-9 with the
+  kit) and CP-07 (bind at each Ishalgen quest hub). The checklist was renumbered a second
+  time: the items that were CP-05 to CP-66 are now CP-08 to CP-69, each id three higher,
+  and CP-00 to CP-04 keep their ids. The list runs from CP-00 to CP-69, 70 items. Every
+  bandage step was rewritten to potion and sit, and nothing is blocked any more. The item
+  data, the help-item code and the Ishalgen bind code were read for this; nothing was
+  built or run.
+- 2026-10-07 — Loop: CP-00 done. The plan is committed with decision D39, the pointer row
+  in CLAUDE.md and one dated line in each of the readiness report, the Ascension document
+  (OD-13) and the Altgard leveling document (the standing bind policy). Six files; seven
+  pre-commit checks pass (run/cp/CP-00/checks/). No baseline exists yet, so the re-record
+  rule did not apply. Next by rule (h): CP-01.

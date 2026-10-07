@@ -8,6 +8,8 @@ The next bounded goal should complete Abyss entry, then establish natural Templa
 
 These contracts are steps toward the maintainer's long-term goals (2026-10-06, in order): a server play-tested by our bots, with bugs fixed as we encounter them; an intelligent bot that can play the whole game (all quests, gathering, crafting and the rest); and, only after those two, bots that can join a human group as an extra healer or DPS. See [CLAUDE.md](../CLAUDE.md#where-this-leads-the-long-term-goals). The Abyss-entry leg is planned in [natural-abyss-entry.md](natural-abyss-entry.md).
 
+**Update 2026-10-07 (D39): class profiles come before the Templar and Sorcerer profiles named above.** The class seam, a Chanter branch at Ascension and levels 1-9 for the five other starter classes are planned in [natural-class-profiles.md](natural-class-profiles.md); the Templar and the Sorcerer later start from its Warrior and Mage profiles with a fresh run in the early-Ascension order, not from its Munin snapshots.
+
 ## Measured endpoint and historical comparison
 
 | Measure | Historical AS-02 | Revised RC |

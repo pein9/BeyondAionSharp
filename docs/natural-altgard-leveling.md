@@ -5380,6 +5380,10 @@ quest's own timer on a death is not known and is not changed.
 the bot is working out of. A return scroll or a death respawn then brings it back to the
 work, not to a town it has left. It applies to every leg from Leg 4 on.
 
+**Widened 2026-10-07 (D39):** the bind at the working hub now holds in Ishalgen too, for every
+class line: the village obelisk 700063 and the outpost obelisk 700064. See CP-Q21 and CP-07 in
+[natural-class-profiles.md](natural-class-profiles.md).
+
 The original questions, from the follow-up sweep:
 - **AB-Q4 — Pull Basfelt's own follow-ups into Leg 4?** Q2227 → Q2291 open at Gornak once Q2226
   is handed in there. Their crystals come from passive lake spirits beside the south
