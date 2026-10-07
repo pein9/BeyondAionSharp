@@ -10,8 +10,8 @@ namespace Aion.GameServer.Tests.Ai;
 /// The call site: conditional spawn groups going into the world at start.
 /// </summary>
 /// <remarks>
-/// <see cref="GatedSpawnService"/> reads 14,292 placements across 91 maps and starts a controller for
-/// every non-instance map that has any. Roughly 619 hold before a pattern writes anything, so that many
+/// <see cref="GatedSpawnService"/> reads 14,290 placements across 91 maps and starts a controller for
+/// every non-instance map that has any. Roughly 617 hold before a pattern writes anything, so that many
 /// npcs appear at boot and the rest wait on a condition.
 /// </remarks>
 [Collection("GoldenDataManager")]

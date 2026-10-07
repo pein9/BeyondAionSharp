@@ -49,7 +49,7 @@ EXIT CODES
 worse than no CI job, and one that treats it as a failure would go red on every machine without the
 dump. The caller has to decide which it wants, so the tool refuses to decide for it.
 
-Usage:  python regen_check.py [--xml DIR]
+Usage:  python regen_check.py [--xml DIR] [--worlds DIR]
 """
 import argparse
 import pathlib
@@ -98,7 +98,12 @@ STRING_EXTRACTORS = [("extract_string_ids.py", "string_ids.tsv"),
                      ("extract_npc_autonomous_skills.py", "npc_autonomous_skills.tsv"),
                      ("extract_skill_categories.py", "skill_categories.tsv")]
 
-# Writes into game-server data rather than out/, because the server reads it directly.
+# Writes into game-server data rather than out/, because the server reads it directly. It reads the
+# world files, and it also reads this port's static spawns: its `overlaps_static` column says which
+# gated placements this port already spawns unconditionally, and the server skips those. So this table
+# drifts when a static spawn moves, not only when the script does. Ishalgen's two new-class trainers
+# (801218, 801219) stood twice on one spot in every channel for eleven days, because their static
+# spawns were moved onto the gated spots and nothing regenerated the table.
 GAME_DATA_EXTRACTORS = [("extract_gated_spawns.py",
                          "game-server/data/static_data/spawns/gated/gated_spawns.tsv")]
 
@@ -194,6 +199,7 @@ def compare(label, produced, committed, problems):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--xml", default="D:/Aion58ServerTesting/Server/Map/XML")
+    ap.add_argument("--worlds", default="D:/Aion58ServerTesting/Server/Map/Worlds")
     args = ap.parse_args()
 
     problems = []
@@ -261,7 +267,26 @@ def main():
                 continue
             compare(f"{script} -> {table}", out, HERE / "out" / table, problems)
 
+        unchecked = not pathlib.Path(args.worlds).is_dir()
+        if unchecked:
+            print(f"\nretail worlds not found at {args.worlds}; game data extractors skipped",
+                  file=sys.stderr)
+        else:
+            print("\nextract: retail worlds and this port's static spawns -> committed game data")
+            for script, target in GAME_DATA_EXTRACTORS:
+                out = tmpdir / pathlib.Path(target).name
+                code, err = run(script, [args.worlds, args.xml, str(out)])
+                label = f"{script} -> {pathlib.Path(target).name}"
+                if code != 0:
+                    tail = "\n      ".join(err.strip().splitlines()[-3:])
+                    problems.append(f"{label}: CRASHED\n      {tail}")
+                    print(f"  CRASH    {label}")
+                    continue
+                compare(label, out, HERE.parents[1] / target, problems)
+
     print()
+    if not problems and unchecked:
+        return 2
     if not problems:
         print("every generator and emitter runs and reproduces what is committed")
         return 0

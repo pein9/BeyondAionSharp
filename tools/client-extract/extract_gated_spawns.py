@@ -79,7 +79,7 @@ def main() -> int:
     maps = map_ids_by_world()
 
     # Where this port already places the same npc within a few metres, retail's gated copy is the same
-    # spawn expressed conditionally -- and putting both in the world doubles it. 6,800 of the 21,096
+    # spawn expressed conditionally -- and putting both in the world doubles it. 6,802 of the 21,096
     # are like that, so they are marked rather than silently emitted.
     existing = existing_spawns(args.repo)
 

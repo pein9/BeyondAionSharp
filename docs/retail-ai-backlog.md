@@ -235,6 +235,13 @@ argument for reading a handler's contents before its count.
   change were wrong; see the log entry before trying a third.
 - **18 `--implemented` audit candidates** — `python tools/client-extract/audit_stale_claims.py
   --implemented`. Most are accurate past-tense history; the yield is in repeated claims.
+- **Thirteen npcs spawned once by this port and placed again by a gate somewhere else** — found by the
+  census of 2026-10-07 after Ishalgen's two trainers were found standing twice. The gated table only
+  skips a placement within 5 m of a static spawn, so an npc retail moved further than that stands at
+  both spots: eight in Kaisinel Academy and Marchutan Priory (207019–207022, 207025–207028), Peja
+  832827 in Pandaemonium, Varina 206314, Kanzat 206315 and rift 700551 in Reshanta, and 214392 in
+  Brusthonin (twice). Each needs a decision between Java's spot and retail's; see the log entry "Two
+  Ishalgen trainers stood twice".
 
 ## D-bis. The skill-index rule — done
 

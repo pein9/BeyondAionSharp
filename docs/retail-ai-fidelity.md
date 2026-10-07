@@ -41560,3 +41560,71 @@ point within 1 m. That is how Java judges its own runs, FEAR and CONFUSE. Outsid
 - The pin `KrallTrapperAiTests.TheEscapeIsNotArrivedWhileTheQuarryIsStillInReach` fails without the fix.
 - The SIM flee test passes after the fortress-exit test and after all 42 Fast tests that precede it.
 - The GameServer suite passes (4,427, 16 skipped).
+
+## Two Ishalgen trainers stood twice: the gated table was stale
+
+Found by the CP-34 probe (`docs/natural-class-profiles.md`, 2026-10-07). Ishalgen held two Npc objects
+for Wild Wilhelm (801218) and two for Sona (801219), in every channel: the static spawn on the floor
+(z 278.5 and 278.35) and a second one on the same x and y at retail's z (281.0 and 280.71), 2.4 m above
+it. Both answered the talk.
+
+**The cause is the gated spawns, not the spawn engine or an AI.** `gated_spawns.tsv` has both trainers
+under `SpecialServer_Cond == 0`, a gate that holds on an empty store. Its `overlaps_static` column says
+whether this port already spawns the npc within 5 m, and `GatedSpawnData` skips the rows that say TRUE.
+The column is computed when the file is generated:
+
+- 2026-08-20: the file is generated. The trainers' static spawns are at Java's spots, 33 m and 39 m
+  away, so both rows read FALSE. From the day the gated spawns were loaded, each trainer stood twice,
+  once at Java's spot and once at retail's.
+- 2026-09-26: `49663a7a8` moves the two static spawns onto retail's x and y
+  (`docs/natural-ishalgen-status.md`). The file is not regenerated, so the rows still read FALSE, and
+  the two copies now stand on one spot.
+
+**Java has no gated spawns** and one spawn entry for each trainer, so Java holds each once. This was a
+defect of this port only.
+
+**The fix is the regenerated file.** `extract_gated_spawns.py` flips exactly these two rows to TRUE and
+changes nothing else. The counts move by two: 6,802 placements duplicate a static spawn, 14,290 are
+loaded, and 617 hold on an empty store. No spawn, template or position was added or changed.
+
+**So that it is found the same day next time,** `regen_check.py` now runs the gated extractor and
+compares its output with the committed file. It declared the extractor in `GAME_DATA_EXTRACTORS` and
+never ran it. The table depends on this port's static spawns as well as on the dump, so it drifts when
+a spawn file is edited. `WORLD_EXTRACTORS` and `STRING_EXTRACTORS` are declared the same way and are
+still not run.
+
+### The count, from a started SIM world
+
+Every Npc of a freshly started SIM world was listed (110,263 objects on 41 maps, 272 gated groups
+placed) and grouped by npc id, map, channel, x and y to 0.1 m.
+
+| | groups | extra objects |
+|---|---|---|
+| same spot, one of the two is a gated placement | 10 | 10 |
+| same spot, static spawns only | 111 | 127 |
+
+- The ten are the two trainers in Ishalgen's five channels (the SIM runs five). Nothing else in the
+  world is doubled this way. After the fix there are none: 110,253 objects, 262 gated groups.
+- The 111 are 51 spots that the spawn files list more than once for one npc, most at a different z or
+  under a different condition. **All 51 are in Java's spawn files too.** The two trees agree on every
+  repeated spot but two, both known: the twelfth Triniel arena spirit (D36) and one Altgard spot removed
+  on 2026-10-01. They are left as Java has them.
+- A census taken after the virtual clock has moved shows about 200 more groups. They are walkers
+  standing on a shared route point, not spawns.
+
+### Still open: thirteen npcs with one static spawn and a gated placement somewhere else
+
+This is what the trainers were before 2026-09-26, and the 5 m rule does not catch it. In channel 1 of
+the same census, thirteen npcs that this port spawns exactly once also have a gated placement on the
+same map, 10 m to 713 m away. Twelve have one and one has two:
+
+- Kaisinel Academy 110070000 (207019 to 207022) and Marchutan Priory 120080000 (207025 to 207028),
+  59 m to 77 m from their static spawns.
+- Pandaemonium 120010000: 832827 (Peja), 9.6 m away.
+- Reshanta 400010000: 206314 (Varina), 206315 (Kanzat) and rift 700551, 369 m to 713 m away.
+- Brusthonin 220050000: 214392, one static spawn and two gated placements.
+
+Each may be one npc that retail moved (two copies here) or one that retail has twice. Nothing was
+changed: choosing between Java's spot and retail's is a decision for each npc, with the server
+running. Eighteen more npc ids have several static spawns and gated placements too; those are
+ordinary creatures and look like added spawns, not copies.

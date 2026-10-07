@@ -274,7 +274,7 @@ public sealed class GameServerBootstrapService : IHostedService
 
 		// The conditional spawn groups retail keeps in its world files, which nothing here has ever
 		// placed. Not Java parity -- aionemu has no equivalent -- but the sanctioned retail exception:
-		// 14,292 placements across 91 maps, of which about 619 hold before any pattern writes a
+		// 14,290 placements across 91 maps, of which about 617 hold before any pattern writes a
 		// variable, and the rest appear when one does. The ones this port already spawns
 		// unconditionally are filtered out of the data, so nothing is doubled. See
 		// docs/retail-ai-fidelity.md and World/Spawns/GatedSpawnService.

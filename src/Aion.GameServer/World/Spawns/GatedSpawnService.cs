@@ -9,9 +9,9 @@ namespace Aion.GameServer.World.Spawns;
 /// Puts the conditional spawn groups into the world at start, and keeps them tracking their gates.
 /// </summary>
 /// <remarks>
-/// The call site the engine was built for. <see cref="GatedSpawnData"/> carries 14,292 placements across
+/// The call site the engine was built for. <see cref="GatedSpawnData"/> carries 14,290 placements across
 /// 91 maps once the ones this port already spawns unconditionally are filtered out, and roughly
-/// <b>619</b> of them hold before anything writes a variable — those appear at start, and the rest wait
+/// <b>617</b> of them hold before anything writes a variable — those appear at start, and the rest wait
 /// for a pattern to move a counter.
 /// <para>
 /// <b>Non-instance maps only.</b> A map whose instances come and go would need a controller per

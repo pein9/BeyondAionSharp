@@ -483,7 +483,13 @@ and Sonna 801219 to their explicit 5.8 X/Y references, respectively
 Z values are set to walkable collision floors 278.500 and 278.350 rather than
 5.8 source Z 281.0 and 280.708, which would be 2.4–2.5 m above those floors.
 Their 4.8 groups remain unconditional. The separate 5.8 gated TSV rows are
-marked as overlaps and skipped by the current gated loader. No other NPC
+marked as overlaps and skipped by the current gated loader. (Correction,
+2026-10-07: they were not. The TSV was not regenerated after this move, so
+both rows still read `overlaps_static = FALSE` and the gated copies kept
+standing at the 5.8 Z above the moved static ones. The suspended pair in the
+screenshot was most likely those gated copies. The rows are marked since
+2026-10-07; see `docs/retail-ai-fidelity.md`, "Two Ishalgen trainers stood
+twice".) No other NPC
 spots or group settings changed. The candidate passed the spawn XSD, nearby
 spawn check, and byte-idempotence check. The running game server was not
 restarted; the user's next rebuilt container needs an in-game visual check.

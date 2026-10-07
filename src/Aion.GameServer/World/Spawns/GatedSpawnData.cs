@@ -22,7 +22,7 @@ namespace Aion.GameServer.World.Spawns;
 /// extractor is the schema.
 /// </para>
 /// <para>
-/// <b>Only about 7% hold on an empty store</b> — 1,447 of them, of which 619 survive the overlap filter — so loading this places roughly that
+/// <b>Only about 7% hold on an empty store</b> — 1,447 of them, of which 617 survive the overlap filter — so loading this places roughly that
 /// many npcs at world start and leaves the rest waiting on a condition. That number is worth knowing
 /// before wondering why a world looks emptier than the file suggests.
 /// </para>
@@ -37,7 +37,7 @@ public static class GatedSpawnData
 	/// <returns>Map id to the groups on that map.</returns>
 	/// <param name="includeOverlapping">
 	/// Whether to include placements this port already spawns unconditionally within a few metres.
-	/// <b>Off by default, and that is the load-bearing part.</b> 6,800 of the 21,096 are the same npc in
+	/// <b>Off by default, and that is the load-bearing part.</b> 6,802 of the 21,096 are the same npc in
 	/// the same spot as an existing static spawn — retail expresses it as a gated group and this port as
 	/// an always-on one — so loading both would put two of everything in those worlds.
 	/// <para>
