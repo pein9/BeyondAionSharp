@@ -3259,7 +3259,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
 
 ### D. What another class needs, and a Warrior in the field before the seam is closed
 
-- [ ] **CP-34 - Q2132 at the six trainers, on prepared characters.** Depends: CP-01, CP-31
+- [x] **CP-34 - Q2132 at the six trainers, on prepared characters.** Depends: CP-01, CP-31
   - Work: Java first: _2132ANewSkill.java:24-134 (register at 24-32, the level change that
     sets the var and reward group at 35-67, and the dialog with the refusal and the pages at
     72-134). Add the gated SIM theory NaturalNewSkillTrainerProbe, six rows on the probe
@@ -3271,6 +3271,55 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
   - Proof: SIM probe NaturalNewSkillTrainerProbe: all six rows pass (Warrior at Minu 203527,
     Scout at Wiokan 203528, Mage at Jurwen 203529, Priest at Kirhen 203530, Engineer at
     801218, Artist at 801219).
+  - 2026-10-07: done. All six rows pass on the final probe code, two to a process on the
+    probe accounts 98 and 100 (run/cp/CP-34/probe-final-1.log warrior and scout,
+    probe-final-2.log mage and priest, probe-final-3.log engineer and artist). The command
+    is AION_SIM_DB_INTEGRATION=1 CP_PROBE_ROWS=<two rows> dotnet test
+    tests/Aion.Simulation.Tests --filter "FullyQualifiedName~NaturalNewSkillTrainerProbe".
+    Guard run guard-a1, set p: verdict pass (run/cp/CP-34/guard-a1/verdict.json), 35,811
+    records, identical to its baseline.
+    - **Java, read first.** _2132ANewSkill.java:24-32 registers the level change and the
+      six trainers; 35-67: at the level change the quest starts, goes straight to REWARD
+      and takes the var and the reward group of the starting class (1/0 Warrior, 2/1
+      Scout, 3/2 Mage, 4/3 Priest, 5/4 Engineer, 6/5 Artist); 72-134: only the class's own
+      trainer answers, with its page on USE_OBJECT (1011, 1352, 1693, 2034, 2375, 2716)
+      and the quest end dialog on anything else; another class's trainer returns false.
+      quest_data.xml: level 3, six reward groups of 275 experience each.
+    - **SimT/SimulationNaturalNewSkillTrainerProbe.cs** is new: the gated theory
+      NaturalNewSkillTrainerProbe, six rows chosen by CP_PROBE_ROWS. It touches no journey
+      code and adds no manifest id.
+    - **What the probe prepared.** The character is created by packets as the row's
+      starter. The test then sets it to level 3, which starts Q2132, and places it two
+      meters from a trainer, twice. Every talk is a client action. No director command is
+      used: the level is set on the server object, as CAPITAL-ASMO sets level 9.
+    - **Each row shows:** Q2132 in REWARD with the contract's var and reward group, on the
+      client and on the server; the next class's trainer opens its ordinary page 10 for
+      quest 0, not a Q2132 page, and the quest stays in REWARD; the class's own trainer
+      opens the contract's page for Q2132 on the talk, and the journey's turn-in
+      (QUEST_SELECT, then SELECTED_QUEST_NOREWARD) completes the quest for 275 experience.
+      The log policy is clean, with protocol warnings and the audit log set to fail.
+      Warrior at 203527 page 1011, Scout at 203528 page 1352, Mage at 203529 page 1693,
+      Priest at 203530 page 2034, Engineer at 801218 page 2375, Artist at 801219 page
+      2716. It is the first time a bot has talked to the Engineer's and the Artist's
+      trainer.
+    - **Attempts.** First attempt: warrior, scout and mage passed; priest, engineer and
+      artist stopped in the probe's own lookup, which asked for exactly one object of the
+      trainer's template (logs probe-a1-2 and probe-a1-3). The one small change: the probe
+      takes the object nearest the contract's position and prints every one it saw. Second
+      attempt: all pass.
+    - **Finding, not fixed: two trainers exist twice.** The server holds two Npc objects
+      for 801218 and two for 801219: the static spawn (objects 55500 and 55161, at z 278.5
+      and 278.4) and a second one at the same x and y about 2.4 m higher (objects 132426
+      and 132427, at z 281.0 and 280.7), with object ids allocated late in the world's
+      start. Both answer the talk. The spawn data holds one entry for each, and no source
+      names the two ids but the quest handler. The other four trainers exist once. What
+      sets the two apart: their templates use ai passive_pattern, the other four general.
+      The cause was not found and the Java server was not compared. It does not stop a
+      journey that approaches the trainer by its shipped position. It is offered as a
+      separate task, and it is a hazard for the Engineer's and the Artist's journeys
+      (CP-60 on): an approach that asks for exactly one trainer object fails.
+    - Bundle: the seven pre-commit checks pass and Fast passes (run cp34-fast).
+      Aion.GameServer.Tests was not run: tests/Aion.Bots did not change.
 - [ ] **CP-35 - A skill catalog generated from the shipped data, and the profile
   validator.** Depends: CP-08, CP-14
   - Work: This item edits existing bot files, so it waits for the first baselines (CP-08).
@@ -4625,3 +4674,9 @@ report what was done, what is blocked and what you need from me.
   and Q2904 at START/0. Its trace first differs from baseline p at the class-choice decision,
   record 35,065. Verify passes with CP_CLASS=priest-chanter and PC_CAPITAL=start. Phase C, the
   Chanter branch, is complete but for CP-29a, which waits for CP-Q22. Next by rule (h): CP-34.
+- 2026-10-07 — Loop: CP-34 done. NaturalNewSkillTrainerProbe, six rows two to a process: every
+  starter is refused at another class's trainer and paid at its own with the contract's var
+  and page (run/cp/CP-34/probe-final-1..3.log). Finding: the server holds the Engineer's and
+  the Artist's trainer twice, the second about 2.4 m above the first; cause not found, offered
+  as a separate task. Guard guard-a1, set p: identical. Seven checks and Fast (cp34-fast)
+  pass. Next by rule (h): CP-35.
