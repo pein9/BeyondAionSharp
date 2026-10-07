@@ -1097,7 +1097,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - Bundle: seven pre-commit checks pass, Aion.GameServer.Tests passes 4,675 with 16
       skipped, and Fast passes all 11 scenario gates (run cp01-fast: 115 tests passed, 5
       skipped, 8.5 minutes). The logs are in run/cp/CP-01/checks/.
-- [ ] **CP-02 - Trace comparer with coverage counts.** Depends: CP-00
+- [x] **CP-02 - Trace comparer with coverage counts.** Depends: CP-00
   - Work: Add scripts/sim/trace/compare_traces.py, reading through
     scripts/sim/trace/trace_input.py: stream two .trace.jsonl files, drop ts and run, skip
     the natural-run-context record, take an ignore list of field paths, print the index and
@@ -1110,6 +1110,38 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
   - Proof: python scripts/sim/trace/test_compare_traces.py: fixtures for a pair identical
     but for ts and run, one changed field, one missing record, two swapped records, and a
     counts fixture.
+  - 2026-10-07: done. scripts/sim/trace/compare_traces.py and its test are added; no C#
+    changed. python scripts/sim/trace/test_compare_traces.py passes 10 of 10
+    (run/cp/CP-02/proof-test_compare_traces.log): the pair identical but for ts, run and the
+    context record; one changed field, reported with its record index, its field path, both
+    sides and both counts; a changed vt, which is a difference; a missing record; a trace
+    that stops early; two swapped records; the ignore list, for every packet and for one;
+    a missing trace and a folder with two traces, which are errors (exit 2) and not
+    differences; the counts fixture; and the digest.
+    - Three modes. Comparing streams both traces and exits 0 only when they are identical.
+      --counts prints 22 numbers, with --json as one object. --digest prints the record
+      count and the SHA-256 of the normalized trace; it was added here because CP-08 stores
+      that hash and must use the same normalization.
+    - What is dropped: ts, run and the whole natural-run-context record (it holds the run
+      id, the build and the module id). The virtual clock vt is compared.
+    - Tried on real traces, beside the proof: the munin capture trace compares identical
+      with itself (151,111 records), and two older Fast traces of different runs,
+      run/ax12a-fast and run/ax12b-fast, compare identical (67,181 records). The munin
+      capture counts 3 deaths, 3 revive steps, 5 retreats, 30 between-fight heals, 156 pull
+      plans, 4 patrol waits, 14 emergency decisions, 79 life potions, and no vendor buy,
+      help item, bind or soul heal. That agrees with the reviewer's numbers in hazard 4.
+    - **A finding: a rest sit writes no trace record.** The sit is a CM_EMOTION packet,
+      which the trace does not record, and RestAsync traces nothing when it sits. Only the
+      walk to a rest spot is traced (rest-relocate, or rest-relocate-none), and a sit at a
+      spot that is already clear leaves nothing. So the count is named restSitsTraced and
+      is a lower bound: 5 in the munin capture. A changed sit still shows in a trace
+      comparison, because the virtual clock of every later record moves. But CP-09 cannot
+      say from the counts alone how often a scope sits, which CP-17 leans on. It is logged
+      here and not fixed: a new trace record would be a C# change, and after CP-08 it would
+      change the baselines.
+    - Bundle: seven pre-commit checks pass, scripts/sim/test-sim-snapshot.ps1 and the new
+      test pass, and Fast passes all 11 scenario gates (run cp02-fast). The logs are in
+      run/cp/CP-02/checks/.
 - [ ] **CP-03 - Replay without capture.** Depends: CP-00
   - Work: CP-Q3 was answered on 2026-10-07, so this item is not blocked.
     scripts/sim/sim-snapshot.ps1 gains -Action Replay: a fresh owned schema through
@@ -2674,6 +2706,12 @@ say so to change one.
 - **The event-scroll finding** (hazard 28) may show that the Cleric's level 20-29 scroll
   bands are weaker than the event scrolls it owns. CP-05 records what it finds here. It
   does not change the Cleric's bands.
+- **A rest sit writes no trace record** (CP-02, 2026-10-07). The counts mode can only
+  count the walks to a rest spot, so "how often does this scope sit" has a lower bound and
+  no exact answer. Default: left as it is, because a trace comparison still catches a
+  changed sit through the virtual clock. The other choice is one trace line in RestAsync
+  (a record per sit), added before CP-08 records the baselines; after CP-08 it would need
+  the baselines recorded again. Say so before CP-08 if you want it.
 
 Every other question runs on its default until an Answer line stands under it.
 
@@ -2916,3 +2954,10 @@ report what was done, what is blocked and what you need from me.
   from the checked-in dialog map: each shows exactly its own starter's second classes.
   Bundle: seven checks, Aion.GameServer.Tests 4,675 passed, Fast 11 gates (cp01-fast). No
   baseline exists yet, so the re-record rule did not apply. Next by rule (h): CP-02.
+- 2026-10-07 — Loop: CP-02 done. scripts/sim/trace/compare_traces.py compares two traces
+  record by record, counts what one trace holds (--counts, 22 numbers) and prints the hash
+  a baseline is stored by (--digest). Its test passes 10 of 10. Finding: a rest sit writes
+  no trace record, so restSitsTraced is a lower bound; it is listed under "Not blocking" for
+  the operator, to be decided before CP-08. Bundle: seven checks, both script tests, Fast 11
+  gates (cp02-fast). No baseline exists yet, so the re-record rule did not apply. Next by
+  rule (h): CP-03.
