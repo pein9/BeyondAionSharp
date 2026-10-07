@@ -588,9 +588,40 @@ Two things are the same for every class line: the help kit at levels 1-9 and the
 each Ishalgen quest hub. What follows was read in the code and the data on 2026-10-07.
 None of it was run.
 
-**The help kit.** CP-05 writes the manifest here, as a table, before any run uses it: per
-level band the item, what it is for, when it is used and how many are kept. It is not
-written yet. What the data and the code say today:
+**The help kit: the manifest.** Written by CP-05 on 2026-10-07, before any run uses it.
+Levels 1-9 are one band: nothing in the data asks for a split, because every item below is
+usable from level 1. A supplied row is topped up to N when fewer than M are owned, at each
+stock check. An owned row is what every starter is created with. The unit test
+UT/NaturalStarterHelpKitTests reads this table and requires it to agree with the allowlist
+and the shipped data, so edit the table and the allowlist together.
+
+<!-- CP-05 manifest -->
+| Item | Id | Family | Levels | Source | Keep | Item level | Use skill | Delay | What it does | When it is used |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Major Life Potion | 162000006 | life-potion | 1-9 | supplied | 30 when below 10 | 50 | 9893 at 1 | group 11, 30000 ms | 1,694 HP: 154 at once, then 154 every 2 s for 20 s | Used: drunk by the class's potion rule, in a fight and between fights, ahead of the Minor Life Potion. |
+| Lesser Anti-Shock Scroll | 164000067 | anti-shock | 1-9 | supplied | 30 when below 8 | 20 | 9953 at 1 | group 32, 60000 ms | a shield that absorbs 158 damage for 24 s | Used: in a fight at 50% HP or below, when no shield is up. |
+| Greater Running Scroll | 164000076 | running | 1-9 | supplied | 20 when below 5 | 30 | 9960 at 3 | group 35, 15000 ms | +30% run speed for 5 min | Used: before a leg of 150 m or more, or a leg to another map. |
+| [Event] Rx: Accelerox | 164002116 | running | 1-9 | owned 50 | - | 30 | 10465 at 3 | group 35, 1000 ms | +30% run speed for 30 min | Used: as the Running scroll when no Greater Running Scroll is owned. |
+| [Event] Rx: Castafodin | 164002118 | awakening | 1-9 | owned 50 | - | 30 | 10467 at 3 | group 34, 1000 ms | +9% casting speed for 30 min | Used: kept up by a class whose profile names casting speed for the shared speed slot. |
+| [Event] Rx: Blitzopan | 164002117 | courage | 1-9 | owned 50 | - | 30 | 10466 at 3 | group 34, 1000 ms | 9% faster attacks for 30 min | Used: kept up by a class whose profile names attack speed (the Warrior and the Scout). |
+| Minor Mana Potion | 162000007 | mana-potion | 1-9 | owned 100 | - | 10 | 9894 at 1 | group 11, 30000 ms | 649 MP: 59 at once, then 59 every 2 s for 20 s | Used: in a fight when MP is below the main attack's cost and HP is above the life-potion threshold (CP-Q12). |
+| Minor Life Potion | 162000002 | life-potion | 1-9 | owned 100 | - | 10 | 9889 at 1 | group 11, 30000 ms | 407 HP: 37 at once, then 37 every 2 s for 20 s | Used: only when no Major Life Potion is owned; it shares the Major's delay. |
+| Mercenary's Fruit Juice | 160000001 | fruit-juice | 1-9 | owned 12 | - | 1 | 10034 at 1 | group 21, 5000 ms | +2 natural HP healing for 15 min | Left out: 2 HP of natural healing changes nothing that a potion does not. |
+| [Event] Lodas Amulet III | 169620005 | xp-amulet | 1-9 | owned 2 | - | 1 | 10249 at 1 | group 71, 14400000 ms | +20% XP for 2 h | Left out: an XP boost, and levels come from quests (no level goals). |
+| Administrator's Boon 3-Day Pass | 164002039 | boon | 1-9 | owned 1 | - | 1 | 10350 at 1 | group 31, 15000 ms | no death penalty for 1 h | Left out: the death rule's soul heal is the operator's stated rule. |
+| Bandage | 169300002 | bandage | 1-9 | owned 20 | - | 1 | none | none | the reagent of Bandage Heal 245 | Left out: the operator ruled bandages out on 2026-10-07 (CP-Q11). |
+
+Why these three are supplied. The operator named them: "Get better healing potions, the
+shield scroll, greater running scroll."
+
+- **The potion** is the life potion with the largest heal a level 1 character may use: 30
+  heal-over-time potions of delay group 11 carry no level requirement, and 1,694 HP is the
+  most any of them heals. The next tier, the Fine Life Potion, needs level 50.
+- **The shield scroll** is the tier OD-13 approved for levels 10-19, so the stock carries
+  on into that band.
+- **The Running scroll** is the one the operator named.
+
+What the data and the code said when this was read, before CP-06:
 
 - A consumable is gated by its `restrict` attribute, not by its item level. Java refuses an
   item by class and by required level, both read from the restrict row
@@ -619,14 +650,20 @@ written yet. What the data and the code say today:
   also has 12 Mercenary's Fruit Juice 160000001 (+2 natural HP healing for 15 min), 2 Lodas
   Amulet III 169620005 (+20% XP for 2 h) and one Administrator's Boon pass 164002039 (no
   death penalty for an hour).
-- **A finding for CP-05 to settle.** The three event scrolls use their skills at level 3
-  (item_templates.xml:835126-835143), and a stat change is the value plus the delta times
-  the skill level (src/Aion.GameServer/SkillEngine/Effect/BufEffect.cs:58; Java
-  BufEffect.java:74). By that reading Accelerox gives +30% run speed for 30 min, the same
-  percent as the Greater Running Scroll, and Castafodin 9% casting speed. The bot's catalog
-  and Appendix D.2 treat them as the Lesser tier's effect, +10% and +3%
-  (Sc/NaturalHelpItemPolicy.cs:69-71; docs/natural-ascension-altgard.md:2832-2836). One of
-  the two is wrong.
+- **The event-scroll finding, settled by CP-05: the data read is right and the catalog is
+  wrong.** The three event scrolls use their skills at level 3
+  (item_templates.xml:835126-835143). An item casts its skill at the level its skilluse
+  action names (Java SkillUseAction.canAct), and a stat change is the value plus the delta
+  times the skill level (Java BufEffect.getModifiers, line 74; C#
+  src/Aion.GameServer/SkillEngine/Effect/BufEffect.cs:58). So Accelerox is +30% run speed,
+  the Greater Running Scroll's percent, Castafodin +9% casting speed, the Greater Awakening
+  Scroll's, and Blitzopan 9% faster attacks, the Greater Courage Scroll's. Each lasts 30
+  min with a 1 s delay, where the tiered scrolls last 5 min with 15 s.
+  UT/NaturalStarterHelpKitTests computes this from the item's skill level and the skill's
+  delta. The bot's catalog and Appendix D.2 file them as the Lesser tier, +10% and +3%
+  (Sc/NaturalHelpItemPolicy.cs:69-71; docs/natural-ascension-altgard.md:2832-2836). Neither
+  is edited here: the catalog's tier decides what the Cleric picks from level 10 on, which
+  this plan does not change. What it costs the Cleric is in the "Not blocking" list.
 - **Where help items are gated today.**
   - Supply: TopUpHelpItemsAsync (J:1501-1526) returns unless the character is a Cleric
     (J:1505). The bridge runner and the later legs call it, first at J:1047 and J:1060. The
@@ -649,6 +686,15 @@ written yet. What the data and the code say today:
     it (SimT/SimulationNaturalIshalgenJourneyTests.cs:71-72, 95-102). Three test files pin
     the list and the policy: UT/NaturalHelpItemAllowlistTests.cs,
     UT/NaturalHelpItemPolicyTests.cs and UT/NaturalHelpItemSupplyTests.cs.
+  - Since CP-05 the level 1-9 rows are NaturalHelpItemAllowlist.Starter, and the supply
+    plan and RequireApproved read them with Approved (AllLevels). Two things follow for
+    CP-06. First, the Cleric's keep list reads Approved alone
+    (Sc/NaturalIshalgenInventoryPolicy.cs:133), so the Major Life Potion is not in it: a
+    level-10 Cleric's shop stop would sell what is left of the level 1-9 potions unless
+    CP-06 adds the Starter rows there. Second, a Cleric is level 9 between the class choice
+    and the ceremony; the supply gate lets a Cleric through, so a stock check in that
+    window now supplies the level 1-9 kit. No stock check falls in it on the present
+    scopes: the level has not changed since the Priest's last check.
 - **Defaults for the manifest**, where the operator's words leave room. Say so to change
   one. The shield scroll is the Lesser Anti-Shock 164000067, the tier OD-13 approved for
   levels 10-19, so the stock carries on into that band; up to the Major is usable. Stock
@@ -974,8 +1020,9 @@ old tier, as the supply rule says of an old tier
     reading of the per-class note the level 1-9 potion is the Major Life Potion (1,694 HP),
     and the Cleric's level 10-19 band supplies the Minor (407 HP). CP-05 records that for
     the operator and does not change the band.
-28. The event-scroll finding of the per-class notes is open: the data read says Accelerox
-    is +30% run speed and the bot's catalog says +10%. If the data read is right, the
+28. (Settled by CP-05 on 2026-10-07: the data read is right. See the "Every line" note and
+    the "Not blocking" list.) The event-scroll finding of the per-class notes was open: the
+    data read says Accelerox is +30% run speed and the bot's catalog says +10%. If the data read is right, the
     Cleric's level 20-29 bands supply scrolls weaker than the event scrolls it owns. CP-05
     settles the reading with a unit test and records the result for the operator. It does
     not change the Cleric's bands.
@@ -1264,7 +1311,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - No journey was played for this item. CP-08 is the first real gate run.
     - Bundle: seven pre-commit checks pass, both script tests pass, and Fast passes all 11
       scenario gates (run cp04-fast). The logs are in run/cp/CP-04/checks/.
-- [ ] **CP-05 - The level 1-9 help kit: manifest and allowlist.** Depends: CP-00
+- [x] **CP-05 - The level 1-9 help kit: manifest and allowlist.** Depends: CP-00
   - Work: The operator approved help items for every class line on 2026-10-07 (Standing
     rules, CP-Q12). This item writes down what the kit is; nothing supplies or uses it
     before CP-06. Read first: Sc/NaturalHelpItemAllowlist.cs and
@@ -1312,6 +1359,41 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     value this item changes, to the level 1-9 kit. UT/NaturalHelpItemPolicyTests.cs:51 (no
     shield scroll is picked at level 9) is changed by CP-06. No other expected value is
     edited, and every assertion about level 10 and above stays.
+  - 2026-10-07: done. The four parts:
+    - (1) The manifest is the table under "Every line: the level 1-9 help kit and the
+      Ishalgen binds": twelve rows, one band for levels 1-9. Three are supplied: Major Life
+      Potion 162000006 (30 when below 10), Lesser Anti-Shock Scroll 164000067 (30 when
+      below 8) and Greater Running Scroll 164000076 (20 when below 5). Nine are what every
+      starter owns: five used (Accelerox, Castafodin, Blitzopan, the Minor Mana Potion and
+      the Minor Life Potion as the fallback) and four left out, each with its reason (the
+      fruit juice, the Lodas Amulet, the Administrator's Boon and the bandages).
+    - (2) The event-scroll finding is settled: the data read is right and the bot's
+      catalog is wrong. The event scrolls are as strong as the Greater tier (+30% run
+      speed, +9% casting speed, 9% faster attacks) and last 30 min. The catalog is not
+      edited; the cost to the Cleric at levels 20-29 is under "Not blocking".
+    - (3) NaturalHelpItemAllowlist.Starter holds the three level 1-9 rows beside Approved,
+      which is not edited; the supply plan and RequireApproved read both through AllLevels.
+      Nothing calls the plan below level 10 before CP-06, so nothing is supplied yet.
+    - (4) Where the Cleric's bands are weaker than the level 1-9 kit is under "Not
+      blocking": the potion at levels 10-19 and the Running scroll at levels 10-29. Two
+      more points are there for the operator: Accelerox against the Greater Running
+      Scroll, and a recovery potion that heals mana too.
+    Java first: PlayerRestrictions.canUseItem refuses by the restrict row's class and
+    level (lines 327-336), the row defaults to 1 for all seventeen classes
+    (ItemTemplate.java:34), SkillUseAction casts the item's skill at the action's level,
+    and BufEffect.getModifiers adds the delta times that level.
+    - Proof: UT/NaturalStarterHelpKitTests passes 6 of 6
+      (run/cp/CP-05/proof-NaturalStarterHelpKitTests.log, with the three existing help-item
+      files: 46 of 46). It reads the manifest table from this file. Three wrong values put
+      into the table by hand (a kept count, an owned count, a delay) failed three tests,
+      and the table was put back. Of the three existing files one expected value changed,
+      as named: the plan at level 9 is now the level 1-9 kit
+      (UT/NaturalHelpItemSupplyTests.cs).
+    - Two notes for CP-06 are in the "Every line" note: the Cleric's keep list reads
+      Approved alone, and a level-9 Cleric passes the supply gate.
+    - Bundle: seven pre-commit checks pass (the warning baseline builds tools/Aion.LiveBots
+      too), Aion.GameServer.Tests passes, and Fast passes all 11 scenario gates (run
+      cp05-fast). The logs are in run/cp/CP-05/checks/.
 - [ ] **CP-06 - The Priest plays levels 1-9 with the kit.** Depends: CP-03, CP-05
   - Work: This item changes the accepted Priest line's levels 1-9 on purpose (the operator,
     2026-10-07: "even change the priest defaults!"). It is not a refactor. Open the gates
@@ -2775,9 +2857,29 @@ say so to change one.
 - **The kit steps down at level 10** (hazard 27). The best potion a level 1-9 character
   may use is the Major Life Potion; the Cleric's approved level 10-19 band supplies the
   Minor. The Cleric's bands are not changed without the operator's word.
-- **The event-scroll finding** (hazard 28) may show that the Cleric's level 20-29 scroll
-  bands are weaker than the event scrolls it owns. CP-05 records what it finds here. It
-  does not change the Cleric's bands.
+- **The event-scroll finding** (hazard 28), settled by CP-05 on 2026-10-07: the event
+  scrolls are as strong as the Greater tier, +30% run speed and +9% casting speed, for 30
+  min. The Cleric's bands are weaker than what it owns until level 30. At levels 20-29 the
+  approved list supplies the Running Scroll (+20%) and the Awakening Scroll (+6%), and the
+  help policy picks them over the owned Accelerox and Castafodin, because the catalog
+  files the event scrolls under tier 10. At levels 10-19 it uses the event scrolls, which
+  is the stronger choice. Default: left as it is, because OD-13 approved those bands and
+  this plan does not change the Cleric's legs. The fix would be one catalog number (the
+  event scrolls' tier) and would change the Cleric's baselines from level 20 on.
+- **Where the Cleric's kit is weaker than the level 1-9 kit** (CP-05, part 4). The life
+  potion: the level 10-19 band supplies the Minor (407 HP), the level 1-9 kit the Major
+  (1,694 HP); the Cleric reaches a potion as strong only by leftover stock. The Running
+  scroll: nothing is supplied at levels 10-19, the +20% Running Scroll at 20-29, and the
+  Greater only from 30. The shield scroll is the same at levels 1-19. Not changed.
+- **Accelerox against the Greater Running Scroll.** They give the same +30%, and a starter
+  owns 50 Accelerox that last six times as long. Default: the supplied Greater Running
+  Scroll is used first, because the operator named it, and Accelerox when none is owned;
+  so while the supply runs, Accelerox is not used at levels 1-9. Say so if Accelerox
+  should be used first, or kept up at all times and not only before a long leg.
+- **A recovery potion heals mana too.** The Major Recovery Potion 162000045 heals the same
+  1,694 HP on the same 30 s delay and restores mana with it, and a level 1 character may
+  use it. Default: the Major Life Potion, the family OD-13 approved, with the starter's
+  own mana potions for mana.
 - **A rest sit writes no trace record** (CP-02, 2026-10-07). The counts mode can only
   count the walks to a rest spot, so "how often does this scope sit" has a lower bound and
   no exact answer. Default: left as it is, because a trace comparison still catches a
@@ -3049,3 +3151,11 @@ report what was done, what is blocked and what you need from me.
   list. Proof: test-sim-snapshot.ps1 with the gate cases. No journey was played. Bundle: seven
   checks, both script tests, Fast 11 gates (cp04-fast). Phase A's tools are built; next by
   rule (h): CP-05.
+- 2026-10-07 — Loop: CP-05 done. The level 1-9 kit is written down: the manifest table (three
+  supplied items, nine owned ones, each used or left out with its reason) and
+  NaturalHelpItemAllowlist.Starter beside the unedited Approved. The event-scroll finding is
+  settled: the event scrolls are as strong as the Greater tier and the bot's catalog files
+  them too low; not edited, recorded under "Not blocking" with three more points for the
+  operator. Proof: UT/NaturalStarterHelpKitTests 6 of 6. Bundle: seven checks,
+  Aion.GameServer.Tests 4,681 passed, Fast 11 gates (cp05-fast). Nothing supplies the kit
+  yet. Next by rule (h): CP-06, the first journey run.

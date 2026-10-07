@@ -18,8 +18,9 @@ public sealed class NaturalHelpItemSupplyTests
 		{
 			[164000067] = 30, [162000002] = 30, [162000017] = 40, [160002273] = 8, [169300003] = 200,
 		}, plan);
-		// The owned veteran scrolls cover Awakening and Running below 20; nothing is supplied below the first band.
-		Assert.Empty(NaturalHelpItemSupply.Plan(9, Owned()));
+		// Below level 10 the kit is the level 1-9 one the operator approved for every class line on 2026-10-07 (CP-05).
+		Assert.Equal(new Dictionary<int, long> { [162000006] = 30, [164000067] = 30, [164000076] = 20 },
+			NaturalHelpItemSupply.Plan(9, Owned()).ToDictionary(topUp => topUp.ItemId, topUp => topUp.Count));
 	}
 
 	[Fact]

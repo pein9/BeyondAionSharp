@@ -37,6 +37,23 @@ public static class NaturalHelpItemAllowlist
 		new(169300004, "powder", 25, 39, 200, 50, 20, 0, 0),
 	];
 
+	/// <summary>
+	/// CP-05: the level 1-9 kit the operator approved for every class line on 2026-10-07 (CP-Q12): "Get better healing
+	/// potions, the shield scroll, greater running scroll." Its manifest is the table in docs/natural-class-profiles.md,
+	/// and a test requires the two to agree. A consumable is gated by its restrict row, not by its item level (Java
+	/// PlayerRestrictions.canUseItem), so a level 1 character may use all three. The rows are keyed by item and level,
+	/// not by class. <see cref="Approved"/> holds the Cleric's bands from level 10 on and is not edited.
+	/// </summary>
+	public static readonly NaturalHelpSupply[] Starter =
+	[
+		new(162000006, "life-potion", 1, 9, 30, 10, 50, 9893, 11),
+		new(164000067, "anti-shock", 1, 9, 30, 8, 20, 9953, 32),
+		new(164000076, "running", 1, 9, 20, 5, 30, 9960, 35),
+	];
+
+	/// <summary>Every supplied row: the level 1-9 kit, then the bands from level 10 on.</summary>
+	public static IEnumerable<NaturalHelpSupply> AllLevels => Starter.Concat(Approved);
+
 	/// <summary>Owned natural substitutes the proposal relies on (veteran rewards, VeteranRewardService months 26/30).</summary>
 	public static readonly int[] OwnedEventScrolls = [164002118, 164002116];
 
@@ -76,7 +93,7 @@ public static class NaturalHelpItemSupply
 	public static bool Enabled(string? value) => value != "0";
 
 	public static IReadOnlyList<NaturalHelpTopUp> Plan(int level, IReadOnlyDictionary<int, long> owned) =>
-		NaturalHelpItemAllowlist.Approved
+		NaturalHelpItemAllowlist.AllLevels
 			.Where(supply => supply.FromLevel <= level && level <= supply.ToLevel &&
 				owned.GetValueOrDefault(supply.ItemId) < supply.Below)
 			.Select(supply => new NaturalHelpTopUp(supply.ItemId, supply.Family, owned.GetValueOrDefault(supply.ItemId),
@@ -105,9 +122,9 @@ public static class NaturalHelpItemSupply
 	/// <summary>Refuse any id that is not approved, or a count above its band's N.</summary>
 	public static void RequireApproved(int itemId, long count)
 	{
-		NaturalHelpSupply[] entries = NaturalHelpItemAllowlist.Approved.Where(supply => supply.ItemId == itemId).ToArray();
+		NaturalHelpSupply[] entries = NaturalHelpItemAllowlist.AllLevels.Where(supply => supply.ItemId == itemId).ToArray();
 		if (entries.Length == 0)
-			throw new InvalidOperationException($"Item {itemId} is not an approved help item (OD-13); refusing to supply it.");
+			throw new InvalidOperationException($"Item {itemId} is not an approved help item (OD-13, CP-Q12); refusing to supply it.");
 		if (count <= 0 || count > entries.Max(supply => supply.TopUpTo))
 			throw new InvalidOperationException($"Refusing to supply {count} of help item {itemId}: outside 1..{entries.Max(supply => supply.TopUpTo)}.");
 	}
