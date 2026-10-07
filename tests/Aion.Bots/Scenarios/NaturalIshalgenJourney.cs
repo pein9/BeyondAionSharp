@@ -4,6 +4,7 @@ using Aion.Bots.Navigation.NavMesh;
 using Aion.Bots.Movement;
 using Aion.Bots.Protocol;
 using Aion.Bots.Reflexes;
+using Aion.Bots.Scenarios.Classes;
 using Aion.Bots.Timing;
 using Aion.Bots.Tracing;
 using Aion.Bots.World;
@@ -47,6 +48,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 	private const float IshalgenOutpostRadius = 100f;
 	/// <summary>The navigator's reason when every checked route to the destination is closed.</summary>
 	private const string NoCheckedRoute = "No collision-checked route to the current destination.";
+	/// <summary>CP-15: which character this run plays; the accepted Priest and Cleric line when the caller names none.</summary>
+	private NaturalClassLine ClassLine => options.ClassLine ?? NaturalClassLine.Default;
 
 	private static BotPosition GroundRoadGoal(BotNavigationGeometry geometry, int map, BotPosition destination) =>
 		geometry.GroundAround(map, destination, [3f, 5f, 8f, 12f]).FirstOrDefault() is { } ground && ground != default
@@ -111,7 +114,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			AvoidHostileAggro = avoidHostileAggro,
 		};
 		var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry, stopOnDeath: false,
-			conservativeRangedHold: false, NaturalMauPolicyParameters.Baseline)
+			conservativeRangedHold: false, NaturalMauPolicyParameters.Baseline, ClassLine)
 		{
 			ApproachMapId = map, AfterKillAsync = afterKill, AfterBindRevive = afterBindRevive,
 		};
@@ -163,7 +166,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			typeof(NaturalIshalgenJourney).Assembly.GetCustomAttributes(false)
 				.OfType<System.Reflection.AssemblyInformationalVersionAttribute>().Single().InformationalVersion,
 			typeof(NaturalIshalgenJourney).Module.ModuleVersionId.ToString(), runtime.NowMillis);
-		combatTrace.WriteAction("ni08-run", "natural-run-context", new Dictionary<string, object?> { ["context"] = RunContext() });
+		var runContext = new Dictionary<string, object?> { ["context"] = RunContext() };
+		// CP-15: the record names the class line only when it is not the accepted one.
+		if (ClassLine != NaturalClassLine.Default) runContext["classLine"] = ClassLine.Id;
+		combatTrace.WriteAction("ni08-run", "natural-run-context", runContext);
 		if (options.Course != null)
 			combatTrace.WriteAction("ni08-run", "phase2-policy", new Dictionary<string, object?>
 			{
@@ -377,7 +383,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				}
 			};
 			var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry,
-				options.StopOnDeath, options.OptimizeHubs, mauPolicy, haramelProgress?.Revives ?? 0);
+				options.StopOnDeath, options.OptimizeHubs, mauPolicy, ClassLine, haramelProgress?.Revives ?? 0);
 			navigationDefense = combat;
 			// The general quest-loot rule: after any kill, open every corpse near the Cleric that the server marked lootable
 			// for it, and take its quest items, as a player does. A quest item drops only while its quest needs it, so every
@@ -428,7 +434,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				// masteries (chain, shield, staff) make items the Priest was refused wearable, so refusals reset.
 				BotKnownObject? self = world.SelfObjectId is int selfId ? world.Objects.GetValueOrDefault(selfId) : null;
 				var playerClass = self?.PlayerClass is byte classId
-					? PlayerClassExtensions.GetPlayerClassById(classId, true) ?? PlayerClass.PRIEST : PlayerClass.PRIEST;
+					? PlayerClassExtensions.GetPlayerClassById(classId, true) ?? ClassLine.Starter : ClassLine.Starter;
 				var race = self?.Race is byte raceId ? (Race)raceId : Race.ASMODIANS;
 				if (playerClass != gearClass)
 				{
@@ -2396,7 +2402,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				geometry = runtime.CreateGeometry();
 				contract = contract with { MapId = session.Api.World.MapId!.Value };
 				combat = new NaturalJourneyCombat(session, here, runtime, geometry, stopOnDeath: false, options.OptimizeHubs, mauPolicy,
-					continuousAltgard ? combat.ReviveCount : haramelProgress?.Revives ?? 0)
+					ClassLine, continuousAltgard ? combat.ReviveCount : haramelProgress?.Revives ?? 0)
 				{
 					ApproachMapId = contract.MapId,
 				};
@@ -4563,7 +4569,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				// routes for the pull planner must come from the instance the Cleric now stands in.
 				geometry = runtime.CreateGeometry();
 				contract = contract with { MapId = session.Api.World.MapId!.Value };
-				combat = new NaturalJourneyCombat(session, here, runtime, geometry, stopOnDeath: false, options.OptimizeHubs, mauPolicy)
+				combat = new NaturalJourneyCombat(session, here, runtime, geometry, stopOnDeath: false, options.OptimizeHubs, mauPolicy,
+					ClassLine)
 				{
 					ApproachMapId = contract.MapId,
 				};
@@ -5778,7 +5785,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					session.TraceDiagnostic("pull-plan", new Dictionary<string, object?>
 					{
 						["purpose"] = purpose,
-						["policyVersion"] = mauPolicy.Id,
+						["policyVersion"] = combat.ClassProfile.Combat.PolicyVersion(mauPolicy),
 						["seed"] = runtime.Seed,
 						["candidateScope"] = "spots-evaluated-before-baseline-rank-cutoff",
 						["chosenAction"] = plan == null ? "no-plan" :

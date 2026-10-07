@@ -4,6 +4,7 @@ using Aion.Bots.Navigation.NavMesh;
 using Aion.Bots.Movement;
 using Aion.Bots.Protocol;
 using Aion.Bots.Reflexes;
+using Aion.Bots.Scenarios.Classes;
 using Aion.Bots.Timing;
 using Aion.Bots.Tracing;
 using Aion.Bots.World;
@@ -21,7 +22,7 @@ public sealed partial class NaturalIshalgenJourney
 	private sealed class NaturalJourneyCombat(INaturalJourneySession session,
 		NaturalJourneyNavigator navigator, NaturalJourneyRuntime runtime,
 		BotNavigationGeometry geometry, bool stopOnDeath, bool conservativeRangedHold,
-		NaturalMauPolicyParameters mauPolicy, int initialRevives = 0)
+		NaturalMauPolicyParameters mauPolicy, NaturalClassLine classLine, int initialRevives = 0)
 	{
 		// A contained encounter or map segment may create another observer for the same client.
 		// Java Skill.setCooldowns belongs to the player, not that observer: retain the packet-derived
@@ -111,9 +112,12 @@ public sealed partial class NaturalIshalgenJourney
 			openChain = null;
 		}
 
+		/// <summary>CP-15: the profile of the class the client observes now. It is read again on every use, because the
+		/// starter becomes its second class inside one run.</summary>
+		public NaturalClassProfile ClassProfile => NaturalClassProfiles.For(
+			session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass, classLine);
 		/// <summary>NA-18: the observed class chooses the catalog (the Cleric adds its level 10 skills).</summary>
-		private NaturalPriestSkill[] Catalog => NaturalClericSkills.ForClass(
-			session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass);
+		private NaturalPriestSkill[] Catalog => ClassProfile.Skills;
 		public int CompletedRetreats => completedRetreats;
 		public bool InCombat { get; private set; }
 		public Func<CancellationToken, Task>? MaintainInventoryAsync { get; set; }
@@ -318,10 +322,9 @@ public sealed partial class NaturalIshalgenJourney
 					ShieldScrollReady: shieldChoice?.Item != null,
 					HasManaPotion: manaPotion != null, ManaPotionReady: manaReady,
 					LastCancelledSkillId: lastCancelledSkillId);
-				NaturalPriestSkill[] catalog = Catalog;
-				NaturalCombatChoice choice = NaturalPriestCombatPolicy.Decide(observation, now, catalog, parameters: mauPolicy);
-				NaturalCombatCandidate[] candidates = NaturalPriestCombatPolicy.CandidateActions(observation, now, choice,
-					catalog, parameters: mauPolicy);
+				INaturalCombatPolicy policy = ClassProfile.Combat;
+				NaturalCombatChoice choice = policy.Decide(observation, now, mauPolicy);
+				NaturalCombatCandidate[] candidates = policy.CandidateActions(observation, now, choice, mauPolicy);
 				if (!candidates.Any(candidate => candidate.Action == choice.Action &&
 					candidate.SkillId == choice.Skill?.Id && candidate.Legal))
 					throw new InvalidDataException($"Baseline chose an action absent from the legal candidate list: {choice.Action}/{choice.Skill?.Id}.");
@@ -331,7 +334,7 @@ public sealed partial class NaturalIshalgenJourney
 				{
 					["encounterId"] = combatAttemptId,
 					["turn"] = turn,
-					["policyVersion"] = mauPolicy.Id,
+					["policyVersion"] = policy.PolicyVersion(mauPolicy),
 					["seed"] = runtime.Seed,
 					["observedState"] = new
 					{

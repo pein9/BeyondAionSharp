@@ -113,7 +113,9 @@ function Invoke-NaturalJourney([string]$Db, [string]$RunId, [string]$Evidence, [
 		'AX_ARENA_FIRST_TRY', 'AX_RING_FIRST_TRY',
 		# CP-03: an inherited NA_HELP_ITEMS=0 would turn the help supply off, and the other two would move the bot
 		# monitor or the SIM process key. Cleared, the supply is on and the monitor is at its default port.
-		'NA_HELP_ITEMS', 'AION_BOT_DASHBOARD_PORT', 'AION_SIM_PROCESS_KEY')
+		'NA_HELP_ITEMS', 'AION_BOT_DASHBOARD_PORT', 'AION_SIM_PROCESS_KEY',
+		# CP-15: an inherited CP_CLASS would play another class line. Cleared, the journey plays the accepted line.
+		'CP_CLASS')
 	$prior = @{}
 	foreach ($variable in $names) {
 		$prior[$variable] = [Environment]::GetEnvironmentVariable($variable)

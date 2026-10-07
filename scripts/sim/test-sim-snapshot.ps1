@@ -195,7 +195,8 @@ try {
 	$buildLog = Join-Path $root 'builds.log'
 	$seenNames = @('AION_SIM_NI08_DATABASE', 'AION_SIM_NI08_ELAPSED_MS', 'AION_SIM_RUN_ID', 'AION_SIM_SEED', 'AION_NI07_COMBAT_DIR',
 		'NI07_FULL_JOURNEY', 'NI08_STOP_AT', 'NI08_RESUME_CHARACTER', 'NA_ASCENSION', 'AF_ALTGARD', 'AF_HM_PROGRESS', 'PC_CAPITAL',
-		'RC_CAPITAL', 'NI07_STOP_AFTER_Q2004', 'NI07_STOP_AFTER_Q2005', 'NA_HELP_ITEMS', 'AION_BOT_DASHBOARD_PORT', 'AION_SIM_PROCESS_KEY')
+		'RC_CAPITAL', 'NI07_STOP_AFTER_Q2004', 'NI07_STOP_AFTER_Q2005', 'NA_HELP_ITEMS', 'AION_BOT_DASHBOARD_PORT', 'AION_SIM_PROCESS_KEY',
+		'CP_CLASS')
 	function dotnet {
 		if ($args[0] -eq 'build') { Add-Content -LiteralPath $buildLog -Value 'build'; $global:LASTEXITCODE = 0; return }
 		$seen = [ordered]@{}
@@ -216,12 +217,13 @@ try {
 		}
 	}
 	$replayPrior = @{}
-	foreach ($name in @('NA_HELP_ITEMS', 'AION_BOT_DASHBOARD_PORT', 'AION_SIM_PROCESS_KEY', 'CP03_FAKE_JOURNEY_EXIT')) {
+	foreach ($name in @('NA_HELP_ITEMS', 'AION_BOT_DASHBOARD_PORT', 'AION_SIM_PROCESS_KEY', 'CP_CLASS', 'CP03_FAKE_JOURNEY_EXIT')) {
 		$replayPrior[$name] = [Environment]::GetEnvironmentVariable($name)
 	}
 	$env:NA_HELP_ITEMS = '0'
 	$env:AION_BOT_DASHBOARD_PORT = '0'
 	$env:AION_SIM_PROCESS_KEY = 'shard-09'
+	$env:CP_CLASS = 'warrior'
 	$env:CP03_FAKE_JOURNEY_EXIT = '0'
 	$listing = Get-SnapshotListing
 	try {
@@ -246,6 +248,7 @@ try {
 			$null -eq $m.child.NI08_RESUME_CHARACTER -and $null -eq $m.child.NI07_STOP_AFTER_Q2004) 'A fresh Replay inherited a scope.'
 		Assert-True ($null -eq $m.child.NA_HELP_ITEMS -and $null -eq $m.child.AION_BOT_DASHBOARD_PORT -and $null -eq $m.child.AION_SIM_PROCESS_KEY) 'The journey inherited the help-item switch, the dashboard port or the process key.'
 		Assert-True ($env:NA_HELP_ITEMS -eq '0' -and $env:AION_BOT_DASHBOARD_PORT -eq '0' -and $env:AION_SIM_PROCESS_KEY -eq 'shard-09') 'Replay did not put the parent environment back.'
+		Assert-True ($null -eq $m.child.CP_CLASS -and $env:CP_CLASS -eq 'warrior') 'The journey inherited a class line, or Replay did not put it back.'
 		Assert-True ($m.receipt.passed -and $m.receipt.schemaDropped -and $m.receipt.item -eq 'CP-TEST' -and $m.receipt.run -eq 'm1' -and
 			$null -eq $m.receipt.from -and $m.receipt.database -eq $mDb -and @($m.receipt.environment.PSObject.Properties).Count -eq 0) 'The fresh Replay receipt is wrong.'
 		Assert-True (Test-Path -LiteralPath (Join-Path $m.evidence 'journey.log')) 'Replay kept no journey log.'

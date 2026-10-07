@@ -17,7 +17,7 @@ $database = 'aion_gs_sim_ni08_' + [Guid]::NewGuid().ToString('N')
 $envNames = @('AION_SIM_DB_INTEGRATION', 'AION_SIM_NI08_DATABASE', 'AION_SIM_NI08_ELAPSED_MS',
 	'AION_SIM_RUN_ID', 'AION_SIM_SEED', 'AION_NI07_COMBAT_DIR', 'AION_BOT_DASHBOARD_PORT',
 	'NI07_FULL_JOURNEY', 'NI08_STOP_AT', 'NI08_RELOG_AT', 'NI08_RESUME_CHARACTER',
-	'NI07_STOP_AFTER_Q2004', 'NI07_STOP_AFTER_Q2005', 'NI07_STOP_AFTER_Q2006', 'NI07_STOP_AFTER_Q2007')
+	'NI07_STOP_AFTER_Q2004', 'NI07_STOP_AFTER_Q2005', 'NI07_STOP_AFTER_Q2006', 'NI07_STOP_AFTER_Q2007', 'CP_CLASS')
 $prior = @{}
 foreach ($name in $envNames) { $prior[$name] = [Environment]::GetEnvironmentVariable($name) }
 $created = $false

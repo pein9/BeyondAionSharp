@@ -1,5 +1,6 @@
 using Aion.Bots.Dashboard;
 using Aion.Bots.Navigation;
+using Aion.Bots.Scenarios.Classes;
 using Aion.Bots.Tracing;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
@@ -88,4 +89,5 @@ public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? R
 	NaturalMauPolicyParameters? MauPolicy = null, bool AscensionBridge = false, bool ClericEncounter = false,
 	bool AltgardLeg1 = false, string? AltgardLegId = null, int[]? AltgardOnlyQuests = null,
 	string? CoinGearReceiptPath = null, string? HaramelProgressPath = null, string? CapitalStage = null,
-	bool LaterCapital = false, string? AbyssArenaFirstTry = null, string? AbyssRingFirstTry = null);
+	bool LaterCapital = false, string? AbyssArenaFirstTry = null, string? AbyssRingFirstTry = null,
+	NaturalClassLine? ClassLine = null);

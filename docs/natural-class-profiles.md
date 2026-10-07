@@ -2059,7 +2059,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,705 with 16 skipped),
       Fast passes (run cp14-fast), and the guard of rule (c) passes: gate p, run guard-a1,
       35,811 records identical to the baseline (run/cp/CP-14/guard-a1/verdict.json).
-- [ ] **CP-15 - Thread the line and the profile through the host and the fight loop.**
+- [x] **CP-15 - Thread the line and the profile through the host and the fight loop.**
   Depends: CP-13, CP-14
   - Work: Add NaturalJourneyOptions.ClassLine as the last optional parameter
     (Sc/NaturalJourneyRuntime.cs:85-91); the journey passes it to the combat constructor at
@@ -2077,6 +2077,37 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     sim-snapshot.ps1:88-92, run-natural-complete.ps1:17-25 and run-natural-resume.ps1:17-32.
   - Proof: Neutral gate, set p+c. Set p alone stops right after the ceremony and holds no
     Cleric fight, so it cannot show the Cleric catalog still resolves.
+  - 2026-10-07: done. Gate run gate-a1: verdict pass (run/cp/CP-15/gate-a1/verdict.json).
+    p: 35,811 records and c: 96,166 records, each identical to its baseline, so the Priest's
+    274 fight decisions and the Cleric's 1,590 came through the profile unchanged.
+    - **The carrier.** NaturalJourneyOptions.ClassLine is the last optional parameter, null
+      by default; the journey reads it as its ClassLine, the accepted line when the caller
+      names none. The session interface is not touched, and tools/Aion.LiveBots builds
+      unchanged.
+    - **The combat class** takes the line as a constructor parameter after the policy
+      parameters, at all four sites. Its new ClassProfile reads the observed class on every
+      use. Catalog is the profile's skill table, the fight loop asks the profile's policy
+      for Decide and CandidateActions, and both policyVersion fields (the combat decision
+      and the pull plan) ask the policy too. The equipment check's fallback class is the
+      line's starter.
+    - **The run context** gains the key classLine only when the line is not the default.
+    - **The journey test** reads CP_CLASS through NaturalClassLine.Parse and takes the
+      trace account, the SIM account, the name, the created class, the resume name check,
+      the class assertion and both step labels from the line. For the default line every
+      one of them has the bytes it had. The SIM session's relog check still classifies
+      with the Priest line; CP-27 owns that.
+    - **Scripts:** CP_CLASS is cleared with the other variables in sim-snapshot.ps1,
+      run-natural-complete.ps1 and run-natural-resume.ps1, and test-sim-snapshot.ps1
+      asserts that a Replay's journey does not inherit it and that the caller gets it back.
+    - **One difference in what is refused, written here because no baseline run meets
+      it.** Before this item an observed class that was neither Priest nor Cleric played
+      with the Priest's catalog; now NaturalClassProfiles.For refuses it by name. That is
+      what the seam asks for (section 2). It matters to one caller outside the gates: the
+      LIVE attach scenario, which would now stop on a character of another class instead
+      of fighting it with Priest skills.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,705 with 16 skipped),
+      test-sim-snapshot.ps1 and test_compare_traces.py pass, and Fast passes (run
+      cp15-fast). The guard of rule (c), gate p, is part of this item's proof run.
 - [ ] **CP-16 - Sustain, upkeep, help-item and patrol reads from the profile.** Depends:
   CP-09, CP-15
   - Work: Replace class tests and direct table reads in the fight-loop inputs with profile
@@ -3686,3 +3717,9 @@ report what was done, what is blocked and what you need from me.
   UT/NaturalClassProfileTests, 6 tests: the 576-state sweep answers as the static policy
   does. Seven checks, 4,705 with 16 skipped, guard p (guard-a1) and Fast (cp14-fast)
   pass. Next by rule (h): CP-15.
+- 2026-10-07 — Loop: CP-15 done. The class line rides on NaturalJourneyOptions.ClassLine and
+  reaches the combat class at its four constructions; the fight loop's catalog, Decide,
+  CandidateActions and policy version go through the observed class's profile. The journey
+  test reads CP_CLASS; the three scripts clear it. Gate gate-a1, set p+c: identical. Seven
+  checks, 4,705 with 16 skipped, the script tests and Fast (cp15-fast) pass. Next by rule (h):
+  CP-16.
