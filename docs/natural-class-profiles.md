@@ -3348,6 +3348,13 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       artist rows now see one object each (55500 and 55161), and a census of the started
       SIM world holds no other npc doubled this way. The hazard for CP-60 on is gone.
       Details: `docs/retail-ai-fidelity.md`, "Two Ishalgen trainers stood twice".
+      **The fix (6bdb96d66) is an outside commit that changes traces (CP-Q5).** Ten fewer
+      objects are made at world start, so every later object id is ten lower. The gate for
+      p at that commit fails on `fields.objectId` at record 1, with 35,789 records against
+      the baseline's 35,811 (run/cp/CP34-dup/gate-p/verdict.json). The journey passes and
+      all 21 step counts equal the baseline's. The other scopes were not run. The
+      re-record rule of section 8 applies: the operator chooses between re-recording at
+      HEAD and reverting.
     - Bundle: the seven pre-commit checks pass and Fast passes (run cp34-fast).
       Aion.GameServer.Tests was not run: tests/Aion.Bots did not change.
 - [ ] **CP-35 - A skill catalog generated from the shipped data, and the profile
