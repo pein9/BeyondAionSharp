@@ -3016,11 +3016,32 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     the legs' own protected items (coin gear, Haramel), which are leg rules. The Cleric's
     shield waits for the off-hand mode of CP-68, as the Warrior's does; until then the
     staff fills both hands, as it does today.
+  - The operator's gear rules, 2026-10-07, given with the answer to CP-Q22. They are the
+    tables of this item and outrank the defaults of CP-Q7 and CP-Q10 where they differ:
+    - "Port over where our cleric/priest uses the same as others, without needing special
+      things. If our generic stuff can't compensate then we need a better system, as every
+      class plays the game slightly differently." So where a table cannot say what a class
+      needs (a two-handed weapon, a shield, a rule that changes at Ascension), the table
+      form is widened for every class; no class gets a branch of its own.
+    - Priest types (Priest, then Cleric or Chanter): leather before Ascension, chain
+      after. After Ascension the staff with the most magic boost, for the Chanter as for
+      the Cleric; this replaces the physical stat of CP-Q7's default for the Chanter, and
+      the pick is the same Karmic Staff. Before Ascension the operator is not sure; the
+      Priest keeps the mace by magic boost, as it plays today, until told otherwise.
+    - Mage types (Mage, then Sorcerer or Spiritmaster): cloth, which is the robe in the
+      item data, and the spellbook.
+    - Warrior types (Warrior, then Gladiator or Templar): chain before Ascension, plate
+      after. The Templar takes sword and shield; the Gladiator the two-handed sword (the
+      GREATSWORD group). The shield and the second hand are built in CP-68; this item
+      writes the tables so that CP-68 adds no class branch either.
+    - Scout, Engineer and Artist: no new word; the defaults of CP-Q10 stand.
   - Proof: Neutral gate, set all. A changed pick changes a trace, so differing scopes are
-    expected. List each scope's first difference in this item. The Priest and Cleric
-    scopes are then re-recorded once, with the operator's word (CP-Q22), and the loop
+    expected: today the Priest has no armor type order, and from this item on it takes
+    leather first. List each scope's first difference in this item. The Priest and Cleric
+    scopes are then re-recorded once (CP-Q22, answered yes on 2026-10-07), and the loop
     prompt's sentence that the journey plays exactly as CP-08 and CP-09 recorded it counts
-    from the new baselines.
+    from the new baselines. The snapshots are not recaptured: a restored character keeps
+    what it wears and what it picked, and the new rules decide from there.
 - [x] **CP-30 - Parameterize the capital scenario by the contract.** Depends: CP-08, CP-25
   - Work: This item edits an existing scenario file, so it waits for the first baselines
     (CP-08). Parameterize CapitalAscensionScenario.RunAsmodianAsync by the contract: the
@@ -3318,6 +3339,15 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       journey that approaches the trainer by its shipped position. It is offered as a
       separate task, and it is a hazard for the Engineer's and the Artist's journeys
       (CP-60 on): an approach that asks for exactly one trainer object fails.
+    - **Finding fixed the same day, in a separate task.** The second objects came from
+      retail's gated spawns (`spawns/gated/gated_spawns.tsv`), which Java does not have.
+      The table marks the placements this port already spawns, and the server skips
+      those. It was generated on 2026-08-20; on 2026-09-26 the two static spawns were moved
+      onto retail's x and y and the table was not regenerated, so its two rows still read
+      "no static spawn here". Regenerated, both are skipped. The probe's engineer and
+      artist rows now see one object each (55500 and 55161), and a census of the started
+      SIM world holds no other npc doubled this way. The hazard for CP-60 on is gone.
+      Details: `docs/retail-ai-fidelity.md`, "Two Ishalgen trainers stood twice".
     - Bundle: the seven pre-commit checks pass and Fast passes (run cp34-fast).
       Aion.GameServer.Tests was not run: tests/Aion.Bots did not change.
 - [ ] **CP-35 - A skill catalog generated from the shipped data, and the profile
@@ -3947,6 +3977,11 @@ as replaced and the Answer rules.
   - Why it is asked: The same choice was an operator decision for the Cleric (OD-5),
     PlayerClass.cs lists the Chanter as a physical class, and the two readings of the stat
     pick different weapons, so the definition has to be yours.
+  - Answer (2026-10-07): "We prefer magic boosted staffs after ascension", said of the
+    Priest types, Cleric and Chanter alike. The Chanter takes the Karmic Staff and ranks
+    its staffs by magic boost, as the Cleric does. The physical stat stays the rule of the
+    Warrior and the Scout. CP-29a moves the Chanter's table to it; the snapshot of CP-33
+    holds the same staff either way.
 - **CP-Q8.** What is the 1-9 endpoint for the five new starters? (a) The existing Munin stop
   with the bridge off: all 41 quests, level 9, Q2008 at START/0. This is the order OD-16
   replaced: a non-Daeva is capped at 126,069 XP (level 9 starts at 82,982), so quest XP past
@@ -4132,17 +4167,15 @@ as replaced and the Answer rules.
 
 ## Blocked / questions for the operator
 
-One item is blocked, and rule (h) passes over it:
+Nothing is blocked: no item is listed here as blocked, and rule (h) passes over none.
 
-- **CP-29a** (the Priest and the Cleric on the table gear rules) waits for **CP-Q22**. The
-  operator asked for the change on 2026-10-07 and said to do it when convenient. Question:
-  the change will very likely alter some of the Priest's and the Cleric's gear and reward
-  picks (today's Priest rule has no armor type order, and its reward choice is class-blind),
-  and each altered pick makes a neutral-gate scope differ. May the seven Priest and Cleric
-  baselines be re-recorded once for this item, after the differences are listed? No default:
-  the item waits for an Answer line here. "Yes" lets the loop take CP-29a at its next pick.
-
-Before that entry, nothing had been blocked since CP-Q3 was answered.
+- **CP-Q22** (asked 2026-10-07 for CP-29a: may the seven Priest and Cleric baselines be
+  re-recorded once, after the differences are listed, when the Priest and the Cleric move
+  to the table gear rules?). Answer (2026-10-07): "Yes, unblock this. All classes need to
+  be able to run. Port over where our cleric/priest uses the same as others, without
+  needing special things. If our generic stuff can't compensate then we need a better
+  system, as every class plays the game slightly differently." The operator gave gear
+  rules per class type with it; they are written into CP-29a. CP-29a is unblocked.
 CP-08's first record run failed in scope p on 2026-10-07; by rule (i) that became lettered
 item CP-07a, which stands in CP-08's Depends, so CP-08 waits for it and is not listed
 here. CP-03
@@ -4680,3 +4713,9 @@ report what was done, what is blocked and what you need from me.
   the Artist's trainer twice, the second about 2.4 m above the first; cause not found, offered
   as a separate task. Guard guard-a1, set p: identical. Seven checks and Fast (cp34-fast)
   pass. Next by rule (h): CP-35.
+- 2026-10-07 — Operator: CP-Q22 answered yes; CP-29a is unblocked and is the next pick. Gear by
+  class type, written into CP-29a: Priest types leather, then chain after Ascension, and the
+  staff by magic boost after Ascension (CP-Q7 answered for the Chanter); Mage types cloth and
+  the spellbook; Warrior types chain, then plate, Templar sword and shield, Gladiator the
+  two-handed sword. No class gets a branch of its own: where the table cannot say it, the
+  table is widened. The loop is holding builds while another session edits this tree.
