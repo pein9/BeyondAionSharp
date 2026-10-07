@@ -28,6 +28,11 @@
 #            The evidence goes to run/cp/<Item>/<Run>/, nothing is written under run/snapshots, and the schema is
 #            dropped whether the run passes or fails. A working tree with uncommitted changes is allowed and recorded.
 #
+# Class lines (docs/natural-class-profiles.md, CP-28): -Class <line id> on Capture and Replay plays another class line
+# (CP_CLASS). A snapshot of another line records it as classLine, Restore prints it back as CP_CLASS, and a run that
+# starts from a snapshot plays the snapshot's line. The accepted line, priest-cleric, is recorded and printed nowhere,
+# so its snapshots and their restores are as they always were. No line sets NA_HELP_ITEMS: the help supply is on.
+#
 # Snapshots are only ever made by natural play and are never edited. Every restore is a fresh copy because the
 # Ascension class choice is irreversible. Only aion_gs_sim_ni08_* schemas on the development MySQL are touched.
 param(
@@ -54,6 +59,8 @@ param(
 	[string]$CapitalStage,
 	[ValidatePattern('^\d+:[34]:\d+$')]
 	[string]$CapitalRelogAt,
+	# Capture and Replay: the class line to play; unset is the accepted line, or the line of the snapshot started from.
+	[string]$Class,
 	# Replay only: the stop boundary NI08_STOP_AT; a completed quest reads as status 5 with packed vars 0.
 	[ValidatePattern('^\d+:\d+:\d+$')]
 	[string]$StopAt,
@@ -87,6 +94,13 @@ if ($Action -ne 'Replay' -and ($StopAt -or $StopAfterQuest -or $Item -or $Replay
 }
 # Read here: inside a function $PSBoundParameters is the function's own.
 $fromGiven = $PSBoundParameters.ContainsKey('From')
+# CP-28: the class lines of docs/natural-class-profiles.md. A line the journey does not hold yet fails later, in
+# NaturalClassLine.Parse, with a message that names it. Only the accepted line plays the capital pass.
+$classLines = @('priest-cleric', 'priest-chanter', 'warrior', 'scout', 'mage', 'engineer', 'artist')
+$defaultClassLine = 'priest-cleric'
+$capitalClassLines = @('priest-cleric')
+if ($Class -and -not $playsScope) { throw 'Class belongs to Capture and Replay; a restored snapshot plays the line it recorded.' }
+if ($Class -and $Class -cnotin $classLines) { throw "Unknown class line '$Class'. Known lines: $($classLines -join ', ')." }
 
 function Invoke-Docker([string[]]$Arguments) {
 	& $Docker @Arguments
@@ -156,6 +170,23 @@ function Get-LegEnvironment([Collections.IDictionary]$BaseEnvironment, [string]$
 	$extra
 }
 
+# CP-28: settle the class line of a run and return it. $Extra holds CP_CLASS already when the run starts from a snapshot
+# of another line ($BaseName); such a run plays that line and -Class may only repeat it. A fresh run takes -Class. The
+# accepted line sets nothing, so its child environment and its receipts stay as they were.
+function Set-ClassLine([hashtable]$Extra, [string]$BaseName) {
+	$line = if ($Extra.ContainsKey('CP_CLASS')) { [string]$Extra['CP_CLASS'] } else { $defaultClassLine }
+	if ($BaseName) {
+		if ($Class -and $Class -ne $line) { throw "Snapshot $BaseName holds class line $line; -Class $Class cannot play it." }
+	} elseif ($Class -and $Class -ne $defaultClassLine) {
+		$Extra['CP_CLASS'] = $Class
+		$line = $Class
+	}
+	if ($CapitalStage -eq 'first' -and $line -notin $capitalClassLines) {
+		throw "Class line $line has no capital leg; -CapitalStage first is the accepted line's."
+	}
+	$line
+}
+
 function Restore-Snapshot([string]$SnapshotName = $Name) {
 	if (-not $SnapshotName) { throw "$Action needs -Name." }
 	$directory = Join-Path $SnapshotRoot $SnapshotName
@@ -163,6 +194,11 @@ function Restore-Snapshot([string]$SnapshotName = $Name) {
 	$dump = Join-Path $directory 'dump.sql.gz'
 	$hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $dump).Hash.ToLowerInvariant()
 	if ($hash -ne $metadata.dumpSha256) { throw "Snapshot $Name dump hash changed; refusing to restore an edited snapshot." }
+	# CP-28: only a snapshot of another class line records one.
+	$classLine = if ($metadata.PSObject.Properties.Name -contains 'classLine') { [string]$metadata.classLine } else { $null }
+	if ($classLine -and $classLine -cnotin $classLines) {
+		throw "Snapshot $SnapshotName records an unknown class line '$classLine'; refusing to restore."
+	}
 	$haramelProgress = $null
 	if ($metadata.PSObject.Properties.Name -contains 'continuousJourney' -and $metadata.continuousJourney) {
 		$continuousFile = Join-Path $directory 'continuous-completion.json'
@@ -247,12 +283,15 @@ function Restore-Snapshot([string]$SnapshotName = $Name) {
 	}
 	if ($metadata.PSObject.Properties.Name -contains 'source' -and $metadata.source -like 'natural-capital-*') {
 		$environment.NA_ASCENSION = '1'
-		$environment.PC_CAPITAL = 'first'
+		# CP-28: a line with no capital leg resumes its capital snapshot on the start stage, which re-checks the
+		# endpoint and stops; the accepted line resumes on the first pass, as it always did.
+		$environment.PC_CAPITAL = $(if ($classLine -and $classLine -notin $capitalClassLines) { 'start' } else { 'first' })
 	}
 	if ($laterCapital) {
 		$environment.NA_ASCENSION = '1'
 		$environment.RC_CAPITAL = '1'
 	}
+	if ($classLine) { $environment.CP_CLASS = $classLine }
 	[pscustomobject]@{
 		snapshot = $SnapshotName
 		database = $db
@@ -289,7 +328,7 @@ try {
 			$runtimeChanges = @(& git -C $repoRoot status --porcelain -- src tests game-server parity-artifacts scripts/sim/sim-snapshot.ps1)
 			if ($runtimeChanges.Count) { throw 'Capture requires committed runtime and snapshot code; commit those changes first.' }
 			if (-not $Run) { $Run = "snapshot-$Name-s$Seed" }
-			$evidence = Join-Path $repoRoot "run/snapshots/_capture/$Run"
+			$evidence = Join-Path $SnapshotRoot "_capture/$Run"
 			if (-not $NoBuild) {
 				& dotnet build (Join-Path $repoRoot 'tests/Aion.Simulation.Tests') -v quiet *> $null
 				if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
@@ -312,6 +351,7 @@ try {
 					if ($LASTEXITCODE -ne 0) { throw 'Could not create the owned capital capture schema.' }
 				}
 				try {
+					$line = Set-ClassLine $extra $(if ($CapitalStage -eq 'first') { $From } else { $null })
 					Invoke-NaturalJourney $db $Run $evidence $extra
 					$capitalFile = Join-Path $evidence 'capital-stage-completion.json'
 					$capitalResult = Get-Content -Raw -LiteralPath $capitalFile | ConvertFrom-Json
@@ -326,7 +366,7 @@ try {
 					Invoke-Docker @('cp', "${ContainerName}:$remote", (Join-Path $directory 'dump.sql.gz'))
 					Invoke-Docker @('exec', $ContainerName, 'rm', '-f', $remote)
 					Copy-Item -LiteralPath $capitalFile -Destination $directory
-					[ordered]@{
+					$capitalMetadata = [ordered]@{
 						schemaVersion = 1; name = $Name; source = "natural-capital-$CapitalStage"
 						from = $(if ($CapitalStage -eq 'first') { $From } else { $null })
 						run = $Run; seed = $Seed; gitSha = (& git -C $repoRoot rev-parse HEAD).Trim()
@@ -334,7 +374,9 @@ try {
 						elapsedMillis = $baseElapsed + [long]$capitalResult.ElapsedMillis
 						dumpSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $directory 'dump.sql.gz')).Hash.ToLowerInvariant()
 						capitalReceiptSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $capitalFile).Hash.ToLowerInvariant()
-					} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $directory 'snapshot.json') -Encoding utf8
+					}
+					if ($line -ne $defaultClassLine) { $capitalMetadata.classLine = $line }
+					$capitalMetadata | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $directory 'snapshot.json') -Encoding utf8
 					Write-Host "Captured capital $CapitalStage snapshot $Name (character $($capitalResult.CharacterId)) in $directory"
 				} finally { Remove-OwnedDatabase $db }
 				break
@@ -347,6 +389,7 @@ try {
 				try {
 					$extra = Get-LegEnvironment $base.environment $Leg
 					if ($LaterCapital) { $extra.RC_CAPITAL = '1' }
+					$line = Set-ClassLine $extra $From
 					Invoke-NaturalJourney $db $Run $evidence $extra
 					$legFile = Join-Path $evidence "altgard-$Leg-completion.json"
 					if (-not (Test-Path -LiteralPath $legFile)) { throw "Altgard leg $Leg did not complete; nothing was captured." }
@@ -386,6 +429,7 @@ try {
 					if ($extra.ContainsKey('RC_CAPITAL') -and $extra.RC_CAPITAL -eq '1') {
 						Save-LaterCapitalCheckpoint $directory $evidence $legMetadata
 					}
+					if ($line -ne $defaultClassLine) { $legMetadata.classLine = $line }
 					$legMetadata | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $directory 'snapshot.json') -Encoding utf8
 					Write-Host "Captured snapshot $Name (character $($legResult.CharacterId)) in $directory"
 				}
@@ -406,6 +450,7 @@ try {
 						ConvertTo-Json | Set-Content -LiteralPath (Join-Path $evidence 'schema-provenance.json')
 				}
 				if ($LaterCapital) { $prefixExtra.RC_CAPITAL = '1' }
+				$line = Set-ClassLine $prefixExtra $null
 				Invoke-NaturalJourney $db $Run $evidence $prefixExtra
 				$clock = Get-Content -Raw -LiteralPath (Join-Path $evidence 'completion-clock.json') | ConvertFrom-Json
 				$completion = Get-Content -Raw -LiteralPath (Join-Path $evidence 'completion.json') | ConvertFrom-Json
@@ -461,6 +506,7 @@ try {
 					$prefixMetadata.continuousCompletionSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $continuousFile).Hash.ToLowerInvariant()
 					$prefixMetadata.haramelProgressSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $directory 'haramel-progress.json')).Hash.ToLowerInvariant()
 				}
+				if ($line -ne $defaultClassLine) { $prefixMetadata.classLine = $line }
 				$prefixMetadata | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $directory 'snapshot.json') -Encoding utf8
 				Write-Host "Captured snapshot $Name (character $($completion.CharacterId)) in $directory"
 			}
@@ -506,6 +552,7 @@ try {
 				if ($LASTEXITCODE -ne 0) { throw 'Could not create the owned replay schema.' }
 			}
 			try {
+				Set-ClassLine $extra $(if ($restores) { $From } else { $null }) | Out-Null
 				if ($CapitalStage) { $extra.NA_ASCENSION = '1'; $extra.PC_CAPITAL = $CapitalStage }
 				if ($Bridge) { $extra.NA_ASCENSION = '1' }
 				if ($ContinuousJourney) { $extra.NA_ASCENSION = '1'; $extra.AF_ALTGARD = 'all' }
@@ -549,7 +596,7 @@ try {
 			$restored = Restore-Snapshot
 			try {
 				if (-not $Run) { $Run = "snapshot-$Name-verify-" + (Get-Date -Format 'yyyyMMddHHmmss') }
-				$evidence = Join-Path $repoRoot "run/snapshots/_verify/$Run"
+				$evidence = Join-Path $SnapshotRoot "_verify/$Run"
 				$extra = @{}
 				foreach ($key in $restored.environment.Keys) { $extra[$key] = $restored.environment[$key] }
 				Invoke-NaturalJourney $restored.database $Run $evidence $extra

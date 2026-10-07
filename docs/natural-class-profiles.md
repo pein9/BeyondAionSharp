@@ -2810,7 +2810,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       still on the Priest line, as logged under CP-26.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,798 with 16 skipped),
       and Fast passes (run cp27-fast). The guard of rule (c), gate p, is in the proof run.
-- [ ] **CP-28 - Snapshot tooling carries the class line.** Depends: CP-03, CP-15
+- [x] **CP-28 - Snapshot tooling carries the class line.** Depends: CP-03, CP-15
   - Work: scripts/sim/sim-snapshot.ps1 gains -Class <line id> for Capture and Replay. The
     script holds the list of the seven line ids of this plan (priest-cleric, priest-chanter,
     warrior, scout, mage, engineer, artist) and refuses any other. A line the C# table does
@@ -2829,6 +2829,51 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     historical restore gains no selector, a recorded line round-trips through Capture and
     Restore, no Capture, Replay or Restore of any line sets NA_HELP_ITEMS, a Chanter capital
     snapshot restores with PC_CAPITAL=start, an unknown line is refused.
+  - 2026-10-07: done. scripts/sim/test-sim-snapshot.ps1 passes with the new cases
+    (run/cp/CP-28/checks.log). Guard run guard-a1, set p: verdict pass
+    (run/cp/CP-28/guard-a1/verdict.json), 35,811 records, identical to its baseline; the
+    gate replays through the changed script.
+    - **Java.** None read: the item changes a script and relies on no server behavior.
+    - **-Class <line id>** is new on Capture and Replay. The script holds the seven line
+      ids and refuses any other, case-sensitively, before it touches MySQL; Restore, Verify
+      and Drop refuse the switch. A fresh run of another line sets CP_CLASS. The accepted
+      line sets nothing, named or not, so its child environment, its Replay receipts and
+      its snapshots are as they were.
+    - **A run that starts from a snapshot plays the snapshot's line.** Restore prints
+      CP_CLASS for a snapshot that recorded a line, and an Altgard leg, the first capital
+      pass and a Replay -From carry it into the journey. -Class may repeat the snapshot's
+      line and may not change it ("Snapshot X holds class line A; -Class B cannot play
+      it."); the restored copy is dropped. The item did not ask for this refusal; without
+      it a wrong -Class would have played a character under another class's rules.
+    - **Metadata.** All three writers (capital, leg, prefix) add classLine as the last
+      property, and only for a line other than the accepted one. Restore refuses a
+      snapshot that records a line outside the seven.
+    - **Capital.** Restore prints PC_CAPITAL=start for a capital snapshot of a line with
+      no capital leg, and first for the accepted line as before. Only priest-cleric has a
+      capital leg. Capture and Replay refuse -CapitalStage first for any other line.
+    - **NA_HELP_ITEMS.** No action sets or prints it. The runner still clears it, so the
+      supply is on for every line.
+    - **One change beside the item's list.** Capture and Verify wrote their evidence to
+      run/snapshots/_capture and run/snapshots/_verify whatever -SnapshotRoot said. They
+      now write under the snapshot root. The default root is run/snapshots, so every real
+      path is the same; the test's captures stay in its temporary folder.
+    - **New cases in the test,** against a fake Docker, a fake journey and a fake git:
+      a historical restore prints its three variables and nothing else; the accepted line,
+      named or not, captures with no CP_CLASS and no classLine and restores with no
+      selector; a Mage capture sets CP_CLASS, records the line, restores with it, and a
+      Replay and a leg capture from it play it and carry it on; a fresh Replay of a Warrior
+      sets the line and one of the accepted line leaves its receipt empty; the accepted
+      line's capital snapshot restores on first, a Chanter's on start with its line, and
+      Verify of the Chanter's takes that environment and passes; no Restore and no Replay
+      receipt holds NA_HELP_ITEMS and the parent's values come back; an unknown line, a
+      line id in another case, a line on Restore or Verify, another line than the
+      snapshot's, a Chanter first capital pass and a snapshot recording an unknown line
+      are each refused, and each restored copy is dropped unplayed.
+    - **The real snapshots.** The 40 snapshots under run/snapshots record no classLine, so each restores exactly as before.
+    - scripts/sim/audit-natural-complete.py was not touched.
+    - Bundle: the seven pre-commit checks pass, both script tests pass
+      (test-sim-snapshot.ps1 and trace/test_compare_traces.py), and Fast passes (run
+      cp28-fast). Aion.GameServer.Tests was not run: no C# changed.
 
 ### C. The Chanter branch at Ascension
 
@@ -4265,3 +4310,9 @@ report what was done, what is blocked and what you need from me.
   capital pass, the Ishalgen return and the four leg gates stay the Cleric's and each refusal
   names the class it met. Gate gate-a1, set p+b+c: identical. Seven checks, 4,798 with 16 skipped
   and Fast (cp27-fast) pass. Next by rule (h): CP-28.
+- 2026-10-07 — Loop: CP-28 done. sim-snapshot.ps1 takes -Class on Capture and Replay, records
+  classLine for a line other than the accepted one, prints it back as CP_CLASS on Restore,
+  and restores a capital snapshot of a line with no capital leg on the start stage. The
+  accepted line's snapshots, restores and receipts are unchanged. test-sim-snapshot.ps1
+  passes with the new cases; guard guard-a1, set p: identical. Seven checks and Fast
+  (cp28-fast) pass. Phase B, the class seam, is complete. Next by rule (h): CP-29.

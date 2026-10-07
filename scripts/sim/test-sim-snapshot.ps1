@@ -18,6 +18,8 @@ Set-Content -LiteralPath $fake -Value @"
 Add-Content -LiteralPath '$log' -Value (`$args -join ' ')
 if ((`$args -join ' ') -like '*FAIL-IMPORT*') { exit 1 }
 if (`$args[0] -eq 'ps') { 'aion-mysql' }
+# A dump copied out of the container: Capture hashes the file it gets.
+if (`$args[0] -eq 'cp' -and `$args[1] -like 'aion-mysql:*') { [IO.File]::WriteAllBytes(`$args[2], [byte[]](5, 6, 7, 8)) }
 exit 0
 "@
 try {
@@ -475,6 +477,164 @@ exit 0
 		Remove-Variable -Name cp04Variants, cp04Journeys -Scope Global -ErrorAction SilentlyContinue
 		if ($null -eq $gatePriorHelp) { Remove-Item -LiteralPath Env:NA_HELP_ITEMS -ErrorAction SilentlyContinue }
 		else { $env:NA_HELP_ITEMS = $gatePriorHelp }
+	}
+
+	# CP-28: the class line. Capture and Replay take -Class and set CP_CLASS; a snapshot of another line records it and
+	# Restore prints it back; the accepted line is recorded and printed nowhere; no line sets NA_HELP_ITEMS. The journey
+	# is a fake dotnet that writes the receipts a capture reads, and git is a fake with a clean tree.
+	$lineEnvPath = Join-Path $root 'line-env.jsonl'
+	$lineSha = '2222222222222222222222222222222222222222'
+	function git { if ($args -contains 'rev-parse') { $lineSha } }
+	function dotnet {
+		if ($args[0] -eq 'build') { $global:LASTEXITCODE = 0; return }
+		$seen = [ordered]@{}
+		foreach ($name in @('CP_CLASS', 'NA_HELP_ITEMS', 'PC_CAPITAL', 'NA_ASCENSION', 'AF_ALTGARD', 'NI08_RESUME_CHARACTER')) {
+			$seen[$name] = [Environment]::GetEnvironmentVariable($name)
+		}
+		Add-Content -LiteralPath $lineEnvPath -Value ($seen | ConvertTo-Json -Compress)
+		$out = $env:AION_NI07_COMBAT_DIR
+		@{ Next = @{ Outcome = 'complete' }; CharacterId = 4242 } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $out 'completion.json')
+		@{ CharacterId = 4242; ElapsedMillis = 7000 } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $out 'completion-clock.json')
+		if ($env:PC_CAPITAL) {
+			@{ verified = $true; Stage = $env:PC_CAPITAL; CharacterId = 4242; ElapsedMillis = 5000 } | ConvertTo-Json |
+				Set-Content -LiteralPath (Join-Path $out 'capital-stage-completion.json')
+		}
+		if ($env:AF_ALTGARD) {
+			$legId = if ($env:AF_ALTGARD -eq '1') { 'l1' } else { $env:AF_ALTGARD }
+			@{ verified = $true; CharacterId = 4242; ElapsedMillis = 1000 } | ConvertTo-Json |
+				Set-Content -LiteralPath (Join-Path $out "altgard-$legId-completion.json")
+		}
+		$global:LASTEXITCODE = 0
+	}
+	# The child environments of the journeys played since the last call.
+	function Get-LineJourneys {
+		$seen = @(if (Test-Path -LiteralPath $lineEnvPath) { Get-Content -LiteralPath $lineEnvPath | ForEach-Object { $_ | ConvertFrom-Json } })
+		if (Test-Path -LiteralPath $lineEnvPath) { Remove-Item -LiteralPath $lineEnvPath }
+		, $seen
+	}
+	function Get-SnapshotMetadata([string]$SnapshotName) { Get-Content -Raw -LiteralPath (Join-Path (Join-Path $snapshots $SnapshotName) 'snapshot.json') | ConvertFrom-Json }
+	function Restore-Line([string]$SnapshotName) { & $script -Action Restore -Name $SnapshotName -Docker $fake -SnapshotRoot $snapshots | ConvertFrom-Json }
+	$capture = @{ Action = 'Capture'; Docker = $fake; SnapshotRoot = $snapshots; NoBuild = $true }
+	$replay = @{ Action = 'Replay'; Item = 'CP-28'; Docker = $fake; SnapshotRoot = $snapshots; ReplayRoot = $replays; NoBuild = $true }
+	$linePriorHelp = [Environment]::GetEnvironmentVariable('NA_HELP_ITEMS')
+	$linePriorClass = [Environment]::GetEnvironmentVariable('CP_CLASS')
+	$env:NA_HELP_ITEMS = '0'
+	$env:CP_CLASS = 'scout'
+	try {
+		# A historical restore gains no selector: munin prints its three variables and nothing else.
+		$historical = Restore-Line 'munin'
+		Assert-True (($historical.environment.PSObject.Properties.Name -join ',') -eq 'AION_SIM_NI08_DATABASE,NI08_RESUME_CHARACTER,AION_SIM_NI08_ELAPSED_MS') 'A historical restore gained a class or help-item selector.'
+
+		# The accepted line, named or not, is captured as before: no CP_CLASS in the journey, no classLine in the snapshot.
+		& $script @capture -Name line-default | Out-Null
+		& $script @capture -Name line-named -Class priest-cleric | Out-Null
+		$played = Get-LineJourneys
+		Assert-True ($played.Count -eq 2 -and $null -eq $played[0].CP_CLASS -and $null -eq $played[1].CP_CLASS) 'A capture of the accepted line set CP_CLASS.'
+		foreach ($accepted in @('line-default', 'line-named')) {
+			$metadata = Get-SnapshotMetadata $accepted
+			Assert-True (($metadata.PSObject.Properties.Name -join ',') -eq 'schemaVersion,name,source,run,seed,gitSha,capturedUtc,characterId,elapsedMillis,dumpSha256') "The accepted line's snapshot $accepted changed what it records."
+			Assert-True ($metadata.source -eq 'natural-ishalgen-journey' -and $metadata.gitSha -eq $lineSha -and $metadata.elapsedMillis -eq 7000) "The accepted line's snapshot $accepted lost its values."
+			Assert-True (((Restore-Line $accepted).environment.PSObject.Properties.Name -join ',') -eq 'AION_SIM_NI08_DATABASE,NI08_RESUME_CHARACTER,AION_SIM_NI08_ELAPSED_MS') "The accepted line's snapshot $accepted restores with a selector."
+		}
+
+		# A recorded line round-trips: Capture sets CP_CLASS and records the line, Restore prints it, a run from it plays it.
+		& $script @capture -Name mage-munin -Class mage | Out-Null
+		$played = Get-LineJourneys
+		Assert-True ($played.Count -eq 1 -and $played[0].CP_CLASS -eq 'mage' -and $null -eq $played[0].NI08_RESUME_CHARACTER) 'A capture of another line did not set CP_CLASS.'
+		$mage = Get-SnapshotMetadata 'mage-munin'
+		Assert-True ($mage.classLine -eq 'mage' -and $mage.PSObject.Properties.Name[-1] -eq 'classLine' -and $mage.source -eq 'natural-ishalgen-journey') 'A snapshot of another line did not record it.'
+		$mageRestored = Restore-Line 'mage-munin'
+		Assert-True (($mageRestored.environment.PSObject.Properties.Name -join ',') -eq 'AION_SIM_NI08_DATABASE,NI08_RESUME_CHARACTER,AION_SIM_NI08_ELAPSED_MS,CP_CLASS' -and
+			$mageRestored.environment.CP_CLASS -eq 'mage') 'Restore did not print the recorded line.'
+		& $script @replay -Run from-mage -From mage-munin | Out-Null
+		& $script @replay -Run from-mage-named -From mage-munin -Class mage | Out-Null
+		$played = Get-LineJourneys
+		Assert-True ($played.Count -eq 2 -and $played[0].CP_CLASS -eq 'mage' -and $played[1].CP_CLASS -eq 'mage' -and $played[0].NI08_RESUME_CHARACTER -eq '4242') 'A run from a recorded line did not play that line.'
+		$fromMage = Get-Content -Raw -LiteralPath (Join-Path (Join-Path (Join-Path $replays 'CP-28') 'from-mage') 'replay.json') | ConvertFrom-Json
+		Assert-True ($fromMage.environment.CP_CLASS -eq 'mage' -and $fromMage.passed) 'A Replay receipt lost its class line.'
+		# A fresh Replay of another line, and of the accepted one.
+		& $script @replay -Run fresh-warrior -Class warrior | Out-Null
+		& $script @replay -Run fresh-accepted -Class priest-cleric | Out-Null
+		$played = Get-LineJourneys
+		Assert-True ($played[0].CP_CLASS -eq 'warrior' -and $null -eq $played[1].CP_CLASS) 'A fresh Replay did not set the line it was given, or set the accepted one.'
+		$freshAccepted = Get-Content -Raw -LiteralPath (Join-Path (Join-Path (Join-Path $replays 'CP-28') 'fresh-accepted') 'replay.json') | ConvertFrom-Json
+		Assert-True (@($freshAccepted.environment.PSObject.Properties).Count -eq 0) 'A Replay of the accepted line changed its receipt.'
+		# A leg captured from a recorded line carries the line into the new snapshot.
+		& $script @capture -Name mage-leg -AltgardLeg1 -From mage-munin | Out-Null
+		$played = Get-LineJourneys
+		Assert-True ($played[0].CP_CLASS -eq 'mage' -and $played[0].AF_ALTGARD -eq '1') 'A leg from a recorded line did not play that line.'
+		Assert-True ((Get-SnapshotMetadata 'mage-leg').classLine -eq 'mage' -and (Restore-Line 'mage-leg').environment.CP_CLASS -eq 'mage') 'A leg snapshot lost the line of its base.'
+		& $script @capture -Name default-leg -AltgardLeg1 -From line-default | Out-Null
+		Assert-True ((Get-SnapshotMetadata 'default-leg').PSObject.Properties.Name -notcontains 'classLine' -and $null -eq (Get-LineJourneys)[0].CP_CLASS) "A leg of the accepted line recorded or set a class line."
+
+		# The capital snapshots. The accepted line's restores on the first pass, as it always did; a Chanter's has no
+		# capital leg and restores on the start stage, where Verify re-checks the endpoint and stops.
+		& $script @capture -Name capital-accepted -CapitalStage start | Out-Null
+		& $script @capture -Name chanter-start -CapitalStage start -Class priest-chanter | Out-Null
+		$played = Get-LineJourneys
+		Assert-True ($null -eq $played[0].CP_CLASS -and $played[1].CP_CLASS -eq 'priest-chanter' -and $played[1].PC_CAPITAL -eq 'start' -and $played[1].NA_ASCENSION -eq '1') 'A capital capture lost its line or its stage.'
+		$acceptedCapital = Restore-Line 'capital-accepted'
+		Assert-True (($acceptedCapital.environment.PSObject.Properties.Name -join ',') -eq 'AION_SIM_NI08_DATABASE,NI08_RESUME_CHARACTER,AION_SIM_NI08_ELAPSED_MS,NA_ASCENSION,PC_CAPITAL' -and
+			$acceptedCapital.environment.PC_CAPITAL -eq 'first') "The accepted line's capital snapshot restores differently."
+		Assert-True ((Get-SnapshotMetadata 'capital-accepted').PSObject.Properties.Name -notcontains 'classLine') "The accepted line's capital snapshot recorded a class line."
+		$chanter = Get-SnapshotMetadata 'chanter-start'
+		Assert-True ($chanter.classLine -eq 'priest-chanter' -and $chanter.source -eq 'natural-capital-start') 'A Chanter capital snapshot did not record its line.'
+		$chanterRestored = Restore-Line 'chanter-start'
+		Assert-True ($chanterRestored.environment.PC_CAPITAL -eq 'start' -and $chanterRestored.environment.NA_ASCENSION -eq '1' -and
+			$chanterRestored.environment.CP_CLASS -eq 'priest-chanter') 'A Chanter capital snapshot did not restore on the start stage with its line.'
+		& $script -Action Verify -Name chanter-start -Run verify-chanter -Docker $fake -SnapshotRoot $snapshots | Out-Null
+		$played = Get-LineJourneys
+		Assert-True ($played.Count -eq 1 -and $played[0].PC_CAPITAL -eq 'start' -and $played[0].CP_CLASS -eq 'priest-chanter' -and $played[0].NI08_RESUME_CHARACTER -eq '4242') 'Verify did not take its environment from Restore.'
+		Assert-True (Test-Path -LiteralPath (Join-Path (Join-Path (Join-Path $snapshots '_verify') 'verify-chanter') 'capital-stage-completion.json')) 'Verify kept no evidence under the snapshot root.'
+		& $script @capture -Name capital-accepted-first -CapitalStage first -From capital-accepted | Out-Null
+		$played = Get-LineJourneys
+		Assert-True ($played[0].PC_CAPITAL -eq 'first' -and $null -eq $played[0].CP_CLASS -and (Get-SnapshotMetadata 'capital-accepted-first').from -eq 'capital-accepted') "The accepted line's first capital pass changed."
+
+		# No Capture, Replay, Restore or Verify of any line set NA_HELP_ITEMS, and the parent's values came back.
+		foreach ($restorable in @('munin', 'line-default', 'mage-munin', 'mage-leg', 'capital-accepted', 'chanter-start')) {
+			Assert-True ((Restore-Line $restorable).environment.PSObject.Properties.Name -notcontains 'NA_HELP_ITEMS') "Restore of $restorable printed NA_HELP_ITEMS."
+		}
+		foreach ($receiptFile in @(Get-ChildItem -LiteralPath (Join-Path $replays 'CP-28') -Recurse -Filter 'replay.json')) {
+			$receiptEnvironment = (Get-Content -Raw -LiteralPath $receiptFile.FullName | ConvertFrom-Json).environment
+			Assert-True (@($receiptEnvironment.PSObject.Properties | ForEach-Object { $_.Name }) -notcontains 'NA_HELP_ITEMS') 'A Replay set NA_HELP_ITEMS.'
+		}
+		Assert-True ($env:NA_HELP_ITEMS -eq '0' -and $env:CP_CLASS -eq 'scout') 'A run did not put the parent environment back.'
+
+		# What is refused, before MySQL is touched: an unknown line, a line on Restore, another line than the snapshot's.
+		if (Test-Path -LiteralPath $log) { Remove-Item -LiteralPath $log }
+		$journeysBefore = (Get-LineJourneys).Count
+		Assert-Throws { & $script @capture -Name unknown-line -Class paladin } "*Unknown class line 'paladin'*" 'Capture accepted an unknown class line.'
+		Assert-Throws { & $script @replay -Run unknown-line -Class Mage } "*Unknown class line 'Mage'*" 'Replay accepted a line id in another case.'
+		Assert-Throws { & $script -Action Restore -Name mage-munin -Class mage -Docker $fake -SnapshotRoot $snapshots } '*belongs to Capture and Replay*' 'Restore accepted a class line.'
+		Assert-Throws { & $script -Action Verify -Name mage-munin -Class mage -Docker $fake -SnapshotRoot $snapshots } '*belongs to Capture and Replay*' 'Verify accepted a class line.'
+		Assert-True (-not (Test-Path -LiteralPath $log) -and -not (Test-Path -LiteralPath (Join-Path $snapshots 'unknown-line'))) 'A refused class line touched MySQL or wrote a snapshot.'
+		# These restore the base first, then refuse and drop the copy without playing.
+		Assert-Throws { & $script @replay -Run wrong-line -From mage-munin -Class warrior } '*holds class line mage; -Class warrior cannot play it*' 'A run changed the line of a snapshot.'
+		Assert-Throws { & $script @replay -Run wrong-line-2 -From munin -Class mage } '*holds class line priest-cleric; -Class mage cannot play it*' 'A run gave a line to a snapshot of the accepted line.'
+		Assert-Throws { & $script @capture -Name wrong-leg -AltgardLeg1 -From mage-munin -Class scout } '*holds class line mage*' 'A leg capture changed the line of its base.'
+		Assert-Throws { & $script @capture -Name chanter-first -CapitalStage first -From chanter-start } '*priest-chanter has no capital leg*' 'A Chanter first capital pass was captured.'
+		Assert-Throws { & $script @replay -Run chanter-first -CapitalStage first -From chanter-start } '*priest-chanter has no capital leg*' 'A Chanter first capital pass was replayed.'
+		$refusedCalls = @(Get-Content -LiteralPath $log)
+		Assert-True ($refusedCalls[-1] -like '*DROP DATABASE IF EXISTS*' -and @($refusedCalls | Where-Object { $_ -like '*DROP DATABASE*' }).Count -eq 5) 'A refused run kept its restored schema.'
+		Assert-True ((Get-LineJourneys).Count -eq 0 -and $journeysBefore -eq 0) 'A refused run was played.'
+		foreach ($absent in @('wrong-leg', 'chanter-first')) {
+			Assert-True (-not (Test-Path -LiteralPath (Join-Path $snapshots $absent))) "A refused capture wrote the snapshot $absent."
+		}
+		# A snapshot that records a line this plan does not hold is not restored.
+		$foreign = Join-Path $snapshots 'foreign-line'
+		Copy-Item -LiteralPath (Join-Path $snapshots 'mage-munin') -Destination $foreign -Recurse
+		$foreignMetadata = Get-SnapshotMetadata 'foreign-line'
+		$foreignMetadata.classLine = 'paladin'
+		$foreignMetadata | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $foreign 'snapshot.json')
+		Remove-Item -LiteralPath $log
+		Assert-Throws { Restore-Line 'foreign-line' } "*records an unknown class line 'paladin'*" 'A snapshot of an unknown line was restored.'
+		Assert-True (-not (Test-Path -LiteralPath $log)) 'A snapshot of an unknown line touched MySQL.'
+	}
+	finally {
+		Remove-Item Function:dotnet
+		Remove-Item Function:git
+		if ($null -eq $linePriorHelp) { Remove-Item -LiteralPath Env:NA_HELP_ITEMS -ErrorAction SilentlyContinue } else { $env:NA_HELP_ITEMS = $linePriorHelp }
+		if ($null -eq $linePriorClass) { Remove-Item -LiteralPath Env:CP_CLASS -ErrorAction SilentlyContinue } else { $env:CP_CLASS = $linePriorClass }
 	}
 
 	# An edited dump is refused before anything is created.
