@@ -85,6 +85,9 @@ public sealed class NaturalClassProfile
 	/// <summary>The HP and MP the shared helpers ask for before they go on.</summary>
 	public required NaturalReadinessThresholds Readiness { get; init; }
 
+	/// <summary>The numbers of the Ishalgen quest executors and of the wait for Return.</summary>
+	public required NaturalCampaignRules Campaign { get; init; }
+
 	/// <summary>How the class moves inside a fight, with its pull style.</summary>
 	public required NaturalFightMovement Movement { get; init; }
 

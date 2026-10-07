@@ -36,3 +36,21 @@ public readonly record struct NaturalReadiness(int HpPercent, int MpPercent = 0)
 /// <param name="BeforeNamedTarget">Before the target of a planned fight: a named is engaged rested.</param>
 public sealed record NaturalReadinessThresholds(NaturalReadiness BeforePull, NaturalReadiness BeforeUseBar,
 	NaturalReadiness BetweenAdds, NaturalReadiness BeforeNamedTarget);
+
+/// <summary>
+/// CP-21: the numbers of the hand-written Ishalgen quest executors and of the wait for Return (docs/natural-class-profiles.md).
+/// The executors keep their shape; only these numbers are the class's. Distances are metres.
+/// </summary>
+/// <param name="SpriggRouteBeyond">Q2002: a Sprigg farther than this is approached along a route first.</param>
+/// <param name="SpriggStandoff">Q2002: the route's last point at least this far from the Sprigg is where the bot stands.</param>
+/// <param name="SpriggSelectWithin">Q2002: an observed Sprigg within this is taken as the target.</param>
+/// <param name="FiringEdgeWithin">Q2005: ground within this of the target, with sight of it, is a firing edge.</param>
+/// <param name="StalkerSearchRange">Q2005: how near the isolated stalker's spot is explored to.</param>
+/// <param name="BlockerReplanBeyond">Q2005: a blocker farther than this is planned for again.</param>
+/// <param name="ReturnCooldownHpFraction">While Return is on cooldown the bot rests below this fraction of its HP.</param>
+/// <param name="StalkerPull">Q2005: a stalker pull is planned at this HP, and the search holds below it.</param>
+/// <param name="BeforeSack">Q2006: before a supply sack is used.</param>
+/// <param name="BeforeCamp">Q2007: before the bot enters the camp.</param>
+public sealed record NaturalCampaignRules(float SpriggRouteBeyond, float SpriggStandoff, float SpriggSelectWithin,
+	float FiringEdgeWithin, float StalkerSearchRange, float BlockerReplanBeyond, float ReturnCooldownHpFraction,
+	NaturalReadiness StalkerPull, NaturalReadiness BeforeSack, NaturalReadiness BeforeCamp);

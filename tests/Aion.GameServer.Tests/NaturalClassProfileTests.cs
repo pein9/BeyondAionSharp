@@ -132,7 +132,7 @@ public sealed class NaturalClassProfileTests
 	{
 		Class = profile.Class, Skills = profile.Skills, Excluded = profile.Excluded, Combat = profile.Combat,
 		HelpItems = profile.HelpItems, Upkeep = profile.Upkeep, PatrolRule = profile.PatrolRule, RangedHold = hold, Rest = profile.Rest,
-		Ranges = ranges ?? profile.Ranges, Readiness = profile.Readiness, Movement = profile.Movement,
+		Ranges = ranges ?? profile.Ranges, Readiness = profile.Readiness, Movement = profile.Movement, Campaign = profile.Campaign,
 	};
 
 	[Fact]
@@ -151,6 +151,23 @@ public sealed class NaturalClassProfileTests
 			Assert.Equal(18f, Copy(profile, profile.RangedHold, profile.Ranges with { PullDistance = 18 }).PullDistance(NaturalMauPolicyParameters.Baseline));
 			// What the refusal text of the shipped-spawn approach prints.
 			Assert.Equal("inside 23 m of", $"inside {profile.Ranges.SpawnApproachRange} m of");
+		}
+	}
+
+	[Fact]
+	public void TheCampaignNumbersAreTheOnesTheQuestExecutorsHeld()
+	{
+		foreach (NaturalClassProfile profile in new[] { NaturalPriestProfile.Priest, NaturalPriestProfile.Cleric })
+		{
+			// CP-21: Q2002's 25, 22 and 25 m, Q2005's 25, 23 and 25 m, Return's 75%, and the three HP thresholds.
+			Assert.Equal(new NaturalCampaignRules(SpriggRouteBeyond: 25, SpriggStandoff: 22, SpriggSelectWithin: 25, FiringEdgeWithin: 25,
+				StalkerSearchRange: 23, BlockerReplanBeyond: 25, ReturnCooldownHpFraction: 0.75f, StalkerPull: new(90), BeforeSack: new(80),
+				BeforeCamp: new(80)), profile.Campaign);
+			// None of the three asks about mana, as the inline tests did not.
+			Assert.Equal((0, 0, 0), (profile.Campaign.StalkerPull.MpPercent, profile.Campaign.BeforeSack.MpPercent, profile.Campaign.BeforeCamp.MpPercent));
+			// Return's wait compared HP with a float product; for every HP of a 669-HP Priest it is the 75% line.
+			for (int hp = 0; hp <= 669; hp++)
+				Assert.Equal(hp < 669 * 0.75f, hp < 669 * profile.Campaign.ReturnCooldownHpFraction);
 		}
 	}
 

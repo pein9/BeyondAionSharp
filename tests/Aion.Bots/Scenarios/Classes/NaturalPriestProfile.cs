@@ -31,6 +31,11 @@ public static class NaturalPriestProfile
 	private static readonly NaturalFightMovement PriestLineMovement = new(NaturalPullStyle.StandOff,
 		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, RangedRouteBeyond: 25, RangeRefusalCloseIn: 10);
 
+	/// <summary>The Sprigg hunt and Q2005's firing edge are spell-range work: 22, 23 and 25 m, each where it stood.</summary>
+	private static readonly NaturalCampaignRules PriestLineCampaign = new(
+		SpriggRouteBeyond: 25, SpriggStandoff: 22, SpriggSelectWithin: 25, FiringEdgeWithin: 25, StalkerSearchRange: 23,
+		BlockerReplanBeyond: 25, ReturnCooldownHpFraction: 0.75f, StalkerPull: new(90), BeforeSack: new(80), BeforeCamp: new(80));
+
 	public static NaturalClassProfile Priest { get; } = new()
 	{
 		Class = PlayerClass.PRIEST,
@@ -46,6 +51,7 @@ public static class NaturalPriestProfile
 		Ranges = PriestLineRanges,
 		Readiness = PriestLineReadiness,
 		Movement = PriestLineMovement,
+		Campaign = PriestLineCampaign,
 	};
 
 	public static NaturalClassProfile Cleric { get; } = new()
@@ -64,6 +70,7 @@ public static class NaturalPriestProfile
 		Ranges = PriestLineRanges,
 		Readiness = PriestLineReadiness,
 		Movement = PriestLineMovement,
+		Campaign = PriestLineCampaign,
 	};
 
 	/// <summary>Calls the static policy with the class's catalog and the run's parameters, and reports the run's policy id.</summary>

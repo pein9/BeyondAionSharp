@@ -137,29 +137,22 @@ public sealed class NaturalClassSeamPinTests(ITestOutputHelper output)
 			Profile: () => Whole(Both(profile => profile.Movement.RangedRouteBeyond))),
 		new("cast: close in after a range rejection (m)", 10f, Owner: "CP-19", Profile: () => Both(profile => profile.Movement.RangeRefusalCloseIn)),
 
-		// Pending, owner CP-21: the Ishalgen campaign's ranges and readiness thresholds.
-		new("Q2002 Sprigg hunt: route when farther than (m)", 25, Owner: "CP-21", Sites:
-			[new(Journey, "AdvanceWheresRaeAsync", "Distance(session.CurrentPosition, candidate.Position) > 25")]),
-		new("Q2002 Sprigg hunt: stand off at least (m)", 22, Owner: "CP-21", Sites:
-			[new(Journey, "AdvanceWheresRaeAsync", "candidate.Position) >= 22", 2)]),
-		new("Q2002 Sprigg hunt: select inside (m)", 25, Owner: "CP-21", Sites:
-			[new(Journey, "AdvanceWheresRaeAsync", "Distance(session.CurrentPosition, candidate.Position) <= 25")]),
-		new("Q2005 firing edge: ground inside (m)", 25, Owner: "CP-21", Sites:
-			[new(Journey, "CompleteTeachingALessonAsync", "Distance(ground, target.Position) <= 25")]),
-		new("Q2005 stalker search area: explore within (m)", 23, Owner: "CP-21", Sites:
-			[new(Journey, "CompleteTeachingALessonAsync", "isolatedStalker, 23, navigator")]),
-		new("Q2005 blocker: plan again when farther than (m)", 25, Owner: "CP-21", Sites:
-			[new(Journey, "CompleteTeachingALessonAsync", "Distance(session.CurrentPosition, currentBlocker.Position) > 25")]),
-		new("Return cooldown wait: rest below HP fraction", 0.75f, Owner: "CP-21", Sites:
-			[new(Journey, "UseLearnedReturnToBindAsync", "session.Api.World.MaxHp * 0.75f")]),
-		new("Q2005: plan the stalker pull at HP percent", 90, Owner: "CP-21", Sites:
-			[new(Journey, "CompleteTeachingALessonAsync", "session.Api.World.CurrentHp * 100 >= session.Api.World.MaxHp * 90")]),
-		new("Q2005: hold the search below HP percent", 90, Owner: "CP-21", Sites:
-			[new(Journey, "CompleteTeachingALessonAsync", "session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 90")]),
-		new("Q2006: rest before a sack below HP percent", 80, Owner: "CP-21", Sites:
-			[new(Journey, "CompleteHitThemWhereItHurtsAsync", "session.Api.World.MaxHp * 80) await RestSafelyAsync(token);")]),
-		new("Q2007: rest before the camp below HP percent", 80, Owner: "CP-21", Sites:
-			[new(Journey, "CompleteWheresRaeThisTimeAsync", "session.Api.World.MaxHp * 80 ||")]),
+		// Turned on by CP-21: the Ishalgen campaign's ranges and readiness thresholds, read from the profiles.
+		new("Q2002 Sprigg hunt: route when farther than (m)", 25, Owner: "CP-21",
+			Profile: () => Whole(Both(profile => profile.Campaign.SpriggRouteBeyond))),
+		new("Q2002 Sprigg hunt: stand off at least (m)", 22, Owner: "CP-21", Profile: () => Whole(Both(profile => profile.Campaign.SpriggStandoff))),
+		new("Q2002 Sprigg hunt: select inside (m)", 25, Owner: "CP-21", Profile: () => Whole(Both(profile => profile.Campaign.SpriggSelectWithin))),
+		new("Q2005 firing edge: ground inside (m)", 25, Owner: "CP-21", Profile: () => Whole(Both(profile => profile.Campaign.FiringEdgeWithin))),
+		new("Q2005 stalker search area: explore within (m)", 23, Owner: "CP-21",
+			Profile: () => Whole(Both(profile => profile.Campaign.StalkerSearchRange))),
+		new("Q2005 blocker: plan again when farther than (m)", 25, Owner: "CP-21",
+			Profile: () => Whole(Both(profile => profile.Campaign.BlockerReplanBeyond))),
+		new("Return cooldown wait: rest below HP fraction", 0.75f, Owner: "CP-21",
+			Profile: () => Both(profile => profile.Campaign.ReturnCooldownHpFraction)),
+		new("Q2005: plan the stalker pull at HP percent", 90, Owner: "CP-21", Profile: () => Both(profile => profile.Campaign.StalkerPull.HpPercent)),
+		new("Q2005: hold the search below HP percent", 90, Owner: "CP-21", Profile: () => Both(profile => profile.Campaign.StalkerPull.HpPercent)),
+		new("Q2006: rest before a sack below HP percent", 80, Owner: "CP-21", Profile: () => Both(profile => profile.Campaign.BeforeSack.HpPercent)),
+		new("Q2007: rest before the camp below HP percent", 80, Owner: "CP-21", Profile: () => Both(profile => profile.Campaign.BeforeCamp.HpPercent)),
 	];
 
 	[Fact]

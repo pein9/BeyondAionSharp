@@ -6360,7 +6360,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					while ((remainingCooldown = session.Api.Timing.TimeUntilCast(returnSkillId)) > TimeSpan.FromSeconds(5))
 					{
 						await DefendAgainstEngagedAsync("natural-return-cooldown");
-						if (session.Api.World.IsDead || session.Api.World.CurrentHp < session.Api.World.MaxHp * 0.75f)
+						if (session.Api.World.IsDead ||
+							session.Api.World.CurrentHp < session.Api.World.MaxHp * combat.ClassProfile.Campaign.ReturnCooldownHpFraction)
 							await RestSafelyAsync(token);
 						remainingCooldown = session.Api.Timing.TimeUntilCast(returnSkillId);
 						if (remainingCooldown <= TimeSpan.FromSeconds(5)) break;
@@ -6582,14 +6583,15 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						int? selected = null;
 						foreach (NaturalNavigationObject candidate in candidates)
 						{
-							if (Distance(session.CurrentPosition, candidate.Position) > 25)
+							NaturalCampaignRules campaign = combat.ClassProfile.Campaign;
+							if (Distance(session.CurrentPosition, candidate.Position) > campaign.SpriggRouteBeyond)
 							{
 								IReadOnlyList<BotPosition> route = await navigator.FindRouteAsync(
 									session.CurrentPosition, candidate.Position, token);
 								if (route.Count == 0) continue;
 								BotPosition standoff = route.LastOrDefault(point =>
-									Distance(point, candidate.Position) >= 22);
-								if (standoff == default && Distance(session.CurrentPosition, candidate.Position) >= 22)
+									Distance(point, candidate.Position) >= campaign.SpriggStandoff);
+								if (standoff == default && Distance(session.CurrentPosition, candidate.Position) >= campaign.SpriggStandoff)
 									standoff = session.CurrentPosition;
 								if (standoff == default) continue;
 								NaturalNavigationResult staging = await NaturalIshalgenNavigator.ExploreAnchorAsync(
@@ -6597,7 +6599,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								if (!staging.Arrived) continue;
 							}
 							if (navigator.Observe().Npcs.Any(npc => npc.ObjectId == candidate.ObjectId) &&
-								Distance(session.CurrentPosition, candidate.Position) <= 25)
+								Distance(session.CurrentPosition, candidate.Position) <= campaign.SpriggSelectWithin)
 							{
 								selected = candidate.ObjectId;
 								break;
@@ -7031,7 +7033,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							IReadOnlyList<BotPosition>? edge = geometry.TraceEdge(contract.MapId, start, candidate);
 							if (edge == null || !navigator.IsSegmentSafe(edge, target.ObjectId)) continue;
 							BotPosition ground = edge[^1];
-							if (Distance(ground, target.Position) <= 25 &&
+							if (Distance(ground, target.Position) <= combat.ClassProfile.Campaign.FiringEdgeWithin &&
 								geometry.HasLineOfSight(contract.MapId, ground, target.Position))
 								return edge.ToArray();
 						}
@@ -7216,7 +7218,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						int ingressEventStart = navigator.Events.Count;
 						BotPosition ingressStart = session.CurrentPosition;
 						NaturalNavigationResult safeStalkerArea = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(
-							contract.MapId, -1, isolatedStalker, 23, navigator, "shipped-stalker-search-area", token);
+							contract.MapId, -1, isolatedStalker, combat.ClassProfile.Campaign.StalkerSearchRange, navigator,
+							"shipped-stalker-search-area", token);
 						if (!safeStalkerArea.Arrived &&
 							safeStalkerArea.Reason == "No collision-checked route to the current destination." &&
 							corridorClearAttempts++ < 12)
@@ -7250,7 +7253,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								NaturalNavigationObject? currentBlocker = navigator.Observe().Npcs
 									.FirstOrDefault(npc => npc.ObjectId == blocker.Npc.ObjectId);
 								if (currentBlocker == null ||
-									Distance(session.CurrentPosition, currentBlocker.Position) > 25 ||
+									Distance(session.CurrentPosition, currentBlocker.Position) > combat.ClassProfile.Campaign.BlockerReplanBeyond ||
 									!geometry.HasLineOfSight(contract.MapId, session.CurrentPosition, currentBlocker.Position))
 								{
 									RejectPullTarget(blocker.Npc.ObjectId);
@@ -7391,7 +7394,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						// Choose the Stalker and the spell-range spot that bring no helpers (Java assist rule), off to the
 						// side of any pack, and walk there before pulling; a planned clean pull replaces the blanket veto.
 						NaturalPullPlan? stalkerPull = null;
-						if (session.Api.World.CurrentHp * 100 >= session.Api.World.MaxHp * 90)
+						if (!combat.ClassProfile.Campaign.StalkerPull.RestFirst(session.Api.World))
 						{
 							NaturalNavigationObject[] stalkers = navigator.Observe().Npcs
 								.Where(npc => npc.TemplateId is 210395 or 210396 or 210750 &&
@@ -7410,7 +7413,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								Distance(session.CurrentPosition, npc.Position) < 12)
 							.ToArray();
 						if (nearbyHostiles.Length > 0 ||
-							session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 90)
+							combat.ClassProfile.Campaign.StalkerPull.RestFirst(session.Api.World))
 						{
 							searchNotes.Add($"attempt {attempt + 1} at {isolatedStalker}: " +
 								$"unsafe HP={session.Api.World.CurrentHp}/{session.Api.World.MaxHp}, " +
@@ -7516,7 +7519,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						// A sack's 3 s use bar breaks on any hit: fight what is on the Priest first, and never start a
 						// use below 80% HP (a death here used to leave the loop navigating while dead).
 						if (!await DefendAgainstEngagedAsync("q2006-sack")) { await RestSafelyAsync(token); continue; }
-						if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 80) await RestSafelyAsync(token);
+						if (combat.ClassProfile.Campaign.BeforeSack.RestFirst(session.Api.World)) await RestSafelyAsync(token);
 						int sack = await ApproachShippedSpawnAsync(700095, skipBlockedTarget: true);
 						int interactionPacketStart = session.PacketHistory.Count;
 						await NaturalDialogProtocol.OpenAsync(session, sack, token);
@@ -7731,7 +7734,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							.OrderBy(waypoint => Distance(session.CurrentPosition, waypoint.Position))
 							.Select(waypoint => (BotPosition?)waypoint.Position).FirstOrDefault();
 						// Never enter the camp low or without a potion in the bag (the recorded human topped up first).
-						if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 80 ||
+						if (combat.ClassProfile.Campaign.BeforeCamp.RestFirst(session.Api.World) ||
 							NaturalIshalgenPotionPolicy.SelectOwnedPotion(session.Api.World.Inventory.Values) == null)
 							await RestSafelyAsync(token);
 						await ClearAroundSpotAsync(generatorHint, null, $"q2007-{color}-generator-approach");

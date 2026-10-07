@@ -2362,7 +2362,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       line reaches them.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,719 with 16 skipped),
       and Fast passes (run cp20-fast). The guard of rule (c), gate p, is in the proof run.
-- [ ] **CP-21 - Campaign ranges and readiness thresholds from the profile.** Depends: CP-20
+- [x] **CP-21 - Campaign ranges and readiness thresholds from the profile.** Depends: CP-20
   - Work: The Ishalgen campaign's range literals (the Q2002 Sprigg hunt at 22 and 25 m,
     J:6433-6510; Q2004 and Q2005 at 23 and 25 m, J:6794, 6896-6913, 7093, 7127) and its
     readiness thresholds (J:6238, 7268, 7287, 7393, 7608-7610) become named profile values
@@ -2370,6 +2370,28 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     firing-edge search keep their shape. Turn on the matching pin rows (the campaign's 22,
     23 and 25 m literals and its readiness thresholds).
   - Proof: Neutral gate, set m.
+  - 2026-10-07: done. Gate run gate-a1, set p+m (the proof set and the guard in one run):
+    verdict pass (run/cp/CP-21/gate-a1/verdict.json). p: 35,811 records and m: 123,112,
+    each identical to its baseline.
+    - **NaturalCampaignRules** (in Sc/Classes/NaturalEngageRules.cs) names ten values:
+      the Sprigg hunt's route threshold 25, standoff 22 and selection range 25; Q2005's
+      firing edge 25, stalker search range 23 and blocker threshold 25; the HP fraction
+      0.75 of the wait for Return; and three HP thresholds, the stalker pull at 90,
+      before a sack at 80 and before the camp at 80. The profile gains Campaign; the
+      Priest and the Cleric share one.
+    - **Eleven sites** in NaturalIshalgenJourney.cs read it: four in the Sprigg hunt (the
+      standoff twice), three in Q2005's ranges, both sides of Q2005's 90% test, and one
+      each in Q2006, Q2007 and UseLearnedReturnToBindAsync. No executor changed shape.
+      The two sides of the 90% test read one value, as they were one threshold.
+    - As CP-11 found, old J:6794 of this item's list holds no literal of its own; Q2004
+      gets its 23 and 30 through ApproachShippedCombatSpawnAsync, which CP-18 moved.
+    - **Every pin row is on.** The pin test has 58 rows asserted and none pending, so
+      CP-41's check that no row is pending already holds.
+    - A unit test names the ten values and shows that Return's float comparison is the
+      75% line for every HP of a 669-HP Priest.
+    - No Java was read: the item relies on no server behavior it did not already rely on.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,720 with 16 skipped),
+      and Fast passes (run cp21-fast). The guard of rule (c), gate p, is in the proof run.
 - [ ] **CP-22 - Gear, keep-or-sell and reward scores behind one set of gear rules.**
   Depends: CP-12, CP-14
   - Work: Load the whole restrict row into NaturalItem and replace IsPriestGear and
@@ -3923,3 +3945,7 @@ report what was done, what is blocked and what you need from me.
   contract and the graph names the line's trainer; the journey's step labels and messages
   take the class name from the line (priest, Priest). Gate gate-a1, set p+m: identical.
   Seven checks, 4,719 with 16 skipped and Fast (cp20-fast) pass. Next by rule (h): CP-21.
+- 2026-10-07 — Loop: CP-21 done. NaturalCampaignRules names the Ishalgen campaign's six
+  ranges, Return's 75% and three HP thresholds on the profile; eleven sites read it. Gate
+  gate-a1, set p+m: identical. The pin test has all 58 rows asserted and none pending.
+  Seven checks, 4,720 with 16 skipped and Fast (cp21-fast) pass. Next by rule (h): CP-22.
