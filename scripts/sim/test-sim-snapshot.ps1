@@ -320,6 +320,160 @@ try {
 		}
 	}
 
+	# CP-04: the neutral gate replays named scopes and compares each trace with its recorded baseline. The journey is a
+	# fake dotnet that writes a small trace; git is a fake that is clean unless the flag file exists.
+	$gate = Join-Path $PSScriptRoot 'run-neutral-gate.ps1'
+	$gateRoot = Join-Path $root 'gate'
+	$gateBaseline = Join-Path $root 'natural-neutral-baseline.json'
+	$gateTraces = Join-Path $root 'baseline'
+	$gateSecond = Join-Path $root 'second-copy'
+	$gateBuildLog = Join-Path $root 'gate-builds.log'
+	$gateDirty = Join-Path $root 'dirty.flag'
+	$gateSha = '1111111111111111111111111111111111111111'
+	$fakeGit = Join-Path $root 'fake-git.ps1'
+	Set-Content -LiteralPath $fakeGit -Value @"
+if (`$args -contains 'rev-parse') { '$gateSha' }
+elseif (`$args -contains 'status' -and (Test-Path -LiteralPath '$gateDirty')) { ' M tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs' }
+exit 0
+"@
+	# Each journey takes the next variant: same (the default), changed (one field differs) or crash (the journey fails).
+	$global:cp04Variants = @()
+	$global:cp04Journeys = 0
+	function dotnet {
+		if ($args[0] -eq 'build') { Add-Content -LiteralPath $gateBuildLog -Value 'build'; $global:LASTEXITCODE = 0; return }
+		$variant = if ($global:cp04Journeys -lt $global:cp04Variants.Count) { $global:cp04Variants[$global:cp04Journeys] } else { 'same' }
+		$global:cp04Journeys++
+		if ($variant -eq 'crash') { $global:LASTEXITCODE = 1; return }
+		$runId = $env:AION_SIM_RUN_ID
+		$common = [ordered]@{ ts = (Get-Date).ToUniversalTime().ToString('o'); vt = '00:00:01.000'; run = $runId; bot = 'b01'; account = 'sim-player-41' }
+		$records = @(
+			($common + [ordered]@{ step = 'ni08-run'; dir = 'action'; packet = 'natural-run-context'; fields = @{ context = @{ Run = $runId; Build = [Guid]::NewGuid().ToString() } } }),
+			($common + [ordered]@{ step = 'ni07-q2001-kill-1'; dir = 'action'; packet = 'combat-decision'; fields = [ordered]@{ action = 'cast-target'; hp = $(if ($variant -eq 'changed') { 179 } else { 180 }); inEmergency = $false } }),
+			($common + [ordered]@{ step = 'ni07-q2001-kill-1'; dir = 'action'; packet = 'combat-hot-potion'; fields = [ordered]@{ itemId = 162000002 } }))
+		Set-Content -LiteralPath (Join-Path $env:AION_NI07_COMBAT_DIR "$runId.trace.jsonl") -Value ($records | ForEach-Object { $_ | ConvertTo-Json -Compress -Depth 5 })
+		$global:LASTEXITCODE = 0
+	}
+	# One gate run: its exit code, its verdict and how many journeys it played.
+	function Invoke-Gate([string]$RunId, [hashtable]$Arguments, [string[]]$Variants = @()) {
+		$global:cp04Variants = $Variants
+		$global:cp04Journeys = 0
+		if (Test-Path -LiteralPath $log) { Remove-Item -LiteralPath $log }
+		& $gate -Item CP-TEST -Run $RunId -Docker $fake -Git $fakeGit -SnapshotRoot $snapshots -ReplayRoot $gateRoot `
+			-BaselineFile $gateBaseline -BaselineRoot $gateTraces -SecondCopyRoot $gateSecond @Arguments | Out-Null
+		$code = $LASTEXITCODE
+		[pscustomobject]@{
+			code = $code; journeys = $global:cp04Journeys; folder = Join-Path (Join-Path $gateRoot 'CP-TEST') $RunId
+			verdict = Get-Content -Raw -LiteralPath (Join-Path (Join-Path (Join-Path $gateRoot 'CP-TEST') $RunId) 'verdict.json') | ConvertFrom-Json
+		}
+	}
+	function Get-GateTraces([string]$ReplayRun) { @(Get-ChildItem -LiteralPath (Join-Path (Join-Path $gateRoot 'CP-TEST') $ReplayRun) -Filter '*.trace.jsonl' -File) }
+	# Scopes l1, c, hm and ax start from snapshots; give the gate's fixture root the two it replays.
+	foreach ($mock in @('altgard', 'altgard-rc-l3')) {
+		$mockDirectory = Join-Path $snapshots $mock
+		New-Item -ItemType Directory -Path $mockDirectory | Out-Null
+		Copy-Item -LiteralPath (Join-Path $munin 'dump.sql.gz') -Destination $mockDirectory
+		[ordered]@{ schemaVersion = 1; name = $mock; characterId = 4242; elapsedMillis = 1000; dumpSha256 = $hash } |
+			ConvertTo-Json | Set-Content -LiteralPath (Join-Path $mockDirectory 'snapshot.json')
+	}
+	$gatePriorHelp = [Environment]::GetEnvironmentVariable('NA_HELP_ITEMS')
+	$env:NA_HELP_ITEMS = '0'
+	try {
+		# Without a baseline nothing can be compared, and a class scope is refused by its name.
+		Assert-Throws { Invoke-Gate 'none1' @{ Set = 'mage'; NoBuild = $true } } "*'mage' has no baseline row*" 'A class scope with no baseline row was played.'
+		Assert-Throws { Invoke-Gate 'none2' @{ Set = 'all'; NoBuild = $true } } '*Set all is empty*' 'An empty set all was played.'
+		Assert-Throws { Invoke-Gate 'none3' @{ Set = 'p+zz'; NoBuild = $true } } "*Unknown scope 'zz'*" 'An unknown scope was accepted.'
+
+		# -Record with uncommitted runtime changes is refused before anything is played.
+		Set-Content -LiteralPath $gateDirty -Value 'dirty'
+		$refused = Invoke-Gate 'rec0' @{ Set = 'p+c'; Record = $true; NoBuild = $true }
+		Assert-True ($refused.code -eq 2 -and $refused.verdict.verdict -eq 'refused-dirty-record' -and $refused.journeys -eq 0) 'A record run from a changed tree was not refused.'
+		Assert-True (-not (Test-Path -LiteralPath $gateBaseline) -and -not (Test-Path -LiteralPath $log)) 'A refused record run wrote a baseline or touched MySQL.'
+		Remove-Item -LiteralPath $gateDirty
+
+		# -Record: each scope twice, one build, the traces kept in both places, and the baseline file written once.
+		$recorded = Invoke-Gate 'rec1' @{ Set = 'p+c+l1'; Record = $true }
+		Assert-True ($recorded.code -eq 0 -and $recorded.verdict.verdict -eq 'pass' -and $recorded.verdict.mode -eq 'record' -and $recorded.journeys -eq 6) 'Three scopes were not each recorded twice.'
+		Assert-True (@(Get-Content -LiteralPath $gateBuildLog).Count -eq 1) 'The gate did not build exactly once.'
+		$baselineText = Get-Content -Raw -LiteralPath $gateBaseline
+		$document = $baselineText | ConvertFrom-Json
+		Assert-True ((@($document.scopes.scope) -join ',') -eq 'p,l1,c') 'The baseline rows are not in the order of the scope table.'
+		$rowP = $document.scopes[0]
+		$rowC = $document.scopes[2]
+		Assert-True ($rowP.records -eq 2 -and $rowP.sha256 -match '^[0-9a-f]{64}$' -and $rowP.commit -eq $gateSha -and $rowP.line -eq 'priest-cleric') 'A baseline row lost its count, its hash or its commit.'
+		Assert-True ($rowP.replay.CapitalStage -eq 'start' -and $null -eq $rowP.snapshot -and $rowC.snapshot -eq 'altgard-rc-l3' -and $rowC.replay.Leg -eq 'l4') 'A baseline row does not say what it replays.'
+		Assert-True ($document.scopes[1].replay.LaterCapital -eq $true -and $document.scopes[1].snapshot -eq 'altgard') 'Scope l1 is not the later-capital leg from altgard.'
+		Assert-True ($rowP.counts.lifePotions -eq 1 -and $rowP.counts.records -eq 3 -and $rowP.counts.deaths -eq 0) 'A baseline row lost its counts.'
+		Assert-True ($rowP.environment.AION_SIM_SEED -eq '1' -and $null -eq $rowP.environment.NA_HELP_ITEMS -and
+			($rowP.environment.PSObject.Properties.Name -join ',') -eq 'AION_SIM_SEED,NA_HELP_ITEMS,AION_BOT_DASHBOARD_PORT,AION_SIM_PROCESS_KEY') 'A baseline row lost its pinned environment.'
+		Assert-True ($rowP.sha256 -eq $rowC.sha256) 'Two scopes with the same records hashed differently.'
+		foreach ($copy in @($gateTraces, $gateSecond)) {
+			Assert-True ((@(Get-ChildItem -LiteralPath (Join-Path $copy $gateSha) -Name | Sort-Object) -join ',') -eq 'c.trace.jsonl,l1.trace.jsonl,p.trace.jsonl') "The recorded traces are not all in $copy."
+		}
+		Assert-True (@(Get-GateTraces 'rec1-p-pass1').Count -eq 0 -and @(Get-GateTraces 'rec1-p-pass2').Count -eq 0) 'A recorded pass left its trace in the evidence folder.'
+		Assert-True ($env:NA_HELP_ITEMS -eq '0') 'The gate did not put the parent environment back.'
+
+		# -Record of two different passes writes nothing, keeps both traces and names the first difference.
+		$unstable = Invoke-Gate 'rec2' @{ Set = 'm'; Record = $true; NoBuild = $true } @('same', 'changed')
+		Assert-True ($unstable.code -eq 1 -and $unstable.verdict.verdict -eq 'fail' -and $unstable.journeys -eq 2) 'Two different passes were recorded.'
+		Assert-True ($unstable.verdict.scopes[0].reason -eq 'the two passes differ' -and $unstable.verdict.scopes[0].firstDifference -like '*fields: fields.hp*') 'An unrepeatable scope does not say where its passes part.'
+		Assert-True ((Get-Content -Raw -LiteralPath $gateBaseline) -eq $baselineText) 'A failed record run changed the baseline file.'
+		Assert-True (@(Get-GateTraces 'rec2-m-pass1').Count -eq 1 -and @(Get-GateTraces 'rec2-m-pass2').Count -eq 1) 'An unrepeatable scope lost its two traces.'
+		Assert-True (-not (Test-Path -LiteralPath (Join-Path (Join-Path $gateTraces $gateSha) 'm.trace.jsonl'))) 'An unrepeatable scope was kept as a baseline trace.'
+		# A scope in a set that fails is not written either, even if its own passes repeat.
+		$mixed = Invoke-Gate 'rec3' @{ Set = 'b+m'; Record = $true; NoBuild = $true } @('same', 'same', 'same', 'changed')
+		Assert-True ($mixed.code -eq 1 -and $mixed.verdict.scopes[0].verdict -eq 'pass' -and (Get-Content -Raw -LiteralPath $gateBaseline) -eq $baselineText) 'A record run that failed wrote part of its set.'
+		# The ignore list is recorded with the row, and a Priest or Cleric row is not replaced without -ReRecord.
+		$ignored = Invoke-Gate 'rec4' @{ Set = 'm'; Record = $true; NoBuild = $true; Ignore = @('combat-decision:fields.hp') } @('same', 'changed')
+		Assert-True ($ignored.code -eq 0 -and $ignored.verdict.verdict -eq 'pass') 'An ignored field kept two passes apart.'
+		$document = Get-Content -Raw -LiteralPath $gateBaseline | ConvertFrom-Json
+		Assert-True ((@($document.scopes.scope) -join ',') -eq 'p,m,l1,c' -and (@($document.scopes[1].ignore) -join ',') -eq 'combat-decision:fields.hp' -and @($document.scopes[0].ignore).Count -eq 0) 'A recorded ignore list was lost or spread to another row.'
+		Assert-True ($document.scopes[0].sha256 -eq $rowP.sha256 -and $document.scopes[3].sha256 -eq $rowC.sha256) 'Recording one scope changed another row.'
+		Assert-Throws { Invoke-Gate 'rec5' @{ Set = 'p'; Record = $true; NoBuild = $true } } "*'p' already has a baseline row*" 'A Priest scope was recorded a second time without the operator.'
+		$again = Invoke-Gate 'rec6' @{ Set = 'p'; Record = $true; ReRecord = $true; NoBuild = $true }
+		Assert-True ($again.code -eq 0 -and $again.journeys -eq 2) 'The operator could not record a scope again.'
+		$baselineText = Get-Content -Raw -LiteralPath $gateBaseline
+
+		# The gate: pass. The candidate trace is deleted, its evidence stays, and a changed tree is allowed and recorded.
+		Set-Content -LiteralPath $gateDirty -Value 'dirty'
+		$pass = Invoke-Gate 'cmp1' @{ Set = 'p+c'; NoBuild = $true }
+		Remove-Item -LiteralPath $gateDirty
+		Assert-True ($pass.code -eq 0 -and $pass.verdict.verdict -eq 'pass' -and $pass.verdict.mode -eq 'compare' -and $pass.journeys -eq 2) 'An unchanged journey did not pass the gate.'
+		Assert-True (@($pass.verdict.uncommitted).Count -eq 1 -and $pass.verdict.commit -eq $gateSha) 'The verdict does not say which code it compared.'
+		Assert-True ($pass.verdict.scopes[0].sha256 -eq $rowP.sha256 -and $pass.verdict.scopes[0].baselineSha256 -eq $rowP.sha256 -and $pass.verdict.scopes[1].scope -eq 'c') 'The verdict lost a scope or its hashes.'
+		Assert-True (@(Get-GateTraces 'cmp1-p').Count -eq 0 -and (Test-Path -LiteralPath (Join-Path (Join-Path (Join-Path $gateRoot 'CP-TEST') 'cmp1-p') 'replay.json'))) 'A passing candidate trace was kept, or its evidence was lost.'
+		Assert-True ((Get-Content -Raw -LiteralPath $gateBaseline) -eq $baselineText) 'A comparison changed the baseline file.'
+		# The row's own ignore list is used, so scope m passes with the field it was recorded without.
+		$ignoredPass = Invoke-Gate 'cmp2' @{ Set = 'm'; NoBuild = $true } @('changed')
+		Assert-True ($ignoredPass.code -eq 0 -and $ignoredPass.verdict.verdict -eq 'pass') 'A comparison did not use the ignore list of its row.'
+		Assert-Throws { Invoke-Gate 'cmp3' @{ Set = 'p'; NoBuild = $true; Ignore = @('fields.hp') } } '*Ignore is recorded*' 'A comparison took an ignore list of its own.'
+
+		# The gate: fail. The candidate is kept and the first differing record is in the verdict. The recorded trace was
+		# lost from run/ and comes back from the second copy.
+		Remove-Item -LiteralPath (Join-Path (Join-Path $gateTraces $gateSha) 'c.trace.jsonl')
+		$fail = Invoke-Gate 'cmp4' @{ Set = 'p+c'; NoBuild = $true } @('same', 'changed')
+		Assert-True ($fail.code -eq 1 -and $fail.verdict.verdict -eq 'fail' -and $fail.verdict.scopes[0].verdict -eq 'pass' -and $fail.verdict.scopes[1].verdict -eq 'fail') 'A changed journey passed the gate.'
+		Assert-True ($fail.verdict.scopes[1].firstDifference -like '*different: first at record 0*' -and $fail.verdict.scopes[1].firstDifference -like '*fields: fields.hp*') 'A failed scope does not name its first differing record.'
+		Assert-True (@(Get-GateTraces 'cmp4-c').Count -eq 1 -and $fail.verdict.scopes[1].candidateTrace -eq @(Get-GateTraces 'cmp4-c')[0].FullName) 'A failing candidate trace was not kept.'
+		Assert-True (Test-Path -LiteralPath (Join-Path (Join-Path $gateTraces $gateSha) 'c.trace.jsonl')) 'A lost baseline trace was not restored from the second copy.'
+		# A journey that fails is a failed scope, not a crash of the gate.
+		$crashed = Invoke-Gate 'cmp5' @{ Set = 'p'; NoBuild = $true } @('crash')
+		Assert-True ($crashed.code -eq 1 -and $crashed.verdict.scopes[0].reason -like 'replay failed:*Natural journey failed*') 'A failed journey was not reported as a failed scope.'
+
+		# Set all is every Priest and Cleric scope that was kept, and says which were not.
+		$all = Invoke-Gate 'cmp6' @{ Set = 'all'; NoBuild = $true } @('same', 'changed')
+		Assert-True ($all.code -eq 0 -and $all.journeys -eq 4 -and (@($all.verdict.scopes.scope) -join ',') -eq 'p,m,l1,c') 'Set all did not play the kept scopes in table order.'
+		Assert-True ((@($all.verdict.leftOutOfAll) -join ',') -eq 'b,hm,ax') 'Set all does not say which scopes it left out.'
+		Assert-Throws { Invoke-Gate 'cmp7' @{ Set = 'all+scout'; NoBuild = $true } } "*'scout' has no baseline row*" 'A class scope with no baseline row was played beside set all.'
+		Assert-Throws { Invoke-Gate 'cmp1' @{ Set = 'p'; NoBuild = $true } } '*already exists*' 'Two gate runs shared an evidence folder.'
+		Assert-True ((Get-ChildItem -LiteralPath $snapshots -Directory -Name | Where-Object { $_ -like '_*' }) -eq $null) 'The gate wrote a capture or verify folder under the snapshot root.'
+	}
+	finally {
+		Remove-Item Function:dotnet
+		Remove-Variable -Name cp04Variants, cp04Journeys -Scope Global -ErrorAction SilentlyContinue
+		if ($null -eq $gatePriorHelp) { Remove-Item -LiteralPath Env:NA_HELP_ITEMS -ErrorAction SilentlyContinue }
+		else { $env:NA_HELP_ITEMS = $gatePriorHelp }
+	}
+
 	# An edited dump is refused before anything is created.
 	if (Test-Path -LiteralPath $log) { Remove-Item -LiteralPath $log }
 	[IO.File]::WriteAllBytes((Join-Path $munin 'dump.sql.gz'), [byte[]](9, 9, 9))

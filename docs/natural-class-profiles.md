@@ -1201,7 +1201,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       aion_gs_sim_ni08_* schema is left. CP-06 is the first real Replay.
     - Bundle: seven pre-commit checks pass, both script tests pass, and Fast passes all 11
       scenario gates (run cp03-fast). The logs are in run/cp/CP-03/checks/.
-- [ ] **CP-04 - The neutral gate script.** Depends: CP-02, CP-03
+- [x] **CP-04 - The neutral gate script.** Depends: CP-02, CP-03
   - Work: Add scripts/sim/run-neutral-gate.ps1 -Set <names> [-Record] [-Item <id>] [-Run
     <id>]: build once, run each scope through Replay with --no-build, compare each trace
     with its baseline, print one verdict and write verdict.json under run/cp/<item>/<run>/;
@@ -1224,6 +1224,46 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     refused-dirty-record in three fixture cases; -Record writes the baseline file once after
     two identical passes and not at all after two different ones; and a class scope with no
     baseline row is refused by name.
+  - 2026-10-07: done. scripts/sim/run-neutral-gate.ps1 is added, with its cases in
+    scripts/sim/test-sim-snapshot.ps1, and both script tests are in the list in CLAUDE.md.
+    The test passes (run/cp/CP-04/proof-test-sim-snapshot.log), against the fake Docker, a
+    fake git and a fake dotnet that writes a small trace:
+    - the verdict is pass (exit 0), fail (exit 1) and refused-dirty-record (exit 2, nothing
+      played, no baseline written);
+    - -Record of three scopes plays six journeys after one build, keeps each trace in the
+      baseline folder and in the second copy, deletes the pass traces from the evidence and
+      writes the baseline file once, rows in table order, each with its replay, snapshot,
+      commit, pinned environment, record count, hash and counts row;
+    - -Record of two different passes writes nothing, keeps both traces and names the first
+      differing record; a set in which one scope fails writes none of its scopes;
+    - a passing candidate trace is deleted and its other evidence kept; a failing one is
+      kept, with the first differing record in the verdict; a failed journey is a failed
+      scope, not a crash of the gate;
+    - a class scope with no baseline row is refused by name, alone and beside set all.
+    Two deliberate breakages of the gate (hash not compared; baseline written after a
+    failed record) each failed the test, and the script was put back.
+    - What the gate does beyond the Work line, so later items can lean on it. **Set all** is
+      every Priest and Cleric scope that has a row, and the verdict lists the ones left
+      out; in a -Record run it is all seven. **-Ignore** is given at -Record only and is
+      stored in the scope's row; a comparison uses its row's list and takes none of its
+      own. **-ReRecord** is needed to record a Priest or Cleric scope that already has a
+      row, so rule (j) cannot be broken by a slip; a class scope's row may be replaced
+      without it. A recorded trace missing from run/cp/baseline is copied back from the
+      second copy when a comparison needs it. A comparison may run on a changed tree, and
+      the verdict lists the uncommitted paths.
+    - Where things are written. The verdict is run/cp/<item>/<run>/verdict.json. Each
+      scope's Replay evidence is beside it, in run/cp/<item>/<run>-<scope>/ (and
+      <run>-<scope>-pass1 and -pass2 in a record run).
+    - **The baseline sha is per row.** Each row holds the commit it was recorded at, and
+      its trace is run/cp/baseline/<that commit>/<scope>.trace.jsonl. CP-08 and CP-09
+      record at two commits, so the baseline sha of the re-record rule is the oldest
+      commit among the rows.
+    - A class scope replays with -Class <line> -StopAt 2004:5:0. sim-snapshot.ps1 learns
+      -Class in CP-28; until then such a replay fails by name, and no class scope is
+      recorded before CP-53.
+    - No journey was played for this item. CP-08 is the first real gate run.
+    - Bundle: seven pre-commit checks pass, both script tests pass, and Fast passes all 11
+      scenario gates (run cp04-fast). The logs are in run/cp/CP-04/checks/.
 - [ ] **CP-05 - The level 1-9 help kit: manifest and allowlist.** Depends: CP-00
   - Work: The operator approved help items for every class line on 2026-10-07 (Standing
     rules, CP-Q12). This item writes down what the kit is; nothing supplies or uses it
@@ -3001,3 +3041,11 @@ report what was done, what is blocked and what you need from me.
   is the first real Replay. Bundle: seven checks, both script tests, Fast 11 gates
   (cp03-fast). No baseline exists yet, so the re-record rule did not apply. Next by rule (h):
   CP-04.
+- 2026-10-07 — Loop: CP-04 done. scripts/sim/run-neutral-gate.ps1 replays named scopes through
+  Replay after one build and compares each trace with its baseline row; -Record plays each
+  scope twice and writes the baseline file once. Verdicts: pass, fail, refused-dirty-record.
+  Added beyond the Work line: -ReRecord for a Priest or Cleric scope that already has a row,
+  -Ignore stored per row, and a per-row baseline commit. Both script tests are in CLAUDE.md's
+  list. Proof: test-sim-snapshot.ps1 with the gate cases. No journey was played. Bundle: seven
+  checks, both script tests, Fast 11 gates (cp04-fast). Phase A's tools are built; next by
+  rule (h): CP-05.

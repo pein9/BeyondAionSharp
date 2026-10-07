@@ -154,6 +154,8 @@ python scripts/e2e/test-full-promotion.py                      # aggregate-only 
 pwsh -NoProfile -File scripts/e2e/test-full-flake.ps1          # actual Full/soak finalizers retain history and build identity
 pwsh -NoProfile -File scripts/e2e/test-live-retry.ps1          # sequential single retry, original failures and no SIM retries
 pwsh -NoProfile -File scripts/sim/test-code-coverage.ps1       # collector requests, attachment/restoration failures and runner selection
+pwsh -NoProfile -File scripts/sim/test-sim-snapshot.ps1        # snapshot, Replay and neutral-gate contract (fake Docker, fake journey)
+python scripts/sim/trace/test_compare_traces.py                # trace comparer: differences, coverage counts and the baseline digest
 pwsh -NoProfile -File scripts/e2e/test-run-report.ps1            # report finalization and runner failure paths
 pwsh -NoProfile -File scripts/live/test-run-soak.ps1           # acceptance runner propagation and failure paths
 pwsh -NoProfile -File scripts/live/test-lifecycle-controller.ps1 # isolated crash ownership and saved-state gates (mock Docker)
