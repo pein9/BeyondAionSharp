@@ -127,6 +127,7 @@ public static class NaturalClassProfiles
 	{
 		[PlayerClass.PRIEST] = NaturalPriestProfile.Priest,
 		[PlayerClass.CLERIC] = NaturalPriestProfile.Cleric,
+		[PlayerClass.CHANTER] = NaturalChanterProfile.Chanter,
 	};
 
 	/// <summary>

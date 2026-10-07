@@ -16,8 +16,12 @@ public sealed record NaturalClassLine(string Id, PlayerClass Starter, PlayerClas
 	/// <summary>The accepted line: the Priest who becomes a Cleric.</summary>
 	public static NaturalClassLine PriestCleric { get; } = new("priest-cleric", PlayerClass.PRIEST, PlayerClass.CLERIC, 41, "Asimnjour");
 
+	/// <summary>CP-32: the Priest who becomes a Chanter. It is the accepted line's character, on its account and under
+	/// its name, up to the class choice at Munin; a run plays one line on its own schema, so the two never meet.</summary>
+	public static NaturalClassLine PriestChanter { get; } = new("priest-chanter", PlayerClass.PRIEST, PlayerClass.CHANTER, 41, "Asimnjour");
+
 	/// <summary>Every line a run can name. Each class's first profile item adds its line here.</summary>
-	public static IReadOnlyList<NaturalClassLine> All { get; } = [PriestCleric];
+	public static IReadOnlyList<NaturalClassLine> All { get; } = [PriestCleric, PriestChanter];
 
 	public static NaturalClassLine Default => All[0];
 
@@ -33,10 +37,11 @@ public sealed record NaturalClassLine(string Id, PlayerClass Starter, PlayerClas
 	/// <summary>The starter as messages name it (<c>Priest</c>).</summary>
 	public string StarterName => char.ToUpperInvariant(StarterLabel[0]) + StarterLabel[1..];
 
-	/// <summary>CP-23 (CP-Q13, on its default): every line but the accepted one runs the equipment check after each
-	/// completed Ishalgen quest. The accepted line keeps its check points, at the end of a rest, so its trace stays as
-	/// recorded.</summary>
-	public bool ChecksGearAfterIshalgenTurnIns => Id != "priest-cleric";
+	/// <summary>CP-23 (CP-Q13, on its default): a line of a new starter runs the equipment check after each completed
+	/// Ishalgen quest. A line whose starter is the Priest keeps the accepted Priest's check points, at the end of a rest,
+	/// so its Ishalgen trace stays as recorded: the accepted line, and (CP-32) the Chanter line, whose levels 1-9 are the
+	/// accepted Priest's up to the class choice.</summary>
+	public bool ChecksGearAfterIshalgenTurnIns => Starter != PlayerClass.PRIEST;
 
 	/// <summary>The class is one this line's character can be: its starter or its second class.</summary>
 	public bool Holds(PlayerClass playerClass) => playerClass == Starter || playerClass == Second;

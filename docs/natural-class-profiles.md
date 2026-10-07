@@ -3150,7 +3150,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       are the scenario's fixed labels (CP-30).
     - Bundle: the seven pre-commit checks pass and Fast passes (run cp31-fast).
       Aion.GameServer.Tests was not run: tests/Aion.Bots did not change.
-- [ ] **CP-32 - Chanter line and profile.** Depends: CP-21, CP-23, CP-24, CP-27, CP-29
+- [x] **CP-32 - Chanter line and profile.** Depends: CP-21, CP-23, CP-24, CP-27, CP-29
   - Work: Add line priest-chanter with the Priest line's account and name, and
     Sc/Classes/NaturalChanterProfile.cs: the Priest catalog through the Priest adapter and
     the Priest rest plan, because a Chanter keeps the Priest's learned skills; the Priest's
@@ -3170,6 +3170,46 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     Chanter on the bridge maps under priest-chanter and refuses it under priest-cleric and
     on every leg-scoped map; the gear rules wear the chosen weapon; the help kit at levels
     1-9 equals the Priest's.
+  - 2026-10-07: done, without the unit test (rule (n)). Proven by the build, the bundle and
+    the guard: run guard-a1, set p, verdict pass (run/cp/CP-32/guard-a1/verdict.json),
+    35,811 records, identical to its baseline. CP-33's capture is the first run that plays
+    the line and the profile.
+    - **Java.** Nothing new: SETPRO13, the ceremony and the dispatch quest were read and
+      probed for a Chanter in CP-25 and CP-31. skill_tree.xml gives a Chanter, by itself
+      and up to level 10: the six level-9 masteries; the passives 141 and 359; and nine
+      skills that are cast or toggled, 246, 249, 1562, 1638, 1685, 1699, 1715, 1778 and
+      the toggle 1809.
+    - **The line** priest-chanter is in NaturalClassLine.All: Priest, then Chanter, on
+      account 41 as Asimnjour, the accepted line's. A run plays one line on its own
+      schema, so the two never meet.
+    - **Sc/Classes/NaturalChanterProfile.cs** is new. The Chanter fights, rests and moves
+      as the Priest it was: the Priest catalog through the Priest adapter, the Priest rest
+      plan, the Priest line's ranges, readiness, movement, campaign numbers and restock
+      table, the Blessing upkeep, and the Priest's patrol rule (CP-Q14's default). All
+      nine of its own cast or toggled skills are excluded with a reason: no Chanter leg
+      exists yet; Light of Resurrection because the bot plays solo. Help items: the kit
+      of every level, as the Cleric's, so the level-10 bands are supplied at the ceremony.
+      To share the Priest's parts, seven members of NaturalPriestProfile and its adapter
+      went from private to internal; nothing else in that file changed.
+    - **Gear and reward picks, before its first run.** Table form (CP-29): MACE or STAFF
+      by the physical stat; CHAIN, LEATHER, ROBE, CLOTHES; no off hand; consumables life
+      elixir, mana elixir, power shard; supplies the six life potions and the kit of every
+      level. The two ceremony weapons: Karmic Staff 101500498, 58-88 at 2.0 s, no
+      physical-attack line (its bonus is 13 physical critical), 73 a swing; Karmic
+      Warhammer 100100495, 44-66 at 1.5 s with 7 physical attack, 55 plus 7 a swing. By
+      CP-Q7's default the Chanter takes and wears the staff, over the Aldelle Mace
+      (29-45, 37 a swing) it holds at Munin. Before the class choice its picks are the
+      accepted Priest's, by the Priest's rules.
+    - **One rule made exact.** ChecksGearAfterIshalgenTurnIns was "every line but
+      priest-cleric" (CP-23, CP-Q13's default). It is now "every line whose starter is not
+      the Priest". CP-Q13's reason is a new class with another rest plan; the Chanter
+      line's levels 1-9 are the accepted Priest's, and CP-33 expects its trace to equal
+      baseline p up to the class-choice send. For priest-cleric the answer is unchanged.
+    - **Not done here, by rule (n):** the catalog ratchet and the identity rows of the
+      Proof line. CP-27's code and CP-31's probe cover the identity; the exclusions above
+      were read from skill_tree.xml by hand.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,676 with 16 skipped),
+      and Fast passes (run cp32-fast).
 - [ ] **CP-33 - The Chanter diverges at Munin, preserved after the ceremony.** Depends:
   CP-28, CP-31, CP-32
   - Work: With the code committed and the bundle green, run sim-snapshot.ps1 -Action Capture
@@ -4547,3 +4587,8 @@ report what was done, what is blocked and what you need from me.
   and the plan's tests removed unless necessary: rule (n). Twelve test files and the golden
   gear file are removed, seven older test files are back at their text from before the plan,
   and three tests are kept. The build and the remaining Aion.GameServer.Tests pass (4,676 with 16 skipped).
+- 2026-10-07 — Loop: CP-32 done. Line priest-chanter and Sc/Classes/NaturalChanterProfile.cs: the
+  Priest's play with every Chanter skill excluded, and gear in table form (mace or staff by
+  the physical stat, so the Karmic Staff is worn). A Priest-starter line keeps the accepted
+  Priest's gear check points. No unit test (rule (n)). Guard guard-a1, set p: identical.
+  Seven checks, 4,676 with 16 skipped and Fast (cp32-fast) pass. Next by rule (h): CP-33.

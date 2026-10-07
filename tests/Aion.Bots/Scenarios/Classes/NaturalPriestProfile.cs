@@ -10,35 +10,35 @@ namespace Aion.Bots.Scenarios.Classes;
 public static class NaturalPriestProfile
 {
 	/// <summary>Blessing of Guardianship, kept up between fights as the recorded human did.</summary>
-	private static readonly NaturalUpkeepBuff Blessing = new("blessing", "buff-blessing");
+	internal static readonly NaturalUpkeepBuff Blessing = new("blessing", "buff-blessing");
 
 	/// <summary>Heal with Healing Light below 90% HP; sit only for mana, from below 50% until 80%, for at most 12 quiet
 	/// sits. Sitting solely for missing HP leaves the Priest exposed to respawns and patrols.</summary>
-	private static NaturalRestRules RestWith(NaturalPriestSkill[] skills) => new(skills, HealBelowPercent: 90,
+	internal static NaturalRestRules RestWith(NaturalPriestSkill[] skills) => new(skills, HealBelowPercent: 90,
 		ManaSitBelowPercent: 50, ManaSitUntilPercent: 80, MaximumQuietSits: 12);
 
 	/// <summary>The Priest casts from range and lets the monster come. The pull distance stays the run's parameter.</summary>
-	private static readonly NaturalEngageRanges PriestLineRanges = new(
+	internal static readonly NaturalEngageRanges PriestLineRanges = new(
 		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, SpellRange: Navigation.NaturalPullPlanner.SpellRange, PullDistance: null,
 		FiringRange: Navigation.NaturalFightThrough.FiringRange, SpawnApproachRange: 23, SpawnPullScanRange: 30, FightThroughPullRange: 30,
 		StandoffSpellRange: 25, StandoffArrivalTolerance: 3, StandoffSafetyMargin: 1, RangedApproachRadius: 20);
 
-	private static readonly NaturalReadinessThresholds PriestLineReadiness = new(
+	internal static readonly NaturalReadinessThresholds PriestLineReadiness = new(
 		BeforePull: new(80), BeforeUseBar: new(60, 40), BetweenAdds: new(60, 40), BeforeNamedTarget: new(80, 60));
 
 	/// <summary>A stand-off: a ranged route while the target is farther than 25 m, then up to it; after a distance refusal
 	/// come to 10 m, or inside melee reach for a melee skill; an obstacle is answered by closing to melee.</summary>
-	private static readonly NaturalFightMovement PriestLineMovement = new(NaturalPullStyle.StandOff,
+	internal static readonly NaturalFightMovement PriestLineMovement = new(NaturalPullStyle.StandOff,
 		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, RangedRouteBeyond: 25, RangeRefusalCloseIn: 10);
 
 	/// <summary>The Sprigg hunt and Q2005's firing edge are spell-range work: 22, 23 and 25 m, each where it stood.</summary>
-	private static readonly NaturalCampaignRules PriestLineCampaign = new(
+	internal static readonly NaturalCampaignRules PriestLineCampaign = new(
 		SpriggRouteBeyond: 25, SpriggStandoff: 22, SpriggSelectWithin: 25, FiringEdgeWithin: 25, StalkerSearchRange: 23,
 		BlockerReplanBeyond: 25, ReturnCooldownHpFraction: 0.75f, StalkerPull: new(90), BeforeSack: new(80), BeforeCamp: new(80));
 
 	/// <summary>The Minor Life Elixir of trade list 721, bought when every owned life potion and elixir together is 5 or
 	/// fewer, up to 12, with no Kinah floor.</summary>
-	private static readonly NaturalRestockRules PriestLineRestock = new(
+	internal static readonly NaturalRestockRules PriestLineRestock = new(
 	[
 		new(NaturalIshalgenPotionPolicy.VendorLifeElixirId, AtOrBelow: 5, Target: 12, TradeListId: 721, CountedWith:
 		[
@@ -93,7 +93,7 @@ public static class NaturalPriestProfile
 	};
 
 	/// <summary>Calls the static policy with the class's catalog and the run's parameters, and reports the run's policy id.</summary>
-	private sealed class StaticPolicy(NaturalPriestSkill[] catalog) : INaturalCombatPolicy
+	internal sealed class StaticPolicy(NaturalPriestSkill[] catalog) : INaturalCombatPolicy
 	{
 		public string PolicyVersion(NaturalMauPolicyParameters parameters) => parameters.Id;
 
