@@ -2006,7 +2006,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,699 with 16 skipped), and
       Fast passes (run cp13-fast). The guard of rule (c), gate p, is part of this item's
       proof run.
-- [ ] **CP-14 - Seam types, with the Priest and the Cleric as the first two profiles.**
+- [x] **CP-14 - Seam types, with the Priest and the Cleric as the first two profiles.**
   Depends: CP-11
   - Work: Add, all public: Sc/Classes/NaturalClassLine.cs (the record, the table of lines
     with priest-cleric as its first and default entry, Parse of CP_CLASS, which refuses an
@@ -2023,6 +2023,42 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     action, skill, reason and checks from Decide and the same candidate list from
     CandidateActions as the static policy; For gives the Priest profile for PRIEST and for
     unobserved, the Cleric profile for CLERIC, and throws for the other fifteen class ids.
+  - 2026-10-07: done. Four files are added under Sc/Classes and no existing file changes;
+    nothing calls the new types yet. UT/NaturalClassProfileTests: 6 tests pass
+    (run/cp/CP-14/profile-a1.log).
+    - **NaturalClassLine.cs:** the record (Id, Starter, Second, SimAccountId,
+      CharacterName), the table All with priest-cleric (PRIEST, CLERIC, account 41,
+      Asimnjour) as its first and default entry, the constant CP_CLASS, Parse and Holds.
+      Parse gives the default for no id and refuses an id the table does not hold, with a
+      message that names it and lists the known ids.
+    - **INaturalCombatPolicy.cs:** PolicyVersion(parameters), Decide(state, now,
+      parameters) and CandidateActions(state, now, chosen, parameters). PolicyVersion takes
+      the run's parameters because today's version is the run's mauPolicy.Id.
+    - **NaturalClassProfile.cs:** the profile (Class, Skills, Excluded, Combat) as a class
+      with required init members, so that later items add members without touching the
+      profiles already written, and NaturalClassProfiles.For(observed class id, line).
+      An unobserved class gives the line's starter. For refuses a class id that is no
+      player class, a class outside the line, and a class of the line that has no profile
+      yet, each with a message that names the class.
+    - **NaturalPriestProfile.cs:** the Priest profile (NaturalPriestSkills.All, nothing
+      excluded) and the Cleric profile (NaturalClericSkills.All and Excluded). Skills is
+      the same array object the journey reads today through NaturalClericSkills.ForClass,
+      which the test asserts. Both use one private adapter that calls the static
+      NaturalPriestCombatPolicy with the class's catalog and the run's parameters.
+    - **The proof.** The 576 states of UT/NaturalClericCombatPolicyTests go through both
+      adapters and the static policy: the same action, skill, target, reason and checks
+      from Decide, and the same candidates field for field from CandidateActions. Beyond
+      the item's text, the same sweep runs for a level-10 Cleric with its first eight
+      Cleric skills learned, and with parameters other than the baseline (pull 20 m, heal
+      60 and 75, finish at 10), so the parameters are shown to reach the static policy.
+      For gives the Priest profile for PRIEST and for unobserved, the Cleric profile for
+      CLERIC, and throws for the other fifteen classes and for id 200. Every line of the
+      table names a starter and a second class that the class-line contract holds.
+    - No Java was read: the item relies on no server behavior. The class ids come from
+      PlayerClass.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,705 with 16 skipped),
+      Fast passes (run cp14-fast), and the guard of rule (c) passes: gate p, run guard-a1,
+      35,811 records identical to the baseline (run/cp/CP-14/guard-a1/verdict.json).
 - [ ] **CP-15 - Thread the line and the profile through the host and the fight loop.**
   Depends: CP-13, CP-14
   - Work: Add NaturalJourneyOptions.ClassLine as the last optional parameter
@@ -3643,3 +3679,10 @@ report what was done, what is blocked and what you need from me.
   class is partial. Gate gate-a1, set p+c: both traces identical to the baselines. The pin
   test followed the move without an edit. Seven checks, 4,699 with 16 skipped and Fast
   (cp13-fast) pass. Next by rule (h): CP-14.
+- 2026-10-07 — Loop: CP-14 done. The seam types are added under Sc/Classes: NaturalClassLine
+  with the table of lines (priest-cleric first and default), INaturalCombatPolicy,
+  NaturalClassProfile with NaturalClassProfiles.For, and the Priest and Cleric profiles as
+  adapters over the static policy. Nothing calls them yet and no existing file changes.
+  UT/NaturalClassProfileTests, 6 tests: the 576-state sweep answers as the static policy
+  does. Seven checks, 4,705 with 16 skipped, guard p (guard-a1) and Fast (cp14-fast)
+  pass. Next by rule (h): CP-15.

@@ -1,0 +1,31 @@
+using Aion.GameServer.Model;
+
+namespace Aion.Bots.Scenarios.Classes;
+
+/// <summary>
+/// Which character a natural run plays (docs/natural-class-profiles.md, the seam, section 1): the starter class, the
+/// second class it takes at Ascension or none, and the SIM account and character name the operator gave the line.
+/// Every line is a male Asmodian. What the server decides for a class is in <see cref="NaturalClassLineContract"/>.
+/// </summary>
+/// <param name="Second">The class chosen at Ascension; null for a line that stops before it.</param>
+public sealed record NaturalClassLine(string Id, PlayerClass Starter, PlayerClass? Second, int SimAccountId, string CharacterName)
+{
+	/// <summary>The journey test reads the line id from this variable; unset means <see cref="Default"/>.</summary>
+	public const string EnvironmentVariable = "CP_CLASS";
+
+	/// <summary>The accepted line: the Priest who becomes a Cleric.</summary>
+	public static NaturalClassLine PriestCleric { get; } = new("priest-cleric", PlayerClass.PRIEST, PlayerClass.CLERIC, 41, "Asimnjour");
+
+	/// <summary>Every line a run can name. Each class's first profile item adds its line here.</summary>
+	public static IReadOnlyList<NaturalClassLine> All { get; } = [PriestCleric];
+
+	public static NaturalClassLine Default => All[0];
+
+	/// <summary>The line with this id; <see cref="Default"/> when none is given.</summary>
+	public static NaturalClassLine Parse(string? id) => string.IsNullOrWhiteSpace(id) ? Default
+		: All.FirstOrDefault(line => line.Id == id) ?? throw new ArgumentException(
+			$"Unknown natural class line '{id}'. Known lines: {string.Join(", ", All.Select(line => line.Id))}.", nameof(id));
+
+	/// <summary>The class is one this line's character can be: its starter or its second class.</summary>
+	public bool Holds(PlayerClass playerClass) => playerClass == Starter || playerClass == Second;
+}
