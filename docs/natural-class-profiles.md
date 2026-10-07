@@ -1587,7 +1587,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       and which hubs the obelisks serve).
     - Bundle: seven pre-commit checks pass, Aion.GameServer.Tests passes, and Fast passes
       all 11 scenario gates (run cp07-fast). The logs are in run/cp/CP-07/checks/.
-- [ ] **CP-07a - The first walk to Munin returns to the hub bind when no checked route is
+- [x] **CP-07a - The first walk to Munin returns to the hub bind when no checked route is
   left.** Depends: CP-07
   - Work: A lettered item by rule (i), found by CP-08's record run on 2026-10-07 (run
     rec-a1). Scope p, the early-Ascension order, failed in its first pass: "q2008-v0-munin:
@@ -1613,6 +1613,26 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     trace shows the fallback's Return landing at the hub bind, and the Priest arrives at
     Munin for Q2008. No baseline exists yet, so rule (k) has no gate to run; CP-08 records
     p next.
+  - 2026-10-07: done on the first attempt. Run p-a1 (run/cp/CP-07a/p-a1/, scope p, seed 1)
+    passed in 38 s and its capital-start checkpoint is verified: no death, 2 retreats.
+    - The Priest reached level 9 at the same place as in CP-08's failed pass, (690, 1548),
+      and the first approach to Munin again ended at (717, 1485) with no checked route.
+      The fallback fired there (trace record bridge-approach-return-to-bind), Return
+      landed at the outpost bind (937, 1706) at game time 1 h 00 min, and from the outpost
+      the Priest walked to Munin, played Q2008 and Q2009 and reached level 10 at the
+      ceremony at 1 h 04 min.
+    - In the same run, for CP-06 and CP-07 in the early-Ascension order: the kit was
+      supplied at level 1, both binds were made (the village's at 0 h 02 min, the
+      outpost's at 0 h 18 min), and at level 10 the stock check supplied the Cleric's mana
+      serum, jelly and powder. It supplied no shield scroll and no life potion: the 30
+      Lesser Anti-Shock Scrolls of the kit and the starter's potions already cover those
+      bands.
+    - What was built: ApproachBridgeNpcAsync, on the Ishalgen map, casts the learned Return
+      once when the approach has no checked route and the bind is more than 30 m away,
+      rests, and approaches again; a second failure ends the run as before. Bridge steps
+      on other maps are not touched.
+    - Bundle: seven pre-commit checks pass, Aion.GameServer.Tests passes, and Fast passes
+      all 11 scenario gates (run cp07a-fast). The logs are in run/cp/CP-07a/checks/.
 - [ ] **CP-08 - Record baselines p and c, twice.** Depends: CP-04, CP-07, CP-07a
   - Work: No file under src or tests changes. CP-05, CP-06 and CP-07 are ticked, so these
     baselines hold the Priest's new levels 1-9: the help kit and both Ishalgen binds. They
@@ -3340,3 +3360,9 @@ report what was done, what is blocked and what you need from me.
   was left from there. Nothing was recorded. Written as lettered item CP-07a (Return to the
   hub bind and walk from there), added to CP-08's Depends. Docs only; seven checks. Next by
   rule (h): CP-07a.
+- 2026-10-07 — Loop: CP-07a done on the first attempt. In the early-Ascension order the first
+  walk to Munin now casts Return to the hub bind when no checked route is left. Run p-a1
+  (scope p) passed in 38 s to the verified capital-start checkpoint: the fallback fired at
+  (717, 1485), Return landed at the outpost, and the Priest walked to Munin from there.
+  Bundle: seven checks, Aion.GameServer.Tests, Fast 11 gates (cp07a-fast). CP-08's Depends
+  are all ticked again. Next by rule (h): CP-08.

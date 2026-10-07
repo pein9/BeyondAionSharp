@@ -45,6 +45,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	/// Anturoon Crossing), and how near the outpost obelisk counts as standing at the outpost.</summary>
 	private const int IshalgenVillageObelisk = 700063, IshalgenOutpostObelisk = 700064;
 	private const float IshalgenOutpostRadius = 100f;
+	/// <summary>The navigator's reason when every checked route to the destination is closed.</summary>
+	private const string NoCheckedRoute = "No collision-checked route to the current destination.";
 
 	private static BotPosition GroundRoadGoal(BotNavigationGeometry geometry, int map, BotPosition destination) =>
 		geometry.GroundAround(map, destination, [3f, 5f, 8f, 12f]).FirstOrDefault() is { } ground && ground != default
@@ -4876,6 +4878,23 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				// NA-19: a travel leg starts; the straight line is a lower bound of the planned route.
 				await combat.BuffOurselfAsync(NaturalHelpTrigger.TravelLeg, token, Distance(session.CurrentPosition, anchor));
 				NaturalNavigationResult approach = await NaturalIshalgenNavigator.ApproachNpcAsync(step.MapId, step.NpcId, anchor, here, token);
+				// CP-07a: level 9 can fall deep in the Mau field, where no checked route to Munin is left. A player casts Return
+				// there, as Q2005's fallback and the stranded Return do, and walks from the hub bind. Ishalgen only, and only
+				// where the approach would otherwise end the run; a second failure ends it as before.
+				if (!approach.Arrived && approach.Reason == NoCheckedRoute && step.MapId == contract.MapId &&
+					session.Api.World.MapId == contract.MapId && session.Api.World.ObeliskBindPoint is { MapId: 220010000 } bind &&
+					Distance(session.CurrentPosition, bind.Position) > 30)
+				{
+					session.TraceDiagnostic("bridge-approach-return-to-bind", new Dictionary<string, object?>
+					{
+						["step"] = step.Key, ["npc"] = step.NpcId, ["reason"] = approach.Reason,
+						["position"] = session.CurrentPosition, ["bindPosition"] = bind.Position,
+					});
+					await UseLearnedReturnToBindAsync();
+					await RestSafelyAsync(token);
+					await combat.BuffOurselfAsync(NaturalHelpTrigger.TravelLeg, token, Distance(session.CurrentPosition, anchor));
+					approach = await NaturalIshalgenNavigator.ApproachNpcAsync(step.MapId, step.NpcId, anchor, here, token);
+				}
 				Require.True(approach.Arrived, $"{step.Key}: {approach.Reason}");
 				return Require.IsType<int>(approach.TargetObjectId);
 			}
