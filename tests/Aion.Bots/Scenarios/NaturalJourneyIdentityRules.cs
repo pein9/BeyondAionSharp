@@ -1,3 +1,4 @@
+using Aion.Bots.Scenarios.Classes;
 using Aion.GameServer.Model;
 
 namespace Aion.Bots.Scenarios;
@@ -29,24 +30,39 @@ public static class NaturalJourneyIdentityRules
 	public static readonly int[] ClericMaps = [320020000, 220010000, 120010000, 220030000];
 
 	/// <summary>Classify what a character list, an admin view or the client shows; null world means not shown.
-	/// The optional leg scopes the approved Q2900 instance without broadening the bridge's default maps.</summary>
-	public static NaturalJourneyStage Classify(PlayerClass playerClass, int level, int? worldId, string? altgardLeg = null)
+	/// The optional leg scopes the approved Q2900 instance without broadening the bridge's default maps.
+	/// The accepted line, the Priest who becomes a Cleric.</summary>
+	public static NaturalJourneyStage Classify(PlayerClass playerClass, int level, int? worldId, string? altgardLeg = null) =>
+		Classify(NaturalClassLine.PriestCleric, playerClass, level, worldId, altgardLeg);
+
+	/// <summary>The same classification from a wire class id (SM_CHARACTER_LIST, SM_PLAYER_INFO).</summary>
+	public static NaturalJourneyStage Classify(int classId, int level, int? worldId, string? altgardLeg = null) =>
+		Classify(NaturalClassLine.PriestCleric, classId, level, worldId, altgardLeg);
+
+	/// <summary>
+	/// CP-25: the same two states for any class line. <see cref="NaturalJourneyStage.IshalgenPriest"/> is the line's
+	/// starter before Ascension, at level 1-9 on the starter maps; <see cref="NaturalJourneyStage.AscensionCleric"/> is
+	/// the line's second class on the bridge maps, and a line without a second class has no such state. The Convent and
+	/// the leg-scoped maps are the Cleric's legs and stay tied to the Cleric.
+	/// </summary>
+	public static NaturalJourneyStage Classify(NaturalClassLine line, PlayerClass playerClass, int level, int? worldId, string? altgardLeg = null)
 	{
-		if (playerClass == PlayerClass.PRIEST && level is >= 1 and <= 9 && (worldId is null || PriestMaps.Contains(worldId.Value)))
+		if (playerClass == line.Starter && level is >= 1 and <= 9 && (worldId is null || PriestMaps.Contains(worldId.Value)))
 			return NaturalJourneyStage.IshalgenPriest;
-		if (playerClass == PlayerClass.CLERIC && level >= 9 && (worldId is null || ClericMaps.Contains(worldId.Value) ||
+		if (line.Second is { } second && playerClass == second && level >= 9 && (worldId is null || ClericMaps.Contains(worldId.Value) ||
+			second == PlayerClass.CLERIC && (
 			level >= 10 && worldId == 120020000 || // PC-06: ordinary Convent visit after the ceremony.
 			altgardLeg == "l11" && level >= 20 && worldId == 320070000 ||
 			altgardLeg == "l12" && level >= 16 && worldId == 300200000 ||
-			altgardLeg == NaturalAbyssEntry.Leg && level >= 25 && worldId is NaturalAbyssEntry.Morheim or NaturalAbyssEntry.ArenaMap))
+			altgardLeg == NaturalAbyssEntry.Leg && level >= 25 && worldId is NaturalAbyssEntry.Morheim or NaturalAbyssEntry.ArenaMap)))
 			return NaturalJourneyStage.AscensionCleric;
 		throw new InvalidDataException(
 			$"Retained natural character is outside the journey: {playerClass} level {level} on map {worldId?.ToString() ?? "unknown"}.");
 	}
 
-	/// <summary>The same classification from a wire class id (SM_CHARACTER_LIST, SM_PLAYER_INFO).</summary>
-	public static NaturalJourneyStage Classify(int classId, int level, int? worldId, string? altgardLeg = null) =>
-		Classify(PlayerClassExtensions.GetPlayerClassById(checked((byte)classId), true)
+	/// <summary>The line's classification from a wire class id.</summary>
+	public static NaturalJourneyStage Classify(NaturalClassLine line, int classId, int level, int? worldId, string? altgardLeg = null) =>
+		Classify(line, PlayerClassExtensions.GetPlayerClassById(checked((byte)classId), true)
 			?? throw new InvalidDataException($"Unknown player class id {classId}."), level, worldId, altgardLeg);
 
 	/// <summary>Once the journals are observed: a Priest has not completed Ascension; a Cleric either has, or is

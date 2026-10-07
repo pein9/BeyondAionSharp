@@ -2577,7 +2577,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - No Java was read: the item relies on no server behavior it did not already rely on.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,731 with 16 skipped),
       and Fast passes (run cp24-fast). The guard of rule (c), gate p, is in the proof run.
-- [ ] **CP-25 - Identity rules by line, and the Ascension contract by line and by choice.**
+- [x] **CP-25 - Identity rules by line, and the Ascension contract by line and by choice.**
   Depends: CP-01, CP-08, CP-14
   - Work: This item edits existing bot files, so it waits for the first baselines (CP-08).
     Add NaturalJourneyIdentityRules.Classify(line, ...)
@@ -2605,6 +2605,76 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     priest-cleric equals the file-loaded contract record for record; the Chanter and the
     Templar overlays' action, class id, list name, Q2009 var and dispatch quest are
     recomputed from quest_data.xml and the handler source.
+  - 2026-10-07: done. UT/NaturalClassLineSeamTests is new and passes, 60 tests (3 facts, 35
+    identity rows, 22 bridge rows). Guard run guard-a1, set p: verdict pass
+    (run/cp/CP-25/guard-a1/verdict.json), 35,811 records, identical to its baseline.
+    - **Java, read first.** _2008Ascension.java:136-162: SETPRO6 sends the page that
+      ClassChangeService gives for the race and the starter, and SETPRO7 to SETPRO17 each
+      set one second class at var 6. _2009ACeremonyinPandaemonium.java:104-133: Balder's
+      SETPRO3 sets the var and the reward group by starting class (10/0, 20/1, 30/2, 40/3,
+      50/4, 60/5); lines 136-178: only that var's preceptor answers, with its own page.
+      The six dispatch handlers (_2901 to _2904, _29070A, _29071A) are one handler with six
+      quest ids: against _2904 the others differ in no line but the id, the class name and
+      an author line. Each registers Doman 204191 and Meiyer 203559.
+    - **quest_data.xml.** The six dispatch quests are IMPORTANT, level 10, 11,237
+      experience, and differ in class_permitted, the Q2009 reward index that starts them
+      and the work item. Q2009's six reward groups each pay 13,125 experience, 5 of item
+      162001057 and 250,000 Kinah. So a pair's bridge needs no number the class-line
+      contract does not hold.
+    - **Classify(line, ...)** is new, for a class and for a wire class id. Before Ascension:
+      the line's starter at level 1-9 on 220010000, 320010000 and 320020000. After it: the
+      line's second class from level 9 on the four bridge maps; the Convent and the l11,
+      l12 and ax maps only when that second class is the Cleric. A line with no second
+      class has no state after Ascension. The two old overloads delegate with the Priest
+      line. No caller was changed: the three in tools/Aion.LiveBots, the identity scenario,
+      the journey, the bridge engine and the two SIM hosts still call the old overloads.
+      The stage names IshalgenPriest and AscensionCleric stay as they are for every line.
+    - **NaturalAscensionContract.ForChoice(core, classLines, starter, second, pick)** builds
+      a pair's bridge in memory and runs it through the checks Load runs. It replaces: the
+      start class; the class step's action and class page; the class choice (classes, page,
+      action, masteries); the ceremony step (var, preceptor, position, talk range, page,
+      pick action) and the ceremony reward (group, list, pick, its group); the dispatch
+      quest in the quest list, its two steps, its start reward, permitted classes and work
+      item; the endpoint's class, id, completed quests and equipped item; and the ceremony
+      item among the protected items. All else is the reviewed bridge's own objects.
+      **ForLine(line, pick)** does this for a line from the two checked-in files.
+      **Step(role)** finds the four class-dependent steps by what they do: ClassChoice,
+      Ceremony, DispatchStart, DispatchReward. Nothing calls the new members yet, and
+      e2e/natural-ascension-contract.json is not edited.
+    - **The pick.** With no pick named, the bridge keeps the reviewed pick, the Karmic
+      Staff 101500498. A second class whose list does not offer it is refused by name, so
+      every pair but the Cleric and the Chanter must name its pick. For the Chanter the
+      unnamed pick is the staff, which is also CP-Q7's default; naming the mace 100100495
+      gives SELECTED_QUEST_REWARD1.
+    - **Step keys of another pair.** The class step keeps its key. The ceremony step keeps
+      q2009-reward-lyfjaberga for the two Priest pairs and is
+      q2009-reward-preceptor-<npc id> for another starter. The dispatch steps are
+      q<quest id>-v0-doman and q<quest id>-reward-meiyer. A caller should ask by role.
+    - **Proof.** (1) Over 10,080 rows (every class, 12 levels, 12 maps, 5 legs) the two old
+      overloads and the Priest line each give the rule as it stood before, restated in the
+      test. (2) 35 rows for a Chanter line, a Templar line and a Warrior line with no
+      second class, accepted and refused: the Chanter and the Templar are refused on the
+      Convent and the leg-scoped maps, and the Warrior-only line refuses both Warrior
+      second classes after Ascension. (3) ForLine and ForChoice for priest-cleric serialize
+      to the same text as the file-loaded record, from new objects. (4) For all eleven
+      second classes and each of the 22 items their lists offer, the bridge's action, class
+      page, Q2009 var, reward group, preceptor, page, list, pick action, dispatch quest,
+      start reward, permitted classes, work item, quest row and endpoint are recomputed
+      from quest_data.xml, QuestTemplate.cs and the ported handlers, the pair's dispatch
+      handler is shown equal to Q2904's but for its id, and eleven steps and the instance,
+      teleporter, bind, shop, movies and kept accessories are shown to be the reviewed
+      bridge's own objects. (5) The Chanter's bridge differs from the Cleric's in the
+      class, the action and the list name and nothing else; the Templar's has SETPRO8,
+      class id 2, knight_selectable_reward, var 10, preceptor 204080 with page 2034, class
+      page 3057 and dispatch 2901.
+    - **Findings, not fixed.** (a) A line with no second class has no bridge: ForLine
+      refuses it by name. CP-26 decides what such a line's runner loads. (b) The bridge's
+      shop (162000053 up to 12 and 169300003 up to 30), its kept accessories and its other
+      protected supplies are carried over as the Cleric's. Whether another class buys
+      169300003 is that class's item to settle. (c) The stage names still say Priest and
+      Cleric for every line; a rename is not this item's.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,791 with 16 skipped),
+      and Fast passes (run cp25-fast).
 - [ ] **CP-26 - The bridge reads the line's contract.** Depends: CP-09, CP-15, CP-25
   - Work: The runner loads the line's contract once and passes it down: PlayBridgeTalkAsync
     stops calling LoadDefault (J:4825, 4841-4851) and asserts the line's ceremony item;
@@ -4083,3 +4153,10 @@ report what was done, what is blocked and what you need from me.
   Priest's Kinah ledger from the m baseline is written into the item. Gate gate-a1, set p+m:
   identical. Seven checks, 4,731 with 16 skipped and Fast (cp24-fast) pass. Next by rule
   (h): CP-25.
+- 2026-10-07 — Loop: CP-25 done. NaturalJourneyIdentityRules.Classify takes a class line and the
+  old overloads delegate with the Priest line. NaturalAscensionContract gains ForLine,
+  ForChoice and Step(role); the Priest-Cleric bridge built in memory equals the reviewed file
+  and all eleven pairs are recomputed from quest_data.xml and the handlers
+  (UT/NaturalClassLineSeamTests, 60 tests). Nothing calls the new members yet. Guard guard-a1,
+  set p: identical. Seven checks, 4,791 with 16 skipped and Fast (cp25-fast) pass. Next
+  by rule (h): CP-26.
