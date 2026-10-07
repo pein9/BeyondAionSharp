@@ -3210,7 +3210,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       were read from skill_tree.xml by hand.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,676 with 16 skipped),
       and Fast passes (run cp32-fast).
-- [ ] **CP-33 - The Chanter diverges at Munin, preserved after the ceremony.** Depends:
+- [x] **CP-33 - The Chanter diverges at Munin, preserved after the ceremony.** Depends:
   CP-28, CP-31, CP-32
   - Work: With the code committed and the bundle green, run sim-snapshot.ps1 -Action Capture
     -CapitalStage start -Class priest-chanter -Name pandaemonium-chanter-start-s1 with its
@@ -3228,6 +3228,34 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     emits CP_CLASS=priest-chanter and PC_CAPITAL=start and no NA_HELP_ITEMS, the resumed
     character is accepted as a level-10 Chanter, and capital-stage-completion.json is
     verified again for stage start.
+  - 2026-10-07: done, first attempt. Snapshot **pandaemonium-chanter-start-s1**, captured
+    at da2a7d3b2 by run cp33-chanter-a1 (run/cp/CP-33/capture-a1.log; evidence
+    run/snapshots/_capture/cp33-chanter-a1). Character 133276, 3,875,166 game ms, dump
+    SHA-256 7eaa7c63faa333d12d77c58b90de1bf4dacc89ab0851ef923cf4c15b08779063, receipt
+    SHA-256 867ac81be5aece0ead4b6a7e70186c117f30dac10c26fab21bdb144e90c39b3b, classLine
+    priest-chanter in snapshot.json.
+    - **Acceptance, from the receipt before Verify:** stage start, verified; class id 11;
+      level 10; map 120010000; Q2008 and Q2009 complete; the Karmic Staff 101500498 worn
+      in both hands; Q2904 at START/0; no death, two retreats. help-items.json lists the
+      level 1-9 kit at the run's start (30 Major Life Potions, 30 Lesser Anti-Shock
+      Scrolls, 20 Greater Running Scrolls) and the level-10 bands at the ceremony (40 mana
+      serums 162000017, 8 of 160002273, 200 of the powder 169300003), as the per-class
+      note foresaw. Accepted.
+    - **The comparer against baseline p** (run/cp/CP-33/compare-p.txt): the first
+      difference is record 35,065, the bridge decision at Munin, whose reason reads
+      "Choose Chanter (SETPRO13)." where p reads "Choose Cleric (SETPRO14).". Every record
+      before it is the accepted Priest's. The Chanter's trace has 35,809 records, p has
+      35,811.
+    - **Proof.** Restore prints NA_ASCENSION=1, PC_CAPITAL=start and
+      CP_CLASS=priest-chanter and no NA_HELP_ITEMS (run/cp/CP-33/restore.txt; that copy
+      was dropped). Verify, run cp33-chanter-verify-a1, passes
+      (run/cp/CP-33/verify-a1.log): the resumed character is accepted as the level-10
+      Chanter of the line, and capital-stage-completion.json is verified again for stage
+      start, with Q2904 still at START/0.
+    - This is the first run of the Chanter line, the Chanter profile and its table gear
+      rules: the equipment check put the staff on over the Priest's mace.
+    - No class scope is recorded for the Chanter, as the item says. No code changed, so
+      this commit is evidence only and no bundle was run.
 
 ### D. What another class needs, and a Warrior in the field before the seam is closed
 
@@ -4592,3 +4620,8 @@ report what was done, what is blocked and what you need from me.
   the physical stat, so the Karmic Staff is worn). A Priest-starter line keeps the accepted
   Priest's gear check points. No unit test (rule (n)). Guard guard-a1, set p: identical.
   Seven checks, 4,676 with 16 skipped and Fast (cp32-fast) pass. Next by rule (h): CP-33.
+- 2026-10-07 — Loop: CP-33 done, first attempt. Snapshot pandaemonium-chanter-start-s1 (character
+  133276, captured at da2a7d3b2): a level-10 Chanter in Pandaemonium with the Karmic Staff worn
+  and Q2904 at START/0. Its trace first differs from baseline p at the class-choice decision,
+  record 35,065. Verify passes with CP_CLASS=priest-chanter and PC_CAPITAL=start. Phase C, the
+  Chanter branch, is complete but for CP-29a, which waits for CP-Q22. Next by rule (h): CP-34.
