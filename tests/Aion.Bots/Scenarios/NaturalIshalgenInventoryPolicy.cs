@@ -61,8 +61,6 @@ public sealed record NaturalInventoryPlan(int Capacity, int Occupied, IReadOnlyL
 
 public sealed class NaturalIshalgenInventoryPolicy
 {
-	/// <summary>Priest-born class-reward list for Q2009's ceremony (quest_data.xml priest_selectable_reward).</summary>
-	private const string CeremonyList = "priest_selectable_reward";
 	private readonly IReadOnlyDictionary<int, NaturalItem> items;
 	private readonly HashSet<int> questItems;
 	private readonly IReadOnlyDictionary<int, int[]> rewards;
@@ -112,11 +110,18 @@ public sealed class NaturalIshalgenInventoryPolicy
 			if (choices.Length > 0) rewards[id] = choices;
 		}
 		// NA-09: the Ascension bridge (docs/natural-ascension-altgard.md): its protected items and the ceremony
-		// weapon the operator chose (OD-5), from the reviewed contract.
+		// weapon the operator chose (OD-5), from the reviewed contract. CP-26: a line that takes another second class has
+		// that pair's bridge, with its own class-reward list (quest_data.xml, priest_selectable_reward for the Cleric) and
+		// dispatch quest; a line that takes none keeps the reviewed bridge's protected items and never reaches its quests.
 		var bridge = NaturalAscensionContract.Load(Path.Combine(root, "parity-artifacts/e2e/natural-ascension-contract.json"));
+		if ((line ?? NaturalClassLine.Default).Second is { } second)
+			bridge = NaturalAscensionContract.ForChoice(bridge,
+				NaturalClassLineContract.Load(Path.Combine(root, "parity-artifacts/e2e/natural-class-lines.json")),
+				(line ?? NaturalClassLine.Default).Starter, second);
 		XElement ceremonyQuest = quests.Elements("quest").Single(q => (int)q.Attribute("id")! == bridge.CeremonyReward.QuestId);
-		rewards[bridge.CeremonyReward.QuestId] = ceremonyQuest.Elements(CeremonyList).Select(e => (int)e.Attribute("item_id")!).ToArray();
-		foreach (int id in new[] { 2008, 2904, 24010 }) rewards[id] = [];
+		rewards[bridge.CeremonyReward.QuestId] = ceremonyQuest.Elements(bridge.CeremonyReward.SelectableList)
+			.Select(e => (int)e.Attribute("item_id")!).ToArray();
+		foreach (int id in bridge.Quests.Select(quest => quest.Id).Where(id => id != bridge.CeremonyReward.QuestId)) rewards[id] = [];
 		// The bridge quests' own item references (Destiny Cards, the dispatch work item) are quest items; the Priest
 		// never carries them, so its rules are unaffected.
 		foreach (XElement quest in quests.Elements("quest").Where(q => bridge.Quests.Any(b => b.Id == (int)q.Attribute("id")!)))

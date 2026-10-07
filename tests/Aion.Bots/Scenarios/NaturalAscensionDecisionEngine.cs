@@ -34,6 +34,7 @@ public static class NaturalAscensionDecisionEngine
 {
 	public const byte Start = 3, Reward = 4, Complete = 5;
 	private const int Ishalgen = 220010000, Ataxiar = 320020000, Pandaemonium = 120010000, Altgard = 220030000;
+	private const int Lyfjaberga = 204083, KarmicStaff = 101500498;
 
 	/// <summary>
 	/// NA-17/25: true once a login lands past the Munin stop, so the bridge runner resumes: Q2008 completed, past its
@@ -69,6 +70,11 @@ public static class NaturalAscensionDecisionEngine
 			return Plan("talk", key, step.QuestId, reason);
 		}
 
+		// CP-26: the class pair, the four class-dependent steps and the dispatch quest are the contract's, so a class line's
+		// bridge is decided by the same rule. The reviewed bridge gives the Cleric's steps and reasons as they always read.
+		string second = string.Join(' ', contract.ClassChoice.ToClass.Split('_').Select(word => word[..1] + word[1..].ToLowerInvariant()));
+		int dispatch = contract.Dispatch.QuestId;
+
 		if (!state.Synchronized || state.MapId == null)
 			return Stop("refresh-observation", "planned", "Wait for a synchronized client view.");
 		if (state.IsDead)
@@ -77,7 +83,7 @@ public static class NaturalAscensionDecisionEngine
 		NaturalJourneyStage stage;
 		try
 		{
-			stage = NaturalJourneyIdentityRules.Classify(state.ClassId, state.Level, state.MapId);
+			stage = NaturalJourneyIdentityRules.Classify(contract.StarterClass, contract.SecondClass, state.ClassId, state.Level, state.MapId);
 			bool ascended = state.CompletedQuestIds.Contains(contract.ClassChoice.QuestId);
 			NaturalJourneyIdentityRules.RequireJournal(stage, ascended,
 				state.Quests.TryGetValue(contract.ClassChoice.QuestId, out BotQuestState? ascension) ? ascension.Status : null, state.MapId);
@@ -109,7 +115,7 @@ public static class NaturalAscensionDecisionEngine
 				>= 51 and <= 54 when state.MapId == Ataxiar =>
 					Plan("fight-trial", null, 2008, $"Guardian assassins: {54 - v + 1} left (scripted trial, 1 damage)."),
 				5 when state.MapId == Ataxiar => Plan("fight-trial", null, 2008, "Brigade General Hellion (scripted trial)."),
-				6 => Step("q2008-v6-munin-class", "Choose Cleric (SETPRO14)."),
+				6 => Step(contract.Step(NaturalAscensionStepRole.ClassChoice).Key, $"Choose {second} ({contract.ClassChoice.Action})."),
 				_ => Stop("wrong-map", "blocked", $"Q2008 var {v} on map {state.MapId} is not a bridge state.", 2008),
 			};
 		}
@@ -119,10 +125,17 @@ public static class NaturalAscensionDecisionEngine
 		{
 			if (!state.Quests.TryGetValue(2009, out BotQuestState? q2009))
 				return Stop("wait-journal", "awaiting-capability", "Q2009 starts when Q2008 completes; not in the journal yet.", 2009);
-			if (q2009.Status == Reward) return Step("q2009-reward-lyfjaberga", "Lyfjaberga: the Karmic Staff (REWARD2).");
+			if (q2009.Status == Reward)
+			{
+				NaturalAscensionStep ceremony = contract.Step(NaturalAscensionStepRole.Ceremony);
+				string pick = contract.CeremonyReward.Action.Replace("SELECTED_QUEST_", "", StringComparison.Ordinal);
+				return Step(ceremony.Key, ceremony.NpcId == Lyfjaberga && contract.CeremonyReward.ItemId == KarmicStaff
+					? $"Lyfjaberga: the Karmic Staff ({pick})."
+					: $"Preceptor {ceremony.NpcId}: ceremony item {contract.CeremonyReward.ItemId} ({pick}).");
+			}
 			return Var(q2009) switch
 			{
-				0 => Step("q2009-v0-munin", "Munin sends the Cleric to Pandaemonium."),
+				0 => Step("q2009-v0-munin", $"Munin sends the {second} to Pandaemonium."),
 				1 => Step("q2009-v1-heimdall", "Heimdall's ceremony."),
 				2 => Step("q2009-v2-balder", "Balder's ceremony."),
 				int other => Stop("unexpected-var", "blocked", $"Q2009 var {other} is not a bridge state.", 2009),
@@ -134,23 +147,23 @@ public static class NaturalAscensionDecisionEngine
 				? Stop("ceremony-complete", "complete", "Q2008/Q2009 complete: return to Ishalgen before the Altgard dispatch.")
 				: Stop("level", "blocked", "The ceremony did not unlock level 10.", 2009);
 
-		// Q2904 Dispatch to Altgard, travel and the bind.
-		if (!Done(2904))
+		// The dispatch quest to Altgard (Q2904 for the Priest-born classes), travel and the bind.
+		if (!Done(dispatch))
 		{
-			if (!state.Quests.TryGetValue(2904, out BotQuestState? q2904))
+			if (!state.Quests.TryGetValue(dispatch, out BotQuestState? q2904))
 				return state.Level < contract.Endpoint.MinimumLevel
-					? Stop("level", "blocked", $"Q2904 needs level {contract.Endpoint.MinimumLevel}; observed {state.Level}.", 2904)
-					: Stop("wait-journal", "awaiting-capability", "Q2904 starts when Q2009 completes; not in the journal yet.", 2904);
-			if (Var(q2904) == 0) return Step("q2904-v0-doman", "Doman takes the dispatch.");
+					? Stop("level", "blocked", $"Q{dispatch} needs level {contract.Endpoint.MinimumLevel}; observed {state.Level}.", dispatch)
+					: Stop("wait-journal", "awaiting-capability", $"Q{dispatch} starts when Q2009 completes; not in the journal yet.", dispatch);
+			if (Var(q2904) == 0) return Step(contract.Step(NaturalAscensionStepRole.DispatchStart).Key, "Doman takes the dispatch.");
 			if (state.MapId == Pandaemonium)
 			{
 				if (state.Kinah < contract.Teleporter.BasePrice)
-					return Stop("not-enough-kinah", "blocked", $"Doman's fare is at least {contract.Teleporter.BasePrice}; {state.Kinah} Kinah.", 2904);
-				return Plan("teleport", null, 2904, $"Doman's teleporter to Altgard (location {contract.Teleporter.LocationId}).");
+					return Stop("not-enough-kinah", "blocked", $"Doman's fare is at least {contract.Teleporter.BasePrice}; {state.Kinah} Kinah.", dispatch);
+				return Plan("teleport", null, dispatch, $"Doman's teleporter to Altgard (location {contract.Teleporter.LocationId}).");
 			}
 			if (state.MapId == Altgard && !BoundHere())
 				return BindOrStop();
-			if (q2904.Status == Reward || Var(q2904) == 1) return Step("q2904-reward-meiyer", "Report to Meiyer.");
+			if (q2904.Status == Reward || Var(q2904) == 1) return Step(contract.Step(NaturalAscensionStepRole.DispatchReward).Key, "Report to Meiyer.");
 		}
 
 		// Q24010 Suthran's Orders: starts on entering Altgard.
@@ -163,11 +176,11 @@ public static class NaturalAscensionDecisionEngine
 		}
 
 		if (state.MapId != Altgard)
-			return Stop("wrong-map", "blocked", $"Every bridge quest is done, but the Cleric is on map {state.MapId}, not Altgard.");
+			return Stop("wrong-map", "blocked", $"Every bridge quest is done, but the {second} is on map {state.MapId}, not Altgard.");
 		if (!BoundHere()) return BindOrStop();
 		if (!state.ShopVisited)
 			return Plan("shop", null, null, "Altgard shop stop: equip, sell, buy potions and powder (no gear).");
-		checks.Add(new("endpoint", "pass", "Four quests, Cleric, bound in Altgard, shop stop done."));
+		checks.Add(new("endpoint", "pass", $"Four quests, {second}, bound in Altgard, shop stop done."));
 		return Stop("bridge-complete", "complete", "The Ascension bridge endpoint is reached.");
 
 		bool Done(int quest) => state.CompletedQuestIds.Contains(quest);

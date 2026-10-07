@@ -26,6 +26,32 @@ public sealed class NaturalIshalgenInventoryPolicyTests
 	});
 
 	[Fact]
+	public void TheCeremonyListAndTheDispatchQuestAreTheLinesBridges()
+	{
+		// CP-26: the policy reads the class-reward list and the dispatch quest from the line's bridge. The accepted line's
+		// is the reviewed one; a Chanter line reads chanter_selectable_reward, which holds the same two items, and keeps
+		// the staff; a line that takes no second class keeps the reviewed bridge and never reaches its quests.
+		string root = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "../.."));
+		int[] ids = [100100025, 101500498, 100100495, 162000053];
+		var accepted = NaturalIshalgenInventoryPolicy.Load(root, ids, Aion.Bots.Scenarios.Classes.NaturalClassLine.PriestCleric);
+		var chanter = NaturalIshalgenInventoryPolicy.Load(root, ids, new("test-priest-chanter",
+			Aion.GameServer.Model.PlayerClass.PRIEST, Aion.GameServer.Model.PlayerClass.CHANTER, 0, "Unused"));
+		var warrior = NaturalIshalgenInventoryPolicy.Load(root, ids, new("test-warrior", Aion.GameServer.Model.PlayerClass.WARRIOR, null, 0, "Unused"));
+		foreach (NaturalIshalgenInventoryPolicy policy in new[] { Bridge.Value, accepted, chanter, warrior })
+		{
+			Assert.Equal(1, policy.ChooseReward(2009, 9, []));
+			Assert.All(new[] { 2008, 2904, 24010 }, quest => Assert.Equal(-1, policy.ChooseReward(quest, 10, [])));
+		}
+		XElement ceremony = XDocument.Load(Path.Combine(root, "game-server/data/static_data/quest_data/quest_data.xml")).Root!
+			.Elements("quest").Single(quest => (int)quest.Attribute("id")! == 2009);
+		foreach (string list in new[] { "priest_selectable_reward", "chanter_selectable_reward" })
+			Assert.Equal(new[] { 100100495, 101500498 }, ceremony.Elements(list).Select(node => (int)node.Attribute("item_id")!));
+		// A pair whose list does not offer the reviewed pick cannot load its policy until its pick is named.
+		Assert.Throws<InvalidDataException>(() => NaturalIshalgenInventoryPolicy.Load(root, ids, new("test-warrior-templar",
+			Aion.GameServer.Model.PlayerClass.WARRIOR, Aion.GameServer.Model.PlayerClass.TEMPLAR, 0, "Unused")));
+	}
+
+	[Fact]
 	public void TheCeremonyRewardIsTheOperatorsStaffAndTheBridgeTurnInsHaveNoChoice()
 	{
 		// quest_data.xml Q2009 priest_selectable_reward: Karmic Warhammer, then Karmic Staff (OD-5).

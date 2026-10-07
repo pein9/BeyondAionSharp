@@ -2675,7 +2675,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       Cleric for every line; a rename is not this item's.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,791 with 16 skipped),
       and Fast passes (run cp25-fast).
-- [ ] **CP-26 - The bridge reads the line's contract.** Depends: CP-09, CP-15, CP-25
+- [x] **CP-26 - The bridge reads the line's contract.** Depends: CP-09, CP-15, CP-25
   - Work: The runner loads the line's contract once and passes it down: PlayBridgeTalkAsync
     stops calling LoadDefault (J:4825, 4841-4851) and asserts the line's ceremony item;
     ImplementedBridgeSteps (J:8477-8481), the engine's step keys and 2904 literals
@@ -2693,6 +2693,59 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     and the ceremony; the dispatch-quest lookups (the Q2904 steps and literals) are then
     covered by the CP-25 unit test only, and the doc says so. Scope p returns before the
     Q2904 block (Sc/NaturalAscensionDecisionEngine.cs:132-135), and c plays none of it.
+  - 2026-10-07: done. Gate run gate-a1, set p+b+c: verdict pass
+    (run/cp/CP-26/gate-a1/verdict.json). p: 35,811 records, b: 128,937 and c: 96,166, each identical to its baseline.
+    Scope b was not dropped by CP-09, so the dispatch-quest lookups are played, in b.
+    - **Java.** Nothing new was read: the item relies on the handlers CP-25 read
+      (_2008Ascension.java, _2009ACeremonyinPandaemonium.java and the six dispatch
+      handlers), and it changes what the bot reads, not what the server does.
+    - **The runner** holds the line's bridge in LineBridge(), built once by
+      NaturalAscensionContract.ForLine(ClassLine) when the run first needs it. The item's
+      line numbers had moved; the sites are these. RunAscensionBridgeAsync and
+      TakeCeremonyTeleporterAsync take it in place of LoadDefault. PlayBridgeTalkAsync
+      takes the instance, the Destiny Card steps and the ceremony reward from it, finds
+      the ceremony step by role and asserts the line's ceremony item, by its id. Doman is
+      found by role in both teleporter steps. The early-ceremony check and the bridge-stop
+      receipt read the dispatch quest and the bridge's quest list from it.
+      ImplementedBridgeSteps keeps the eleven keys that are the same for every pair, and
+      PlaysBridgeStep adds the four class-dependent steps by role.
+    - **The engine** reads the class pair, the four class-dependent steps and the dispatch
+      quest from the contract it is given. Its identity check classifies with the
+      contract's pair, through a new Classify(starter, second, ...) that the line overloads
+      of CP-25 now delegate to. The reasons that name the class or the dispatch quest are
+      built from the contract. The ceremony reason stays "Lyfjaberga: the Karmic Staff
+      (REWARD2)." when the preceptor is Lyfjaberga and the pick is the Karmic Staff; any
+      other ceremony reads "Preceptor <npc>: ceremony item <id> (REWARDn).". The contract
+      gains StarterClass and SecondClass, left out of its JSON.
+    - **The inventory policy** builds the line's bridge with ForChoice and reads the
+      ceremony list and the quests with no reward choice from it; the constant
+      priest_selectable_reward is gone. A line with no second class keeps the reviewed
+      bridge's protected items and never reaches its quests.
+    - **Unit rows.** NaturalAscensionDecisionEngineTests, 3 new: (1) twelve steps and
+      reasons of the reviewed bridge, word for word, with the Q2904 texts and the identity
+      and endpoint checks; (2) under the Chanter's bridge a level-9 Chanter in Ataxiar at
+      Q2008 REWARD is sent on to Munin, in the ceremony-only bridge too, where the reviewed
+      bridge still blocks it at "identity"; the Chanter's route reads SETPRO13, Lyfjaberga
+      and Q2904; (3) a Templar's bridge uses preceptor 204080 and Q2901 and is not moved
+      by a Q2904 in the journal. NaturalIshalgenInventoryPolicyTests, 1 new: the accepted
+      line, a Chanter line and a line with no second class all pick the staff at Q2009 and
+      have no choice at Q2008, Q2904 and Q24010. The refusal that
+      NaturalAscensionDecisionEngineTests asserted for the default bridge still stands.
+    - **Findings, not fixed.** (a) A pair whose list does not offer the Karmic Staff cannot
+      load its inventory policy or its bridge until its pick is named: ForLine and the
+      policy pass no pick. Only the Cleric and the Chanter take a second class in this
+      plan, and both lists offer the staff, so nothing here is stopped; a later line needs
+      its pick on the class line. (b) Left as they were, because they are the Cleric's
+      gates of CP-27: VerifyCapitalPass, with its Q2904 text and the worn staff 101500498;
+      the early ceremony's IsCleric test; and the endpoint's identity check in
+      CompleteAscensionLegAsync, which classifies with the Priest line and says "the
+      bridge's Cleric". No item lists that last check. The Chanter stops at the
+      capital-stage stop in CP-33 and never reaches it; a line that plays the whole bridge
+      would. (c) The two failure texts of the ceremony assertion now name the item id, not
+      the Karmic Staff. They are written only when the assertion fails. (d) The engine
+      still names Q2008 and Q2009 by number; they are the same for every pair.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,795 with 16 skipped),
+      and Fast passes (run cp26-fast). The guard of rule (c), gate p, is in the proof run.
 - [ ] **CP-27 - Second-class checks by line; the Cleric-only leg gates stay.** Depends:
   CP-26
   - Work: The early-ceremony check (J:1398) uses the line's second class. Three SIM identity
@@ -4160,3 +4213,9 @@ report what was done, what is blocked and what you need from me.
   (UT/NaturalClassLineSeamTests, 60 tests). Nothing calls the new members yet. Guard guard-a1,
   set p: identical. Seven checks, 4,791 with 16 skipped and Fast (cp25-fast) pass. Next
   by rule (h): CP-26.
+- 2026-10-07 — Loop: CP-26 done. The runner builds the line's bridge once (LineBridge) and the
+  bridge engine, the talk handler, the teleporter steps and the inventory policy read the
+  class pair, the four class-dependent steps and the dispatch quest from it. The engine's
+  identity check uses the contract's pair, so a Chanter's bridge accepts a Chanter. Gate
+  gate-a1, set p+b+c: identical. Seven checks, 4,795 with 16 skipped and Fast (cp26-fast)
+  pass. Next by rule (h): CP-27.

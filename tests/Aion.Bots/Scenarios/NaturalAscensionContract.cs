@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Aion.Bots.Scenarios.Classes;
 using Aion.GameServer.Model;
 
@@ -67,6 +68,14 @@ public sealed record NaturalAscensionContract(
 			: throw new InvalidDataException($"Unknown dialog action '{name}'.");
 
 	public IEnumerable<NaturalAscensionStep> StepsFor(int questId) => Steps.Where(step => step.QuestId == questId);
+
+	/// <summary>CP-26: the starter this bridge begins with.</summary>
+	[JsonIgnore]
+	public PlayerClass StarterClass => Enum.Parse<PlayerClass>(ClassChoice.FromClass);
+
+	/// <summary>The class this bridge chooses at Ascension.</summary>
+	[JsonIgnore]
+	public PlayerClass SecondClass => Enum.Parse<PlayerClass>(ClassChoice.ToClass);
 
 	/// <summary>CP-25: one of the four steps that depend on the class pair, found by what it does, not by its key.</summary>
 	public NaturalAscensionStep Step(NaturalAscensionStepRole role) => role switch

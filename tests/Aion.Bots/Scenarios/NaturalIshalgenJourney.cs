@@ -160,6 +160,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		NaturalCapitalContract capitalContract = NaturalCapitalContract.LoadDefault();
 		// CP-20: what the server decides for the line's starter (the Q2132 var and trainer).
 		NaturalStarterClass starterFacts = NaturalClassLineContract.LoadDefault().Starter(ClassLine.Starter);
+		// CP-26: the line's Ascension bridge, loaded once when the run first needs it. The accepted line's is the reviewed
+		// contract; a line that takes no second class has none and is refused there by name.
+		NaturalAscensionContract? lineBridge = null;
+		NaturalAscensionContract LineBridge() => lineBridge ??= NaturalAscensionContract.ForLine(ClassLine);
 		NaturalJourneyCheckpoint? checkpoint = null;
 		NaturalCoinGearProgress? coinGearProgress = null;
 		NaturalHaramelProgress? haramelProgress = null;
@@ -1068,7 +1072,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			// steps are played by one generic handler; moves not built yet stop the run with a precise receipt.
 			async Task RunAscensionBridgeAsync(bool ceremonyOnly = false)
 			{
-				NaturalAscensionContract bridge = NaturalAscensionContract.LoadDefault();
+				NaturalAscensionContract bridge = LineBridge();
 				await TopUpHelpItemsAsync("run-start");
 				await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRelog, token); // NA-19: a fresh login or a resume
 				string? previous = null;
@@ -1103,7 +1107,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						return;
 					}
 					NaturalAscensionStep? step = next.StepKey is string key ? bridge.Steps.Single(s => s.Key == key) : null;
-					if (next.Action == "talk" && step != null && ImplementedBridgeSteps.Contains(step.Key))
+					if (next.Action == "talk" && step != null && PlaysBridgeStep(bridge, step))
 						await PlayBridgeTalkAsync(step);
 					else if (next.Action == "fight-trial")
 						await FightAscensionTrialAsync(bridge);
@@ -1451,8 +1455,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					NaturalJourneyCheckpoint after = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
 						session.ConnectionGeneration, contract, session.CurrentPosition, earlyAscension: true);
 					Require.All(before.CompletedQuestIds, id => Require.Contains(id, after.CompletedQuestIds));
-					Require.Equal(3, session.Api.World.Quests[2904].Status);
-					Require.Equal(0, QuestVar(2904));
+					Require.Equal(3, session.Api.World.Quests[LineBridge().Dispatch.QuestId].Status);
+					Require.Equal(0, QuestVar(LineBridge().Dispatch.QuestId));
 					await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "early-ascension-completion.json"),
 						System.Text.Json.JsonSerializer.Serialize(new { before, after, verified = true, session.CharacterId,
 							ElapsedMillis = runtime.NowMillis, Deaths = combat.ReviveCount }), token);
@@ -1463,12 +1467,12 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 
 			async Task TakeCeremonyTeleporterAsync(bool toIshalgen)
 			{
-				NaturalAscensionContract bridge = NaturalAscensionContract.LoadDefault();
+				NaturalAscensionContract bridge = LineBridge();
 				int npc;
 				if (toIshalgen)
 				{
 					session.BeginStep("early-ascension-return", "doman-teleporter-back-to-unfinished-ishalgen");
-					NaturalAscensionStep doman = bridge.Steps.Single(step => step.Key == "q2904-v0-doman");
+					NaturalAscensionStep doman = bridge.Step(NaturalAscensionStepRole.DispatchStart);
 					NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World), newEntry: false);
 					npc = await ApproachBridgeNpcAsync(doman, new(doman.Position[0], doman.Position[1], doman.Position[2], 0), here);
 				}
@@ -4745,7 +4749,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			async Task TakeBridgeTeleporterAsync(NaturalAscensionContract bridge)
 			{
 				session.BeginStep("na-teleport-altgard", "doman-teleporter-to-altgard");
-				NaturalAscensionStep doman = bridge.Steps.Single(step => step.Key == "q2904-v0-doman");
+				NaturalAscensionStep doman = bridge.Step(NaturalAscensionStepRole.DispatchStart);
 				var anchor = new BotPosition(doman.Position[0], doman.Position[1], doman.Position[2], 0);
 				NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World), newEntry: false);
 				int npc = await ApproachBridgeNpcAsync(doman, anchor, here);
@@ -4782,8 +4786,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					System.Text.Json.JsonSerializer.Serialize(new
 					{
 						stop, session.Api.World.MapId, session.Api.World.Level, session.CurrentPosition,
-						Quests = session.Api.World.Quests.Values.Where(q => q.QuestId is 2008 or 2009 or 2904 or 24010).ToArray(),
-						Completed = session.Api.World.CompletedQuestIds.Where(q => q is 2008 or 2009 or 2904 or 24010).ToArray(),
+						Quests = session.Api.World.Quests.Values.Where(q => LineBridge().Quests.Any(quest => quest.Id == q.QuestId)).ToArray(),
+						Completed = session.Api.World.CompletedQuestIds.Where(q => LineBridge().Quests.Any(quest => quest.Id == q)).ToArray(),
 					}), token);
 			}
 
@@ -4850,7 +4854,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				{
 					// Hagen's QUEST_SELECT starts the scripted flight (teleport 3001, flypath 3); the client flies the path
 					// with CM_MOVE_IN_AIR and lands with LAND_FLYTELEPORT. The trial spawns about 2 s before the landing.
-					NaturalAscensionInstance instance = NaturalAscensionContract.LoadDefault().Instance;
+					NaturalAscensionInstance instance = LineBridge().Instance;
 					await session.WaitForPacketAsync(typeof(SM_EMOTION), token, packet =>
 						packet.Get<int>("senderObjectId") == session.CharacterId &&
 						packet.Get<byte>("emotionType") == (byte)EmotionType.START_FLYTELEPORT);
@@ -4866,17 +4870,18 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						$"{step.Key} did not hand over item {card}.");
 				// Munin's SELECT5_1 takes the three Destiny Cards back before Ataxiar opens.
 				if (step.Key == "q2008-v4-munin")
-					Require.True(NaturalAscensionContract.LoadDefault().Steps.Where(s => s.QuestId == 2008 && s.ReceivesItemId != null)
+					Require.True(LineBridge().Steps.Where(s => s.QuestId == 2008 && s.ReceivesItemId != null)
 						.All(s => ItemCount(session.Api.World, s.ReceivesItemId!.Value) == 0), "Munin did not take the Destiny Cards back.");
-				if (step.QuestId == NaturalAscensionContract.LoadDefault().CeremonyReward.QuestId && step.ExpectedStatus == "REWARD")
+				if (step == LineBridge().Step(NaturalAscensionStepRole.Ceremony))
 				{
-					// NA-14: the ceremony pays level 10, the Karmic Staff (OD-5), 250,000 Kinah and five teas; wear the staff.
-					NaturalAscensionCeremonyReward reward = NaturalAscensionContract.LoadDefault().CeremonyReward;
-					Require.True(ItemCount(session.Api.World, reward.ItemId) == 1, "The ceremony did not pay the Karmic Staff.");
+					// NA-14: the ceremony pays level 10, the line's ceremony weapon (the Karmic Staff for the Cleric, OD-5),
+					// 250,000 Kinah and five teas; wear the weapon.
+					NaturalAscensionCeremonyReward reward = LineBridge().CeremonyReward;
+					Require.True(ItemCount(session.Api.World, reward.ItemId) == 1, $"The ceremony did not pay the line's weapon {reward.ItemId}.");
 					await EquipUpgradesAsync(token);
 					await session.SynchronizeAsync(token);
 					Require.True(session.Api.World.Inventory.Values.Any(item => item.ItemId == reward.ItemId &&
-						(item.Details.EquippedSlot ?? 0) > 0), "The Karmic Staff was not equipped after the ceremony.");
+						(item.Details.EquippedSlot ?? 0) > 0), $"The ceremony weapon {reward.ItemId} was not equipped after the ceremony.");
 				}
 				session.TraceDiagnostic("ascension-bridge-step", new Dictionary<string, object?>
 				{
@@ -8601,12 +8606,17 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		}
 	}
 
-	/// <summary>Bridge talk steps the runner can play so far (NA-12: the Q2008 Norn circuit into Ataxiar).</summary>
+	/// <summary>Bridge talk steps the runner can play so far (NA-12: the Q2008 Norn circuit into Ataxiar): the eleven that
+	/// are the same for every class pair, by key.</summary>
 	private static readonly HashSet<string> ImplementedBridgeSteps =
 		["q2008-v0-munin", "q2008-v1-urd", "q2008-v2-verdandi", "q2008-v3-skuld", "q2008-v4-munin",
-		"q2008-v99-hagen", "q2008-v6-munin-class", "q2008-reward-munin",
-		"q2009-v0-munin", "q2009-v1-heimdall", "q2009-v2-balder", "q2009-reward-lyfjaberga",
-		"q2904-v0-doman", "q2904-reward-meiyer", "q24010-reward-suthran"];
+		"q2008-v99-hagen", "q2008-reward-munin",
+		"q2009-v0-munin", "q2009-v1-heimdall", "q2009-v2-balder", "q24010-reward-suthran"];
+
+	/// <summary>CP-26: the runner plays those eleven and the four class-dependent steps of the line's bridge, which are
+	/// found by role: the class choice, the ceremony and the dispatch quest's two.</summary>
+	private static bool PlaysBridgeStep(NaturalAscensionContract bridge, NaturalAscensionStep step) =>
+		ImplementedBridgeSteps.Contains(step.Key) || Enum.GetValues<NaturalAscensionStepRole>().Any(role => bridge.Step(role) == step);
 
 	private static NaturalIshalgenObservation ObserveNaturalJourney(INaturalJourneySession session)
 	{

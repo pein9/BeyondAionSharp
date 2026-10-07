@@ -45,11 +45,16 @@ public static class NaturalJourneyIdentityRules
 	/// the line's second class on the bridge maps, and a line without a second class has no such state. The Convent and
 	/// the leg-scoped maps are the Cleric's legs and stay tied to the Cleric.
 	/// </summary>
-	public static NaturalJourneyStage Classify(NaturalClassLine line, PlayerClass playerClass, int level, int? worldId, string? altgardLeg = null)
+	public static NaturalJourneyStage Classify(NaturalClassLine line, PlayerClass playerClass, int level, int? worldId, string? altgardLeg = null) =>
+		Classify(line.Starter, line.Second, playerClass, level, worldId, altgardLeg);
+
+	/// <summary>CP-26: the same rule for a starter and the second class it takes, as a bridge contract names its pair.</summary>
+	public static NaturalJourneyStage Classify(PlayerClass starter, PlayerClass? chosen, PlayerClass playerClass, int level, int? worldId,
+		string? altgardLeg = null)
 	{
-		if (playerClass == line.Starter && level is >= 1 and <= 9 && (worldId is null || PriestMaps.Contains(worldId.Value)))
+		if (playerClass == starter && level is >= 1 and <= 9 && (worldId is null || PriestMaps.Contains(worldId.Value)))
 			return NaturalJourneyStage.IshalgenPriest;
-		if (line.Second is { } second && playerClass == second && level >= 9 && (worldId is null || ClericMaps.Contains(worldId.Value) ||
+		if (chosen is { } second && playerClass == second && level >= 9 && (worldId is null || ClericMaps.Contains(worldId.Value) ||
 			second == PlayerClass.CLERIC && (
 			level >= 10 && worldId == 120020000 || // PC-06: ordinary Convent visit after the ceremony.
 			altgardLeg == "l11" && level >= 20 && worldId == 320070000 ||
@@ -62,7 +67,12 @@ public static class NaturalJourneyIdentityRules
 
 	/// <summary>The line's classification from a wire class id.</summary>
 	public static NaturalJourneyStage Classify(NaturalClassLine line, int classId, int level, int? worldId, string? altgardLeg = null) =>
-		Classify(line, PlayerClassExtensions.GetPlayerClassById(checked((byte)classId), true)
+		Classify(line.Starter, line.Second, classId, level, worldId, altgardLeg);
+
+	/// <summary>The pair's classification from a wire class id.</summary>
+	public static NaturalJourneyStage Classify(PlayerClass starter, PlayerClass? chosen, int classId, int level, int? worldId,
+		string? altgardLeg = null) =>
+		Classify(starter, chosen, PlayerClassExtensions.GetPlayerClassById(checked((byte)classId), true)
 			?? throw new InvalidDataException($"Unknown player class id {classId}."), level, worldId, altgardLeg);
 
 	/// <summary>Once the journals are observed: a Priest has not completed Ascension; a Cleric either has, or is
