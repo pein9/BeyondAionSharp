@@ -2392,7 +2392,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - No Java was read: the item relies on no server behavior it did not already rely on.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,720 with 16 skipped),
       and Fast passes (run cp21-fast). The guard of rule (c), gate p, is in the proof run.
-- [ ] **CP-22 - Gear, keep-or-sell and reward scores behind one set of gear rules.**
+- [x] **CP-22 - Gear, keep-or-sell and reward scores behind one set of gear rules.**
   Depends: CP-12, CP-14
   - Work: Load the whole restrict row into NaturalItem and replace IsPriestGear and
     IsClericGear, the two Decide branches, GearScore and ClericGearScore,
@@ -2412,6 +2412,49 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     test only, and the doc says so. If CP-09 dropped ax, the set goes without it: the
     coin-armor purchases and the staff rule then rest on the golden test only, and the doc
     says so.
+  - 2026-10-07: done. Gate run gate-a1, set p+m+b+c+ax (the proof set and the guard in one
+    run): verdict pass (run/cp/CP-22/gate-a1/verdict.json). p: 35,811 records, m: 123,112,
+    b: 128,937, c: 96,166 and ax: 15,762, each identical to its baseline. Scope b holds
+    the Altgard shop stop's sale by the gear rules and ax the seven coin-armor purchases
+    with their 14 equips. The golden gear test of CP-12 is green on the new code without
+    an edit: 2,207 items, both classes, every level.
+    - **Sc/Classes/NaturalGearRules.cs** is new: the class whose restrict column counts,
+      the gear groups with the weapon and off-hand groups, an optional cap on the required
+      level, the score, the equip reason, the supplies, whether the rules are those from
+      Ascension on, the hand rule's group, and the expected level-1 skills with their
+      catalog. Slot, Usable and AutoLearnedSkillsObserved are methods of the rules. The
+      Priest's and the Cleric's rules are its two static instances, and the profile gains
+      Gear.
+    - **NaturalItem** holds the whole restrict and restrict_max rows, with
+      RequiredLevelFor(class) and MaximumLevelFor(class). Every old member keeps its name
+      and asks the rules: RequiredLevel, MaximumLevel, ClericLevel, ClericMaximumLevel,
+      IsPriestGear, GearSlot, UsableAt, GearScore, IsClericGear, ClericGearSlot,
+      UsableByClericAt and ClericGearScore. All 50,371 restrict rows of the shipped
+      templates are 17 whole numbers, so reading the whole row cannot fail where reading
+      two columns did not.
+    - **One Decide path.** Decide(inventory, level, capacity, rules, ...) replaces the two
+      branches. Its checks run in the Cleric branch's order; the six that only the Cleric
+      had (the Haramel and coin-gear protections, the retained staff, the open quest's
+      needs, the accessory kept for later and the surplus accessory) apply only to rules
+      from Ascension on, and so does the bridge contract's protected item list as a
+      supply. The old overload with the cleric flag picks the rules and calls it, so the
+      six callers of the journey are untouched; CP-23 gives them the observed class's
+      rules.
+    - **ChooseReward** still scores every choice by the Priest's rules for every class,
+      now by name. **AutoLearnedPriestSkillsObserved** asks the Priest's rules.
+    - **The staff rule** of NaturalGearPolicy.SelectUpgrades reads the hand rule's group
+      from an optional rules parameter, the Priest line's by default. Both rule sets name
+      STAFF. Rules without one wear by item level, which no profile uses yet.
+    - **One thing the Cleric's rules do not have.** No check of expected skills was ever
+      written for the Cleric, so its rules expect none and its test always passes. The
+      class-line contract of CP-01 holds every class's masteries; a profile item that
+      wants the check reads them from there.
+    - UT/NaturalGearRulesTests, 5 tests, cover what the rules add: the whole restrict
+      row, the two rule sets' groups and supplies, slots, the level cap and both score
+      formulas, the expected skills, and the hand rule with and without a group.
+    - No Java was read: the item relies on no server behavior it did not already rely on.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,725 with 16 skipped),
+      and Fast passes (run cp22-fast). The guard of rule (c), gate p, is in the proof run.
 - [ ] **CP-23 - The journey's reward, sell and equip sites use the observed class's gear
   rules.** Depends: CP-15, CP-22
   - Work: Decide(world) resolves the rules from the observed class in place of
@@ -3949,3 +3992,8 @@ report what was done, what is blocked and what you need from me.
   ranges, Return's 75% and three HP thresholds on the profile; eleven sites read it. Gate
   gate-a1, set p+m: identical. The pin test has all 58 rows asserted and none pending.
   Seven checks, 4,720 with 16 skipped and Fast (cp21-fast) pass. Next by rule (h): CP-22.
+- 2026-10-07 — Loop: CP-22 done. Sc/Classes/NaturalGearRules.cs holds what a class treats as
+  gear, how it ranks it and what it keeps; the inventory policy has one Decide path, the item
+  carries the whole restrict row, and the staff rule reads its group from the rules. The
+  golden gear test is green without an edit. Gate gate-a1, set p+m+b+c+ax: identical. Seven
+  checks, 4,725 with 16 skipped and Fast (cp22-fast) pass. Next by rule (h): CP-23.

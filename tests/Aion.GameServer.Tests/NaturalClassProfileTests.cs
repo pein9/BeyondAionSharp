@@ -133,6 +133,7 @@ public sealed class NaturalClassProfileTests
 		Class = profile.Class, Skills = profile.Skills, Excluded = profile.Excluded, Combat = profile.Combat,
 		HelpItems = profile.HelpItems, Upkeep = profile.Upkeep, PatrolRule = profile.PatrolRule, RangedHold = hold, Rest = profile.Rest,
 		Ranges = ranges ?? profile.Ranges, Readiness = profile.Readiness, Movement = profile.Movement, Campaign = profile.Campaign,
+		Gear = profile.Gear,
 	};
 
 	[Fact]

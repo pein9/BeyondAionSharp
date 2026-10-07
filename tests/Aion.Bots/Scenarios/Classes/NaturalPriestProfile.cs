@@ -52,6 +52,7 @@ public static class NaturalPriestProfile
 		Readiness = PriestLineReadiness,
 		Movement = PriestLineMovement,
 		Campaign = PriestLineCampaign,
+		Gear = NaturalGearRules.Priest,
 	};
 
 	public static NaturalClassProfile Cleric { get; } = new()
@@ -71,6 +72,7 @@ public static class NaturalPriestProfile
 		Readiness = PriestLineReadiness,
 		Movement = PriestLineMovement,
 		Campaign = PriestLineCampaign,
+		Gear = NaturalGearRules.Cleric,
 	};
 
 	/// <summary>Calls the static policy with the class's catalog and the run's parameters, and reports the run's policy id.</summary>

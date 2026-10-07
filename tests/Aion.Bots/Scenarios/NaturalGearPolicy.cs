@@ -1,3 +1,4 @@
+using Aion.Bots.Scenarios.Classes;
 using Aion.Bots.World;
 
 namespace Aion.Bots.Scenarios;
@@ -36,11 +37,14 @@ public static class NaturalGearPolicy
 
 	/// <param name="offHandSlots">Slot bits that can never be requested directly (the off-hand swap set).</param>
 	/// <param name="refused">Items the server already refused; never asked again.</param>
+	/// <param name="rules">CP-22: the class's gear rules, for the hand rule; the Priest line's (the staff) when not given.</param>
 	public static IReadOnlyList<NaturalGearUpgrade> SelectUpgrades(IEnumerable<BotInventoryItem> inventory, int level,
-		Func<int, NaturalGearInfo?> describe, long offHandSlots, IReadOnlySet<int>? refused = null)
+		Func<int, NaturalGearInfo?> describe, long offHandSlots, IReadOnlySet<int>? refused = null, NaturalGearRules? rules = null)
 	{
 		ArgumentNullException.ThrowIfNull(inventory);
 		ArgumentNullException.ThrowIfNull(describe);
+		string? handGroup = (rules ?? NaturalGearRules.Priest).HandRuleGroup;
+		bool HandItem(NaturalGearInfo? info) => handGroup != null && info?.Group == handGroup;
 		BotInventoryItem[] items = inventory.ToArray();
 		// What is worn now, by single slot bit.
 		var worn = new Dictionary<long, (BotInventoryItem Item, int Level)>();
@@ -59,14 +63,14 @@ public static class NaturalGearPolicy
 				info.RequiredLevel <= level)
 			.OrderByDescending(c => c.Info!.ItemLevel).ThenBy(c => c.Item.ObjectId).ToArray();
 		NaturalGearInfo? held = worn.TryGetValue(MainHand, out var hand) ? describe(hand.Item.ItemId) : null;
-		bool staffRule = held is { IsStaff: true } || candidates.Any(c => c.Info!.IsStaff);
+		bool staffRule = HandItem(held) || candidates.Any(c => HandItem(c.Info));
 		if (staffRule)
 		{
 			// The staff with the most magic boost; a staff already held stays unless a bag staff has more.
-			var best = candidates.Where(c => c.Info!.IsStaff)
+			var best = candidates.Where(c => HandItem(c.Info))
 				.OrderByDescending(c => c.Info!.MagicBoost).ThenByDescending(c => c.Info!.ItemLevel).ThenBy(c => c.Item.ObjectId)
 				.FirstOrDefault();
-			if (best.Item != null && (held is not { IsStaff: true } || best.Info!.MagicBoost > held.MagicBoost))
+			if (best.Item != null && (!HandItem(held) || best.Info!.MagicBoost > held!.MagicBoost))
 			{
 				upgrades.Add(new NaturalGearUpgrade(best.Item.ObjectId, best.Item.ItemId, MainHand, best.Info!.ItemLevel,
 					worn.TryGetValue(MainHand, out var replaced) ? replaced.Level : null));
