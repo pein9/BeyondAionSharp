@@ -1587,7 +1587,33 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       and which hubs the obelisks serve).
     - Bundle: seven pre-commit checks pass, Aion.GameServer.Tests passes, and Fast passes
       all 11 scenario gates (run cp07-fast). The logs are in run/cp/CP-07/checks/.
-- [ ] **CP-08 - Record baselines p and c, twice.** Depends: CP-04, CP-07
+- [ ] **CP-07a - The first walk to Munin returns to the hub bind when no checked route is
+  left.** Depends: CP-07
+  - Work: A lettered item by rule (i), found by CP-08's record run on 2026-10-07 (run
+    rec-a1). Scope p, the early-Ascension order, failed in its first pass: "q2008-v0-munin:
+    No collision-checked route to the current destination." The Priest reached level 9 in
+    the Mau field at (690, 1548), in the second stalker fight of Q2005, and left for Munin
+    from there. Its first plan crossed monsters, and 16 s later, at (717, 1485) with 42
+    hazards in view, no plan was left. The old accepted run (rc11-full-create-s1-a25)
+    reached level 9 one fight earlier, at (723, 1533), found a road route at once and
+    walked by the outpost to Munin. So the walk depends on where level 9 falls, and
+    CP-06 and CP-07 moved that. It is not a fault of the kit or of a bind; it is the first
+    run of the new levels 1-9 in the early-Ascension order, which CP-09's Work line sends
+    back here. Scope p cannot be dropped: it is the guard of rule (c).
+    To do: in ApproachBridgeNpcAsync, on the Ishalgen map only. When the approach fails
+    with that reason and the bot is bound on that map more than 30 m away, cast the
+    learned Return (UseLearnedReturnToBindAsync, as Q2005's fallback and the stranded
+    Return already do), rest, and approach once more from the bind. A second failure
+    throws as it does today. Trace the fallback. The outpost bind of CP-07 is what makes
+    this a way out: from the outpost the old run had a road route to Munin. The change
+    fires only where the run throws today, so no run that passes changes, and the bridge's
+    steps on other maps are not touched. Rule (e) applies: two attempts at most.
+  - Proof: One contained run under run/cp/CP-07a/<run-id>: sim-snapshot.ps1 -Action Replay
+    -Item CP-07a -CapitalStage start (scope p, a fresh Priest, seed 1). The run passes, the
+    trace shows the fallback's Return landing at the hub bind, and the Priest arrives at
+    Munin for Q2008. No baseline exists yet, so rule (k) has no gate to run; CP-08 records
+    p next.
+- [ ] **CP-08 - Record baselines p and c, twice.** Depends: CP-04, CP-07, CP-07a
   - Work: No file under src or tests changes. CP-05, CP-06 and CP-07 are ticked, so these
     baselines hold the Priest's new levels 1-9: the help kit and both Ishalgen binds. They
     are recorded once, and rule (j) keeps them. On a clean tree, with nothing else using the
@@ -1600,6 +1626,22 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     and becomes a lettered item under this one only after the operator is told.
   - Proof: The record run: for p and for c, pass one and pass two are identical after
     normalization (run/cp/CP-08/<run-id>/verdict.json).
+  - 2026-10-07, not ticked. Record run rec-a1 at commit f8aa9fd47
+    (run/cp/CP-08/rec-a1/verdict.json): verdict fail, and nothing was written.
+    - **Scope c repeated.** Its two passes are identical after normalization: 96,166
+      records, SHA-256 fce0e6a7c27ad4d85cf42687e4d7b0aacbc77455c1387b61153f8f042a6d35cc,
+      2 min 17 s each. That answers hazard 1 for the Cleric: a same-seed replay repeats at
+      HEAD. Its counts: 1 death, 25 retreats, 36 retreat routes, 60 powder rest casts, 120
+      patrol waits, 11 emergency decisions, 201 pull plans, 102 life potions, 1 mana
+      potion, 4 shield scrolls, 1 bind, 1 soul heal. Both traces are kept in
+      run/cp/CP-08/rec-a1-c-pass1 and -pass2.
+    - **Scope p failed in its first pass** after 53 s, at the walk to Munin for Q2008
+      (run/cp/CP-08/rec-a1-p-pass1/). The gate played no second pass. The cause and the
+      fix are lettered item CP-07a, which is now in this item's Depends. This is not the
+      case this item stops the loop for: no two passes differed.
+    - The gate itself worked on its first real run: one build, four journeys, the
+      refusal to write a baseline for a set in which one scope failed, and no schema left
+      behind.
 - [ ] **CP-09 - Record baselines m, b, l1, hm and ax, twice.** Depends: CP-07, CP-08
   - Work: The same procedure for m, b, l1 (from altgard with -LaterCapital, as altgard-rc-l1
     was captured), hm and ax, in one -Record run with -Item CP-09. Scopes m and b start from
@@ -2917,7 +2959,10 @@ as replaced and the Answer rules.
 
 ## Blocked / questions for the operator
 
-Nothing is blocked: no item is listed here as blocked, and rule (h) passes over none. CP-03
+Nothing is blocked: no item is listed here as blocked, and rule (h) passes over none.
+CP-08's first record run failed in scope p on 2026-10-07; by rule (i) that became lettered
+item CP-07a, which stands in CP-08's Depends, so CP-08 waits for it and is not listed
+here. CP-03
 (Replay without capture) was listed until 2026-10-07, when the operator answered CP-Q3, the
 question about the number of runs ("Your recommended"). An item id named in the notes below
 is not a blocked item.
@@ -3289,3 +3334,9 @@ report what was done, what is blocked and what you need from me.
   monsters walking home in Q2128 (hazard 30, logged). Bundle: seven checks,
   Aion.GameServer.Tests 4,695 passed, Fast 11 gates (cp07-fast). The Priest's levels 1-9 are
   now as the baselines will record them. Next by rule (h): CP-08.
+- 2026-10-07 — Loop: CP-08 tried, not ticked. Record run rec-a1: scope c repeated (96,166
+  records in both passes), scope p failed in its first pass at the walk to Munin for Q2008:
+  the new levels 1-9 reach level 9 one fight later in the Mau field, and no checked route
+  was left from there. Nothing was recorded. Written as lettered item CP-07a (Return to the
+  hub bind and walk from there), added to CP-08's Depends. Docs only; seven checks. Next by
+  rule (h): CP-07a.
