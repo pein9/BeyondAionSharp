@@ -87,8 +87,8 @@ public sealed class NaturalIshalgenInventoryPolicyTests
 	{
 		BotInventoryItem[] bag = [Item(1, 100100025, equipped: 1), Item(2, 101500498)];
 		Assert.Equal("best-usable-cleric-upgrade", Bridge.Value.Decide(bag, 10, 27, cleric: true).Decisions.Single(d => d.ObjectId == 2).Reason);
-		// The frozen Priest rules are unchanged: a Priest has no staff mastery, so the staff is not its gear.
-		Assert.Equal("unneeded-or-unusable", Bridge.Value.Decide(bag, 9, 27).Decisions.Single(d => d.ObjectId == 2).Reason);
+		// A Priest has no staff mastery, so the staff is not its gear; it is kept as the bridge's supply.
+		Assert.Equal("combat-supply", Bridge.Value.Decide(bag, 9, 27).Decisions.Single(d => d.ObjectId == 2).Reason);
 		NaturalItem staff = Bridge.Value.Item(101500498), mace = Bridge.Value.Item(100100025);
 		Assert.True(staff.UsableByClericAt(10));
 		Assert.True(staff.ClericGearScore > mace.ClericGearScore);

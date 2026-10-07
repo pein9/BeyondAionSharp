@@ -505,7 +505,7 @@ public sealed partial class SimulationFastScenarioTests
 			BotWorldModel world = session.Api.World;
 			Task<IReadOnlyList<NaturalGearUpgrade>> EquipAsync(CancellationToken equipToken) => NaturalInventoryCheck.EquipAsync(session,
 				world.Inventory.Values, id => NaturalInventoryCheck.Describe(items.GetItemTemplate(id), PlayerClass.CLERIC, Race.ASMODIANS),
-				(long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF, refused, equipToken);
+				(long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF, refused, equipToken, Aion.Bots.Scenarios.Classes.NaturalGearRules.Cleric);
 			async Task GiveAsync(params (int Id, long Count)[] given)
 			{
 				foreach ((int id, long count) in given) Assert.Equal(0, ItemService.AddItem(server, id, count, allowInventoryOverflow: true));

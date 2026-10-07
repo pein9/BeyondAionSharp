@@ -39,13 +39,13 @@ public sealed record NaturalItem(int Id, string Group, int[] Restrict, int[] Res
 	public bool UsableAt(int level) => NaturalGearRules.Priest.Usable(this, level);
 	public long GearScore => NaturalGearRules.Priest.Score(this);
 
-	// NA-09: after Ascension the Cleric also wears chain, shields and staves (masteries 49/50/89), and its
-	// accessories are gear the journey keeps. The Priest rules above stay exactly as the Ishalgen leg used them.
+	// NA-09: after Ascension the Cleric also wears chain and staves (masteries 49 and 89). CP-29a: both rule sets are
+	// built from the class's gear table.
 	public bool IsAccessory => Group is "RING" or "EARRING" or "NECKLACE" or "BELT";
 	public bool IsClericGear => NaturalGearRules.Cleric.IsGear(this);
 	public string? ClericGearSlot => NaturalGearRules.Cleric.Slot(this);
 	public bool UsableByClericAt(int level) => NaturalGearRules.Cleric.Usable(this, level);
-	/// <summary>A Cleric casts: a weapon ranks by magic boost, then damage; armor by item level, then quality.</summary>
+	/// <summary>A Cleric casts: a staff before a mace, each by magic boost, then damage; armor by item level, then type.</summary>
 	public long ClericGearScore => NaturalGearRules.Cleric.Score(this);
 }
 
@@ -186,51 +186,48 @@ public sealed class NaturalIshalgenInventoryPolicy
 		Decide(inventory, level, capacity, cleric ? NaturalGearRules.Cleric : NaturalGearRules.Priest, questNeeded, coinGear, haramel);
 
 	/// <summary>
-	/// CP-22: keep, wear or sell, by the class's gear rules. The best usable item of each slot is worn, supplies are kept,
-	/// and what is left and sellable is sold. From Ascension on (NA-09) the rules also honor a leg's protected items and
-	/// retained staff and an open quest's needs, keep the bridge's supplies (Lesser Life Elixirs, mana elixirs, powder,
-	/// Zeller jelly, Tea of Repose, Destiny Cards), and treat accessories apart (AK-Q4 (b)): one still in the cube once the
-	/// upgrades are worn is surplus and sold, unless the character is not yet the level to wear it.
+	/// CP-22: keep, wear or sell, by the class's gear rules. The best usable item of each slot is worn, gear for a later
+	/// level is kept while it beats that, supplies are kept, and what is left and sellable is sold. A leg's protected items
+	/// and retained weapon and an open quest's needs are honored whenever the leg gives them (NA-09), and the bridge's
+	/// supplies are kept (Lesser Life Elixirs, mana elixirs, powder, Zeller jelly, Tea of Repose, Destiny Cards).
+	/// Accessories are apart (AK-Q4 (b)): the equipment check wears them, so one still in the cube once the upgrades are
+	/// worn is surplus and sold, unless the character is not yet the level to wear it. CP-29a: one path for every class.
 	/// </summary>
 	public NaturalInventoryPlan Decide(IEnumerable<BotInventoryItem> inventory, int level, int capacity, NaturalGearRules rules,
 		IReadOnlySet<int>? questNeeded = null, NaturalCoinGear? coinGear = null, NaturalHaramel? haramel = null)
 	{
 		ArgumentNullException.ThrowIfNull(rules);
-		bool later = rules.AfterAscension;
 		BotInventoryItem[] observed = inventory.Where(item => item.ItemId != BotWorldModel.KinahItemId).ToArray();
 		int occupied = Occupied(observed);
-		var best = observed.Where(item => items.TryGetValue(item.ItemId, out var template) && rules.Usable(template, level) &&
-				!(later && template.IsAccessory))
+		var best = observed.Where(item => items.TryGetValue(item.ItemId, out var template) && rules.Usable(template, level))
 			.GroupBy(item => rules.Slot(items[item.ItemId]))
 			.ToDictionary(group => group.Key!, group => group.OrderByDescending(item => rules.Score(items[item.ItemId]))
 				.ThenBy(item => item.ObjectId).First().ObjectId);
-		// CP-29: what the best wearable item of a slot scores. A rule in table form holds a better item of that slot until
-		// the character has the level for it.
+		// CP-29: what the best wearable item of a slot scores. A better item of that slot is held until the character has the
+		// level for it.
 		long BestScore(string? slot) => slot != null && best.TryGetValue(slot, out int objectId)
 			? rules.Score(items[observed.First(item => item.ObjectId == objectId).ItemId]) : long.MinValue;
 		var decisions = new List<NaturalInventoryDecision>();
 		foreach (BotInventoryItem item in observed.OrderBy(item => item.ObjectId))
 		{
 			string action, reason;
-			if (later && haramel?.ProtectedItemIds.Contains(item.ItemId) == true) (action, reason) = ("hold", "haramel-retained-item");
-			else if (later && coinGear?.ProtectedItemIds.Contains(item.ItemId) == true) (action, reason) = ("hold", "coin-gear-protected");
+			if (haramel?.ProtectedItemIds.Contains(item.ItemId) == true) (action, reason) = ("hold", "haramel-retained-item");
+			else if (coinGear?.ProtectedItemIds.Contains(item.ItemId) == true) (action, reason) = ("hold", "coin-gear-protected");
 			else if (!items.TryGetValue(item.ItemId, out NaturalItem? template)) (action, reason) = ("hold", "unknown-static-item");
-			else if (later && (coinGear != null || haramel != null) && rules.Slot(template) is "WEAPON" or "SUB")
+			else if ((coinGear != null || haramel != null) && rules.GoesInItsHands(template))
 				(action, reason) = ("hold", "retained-staff-no-weapon-swap");
 			else if (questItems.Contains(item.ItemId) || template.Group is "QUEST" or "KEY") (action, reason) = ("hold", "quest-protected");
-			else if (later && questNeeded?.Contains(item.ItemId) == true) (action, reason) = ("hold", "quest-needed");
+			else if (questNeeded?.Contains(item.ItemId) == true) (action, reason) = ("hold", "quest-needed");
 			else if (item.Details.EquippedSlot.GetValueOrDefault() != 0) (action, reason) = ("hold", "currently-equipped");
 			else if (template.Group == "CL_MULTISLOT") (action, reason) = ("hold", "multi-slot-needs-separate-equip-review");
-			else if (later && template.IsAccessory && template.RequiredLevelFor(rules.Class) > level) (action, reason) = ("hold", "accessory-for-later");
-			else if (later && template.IsAccessory && (item.ItemMask & 4) != 0 && template.Sellable) (action, reason) = ("sell", "surplus-accessory");
+			else if (template.IsAccessory && template.RequiredLevelFor(rules.Class) > level) (action, reason) = ("hold", "accessory-for-later");
+			else if (template.IsAccessory && (item.ItemMask & 4) != 0 && template.Sellable) (action, reason) = ("sell", "surplus-accessory");
 			else if (best.TryGetValue(rules.Slot(template) ?? "", out int winner) && winner == item.ObjectId)
 				(action, reason) = ("equip", rules.EquipReason);
-			// CP-29: a rule in table form never sells what the class will wear. The equipment check wears an accessory by
-			// item level, so the rule keeps every accessory; gear for a later level is kept while it beats the slot's best.
-			else if (rules.IsTable && template.IsAccessory) (action, reason) = ("hold", "accessory-kept");
-			else if (rules.IsTable && template.RequiredLevelFor(rules.Class) > level && rules.UsableNowOrLater(template, level) &&
+			// CP-29: gear for a later level is kept while it beats the slot's best.
+			else if (template.RequiredLevelFor(rules.Class) > level && rules.UsableNowOrLater(template, level) &&
 				rules.Score(template) > BestScore(rules.Slot(template))) (action, reason) = ("hold", "gear-for-later");
-			else if (rules.Supplies.Contains(item.ItemId) || later && bridgeSupplies.Contains(item.ItemId)) (action, reason) = ("hold", "combat-supply");
+			else if (rules.Supplies.Contains(item.ItemId) || bridgeSupplies.Contains(item.ItemId)) (action, reason) = ("hold", "combat-supply");
 			else if ((item.ItemMask & 4) == 0 || !template.Sellable) (action, reason) = ("hold", "not-sellable");
 			else (action, reason) = ("sell", rules.IsGear(template) ? "surplus-gear" : "unneeded-or-unusable");
 			decisions.Add(new(item.ObjectId, item.ItemId, action, reason, item.Count));
@@ -242,36 +239,21 @@ public sealed class NaturalIshalgenInventoryPolicy
 	private int Occupied(IEnumerable<BotInventoryItem> observed) => observed.Count(item => item.Details.EquippedSlot.GetValueOrDefault() == 0 &&
 		(!items.TryGetValue(item.ItemId, out NaturalItem? template) || template.InMainCube));
 
+	/// <summary>
+	/// CP-29: the reward choice, by the class's gear rules. A weapon of the class's groups that beats the held one comes
+	/// first, then armor of its types that beats the worn piece; an item for a later level counts, because the rules keep
+	/// it. With no upgrade offered, the class's own gear is still preferred to another class's, then a consumable by the
+	/// rules' order, then the sale price.
+	/// </summary>
 	/// <param name="rewardRules">CP-23: the rules the choices are scored by (the profile's
-	/// <see cref="NaturalClassProfile.RewardGear"/>); the Priest's when not given.</param>
+	/// <see cref="NaturalClassProfile.Gear"/>); the Priest's when not given.</param>
 	public int ChooseReward(int questId, int level, IEnumerable<BotInventoryItem> inventory, NaturalGearRules? rewardRules = null)
 	{
 		// The ceremony weapon is the operator's choice (OD-5: the Karmic Staff), not a score.
 		if (questId == ceremony.QuestId && rewards.TryGetValue(questId, out int[]? list))
 			return Array.IndexOf(list, ceremony.ItemId);
 		if (!rewards.TryGetValue(questId, out int[]? choices) || choices.Length == 0) return -1;
-		// The accepted line's choice is class-blind, as it always was: the Priest's rules score it for the Cleric too.
 		NaturalGearRules rules = rewardRules ?? NaturalGearRules.Priest;
-		if (rules.IsTable) return ChooseTableReward(choices, level, inventory, rules);
-		var owned = inventory.Where(item => items.TryGetValue(item.ItemId, out var template) && rules.Usable(template, level))
-			.GroupBy(item => rules.Slot(items[item.ItemId]))
-			.ToDictionary(group => group.Key!, group => group.Max(item => rules.Score(items[item.ItemId])));
-		return choices.Select((id, index) => (id, index))
-			.OrderByDescending(choice => items.TryGetValue(choice.id, out NaturalItem? item) && rules.Usable(item, level)
-				&& rules.Score(item) > owned.GetValueOrDefault(rules.Slot(item)!) ? rules.Score(item) : 0)
-			.ThenByDescending(choice => items.TryGetValue(choice.id, out NaturalItem? item) && item.Sellable
-				? item.Price : 0)
-			.ThenBy(choice => choice.index).First().index;
-	}
-
-	/// <summary>
-	/// CP-29: the reward choice of a rule in table form. A weapon of the class's groups that beats the held one comes
-	/// first, then armor of its types that beats the worn piece; an item for a later level counts, because the rule keeps
-	/// it. With no upgrade offered, the class's own gear is still preferred to another class's, then a consumable by the
-	/// rule's order, then the sale price as before.
-	/// </summary>
-	private int ChooseTableReward(int[] choices, int level, IEnumerable<BotInventoryItem> inventory, NaturalGearRules rules)
-	{
 		var owned = inventory.Where(item => items.TryGetValue(item.ItemId, out var template) && rules.UsableNowOrLater(template, level))
 			.GroupBy(item => rules.Slot(items[item.ItemId]))
 			.ToDictionary(group => group.Key!, group => group.Max(item => rules.Score(items[item.ItemId])));

@@ -831,14 +831,27 @@ level 10 on stays as OD-13 approved it. Known quirks are logged, not fixed: the 
 objects rebuilt at J:2382 and 4550 lose MaintainInventoryAsync (assigned only at J:442), the
 swing counter overflows at turn 256 (J:9279), robe and leather tie on the gear score.
 
+Gear, since CP-29a (the operator's rules of 2026-10-07): both use the table rules of every
+class, and the paragraph above no longer holds for gear. Priest: a mace, ranked by magic
+boost; leather, then robe, then clothes. Cleric: a staff before a mace, each ranked by magic
+boost, so the staff rule is the table's weapon order; chain, then leather, robe, clothes.
+Armor is ranked by item level first and by type second (CP-Q24). The Priest's picks: the
+maces at Q2100, Q2002 and Q2134 (100100024, 100100493, 100100025) and the leather piece at
+Q2001, Q2005, Q2006, Q2007 and Q2129 (114300804, 113300791, 114300805, 110301182,
+111300768). The level-10 Cleric of a bridge run takes the chain piece at Q2005, Q2006,
+Q2007 and Q2129 (113500762, 114500767, 110501156, 111500751). Q2117 and Q2124 keep reward
+1. The ceremony pick stays the Karmic Staff (OD-5). Both keep the mana potions; the Cleric also keeps what
+is left of the level 1-9 kit and every help item. The robe and leather tie is gone.
+
 ### CHANTER (second class of PRIEST, line priest-chanter)
 
 Server delta from the Cleric, checked in Java: SETPRO13 (_2008Ascension.java:153-154), class
 id 11 and the list name chanter_selectable_reward; same class page 4080, same preceptor,
 same Q2904. It reuses the Priest line's whole run and identity and differs first at the
 class-choice send. Its profile is the Priest adapter over the Priest catalog with the Priest
-rest plan; every level-10 Chanter active is excluded with a reason. The two ceremony weapons
-rank differently by reading: Karmic Staff 58-88 at 2.0 s hits harder per swing; Karmic
+rest plan; every level-10 Chanter active is excluded with a reason. Since CP-29a its gear
+table is the Cleric's: a staff before a mace by magic boost, chain first (CP-Q7, answered).
+The two ceremony weapons rank differently by reading: Karmic Staff 58-88 at 2.0 s hits harder per swing; Karmic
 Warhammer 44-66 with +7 physical attack at 1.5 s does more per second and leaves the shield
 hand free (question 7). Help items are on, as for every line. Its levels 1-9 are the
 Priest's, with the level 1-9 kit. Five help-item bands start at level 10, and the allowlist
@@ -862,8 +875,10 @@ Robust Blow 2877 and Rage 2903 both name it as their required step with time 300
 also follow Robust Blow inside Robust Blow's 3 s, because Java accepts a match on the
 previous chain skill (ChainCondition.java:40-46); Body Smash 2890 is another opener and
 resets the chain; any non-chain cast resets it too. At Q2100 the defined stat prefers
-Raider's Mace (20-30 at 1.5 s) to Raider's Sword (20-26 at 1.4 s); Q2100 is also the only
-Ishalgen quest that offers a shield. The Warrior takes the weapon there, not the shield
+Raider's Mace (20-30 at 1.5 s) to Raider's Sword (20-26 at 1.4 s), but since CP-29a a
+table's weapon groups are an order and the Warrior's is sword, then mace: it takes Raider's
+Sword 100000107, and the swords at Q2002 and Q2134 (100000639, 100000108). Q2100 is also the
+only Ishalgen quest that offers a shield. The Warrior takes the weapon there, not the shield
 (the operator, 2026-10-07: "Warrior does take weapon"). It recovers by life potion and by
 sitting while the potion is on its delay; it uses no bandage. It is the first class to rest
 and to fight in a probe (CP-42, CP-43) and to walk in during a journey (CP-44), and the
@@ -3042,6 +3057,74 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     prompt's sentence that the journey plays exactly as CP-08 and CP-09 recorded it counts
     from the new baselines. The snapshots are not recaptured: a restored character keeps
     what it wears and what it picked, and the new rules decide from there.
+  - 2026-10-07: the code is done and the gate has listed the differences; the re-record
+    follows from this commit. No server behavior is new to this item: the mastery check
+    of Java Equipment.equipItem was read for CP-29.
+    - **One rule set for every class.** NaturalGearRules.Priest and .Cleric are built by
+      NaturalClassGearTable.Priest and .Cleric (Sc/Classes/NaturalClassGearTable.cs), as
+      every other class's rules are. The Chanter's table moved beside them. Removed:
+      AfterAscension, HandRuleGroup, IsTable, OffHandGroups, the staff branch of
+      NaturalGearPolicy.SelectUpgrades, ChooseStaffReward (no journey called it), the old
+      reward choice, the profile's RewardGear (a class's rewards are scored by its own
+      rules), and the accessory-kept hold.
+    - **The table was widened three times, for every class.** (1) The weapon groups are
+      an order: a weapon of an earlier group outranks every weapon of a later one, and
+      the class's stat ranks within a group. The staff rule is the Cleric's order, STAFF
+      then MACE. The Warrior's order is SWORD then MACE, so it now takes the three swords
+      (100000107, 100000639, 100000108) where CP-29 named the maces by the stat; the
+      operator named the sword for both Warrior second classes. (2) A table names the
+      consumables the class keeps beside the life potions and its kit: the mana potions
+      for the Priest, and for the Cleric and the Chanter also what is left of the level
+      1-9 kit and every help item the help-item policy knows. This closes finding (a) of
+      CP-29 for the Priest types; a Mage's table names its own in CP-46. (3) Armor is
+      ranked by item level first and by the type's place second (CP-Q24). CP-29 ranked
+      the type first, which kept a level-1 leather piece over a level-8 robe piece; the
+      recorded human Priest wore the level-8 robe leggings over the level-1 leather. So
+      the operator's "leather, then chain" decides between pieces of one item level,
+      which is what every Ishalgen armor reward offers. This replaces finding (c) of
+      CP-29.
+    - **Keep or sell has one path.** A leg's protected items, its retained weapon and an
+      open quest's needs are honored whenever the leg gives them; they are leg rules and
+      no longer ask for a class. The retained weapon is every item that goes in the
+      class's hands: its weapon groups, and a shield when it has the mastery. The bridge's
+      supplies are kept at every level. An accessory is held for a later level or sold as
+      surplus, for every class, as the Cleric did; gear for a later level is held while
+      it beats the slot's best. A shield is no class's gear until CP-68, so outside the
+      coin-gear and Haramel legs an unworn shield is sold.
+    - **Gate, set all, run gate-a1** (run/cp/CP-29a/gate-a1/verdict.json), against the
+      baselines of be9837cd8: every journey ran to its end. l1 and hm are identical.
+      - p, m and b first differ at record 5,845, 7,012 and 5,845, at Q2001's reward: the
+        Priest sends reward 2, Boromer's Boots 114300804 (leather), where it sent reward
+        1, Boromer's Shoes (robe). After that it takes Ulgorn's Mace 100100493 at Q2002
+        and wears it, where the old choice took Ulgorn's Dagger, which the server
+        refused to a Priest; and the leather piece at Q2005, Q2006, Q2007 and Q2129
+        (113300791, 114300805, 110301182, 111300768). The level-10 Cleric of b takes and
+        wears chain at the four it claims as a Cleric: 113500762, 114500767, 110501156,
+        111500751. Q2100, Q2134, Q2117 and Q2124 keep their picks. No other pick of any
+        scope changes but c's.
+      - m, the Priest to Munin: 112,397 records against 123,046; no death where the
+        baseline has one; 36 life potions against 69; no emergency decision against 7;
+        103 pull plans against 148. p: 37,222 records against 35,789. b: 144,048 against
+        128,869, with 36 patrol waits against 21 and 132 pull plans against 112; its
+        Cleric spent about 12 minutes of wall time on rejected route searches at Q2005's
+        stalker step and then went on.
+      - c first differs at record 23,764, Q2224's reward: reward 4, Altgard Legionary
+        Handguards 111501698 (chain, level 16), where it sent reward 1, the robe gloves.
+        Its record count and all 21 step counts are the baseline's.
+      - ax first differs at record 94: the first inventory check wears the same items in
+        another order (the chausses before the earrings). The 14 equips are the same
+        items in the same slots, and the record count and step counts are the baseline's.
+    - **Existing tests, edited and not extended (rule (n)).** NaturalGearPolicyTests: the
+      tooltip rows carry their item group and the maces their magic boost, the staff
+      rows pass the Cleric's rules, and the ChooseStaffReward test went with the method.
+      NaturalIshalgenInventoryPolicyTests: a Priest keeps the Karmic Staff as the
+      bridge's supply. SimulationAbyssEntryContractTests passes the Cleric's rules to the
+      equipment check. The capital probe PC-04 built its own tooltip without the item
+      group, so the first Fast run (cp29a-fast) failed there: the rules do not ask the
+      server for an item whose group they cannot read. It now reads the tooltip the
+      journey reads and passes the Cleric's rules.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with
+      16 skipped) and Fast passes on its second run (cp29a-fast-a2), after the probe edit.
 - [x] **CP-30 - Parameterize the capital scenario by the contract.** Depends: CP-08, CP-25
   - Work: This item edits an existing scenario file, so it waits for the first baselines
     (CP-08). Parameterize CapitalAscensionScenario.RunAsmodianAsync by the contract: the
@@ -4177,6 +4260,19 @@ as replaced and the Answer rules.
     that obelisk: Linevir 203512 at the village, Rusalka 203680 at the outpost. This changes
     the accepted Priest line's levels 1-9 on purpose. The answer says nothing about hub
     flight, so in Ishalgen that stays off.
+- **CP-Q24** (asked 2026-10-07, in CP-29a). When two armor pieces of different types
+  compete for a slot, which wins: the higher item level, or the class's better type?
+  - Default: Item level first, the type second. A class takes its own type at a reward
+    that offers one item level in several types (every Ishalgen armor reward does), and
+    wears the higher piece when the levels differ. A Cleric in level-20 leather does not
+    put on a level-16 chain piece.
+  - Why it is asked: The operator's rule names a type for each class ("leather, then
+    chain"), and CP-29 read it as the type first. That kept a level-1 leather piece over
+    a level-8 robe piece, which the recorded human Priest did not do, and the legs from
+    Altgard on were accepted with item level deciding. The other reading changes what a
+    Cleric wears on those legs and needs the baselines re-recorded again.
+  - Also asked with it: the Warrior now takes the sword before the mace (the table's
+    weapon order), where the physical stat alone preferred the mace by 4 points.
 
 ## Blocked / questions for the operator
 
@@ -4783,3 +4879,11 @@ report what was done, what is blocked and what you need from me.
   record-a1: pass, every scope repeats. p 35,789, m 123,046, b 128,869, l1 30,693, c 96,166,
   hm 39,564, ax 15,762 records; all 21 step counts of each row equal the old row's. The
   baseline sha is be9837cd8. Docs and evidence only: no bundle run. Next by rule (h): CP-29a.
+- 2026-10-07 — Loop: CP-29a, code. The Priest and the Cleric are on the table gear rules; the
+  staff branch, the class-blind reward choice and the Ascension flag are gone. Widened for
+  every class: weapon groups are an order, a table names its kept consumables, armor ranks by
+  item level and then type (CP-Q24, on its default). Gate gate-a1, set all: every journey ran;
+  l1 and hm identical; c differs by one reward pick and ax by an equip order, both with the
+  baseline's counts; p, m and b change from Q2001's reward (leather), and the Priest reaches
+  Munin with no death and 36 potions against 69. Seven checks, unit suite and Fast
+  (cp29a-fast-a2) pass. The re-record of the seven scopes follows from this commit.

@@ -65,7 +65,6 @@ public static class NaturalPriestProfile
 		Movement = PriestLineMovement,
 		Campaign = PriestLineCampaign,
 		Gear = NaturalGearRules.Priest,
-		RewardGear = NaturalGearRules.Priest,
 		Restock = PriestLineRestock,
 	};
 
@@ -87,8 +86,6 @@ public static class NaturalPriestProfile
 		Movement = PriestLineMovement,
 		Campaign = PriestLineCampaign,
 		Gear = NaturalGearRules.Cleric,
-		// Class-blind, as it always was: the Altgard legs' accepted picks were scored by the Priest's rules.
-		RewardGear = NaturalGearRules.Priest,
 		Restock = PriestLineRestock,
 	};
 

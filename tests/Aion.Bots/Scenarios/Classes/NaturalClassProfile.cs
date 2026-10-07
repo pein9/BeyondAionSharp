@@ -88,10 +88,6 @@ public sealed class NaturalClassProfile
 	/// <summary>What the class treats as gear, how it ranks it and what it keeps.</summary>
 	public required NaturalGearRules Gear { get; init; }
 
-	/// <summary>The rules a selectable quest reward is scored by. A class's own gear rules, except on the accepted line:
-	/// there the choice was always the Priest's, for the Cleric too, and its picks are accepted.</summary>
-	public required NaturalGearRules RewardGear { get; init; }
-
 	/// <summary>What the class buys at a vendor when its stock runs down: potions only.</summary>
 	public required NaturalRestockRules Restock { get; init; }
 

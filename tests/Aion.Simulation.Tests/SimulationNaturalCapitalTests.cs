@@ -334,15 +334,11 @@ public sealed partial class SimulationFastScenarioTests
 			Assert.Equal(kinah, session.Api.World.Kinah);
 			Assert.Contains(session.Api.World.Inventory.Values, item => item.ItemId == 122000870);
 			Assert.Equal(2, session.Api.World.Inventory.Values.Where(item => item.ItemId == 164000074).Sum(item => item.Count));
-			NaturalGearInfo? Describe(int id)
-			{
-				var template = fixture.DataManager.StaticData.ItemDataDh.GetItemTemplate(id);
-				return template.GetItemSlot() == 0 ? null : new(template.GetItemSlot(),
-					template.GetRequiredLevel(PlayerClass.CLERIC), template.GetLevel(),
-					template.GetRace() is Race.PC_ALL or Race.ASMODIANS);
-			}
+			NaturalGearInfo? Describe(int id) => NaturalInventoryCheck.Describe(
+				fixture.DataManager.StaticData.ItemDataDh.GetItemTemplate(id), PlayerClass.CLERIC, Race.ASMODIANS);
 			NaturalGearUpgrade ring = Assert.Single(NaturalGearPolicy.SelectUpgrades(session.Api.World.Inventory.Values,
-				session.Api.World.Level, Describe, (long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF),
+				session.Api.World.Level, Describe, (long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF,
+				rules: Aion.Bots.Scenarios.Classes.NaturalGearRules.Cleric),
 				upgrade => upgrade.ItemId == 122000870);
 			await session.SendPacketAsync(session.Api.Equip(0, ring.Slot, ring.ObjectId), token);
 			await session.SynchronizeAsync(token);

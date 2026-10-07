@@ -13,17 +13,21 @@ public enum NaturalWeaponStat
 }
 
 /// <summary>
-/// CP-29: the hand-written part of a class's table gear rule (docs/natural-class-profiles.md): the weapon groups it holds,
-/// how it ranks a weapon, the armor types it wears, best first, and the consumables it takes at a reward, best first. What
-/// the class can wear at all is not written here: it is read from the class's mastery rows in the class-line contract,
-/// because the server refuses an item of a group the character has no mastery skill for (Java Equipment.equipItem,
-/// checkAvailableEquipSkills). The Priest and the Cleric keep the rules of CP-22 and never use a table.
+/// CP-29: the hand-written part of a class's gear rule (docs/natural-class-profiles.md): the weapon groups it holds, best
+/// first, how it ranks a weapon within a group, the armor types it prefers, best first, the consumables it takes at a
+/// reward, best first, and the consumables it keeps. What the class can wear at all is not written here: it is read from
+/// the class's mastery rows in the class-line contract, because the server refuses an item of a group the character has
+/// no mastery skill for (Java Equipment.equipItem, checkAvailableEquipSkills). CP-29a: every class has a table, the
+/// Priest and the Cleric included, and a rule that changes at Ascension is the second class's own table.
 /// </summary>
-/// <param name="WeaponGroups">The item groups the class holds in its hand. It may be able to wear more.</param>
+/// <param name="WeaponGroups">The item groups the class holds in its hand, best first: a weapon of an earlier group
+/// outranks every weapon of a later one, whatever its numbers. It may be able to wear more.</param>
 /// <param name="ArmorTypes">The mastery names of the armor it wears (<c>CHAIN</c>, <c>LEATHER</c>, <c>ROBE</c>,
-/// <c>CLOTHES</c>, <c>PLATE</c>), best first.</param>
+/// <c>CLOTHES</c>, <c>PLATE</c>), best first. Item level ranks a piece first, as the recorded human Priest wore level-8
+/// robe leggings over level-1 leather; of two pieces of one item level, the earlier type wins (CP-Q24).</param>
+/// <param name="Supplies">Consumables the class keeps beside the life potions and its help kit; none when not given.</param>
 public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<string> WeaponGroups, NaturalWeaponStat WeaponStat,
-	IReadOnlyList<string> ArmorTypes, IReadOnlyList<int> ConsumableOrder)
+	IReadOnlyList<string> ArmorTypes, IReadOnlyList<int> ConsumableOrder, IReadOnlyList<int>? Supplies = null)
 {
 	private static readonly string[] ArmorParts = ["_TORSO", "_GLOVE", "_SHOULDER", "_PANTS", "_SHOES", "_HEADS"];
 
@@ -37,6 +41,25 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 		NaturalIshalgenPotionPolicy.LesserLifeElixirId, NaturalIshalgenPotionPolicy.LesserLifePotionId,
 		NaturalIshalgenPotionPolicy.LifePotionId, NaturalIshalgenPotionPolicy.MajorLifePotionId,
 	];
+
+	/// <summary>What a class of the Priest line keeps from Ascension on: every mana potion combat drinks, what is left of
+	/// the level 1-9 kit, and every help scroll and food the help-item policy knows (NA-21, OD-13).</summary>
+	public static readonly IReadOnlyList<int> PriestLineSupplies =
+	[
+		.. NaturalIshalgenPotionPolicy.ManaPotionIds,
+		.. NaturalHelpItemAllowlist.Starter.Select(supply => supply.ItemId),
+		.. NaturalHelpItemPolicy.All.Select(help => help.ItemId),
+	];
+
+	// CP-29a, the operator's gear rules of 2026-10-07 for the Priest types: leather before Ascension, chain after; the
+	// staff with the most magic boost after Ascension (the staff rule, AX-Q1), which is the weapon order here. The Priest
+	// keeps its mace by magic boost.
+	public static NaturalClassGearTable Priest { get; } = new(PlayerClass.PRIEST, ["MACE"], NaturalWeaponStat.Magical,
+		["LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, NaturalIshalgenPotionPolicy.ManaPotionIds);
+	public static NaturalClassGearTable Cleric { get; } = new(PlayerClass.CLERIC, ["STAFF", "MACE"], NaturalWeaponStat.Magical,
+		["CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies);
+	public static NaturalClassGearTable Chanter { get; } = new(PlayerClass.CHANTER, ["STAFF", "MACE"], NaturalWeaponStat.Magical,
+		["CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies);
 
 	// The defaults of CP-Q10 for the five new starters. Each holds one weapon and nothing in the off hand.
 	public static NaturalClassGearTable Warrior { get; } = new(PlayerClass.WARRIOR, ["SWORD", "MACE"], NaturalWeaponStat.Physical,
@@ -59,17 +82,18 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 
 	/// <summary>
 	/// The one score of the rule, for the equipment check, keep or sell, and the reward choice. Higher is better among
-	/// items of one slot. A weapon: the class's stat, then item level. Armor: the type's place in the class's order, then
-	/// item level. Anything else that is worn (an accessory): item level.
+	/// items of one slot. A weapon: the group's place in the class's order, then the class's stat, then item level. Armor:
+	/// item level, then the type's place in the class's order. Anything else that is worn (an accessory): item level.
 	/// </summary>
 	public long Score(string group, int itemLevel, int minimumDamage, int maximumDamage, int magicBoost, int physicalAttack)
 	{
-		if (WeaponGroups.Contains(group))
-			return WeaponStat == NaturalWeaponStat.Physical
-				? PhysicalStat(minimumDamage, maximumDamage, physicalAttack) * 1_000_000L + itemLevel * 1_000L + maximumDamage
-				: magicBoost * 1_000_000L + maximumDamage * 1_000L + minimumDamage;
+		for (int index = 0; index < WeaponGroups.Count; index++)
+			if (WeaponGroups[index] == group)
+				return (WeaponGroups.Count - index) * 1_000_000_000_000L + (WeaponStat == NaturalWeaponStat.Physical
+					? PhysicalStat(minimumDamage, maximumDamage, physicalAttack) * 1_000_000L + itemLevel * 1_000L + maximumDamage
+					: magicBoost * 1_000_000L + maximumDamage * 1_000L + minimumDamage);
 		int place = ArmorPlace(group);
-		return (place < 0 ? 0 : ArmorTypes.Count - place) * 1_000_000_000L + itemLevel * 1_000_000L;
+		return itemLevel * 1_000_000L + (place < 0 ? 0 : ArmorTypes.Count - place);
 	}
 
 	/// <summary>Where an armor group's type stands in the class's order; -1 for a group that is not armor of one of its types.</summary>
@@ -83,7 +107,7 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 	}
 
 	/// <summary>
-	/// The class's gear rules in table form. The class's mastery rows say what it can wear: a starter's own rows, and for a
+	/// The class's gear rules. The class's mastery rows say what it can wear: a starter's own rows, and for a
 	/// second class its starter's rows with its own. A table that names a weapon group or an armor type the class has no
 	/// mastery for is refused by name.
 	/// </summary>
@@ -116,8 +140,8 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 			Score = item => table.Score(item.Group, item.ItemLevel, item.MinimumDamage, item.MaximumDamage, item.MagicBoost, item.PhysicalAttack),
 			UpgradeScore = info => table.Score(info.Group ?? "", info.ItemLevel, info.MinimumDamage, info.MaximumDamage, info.MagicBoost, info.PhysicalAttack),
 			EquipReason = $"best-usable-{Class.ToString().ToLowerInvariant()}-upgrade",
-			Supplies = LifePotionIds.Concat((kit ?? NaturalHelpItemAllowlist.Starter).Select(supply => supply.ItemId)).ToHashSet(),
-			HandRuleGroup = null,
+			Supplies = LifePotionIds.Concat((kit ?? NaturalHelpItemAllowlist.Starter).Select(supply => supply.ItemId))
+				.Concat(Supplies ?? []).ToHashSet(),
 			MasteryUnlocks = unlocks,
 			ConsumableOrder = ConsumableOrder,
 			ExpectedSkillIds = masteries.Select(mastery => mastery.SkillId).Where(id => !replaced.Contains(id)).Distinct().Order().ToArray(),

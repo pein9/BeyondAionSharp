@@ -6455,7 +6455,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				var inventory = NaturalIshalgenInventoryPolicy.Load(root,
 					session.Api.World.Inventory.Values.Select(item => item.ItemId));
 				int rewardIndex = inventory.ChooseReward(2100, session.Api.World.Level,
-					session.Api.World.Inventory.Values, combat.ClassProfile.RewardGear);
+					session.Api.World.Inventory.Values, combat.ClassProfile.Gear);
 				Require.True(rewardIndex >= 0, $"Q2100 should present a selectable reward to the natural {ClassLine.StarterName}.");
 				await FinishStandardQuestAsync(session, ulgorn, 2100, token,
 					DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex);
@@ -6521,7 +6521,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				var inventory = NaturalIshalgenInventoryPolicy.Load(root,
 					session.Api.World.Inventory.Values.Select(item => item.ItemId));
 				int rewardIndex = inventory.ChooseReward(2001, session.Api.World.Level,
-					session.Api.World.Inventory.Values, combat.ClassProfile.RewardGear);
+					session.Api.World.Inventory.Values, combat.ClassProfile.Gear);
 				Require.True(rewardIndex >= 0);
 				await FinishStandardQuestAsync(session, boromer, 2001, token,
 					DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex);
@@ -6752,7 +6752,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				var inventory = NaturalIshalgenInventoryPolicy.Load(root,
 					session.Api.World.Inventory.Values.Select(item => item.ItemId));
 				int rewardIndex = inventory.ChooseReward(2002, session.Api.World.Level,
-					session.Api.World.Inventory.Values, combat.ClassProfile.RewardGear);
+					session.Api.World.Inventory.Values, combat.ClassProfile.Gear);
 				Require.True(rewardIndex >= 0);
 				await NaturalDialogProtocol.OpenAsync(session, ulgorn, token);
 				await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
@@ -7494,7 +7494,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				var inventory = NaturalIshalgenInventoryPolicy.Load(root,
 					session.Api.World.Inventory.Values.Select(item => item.ItemId));
 				int rewardIndex = inventory.ChooseReward(2005, session.Api.World.Level,
-					session.Api.World.Inventory.Values, combat.ClassProfile.RewardGear);
+					session.Api.World.Inventory.Values, combat.ClassProfile.Gear);
 				Require.True(rewardIndex >= 0);
 				await FinishStandardQuestAsync(session, mijou, 2005, token,
 					DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex);
@@ -7617,7 +7617,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				var inventory = NaturalIshalgenInventoryPolicy.Load(root,
 					session.Api.World.Inventory.Values.Select(item => item.ItemId));
 				int rewardIndex = inventory.ChooseReward(2006, session.Api.World.Level,
-					session.Api.World.Inventory.Values, combat.ClassProfile.RewardGear);
+					session.Api.World.Inventory.Values, combat.ClassProfile.Gear);
 				Require.True(rewardIndex >= 0);
 				await FinishStandardQuestAsync(session, ulgorn, 2006, token,
 					DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex);
@@ -7796,7 +7796,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				var inventory = NaturalIshalgenInventoryPolicy.Load(root,
 					session.Api.World.Inventory.Values.Select(item => item.ItemId));
 				int rewardIndex = inventory.ChooseReward(2007, session.Api.World.Level,
-					session.Api.World.Inventory.Values, combat.ClassProfile.RewardGear);
+					session.Api.World.Inventory.Values, combat.ClassProfile.Gear);
 				Require.True(rewardIndex >= 0);
 				await FinishStandardQuestAsync(session, ulgorn, 2007, token,
 					DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex);
@@ -8162,7 +8162,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								var inventory = NaturalIshalgenInventoryPolicy.Load(root,
 									session.Api.World.Inventory.Values.Select(item => item.ItemId));
 								int rewardIndex = inventory.ChooseReward(plan.Id, session.Api.World.Level,
-									session.Api.World.Inventory.Values, combat.ClassProfile.RewardGear);
+									session.Api.World.Inventory.Values, combat.ClassProfile.Gear);
 								Require.True(rewardIndex >= 0);
 								rewardAction = DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex;
 							}

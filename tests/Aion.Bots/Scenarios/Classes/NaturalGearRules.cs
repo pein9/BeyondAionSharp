@@ -6,8 +6,8 @@ namespace Aion.Bots.Scenarios.Classes;
 
 /// <summary>
 /// CP-22: what a class treats as gear, how it ranks it and what it keeps (docs/natural-class-profiles.md). The inventory
-/// policy's one decision path, the item's own gear members and the equipment check's hand rule all read these rules;
-/// nothing else tests for a class. The Priest's and the Cleric's rules are the two rule sets the policy held inline.
+/// policy's one decision path, the item's own gear members and the equipment check all read these rules; nothing else
+/// tests for a class. CP-29a: every class's rules are built from its <see cref="NaturalClassGearTable"/>.
 /// </summary>
 public sealed class NaturalGearRules
 {
@@ -19,9 +19,6 @@ public sealed class NaturalGearRules
 
 	/// <summary>Gear groups that go in the weapon slot.</summary>
 	public required IReadOnlySet<string> WeaponGroups { get; init; }
-
-	/// <summary>Gear groups that go in the off hand.</summary>
-	public IReadOnlySet<string> OffHandGroups { get; init; } = new HashSet<string>();
 
 	/// <summary>Gear above this required level is not considered at all (the Ishalgen Priest stops at 9); null for no cap.</summary>
 	public int? HighestRequiredLevel { get; init; }
@@ -35,34 +32,20 @@ public sealed class NaturalGearRules
 	/// <summary>Consumables the class keeps and never sells.</summary>
 	public required IReadOnlySet<int> Supplies { get; init; }
 
-	/// <summary>The rules from Ascension on: a leg's protected items and retained staff and an open quest's needs are
-	/// honored, the bridge's supplies are kept, and an accessory is either kept for a later level or sold as surplus.</summary>
-	public bool AfterAscension { get; init; }
-
-	/// <summary>The hand rule of the equipment check: once the character owns a wearable item of this group, the hands
-	/// hold one, the one with the most magic boost (the operator's staff rule, AX-Q1). Null for no such rule.</summary>
-	public string? HandRuleGroup { get; init; }
-
 	/// <summary>Skills every character of the class has from level 1, beside its catalog's auto-learned ones.</summary>
 	public IReadOnlyList<int> ExpectedSkillIds { get; init; } = [];
 
 	/// <summary>The catalog whose skills must be observed as learned by their level.</summary>
 	public NaturalPriestSkill[] SkillCatalog { get; init; } = [];
 
-	/// <summary>CP-29: what the class's mastery skills let it wear (weapon groups, armor types, <c>SHIELD</c>), for a rule
-	/// in table form (<see cref="NaturalClassGearTable"/>). Null for the Priest's and the Cleric's rules, which ask the
-	/// server and remember what it refused.</summary>
-	public IReadOnlySet<string>? MasteryUnlocks { get; init; }
+	/// <summary>CP-29: what the class's mastery skills let it wear (weapon groups, armor types, <c>SHIELD</c>). The rules
+	/// never ask the server for an item of a group the class has no mastery for.</summary>
+	public required IReadOnlySet<string> MasteryUnlocks { get; init; }
 
-	/// <summary>The rule is in table form: it filters what the class cannot wear, ranks the equipment check by its own
-	/// score, keeps what the class will wear at a later level and its accessories, and prefers the class's gear at a
-	/// reward.</summary>
-	public bool IsTable => MasteryUnlocks != null;
+	/// <summary><see cref="Score"/> over the client's tooltip view of an item, for the equipment check.</summary>
+	public required Func<NaturalGearInfo, long> UpgradeScore { get; init; }
 
-	/// <summary>A table rule's <see cref="Score"/> over the client's tooltip view of an item, for the equipment check.</summary>
-	public Func<NaturalGearInfo, long>? UpgradeScore { get; init; }
-
-	/// <summary>A table rule's pick among consumables at a reward, best first.</summary>
+	/// <summary>The pick among consumables at a reward, best first.</summary>
 	public IReadOnlyList<int> ConsumableOrder { get; init; } = [];
 
 	public bool IsGear(NaturalItem item) => GearGroups.Contains(item.Group);
@@ -70,7 +53,6 @@ public sealed class NaturalGearRules
 	/// <summary>The slot name gear of one kind competes for; null for what is not gear.</summary>
 	public string? Slot(NaturalItem item) => !IsGear(item) ? null
 		: WeaponGroups.Contains(item.Group) ? "WEAPON"
-		: OffHandGroups.Contains(item.Group) ? "SUB"
 		: item.Group == "HEAD" || item.Group.EndsWith("_HEADS", StringComparison.Ordinal) ? "HEAD"
 		: item.IsAccessory ? item.Group
 		: item.Group[(item.Group.IndexOf('_') + 1)..];
@@ -85,12 +67,10 @@ public sealed class NaturalGearRules
 
 	/// <summary>
 	/// CP-29: the class has the mastery skill the server asks for before it lets an item of this group be worn (Java
-	/// Equipment.checkAvailableEquipSkills): the group needs none, or the class's mastery rows unlock it. Always true for a
-	/// rule that is not in table form.
+	/// Equipment.checkAvailableEquipSkills): the group needs none, or the class's mastery rows unlock it.
 	/// </summary>
 	public bool Wears(string? group)
 	{
-		if (MasteryUnlocks == null) return true;
 		if (!Enum.TryParse(group, out ItemGroup parsed)) return false;
 		if (!parsed.RequiresMastery()) return true;
 		if (parsed == ItemGroup.SHIELD) return MasteryUnlocks.Contains("SHIELD");
@@ -98,6 +78,11 @@ public sealed class NaturalGearRules
 		ItemSubType type = parsed.GetItemSubType();
 		return type == ItemSubType.ALL_ARMOR || MasteryUnlocks.Contains(type.ToString());
 	}
+
+	/// <summary>The item goes in the class's hands: a weapon of its groups, or a shield when it has the shield mastery.
+	/// A leg that retains the held weapon keeps these (the coin-gear and Haramel legs).</summary>
+	public bool GoesInItsHands(NaturalItem item) => WeaponGroups.Contains(item.Group) ||
+		item.Group == "SHIELD" && MasteryUnlocks.Contains("SHIELD");
 
 	/// <summary>The class may wear the item at this level or will at a later one: <see cref="Usable"/> without the
 	/// character's level as a floor.</summary>
@@ -112,57 +97,11 @@ public sealed class NaturalGearRules
 	public bool AutoLearnedSkillsObserved(int level, IReadOnlyDictionary<int, BotSkill> learned) =>
 		ExpectedSkillIds.Concat(SkillCatalog.Where(skill => skill.MinimumLevel <= level).Select(skill => (int)skill.Id)).All(learned.ContainsKey);
 
-	private static readonly string[] PriestGearGroups =
-	[
-		"MACE", "RB_TORSO", "RB_GLOVE", "RB_SHOULDER", "RB_PANTS", "RB_SHOES",
-		"CL_TORSO", "CL_GLOVE", "CL_SHOULDER", "CL_PANTS", "CL_SHOES", "CL_HEADS",
-		"LT_TORSO", "LT_GLOVE", "LT_SHOULDER", "LT_PANTS", "LT_SHOES", "LT_HEADS",
-	];
+	/// <summary>The Ishalgen Priest: its table, the level 1-9 kit and every Priest skill by its level.</summary>
+	public static NaturalGearRules Priest { get; } = NaturalClassGearTable.Priest.Rules(NaturalClassLineContract.LoadDefault(),
+		NaturalHelpItemAllowlist.Starter, NaturalPriestSkills.All);
 
-	// The starter HP and MP potions, the bought timed healing, and (CP-06) the supplied items of the level 1-9 kit. The
-	// event scrolls of its manifest need no entry: they cannot be sold. The starter's bandages are not a supply: no class
-	// uses one (CP-Q11).
-	private static readonly int[] PriestSupplies = [162000002, 162000007, 162000052,
-		.. NaturalHelpItemAllowlist.Starter.Select(supply => supply.ItemId)];
-
-	/// <summary>The Ishalgen Priest: a mace, robes, cloth and leather, up to required level 9, ranked by required level,
-	/// then quality, then the weapon's magic boost and damage.</summary>
-	public static NaturalGearRules Priest { get; } = new()
-	{
-		Class = PlayerClass.PRIEST,
-		GearGroups = PriestGearGroups.ToHashSet(),
-		WeaponGroups = new HashSet<string> { "MACE" },
-		HighestRequiredLevel = 9,
-		Score = item => (long)item.RequiredLevelFor(PlayerClass.PRIEST) * 1_000_000 + (long)item.Quality * 100_000
-			+ (long)item.MagicBoost * 100 + item.MaximumDamage * 10L + item.MinimumDamage,
-		EquipReason = "best-usable-priest-upgrade",
-		Supplies = PriestSupplies.ToHashSet(),
-		HandRuleGroup = "STAFF",
-		// Cloth, leather and mace mastery and the basic attack, then every Priest skill by its level.
-		ExpectedSkillIds = [39, 40, 41, 103],
-		SkillCatalog = NaturalPriestSkills.All,
-	};
-
-	/// <summary>NA-09: after Ascension the Cleric also wears chain, shields and staves, and its accessories are gear the
-	/// journey keeps. A Cleric casts: a weapon ranks by magic boost, then damage; armor by item level, then quality.
-	/// NA-21: the approved help items, every help scroll and every potion combat drinks are supplies too.</summary>
-	public static NaturalGearRules Cleric { get; } = new()
-	{
-		Class = PlayerClass.CLERIC,
-		GearGroups = PriestGearGroups.Concat(["RING", "EARRING", "NECKLACE", "BELT", "STAFF", "SHIELD", "HEAD",
-			"CH_TORSO", "CH_GLOVE", "CH_SHOULDER", "CH_PANTS", "CH_SHOES", "CH_HEADS"]).ToHashSet(),
-		WeaponGroups = new HashSet<string> { "MACE", "STAFF" },
-		OffHandGroups = new HashSet<string> { "SHIELD" },
-		Score = item => Cleric!.Slot(item) == "WEAPON"
-			? (long)item.MagicBoost * 1_000_000 + item.MaximumDamage * 1_000L + item.MinimumDamage
-			: (long)item.ItemLevel * 1_000_000 + (long)item.Quality * 100_000 + item.Price,
-		EquipReason = "best-usable-cleric-upgrade",
-		Supplies = PriestSupplies
-			.Concat(NaturalHelpItemAllowlist.AllLevels.Select(supply => supply.ItemId))
-			.Concat(NaturalHelpItemPolicy.All.Select(help => help.ItemId))
-			.Concat(NaturalIshalgenPotionPolicy.ManaPotionIds)
-			.Concat([NaturalIshalgenPotionPolicy.LesserLifePotionId, NaturalIshalgenPotionPolicy.LifePotionId]).ToHashSet(),
-		AfterAscension = true,
-		HandRuleGroup = "STAFF",
-	};
+	/// <summary>The Cleric: its table and the approved help items of every level (OD-13).</summary>
+	public static NaturalGearRules Cleric { get; } = NaturalClassGearTable.Cleric.Rules(NaturalClassLineContract.LoadDefault(),
+		NaturalHelpItemAllowlist.AllLevels);
 }

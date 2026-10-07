@@ -1,4 +1,5 @@
 using Aion.Bots.Scenarios;
+using Aion.Bots.Scenarios.Classes;
 using Aion.Bots.World;
 
 namespace Aion.GameServer.Tests;
@@ -10,15 +11,15 @@ public sealed class NaturalGearPolicyTests
 	// The recorded human session at Nalto (2026-09-24): the bot's bag after Q2006, level 9.
 	private static readonly Dictionary<int, NaturalGearInfo> Items = new()
 	{
-		[100100011] = new(Main | Sub, 1, 1, true),       // Training Mace (worn)
-		[110300292] = new(Torso, 1, 1, true),            // Training Leather Armor (worn)
-		[113300278] = new(Pants, 1, 1, true),            // Training Leather Leg Armor (worn)
-		[100100024] = new(Main | Sub, 3, 3, true),       // Raider's Mace
-		[100200604] = new(Main | Sub, -1, 5, true),      // Ulgorn's Dagger: not a Priest weapon
-		[114100794] = new(Boots, 4, 4, true),            // Boromer's Shoes
-		[114100795] = new(Boots, 8, 8, true),            // Anturoon Shoes
-		[113100773] = new(Pants, 8, 8, true),            // Anturoon Leggings
-		[122000869] = new(RingLeft | RingRight, 7, 7, true), // Spirit Ring
+		[100100011] = new(Main | Sub, 1, 1, true, "MACE", 80),      // Training Mace (worn)
+		[110300292] = new(Torso, 1, 1, true, "LT_TORSO"),           // Training Leather Armor (worn)
+		[113300278] = new(Pants, 1, 1, true, "LT_PANTS"),           // Training Leather Leg Armor (worn)
+		[100100024] = new(Main | Sub, 3, 3, true, "MACE", 100),     // Raider's Mace
+		[100200604] = new(Main | Sub, -1, 5, true, "DAGGER"),       // Ulgorn's Dagger: not a Priest weapon
+		[114100794] = new(Boots, 4, 4, true, "RB_SHOES"),           // Boromer's Shoes
+		[114100795] = new(Boots, 8, 8, true, "RB_SHOES"),           // Anturoon Shoes
+		[113100773] = new(Pants, 8, 8, true, "RB_PANTS"),           // Anturoon Leggings
+		[122000869] = new(RingLeft | RingRight, 7, 7, true, "RING"), // Spirit Ring
 		[182400001] = null!,                             // kinah: not gear
 		// AX-04, the staff rule: the Cleric's staffs with their magic boost, and the hand items that must not replace one.
 		[101500498] = new(Main | Sub, 10, 10, true, "STAFF", 260),  // Karmic Staff
@@ -77,7 +78,8 @@ public sealed class NaturalGearPolicyTests
 	{
 		// Ascension: the Karmic Staff arrives while the level-3 mace is worn. A mace of a higher item level stays in the bag.
 		BotInventoryItem[] inventory = [Worn(2, 100100024, Main), Bag(40, 101500498), Bag(41, 100101199), Bag(42, 114100795)];
-		IReadOnlyList<NaturalGearUpgrade> upgrades = NaturalGearPolicy.SelectUpgrades(inventory, 25, Describe, offHandSlots: 0);
+		IReadOnlyList<NaturalGearUpgrade> upgrades = NaturalGearPolicy.SelectUpgrades(inventory, 25, Describe, offHandSlots: 0,
+			rules: NaturalGearRules.Cleric);
 		Assert.Equal([(40, Main), (42, Boots)], upgrades.Select(u => (u.ObjectId, u.Slot)).OrderBy(u => u.ObjectId).ToArray());
 		Assert.Equal(3, upgrades.Single(u => u.ObjectId == 40).ReplacesItemLevel);
 	}
@@ -88,11 +90,14 @@ public sealed class NaturalGearPolicyTests
 		BotInventoryItem[] bag = [Bag(41, 100101199), Bag(43, 115001119)];
 		// Magic boost decides, not item level: the level-26 staff with 420 loses to the level-25 staff with 460.
 		Assert.Equal([(50, Main)], NaturalGearPolicy.SelectUpgrades([Worn(2, 101501357, Main | Sub), Bag(50, 101501224), Bag(51, 101500812), .. bag],
-			26, Describe, 0).Select(u => (u.ObjectId, u.Slot)));
-		Assert.Empty(NaturalGearPolicy.SelectUpgrades([Worn(2, 101501224, Main | Sub), Bag(51, 101500812), Bag(52, 101501357), .. bag], 26, Describe, 0));
+			26, Describe, 0, rules: NaturalGearRules.Cleric).Select(u => (u.ObjectId, u.Slot)));
+		Assert.Empty(NaturalGearPolicy.SelectUpgrades([Worn(2, 101501224, Main | Sub), Bag(51, 101500812), Bag(52, 101501357), .. bag], 26, Describe, 0,
+			rules: NaturalGearRules.Cleric));
 		// The same staff again is no upgrade, and a staff the level does not allow yet waits.
-		Assert.Empty(NaturalGearPolicy.SelectUpgrades([Worn(2, 101501357, Main | Sub), Bag(53, 101501357), Bag(50, 101501224), .. bag], 24, Describe, 0));
-		Assert.Empty(NaturalGearPolicy.SelectUpgrades([Worn(2, 101501357, Main | Sub), Bag(50, 101501224)], 26, Describe, 0, refused: new HashSet<int> { 50 }));
+		Assert.Empty(NaturalGearPolicy.SelectUpgrades([Worn(2, 101501357, Main | Sub), Bag(53, 101501357), Bag(50, 101501224), .. bag], 24, Describe, 0,
+			rules: NaturalGearRules.Cleric));
+		Assert.Empty(NaturalGearPolicy.SelectUpgrades([Worn(2, 101501357, Main | Sub), Bag(50, 101501224)], 26, Describe, 0, refused: new HashSet<int> { 50 },
+			rules: NaturalGearRules.Cleric));
 	}
 
 	[Fact]
@@ -101,14 +106,5 @@ public sealed class NaturalGearPolicyTests
 		// The Priest in Ishalgen: a staff it cannot wear changes nothing, and the better mace still goes on.
 		BotInventoryItem[] inventory = [Worn(2, 100100011, Main), Bag(14, 100100024), Bag(60, 101500001)];
 		Assert.Equal([(14, Main)], NaturalGearPolicy.SelectUpgrades(inventory, 9, Describe, 0).Select(u => (u.ObjectId, u.Slot)));
-	}
-
-	[Fact]
-	public void ARewardThatOffersAStaffTakesTheStaffWithTheMostMagicBoost()
-	{
-		Assert.Equal(101501224, NaturalGearPolicy.ChooseStaffReward([100101199, 101501224], 25, Describe));
-		Assert.Equal(101501224, NaturalGearPolicy.ChooseStaffReward([101500812, 101501224, 101501357], 26, Describe));
-		Assert.Equal(101501357, NaturalGearPolicy.ChooseStaffReward([101500812, 101501224, 101501357], 24, Describe));
-		Assert.Null(NaturalGearPolicy.ChooseStaffReward([100101199, 115001119, 101500001], 25, Describe));
 	}
 }

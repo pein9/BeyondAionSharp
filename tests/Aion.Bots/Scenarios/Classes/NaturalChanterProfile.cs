@@ -27,17 +27,10 @@ public static class NaturalChanterProfile
 		[1809] = "Celerity Mantra (toggle): " + NoLeg,
 	};
 
-	/// <summary>
-	/// A mace or a staff, ranked per swing by the physical stat (CP-Q7, on its default), so the Karmic Staff (58-88, mean
-	/// 73) is held before the Karmic Warhammer (44-66 with 7 physical attack, 55 plus 7). Chain first, as the Chanter's
-	/// level-9 mastery unlocks it. The staff rule by magic boost stays the Cleric's.
-	/// </summary>
-	public static NaturalClassGearTable GearTable { get; } = new(PlayerClass.CHANTER, ["MACE", "STAFF"], NaturalWeaponStat.Physical,
-		["CHAIN", "LEATHER", "ROBE", "CLOTHES"], NaturalClassGearTable.DefaultConsumableOrder);
-
-	// The supplies are the kit of every level: at the ceremony the level-10 bands are supplied to a Chanter as to a
-	// Cleric, because the allowlist is keyed by level and not by class.
-	private static readonly NaturalGearRules ChanterGear = GearTable.Rules(NaturalClassLineContract.LoadDefault(),
+	// CP-29a (CP-Q7, answered 2026-10-07): the Chanter's table is the Cleric's, the staff with the most magic boost and
+	// chain first. The supplies are the kit of every level: at the ceremony the level-10 bands are supplied to a Chanter
+	// as to a Cleric, because the allowlist is keyed by level and not by class.
+	private static readonly NaturalGearRules ChanterGear = NaturalClassGearTable.Chanter.Rules(NaturalClassLineContract.LoadDefault(),
 		NaturalHelpItemAllowlist.AllLevels, NaturalPriestSkills.All);
 
 	public static NaturalClassProfile Chanter { get; } = new()
@@ -57,7 +50,6 @@ public static class NaturalChanterProfile
 		Movement = NaturalPriestProfile.PriestLineMovement,
 		Campaign = NaturalPriestProfile.PriestLineCampaign,
 		Gear = ChanterGear,
-		RewardGear = ChanterGear,
 		Restock = NaturalPriestProfile.PriestLineRestock,
 	};
 }
