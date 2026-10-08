@@ -5428,7 +5428,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       engineer 24,580, scout 31,082). Bundle: the seven pre-commit checks pass,
       Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run cp67a-fast, 11 passed).
     - CP-67 is retried next with a fresh budget: all nine rows in one pass.
-- [ ] **CP-68 - Off hand: shield and second weapon in the gear rules.** Depends: CP-29,
+- [x] **CP-68 - Off hand: shield and second weapon in the gear rules.** Depends: CP-29,
   CP-57, CP-66
   - Work: Java first: Equipment.java's rules for shields and dual wield. The table gear rule
     gains an off-hand mode: none, shield (Warrior, mastery 43 from level 1; Q2100 offers
@@ -5444,6 +5444,63 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     turns a mode on for a class follows rule (j).
   - Proof: Unit test UT/NaturalGearPolicyTests: new cases for sword plus shield and for
     dagger plus dagger after skill 55; the staff-rule and Priest cases unchanged.
+  - 2026-10-08: done. The mode is built and is off for every class. By rule (n) no unit
+    test was added: the proof is the build, the bundle, the guard and a one-time check that
+    is not committed; the existing NaturalGearPolicyTests pass unchanged.
+    - **Java, read first** (Equipment.java). equipItem, lines 68-71: a two-hand weapon is
+      always put in both hands, and a one-hand weapon asked for by a character without the
+      dual-wield effect is moved to the main hand with no message. Lines 85-93 and 323-334:
+      an item of a group that has mastery skills is refused without one of them, a shield
+      with its own message. Lines 139-150: the swap set's off-hand slots cannot be asked
+      for, and the asked slot must be one of the item's own. getUnequipSlots, lines 215-222:
+      equipping into either hand takes a two-hand weapon out of both. unEquipItem, lines
+      258-267: taking the main-hand weapon off takes an off-hand weapon off with it, a
+      shield not. WeaponDualEffect.hasDualWieldEffect, lines 36-45: the effect comes from a
+      skill with a wpndual effect. skill_tree.xml:90-92: skill 55 is learned by the Scout
+      at level 5, the Gunner at 10 and the Gladiator at 20. The port has the same rules
+      (Equipment.cs:47, 126 and 169).
+    - **The mode.** NaturalOffHand (None, Shield, SecondWeapon) is a value of
+      NaturalClassGearTable, unset in every table, and of the NaturalGearRules built from
+      it. A table that names Shield for a class without the shield mastery is refused by
+      name. NaturalGearInfo says whether a weapon takes one hand (the item template's own
+      answer), and NaturalInventoryCheck passes whether a dual-wield skill is in the
+      observed skill list (the eight auto-learned passives with the wpndual effect: 55, 70,
+      76, 82, 143, 144, 171, 207; the stigma ones are left out).
+    - **SelectUpgrades.** After the main-hand pick, and only when the rules name a mode and
+      the main hand then holds a one-hand weapon: the best bag item that fits the mode goes
+      in the off hand when the off hand holds nothing that fits or something the rules
+      score lower. Shield: an item of group SHIELD. SecondWeapon: a one-hand weapon of the
+      class's own groups, and only when a dual-wield skill is observed, because without it
+      the server would put the weapon in the main hand. A two-hand weapon that the pick
+      has just replaced no longer counts as held in the off hand. With no mode the block is
+      not entered, and what every class does is what it did.
+    - **One-time check, not committed** (run/cp/CP-68/check-a1.log, run with the existing
+      NaturalGearPolicyTests: 7 tests pass). Warrior with mode Shield, Training Sword worn,
+      Raider's Sword and Shield in the bag: the sword to the main hand, then the shield to
+      the off hand; the same bag with mode None: the sword only. A level-8 shield replaces
+      a worn level-3 shield; the same shield again and a shield above the character's level
+      are not asked for. Scout with mode SecondWeapon and three daggers: with no skill
+      observed only the best dagger goes to the main hand; with the skill observed the best
+      goes to the main hand and the next to the off hand; with two worn and a worse one in
+      the bag nothing is asked; with mode None and the skill observed, the main hand only.
+      A Templar-shaped table (sword before greatsword, mode Shield) with a greatsword worn
+      takes the sword and then the shield, and the shield replaces nothing; with the
+      greatsword first it asks for nothing. The Cleric with a staff worn and a mace and a
+      shield in the bag asks for nothing. Every table's rules read mode None.
+    - **Not built here, needed before a mode is turned on** (findings, not fixed). (a) The
+      keep-and-sell policy does not know the off hand: a shield is not in a class's gear
+      groups, and a second weapon competes with the first for the one WEAPON slot, so
+      either would be sold as spare. (b) The reward choice scores one weapon; CP-Q10 keeps
+      the Warrior on the weapon at Q2100, so the only Ishalgen shield is never owned. (c)
+      A check plans from one view of the bag: a weapon the main-hand pick displaces is a
+      candidate for the off hand only at the next check. (d) No SIM run has equipped an
+      off-hand item by packets yet; the first class that turns a mode on proves that, and
+      re-records its scope by rule (j).
+    - **Guard, rule (c).** Run guard-a1, gate p and the five class scopes: all six
+      identical to their baselines (p 37,222, mage 23,555, warrior 24,199, artist 23,104,
+      engineer 24,580, scout 31,082). The Cleric's scopes are compared in CP-69's full
+      gate. Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 passed, 16 skipped)
+      and Fast passes (run cp68-fast, 11 passed).
 - [ ] **CP-69 - Final gate and close-out.** Depends: CP-33, CP-45, CP-53, CP-57, CP-60,
   CP-63, CP-66, CP-67, CP-68
   - Work: No code. Run the whole check list of CLAUDE.md, then the full gate on the
@@ -6645,3 +6702,11 @@ report what was done, what is blocked and what you need from me.
   dispatch quest (Q2901, Q2902, Q2903, Q29070, Q29071) at var 1 at Doman. Attacks on
   Hellion: 56 to 131 for seven rows, 1,393 and 1,365 for the two Scout rows. Evidence only;
   seven checks pass. Next by rule (h): CP-68.
+- 2026-10-08 — Loop: CP-68 done. Java's Equipment rules read first. The gear table gains an
+  off-hand mode (None, Shield, SecondWeapon), unset in every table, and SelectUpgrades fills
+  the off hand by it beside a one-hand weapon: the best shield, or the best other one-hand
+  weapon of the class's groups once a dual-wield skill is observed. No class has a mode on.
+  One-time check, not committed (rule (n)): sword plus shield, dagger plus dagger with and
+  without the skill, a replaced two-hand weapon, the Cleric's staff and every mode-None
+  case behave as written. Guard guard-a1, p and five class scopes: identical. Seven checks,
+  unit suite and Fast (cp68-fast) pass. Next by rule (h): CP-69, the last item.

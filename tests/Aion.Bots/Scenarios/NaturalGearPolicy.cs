@@ -9,8 +9,10 @@ namespace Aion.Bots.Scenarios;
 /// <param name="Group">The item group (<c>STAFF</c>, <c>MACE</c>, <c>SHIELD</c>, <c>CH_TORSO</c>).</param>
 /// <param name="MagicBoost">A weapon's magic boost; a class that casts ranks its weapons by it.</param>
 /// <param name="MinimumDamage">CP-29: a weapon's damage and its flat physical-attack bonus, for a table rule's physical stat.</param>
+/// <param name="OneHandWeapon">CP-68: a weapon that takes one hand, so the other may hold a shield or a second weapon.</param>
 public sealed record NaturalGearInfo(long ValidSlots, int RequiredLevel, int ItemLevel, bool RaceAllowed,
-	string? Group = null, int MagicBoost = 0, int MinimumDamage = 0, int MaximumDamage = 0, int PhysicalAttack = 0)
+	string? Group = null, int MagicBoost = 0, int MinimumDamage = 0, int MaximumDamage = 0, int PhysicalAttack = 0,
+	bool OneHandWeapon = false)
 {
 	public bool GoesInAHand => (ValidSlots & (NaturalGearPolicy.MainHand | NaturalGearPolicy.SubHand)) != 0;
 }
@@ -30,16 +32,28 @@ public sealed record NaturalGearUpgrade(int ObjectId, int ItemId, long Slot, int
 /// boost. This is the rule ALL THE TIME") is the Cleric's weapon order, staff before mace (CP-29a): once the
 /// character owns a staff it can wear, the hands hold a staff, the one with the most magic boost.
 /// </para>
+/// <para>
+/// CP-68: a class's rules may name an off-hand mode (<see cref="NaturalOffHand"/>). Beside a one-hand weapon in the main
+/// hand, the off hand then holds the best shield, or the best other one-hand weapon of the class's groups. The second
+/// weapon is asked for only when a dual-wield skill is observed: without it the server moves a one-hand weapon asked
+/// into the off hand to the main hand, with no message (Java Equipment.equipItem). No class has a mode turned on.
+/// </para>
 /// </summary>
 public static class NaturalGearPolicy
 {
 	public const long MainHand = 1, SubHand = 2;
 
+	/// <summary>CP-68: the auto-learned passive skills with the dual-wield effect (skill_templates.xml, effect wpndual;
+	/// the Scout learns 55 at level 5). The stigma skills with the effect are left out: no natural line takes a stigma.</summary>
+	public static readonly IReadOnlySet<int> DualWieldSkillIds = new HashSet<int> { 55, 70, 76, 82, 143, 144, 171, 207 };
+
 	/// <param name="offHandSlots">Slot bits that can never be requested directly (the off-hand swap set).</param>
 	/// <param name="refused">Items the server already refused; never asked again.</param>
 	/// <param name="rules">CP-22: the class's gear rules; the Priest's when not given.</param>
+	/// <param name="dualWield">CP-68: a skill of <see cref="DualWieldSkillIds"/> is in the observed skill list.</param>
 	public static IReadOnlyList<NaturalGearUpgrade> SelectUpgrades(IEnumerable<BotInventoryItem> inventory, int level,
-		Func<int, NaturalGearInfo?> describe, long offHandSlots, IReadOnlySet<int>? refused = null, NaturalGearRules? rules = null)
+		Func<int, NaturalGearInfo?> describe, long offHandSlots, IReadOnlySet<int>? refused = null, NaturalGearRules? rules = null,
+		bool dualWield = false)
 	{
 		ArgumentNullException.ThrowIfNull(inventory);
 		ArgumentNullException.ThrowIfNull(describe);
@@ -73,6 +87,23 @@ public static class NaturalGearPolicy
 			upgrades.Add(new NaturalGearUpgrade(bestWeapon.Item.ObjectId, bestWeapon.Item.ItemId, MainHand, bestWeapon.Info!.ItemLevel,
 				worn.TryGetValue(MainHand, out var replaced) ? replaced.Level : null));
 			worn[MainHand] = (bestWeapon.Item, bestWeapon.Info.ItemLevel, Rank(bestWeapon.Info));
+		}
+		if (gearRules.OffHand != NaturalOffHand.None && worn.TryGetValue(MainHand, out var main) &&
+			describe(main.Item.ItemId) is { OneHandWeapon: true })
+		{
+			// CP-68: the off hand beside a one-hand weapon, by the class's mode. A two-hand weapon fills both slots, so
+			// what the off hand shows of the weapon that was held before the pick above is no longer there.
+			bool Fits(NaturalGearInfo info) => gearRules.OffHand == NaturalOffHand.Shield ? info.Group == "SHIELD"
+				: dualWield && info.OneHandWeapon && gearRules.WeaponGroups.Contains(info.Group ?? "");
+			(BotInventoryItem Item, int Level, long Rank)? offHand = worn.TryGetValue(SubHand, out var sub) &&
+				sub.Item.ObjectId != hand.Item?.ObjectId && describe(sub.Item.ItemId) is { } subInfo && Fits(subInfo) ? sub : null;
+			var bestOffHand = candidates.FirstOrDefault(c => c.Item.ObjectId != main.Item.ObjectId && Fits(c.Info!));
+			if (bestOffHand.Item != null && (offHand == null || Rank(bestOffHand.Info!) > offHand.Value.Rank))
+			{
+				upgrades.Add(new NaturalGearUpgrade(bestOffHand.Item.ObjectId, bestOffHand.Item.ItemId, SubHand, bestOffHand.Info!.ItemLevel,
+					offHand?.Level));
+				worn[SubHand] = (bestOffHand.Item, bestOffHand.Info.ItemLevel, Rank(bestOffHand.Info));
+			}
 		}
 		foreach (var (item, info) in candidates)
 		{

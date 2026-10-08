@@ -42,6 +42,9 @@ public sealed class NaturalGearRules
 	/// never ask the server for an item of a group the class has no mastery for.</summary>
 	public required IReadOnlySet<string> MasteryUnlocks { get; init; }
 
+	/// <summary>CP-68: what the equipment check puts in the off hand beside a one-hand weapon; nothing for every class today.</summary>
+	public NaturalOffHand OffHand { get; init; }
+
 	/// <summary><see cref="Score"/> over the client's tooltip view of an item, for the equipment check.</summary>
 	public required Func<NaturalGearInfo, long> UpgradeScore { get; init; }
 

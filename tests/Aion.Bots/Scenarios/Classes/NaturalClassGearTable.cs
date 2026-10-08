@@ -12,6 +12,17 @@ public enum NaturalWeaponStat
 	Magical,
 }
 
+/// <summary>CP-68: what a class holds in its off hand beside a one-hand weapon.</summary>
+public enum NaturalOffHand
+{
+	/// <summary>Nothing. Every class's table today.</summary>
+	None,
+	/// <summary>The best shield it owns; the class needs the shield mastery.</summary>
+	Shield,
+	/// <summary>The best other one-hand weapon of its groups, once a dual-wield skill is observed.</summary>
+	SecondWeapon,
+}
+
 /// <summary>
 /// CP-29: the hand-written part of a class's gear rule (docs/natural-class-profiles.md): the weapon groups it holds, best
 /// first, how it ranks a weapon within a group, the armor types it prefers, best first, the consumables it takes at a
@@ -26,8 +37,11 @@ public enum NaturalWeaponStat
 /// <c>CLOTHES</c>, <c>PLATE</c>), best first. Item level ranks a piece first, as the recorded human Priest wore level-8
 /// robe leggings over level-1 leather; of two pieces of one item level, the earlier type wins (CP-Q24).</param>
 /// <param name="Supplies">Consumables the class keeps beside the life potions and its help kit; none when not given.</param>
+/// <param name="OffHand">CP-68: the off-hand mode; nothing when not given. Turning one on for a class is the operator's
+/// decision and re-records that class's scope.</param>
 public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<string> WeaponGroups, NaturalWeaponStat WeaponStat,
-	IReadOnlyList<string> ArmorTypes, IReadOnlyList<int> ConsumableOrder, IReadOnlyList<int>? Supplies = null)
+	IReadOnlyList<string> ArmorTypes, IReadOnlyList<int> ConsumableOrder, IReadOnlyList<int>? Supplies = null,
+	NaturalOffHand OffHand = NaturalOffHand.None)
 {
 	private static readonly string[] ArmorParts = ["_TORSO", "_GLOVE", "_SHOULDER", "_PANTS", "_SHOES", "_HEADS"];
 
@@ -128,6 +142,8 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 		if (WeaponGroups.Count == 0 || ArmorTypes.Count == 0 || WeaponGroups.Distinct().Count() != WeaponGroups.Count ||
 			ArmorTypes.Distinct().Count() != ArmorTypes.Count)
 			throw new InvalidDataException($"The {Class} gear table needs weapon groups and armor types, each named once.");
+		if (OffHand == NaturalOffHand.Shield && !unlocks.Contains("SHIELD"))
+			throw new InvalidDataException($"The {Class} gear table holds a shield, which the class has no mastery for.");
 		string[] armorGroups = Enum.GetNames<ItemGroup>().Where(group => ArmorPlace(group) >= 0).ToArray();
 		NaturalClassGearTable table = this;
 		// A second class's mastery takes the place of the starter's it names.
@@ -145,6 +161,7 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 			Supplies = LifePotionIds.Concat((kit ?? NaturalHelpItemAllowlist.Starter).Select(supply => supply.ItemId))
 				.Concat(Supplies ?? []).ToHashSet(),
 			MasteryUnlocks = unlocks,
+			OffHand = OffHand,
 			ConsumableOrder = ConsumableOrder,
 			ExpectedSkillIds = masteries.Select(mastery => mastery.SkillId).Where(id => !replaced.Contains(id)).Distinct().Order().ToArray(),
 			SkillCatalog = skillCatalog ?? [],

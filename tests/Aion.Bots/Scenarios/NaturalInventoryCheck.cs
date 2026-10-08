@@ -34,7 +34,8 @@ public static class NaturalInventoryCheck
 			template.GetWeaponStats()?.GetMinDamage() ?? 0, template.GetWeaponStats()?.GetMaxDamage() ?? 0,
 			template.GetModifiers()?.Where(modifier => modifier.GetName() == Aion.GameServer.Model.Stats.Container.StatEnum.PHYSICAL_ATTACK &&
 				modifier.GetType() == typeof(Aion.GameServer.Model.Stats.Calc.Functions.StatAddFunction) && !modifier.HasConditions())
-				.Sum(modifier => modifier.GetValue()) ?? 0);
+				.Sum(modifier => modifier.GetValue()) ?? 0,
+			template.IsOneHandWeapon());
 	}
 
 	/// <summary>Wear what <see cref="NaturalGearPolicy.SelectUpgrades"/> picks from <paramref name="wearable"/>. The server
@@ -46,7 +47,8 @@ public static class NaturalInventoryCheck
 		BotWorldModel world = session.Api.World;
 		var worn = new List<NaturalGearUpgrade>();
 		if (world.IsDead) return worn;
-		foreach (NaturalGearUpgrade upgrade in NaturalGearPolicy.SelectUpgrades(wearable, world.Level, describe, offHandSlots, refused, rules))
+		bool dualWield = world.Skills.Keys.Any(NaturalGearPolicy.DualWieldSkillIds.Contains);
+		foreach (NaturalGearUpgrade upgrade in NaturalGearPolicy.SelectUpgrades(wearable, world.Level, describe, offHandSlots, refused, rules, dualWield))
 		{
 			await session.SendPacketAsync(session.Api.Equip(0, upgrade.Slot, upgrade.ObjectId), token);
 			await session.SynchronizeAsync(token);
