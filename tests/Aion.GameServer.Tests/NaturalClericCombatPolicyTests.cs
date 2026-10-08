@@ -214,7 +214,7 @@ public sealed class NaturalClericCombatPolicyTests
 		{
 			NaturalCombatObservation state = fight with { Hp = hp, Mp = mp };
 			NaturalCombatChoice choice = Decide(state);
-			Assert.False(choice.Skill?.IsRestSkill == true, $"hp={hp} mp={mp} chose {choice.Skill?.Id}");
+			Assert.False(choice.Skill != null && NaturalClericSkills.RestSkills.IsRestOnly(choice.Skill), $"hp={hp} mp={mp} chose {choice.Skill?.Id}");
 			Assert.All(NaturalPriestCombatPolicy.CandidateActions(state, Now, choice, Catalog)
 				.Where(candidate => candidate.SkillId is 3867 or 247 or 250), candidate => Assert.False(candidate.Legal));
 		}
@@ -322,7 +322,7 @@ public sealed class NaturalClericCombatPolicyTests
 		{
 			NaturalCombatObservation state = hit with { Hp = hp, Mp = mp };
 			NaturalCombatChoice choice = Decide(state);
-			Assert.False(choice.Skill?.IsPowderRest == true, $"hp={hp} mp={mp} chose {choice.Skill?.Id}");
+			Assert.False(choice.Skill != null && NaturalClericSkills.RestSkills.IsReagent(choice.Skill), $"hp={hp} mp={mp} chose {choice.Skill?.Id}");
 			Assert.All(NaturalPriestCombatPolicy.CandidateActions(state, Now, choice, Catalog)
 				.Where(candidate => candidate.SkillId is 246 or 249), candidate => Assert.False(candidate.Legal));
 		}

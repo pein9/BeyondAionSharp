@@ -571,13 +571,45 @@ to the endpoint. The close of phase B is NR-21.
       identical to their baselines (p 37,222, mage 23,555, warrior 24,199, artist 23,104,
       engineer 24,580, scout 27,592). Bundle: the seven pre-commit checks pass,
       Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run nr11-fast, 11 passed).
-- [ ] **NR-12 - The skill record and the rest rule without role names.** Depends: NR-10
+- [x] **NR-12 - The skill record and the rest rule without role names.** Depends: NR-10
   - Work: Whether a skill is cast on the bot comes from the catalog's target kind for
     every row, and the rest rule names its rest-only skills by kind (a reagent skill for
     health, one for mana, a skill that trades health for mana) with the numbers
     NaturalPowderRestPolicy holds. TargetsSelf, IsPowderRest and IsRestSkill no longer
     read a role name. The Priest and the Cleric rest as they did.
   - Proof: The full gate identical: the rest is unchanged for every class.
+  - 2026-10-08: done. No server behavior is involved.
+    - **The skill record** (NaturalPriestSkill) no longer has TargetsSelf, IsPowderRest
+      and IsRestSkill. The table rule casts a skill on the bot when the template's first
+      target is the caster, or a friend or the caster, and no longer falls back to a role
+      name. The old static rule, which is the only user of the hand-typed rows and goes
+      with them in NR-18, says the same three things by role in its own code.
+    - **The rest rule** (Sc/Classes/NaturalRestRules.cs) gains NaturalRestSkills: the
+      rest-only skills by kind (a reagent skill for health, one for mana, a skill that
+      trades health for mana) with the own heal, the shared cooldown group, the HP below
+      which the rest heals and the HP the trade needs. Each names its role and the name a
+      trace reason gives it, so the Cleric's reasons read as they did. The rules also name
+      the heal's role, where "heal" stood. NaturalPowderRestPolicy takes the kinds and
+      holds no role name; the Cleric's kinds are NaturalClericSkills.RestSkills (Herb
+      Treatment, MP Recovery, Penance, Healing Light, group 1153, 90% and 70%), and the
+      Priest line's rest rules name them. A class with no rest-only skills names none.
+    - **Tests.** Two assertions of the existing NaturalClericCombatPolicyTests read the
+      removed members and now ask the rest kinds the same question; no test was added.
+    - **One-time check, not committed** (run/nr/NR-12/check-a2.log, with the existing
+      Priest, Cleric and rest tests: 38 pass; a1 did not compile for a missing using in the
+      check). Every generated row of the five starters states its first target (Warrior 6
+      rows, Mage 7, Artist 5, Engineer 7, Scout 5; none without), so nothing relied on the
+      removed fallback. The Priest's 8 and the Cleric's 50 hand-typed rows state none and
+      are read by the old rule alone. Of the Cleric's rows 6 are reagent skills and 8 are
+      rest-only.
+    - **Left for NR-18:** the fight loop still marks a fight as healed by the role name
+      "heal" and traces the Lesser Odella Powder count by item id.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, run gate-a1
+      (run/nr/NR-12/gate-a1/verdict.json): verdict pass, all twelve scopes identical to
+      their baselines (p 37,222, m 112,397, b 144,048, l1 30,693, c 96,166, hm 39,564, ax
+      15,762, mage 23,555, warrior 24,199, artist 23,104, engineer 24,580, scout 27,592).
+      Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and
+      Fast passes (run nr12-fast, 11 passed).
 - [ ] **NR-13 - Generated catalogs for the Priest and the Cleric.** Depends: NR-12
   - Work: The Priest's and the Cleric's catalogs are generated from the skill templates
     with a role per skill id, as the other classes' are, with the reason for every active
@@ -889,3 +921,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   check of 21 cases on the Cleric's skill rows, not committed. Guard guard-a1, p and five
   class scopes: identical. Seven checks, unit suite and Fast (nr11-fast) pass. Next: NR-12,
   the skill record and the rest rule without role names.
+- 2026-10-08 — Loop: NR-12 done. The shared skill record lost its three role-name members;
+  the table rule reads a row's own first target, and the rest rule names its rest-only
+  skills by kind, with the Cleric's kinds as data. The old static rule keeps the role
+  names in its own code until NR-18. Full gate gate-a1, twelve scopes: identical, so the
+  Priest and the Cleric rest as they did. Seven checks, unit suite and Fast (nr12-fast)
+  pass. Next: NR-13, generated catalogs for the Priest and the Cleric.

@@ -15,7 +15,7 @@ public static class NaturalPriestProfile
 	/// <summary>Heal with Healing Light below 90% HP; sit only for mana, from below 50% until 80%, for at most 12 quiet
 	/// sits. Sitting solely for missing HP leaves the Priest exposed to respawns and patrols.</summary>
 	internal static NaturalRestRules RestWith(NaturalPriestSkill[] skills) => new(skills, HealBelowPercent: 90,
-		ManaSitBelowPercent: 50, ManaSitUntilPercent: 80, MaximumQuietSits: 12);
+		ManaSitBelowPercent: 50, ManaSitUntilPercent: 80, MaximumQuietSits: 12, RestSkills: NaturalClericSkills.RestSkills);
 
 	/// <summary>The Priest casts from range and lets the monster come. The pull distance stays the run's parameter.</summary>
 	internal static readonly NaturalEngageRanges PriestLineRanges = new(

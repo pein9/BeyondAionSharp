@@ -20,18 +20,7 @@ public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role
 	int ReagentItemId = 0, int ReagentCount = 0,
 	string? TargetKind = null, int CastMillis = 0, IReadOnlyList<string>? RequiredWeaponGroups = null,
 	bool AddWeaponRange = false, int SelfCount = 0, string? Activation = null, string? CounterStatus = null,
-	bool OutOfCombatOnly = false)
-{
-	/// <summary>Skills cast on the bot itself; every other role targets the monster.</summary>
-	public bool TargetsSelf => Role is "heal" or "blessing" or "rejuvenation" or "salvation" or "herb" or "mp-recovery"
-		or "penance" or "grace" or "flash-recovery";
-
-	/// <summary>Powder rest skills (4 s cast, cancelled by any hit): only the rest policy casts them.</summary>
-	public bool IsPowderRest => Role is "herb" or "mp-recovery";
-
-	/// <summary>AC-00: skills only the rest policy casts: the powder skills and Penance (it spends HP for mana).</summary>
-	public bool IsRestSkill => IsPowderRest || Role == "penance";
-}
+	bool OutOfCombatOnly = false);
 
 /// <summary>
 /// Frozen 4.8 Priest level 1-9 active skills. The learned SM_SKILL_LIST is still the authority:
@@ -134,6 +123,18 @@ public static class NaturalPriestCombatPolicy
 	public static int EmergencyExitPercent(int attackers, bool targetSeasoned) =>
 		EmergencyEnterPercent(attackers, targetSeasoned) + (EmergencyClearPercent - EmergencyPercent);
 
+	// NR-12: the frozen hand-typed rows carry no target kind, so this rule, which goes with them, says by role what the
+	// shared skill record no longer does.
+	/// <summary>Skills cast on the bot itself; every other role targets the monster.</summary>
+	private static bool TargetsSelf(NaturalPriestSkill skill) => skill.Role is "heal" or "blessing" or "rejuvenation" or "salvation"
+		or "herb" or "mp-recovery" or "penance" or "grace" or "flash-recovery";
+
+	/// <summary>Powder rest skills (4 s cast, cancelled by any hit): only the rest policy casts them.</summary>
+	private static bool IsPowderRest(NaturalPriestSkill skill) => skill.Role is "herb" or "mp-recovery";
+
+	/// <summary>AC-00: skills only the rest policy casts: the powder skills and Penance (it spends HP for mana).</summary>
+	private static bool IsRestSkill(NaturalPriestSkill skill) => IsPowderRest(skill) || skill.Role == "penance";
+
 	/// <summary>Audit all client-observable candidate actions after Decide, including later branches it did not visit.</summary>
 	public static NaturalCombatCandidate[] CandidateActions(NaturalCombatObservation state,
 		DateTimeOffset now, NaturalCombatChoice chosen, IEnumerable<NaturalPriestSkill>? catalog = null,
@@ -182,12 +183,12 @@ public static class NaturalPriestCombatPolicy
 
 		foreach (NaturalPriestSkill skill in skills.OrderBy(skill => skill.Id))
 		{
-			string action = skill.TargetsSelf ? "cast-self" : "cast-target";
+			string action = TargetsSelf(skill) ? "cast-self" : "cast-target";
 			int? target = action == "cast-target" ? state.TargetObjectId : null;
 			var reasons = new List<string>();
 			if (state.Dead) reasons.Add("Client reported death.");
-			if (skill.IsPowderRest) reasons.Add("Powder rest skill: any hit cancels its 4 s cast, so only the rest policy casts it.");
-			else if (skill.IsRestSkill) reasons.Add("Rest skill: it spends HP for mana, so only the rest policy casts it.");
+			if (IsPowderRest(skill)) reasons.Add("Powder rest skill: any hit cancels its 4 s cast, so only the rest policy casts it.");
+			else if (IsRestSkill(skill)) reasons.Add("Rest skill: it spends HP for mana, so only the rest policy casts it.");
 			if (state.Dp < skill.DpCost) reasons.Add("Observed DP is below the skill's cost.");
 			if (skill.Role == "rejuvenation" && state.HasRejuvenation != false)
 				reasons.Add("The heal over time is already observed, or effects are unobserved.");

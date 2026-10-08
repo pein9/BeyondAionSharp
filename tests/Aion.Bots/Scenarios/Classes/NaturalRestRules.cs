@@ -24,6 +24,31 @@ public sealed record NaturalRestObservation(int Level, int Hp, int MaxHp, int Mp
 /// <param name="UsesMana">The class's attacks need mana, so the mana sit of the rules applies as well.</param>
 public sealed record NaturalPotionRestPlan(int HpTargetPercent, bool UsesMana);
 
+/// <summary>NR-12: one skill of a class's rest, by its role in the catalog and by the name a trace reason gives it.</summary>
+public sealed record NaturalRestSkill(string Role, string Name);
+
+/// <summary>
+/// NR-12: the skills a class casts only between fights, by what they do, with the numbers of their use. The Cleric's are
+/// Herb Treatment and MP Recovery, which spend a reagent in a long cast that any hit cancels and share one cooldown, and
+/// Penance, which trades health for mana.
+/// </summary>
+/// <param name="ReagentHealth">Restores HP for a reagent.</param>
+/// <param name="ReagentMana">Restores MP for a reagent.</param>
+/// <param name="HealthForMana">Trades HP for MP over time.</param>
+/// <param name="Heal">The class's own heal, cast while the reagent skills cool down or when there is no reagent.</param>
+/// <param name="SharedCooldownId">The cooldown group the two reagent skills share.</param>
+/// <param name="HealBelowPercent">HP below this is restored.</param>
+/// <param name="HealthForManaMinimumHpPercent">The health-for-mana skill starts only at or above this HP.</param>
+public sealed record NaturalRestSkills(NaturalRestSkill ReagentHealth, NaturalRestSkill ReagentMana, NaturalRestSkill HealthForMana,
+	NaturalRestSkill Heal, int SharedCooldownId, int HealBelowPercent, int HealthForManaMinimumHpPercent)
+{
+	/// <summary>A reagent skill: a long cast that any hit cancels, so only the rest casts it.</summary>
+	public bool IsReagent(NaturalPriestSkill skill) => skill.Role == ReagentHealth.Role || skill.Role == ReagentMana.Role;
+
+	/// <summary>A skill only the rest casts: the reagent skills and the one that spends HP for mana.</summary>
+	public bool IsRestOnly(NaturalPriestSkill skill) => IsReagent(skill) || skill.Role == HealthForMana.Role;
+}
+
 /// <param name="Action"><see cref="NaturalRestRules.Powder"/>, <see cref="NaturalRestRules.CastHeal"/>,
 /// <see cref="NaturalRestRules.SitForMana"/>, <see cref="NaturalRestRules.DrinkLifePotion"/>,
 /// <see cref="NaturalRestRules.SitForHealth"/>, <see cref="NaturalRestRules.Done"/> or <see cref="NaturalRestRules.Blocked"/>.</param>
@@ -44,10 +69,12 @@ public sealed record NaturalRestDecision(string Action, NaturalPriestSkill? Skil
 /// for at most <paramref name="MaximumQuietSits"/> undisturbed sits.
 /// </summary>
 /// <param name="Skills">The class's skill catalog.</param>
-/// <param name="PotionPlan">CP-37: the plan of a class with no heal of its own; it applies until a skill of the role
-/// <c>heal</c> is observed in the skill list, and from then on the plan above does. Null for the Priest line.</param>
+/// <param name="PotionPlan">CP-37: the plan of a class with no heal of its own; it applies until a skill of the heal
+/// role is observed in the skill list, and from then on the plan above does. Null for the Priest line.</param>
+/// <param name="RestSkills">NR-12: the class's rest-only skills, by kind; null for a class that has none.</param>
+/// <param name="HealRole">NR-12: the role of the class's own heal in its catalog.</param>
 public sealed record NaturalRestRules(NaturalPriestSkill[] Skills, int HealBelowPercent, int ManaSitBelowPercent, int ManaSitUntilPercent,
-	int MaximumQuietSits, NaturalPotionRestPlan? PotionPlan = null)
+	int MaximumQuietSits, NaturalPotionRestPlan? PotionPlan = null, NaturalRestSkills? RestSkills = null, string HealRole = "heal")
 {
 	public const string Powder = "powder", CastHeal = "cast-heal", SitForMana = "sit-for-mana", Done = "done", Blocked = "blocked";
 	public const string DrinkLifePotion = "drink-life-potion", SitForHealth = "sit-for-health";
@@ -57,7 +84,7 @@ public sealed record NaturalRestRules(NaturalPriestSkill[] Skills, int HealBelow
 
 	public NaturalRestDecision Decide(NaturalRestObservation state)
 	{
-		if (PotionPlan is { } plan && NaturalPriestSkills.Best("heal", state.Level, state.Learned, Skills) == null)
+		if (PotionPlan is { } plan && NaturalPriestSkills.Best(HealRole, state.Level, state.Learned, Skills) == null)
 			return DecideWithoutHeal(state, plan);
 		bool recovering = state.RecoveringMana, recovered = false;
 		if (state.Mp * 100 < state.MaxMp * ManaSitBelowPercent) recovering = true;
@@ -68,17 +95,17 @@ public sealed record NaturalRestRules(NaturalPriestSkill[] Skills, int HealBelow
 		}
 		// NA-18 (OD-9): powder first. Sitting and the own heal stay the fallback below.
 		NaturalPowderRestChoice? powder = null;
-		if (Skills.Any(skill => skill.IsPowderRest && state.Learned.ContainsKey(skill.Id)))
+		if (RestSkills is { } restSkills && Skills.Any(skill => restSkills.IsReagent(skill) && state.Learned.ContainsKey(skill.Id)))
 		{
 			powder = NaturalPowderRestPolicy.Decide(new NaturalPowderRestObservation(
 				state.Level, state.Hp, state.MaxHp, state.Mp, state.MaxMp, recovering, state.Learned,
-				state.Cooldowns, state.ItemCounts, LastPowderSkillId: state.LastPowderSkillId), state.Now, Skills);
-			if (powder.Skill is { IsRestSkill: true } restSkill) return new(Powder, restSkill, recovering, recovered, powder, null);
+				state.Cooldowns, state.ItemCounts, LastPowderSkillId: state.LastPowderSkillId), state.Now, Skills, restSkills);
+			if (powder.Skill is { } restSkill && restSkills.IsRestOnly(restSkill)) return new(Powder, restSkill, recovering, recovered, powder, null);
 		}
 		if (!recovering)
 		{
 			if (state.Hp * 100 >= state.MaxHp * HealBelowPercent) return new(Done, null, recovering, recovered, powder, null);
-			NaturalPriestSkill? heal = NaturalPriestSkills.Best("heal", state.Level, state.Learned, Skills);
+			NaturalPriestSkill? heal = NaturalPriestSkills.Best(HealRole, state.Level, state.Learned, Skills);
 			return heal == null || state.Mp < heal.ManaCost
 				? new(Blocked, null, recovering, recovered, powder, NoSelfHeal)
 				: new(CastHeal, heal, recovering, recovered, powder, null);

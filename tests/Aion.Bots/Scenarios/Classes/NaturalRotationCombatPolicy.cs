@@ -465,7 +465,6 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 
 	private static bool LifePotionUsable(NaturalCombatObservation state) => state.HasHotPotion && state.HotPotionReady && !state.HotPotionActive;
 
-	/// <summary>The skill is cast on the bot: the template's first target is the caster, or a friend or the caster; a
-	/// hand-typed row says it by its role.</summary>
-	private static bool Self(NaturalPriestSkill skill) => skill.TargetKind == null ? skill.TargetsSelf : skill.TargetKind is "ME" or "TARGETORME";
+	/// <summary>The skill is cast on the bot: the template's first target is the caster, or a friend or the caster.</summary>
+	private static bool Self(NaturalPriestSkill skill) => skill.TargetKind is "ME" or "TARGETORME";
 }
