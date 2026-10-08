@@ -5057,7 +5057,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - **Finding, not fixed.** Many fights are fought with the monster on the Engineer:
       it holds its place and the monster comes. That is the profile's stand-off; it
       does not step back.
-- [ ] **CP-62 - Engineer 1-9 at Munin, captured and verified as munin-engineer-s1.**
+- [x] **CP-62 - Engineer 1-9 at Munin, captured and verified as munin-engineer-s1.**
   Depends: CP-61
   - Work: As CP-52 with -Class engineer -Name munin-engineer-s1. Acceptance: a pistol and
     leather pieces worn, nothing wearable and nothing of the help kit sold, the help items
@@ -5065,6 +5065,46 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     becomes a lettered checkpoint item.
   - Proof: sim-snapshot.ps1 -Action Verify -Name <the accepted name> passes as a level-9
     Engineer, with CP_CLASS=engineer and no NA_HELP_ITEMS emitted by the restore.
+  - 2026-10-08: done, first attempt. Snapshot **munin-engineer-s1**, captured at 93927e3ea
+    on a clean tree by run cp62-engineer-a1 (run/cp/CP-62/capture-a1.log; evidence
+    run/snapshots/_capture/cp62-engineer-a1). Character 133266, 9,820,211 game ms (2 h 43
+    min 40 s, the shortest of the four so far), 109,256 trace records, dump SHA-256
+    49f1e2c6fdadc778f0db9f9858e568a49732efb715d61155f6537b62ab33dbb1, receipt SHA-256
+    eee880868511371bf711ecb2e71cc1890a9bac4791db918c9e1c63f0452f4855, classLine engineer in
+    snapshot.json. The code is CP-56a's (4628956c1); every commit after it is evidence
+    only, so no bundle was run again.
+    - **Acceptance, from the receipt and the trace before Verify.** Class id 12, level 9,
+      728 HP and 738 MP; 41 quests completed, Q2008 at START/0; the last decision is
+      journey-complete, standing at the client-observed Munin. Worn: the pistol 101800195
+      (Q2134), the leather pieces 110301182 (Q2007), 113300791 (Q2005), 114300805 (Q2006)
+      and 111300768 (Q2129), and the accessories 122000869 and 121000749. The trace holds
+      no sale, no discard and no vendor visit; the replaced pistols and the starter
+      pieces are still in the cube. help-items.json lists the kit at the start (30 life
+      potions 162000006, 30 Anti-Shock scrolls 164000067, 20 Greater Running Scrolls
+      164000076) and two refills at level-9 checkpoints (16 running scrolls, 22 life
+      potions). Both Ishalgen binds are in the trace: the village obelisk 700063 at 4:07
+      for 43 Kinah and the outpost obelisk 700064 at 18:44 for 134. Accepted.
+    - **Ledger.** 146 encounters, 132 kills, no death, 9 retreats, each at two attackers;
+      5 encounters ended on a blocked approach. 759 decisions: 518 casts on a target, 143
+      pistol shots, 49 waits, 26 approaches, 10 life potions, 9 retreats, 2 shield
+      scrolls and 2 casts of Bullet Resistance. Casts: Direct Shot 220, Rapidfire 117,
+      Gunshot 97, Hot Shot 56. Hot Shot (level 9), Bullet Resistance and the shield
+      scroll are shown on the Engineer for the first time. 102 pull plans: 91 pulls, 6
+      waits, 5 with no plan. Lowest HP 44% (275 of 628, at Q2007's blue generator). Used:
+      22 life potions (13 in rests, 9 in fights); two sits for health; two Anti-Shock
+      scrolls, 30 to 28; the Greater Running Scroll 18 times; Blitzopan six times; Return
+      twice. No restock. 40,413 Kinah at the end.
+    - **Proof.** Restore prints CP_CLASS=engineer and no NA_HELP_ITEMS (run/cp/CP-62/
+      restore.txt; that copy was dropped). Verify, run cp62-engineer-verify-a1, passes
+      (run/cp/CP-62/verify-a1.log; evidence run/snapshots/_verify/cp62-engineer-verify-a1):
+      the run's context reads classLine engineer, the resumed character is observed as
+      class id 12 at level 9 with the Engineer's skills, 41 quests completed and Q2008 at
+      START/0, and the endpoint is reached again.
+    - **Findings, not fixed.** (a) 19 corpses were not looted (14 with no safe path, 5
+      far). (b) 13 obstacle refusals were answered by closing in, and one cast was
+      refused for distance. (c) The receipt's 16-bit EquipmentSlot hides the accessory
+      123000864, as for the other classes.
+    - No code changed, so this commit is evidence only. The class scope is CP-63's.
 - [ ] **CP-63 - Record class scope engineer, twice.** Depends: CP-62
   - Work: As CP-53 with -Set engineer -Item CP-63.
   - Proof: The record run: the two passes of class scope engineer are identical after
@@ -6266,3 +6306,11 @@ report what was done, what is blocked and what you need from me.
   attackers. Gunshot 17, Rapidfire 18, the held chain's wait seven times. Seven life
   potions, four running scrolls, Blitzopan twice. Evidence and docs only; seven checks pass.
   Next by rule (h): CP-62.
+- 2026-10-08 — Loop: CP-62 done, first attempt. Snapshot munin-engineer-s1 captured at
+  93927e3ea (run cp62-engineer-a1) and verified (run cp62-engineer-verify-a1): an Engineer
+  created by packets plays all 41 Ishalgen quests in 2 h 44 min of game time and stands at
+  Munin at level 9 with Q2008 at START/0, in its Q2134 pistol and four leather pieces. 146
+  encounters, 132 kills, no death, 9 retreats at two attackers; lowest HP 44%. Hot Shot,
+  Bullet Resistance and the shield scroll are shown in play. 22 life potions, 18 running
+  scrolls, Blitzopan six times; nothing sold and nothing bought. Restore prints
+  CP_CLASS=engineer and no NA_HELP_ITEMS. Evidence only. Next by rule (h): CP-63.
