@@ -5223,10 +5223,26 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - All five new starters now stand at Munin: munin-mage-s1, munin-warrior-s1,
       munin-artist-s1, munin-engineer-s1 and munin-scout-s1. No code changed in this
       item, so this commit is evidence only. The class scope is CP-66's.
-- [ ] **CP-66 - Record class scope scout, twice.** Depends: CP-65
+- [x] **CP-66 - Record class scope scout, twice.** Depends: CP-65
   - Work: As CP-53 with -Set scout -Item CP-66.
   - Proof: The record run: the two passes of class scope scout are identical after
     normalization (run/cp/CP-66/<run-id>/verdict.json).
+  - 2026-10-08: done. Run record-a1 at e1ff5f857 on a clean tree: the gate played class
+    scope scout twice (run/cp/CP-66/record-a1-scout-pass1 and -pass2) and the two passes
+    are identical after normalization: 31,082 records, SHA-256
+    85d3c5974e2c108c5a056ce96015a7bbf3172c31d3e21a19aca9a143f5747d36
+    (run/cp/CP-66/record-a1/verdict.json, verdict pass). The Q2004 stop of CP-64 landed on
+    the status-5 stop, so the scope is recorded as defined. Its row is written into
+    parity-artifacts/e2e/natural-neutral-baseline.json with an empty ignore list and these
+    counts: no death, 3 retreats, 4 pull plans, 13 life potions in fights, 5 running
+    scrolls, 2 speed scrolls, 3 help items supplied, 2 binds. They are those of CP-64's
+    second attempt, the one with the swarm limit of three.
+    - The baseline file now holds twelve scopes: p, m, b, l1, c, hm and ax of the
+      accepted line, and mage, warrior, artist, engineer and scout. The guard of rule (c)
+      runs gate p and all five class scopes.
+    - Evidence only. The seven pre-commit checks pass, and so do the trace comparer's
+      tests and the snapshot and gate contract tests, which read the baseline file.
+    - Phase F is closed: five snapshots at Munin and five recorded class scopes.
 
 ### G. Close-out
 
@@ -6433,3 +6449,8 @@ report what was done, what is blocked and what you need from me.
   shown in play. 75 life potions, 21 running scrolls, Blitzopan seven times; nothing sold and
   nothing bought. Restore prints CP_CLASS=scout and no NA_HELP_ITEMS. All five new starters
   now stand at Munin. Evidence only. Next by rule (h): CP-66.
+- 2026-10-08 — Loop: CP-66 done. Class scope scout recorded at e1ff5f857 (run record-a1): two
+  passes of Replay -Class scout -StopAt 2004:5:0, identical after normalization, 31,082
+  records, SHA-256 85d3c597...f5747d36. The baseline file holds twelve scopes and the guard
+  of rule (c) runs p and all five class scopes. Evidence only; seven checks and the two
+  script tests that read the baseline pass. Phase F is closed. Next by rule (h): CP-67.
