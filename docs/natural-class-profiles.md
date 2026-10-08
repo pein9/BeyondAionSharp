@@ -4076,7 +4076,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       spell-range and it selects a stand-off (combat-standoff-selected, 12.2 m) before
       the Warrior walks in. It works, and the numbers are the Warrior's to tune when a
       later checkpoint shows a need.
-- [ ] **CP-45 - Seam closed: the class-literal ratchet.** Depends: CP-41, CP-42, CP-43,
+- [x] **CP-45 - Seam closed: the class-literal ratchet.** Depends: CP-41, CP-42, CP-43,
   CP-44
   - Work: No bot code changes. Add UT/NaturalClassSeamRatchetTests with
     e2e/natural-class-literals-baseline.json: per file under tests/Aion.Bots and
@@ -4088,6 +4088,45 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     in the doc; the leg gates stay.
   - Proof: Unit test UT/NaturalClassSeamRatchetTests: green at the counts recorded in the
     baseline file, with one fixture case that shows it fails when a count rises.
+  - 2026-10-08: done as far as rule (n) allows, at HEAD 143208440 with no code change. The
+    item's own work is a unit test and its baseline file, and rule (n) writes no new unit
+    test, so neither exists: nothing fails when a count rises. What stands is the other
+    half of the Work line, the list below, counted after the Warrior rested, fought and
+    journeyed on the seam. If the operator wants the ratchet, it is one small test over
+    these counts.
+    - **Counted:** PlayerClass.PRIEST, PlayerClass.CLERIC, IsCleric, NaturalPriestSkills.,
+      NaturalClericSkills. and NaturalPriestCombatPolicy. in every .cs file under
+      tests/Aion.Bots and tools/Aion.LiveBots, outside Sc/Classes and the two frozen
+      policy files (NaturalPriestCombatPolicy.cs, NaturalClericSkills.cs). 27 in 10
+      files: PRIEST 6, CLERIC 6, IsCleric 7, NaturalPriestSkills. 4, NaturalClericSkills.
+      1, NaturalPriestCombatPolicy. 3.
+    - **The leg gates, which stay** (section 6): Sc/NaturalIshalgenJourney.cs, IsCleric 4
+      (the early ceremony's endpoint, the Abyss-entry leg, an Altgard leg, the NA-23
+      encounter); Sc/NaturalIshalgenJourney.Combat.cs, IsCleric 1 with CLERIC 1 (the
+      helper those four read); Sc/NaturalCapitalDecisionEngine.cs, CLERIC 1 (the capital
+      leg); Sc/NaturalJourneyIdentityRules.cs, CLERIC 1 (the Convent and the later maps
+      belong to a Cleric).
+    - **Names kept for their callers** (section 7): Sc/NaturalIshalgenInventoryPolicy.cs,
+      PRIEST 2 and CLERIC 2 (NaturalItem's RequiredLevel, MaximumLevel, ClericLevel and
+      ClericMaximumLevel), IsCleric 2 with CLERIC 1 (IsClericGear and the static
+      IsCleric(world)).
+    - **Shared helpers that live on the Priest's classes:** NaturalPriestSkills.Best,
+      the role lookup over any catalog, called at Sc/NaturalIshalgenJourney.Combat.cs:765
+      and Sc/NaturalIshalgenJourney.cs:5935 (NaturalPriestSkills. 2);
+      NaturalPriestCombatPolicy.MeleeReach at J.Combat:239 and .SwarmedAttackers at
+      Sc/NaturalPatrolPolicy.cs:31 (NaturalPriestCombatPolicy. 2);
+      NaturalClericSkills.LesserOdellaPowder in the powder-rest trace at J.Combat:901
+      (NaturalClericSkills. 1). None decides for a class: the catalog and the profile are
+      the caller's.
+    - **Not the natural journey:** Sc/CharacterLifecycleScenario.cs, PRIEST 1 (the six
+      starters it creates); Sc/CharacterSwitchScenario.cs, PRIEST 1 (its second
+      character); Sc/NaturalIshalgenIdentityScenario.cs, PRIEST 2 (its two fixed
+      characters); tools/Aion.LiveBots/LiveNaturalIshalgenCombatScenario.cs,
+      NaturalPriestSkills. 2 and NaturalPriestCombatPolicy. 1 (the live Priest combat
+      scenario, on the public members section 7 keeps).
+    - No file of the natural journey names a class other than the accepted line's
+      outside Sc/Classes: the Warrior appears only in NaturalClassLine,
+      NaturalClassProfile, NaturalClassGearTable and its own profile file.
 
 ### E. Profiles for Mage, Artist, Engineer and Scout
 
@@ -5365,3 +5404,10 @@ report what was done, what is blocked and what you need from me.
   kill. Kit used: five Major Life Potions in rests, three running scrolls, one Blitzopan; the
   shield scroll and the in-fight potion were not needed. Bound at the village obelisk.
   Evidence and docs only. Next by rule (h): CP-45.
+- 2026-10-08 — Loop: CP-45 done as far as rule (n) allows: no ratchet test and no baseline
+  file, the list instead. 27 Priest and Cleric literals remain in 10 files outside Sc/Classes
+  and the two frozen policy files: 8 are leg gates or their helper, 7 are names kept for
+  callers, 5 are shared helpers that live on the Priest's classes, and 7 are in scenarios that
+  are not the natural journey and in the live Priest scenario. Docs only.
+  This is the first report point: the seam is closed with a Warrior in the field, and the
+  Chanter capture CP-33 is ticked. Next by rule (h): CP-46.
