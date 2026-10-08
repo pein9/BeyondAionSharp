@@ -32,6 +32,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("engineer-5", NaturalClassLine.Engineer, ProbeAccountB, "Asimfiveengi"),
 		new("scout-1", NaturalClassLine.Scout, ProbeAccountA, "Asimonescout"),
 		new("scout-7", NaturalClassLine.Scout, ProbeAccountB, "Asimsevenscout"),
+		new("warrior-pack", NaturalClassLine.Warrior, ProbeAccountA, "Asimpackwar"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -164,6 +165,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "engineer-5": await EngineerLevelFiveRowAsync(probe, id, geometry, token); break;
 			case "scout-1": await ScoutLevelOneRowAsync(probe, id, geometry, token); break;
 			case "scout-7": await ScoutLevelSevenRowAsync(probe, id, geometry, token); break;
+			case "warrior-pack": await WarriorPackRowAsync(probe, id, geometry, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -569,4 +571,50 @@ public sealed partial class SimulationFastScenarioTests
 			$"Decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}. " +
 			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
 	}
+
+	/// <summary>
+	/// CP-56a, row warrior-pack. Prepared by the director: level 9 and a place 20 m east of two Eyvindr Sailors that stand
+	/// half a metre apart (210738 at 1165.3/1861.3, level 6, and 210737 beside it, level 5). Every other act is the
+	/// journey's: the Warrior takes the 210738 as its target. The hazard-checked walk to it is refused, because it stands
+	/// inside its neighbour's circle; the walk-in then accepts that neighbour as the target's pack and walks in. A kill, a
+	/// retreat and a death are all recorded outcomes; a blocked approach throws in the fight loop and fails the row.
+	/// </summary>
+	private async Task WarriorPackRowAsync(StarterProbe probe, string id, BotNavigationGeometry geometry, CancellationToken token)
+	{
+		const int map = 220010000, sailor = 210738, mate = 210737;
+		var pair = new BotPosition(1165.33f, 1861.31f, 251.419f, 0);
+		probe.Session.BeginStep("s01", "director-sets-level-nine-and-places-by-two-sailors");
+		await probe.SetLevelAsync(9);
+		// The eastmost ground 20 m from the pair: clear of the other Eyvindr spots, the nearest of which is 17 m on.
+		BotPosition spot = geometry.GroundAround(map, pair, [20]).OrderByDescending(point => point.X).ThenBy(point => point.Y).First();
+		await probe.PlaceAsync(spot.X, spot.Y, spot.Z);
+		probe.Session.BeginStep("s02", "walk-in-on-a-sailor-and-its-pack");
+		Npc target = NearestLiving(probe, sailor);
+		Npc neighbour = NearestLiving(probe, mate, target);
+		Assert.True(MathF.Abs(target.GetX() - pair.X) < 3 && MathF.Abs(target.GetY() - pair.Y) < 3, $"The target stands at {target.GetX()}/{target.GetY()}.");
+		// The journey walks its quest legs with aggro circles as hazards; the probe asks for the same.
+		NaturalCombatDiagnosticResult result = await probe.Journey.RunObservedCombatAsync(_ => Task.FromResult(target.GetObjectId()), token,
+			avoidHostileAggro: true);
+		IReadOnlyList<StarterTraceRecord> records = probe.TraceOf("s02");
+		IReadOnlyDictionary<string, int> decisions = probe.DecisionsOf("s02");
+		StarterTraceRecord[] accepts = records.Where(record => record is { Direction: "action", Packet: "walk-in-accepts-pack" }).ToArray();
+		Assert.NotEmpty(accepts);
+		JsonElement first = accepts[0].Fields;
+		Assert.True(first.GetProperty("accepted").GetBoolean(), "The pack was not accepted.");
+		int[] pack = first.GetProperty("pack").EnumerateArray().Select(member => member.GetInt32()).ToArray();
+		Assert.Equal([neighbour.GetObjectId()], pack);
+		Assert.True(decisions.GetValueOrDefault("attack") + decisions.GetValueOrDefault("cast-target") > 0, "The fight was not fought.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Warrior, max HP {probe.World.MaxHp}, placed {MathF.Sqrt(MathF.Pow(spot.X - pair.X, 2) + MathF.Pow(spot.Y - pair.Y, 2)):F1} m from the pair. " +
+			$"Walk-in accepted the pack {string.Join(",", pack)} {accepts.Length} time(s) after: {first.GetProperty("refused").GetString()} " +
+			$"Result {result}. Target dead {target.IsDead()}, neighbour dead {neighbour.IsDead()}. " +
+			$"Decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
+	}
+
+	/// <summary>The living monster of a template nearest to another monster.</summary>
+	private Npc NearestLiving(StarterProbe probe, int templateId, Npc near) => probe.World.Objects.Values
+		.Where(known => known.TemplateId == templateId)
+		.Select(known => fixture.World.FindVisibleObject(known.ObjectId)).OfType<Npc>().Where(npc => !npc.IsDead())
+		.OrderBy(npc => MathF.Abs(npc.GetX() - near.GetX()) + MathF.Abs(npc.GetY() - near.GetY()))
+		.First();
 }

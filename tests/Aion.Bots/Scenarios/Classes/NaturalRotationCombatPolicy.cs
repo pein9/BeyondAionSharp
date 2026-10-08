@@ -102,6 +102,9 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 
 	public string PolicyVersion(NaturalMauPolicyParameters parameters) => $"{rules.Id}:{parameters.Id}";
 
+	/// <summary>CP-56a: attackers at which the class leaves; a walk-in approach takes on no pack that reaches it.</summary>
+	public int SwarmAttackers => rules.SwarmAttackers;
+
 	public int EmergencyEnterPercent(int attackers, bool targetSeasoned) => rules.EmergencyPercent;
 
 	public int EmergencyExitPercent(int attackers, bool targetSeasoned) => rules.EmergencyClearPercent;

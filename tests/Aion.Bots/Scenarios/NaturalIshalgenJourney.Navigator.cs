@@ -29,6 +29,9 @@ public sealed partial class NaturalIshalgenJourney
 		public BotTravelPlanner? Planner { get; init; }
 		public List<NaturalNavigationEvent> Events { get; } = [];
 		public HashSet<int> UnavailableObjects { get; } = [];
+		/// <summary>CP-56a: the monsters a walk-in approach has accepted as its target's pack. While it is set their
+		/// circles are no hazard to a route or a segment; it is empty outside that approach.</summary>
+		public IReadOnlySet<int> AcceptedPack { get; set; } = new HashSet<int>();
 		private BotPosition? lastMovementStart;
 		public BotPosition? LastMovementStart => lastMovementStart;
 		private bool defending;
@@ -281,7 +284,7 @@ public sealed partial class NaturalIshalgenJourney
 			BotPosition? objective = destination ?? observed
 				.FirstOrDefault(npc => npc.ObjectId == targetObjectId)?.Position;
 			return observed
-			.Where(npc => npc.ObjectId != targetObjectId &&
+			.Where(npc => npc.ObjectId != targetObjectId && !AcceptedPack.Contains(npc.ObjectId) &&
 				(destination == null || Distance(npc.Position, destination.Value) > 0.1f))
 			.Select(npc => (npc,
 				template: runtime.Data.NpcDataDh.GetNpcTemplate(npc.TemplateId)))

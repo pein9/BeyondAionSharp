@@ -520,6 +520,31 @@ public sealed partial class NaturalIshalgenJourney
 								ApproachMapId, npc.TemplateId!.Value, target, destination, navigator, token)
 							: await NaturalIshalgenNavigator.ApproachNpcAsync(
 								ApproachMapId, npc.TemplateId!.Value, destination, navigator, token);
+						if (!approach.Arrived && profile.PullStyle == NaturalPullStyle.WalkIn)
+						{
+							// CP-56a: the walk was planned against every other monster's circle, so a target that stands
+							// inside its neighbour's circle is never reached. The walk-in planner already counts that
+							// neighbour as a helper of the fight; plan the walk once more with the pack's circles left
+							// out, unless the pack would bring the fight to the swarm limit. Every other circle stays.
+							int[] pack = WalkInPack(target);
+							bool accepted = pack.Length > 0 && profile.Combat is NaturalRotationCombatPolicy walkInTable &&
+								pack.Length + 1 < walkInTable.SwarmAttackers;
+							session.TraceDiagnostic("walk-in-accepts-pack", new Dictionary<string, object?>
+							{
+								["targetObjectId"] = target, ["pack"] = pack, ["accepted"] = accepted,
+								["refused"] = approach.Reason, ["position"] = session.CurrentPosition,
+							});
+							if (accepted)
+							{
+								navigator.AcceptedPack = pack.ToHashSet();
+								try
+								{
+									approach = await NaturalIshalgenNavigator.ApproachNpcObjectAsync(
+										ApproachMapId, npc.TemplateId!.Value, target, destination, navigator, token);
+								}
+								finally { navigator.AcceptedPack = new HashSet<int>(); }
+							}
+						}
 						if (!approach.Arrived)
 							throw new NaturalCombatApproachBlockedException(approach.Reason);
 						// Navigation can already be at a walking NPC's announced destination while combat still
@@ -1222,6 +1247,29 @@ public sealed partial class NaturalIshalgenJourney
 			if (!safe) return;
 			await navigator.MoveAsync(route, token);
 			await navigator.SynchronizeAsync(token);
+		}
+
+		/// <summary>
+		/// CP-56a: the monsters that join a fight at the target's own position, as the walk-in planner counts them
+		/// (<see cref="NaturalPullPlanner.AddsAt"/>: the server's support rule and every circle that reaches the spot).
+		/// </summary>
+		private int[] WalkInPack(int targetObjectId)
+		{
+			NaturalPullMonster? Monster(NaturalNavigationObject npc) =>
+				runtime.Data.NpcDataDh.GetNpcTemplate(npc.TemplateId) is { } template && runtime.IsAggressive(template)
+					? new(npc, template.GetAggroRange(), template.GetTribe().ToString(), template.GetBoundRadius().GetMaxOfFrontAndSide())
+					: null;
+			IReadOnlyList<NaturalNavigationObject> observed = navigator.Observe().Npcs;
+			if (observed.FirstOrDefault(npc => npc.ObjectId == targetObjectId) is not { } targetNpc || Monster(targetNpc) is not { } target)
+				return [];
+			NaturalPullMonster[] monsters = observed.Where(npc => npc.ObjectId != targetObjectId)
+				.Select(Monster).OfType<NaturalPullMonster>().ToArray();
+			bool CanSupport(string helper, string asking) =>
+				Enum.TryParse(helper, out Aion.GameServer.Model.TribeClass h) && Enum.TryParse(asking, out Aion.GameServer.Model.TribeClass a) &&
+				runtime.Data.TribeRelations.CanSupport(h, a);
+			return NaturalPullPlanner.AddsAt(target, targetNpc.Position, monsters, CanSupport,
+					(a, b) => geometry.HasLineOfSight(ApproachMapId, a, b), ClassProfile.Ranges.MeleeReach)
+				.Select(add => add.Npc.ObjectId).Order().ToArray();
 		}
 
 		private async Task<bool> CastAsync(NaturalPriestSkill skill, int target, CancellationToken token)

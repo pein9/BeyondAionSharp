@@ -4781,7 +4781,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       whole run took 3 h 05 min.
     - Not a small change, so by rule (i) it is CP-56a below. The first attempt is spent;
       CP-56 is retried with a fresh two-attempt budget after it.
-- [ ] **CP-56a - A walk-in approach accepts the pack its planner counts.** Depends: CP-55
+- [x] **CP-56a - A walk-in approach accepts the pack its planner counts.** Depends: CP-55
   - Work: Java first: the support rule the planner's AddsAt mirrors
     (AggroEventHandler.onCreatureNeedsSupport, read for CP-40). In the fight loop's approach
     of a walk-in class (J.Combat, the branch of CP-43a): when the hazard-checked walk to an
@@ -4801,6 +4801,39 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     recorded outcomes. Guards: gate p and class scope mage identical (rule (c)); rows
     warrior-1, warrior-7, scout-1 and scout-7 play as recorded (rule (k), the branch is
     CP-43a's).
+  - 2026-10-08: done. Java: AggroEventHandler.onCreatureNeedsSupport, as read for CP-40;
+    nothing new on the server is relied on.
+    - **The change.** J.Combat, the approach of a walk-in class: when the hazard-checked
+      walk to the target is refused, the fight loop asks NaturalPullPlanner.AddsAt for the
+      monsters that join a fight at the target's position (WalkInPack), traces
+      walk-in-accepts-pack with them, and, when there is a pack and it leaves the fight
+      under the class's swarm limit, plans the walk once more with those monsters'
+      circles left out (NaturalJourneyNavigator.AcceptedPack, empty outside that walk).
+      Every other circle stays a hazard. It applies whether or not the target has been
+      pulled yet: a pulled target that stands in its mate's circle is refused the same
+      way. NaturalRotationCombatPolicy shows its swarm limit. A stand-off class never
+      reaches the branch, and with no pack accepted the navigator's hazards are computed
+      as before.
+    - **The row differs from the Proof line above, on purpose.** At the Map of Eyvindr a
+      fresh world has three monsters inside one another's reach (two 210737 and a 210738
+      the journey had already killed), and a pack of two is the Warrior's swarm limit, so
+      the walk stays refused there. The row uses the two Eyvindr Sailors that stand half a
+      metre apart 48 m from the map (210738 at 1165.3/1861.3, level 6, 502 HP, and 210737
+      beside it, level 5, 393 HP): one pack mate, as the journey met at the map.
+    - **Probe, row warrior-pack** (run/cp/CP-56a/probe-a2.log, trace beside it), on
+      account 98 as Asimpackwar. Prepared: level 9, placed 20.0 m east of the pair. A
+      level-9 Warrior in its starting gear has 741 HP. The walk to the 210738 is refused
+      ("No collision-checked route to the current destination"), the pack of one (its
+      neighbour) is accepted once, and the Warrior walks in and fights with both on it:
+      four casts, six swings and one life potion, and the target is dead after 15.5 s. No death, no retreat; 511 of 741 HP at the
+      end, with the neighbour still alive. The first run of the row (probe-a1.log) asked
+      the journey for no aggro avoidance, so the walk was never refused and the row's own
+      check failed; the row now asks for it, as the journey's quest legs do.
+    - **Rule (k).** Rows warrior-1, warrior-7, scout-1 and scout-7 play as recorded (warrior-1 6,631, 7,331 and 8,901 ms; warrior-7 the same five casts and 14,008 ms; scout-1 4,630, 6,630 and 4,702 ms; scout-7 the same four casts and 12,105 ms; run/cp/CP-56a/probe-warrior.log and probe-scout.log).
+    - **Guard.** Gate p and class scope mage, run guard-a1: both identical to their
+      baselines (p 37,222 records, mage 23,555). Bundle: the seven pre-commit checks
+      pass, Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run cp56a-fast, 11 passed).
+    - CP-56 is retried next with a fresh two-attempt budget.
 - [ ] **CP-57 - Record class scope warrior, twice.** Depends: CP-56
   - Work: As CP-53 with -Set warrior -Item CP-57.
   - Proof: The record run: the two passes of class scope warrior are identical after
@@ -5993,3 +6026,10 @@ report what was done, what is blocked and what you need from me.
   against every other circle. No snapshot was written; the name stays free. Not a small
   change: lettered item CP-56a written after CP-56 and added to its Depends (rule (i)).
   Docs only. Next by rule (h): CP-56a.
+- 2026-10-08 — Loop: CP-56a done. A walk-in class whose hazard-checked walk to its target is
+  refused plans it once more with the circles of the target's pack left out, when that pack
+  is what the planner counts as the fight's adds and stays under the swarm limit; traced as
+  walk-in-accepts-pack. Probe row warrior-pack: a level-9 Warrior walks in on two Eyvindr
+  Sailors half a metre apart, with the neighbour accepted, and kills its target in 15.5 s
+  with both on it. Warrior and Scout rows play as recorded. Guard guard-a1, p and mage:
+  identical. Seven checks, unit suite and Fast (cp56a-fast) pass. Next by rule (h): CP-56.
