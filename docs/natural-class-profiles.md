@@ -4567,7 +4567,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       11.5 m. (c) Five more obstacle refusals were answered by closing in: Ice Chain at
       25.0 m on Q2005's fourth stalker, Flame Bolt twice at Q2006's third sack, Frozen
       Shock twice at the violet generator, where that encounter ended without a kill.
-- [ ] **CP-52 - Mage 1-9 at Munin, captured and verified as munin-mage-s1.** Depends: CP-51
+- [x] **CP-52 - Mage 1-9 at Munin, captured and verified as munin-mage-s1.** Depends: CP-51
   - Work: With the code committed and the bundle green, run sim-snapshot.ps1 -Action Capture
     -Class mage -Name munin-mage-s1 with its own -Run (bridge off, seed 1): all 41 quests,
     level 9, Q2008 at START/0, standing at Munin (J:1010-1027). Acceptance beyond the
@@ -4583,6 +4583,46 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
   - Proof: sim-snapshot.ps1 -Action Verify -Name <the accepted name> passes: the restore
     emits CP_CLASS=mage and no NA_HELP_ITEMS, the resumed character is accepted as a level-9
     Mage, and the endpoint is reached again.
+  - 2026-10-08: done, first attempt. Snapshot **munin-mage-s1**, captured at 8b1f3441e on
+    a clean tree by run cp52-mage-a1 (run/cp/CP-52/capture-a1.log; evidence
+    run/snapshots/_capture/cp52-mage-a1). Character 133266, 11,099,246 game ms (3 h 04 min
+    59 s), 119,511 trace records, dump SHA-256
+    19e7209a74b41be2be935f59bc63947526c911bbd5f2238d6dff80c2fed1cd09, receipt SHA-256
+    91db7d456c897824ee4828bac6ffd24c86f680aa748a3047dba6a39beb7ab375, classLine mage in
+    snapshot.json. The code is CP-49's (7c15e4dd0); the three commits after it are evidence
+    only, so no bundle was run again.
+    - **Acceptance, from the receipt and the trace before Verify.** Class id 6, level 9,
+      532 HP and 1,400 MP; 41 quests completed, Q2008 at START/0; the journey's last
+      decision is journey-complete, standing at the client-observed Munin. Worn: the
+      spellbook 100600048 (Q2134) in both hands, the robe pieces 110101250 (Q2007),
+      113100773 (Q2005), 114100795 (Q2006) and 111100763 (Q2129), and the accessories
+      122000869 and 121000749. The trace holds no sale and no vendor visit at all, so no
+      wearable item and no kit item was sold; the replaced spellbooks and the starter
+      pieces are still in the cube. help-items.json lists the kit at the start (30 life
+      potions 162000006, 30 Anti-Shock scrolls 164000067, 20 Greater Running Scrolls
+      164000076) and one refill of 16 Greater Running Scrolls at a level-9 checkpoint.
+      Both Ishalgen binds are in the trace: the village obelisk 700063 at 4:06 for 43
+      Kinah and the outpost obelisk 700064 at 18:00 for 134. Accepted.
+    - **Ledger.** 155 encounters, 142 kills, no death, 9 retreats, each at two or more
+      attackers; lowest HP 54% (161 of 298, Q2003). 647 decisions. Casts: Flame Bolt 223,
+      Ice Chain 129, Erosion 95, Frozen Shock 63, Blaze 58, Stone Skin 21, Root 7. 130
+      pull plans and 6 patrol waits. Used: the life potion 11 times, 30 to 19 (three in
+      rests, eight in fights at or below 75% HP); one sit for health; the Greater Running
+      Scroll 20 times; Castafodin six times; Return once; one sit for mana, at 2:55:26. Not
+      used: the shield scroll (30 left; HP never reached 50%) and the mana potion. No restock: 19 life potions and the ten Minor Life Elixirs of Q2117 and
+      Q2124 were left. 40,413 Kinah at the end.
+    - **Proof.** Restore prints CP_CLASS=mage and no NA_HELP_ITEMS (run/cp/CP-52/
+      restore.txt; that copy was dropped). Verify, run cp52-mage-verify-a1, passes
+      (run/cp/CP-52/verify-a1.log; evidence run/snapshots/_verify/cp52-mage-verify-a1):
+      the run's context reads classLine mage, the resumed character is observed as class
+      id 6 at level 9 with 41 quests completed and Q2008 at START/0, and the endpoint is
+      reached again.
+    - **Findings, not fixed.** (a) 12 corpses were not looted in the whole run (the
+      quest-loot-skip records): nine lay 61 to 91 m away and three had no safe path. (b) Nine obstacle refusals were
+      answered by closing in. (c) The receipt's EquipmentSlot holds 16 bits: the accessory
+      123000864, put on in slot 65536 at 2:05:28, reads as slot 0 in completion.json. (d)
+      The 12 s wait of CP-51 at the blue generator is in this run as well.
+    - No code changed, so this commit is evidence only. The class scope is CP-53's.
 - [ ] **CP-53 - Record class scope mage, twice.** Depends: CP-52
   - Work: No code changes. On a clean tree run run-neutral-gate.ps1 -Set mage -Record -Item
     CP-53. The gate plays class scope mage (Replay -Class mage -StopAt 2004:5:0) twice,
@@ -5791,3 +5831,10 @@ report what was done, what is blocked and what you need from me.
   waiting on a far target while another monster hit it, four more corpses not looted, five
   more obstacle refusals answered by closing in. Evidence and docs only; seven checks pass.
   Next by rule (h): CP-52.
+- 2026-10-08 — Loop: CP-52 done, first attempt. Snapshot munin-mage-s1 captured at 8b1f3441e
+  (run cp52-mage-a1) and verified (run cp52-mage-verify-a1): a Mage created by packets plays
+  all 41 Ishalgen quests in 3 h 05 min of game time and stands at Munin at level 9 with Q2008
+  at START/0, in its Q2134 spellbook and four robe pieces. 155 encounters, 142 kills, no
+  death, 9 retreats; 11 life potions, 20 running scrolls, Castafodin six times; nothing sold
+  and nothing bought. Restore prints CP_CLASS=mage and no NA_HELP_ITEMS. Evidence only.
+  Next by rule (h): CP-53.
