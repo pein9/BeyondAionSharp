@@ -3922,7 +3922,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and
       Fast passes (run cp42-fast).
 - [ ] **CP-43 - Warrior profile, with the kill and chain rows.** Depends: CP-21, CP-24,
-  CP-39, CP-40, CP-42
+  CP-39, CP-40, CP-42, CP-43a
   - Work: Finish Sc/Classes/NaturalWarriorProfile.cs and take out the temporary exclusions
     of CP-42: walk-in pull; Ferocious Strike 2864/2865, then Robust Blow 2877/2878 within 3
     s, then Rage 2903 when hurt. Robust Blow and Rage are both second steps of Ferocious
@@ -3950,6 +3950,40 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     Ferocious Strike, Robust Blow and Rage in that order, Rage inside Robust Blow's 3 s, on
     one Fanged Karnif 210389 (478 HP, level 6) with no cast-start timeout. Karnif 210389 is
     the one that spawns in Ishalgen; 210655 (577 HP) has a template but no spawn.
+- [x] **CP-43a - A walk-in class approaches its target, not the nearest of its kind.**
+  Depends: CP-39, CP-40, CP-42
+  - Work: Lettered under CP-43 by rule (i), 2026-10-08: row warrior-1 failed twice. The
+    fight loop's approach (J.Combat, case approach) calls
+    NaturalIshalgenNavigator.ApproachNpcAsync with the target's template and position, and
+    that routine goes to the nearest client-observed NPC of the template and reports
+    arrival within 3 m of it. For the Priest line the approach is rare and its targets
+    stand apart. A class that walks to its target meets several monsters of one kind at
+    once: the Warrior arrived at another Sprigg Worker, or at the corpse of the one it had
+    just killed, the policy asked for the approach again, and the fight ran into its
+    1,000-action bound. Add ApproachNpcObjectAsync, the same routine with the object as
+    its target, and let the fight loop use it for a walk-in profile. The Priest line's
+    call is not touched.
+  - Proof: Neutral gate, set m+c: the Priest line's approach is unchanged. The fix itself
+    is shown by CP-43's row warrior-1, three Sprigg Workers of one template killed one
+    after another.
+  - 2026-10-08: done. No server behavior is relied on.
+    - **The two failures of CP-43's row warrior-1** (run/cp/CP-43/probe-a1.log and
+      probe-a2.log, traces beside them). Attempt 1: kill 1 succeeded (approach, Ferocious
+      Strike, three swings, 6.6 s); in kill 2 the approach reported "Within 3.0 m of a
+      client-observed NPC" at once, 1,000 times: the NPC was the corpse of kill 1 at the
+      bot's feet, 12.2 m from the target. Attempt 2 waited for the corpse to leave the
+      client's view before the next kill: the approach then walked 10 m to another living
+      Sprigg Worker, object 55242, when the target was 55241, and looped the same way.
+    - **Built.** NaturalIshalgenNavigator.ApproachNpcObjectAsync (the approach with a
+      target filter on the object id), used by the fight loop when the profile's pull
+      style is walk-in.
+    - **Gate, set p+m+c, run gate-a1** (run/cp/CP-43a/gate-a1/verdict.json): verdict pass; p (37,222 records), m (112,397) and c (96,166) are identical to their baselines of 49cf15b60. p is
+      the guard of rule (c); m and c are the proof, and the guard of rule (k) for the
+      fight loop of CP-39.
+    - Shown by CP-43's rows on the same tree (probe-b2.log): three Sprigg Workers killed
+      in 6.6, 7.3 and 8.9 s, one approach each.
+    - Bundle, run once for this item and CP-43 on one tree: the seven pre-commit checks
+      pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and Fast passes (run cp43-fast).
 - [ ] **CP-44 - Warrior to Q2132: the walk-in played in the journey.** Depends: CP-10,
   CP-20, CP-21, CP-23, CP-24, CP-27, CP-28, CP-34, CP-41, CP-43
   - Work: The maintainer's request asks for these fresh-create runs. It waits for the full
@@ -5242,3 +5276,8 @@ report what was done, what is blocked and what you need from me.
   the second; both end at full HP. Guard guard-a1, set p+m+c: identical. Seven checks, unit
   suite and Fast (cp42-fast) pass. Finding: the comparer counts neither rest potion nor sit for
   health. Next by rule (h): CP-43.
+- 2026-10-08 — Loop: CP-43's row warrior-1 failed twice, so by rule (i) CP-43a was written
+  and worked: the fight loop's approach went to the nearest monster of the target's template
+  (another Sprigg Worker, or the last kill's corpse) and looped to the 1,000-action bound. A
+  walk-in profile now approaches the target object. Gate gate-a1, set p+m+c: identical in all
+  three. Bundle shared with CP-43. Next by rule (h): CP-43 again, with a fresh budget.

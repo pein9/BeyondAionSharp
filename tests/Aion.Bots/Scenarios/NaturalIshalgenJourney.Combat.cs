@@ -513,8 +513,13 @@ public sealed partial class NaturalIshalgenJourney
 							break;
 						}
 						long approachStarted = runtime.NowMillis;
-						NaturalNavigationResult approach = await NaturalIshalgenNavigator.ApproachNpcAsync(
-							ApproachMapId, npc.TemplateId!.Value, destination, navigator, token);
+						// CP-43a: a walk-in class goes to the target itself. The Priest line's approach, by the template's
+						// nearest monster, stays as recorded.
+						NaturalNavigationResult approach = profile.PullStyle == NaturalPullStyle.WalkIn
+							? await NaturalIshalgenNavigator.ApproachNpcObjectAsync(
+								ApproachMapId, npc.TemplateId!.Value, target, destination, navigator, token)
+							: await NaturalIshalgenNavigator.ApproachNpcAsync(
+								ApproachMapId, npc.TemplateId!.Value, destination, navigator, token);
 						if (!approach.Arrived)
 							throw new NaturalCombatApproachBlockedException(approach.Reason);
 						// Navigation can already be at a walking NPC's announced destination while combat still

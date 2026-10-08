@@ -79,6 +79,16 @@ public static class NaturalIshalgenNavigator
 		BotPosition staticAnchor, INaturalNavigationDriver driver, string kind, CancellationToken token = default)
 		=> await ApproachAsync(mapId, templateId, staticAnchor, driver, kind, false, ArrivalRadius, token);
 
+	/// <summary>
+	/// CP-43a: approach one observed NPC, the object itself. <see cref="ApproachNpcAsync"/> goes to the nearest observed NPC
+	/// of the template, which is another monster, or a corpse, whenever several of one kind stand together; a class that
+	/// walks to its target must arrive at the target.
+	/// </summary>
+	public static async Task<NaturalNavigationResult> ApproachNpcObjectAsync(int mapId, int npcTemplateId, int objectId,
+		BotPosition staticAnchor, INaturalNavigationDriver driver, CancellationToken token = default)
+		=> await ApproachAsync(mapId, npcTemplateId, staticAnchor, driver, "NPC", false, ArrivalRadius, token,
+			targetFilter: npc => npc.ObjectId == objectId);
+
 	public static async Task<NaturalNavigationResult> ExploreAnchorAsync(int mapId, int templateId,
 		BotPosition staticAnchor, INaturalNavigationDriver driver, string kind, CancellationToken token = default)
 		=> await ApproachAsync(mapId, templateId, staticAnchor, driver, kind, true, ArrivalRadius, token);
