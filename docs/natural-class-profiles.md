@@ -5015,7 +5015,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       artist.
     - Evidence only. The seven pre-commit checks pass, and so do the trace comparer's
       tests and the snapshot and gate contract tests, which read the baseline file.
-- [ ] **CP-61 - Engineer to the Q2004 checkpoint.** Depends: CP-48, CP-53
+- [x] **CP-61 - Engineer to the Q2004 checkpoint.** Depends: CP-48, CP-53
   - Work: Run Replay -Class engineer -StopAt 2004:5:0 -Item CP-61. Trainer Wild Wilhelm
     801218 (var 5) and the pistol rewards have never been played by a bot. A site that still
     stands the bot off beyond 20 m is fixed through its named profile distance, not by a new
@@ -5023,6 +5023,40 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
   - Proof: One contained run under run/cp/CP-61/<run-id>: resume-receipt.json shows class id
     12 with Q2132 and Q2004 completed. On the -StopAfterQuest fallback the proof is the
     passing run plus the trace's creation step and its turn-in records, as in CP-50.
+  - 2026-10-08: done on the first attempt, with no code change: no site stood the bot off
+    beyond 20 m, so no profile distance was touched. Run journey-a1 at 59cd56975 on a clean
+    tree, CP_CLASS=engineer and NI08_STOP_AT=2004:5:0, seed 1, bridge off, help items on
+    (run/cp/CP-61/journey-a1/: replay.json passed, schema dropped). The status-5 stop
+    landed and wrote its receipt.
+    - **The stop.** resume-receipt.json: class id 12, level 8, 555 HP and 660 MP.
+      Completed: Q2000 to Q2004, Q2100 to Q2104 and Q2132, turned in at the Engineer's
+      trainer at 15:14, the first time a bot has played that trainer in a journey. Q2005
+      and Q2006 are in the journal. 32 min 05 s of game time, 24,581 trace records.
+    - **Distances.** Seven pull plans with policy natural-engineer-v1, all clean pulls,
+      and the stand-off chosen for each is 10.8 to 17.4 m from the target, inside the
+      18 m of the profile. No fight's first shot was fired from beyond 20.0 m, and no
+      cast was refused for distance.
+    - **Fights.** 30 encounters, 27 kills, no death, 3 retreats, each at two attackers
+      (10:25 in Q2002, 18:51 in Q2003, 25:28 at Q2004's second tombstone); lowest HP 71%.
+      133 decisions: 89 casts, 32 pistol shots, 7 waits, 3 retreats, 2 life potions.
+      Casts: Direct Shot 52, Gunshot 17, Rapidfire 18, each Rapidfire right after
+      Gunshot or after the first Rapidfire. The seven waits are the held chain of CP-48,
+      shown in play for the first time: Rapidfire cooling down inside its 2 s. Two
+      obstacle refusals (Direct Shot at 19.2 m, Gunshot at 10.4 m) were answered by
+      closing in, the answer CP-48 gave the class.
+    - **Ledger.** Supplied at the start: 30 life potions 162000006, 30 Anti-Shock scrolls
+      164000067, 20 Greater Running Scrolls 164000076. Used: seven life potions, 30 to
+      23 (five in rests, two in fights); one sit for health; the Greater Running Scroll
+      four times; Blitzopan twice. Not shown: the shield scroll, Bullet Resistance and
+      Hot Shot (levels 7 and 9; HP never reached 60%).
+    - **Gear and picks.** Worn: the pistol 101800194 from Q2100 at 4:11, the leather
+      piece 114300804 from Q2001 at 7:50, the pistol 101800505 from Q2002 at 15:14, as
+      CP-48 lists them. The pistol rewards had never been taken by a bot.
+    - **Binds and Kinah.** The village obelisk 700063 at 4:07 for 43 Kinah, the outpost
+      obelisk 700064 at 18:44 for 134. 4,093 Kinah at the stop.
+    - **Finding, not fixed.** Many fights are fought with the monster on the Engineer:
+      it holds its place and the monster comes. That is the profile's stand-off; it
+      does not step back.
 - [ ] **CP-62 - Engineer 1-9 at Munin, captured and verified as munin-engineer-s1.**
   Depends: CP-61
   - Work: As CP-52 with -Class engineer -Name munin-engineer-s1. Acceptance: a pistol and
@@ -6224,3 +6258,11 @@ report what was done, what is blocked and what you need from me.
   records, SHA-256 1b955d9e...3992875c. The guard of rule (c) now runs p, mage, warrior and
   artist. Evidence only; seven checks and the two script tests that read the baseline pass.
   Next by rule (h): CP-61.
+- 2026-10-08 — Loop: CP-61 done on the first attempt, no code change. The Engineer played
+  from creation to the Q2004 stop in 32 min 05 s of game time (run journey-a1): class id 12,
+  level 8, Q2000 to Q2004, Q2100 to Q2104 and Q2132 completed, its trainer and its pistol
+  rewards played for the first time. Every pull stood off 10.8 to 17.4 m from its target and
+  no cast was refused for distance. 30 encounters, 27 kills, no death, 3 retreats at two
+  attackers. Gunshot 17, Rapidfire 18, the held chain's wait seven times. Seven life
+  potions, four running scrolls, Blitzopan twice. Evidence and docs only; seven checks pass.
+  Next by rule (h): CP-62.
