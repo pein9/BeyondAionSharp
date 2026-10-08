@@ -4750,7 +4750,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       potions. (b) The kit's life potions ran out inside Q2007; the refill comes only at a
       checkpoint. (c) 20 corpses were not looted: 14 had no safe path and 6 lay 68 to 88 m
       away. (d) Five distance refusals of Ferocious Strike, each answered by closing in.
-- [ ] **CP-56 - Warrior 1-9 at Munin, captured and verified as munin-warrior-s1.** Depends:
+- [x] **CP-56 - Warrior 1-9 at Munin, captured and verified as munin-warrior-s1.** Depends:
   CP-55, CP-56a
   - Work: As CP-52 with -Class warrior -Name munin-warrior-s1. Acceptance: a sword or mace
     and chain pieces worn, the weapon and not the shield taken at Q2100, nothing wearable
@@ -4781,6 +4781,58 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       whole run took 3 h 05 min.
     - Not a small change, so by rule (i) it is CP-56a below. The first attempt is spent;
       CP-56 is retried with a fresh two-attempt budget after it.
+  - 2026-10-08: done, on the first attempt of the fresh budget. Snapshot
+    **munin-warrior-s1**, captured at 4628956c1 (CP-56a's commit, bundle green) on a clean
+    tree by run cp56-warrior-b1 (run/cp/CP-56/capture-b1.log; evidence
+    run/snapshots/_capture/cp56-warrior-b1). Character 133266, 12,454,589 game ms (3 h 27
+    min 35 s), 132,906 trace records, dump SHA-256
+    b7d7735119eb2d0652020b89f17f80aec19704b863bb6617bf4a1f62f9a4d932, receipt SHA-256
+    5c7a6145d3658f64b8c86a0c30d1adcf6a02568ccc5deaa5900249b6004f46aa, classLine warrior in
+    snapshot.json.
+    - **Acceptance, from the receipt and the trace before Verify.** Class id 0 with
+      Ferocious Strike, Robust Blow, Body Smash and Rage in its Skills; level 9, 857 HP;
+      41 quests completed, Q2008 at START/0; the last decision is journey-complete,
+      standing at the client-observed Munin. Worn: the sword 100000108 (Q2134), the chain
+      pieces 110501156 (Q2007), 113500762 (Q2005), 114500767 (Q2006) and 111500751
+      (Q2129), and the accessories 122000869 and 121000749. At Q2100 it took the sword
+      100000107 and owns no shield. The trace holds no sale, no discard and no vendor
+      visit, so nothing wearable and nothing of the kit was sold; the replaced swords and
+      the starter pieces are still in the cube. help-items.json lists the kit at the
+      start (30 life potions 162000006, 30 Anti-Shock scrolls 164000067, 20 Greater
+      Running Scrolls 164000076) and four refills at level-9 checkpoints: life potions
+      three times (22, 23 and 30) and 16 running scrolls. Both Ishalgen binds are in the
+      trace: the village obelisk 700063 at 4:23 for 43 Kinah and the outpost obelisk
+      700064 at 18:32 for 134. Accepted.
+    - **Ledger.** 217 encounters, 172 kills, no death, 4 retreats; 36 encounters ended
+      on a blocked approach and were taken up again. 2,447 decisions: 1,262 swings, 890
+      casts on a target, 29 on itself, 205 approaches, 54 life potions, 3 shield scrolls,
+      4 retreats. Casts: Ferocious Strike 312, Robust Blow 291, Body Smash 250, Rage 24.
+      205 pull plans: 127 pulls, 64 waits, 14 with no plan. Lowest HP 18% (135 of 757, at
+      Q2007's blue generator at 1:10:07, where it left and lived). Used: 85 life potions,
+      75 of the kit's (44 in fights, 31 in rests) and 10 of its own Minor Life Potions;
+      17 sits for health; two Anti-Shock scrolls, 30 to 28; the Greater Running Scroll 22
+      times; Blitzopan seven times; Return twice. No restock was bought: 30 kit potions,
+      101 of its own and the ten Minor Life Elixirs were left. 40,413 Kinah at the end.
+    - **What CP-56a changed in this run.** 43 walk-in-accepts-pack records: 10 accepted a
+      pack of one, 4 refused a pack of two (the swarm limit), and 29 had no pack, so the
+      walk stayed refused for a circle that is not the target's pack. The first two
+      accepted walks are at Q2007's green and blue generators, and Q2007 went without a
+      death, where CP-55 had two; the run is 3 h 28 min against attempt 1's 2 h 30 min to
+      Q2116 with two deaths. At Q2116 it walked in on the map's guards six times, left
+      three times at three attackers and near full HP, and collected the map by 2:00:27.
+    - **Proof.** Restore prints CP_CLASS=warrior and no NA_HELP_ITEMS (run/cp/CP-56/
+      restore.txt; that copy was dropped). Verify, run cp56-warrior-verify-b1, passes
+      (run/cp/CP-56/verify-b1.log; evidence run/snapshots/_verify/cp56-warrior-verify-b1):
+      the run's context reads classLine warrior, the resumed character is observed as
+      class id 0 at level 9 with the Warrior's skills, 41 quests completed and Q2008 at
+      START/0, and the endpoint is reached again.
+    - **Findings, not fixed.** (a) 17 corpses were not looted (11 with no safe path, 5
+      far, 1 gone). (b) 11 distance refusals of Ferocious Strike, each answered by closing
+      in. (c) The Hatata fight of Q2129 logged 20 refused walks with no pack in 30 s
+      before it went on; it did not stop the run. (d) The receipt's 16-bit EquipmentSlot
+      hides the accessory 123000864 in slot 65536, as for the Mage.
+    - No code changed in this item, so this commit is evidence only. The class scope is
+      CP-57's.
 - [x] **CP-56a - A walk-in approach accepts the pack its planner counts.** Depends: CP-55
   - Work: Java first: the support rule the planner's AddsAt mirrors
     (AggroEventHandler.onCreatureNeedsSupport, read for CP-40). In the fight loop's approach
@@ -6033,3 +6085,11 @@ report what was done, what is blocked and what you need from me.
   Sailors half a metre apart, with the neighbour accepted, and kills its target in 15.5 s
   with both on it. Warrior and Scout rows play as recorded. Guard guard-a1, p and mage:
   identical. Seven checks, unit suite and Fast (cp56a-fast) pass. Next by rule (h): CP-56.
+- 2026-10-08 — Loop: CP-56 done on the first attempt of its fresh budget. Snapshot
+  munin-warrior-s1 captured at 4628956c1 (run cp56-warrior-b1) and verified (run
+  cp56-warrior-verify-b1): a Warrior created by packets plays all 41 Ishalgen quests in 3 h
+  28 min of game time and stands at Munin at level 9 with Q2008 at START/0, in its Q2134
+  sword and four chain pieces, with no shield. 217 encounters, 172 kills, no death, 4
+  retreats; 85 life potions, 22 running scrolls, Blitzopan seven times; nothing sold and
+  nothing bought. With the pack rule of CP-56a Q2007 went without a death. Restore prints
+  CP_CLASS=warrior and no NA_HELP_ITEMS. Evidence only. Next by rule (h): CP-57.
