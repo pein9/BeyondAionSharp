@@ -4519,7 +4519,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       skipped as far. (b) Erosion's obstacle refusal is answered by closing in to melee, which is
       the Priest's answer and brings a cloth class to the monster. (c) The comparer still
       counts no sit for health (restSitsTraced 0 with one rest-sit-for-health record).
-- [ ] **CP-51 - Mage to the Q2007 checkpoint.** Depends: CP-50
+- [x] **CP-51 - Mage to the Q2007 checkpoint.** Depends: CP-50
   - Work: Run Replay -Class mage -StopAt 2007:5:0 -Item CP-51. This passes the Q2005
     stalkers and the Q2007 generators, the first fights whose attempt budgets were sized on
     a class that heals itself. Rule (e) applies; a per-class override of one budget carries
@@ -4528,6 +4528,45 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     6 with Q2005 and Q2007 completed. On the -StopAfterQuest fallback the proof is the
     passing run plus the trace's creation step and its Q2005 and Q2007 turn-in records, as
     in CP-50.
+  - 2026-10-08: done on the first attempt, with no code change and no budget override. Run
+    journey-a1 at 2c639f2a2 on a clean tree, CP_CLASS=mage and NI08_STOP_AT=2007:5:0, seed
+    1, bridge off, help items on (run/cp/CP-51/journey-a1/: replay.json passed, schema
+    dropped). The status-5 stop landed and wrote its receipt; the fallback was not used.
+    - **The stop.** resume-receipt.json: class id 6, level 9, 432 HP and 729 of 1,327 MP.
+      Completed: Q2000 to Q2007, Q2100 to Q2104 and Q2132; Q2008 is in the journal at
+      START/0. 74 min 33 s of game time, 47,618 trace records. Q2005 took from 30:45 to
+      49:32, Q2006 to 56:20, Q2007 to 1:14:31.
+    - **Fights, whole run.** 69 encounters, 63 kills, no death. 339 decisions: 297 casts
+      on a target, 2 on itself, 6 life potions, 7 retreats, 2 approaches, 25 waits. Casts:
+      Flame Bolt 121, Ice Chain 61, Erosion 40, Blaze 29, Frozen Shock 26, Stone Skin 9,
+      Root 5. 48 pull plans: 37 pulls, 9 waits and 2 with no plan.
+    - **From the Q2004 stop on** (the part CP-50 did not play): 41 encounters, 37 kills.
+      Five retreat decisions, each at two or more attackers and at full HP: at the first
+      stalker of Q2005 (32:12, three attackers by the time it left), at the third (39:05
+      and 39:12, four attackers), and twice at Q2007's blue generator (1:09:01 and
+      1:09:26). The stalkers and the generators were finished inside their attempt
+      budgets as the Priest's are sized. HP never fell below the 54% of Q2003.
+    - **Ledger.** Supplied at the start: 30 life potions 162000006, 30 Anti-Shock scrolls
+      164000067, 20 Greater Running Scrolls 164000076. Used in the whole run: the life
+      potion nine times, 30 to 21 (three in rests and six in fights at or below 75% HP;
+      two of the six after the Q2004 stop, at 1:09:20 and 1:11:22); one sit for health;
+      the Greater Running Scroll seven times, 20 to 13; Castafodin three times, one for
+      each 30 minutes. Not shown: the shield scroll (HP never reached 50%), the mana
+      potion and the mana sit (MP never ran short; it stops at 55%).
+    - **Gear and picks.** Worn after the Q2004 stop: the accessory 122000869 from Q2004
+      at 30:45, the robe piece 113100773 from Q2005 at 49:32 and 114100795 from Q2006 at
+      56:20, as CP-46 lists them.
+    - **Binds and Kinah.** As in CP-50: the village for 43 Kinah, the outpost for 134. It
+      stays bound at the outpost. 4,093 Kinah in the receipt, as at the Q2004 stop.
+    - **Findings, not fixed.** (a) At Q2007's blue generator the first retreat was
+      cornered, and the Mage then held its place for 12 s (25 wait decisions) with its
+      target 38 m away while a second monster reached it and hit it to 67% HP; it drank a
+      potion and fought that monster only after the target had gone home. The table has
+      no answer for an attacker that is not the target. (b) Four more corpses were not
+      looted: three lay 61 to 91 m away after a retreat and one had no safe path at
+      11.5 m. (c) Five more obstacle refusals were answered by closing in: Ice Chain at
+      25.0 m on Q2005's fourth stalker, Flame Bolt twice at Q2006's third sack, Frozen
+      Shock twice at the violet generator, where that encounter ended without a kill.
 - [ ] **CP-52 - Mage 1-9 at Munin, captured and verified as munin-mage-s1.** Depends: CP-51
   - Work: With the code committed and the bundle green, run sim-snapshot.ps1 -Action Capture
     -Class mage -Name munin-mage-s1 with its own -Run (bridge off, seed 1): all 41 quests,
@@ -5744,3 +5783,11 @@ report what was done, what is blocked and what you need from me.
   four in fights), one sit for health, five running scrolls, Castafodin once; the shield
   scroll and the mana potion were not needed. Bound at the village (43 Kinah) and the outpost
   (134 Kinah). Evidence and docs only; seven checks pass. Next by rule (h): CP-51.
+- 2026-10-08 — Loop: CP-51 done on the first attempt, no code change, no budget override.
+  The Mage played from creation to the Q2007 stop in 74 min 33 s of game time (run
+  journey-a1): class id 6, level 9, Q2000 to Q2007 completed, Q2008 at START/0. 69
+  encounters, 63 kills, no death, 7 retreat decisions, all at two or more attackers. Nine life
+  potions, seven running scrolls, Castafodin three times. Findings written in: 12 s of
+  waiting on a far target while another monster hit it, four more corpses not looted, five
+  more obstacle refusals answered by closing in. Evidence and docs only; seven checks pass.
+  Next by rule (h): CP-52.
