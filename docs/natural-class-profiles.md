@@ -3688,7 +3688,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       the guard of rule (c); m and c are the item's proof.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and
       Fast passes (run cp37-fast). The two new steps are first played by CP-42.
-- [ ] **CP-38 - Casting with any weapon.** Depends: CP-15
+- [x] **CP-38 - Casting with any weapon.** Depends: CP-15
   - Work: Copy the ItemGroup to BotWeaponMotionType mapping of
     SimT/SimulationSkillSweepTests.cs:349-363 into Aion.Bots and leave the sweep's own code
     alone. CreateSpellCast (Sc/NaturalJourneyRuntime.cs:44-66) uses it and stops throwing
@@ -3702,6 +3702,26 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     every weapon group a starter or an Ishalgen reward can put in the main hand, with a
     check that motion_times.xml has the rows.
   - Proof: Neutral gate, set p+c: mace, staff and bare hands cast exactly as before.
+  - 2026-10-07: done. Java read: Equipment.getOffHandWeaponType returns the sub-hand item's
+    group only when it is a weapon and not the main-hand item itself, so a shield and a
+    two-handed weapon give none.
+    - **Built.** BotWeaponMotion.For(main hand, off-hand weapon) in
+      tests/Aion.Bots/Timing/BotMotionTiming.cs, the sweep's mapping copied; the sweep's own
+      code is untouched. CreateSpellCast (Sc/NaturalJourneyRuntime.cs) uses it, reads a
+      weapon in slot 2 as the second weapon, and no longer throws for a weapon that is
+      not a mace or a staff. Race and gender stay Asmodian male.
+    - **Proof by rule (n): no unit theory.** A one-time check from an uncommitted test file
+      (run/cp/CP-38/check-a1.log). The mapping: SWORD OneHand, GREATSWORD TwoHand, DAGGER
+      Dagger, MACE Mace, ORB Orb, SPELLBOOK Book, POLEARM Polearm, STAFF Staff, BOW Bow,
+      HARP Harp, GUN OneGun, CANNON Cannon, KEYBLADE Keyblade; no weapon, an unknown group
+      and a shield are bare hands; two daggers or a sword and a dagger are TwoWeapon, two
+      guns TwoGun. motion_times.xml gives a hit time for every castable auto-learned skill
+      of every starter with each weapon it can hold at levels 1-9, and for the Cleric with
+      a staff: 113 hit times, none failed. A second dagger shortens the Scout's Surprise
+      Attack from 482 to 368 ms and Soul Slash from 680 to 623 ms.
+    - **Gate, set p+c, run gate-a1** (run/cp/CP-38/gate-a1/verdict.json): verdict pass; p (37,222 records) and c (96,166) are identical to their baselines of 49cf15b60.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and
+      Fast passes (run cp38-fast).
 - [ ] **CP-39 - Chain timing, swing and reach for table profiles.** Depends: CP-19, CP-36,
   CP-38
   - Work: Java first: PlayerController's attack rules (C# twin
@@ -5070,3 +5090,8 @@ report what was done, what is blocked and what you need from me.
   sit-for-health). A one-time sweep, not committed (rule (n)): 68,992 states, none wrong. Gate
   gate-a1, set p+m+c: identical in all three. Seven checks, unit suite and Fast (cp37-fast)
   pass. Next by rule (h): CP-38.
+- 2026-10-07 — Loop: CP-38 done. CreateSpellCast picks the animation set for any weapon, and
+  for a second weapon in the off hand, from BotWeaponMotion.For. A one-time check, not
+  committed (rule (n)): 113 hit times over every starter's castable skills and weapons, none
+  failed. Gate gate-a1, set p+c: identical. Seven checks, unit suite and Fast (cp38-fast)
+  pass. Next by rule (h): CP-39.

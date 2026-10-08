@@ -120,6 +120,32 @@ public enum BotWeaponMotionType
 	Harp,
 }
 
+/// <summary>
+/// CP-38: the animation set of what the hands hold, as the client picks it. The same mapping the skill sweep uses
+/// (SimulationSkillSweepTests), kept here for the journey. An off-hand weapon is a second weapon, never a shield (Java
+/// Equipment.getOffHandWeaponType), and it decides: two guns, or any other pair.
+/// </summary>
+public static class BotWeaponMotion
+{
+	/// <param name="mainHand">The item group in the main hand; null or a group that is no weapon for bare hands.</param>
+	/// <param name="offHandWeapon">The item group of a weapon in the off hand; null for none or a shield.</param>
+	public static BotWeaponMotionType For(Aion.GameServer.Model.Templates.Items.Enums.ItemGroup? mainHand,
+		Aion.GameServer.Model.Templates.Items.Enums.ItemGroup? offHandWeapon = null)
+	{
+		if (offHandWeapon is { } second)
+			return second == Aion.GameServer.Model.Templates.Items.Enums.ItemGroup.GUN ? BotWeaponMotionType.TwoGun : BotWeaponMotionType.TwoWeapon;
+		return mainHand?.ToString() switch
+		{
+			"SWORD" => BotWeaponMotionType.OneHand, "DAGGER" => BotWeaponMotionType.Dagger,
+			"MACE" => BotWeaponMotionType.Mace, "STAFF" => BotWeaponMotionType.Staff,
+			"GREATSWORD" => BotWeaponMotionType.TwoHand, "POLEARM" => BotWeaponMotionType.Polearm,
+			"BOW" => BotWeaponMotionType.Bow, "ORB" => BotWeaponMotionType.Orb, "SPELLBOOK" => BotWeaponMotionType.Book,
+			"HARP" => BotWeaponMotionType.Harp, "GUN" => BotWeaponMotionType.OneGun, "CANNON" => BotWeaponMotionType.Cannon,
+			"KEYBLADE" => BotWeaponMotionType.Keyblade, _ => BotWeaponMotionType.NoWeapon,
+		};
+	}
+}
+
 internal static class BotWeaponMotionTypeExtensions
 {
 	public static string ToXmlName(this BotWeaponMotionType weapon) => weapon switch

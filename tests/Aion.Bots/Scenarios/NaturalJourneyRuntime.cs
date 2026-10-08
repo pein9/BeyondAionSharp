@@ -48,13 +48,11 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 			?? throw new InvalidDataException($"Missing client skill template {skillId}.");
 		var equipped = world.Inventory.Values.SingleOrDefault(item => item.Details.EquippedSlot is 1 or 3);
 		ItemGroup group = equipped == null ? ItemGroup.NONE : Data.ItemDataDh.GetItemTemplate(equipped.ItemId).GetItemGroup();
-		BotWeaponMotionType weapon = group switch
-		{
-			ItemGroup.MACE => BotWeaponMotionType.Mace,
-			ItemGroup.STAFF => BotWeaponMotionType.Staff,
-			ItemGroup.NONE => BotWeaponMotionType.NoWeapon,
-			_ => throw new InvalidDataException($"Unexpected Priest weapon motion group {group}."),
-		};
+		// CP-38: any weapon casts. A second weapon in the off hand (slot 2) changes the animation set; a shield does not.
+		var offHand = world.Inventory.Values.SingleOrDefault(item => item.Details.EquippedSlot == 2);
+		ItemGroup? second = offHand != null && Data.ItemDataDh.GetItemTemplate(offHand.ItemId) is { } offTemplate && offTemplate.IsWeapon()
+			? offTemplate.GetItemGroup() : null;
+		BotWeaponMotionType weapon = BotWeaponMotion.For(group, second);
 		BotPosition destination = target == world.SelfObjectId ? origin : world.Objects[target].Position;
 		float distance = MathF.Sqrt(MathF.Pow(origin.X - destination.X, 2) + MathF.Pow(origin.Y - destination.Y, 2) +
 			MathF.Pow(origin.Z - destination.Z, 2));
