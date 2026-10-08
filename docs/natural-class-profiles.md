@@ -4025,7 +4025,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       in 6.6, 7.3 and 8.9 s, one approach each.
     - Bundle, run once for this item and CP-43 on one tree: the seven pre-commit checks
       pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and Fast passes (run cp43-fast).
-- [ ] **CP-44 - Warrior to Q2132: the walk-in played in the journey.** Depends: CP-10,
+- [x] **CP-44 - Warrior to Q2132: the walk-in played in the journey.** Depends: CP-10,
   CP-20, CP-21, CP-23, CP-24, CP-27, CP-28, CP-34, CP-41, CP-43
   - Work: The maintainer's request asks for these fresh-create runs. It waits for the full
     gate of CP-41, so no new class journeys on a refactor that is not yet checked. Run
@@ -4046,6 +4046,36 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     not shown. Class
     id 0 alone is not enough: it is also what the receipt holds when the class was not
     observed (Sc/NaturalJourneyCheckpoint.cs:12, 35).
+  - 2026-10-08: done on the first attempt, with no code change. Run journey-a1 at
+    ee72dcafa on a clean tree, CP_CLASS=warrior and NI08_STOP_AT=2132:5:0, seed 1, bridge
+    off, help items on (run/cp/CP-44/journey-a1/: replay.json passed, schema dropped).
+    - **The stop.** resume-receipt.json: class id 0, level 6, and the Skills hold
+      Ferocious Strike 2864 and 2865, Robust Blow 2877 and Body Smash 2890, so the class
+      was observed. Completed: Q2000, Q2001, Q2002, Q2100 to Q2104 and Q2132, turned in at
+      Minu. 15 min 03 s of game time, 11,665 trace records.
+    - **The walk-in.** Three pull-plan records with policy natural-warrior-v1, each a
+      pull with no expected helper, each followed by a kill: at 10:27 (kill at 10:41),
+      11:32 (11:40) and 11:44 (11:55), all on Sprigg Gatherers 210377 of Q2002. No plan
+      expected a helper and no fight ended in a retreat, so the body pull of question 15
+      was not tried.
+    - **Fights.** 17 encounters, 17 kills, no death, no retreat. 141 decisions: 16
+      approaches, 43 casts, 82 swings. Casts: Ferocious Strike 21, Robust Blow 16, Body
+      Smash 6. Rage is learned at level 7 and was not reached.
+    - **Ledger.** Supplied at the start: 30 Major Life Potions, 30 Anti-Shock scrolls,
+      20 Greater Running Scrolls (help-items.json). Used: the Major Life Potion five
+      times, each in a rest below 90% HP (rest-life-potion at 6:38, 7:17, 7:55, 11:07
+      and 11:40); the Greater Running Scroll three times; Blitzopan once, at the start,
+      for its 30 minutes. Not shown: the shield scroll and the potion in a fight,
+      because the lowest HP seen was 79.4% (301 of 379, in Q2001's third kill), above the
+      75% and 50% of the ladder. No sit for health: the potion was ready at every rest.
+    - **Gear and picks.** Worn: Raider's Sword 100000107 from Q2100, Boromer's Brogans
+      114500766 (chain) from Q2001, Ulgorn's Sword 100000639 from Q2002.
+    - **Bind.** At the village obelisk 700063 at 4:22, on arrival for work, for 43 Kinah.
+    - **Finding, not fixed.** The Sprigg hunt of Q2002 still runs on the Priest line's
+      campaign numbers: its step is named pull-client-observed-sprigg-from-warrior-
+      spell-range and it selects a stand-off (combat-standoff-selected, 12.2 m) before
+      the Warrior walks in. It works, and the numbers are the Warrior's to tune when a
+      later checkpoint shows a need.
 - [ ] **CP-45 - Seam closed: the class-literal ratchet.** Depends: CP-41, CP-42, CP-43,
   CP-44
   - Work: No bot code changes. Add UT/NaturalClassSeamRatchetTests with
@@ -5329,3 +5359,9 @@ report what was done, what is blocked and what you need from me.
   and Rage in that order, Rage 701 ms after Robust Blow, and kills a Fanged Karnif in 14.0 s.
   Every swing was answered. Seven checks, unit suite and Fast (cp43-fast) pass; the guard is
   CP-43a's gate. Next by rule (h): CP-44, the Warrior's first journey.
+- 2026-10-08 — Loop: CP-44 done on the first attempt, no code change. Run journey-a1: a
+  fresh-created Warrior plays Ishalgen to the Q2132 turn-in in 15 min of game time: level 6, 9
+  quests, 17 kills, no death, lowest HP 79.4%. Three walk-in pull plans, each followed by a
+  kill. Kit used: five Major Life Potions in rests, three running scrolls, one Blitzopan; the
+  shield scroll and the in-fight potion were not needed. Bound at the village obelisk.
+  Evidence and docs only. Next by rule (h): CP-45.
