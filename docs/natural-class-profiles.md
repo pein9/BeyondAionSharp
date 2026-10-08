@@ -3921,7 +3921,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       the sits made in a rest until the comparer learns the two records.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and
       Fast passes (run cp42-fast).
-- [ ] **CP-43 - Warrior profile, with the kill and chain rows.** Depends: CP-21, CP-24,
+- [x] **CP-43 - Warrior profile, with the kill and chain rows.** Depends: CP-21, CP-24,
   CP-39, CP-40, CP-42, CP-43a
   - Work: Finish Sc/Classes/NaturalWarriorProfile.cs and take out the temporary exclusions
     of CP-42: walk-in pull; Ferocious Strike 2864/2865, then Robust Blow 2877/2878 within 3
@@ -3950,6 +3950,47 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     Ferocious Strike, Robust Blow and Rage in that order, Rage inside Robust Blow's 3 s, on
     one Fanged Karnif 210389 (478 HP, level 6) with no cast-start timeout. Karnif 210389 is
     the one that spawns in Ishalgen; 210655 (577 HP) has a template but no spawn.
+  - 2026-10-08: done, after CP-43a. Java: the chain rules were read for CP-35 and the
+    attack rules for CP-39; nothing new is relied on.
+    - **The profile.** The catalog holds the six Warrior skills: Ferocious Strike 2864
+      and 2865 (role strike), Robust Blow 2877 and 2878 (robust), Rage 2903 (rage), Body
+      Smash 2890 (smash); only the three common skills stay excluded, and the validator
+      passes. The table is natural-warrior-v1: on the target strike, robust, rage, smash,
+      with the weapon as filler; nothing is cast at range, so it walks in. An open
+      follow-up always goes first, so Robust Blow follows Ferocious Strike, and Body
+      Smash, another chain's opener, comes only after the follow-ups.
+    - **Rage when hurt.** Rage is 9 physical attack and a 514 HP shield for 10 s, a chain
+      step with 3 s to be cast in. The table casts it at or below 80% HP. For that the
+      rule table gained OnlyWhenHurt, a map from an attack role to an HP percentage (a
+      change to CP-36's policy; rule (k) is met by the gate of CP-43a, run on this tree).
+      In attempt 1 Rage was a step of the recovery ladder, which is read before the
+      attack list: the Warrior cast Ferocious Strike, Rage, Robust Blow (2865 at 2.8 s,
+      2903 at 3.6 s, 2877 at 4.3 s). All three landed, Robust Blow after Rage by the
+      previous chain category, but not in the item's order.
+    - **Probe, rows warrior-1 and warrior-7.** Attempts 1 and 2 (probe-a1.log,
+      probe-a2.log): row 1 failed both times, which became CP-43a; row 7 failed the order
+      check in attempt 1 and passed in attempt 2. With CP-43a in, a fresh budget: attempt
+      b1 failed in the probe's own check, which asked every kill for a Ferocious Strike
+      although its 10 s cooldown outlasts a kill; attempt b2 (probe-b2.log, traces beside
+      it) passes both rows.
+      - Row warrior-1, on account 98 as Asimonewar. Prepared: placed 15 m from a Sprigg
+        Worker's spot. Three Sprigg Workers 210363 killed in 6.6, 7.3 and 8.9 s: one
+        approach each, Ferocious Strike in the first two, 3, 3 and 5 swings; HP 283 of
+        284 at the worst. 16 decisions in all.
+      - Row warrior-7, on account 100 as Asimsevenwar. Prepared: level 7, placed 18 m
+        from a Fanged Karnif's spot, HP cut to half as the fight begins. A level-7
+        Warrior has 614 HP. It drinks a Minor Life Potion, walks in, and casts Ferocious
+        Strike 2865 at 2.8 s, Robust Blow 2877 at 3.6 s, Rage 2903 at 4.3 s (701 ms after
+        Robust Blow), Body Smash 2890 at 5.0 s, then swings five times and strikes again
+        at 13.2 s. The Karnif 210389 is dead after 14.0 s; HP 568/614 at the end. No cast
+        timed out.
+      - Swings: 11 sent in row 1 and 5 in row 7, each answered by an SM_ATTACK, numbered
+        0 upward, 1.5 s apart (the Training Sword's 1,400 ms and 100 ms). No swing was
+        refused in silence, so SM_ATTACK_RESPONSE needs no item.
+      - Row warrior-rest was run again on this tree and passes (probe-rest.log).
+    - Bundle, run once for CP-43a and this item on one tree: the seven pre-commit checks
+      pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and Fast passes (run cp43-fast). Guard:
+      the gate of CP-43a, set p+m+c, identical.
 - [x] **CP-43a - A walk-in class approaches its target, not the nearest of its kind.**
   Depends: CP-39, CP-40, CP-42
   - Work: Lettered under CP-43 by rule (i), 2026-10-08: row warrior-1 failed twice. The
@@ -5281,3 +5322,10 @@ report what was done, what is blocked and what you need from me.
   (another Sprigg Worker, or the last kill's corpse) and looped to the 1,000-action bound. A
   walk-in profile now approaches the target object. Gate gate-a1, set p+m+c: identical in all
   three. Bundle shared with CP-43. Next by rule (h): CP-43 again, with a fresh budget.
+- 2026-10-08 — Loop: CP-43 done. The Warrior's rotation: Ferocious Strike, Robust Blow, Rage
+  at or below 80% HP (a new OnlyWhenHurt entry of the rule table), Body Smash, the weapon as
+  filler. Probe, second attempt of the fresh budget: a level-1 Warrior kills three Sprigg
+  Workers in 6.6 to 8.9 s; a level-7 Warrior at half HP casts Ferocious Strike, Robust Blow
+  and Rage in that order, Rage 701 ms after Robust Blow, and kills a Fanged Karnif in 14.0 s.
+  Every swing was answered. Seven checks, unit suite and Fast (cp43-fast) pass; the guard is
+  CP-43a's gate. Next by rule (h): CP-44, the Warrior's first journey.

@@ -4,24 +4,36 @@ using Aion.GameServer.Model;
 namespace Aion.Bots.Scenarios.Classes;
 
 /// <summary>
-/// CP-42: the Warrior, levels 1-9 (docs/natural-class-profiles.md). Its catalog is generated from the shipped data, so
-/// the profile is built from the static data of the run. This item holds everything but the fight: the table has one
-/// line, the weapon swing, and every active skill is excluded until CP-43 adds the rotation.
+/// CP-42, CP-43: the Warrior, levels 1-9 (docs/natural-class-profiles.md). Its catalog is generated from the shipped
+/// data, so the profile is built from the static data of the run.
 /// </summary>
 public static class NaturalWarriorProfile
 {
-	/// <summary>The reason every castable Warrior skill carries until its rotation exists.</summary>
-	public const string RotationPending = "rotation added by CP-43";
-
 	private const int TopLevel = 9;
 
+	/// <summary>The roles of the Warrior's six active skills. Robust Blow and Rage are both second steps of Ferocious
+	/// Strike's chain (precategory W_CHAINA_1TH_1, 3 s); Body Smash opens a chain of its own.</summary>
+	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
+	{
+		[2864] = "strike", [2865] = "strike", [2877] = "robust", [2878] = "robust", [2903] = "rage", [2890] = "smash",
+	};
+
 	/// <summary>
-	/// CP-Q11: in a fight the shield scroll at 50% HP and the life potion at or below 75%; it leaves at three attackers,
-	/// or at 25% HP with neither ready. The weapon swings whenever nothing else can be done.
+	/// CP-43: on the target, Ferocious Strike, then Robust Blow inside its 3 s (a follow-up is always cast first), then
+	/// Rage when it is hurt, at or below 80% HP (9 physical attack and a 514 HP shield for 10 s; it follows Robust Blow by
+	/// the previous chain category), then Body Smash, which is another chain's opener and resets the chain, so it goes
+	/// only when no follow-up is ready. The weapon swings whenever no skill is ready; a swing is no skill and resets
+	/// nothing. Nothing reaches a target that is not on the bot, so it walks in.
+	/// <para>
+	/// The ladder, CP-Q11: the shield scroll at 50% HP and the life potion at or below 75%; it leaves at three attackers, or
+	/// at 25% HP with nothing ready.
+	/// </para>
 	/// </summary>
-	private static readonly NaturalRotationRules Rules = new("natural-warrior-v0", Adjacent: [], AtRange: [], Upkeep: [],
+	private static readonly NaturalRotationRules Rules = new("natural-warrior-v1", Adjacent: ["strike", "robust", "rage", "smash"], AtRange: [],
+		Upkeep: [],
 		Recovery: [new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
-		SwarmAttackers: 3, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler);
+		SwarmAttackers: 3, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler,
+		OnlyWhenHurt: new Dictionary<string, int> { ["rage"] = 80 });
 
 	/// <summary>It walks to the target and fights at the weapon's reach; after a distance refusal it comes inside reach.</summary>
 	private static readonly NaturalFightMovement Movement = new(NaturalPullStyle.WalkIn,
@@ -38,10 +50,8 @@ public static class NaturalWarriorProfile
 	public static NaturalClassProfile Create(StaticData data)
 	{
 		ArgumentNullException.ThrowIfNull(data);
-		var excluded = new Dictionary<int, string>(NaturalSkillCatalog.CommonExcluded);
-		foreach (int id in NaturalSkillCatalog.AutoLearnedCastable(data, PlayerClass.WARRIOR, TopLevel).Keys)
-			excluded.TryAdd(id, RotationPending);
-		NaturalPriestSkill[] skills = NaturalSkillCatalog.Build(data, PlayerClass.WARRIOR, new Dictionary<int, string>(), excluded);
+		IReadOnlyDictionary<int, string> excluded = NaturalSkillCatalog.CommonExcluded;
+		NaturalPriestSkill[] skills = NaturalSkillCatalog.Build(data, PlayerClass.WARRIOR, Roles, excluded);
 		NaturalGearRules gear = NaturalClassGearTable.Warrior.Rules(NaturalClassLineContract.LoadDefault());
 		NaturalProfileValidator.Require(data, PlayerClass.WARRIOR, TopLevel, skills, excluded, Rules.Lines(skills), gear);
 		return new NaturalClassProfile

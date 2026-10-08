@@ -42,9 +42,12 @@ public enum NaturalAutoAttack
 /// <param name="ControlRole">A skill cast on the target before a retreat; null for none.</param>
 /// <param name="EmergencyPercent">HP at or below which the fight is an emergency: recover only, every ladder step at once.</param>
 /// <param name="EmergencyClearPercent">HP at or above which the emergency is over.</param>
+/// <param name="OnlyWhenHurt">CP-43: attack roles that are cast only while HP is at or below the percentage given, in
+/// their place in the list (the Warrior's Rage, a chain step that shields it). Null for none.</param>
 public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjacent, IReadOnlyList<string> AtRange,
 	IReadOnlyList<NaturalRotationUpkeep> Upkeep, IReadOnlyList<NaturalRecoveryStep> Recovery, int SwarmAttackers, int FleeHpPercent,
-	NaturalAutoAttack AutoAttack, string? ControlRole = null, int EmergencyPercent = 35, int EmergencyClearPercent = 45)
+	NaturalAutoAttack AutoAttack, string? ControlRole = null, int EmergencyPercent = 35, int EmergencyClearPercent = 45,
+	IReadOnlyDictionary<string, int>? OnlyWhenHurt = null)
 {
 	/// <summary>The table's two attack lists as lines of skill ids, every rank of a role in level order, for
 	/// <see cref="NaturalProfileValidator"/>.</summary>
@@ -80,6 +83,7 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		this.catalog = catalog.ToArray();
 		this.movement = movement;
 		IEnumerable<string> named = rules.Adjacent.Concat(rules.AtRange).Concat(rules.Upkeep.Select(upkeep => upkeep.Role))
+			.Concat(rules.OnlyWhenHurt?.Keys ?? [])
 			.Concat(rules.Recovery.Where(step => step.Kind == NaturalRecoveryKind.Skill).Select(step => step.Role ?? ""))
 			.Concat(rules.ControlRole == null ? [] : [rules.ControlRole]);
 		foreach (string role in named.Distinct())
@@ -153,7 +157,10 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		}
 		bool adjacent = Adjacent(state);
 		IReadOnlyList<string> list = adjacent ? rules.Adjacent : rules.AtRange;
-		NaturalPriestSkill[] line = list.Select(role => Best(role, state)).OfType<NaturalPriestSkill>().ToArray();
+		// A role that is cast only when hurt is left out of the line while HP is above its percentage.
+		NaturalPriestSkill[] line = list
+			.Where(role => rules.OnlyWhenHurt == null || !rules.OnlyWhenHurt.TryGetValue(role, out int percent) || HpAtOrBelow(percent))
+			.Select(role => Best(role, state)).OfType<NaturalPriestSkill>().ToArray();
 		foreach (NaturalPriestSkill followUp in line.Where(skill => skill.RequiresChainCategory != null))
 			if (Ready(followUp)) return Cast(followUp, $"The {followUp.Role} follow-up is open; cast it before the chain resets.");
 		if (!state.Aggro && Upkeep(duringFight: false) is { } before) return Cast(before, $"The {before.Role} buff goes up before the first hit.");
