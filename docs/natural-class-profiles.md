@@ -4940,7 +4940,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       obelisk 700064 at 18:13 for 134. 4,093 Kinah at the stop.
     - **Finding, not fixed.** One corpse was not looted, 90.9 m away when the sweep ran,
       the same 210404 as in the Mage's and the Warrior's runs.
-- [ ] **CP-59 - Artist 1-9 at Munin, captured and verified as munin-artist-s1.** Depends:
+- [x] **CP-59 - Artist 1-9 at Munin, captured and verified as munin-artist-s1.** Depends:
   CP-58
   - Work: As CP-52 with -Class artist -Name munin-artist-s1. Acceptance: a harp and robe
     pieces worn, nothing wearable and nothing of the help kit sold, the help items listed
@@ -4950,6 +4950,53 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     item.
   - Proof: sim-snapshot.ps1 -Action Verify -Name <the accepted name> passes as a level-9
     Artist, with CP_CLASS=artist and no NA_HELP_ITEMS emitted by the restore.
+  - 2026-10-08: done, first attempt. Snapshot **munin-artist-s1**, captured at 3b31227ab on
+    a clean tree by run cp59-artist-a1 (run/cp/CP-59/capture-a1.log; evidence
+    run/snapshots/_capture/cp59-artist-a1). Character 133266, 11,631,089 game ms (3 h 13
+    min 51 s), 127,315 trace records, dump SHA-256
+    2c2de4b2bb8447522e6d7f82adef47c6a6e914412020cbe03a283356f60a28e1, receipt SHA-256
+    33ff2a9131f6d3f6b02af828be13db2a9e9c9083c70a040076a1ae68e191082d, classLine artist in
+    snapshot.json. The code is CP-56a's (4628956c1); every commit after it is evidence
+    only, so no bundle was run again.
+    - **Acceptance, from the receipt and the trace before Verify.** Class id 15, level 9,
+      644 HP and 1,340 MP; 41 quests completed, Q2008 at START/0; the last decision is
+      journey-complete, standing at the client-observed Munin. Worn: the harp 102000208
+      (Q2134) in both hands, the robe pieces 110101250 (Q2007), 113100773 (Q2005),
+      114100795 (Q2006) and 111100763 (Q2129), and the accessories 122000869 and
+      121000749. The trace holds no sale, no discard and no vendor visit; the replaced
+      harps and the starter pieces are still in the cube. help-items.json lists the kit
+      at the start (30 life potions 162000006, 30 Anti-Shock scrolls 164000067, 20
+      Greater Running Scrolls 164000076) and two refills at level-9 checkpoints (29 life
+      potions, 16 running scrolls). Both Ishalgen binds are in the trace: the village
+      obelisk 700063 at 4:11 for 43 Kinah and the outpost obelisk 700064 at 18:13 for
+      134. The rest plan switches: one potion drunk in a rest at 7:37, at level 4, and
+      from 21:14 on 27 rests healed with Soothing Melody and none drank a potion.
+      Accepted.
+    - **Ledger.** 168 encounters, 150 kills, one death, 19 retreats, each at two or more
+      attackers. 1,485 decisions: 612 casts on a target, 789 waits for Pulse's cooldown,
+      37 life potions, 21 approaches, 19 retreats, 4 casts of Soothing Melody in a fight
+      and 3 shield scrolls: the ladder's heal step and the shield scroll are shown on the
+      Artist for the first time. Casts: Pulse 416, Song of Ice 156, Soothing Melody 31.
+      142 pull plans: 107 pulls, 28 waits, 7 with no plan. Used: 38 life potions (37 in
+      fights, one in a rest); three Anti-Shock scrolls, 30 to 27; the Greater Running
+      Scroll 20 times; Castafodin seven times; seven sits for mana; Return twice. No sit
+      for health and no restock. 40,342 Kinah at the end.
+    - **The death.** 1:12:15, at Q2007's blue generator: it left at two attackers at
+      1:11:03, was down to 57 of 544 HP (10%) at 1:11:58, left again at 1:12:00 and once
+      more at 1:12:10, with five on it at 177 HP, and was killed. It revived at the outpost obelisk it is bound to and
+      the soul heal ran at the Soul Healer 203680: 287 XP back for 71 Kinah. It took up
+      the generators again and finished Q2007 at 1:30:08.
+    - **Proof.** Restore prints CP_CLASS=artist and no NA_HELP_ITEMS (run/cp/CP-59/
+      restore.txt; that copy was dropped). Verify, run cp59-artist-verify-a1, passes
+      (run/cp/CP-59/verify-a1.log; evidence run/snapshots/_verify/cp59-artist-verify-a1):
+      the run's context reads classLine artist, the resumed character is observed as
+      class id 15 at level 9 with the Artist's skills, 41 quests completed and Q2008 at
+      START/0, and the endpoint is reached again.
+    - **Findings, not fixed.** (a) 17 corpses were not looted (9 far, 7 with no safe
+      path, 1 gone). (b) Nine obstacle refusals were answered by closing in. (c) Fiery
+      Descant 4300 is learned at level 7 and stays excluded. (d) The receipt's 16-bit
+      EquipmentSlot hides the accessory 123000864, as for the other classes.
+    - No code changed, so this commit is evidence only. The class scope is CP-60's.
 - [ ] **CP-60 - Record class scope artist, twice.** Depends: CP-59
   - Work: As CP-53 with -Set artist -Item CP-60.
   - Proof: The record run: the two passes of class scope artist are identical after
@@ -6149,3 +6196,12 @@ report what was done, what is blocked and what you need from me.
   rests heal with Soothing Melody (three times) where they drank a potion before; six life
   potions, five running scrolls, Castafodin once. Evidence and docs only; seven checks pass.
   Next by rule (h): CP-59.
+- 2026-10-08 — Loop: CP-59 done, first attempt. Snapshot munin-artist-s1 captured at
+  3b31227ab (run cp59-artist-a1) and verified (run cp59-artist-verify-a1): an Artist created
+  by packets plays all 41 Ishalgen quests in 3 h 14 min of game time and stands at Munin at
+  level 9 with Q2008 at START/0, in its Q2134 harp and four robe pieces. 168 encounters, 150
+  kills, one death at Q2007's blue generator (revived at the outpost obelisk, soul healed for
+  71 Kinah), 19 retreats. The rest switches from the potion to Soothing Melody at level 5 (27
+  rest heals), and the heal is cast four times in a fight. 38 life potions, three shield
+  scrolls, 20 running scrolls. Restore prints CP_CLASS=artist and no NA_HELP_ITEMS. Evidence
+  only. Next by rule (h): CP-60.
