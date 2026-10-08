@@ -36,13 +36,14 @@ public enum NaturalObstacleAnswer
 /// approach stops, what counts as adjacent, how far to close in after the server refuses a cast for distance, and what
 /// to do about an obstacle. The fight loop moves; this only decides. The Priest line is a stand-off: a ranged route
 /// while the target is farther than <paramref name="RangedRouteBeyond"/>, then up to the target; a walk-in class always
-/// walks to the target; a weapon-range class holds at <paramref name="HoldDistance"/>. The last two are not played yet.
+/// walks to the target; a weapon-range class holds at <paramref name="HoldDistance"/>.
 /// </summary>
 /// <param name="MeleeReach">A monster within this is on the bot.</param>
 /// <param name="RangeRefusalCloseIn">How near to come after a distance refusal of a skill that is not a melee skill.</param>
 /// <param name="RecentHitMillis">A target that hit the bot within this is adjacent whatever its lagging position says.</param>
+/// <param name="ObstacleAnswer">CP-48: the class's own answer to an obstacle; null leaves it to the style.</param>
 public sealed record NaturalFightMovement(NaturalPullStyle Style, float MeleeReach, float RangedRouteBeyond, float RangeRefusalCloseIn,
-	float HoldDistance = 0, int RecentHitMillis = 3000)
+	float HoldDistance = 0, int RecentHitMillis = 3000, NaturalObstacleAnswer? ObstacleAnswer = null)
 {
 	/// <param name="targetRanged">The target attacks from range, so its hits say nothing about where it stands.</param>
 	/// <param name="millisSinceHitByTarget">Game time since the target last hit the bot; null when it has not.</param>
@@ -60,8 +61,8 @@ public sealed record NaturalFightMovement(NaturalPullStyle Style, float MeleeRea
 	public float CloseInAfterRangeRefusal(float skillRange) => skillRange <= MeleeReach ? MeleeReach - 1 : RangeRefusalCloseIn;
 
 	/// <summary>The answer to STR_SKILL_OBSTACLE.</summary>
-	public NaturalObstacleAnswer AfterObstacleRefusal =>
-		Style == NaturalPullStyle.WeaponRangeStandOff ? NaturalObstacleAnswer.AnotherSightLine : NaturalObstacleAnswer.CloseToMelee;
+	public NaturalObstacleAnswer AfterObstacleRefusal => ObstacleAnswer ??
+		(Style == NaturalPullStyle.WeaponRangeStandOff ? NaturalObstacleAnswer.AnotherSightLine : NaturalObstacleAnswer.CloseToMelee);
 
 	/// <summary>How near to the target <see cref="NaturalObstacleAnswer.CloseToMelee"/> comes.</summary>
 	public float ObstacleCloseIn => MeleeReach - 1;

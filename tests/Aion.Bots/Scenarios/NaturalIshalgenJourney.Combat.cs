@@ -1294,7 +1294,12 @@ public sealed partial class NaturalIshalgenJourney
 					// The server measured more than the skill's range although the client's last-known
 					// position says otherwise: a walker moved on without a fresh SM_MOVE. Close in along
 					// checked ground, as a player walks toward a target that drifted out of range.
-					await CloseInAfterRangeRejectionAsync(target, token, ClassProfile.Movement.CloseInAfterRangeRefusal(skill.Range));
+					// CP-48: a skill that adds the weapon's range reaches as far as the weapon does; it is not a melee skill
+					// for having no range of its own. A row without that flag keeps its own range, as recorded.
+					float reach = !skill.AddWeaponRange ? skill.Range : NaturalSkillCatalog.Reach(skill,
+						session.Api.World.Inventory.Values.SingleOrDefault(item => item.Details.EquippedSlot is 1 or 3) is { } mainHand
+							? runtime.Data.ItemDataDh.GetItemTemplate(mainHand.ItemId)?.GetWeaponStats()?.GetAttackRange() : null);
+					await CloseInAfterRangeRejectionAsync(target, token, ClassProfile.Movement.CloseInAfterRangeRefusal(reach));
 					await session.AdvanceAsync(TimeSpan.FromMilliseconds(300), token);
 					await session.SynchronizeAsync(token);
 					return true; // Re-evaluate range, health and attackers before retrying.
@@ -1315,7 +1320,7 @@ public sealed partial class NaturalIshalgenJourney
 					});
 					NaturalFightMovement movement = ClassProfile.Movement;
 					if (movement.AfterObstacleRefusal != NaturalObstacleAnswer.CloseToMelee)
-						throw new NotSupportedException($"The {movement.Style} answer to an obstacle has no executor yet (CP-36).");
+						throw new NotSupportedException($"The {movement.Style} answer to an obstacle has no executor yet (CP-48).");
 					await CloseInAfterRangeRejectionAsync(target, token, movement.ObstacleCloseIn);
 					await session.AdvanceAsync(TimeSpan.FromMilliseconds(300), token);
 					await session.SynchronizeAsync(token);
@@ -1371,7 +1376,14 @@ public sealed partial class NaturalIshalgenJourney
 							? DateTimeOffset.MaxValue : runtime.Epoch.AddMilliseconds(runtime.NowMillis + skill.ChainWindowMillis))
 						: null;
 			}
-			await session.AdvanceAsync(BotCastProtocol.RecoveryDelay(result), token);
+			TimeSpan recovery = BotCastProtocol.RecoveryDelay(result);
+			// CP-48: a table-driven class also waits out the animation's last hit, as its client would: after Gunshot from
+			// 18 m the bullet lands 785 ms after the cast and the server takes no next skill for 819 ms. The Priest line
+			// keeps the recorded wait.
+			if (ClassProfile.TableDriven && result.PacketType == typeof(SM_CASTSPELL_RESULT) &&
+				TimeSpan.FromMilliseconds(runtime.AnimationLastHitMillis(session.Api.World, skill.Id) + 1) is var lastHit && lastHit > recovery)
+				recovery = lastHit;
+			await session.AdvanceAsync(recovery, token);
 			return true;
 		}
 	}

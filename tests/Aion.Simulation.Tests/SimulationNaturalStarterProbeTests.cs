@@ -28,6 +28,8 @@ public sealed partial class SimulationFastScenarioTests
 		new("mage-5", NaturalClassLine.Mage, ProbeAccountB, "Asimfivemage"),
 		new("artist-1", NaturalClassLine.Artist, ProbeAccountA, "Asimoneart"),
 		new("artist-5", NaturalClassLine.Artist, ProbeAccountB, "Asimfiveart"),
+		new("engineer-1", NaturalClassLine.Engineer, ProbeAccountA, "Asimoneengi"),
+		new("engineer-5", NaturalClassLine.Engineer, ProbeAccountB, "Asimfiveengi"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -156,6 +158,8 @@ public sealed partial class SimulationFastScenarioTests
 			case "mage-5": await MageLevelFiveRowAsync(probe, id, geometry, token); break;
 			case "artist-1": await CasterLevelOneRowAsync(probe, id, geometry, "Artist", "Pulse", 4408, token); break;
 			case "artist-5": await ArtistLevelFiveRowAsync(probe, id, geometry, token); break;
+			case "engineer-1": await CasterLevelOneRowAsync(probe, id, geometry, "Engineer", "Direct Shot", 2219, token); break;
+			case "engineer-5": await EngineerLevelFiveRowAsync(probe, id, geometry, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -295,10 +299,11 @@ public sealed partial class SimulationFastScenarioTests
 	}
 
 	/// <summary>
-	/// CP-46 and CP-47, rows mage-1 and artist-1. Prepared by the director: the level-1 caster is placed 18 m from a
+	/// CP-46 to CP-48, rows mage-1, artist-1 and engineer-1. Prepared by the director: the level-1 caster is placed 18 m from a
 	/// Sprigg Worker's shipped spot, and its HP is halved before the second and before the third kill. Every other act is
 	/// the journey's: three Sprigg Workers (210363, 143 HP) killed through RunObservedCombatAsync with the class's first
-	/// attack from range (the Mage's Flame Bolt 1282, the Artist's Pulse 4408). Each kill begins with the journey's
+	/// attack from range (the Mage's Flame Bolt 1282, the Artist's Pulse 4408, the Engineer's Direct Shot 2219) and with
+	/// no cast refused for distance. Each kill begins with the journey's
 	/// ordinary rest: the first forced rest drinks a Minor Life Potion; the second comes while the potion's 30 s delay
 	/// still runs, so it sits to the HP target and drinks nothing.
 	/// </summary>
@@ -336,6 +341,7 @@ public sealed partial class SimulationFastScenarioTests
 				record.Fields.GetProperty("action").GetString() == "cast-target");
 			double firedFrom = first.Fields.GetProperty("targetDistance").GetDouble();
 			Assert.True(firedFrom > 5, $"Kill {kill} began at {firedFrom:F1} m.");
+			Assert.DoesNotContain(records, record => record is { Direction: "action", Packet: "combat-range-rejected" });
 			int potions = records.Count(record => record is { Direction: "action", Packet: "rest-life-potion" });
 			int sits = records.Count(record => record is { Direction: "action", Packet: "rest-sit-for-health" });
 			restPotions += potions;
@@ -433,5 +439,39 @@ public sealed partial class SimulationFastScenarioTests
 			$"{heals.Length} Soothing Melody in the rest; one Fanged Karnif: {result}. Casts {order}. " +
 			$"Decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}. " +
 			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// CP-48, row engineer-5. Prepared by the director: level 5 and a place 18 m from a Vengeful Ghost's shipped spot.
+	/// Every other act is the journey's: Gunshot and then Rapidfire twice, each inside 2 s of the step before it and with
+	/// no other cast between, on one Vengeful Ghost (210593, 719 HP, level 8). A death or a retreat is a recorded outcome;
+	/// a cast that never starts throws in the fight loop and fails the row.
+	/// </summary>
+	private async Task EngineerLevelFiveRowAsync(StarterProbe probe, string id, BotNavigationGeometry geometry, CancellationToken token)
+	{
+		const int map = 220010000, ghost = 210593, direct = 2219, gunshot = 1957, rapid = 2142;
+		probe.Session.BeginStep("s01", "director-sets-level-five-and-places-by-a-ghost");
+		await probe.SetLevelAsync(5);
+		Assert.All(new[] { direct, gunshot, rapid }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 5."));
+		BotPosition spot = GroundNear(geometry, map, new BotPosition(540.176f, 1865.25f, 293.628f, 0), 18);
+		await probe.PlaceAsync(spot.X, spot.Y, spot.Z);
+		probe.Session.BeginStep("s02", "fight-a-vengeful-ghost");
+		Npc target = NearestLiving(probe, ghost);
+		NaturalCombatDiagnosticResult result = await probe.Journey.RunObservedCombatAsync(_ => Task.FromResult(target.GetObjectId()), token);
+		IReadOnlyList<StarterTraceRecord> records = probe.TraceOf("s02");
+		var casts = probe.CastsOf("s02").ToList();
+		IReadOnlyDictionary<string, int> decisions = probe.DecisionsOf("s02");
+		string order = string.Join(" ", casts.Select(cast => $"{cast.SkillId}@{cast.At.TotalSeconds:F1}"));
+		int chain = Enumerable.Range(0, Math.Max(0, casts.Count - 2)).FirstOrDefault(index =>
+			casts[index].SkillId == gunshot && casts[index + 1].SkillId == rapid && casts[index + 2].SkillId == rapid, -1);
+		Assert.True(chain >= 0, $"Gunshot was not followed by Rapidfire twice: {order}.");
+		TimeSpan first = casts[chain + 1].At - casts[chain].At, second = casts[chain + 2].At - casts[chain + 1].At;
+		Assert.True(first <= TimeSpan.FromSeconds(2) && second <= TimeSpan.FromSeconds(2),
+			$"Rapidfire came {first.TotalMilliseconds:F0} and {second.TotalMilliseconds:F0} ms after the step before it: {order}.");
+		int refusals = records.Count(record => record is { Direction: "action", Packet: "combat-range-rejected" });
+		Console.WriteLine($"{id}: level {probe.World.Level} Engineer, max HP {probe.World.MaxHp}, one Vengeful Ghost: {result}. " +
+			$"Casts {order}; Rapidfire {first.TotalMilliseconds:F0} ms after Gunshot and again {second.TotalMilliseconds:F0} ms later. " +
+			$"Decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}. " +
+			$"Distance refusals {refusals}. HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
 	}
 }

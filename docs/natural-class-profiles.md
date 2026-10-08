@@ -4286,7 +4286,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       37,222, m 112,397, c 96,166 records). Bundle: the seven pre-commit checks pass,
       Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run
       cp47-fast, 11 passed).
-- [ ] **CP-48 - Engineer profile.** Depends: CP-21, CP-24, CP-46
+- [x] **CP-48 - Engineer profile.** Depends: CP-21, CP-24, CP-46
   - Work: Add line engineer and Sc/Classes/NaturalEngineerProfile.cs: stand-off at 18 m,
     inside the planner's bound and the pistol's 20 m; Direct Shot 2219/2220 as pull and
     filler; Gunshot 1957/1958 then Rapidfire 2142 twice, each within 2 s of the step before
@@ -4305,6 +4305,91 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     first shows the life potion drunk, the second, inside the potion's delay, the sit). Row
     5: a director-leveled level-5 Engineer casts Gunshot then Rapidfire twice on one
     Vengeful Ghost 210593 (719 HP) with no cast-start timeout.
+  - 2026-10-08: done on the second probe attempt. Java: Skill.endCast sets the player's
+    next skill use to now plus the animation's last-hit time
+    (MotionData.calculateAnimationTimesAfterLastHit), and CM_CASTSPELL writes an audit line
+    and answers STR_SKILL_NOT_READY for a cast before it. The chain, selfcount and
+    weapon-range rules were read for CP-35 and CP-39.
+    - **The line.** NaturalClassLine.Engineer: id engineer, starter ENGINEER, no second
+      class, account 41, name Asimengi (CP-Q19, on its default).
+    - **The profile** (Sc/Classes/NaturalEngineerProfile.cs), built from the run's static
+      data. Catalog: Direct Shot 2219/2220 (direct), Gunshot 1957/1958 (gunshot),
+      Rapidfire 2142 (rapid), Hot Shot 1942 (hot), Bullet Resistance 2168 (resist); the
+      three common skills are excluded; the validator passes. Table natural-engineer-v1,
+      the same list at every distance: Hot Shot when ready (level 9; it lowers the fire
+      resistance Gunshot and Rapidfire are measured against), Gunshot, Rapidfire twice,
+      Direct Shot for the pull and everything between, and the pistol whenever no skill is
+      ready. Ladder: the shield scroll at 50% HP, the life potion at or below 75%, Bullet
+      Resistance at or below 60%. It leaves at two attackers or at 25% HP with nothing
+      ready. Rest: the potion plan, HP target 90%; a mana sit only below 20% until 50%,
+      because Direct Shot and the pistol cost no mana. Readiness: 80% HP before a pull,
+      60% HP and 20% MP before a use bar and between adds, 80% HP and 30% MP before a
+      named target. Help items: the level 1-9 kit of CP-05 with the Courage family in the
+      shared speed slot (Blitzopan): every attack skill is instant, so a casting-speed
+      scroll would do nothing, and attack speed quickens the pistol. Restock: the Minor
+      Life Elixir of list 721 at 5 or fewer up to 12, Kinah floor 500.
+    - **Distances, all 20 m or less.** Pull 18 m; hold distance 18 m (weapon-range
+      stand-off: an approach is a ranged route, and inside 18 m it stays); spell range 17
+      (so a shipped spawn is approached to 20), firing range 19, spawn approach 19, spawn
+      pull scan 20, fight-through pull 20, stand-off measured from 20 with tolerance 3 and
+      margin 1, ranged approach radius 16; after a distance refusal it comes to 12 m.
+      Campaign: Sprigg route beyond 20, stand-off 18, select within 20; firing edge
+      within 20; stalker search 19; blocker replan beyond 20. The Priest line's readiness
+      numbers for Return, the stalker, the sack and the camp are kept.
+    - **Gear.** The Engineer table of CP-29 as it is: pistol by magic boost; leather, then
+      robe, then clothes; no mana potions kept. Reward picks as CP-29 lists them: the
+      pistols at Q2100, Q2002 and Q2134 (101800194, 101800505, 101800195), the leather
+      piece at Q2001, Q2005, Q2006, Q2007 and Q2129 (114300804, 113300791, 114300805,
+      110301182, 111300768), and the Minor Life Elixir at Q2117 and Q2124.
+    - **Shared code this class needed.**
+      - Table policy, a held chain (NaturalRotationRules.HoldOpenChain, on for the
+        Engineer only): while a follow-up of the open chain only cools down and clears
+        inside its chain time, the class waits and casts or swings nothing else; outside
+        an emergency no recovery skill is cast while a follow-up is ready or so awaited.
+        This is what keeps Direct Shot and Bullet Resistance out of the chain.
+      - The fight loop measures a distance refusal by the skill's reach, weapon range
+        included, so a gun skill with no range of its own is not taken for a melee skill
+        and the Engineer is not walked to 2 m. A row without the weapon-range flag keeps
+        its own range, so the Priest line is as recorded.
+      - NaturalFightMovement takes the class's own answer to an obstacle. The Engineer's
+        is the Priest's, close in to the target: a search for another sight line is still
+        not built, and the style's default (which has no executor) is no longer reached.
+      - The wait after a cast. First attempt: the chain played, and the server wrote
+        "tried to use skill 2142 32 ms too early. Previous skill: 1957" and refused that
+        Rapidfire once. The loop waited for the bullet's hit time (785 ms from 18 m); the
+        server takes no next skill before the animation's last hit (900 ms for Gunshot
+        with a pistol, 819 ms under Blitzopan). A table-driven class now also waits out
+        the unboosted animation's last hit (NaturalJourneyRuntime.AnimationLastHitMillis).
+        The Priest line keeps the recorded wait.
+    - **Probe, rows engineer-1 and engineer-5** (run/cp/CP-48: probe-a1.log is the first
+      attempt, probe-a2.log the second; probe-warrior.log, probe-mage.log and
+      probe-artist.log are the rule (k) rows; traces beside them).
+      - Row engineer-1, on account 98 as Asimoneengi; it passed in both attempts with the
+        same numbers. Prepared: placed 18 m from a Sprigg Worker's spot; HP halved before
+        the second and the third kill. A level-1 Engineer has 219 HP and 170 MP. Three
+        Sprigg Workers 210363 die in 3.0, 3.2 and 1.1 s: Direct Shot from 10.6, 18.3 and
+        10.6 m, and for the first two one pistol shot after it. No cast was refused for
+        distance. The rest before the second kill drinks one Minor Life Potion and sits
+        once; the rest before the third, inside the potion's 30 s delay, drinks nothing
+        and sits once.
+      - Row engineer-5, on account 100 as Asimfiveengi. Prepared: level 5, placed 18 m
+        from a Vengeful Ghost's spot. A level-5 Engineer has 399 HP and 450 MP. Second
+        attempt: Gunshot 1957 from 18.2 m, Rapidfire 2142 after 902 ms and again 1,078 ms
+        later, then Direct Shot, one pistol shot and Direct Shot; the ghost 210593 (719
+        HP, level 8) is dead after 7.0 s and the Engineer ends at full HP. Decisions: cast-target
+        5, attack 1. No distance refusal, no cast without a start, no audit line. First
+        attempt: the same casts, Rapidfire 1,138 and 1,053 ms after the step before it,
+        and the audit line above failed the row.
+    - **Built and not shown in play:** the held chain's wait (Rapidfire's 1 s cooldown was
+      over each time the animation let the next cast go), Bullet Resistance and Hot Shot
+      (levels 7 and 9), the answer to a distance refusal and to an obstacle.
+    - Rule (k): the rows of the other table-driven classes play as recorded (warrior-1
+      6,631, 7,331 and 8,901 ms; warrior-7 the same five casts and 14,008 ms; mage-1
+      2,575, 2,832 and 2,575 ms; mage-5 the same three casts and 6,127 ms; artist-1 1,611,
+      1,762 and 1,611 ms; artist-5 the same four casts and 7,075 ms).
+    - Guard: gate p+m+c, run guard-a1, each identical to its baseline of 49cf15b60 (p
+      37,222, m 112,397, c 96,166 records). Bundle: the seven pre-commit checks pass,
+      Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run cp48-fast, 11 passed).
 - [ ] **CP-49 - Scout profile.** Depends: CP-21, CP-24, CP-43, CP-46
   - Work: Add line scout and Sc/Classes/NaturalScoutProfile.cs: walk-in pull; Devotion 3235
     before the opener; Swift Edge 3182/3183 then Soul Slash 3223 at once; Focused Evasion
@@ -5544,3 +5629,15 @@ report what was done, what is blocked and what you need from me.
   itself with Soothing Melody in the rest and kills a Fanged Karnif in 7.1 s with no
   approach. Warrior and Mage rows play as recorded. Guard guard-a1, set p+m+c: identical.
   Seven checks, unit suite and Fast (cp47-fast) pass. Next by rule (h): CP-48.
+- 2026-10-08 — Loop: CP-48 done on the second probe attempt. Line engineer and the Engineer's
+  profile, the first weapon-range stand-off: pull and hold at 18 m, every distance 20 m or
+  less; Gunshot, Rapidfire twice, Direct Shot and the pistol between; the shield scroll, the
+  life potion and Bullet Resistance on the ladder; the potion-and-sit rest. Shared code: a
+  held chain in the table policy, a distance refusal measured by the skill's reach, the
+  class's own answer to an obstacle, and, after the first attempt's audit line (Rapidfire 32
+  ms too early), a wait for the animation's last hit after every cast of a table-driven
+  class. Probe: a level-1 Engineer kills three Sprigg Workers with Direct Shot and the pistol
+  from range, with the two forced rests; a level-5 Engineer casts Gunshot and Rapidfire twice
+  (902 and 1,078 ms apart) and kills a Vengeful Ghost in 7.0 s untouched. Warrior, Mage and
+  Artist rows play as recorded. Guard guard-a1, set p+m+c: identical. Seven checks, unit
+  suite and Fast (cp48-fast) pass. Next by rule (h): CP-49.

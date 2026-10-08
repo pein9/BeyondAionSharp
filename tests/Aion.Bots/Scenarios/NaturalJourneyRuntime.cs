@@ -46,13 +46,7 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 	{
 		var template = Data.SkillDataDh.GetSkillTemplate(skillId)
 			?? throw new InvalidDataException($"Missing client skill template {skillId}.");
-		var equipped = world.Inventory.Values.SingleOrDefault(item => item.Details.EquippedSlot is 1 or 3);
-		ItemGroup group = equipped == null ? ItemGroup.NONE : Data.ItemDataDh.GetItemTemplate(equipped.ItemId).GetItemGroup();
-		// CP-38: any weapon casts. A second weapon in the off hand (slot 2) changes the animation set; a shield does not.
-		var offHand = world.Inventory.Values.SingleOrDefault(item => item.Details.EquippedSlot == 2);
-		ItemGroup? second = offHand != null && Data.ItemDataDh.GetItemTemplate(offHand.ItemId) is { } offTemplate && offTemplate.IsWeapon()
-			? offTemplate.GetItemGroup() : null;
-		BotWeaponMotionType weapon = BotWeaponMotion.For(group, second);
+		BotWeaponMotionType weapon = WeaponMotion(world);
 		BotPosition destination = target == world.SelfObjectId ? origin : world.Objects[target].Position;
 		float distance = MathF.Sqrt(MathF.Pow(origin.X - destination.X, 2) + MathF.Pow(origin.Y - destination.Y, 2) +
 			MathF.Pow(origin.Z - destination.Z, 2));
@@ -62,6 +56,28 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 		int hitTime = motions.Value.CalculateClientHitTime(template,
 			new BotMotionProfile(Race.ASMODIANS, Gender.MALE, weapon), travel);
 		return new(skillId, level, 0) { TargetObjectId = target, HitTime = checked((ushort)hitTime) };
+	}
+
+	/// <summary>
+	/// CP-48: how long after a completed cast the skill's animation reaches its last hit, with the weapon in hand. The
+	/// server allows no next skill before it (Java Skill.endCast: nextSkillUse = now + lastHitMillis). The unboosted
+	/// animation is taken, which is the longer one under an attack-speed buff. 0 for a skill with no motion row.
+	/// </summary>
+	public int AnimationLastHitMillis(BotWorldModel world, ushort skillId) =>
+		Data.SkillDataDh.GetSkillTemplate(skillId) is { } template
+			? motions.Value.CalculateAnimationTimesAfterLastHit(template,
+				new BotMotionProfile(Race.ASMODIANS, Gender.MALE, WeaponMotion(world)))?.LastHitMillis ?? 0
+			: 0;
+
+	private BotWeaponMotionType WeaponMotion(BotWorldModel world)
+	{
+		var equipped = world.Inventory.Values.SingleOrDefault(item => item.Details.EquippedSlot is 1 or 3);
+		ItemGroup group = equipped == null ? ItemGroup.NONE : Data.ItemDataDh.GetItemTemplate(equipped.ItemId).GetItemGroup();
+		// CP-38: any weapon casts. A second weapon in the off hand (slot 2) changes the animation set; a shield does not.
+		var offHand = world.Inventory.Values.SingleOrDefault(item => item.Details.EquippedSlot == 2);
+		ItemGroup? second = offHand != null && Data.ItemDataDh.GetItemTemplate(offHand.ItemId) is { } offTemplate && offTemplate.IsWeapon()
+			? offTemplate.GetItemGroup() : null;
+		return BotWeaponMotion.For(group, second);
 	}
 }
 

@@ -44,10 +44,13 @@ public enum NaturalAutoAttack
 /// <param name="EmergencyClearPercent">HP at or above which the emergency is over.</param>
 /// <param name="OnlyWhenHurt">CP-43: attack roles that are cast only while HP is at or below the percentage given, in
 /// their place in the list (the Warrior's Rage, a chain step that shields it). Null for none.</param>
+/// <param name="HoldOpenChain">CP-48: while a follow-up of the open chain only cools down and clears inside its chain time,
+/// nothing else is cast or swung, and outside an emergency no recovery skill is cast while a follow-up is ready or so
+/// awaited (the Engineer's Rapidfire, twice inside 2 s each: a Direct Shot or a Bullet Resistance between resets it).</param>
 public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjacent, IReadOnlyList<string> AtRange,
 	IReadOnlyList<NaturalRotationUpkeep> Upkeep, IReadOnlyList<NaturalRecoveryStep> Recovery, int SwarmAttackers, int FleeHpPercent,
 	NaturalAutoAttack AutoAttack, string? ControlRole = null, int EmergencyPercent = 35, int EmergencyClearPercent = 45,
-	IReadOnlyDictionary<string, int>? OnlyWhenHurt = null)
+	IReadOnlyDictionary<string, int>? OnlyWhenHurt = null, bool HoldOpenChain = false)
 {
 	/// <summary>The table's two attack lists as lines of skill ids, every rank of a role in level order, for
 	/// <see cref="NaturalProfileValidator"/>.</summary>
@@ -63,8 +66,9 @@ public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjac
 /// Order of one decision: death and incomplete life statistics; the swarm limit; the recovery ladder; the flee limit;
 /// the mana potion; with no target, upkeep or ready; with one, a ready follow-up before anything else (any non-chain
 /// cast, and another chain's first step, resets the open chain: Java Skill.canUseSkill, ChainCondition.shouldReset), the
-/// in-fight upkeep, the attack list for the target's place, the weapon, a wait for a listed
-	/// attack that is in reach and only cooling down, and last a movement answer by the pull style.
+/// held chain's wait (<see cref="NaturalRotationRules.HoldOpenChain"/>), the in-fight upkeep, the attack list for the
+/// target's place, the weapon, a wait for a listed attack that is in reach and only cooling down, and last a movement
+/// answer by the pull style.
 /// A follow-up is legal when its required category is the current or the previous chain category (Java
 /// ChainCondition.validate accepts either) on the same target, inside its own chain time (CP-Q17).
 /// </para>
@@ -123,6 +127,16 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			return Choice("retreat", null, reason);
 		}
 
+		// CP-48: a follow-up of the open chain is ready, or only cools down and clears inside its chain time.
+		bool Pending(NaturalPriestSkill skill)
+		{
+			if (skill.RequiresChainCategory == null) return false;
+			string[] reasons = Refusals(skill, state, now, parameters);
+			return reasons.Length == 0 || reasons is [CoolingDown] && ClearsInsideChain(skill, state);
+		}
+		bool ChainHeld() => rules.HoldOpenChain &&
+			catalog.Any(skill => skill.RequiresChainCategory != null && Best(skill.Role, state)?.Id == skill.Id && Pending(skill));
+
 		if (state.Dead) return Choice("revive", null, "Client reported death.");
 		if (state.MaxHp <= 0 || state.MaxMp <= 0 || state.Hp < 0 || state.Mp < 0)
 			return Choice("blocked", null, "Client life statistics are incomplete.");
@@ -142,7 +156,7 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 						return Choice("shield-scroll", null, $"{at}: use the owned Anti-Shock damage shield.");
 					case NaturalRecoveryKind.LifePotion when LifePotionUsable(state):
 						return Choice("hot-potion", null, $"{at}: drink the owned life potion.");
-					case NaturalRecoveryKind.Skill when Best(step.Role!, state) is { } recovery && Ready(recovery):
+					case NaturalRecoveryKind.Skill when (state.InEmergency || !ChainHeld()) && Best(step.Role!, state) is { } recovery && Ready(recovery):
 						return Cast(recovery, $"{at}: {step.Role}.");
 				}
 			}
@@ -166,6 +180,8 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			.Select(role => Best(role, state)).OfType<NaturalPriestSkill>().ToArray();
 		foreach (NaturalPriestSkill followUp in line.Where(skill => skill.RequiresChainCategory != null))
 			if (Ready(followUp)) return Cast(followUp, $"The {followUp.Role} follow-up is open; cast it before the chain resets.");
+		if (rules.HoldOpenChain && line.Any(Pending))
+			return Choice("wait", null, "An open follow-up only cools down and clears inside its chain time; hold the chain for it.");
 		if (!state.Aggro && Upkeep(duringFight: false) is { } before) return Cast(before, $"The {before.Role} buff goes up before the first hit.");
 		if (Upkeep(duringFight: true) is { } during) return Cast(during, $"The {during.Role} buff is absent from the observed effects.");
 		foreach (NaturalPriestSkill attack in line.Where(skill => skill.RequiresChainCategory == null))
@@ -291,6 +307,15 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		if (!category) return false;
 		if (skill.ChainWindowMillis <= 0) return state.ChainExpiresAt is not DateTimeOffset expires || expires > now;
 		return state.ChainStepAt is DateTimeOffset at ? now <= at.AddMilliseconds(skill.ChainWindowMillis) : state.ChainExpiresAt > now;
+	}
+
+	/// <summary>The skill's cooldown ends no later than its step of the open chain does: the follow-up's own chain time
+	/// counted from the step before it, or the observed expiry when the step's time is not known.</summary>
+	private static bool ClearsInsideChain(NaturalPriestSkill skill, NaturalCombatObservation state)
+	{
+		DateTimeOffset? deadline = skill.ChainWindowMillis > 0 && state.ChainStepAt is DateTimeOffset at
+			? at.AddMilliseconds(skill.ChainWindowMillis) : state.ChainExpiresAt;
+		return deadline is DateTimeOffset end && state.Cooldowns.TryGetValue(skill.CooldownId, out DateTimeOffset until) && until <= end;
 	}
 
 	/// <summary>The mana kept back from attacks: the best learned recovery skill's cost and the run's extra. A class with no
