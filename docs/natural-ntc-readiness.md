@@ -10,6 +10,8 @@ These contracts are steps toward the maintainer's long-term goals (2026-10-06, i
 
 **Update 2026-10-07 (D39): class profiles come before the Templar and Sorcerer profiles named above.** The class seam, a Chanter branch at Ascension and levels 1-9 for the five other starter classes are planned in [natural-class-profiles.md](natural-class-profiles.md); the Templar and the Sorcerer later start from its Warrior and Mage profiles with a fresh run in the early-Ascension order, not from its Munin snapshots.
 
+**Update 2026-10-08 (CP-69): the class-profile plan is closed.** Every class now runs on one class seam, with the Priest and the Cleric on it and their seven scopes identical to their baselines. Six snapshots were added and verified: `pandaemonium-chanter-start-s1` (a level-10 Chanter after the ceremony, Q2904 at START/0) and `munin-mage-s1`, `munin-warrior-s1`, `munin-artist-s1`, `munin-engineer-s1` and `munin-scout-s1` (each a level-9 starter at Munin with Q2008 at START/0, after all 41 Ishalgen quests with the level 1-9 help kit). The Cleric's endpoint is unchanged: `morheim-abyss-entry-s1`. A probe on prepared characters shows that the server lets all eleven Asmodian second classes be chosen and dispatched to Altgard by packets. No second-class profile exists beside the Cleric's; what each class needs before one, and the findings left open, are in the [closing status](natural-class-profiles.md#closing-status-2026-10-08) of the plan. The Templar and Sorcerer profiles named above are the next contract.
+
 ## Measured endpoint and historical comparison
 
 | Measure | Historical AS-02 | Revised RC |

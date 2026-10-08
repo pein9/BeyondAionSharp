@@ -1,6 +1,12 @@
 # Natural class profiles: the class seam, the Chanter branch, and levels 1-9 for every starter
 
-Status: planning only, 2026-10-06. Nothing in this document is implemented. It answers the
+Status: closed, 2026-10-08. Every item of the CP checklist is ticked: the 70 of the plan and
+five lettered ones. The class seam is in place with the Priest and the Cleric on it, six new
+snapshots are preserved under their accepted names, and the full gate at `2486278d1` finds
+all twelve scopes identical to their baselines. What was done, what was found and not fixed,
+and what each class needs next is under [Closing status](#closing-status-2026-10-08).
+
+As planned on 2026-10-06, before anything was implemented: this document answers the
 operator's question "how generic is what we have", fixes the design of the class seam, and
 gives the CP checklist that a loop works one item at a time. Line numbers are those of
 commit `b45b72a43`.
@@ -19,6 +25,125 @@ decisions. They turn help items on for every class line, rule out bandages, add 
 each Ishalgen quest hub and settle the Warrior's Q2100 pick. Three items were added for
 them (CP-05 to CP-07) and the checklist was renumbered a second time, again before any item
 was started. Nothing is blocked.
+
+## Closing status (2026-10-08)
+
+Written by CP-69. The evidence of every statement here is under the item it names.
+
+**The gate and the checks.** Full gate, run gate-a1 of CP-69, on the committed tree at
+`2486278d1` (run/cp/CP-69/gate-a1/verdict.json): verdict pass, twelve scopes, each identical
+to its baseline. The Priest and Cleric scopes are those of 49cf15b60: p 37,222 records, m
+112,397, b 144,048, l1 30,693, c 96,166, hm 39,564, ax 15,762. The class scopes: mage 23,555
+(recorded at 473e39dc4), warrior 24,199 (dd98e97e4), artist 23,104 (84bf4bcee), engineer
+24,580 (646134842), scout 31,082 (e1ff5f857). The whole check list of CLAUDE.md passes, 35
+entries (run/cp/CP-69/checks.log).
+
+**The six new snapshots.** All are under their accepted names; no capture was rejected, so
+no `-a2` name exists. Each was captured from committed code on a clean tree and verified.
+
+| Snapshot | Captured at | Who stands where | Game time | Deaths | Retreats | Life potions | Other help items used |
+|---|---|---|---|---|---|---|---|
+| pandaemonium-chanter-start-s1 | da2a7d3b2 | Chanter 10 in Pandaemonium, Karmic Staff worn, Q2904 at START/0 | 1 h 05 min | 0 | 2 | as the Priest of scope p | as the Priest of scope p |
+| munin-mage-s1 | 8b1f3441e | Mage 9 at Munin, Q2008 at START/0 | 3 h 05 min | 0 | 9 | 11 | 20 running scrolls, Castafodin 6 times |
+| munin-warrior-s1 | 4628956c1 | Warrior 9 at Munin, Q2008 at START/0 | 3 h 28 min | 0 | 4 | 85 | 22 running scrolls, Blitzopan 7 times, 2 shield scrolls |
+| munin-artist-s1 | 3b31227ab | Artist 9 at Munin, Q2008 at START/0 | 3 h 14 min | 1 | 19 | 38 | 20 running scrolls, 3 shield scrolls |
+| munin-engineer-s1 | 93927e3ea | Engineer 9 at Munin, Q2008 at START/0 | 2 h 44 min | 0 | 9 | 22 | 18 running scrolls, Blitzopan 6 times |
+| munin-scout-s1 | c7c9d66cd | Scout 9 at Munin, Q2008 at START/0 | 3 h 21 min | 0 | 7 | 75 | 21 running scrolls, Blitzopan 7 times |
+
+Each of the five starters was created by packets and played all 41 Ishalgen quests with the
+level 1-9 help kit and both hub binds; none sold or bought anything. The one death is the
+Artist's, at Q2007's blue generator; it revived at the outpost obelisk and soul healed
+there. The Chanter's trace is the accepted Priest's up to the class choice at Munin. The old
+snapshot munin and every other earlier snapshot are as they were.
+
+**The accepted line.** The Priest's levels 1-9 changed once, on purpose, in CP-05 to CP-07
+(the kit and the two binds). The baselines were recorded after that (CP-08, CP-09),
+re-recorded once for the two outside commits that fixed the doubled trainers (CP-Q23), and
+once more when the Priest and the Cleric moved onto the table gear rules (CP-29a, CP-Q22).
+From then on every item kept them identical. No Priest or Cleric snapshot was touched.
+
+**Lettered items (rule (i)).** Five, all ticked.
+
+- CP-07a: the first walk to Munin casts Return to the hub bind when no checked route is
+  left. Found by CP-08's first record run.
+- CP-29a: the Priest and the Cleric on the same table gear rules as every other class, by
+  the operator's word; the seven baselines were re-recorded for it.
+- CP-43a: a walk-in class approaches its own target, not the nearest of its kind. The
+  Warrior's level-1 probe row failed twice before it.
+- CP-56a: a walk-in approach accepts the pack its planner already counts, under the swarm
+  limit. The Warrior's first capture run stopped at Q2116's Map of Eyvindr before it.
+- CP-67a: the two Scout rows of the class-choice probe name their own swing bound for
+  Hellion, after Java's damage rule was read beside the port and found the same.
+
+**Attempts that failed and are kept as evidence.** No snapshot was rejected. The Warrior's
+first capture run (cp56-warrior-a1) failed before the dump and wrote no snapshot. The
+Scout's first journey to Q2004 (CP-64) reached its stop with two deaths and 21 retreats, and
+its swarm limit went from 2 to 3. The first pass of CP-67 stopped two rows at the ceremony's
+reward window and two in the trial. Each item's own lines name the others, with the logs
+under run/cp/.
+
+**Found and not fixed.** Each is written under the item that met it.
+
+- Play, every class: corpses are left unlooted in every run (1 to 20 a run), far away after
+  a retreat or with no safe path, which falls short of "loot every kill". The kit's life
+  potions can run out between two checkpoints (the Warrior in Q2007).
+- Play, the table policy: it has no answer for an attacker that is not its target (the Mage
+  at Q2007's blue generator). An obstacle refusal is answered by closing in to melee; no
+  other sight line is looked for. A melee opener is refused for distance on a target the
+  policy counts as adjacent (Ferocious Strike, Swift Edge). The Engineer holds its place and
+  does not step back. The Sprigg hunt of Q2002 and the approaches of Q2004 still select a
+  stand-off before a walk-in class walks in. The Hatata fight logs refused walks with no
+  pack. The body pull of CP-Q15 is untried.
+- The bridge for another pair: a line's bridge passes no ceremony pick; its shop, kept
+  accessories and protected supplies are the Cleric's; the capital pass and the endpoint
+  identity check are the Cleric's gates; stage and step names say Priest and Cleric for
+  every class. An unobserved class reads as id 0, the Warrior's.
+- Gear: the off-hand mode of CP-68 is built and off; keep-and-sell and the reward choice do
+  not know the off hand, and no run has equipped an off-hand item by packets. The receipt's
+  EquipmentSlot is 16 bits wide, so slot 65536 reads 0.
+- Tools: the comparer counts neither rest-life-potion nor rest-sit-for-health. There is no
+  class-literal ratchet test (rule (n)); the seam is guarded by the gate.
+- The server: one defect was found, the two new-class trainers spawned twice (CP-34), and
+  it was fixed in a separate task. Nothing else was found that differs from Java. The
+  starter's masteries stay in the skill list beside the second class's, in Java as in the
+  port.
+
+**What each class needs before its second class.** For every line: the operator's choice of
+the second class and of its ceremony weapon, written on the class line; a profile for the
+second class (its skills from level 10, its gear table after Ascension, its help kit from
+level 10); and the Cleric-only parts of the bridge and of the leg gates opened for it (the
+seam, section 6). CP-67 shows that the server lets every Asmodian second class be chosen
+and dispatched today.
+
+- Chanter: stands in Pandaemonium as a Chanter with its gear rules. Its play from level 10
+  on is not built, and the Altgard legs it would play next have the Cleric's gates.
+- Warrior: Gladiator or Templar. Plate after Ascension; the greatsword for a Gladiator; sword
+  and shield for a Templar, which needs the off-hand mode turned on and the keep-and-sell
+  rule taught the shield.
+- Scout: Assassin or Ranger. It must fight the Ascension trial with its skills: with normal
+  attacks Hellion takes about 1,400 swings. The second dagger waits for the operator's word
+  (CP-68); a Ranger takes a bow, a ranged weapon the Scout's walk-in profile does not cover.
+- Mage: Sorcerer or Spirit Master. Its open findings are the attacker that is not the target
+  and the missing search for another sight line; a Spirit Master also has a spirit, which
+  nothing in the policy handles.
+- Engineer: Gunner or Rider. A Gunner learns the dual-wield skill at level 10, so it is the
+  second class the off-hand mode is for; a Rider changes to the keyblade and chain.
+- Artist: Bard. It stays on the harp. Its one death and 19 retreats are the most of the
+  five starters.
+
+docs/natural-ntc-readiness.md says since D39 that the Templar and the Sorcerer start from
+the Warrior and Mage profiles with a fresh run in the early-Ascension order, not from the
+Munin snapshots.
+
+**Evidence directories for the operator.** Nothing was deleted. This plan left: run/cp (82
+folders, about 1.5 GB: one per item, and CP34-dup, baseline, rerecord-6bdb96d66,
+rerecord-23e370c6f and tests-removed); seven capture runs under run/snapshots/_capture
+(about 8.3 GB with the older ones; cp56-warrior-a1 is the failed one) and six verify runs
+under run/snapshots/_verify; and, at the top of run/, 52 Fast run folders named
+cpNN-fast (cp29a-fast-a2 among them) with their trace files beside them, about 1,500
+entries in all. The Fast folders and their traces are stray: each item's result is in
+its fast.log under run/cp. Whether a throwaway schema was left in the database was not
+checked; every run of this plan dropped its own.
 
 ## The request
 
@@ -5501,7 +5626,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       engineer 24,580, scout 31,082). The Cleric's scopes are compared in CP-69's full
       gate. Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 passed, 16 skipped)
       and Fast passes (run cp68-fast, 11 passed).
-- [ ] **CP-69 - Final gate and close-out.** Depends: CP-33, CP-45, CP-53, CP-57, CP-60,
+- [x] **CP-69 - Final gate and close-out.** Depends: CP-33, CP-45, CP-53, CP-57, CP-60,
   CP-63, CP-66, CP-67, CP-68
   - Work: No code. Run the whole check list of CLAUDE.md, then the full gate on the
     committed tree with the five class scopes. Write the closing Status paragraph of
@@ -5512,6 +5637,25 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     scope differs, follow the full-gate failure rule of section 8.
   - Proof: Neutral gate, set all plus the five class scopes: every scope is identical to its
     baseline.
+  - 2026-10-08: done, at HEAD 2486278d1 with no code change.
+    - **The whole check list of CLAUDE.md, once** (run/cp/CP-69/checks.log, one log per
+      check beside it): all 35 entries exit 0. dotnet build and dotnet test of
+      AionServer.slnx pass: Aion.GameServer.Tests 4,675 with 16 skipped, Aion.Commons.Tests
+      303, Aion.LoginServer.Tests 135 with 7 skipped, Aion.ChatServer.Tests 41 with 1
+      skipped, Aion.Simulation.Tests 145 with 150 skipped (its database tests need
+      AION_SIM_DB_INTEGRATION). The four ratchets, the fidelity check, the thirteen Python
+      tests, the thirteen PowerShell tests, the NavBake check of the baked maps and Fast
+      (run cp69-fast) pass.
+    - **Gate, set all+mage+warrior+artist+engineer+scout, run gate-a1**
+      (run/cp/CP-69/gate-a1/verdict.json): verdict pass on a clean tree. All twelve scopes
+      are identical to their baselines: p 37,222 records, m 112,397, b 144,048, l1 30,693,
+      c 96,166, hm 39,564, ax 15,762, mage 23,555, warrior 24,199, artist 23,104, engineer
+      24,580, scout 31,082.
+    - **Close-out.** The Status line and the section "Closing status (2026-10-08)" at the
+      head of this document are written, with the six snapshots, each class's deaths and
+      consumables, the five lettered items, the failed attempts, the findings not fixed,
+      what each class needs before its second class and the evidence directories.
+      docs/natural-ntc-readiness.md has its update of the same date.
 
 ## Operator decisions
 
@@ -6710,3 +6854,8 @@ report what was done, what is blocked and what you need from me.
   without the skill, a replaced two-hand weapon, the Cleric's staff and every mode-None
   case behave as written. Guard guard-a1, p and five class scopes: identical. Seven checks,
   unit suite and Fast (cp68-fast) pass. Next by rule (h): CP-69, the last item.
+- 2026-10-08 — Loop: CP-69 done. The whole check list of CLAUDE.md passes (35 entries) and the
+  full gate at 2486278d1, run gate-a1, finds all twelve scopes identical to their baselines.
+  The closing status is written at the head of this document and docs/natural-ntc-readiness.md
+  is updated. All 75 items are ticked: the class seam, the Chanter at Pandaemonium and five
+  new starters at Munin, each preserved and verified. The list is closed; the loop stops.
