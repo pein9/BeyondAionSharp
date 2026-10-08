@@ -163,6 +163,71 @@ What this plan changes or adds:
 | D. One class after another | NR-50 to NR-149 | Ten items reserved for each class in the order of NR-Q1: profile, probes, bridge, legs, endpoint, scope. |
 | E. Close | NR-150 to NR-152 | The whole check list, the full gate, the closing status and the readiness document. |
 
+## Surveys
+
+### Survey A1: what is the Cleric's alone, from the trial to the endpoint (NR-01, 2026-10-08)
+
+Read: the journey (Sc/NaturalIshalgenJourney.cs and its Combat and Navigator parts), the
+bridge, capital, Altgard, coin-gear, Haramel and Abyss engines and steps under
+tests/Aion.Bots/Scenarios, the identity rules, the inventory policy, the help-item
+allowlist, the leg contracts under parity-artifacts/e2e, scripts/sim/sim-snapshot.ps1
+and the gate. Java and the quest data for the class-dependent server steps.
+
+**What is already generic.** The trial is fought by the class's own fight rules
+(FightAscensionTrialAsync calls the fight loop with ScriptedTrial set), so a natural Scout
+uses its skills there. The class seam took most class literals out of the bot; what is left is in
+the tables below. No leg contract's start.class is read by
+code; it is data only. Of the 121 quests on the route, quest_data.xml gives a class limit to
+one, the dispatch quest, which the class line already carries (Q2904 for the Priest's
+classes), and per-class reward lists to four: Q2009, Q2900, Q2947 and Q28505. Every other
+reward list is the same for all classes.
+
+**Gates that name the Cleric.**
+
+| Where | What it does today | What it must read instead |
+|---|---|---|
+| J: Ishalgen finish (`Require.True(... combat.IsCleric` "Ishalgen must finish as the ceremony-proven Cleric") | Refuses any other class at the end of an early-Ascension Ishalgen. | The line's second class. |
+| J: the Altgard legs ("An Altgard leg needs the Cleric") and the Abyss leg ("The Abyss-entry leg needs the Cleric") | Refuse any other class at the start of a leg. | The line's second class. |
+| J: CompleteAscensionLegAsync ("The endpoint character is not the bridge's Cleric") | Classifies the endpoint with the Priest line. | The run's line. |
+| Sc/NaturalIshalgenDecisionLoop.cs, `returnedCleric` (class id 10) | Lets only the Cleric return to Ishalgen after the ceremony. | The line's second class id. |
+| Sc/NaturalCapitalDecisionEngine.cs ("The capital pass requires the completed level-10 Cleric ceremony") | Refuses another class at the capital pass. | The line's second class and its dispatch quest. |
+| Sc/NaturalJourneyIdentityRules.cs, `second == PlayerClass.CLERIC` | The Convent and the l11, l12 and ax maps are open to the Cleric only. | Any line's second class. |
+| scripts/sim/sim-snapshot.ps1, `$capitalClassLines = @('priest-cleric')` and the list of seven line ids | Only the accepted line plays the capital's first pass; a second-class line id is unknown. | Every line that has a second class. |
+| J: RunClericEncounterAsync (NA-23) | A diagnostic for the level-10 Cleric. | Stays the Cleric's; it is not on the route. |
+
+**Leg data that is the Cleric's.**
+
+| Leg | The Cleric's data | By class |
+|---|---|---|
+| Bridge (natural-ascension-contract.json) | SETPRO14, Q2904, the Karmic Staff; the shop (Lesser Life Elixir 162000053 and Lesser Odella Powder 169300003), the kept accessories, the protected items. ForLine passes no ceremony pick. | The pair from the class line (ForChoice does this already), the pick from the line, the powder only for a class whose catalog has a reagent skill. |
+| Capital (natural-capital-contract.json) | dispatchQuestId 2904. | The line's dispatch quest. |
+| Altgard legs 1 to 10 | Reward pins: CH_SHOES 114501726, CH_TORSO 110551139, STAFF 101501355 and 101501357, a chain shoulder and legs, and accessories. Each is one item of a list all classes are offered. | The class's gear rule picks from the same list; the pins stay as the Cleric's own. |
+| Leg 1, 2 and later: air kills | NaturalAirCombat shoots with Smite (`SmiteIds`), from 25 m. | A role the profile names for a shot in flight; a class with no ranged skill flies into its weapon's reach. |
+| Coin gear (cg) | staffItemId 101501357, three chain purchases, five chain body slots, the cloth gloves, 18 coins in and 19 at the end, the stigma skill 11504 that must not be learned. | The vendor's pieces of the class's armor type, the weapon the class holds, and counts taken from what is observed. |
+| Leg 11, destiny (Q2900) | stoneItemId 140000001, stigmaSkillId 11504, the legacy reward 140000098. | Java gives four stones by class (_2900NoEscapingDestiny.java:242-259): 140000001 for Cleric, Chanter and Bard; 140000002 for Rider, Gunner and Ranger; 140000003 for Gladiator, Assassin and Templar, which needs a melee weapon; 140000004 for Sorcerer and Spirit Master. The reward list is per class. |
+| Leg 12, Haramel | staffItemId and StaffObjectId 137763, the chain groups of CanUpgradeGroup, chestNpcId 700832, 19 iron and 7 bronze coins, protected and cleanup item ids. | Java spawns one of four chests by class (HaramelInstance.java:32-52): 700829 Gladiator and Templar; 700830 Assassin, Ranger and Gunner; 700831 Bard, Sorcerer and Spirit Master; 700832 Cleric, Chanter and Rider. Q28505's reward list is per class. Object ids and counts are read at the leg's start. |
+| Abyss entry (ax) | Reward pins CH_TORSO 110551147 and STAFF 101501224 (Q2947's list is per class), two tiers of chain coin armor with a staff each, the staff rule by magic boost, the protected items. Start level exactly 25 with Q2945 started. | The class's armor type and weapon group at each tier, ranked by the class's own stat; the start as a minimum. |
+
+**Rules that are the Cleric's.**
+
+| Where | Today | By class |
+|---|---|---|
+| Sc/NaturalHelpItemAllowlist.cs, `Approved` | The Cleric's bands from level 10: awakening scrolls, mana serums, DP jelly and Odella powder beside the life potions, the shield scroll and the running scroll. | A kit by class (NR-Q8): the shared rows for every class, the mana rows for a class that casts from mana, the powder for a class with a reagent skill. |
+| Sc/NaturalPatrolPolicy.cs | `Cleric` decides whether the patrol rule applies at all; the pack limit comes from NaturalPriestCombatPolicy.SwarmedAttackers. | Every second class, with the profile's swarm limit. |
+| J: the blocked-pull view (heal, rejuvenation and salvation looked up by role) | Names three Cleric roles. | The profile's recovery roles. |
+| Sc/NaturalIshalgenInventoryPolicy.cs | `IsCleric`, `Decide(..., cleric)`, the Cleric's supplies added to the bridge's protected set. | The observed class's gear rules, as the equipment check already does. |
+| Leg contracts as receipts | Several legs require exact values of the accepted run: a level, a coin count, an object id. | Kept for the Cleric; for another class the same facts are read as minimums or observed at the leg's start. |
+
+**Java, read for this survey.** _2008Ascension.java:141-162 (all eleven classes can be
+chosen, CP-67). _2009ACeremonyinPandaemonium.java:136-178 (the preceptor by starter).
+_2900NoEscapingDestiny.java:32 and 242-259 (four stones by class). HaramelInstance.java:
+28-54 (four chests by class). quest_data.xml: class_permitted stands on Q2904 alone among
+the route's quests; per-class reward lists on Q2009, Q2900, Q2947 and Q28505. No server change is expected.
+
+**Not found.** Hand of Reincarnation 4005 is named only in the Cleric's list of skills left
+out; no leg casts it. The ring course's boost skill 265 and the poison of leg 2 (skill 255)
+have no class input.
+
 ## NR checklist
 
 ### A. Open
@@ -174,7 +239,7 @@ What this plan changes or adds:
   - 2026-10-08: done. This document, the CLAUDE.md row, D40 and a pointer under the
     class-profile plan's closing status are committed together. The seven pre-commit
     checks pass (run/nr/NR-00/checks.log).
-- [ ] **NR-01 - Survey: what is the Cleric's alone, from the trial to the endpoint.**
+- [x] **NR-01 - Survey: what is the Cleric's alone, from the trial to the endpoint.**
   Depends: NR-00
   - Work: No code. Read the journey from the first walk to Munin to the end of the Abyss
     leg, the bridge contract, the Altgard, Haramel and Abyss contracts and manifests, the
@@ -186,6 +251,9 @@ What this plan changes or adds:
     already known). Write the list into this document as "Survey A1" and write the items of
     phase C from it (rule (q)).
   - Proof: The list stands in this document; phase C has its items; seven checks pass.
+  - 2026-10-08: done. No code changed. "Survey A1" stands above the checklist, and phase C
+    has thirteen items, NR-30 to NR-42, written from it. Seven pre-commit checks pass
+    (run/nr/NR-01/checks.log).
 - [ ] **NR-02 - Survey: what the Priest and the Cleric do that the table policy does not.**
   Depends: NR-00
   - Work: No code. Set NaturalPriestCombatPolicy, the journey's rest and heal code, the
@@ -229,14 +297,94 @@ What this plan changes or adds:
 
 ### C. The legs opened by class line
 
-- [ ] **NR-30 - Phase C's items.** Depends: NR-01, and the close of phase B
-  - Work: Written by NR-01 (rule (q)). They must end with: the trial fought and the class
-    chosen by the line's own profile; the bridge's pick, shop, kept accessories, capital
-    pass and endpoint check read from the line; the leg identity rules by line; every
-    later-leg contract, reward pin, coin-gear tier and manifest read by class; each
-    leg-specific Cleric skill replaced by a role the profile names. No class but the Cleric
-    plays a leg in this phase; the Cleric's scopes stay identical (rule (c)).
-  - Proof: Each item's own; the phase closes with the full gate identical.
+Written by NR-01 from Survey A1 (rule (q)). In this phase no class but the Cleric plays a
+leg: each item is proven by the Cleric's scopes staying identical and by a one-time check,
+not committed, that prints what the changed rule gives each of the eleven classes. The
+first class of phase D is the first to play what this phase opens, and what it finds
+becomes lettered items there. Every item depends on the close of phase B.
+
+- [ ] **NR-30 - The class line carries the pair, the pick and the dispatch; the scripts
+  accept every line.** Depends: NR-01, the close of phase B
+  - Work: A class line with a second class names its ceremony pick, and ForLine passes it
+    (CP-26's finding). The capital contract's dispatch quest is the line's.
+    scripts/sim/sim-snapshot.ps1 takes its line ids and its capital lines from one list
+    that holds every line with a second class; a snapshot of such a line records it.
+  - Proof: scripts/sim/test-sim-snapshot.ps1 passes; gate p, b and l1 identical.
+- [ ] **NR-31 - The gates read the line's second class.** Depends: NR-30
+  - Work: The five refusals of Survey A1's first table (the Ishalgen finish, the Altgard
+    and Abyss leg starts, the bridge endpoint, the capital pass), `returnedCleric` in the
+    decision loop and the leg-scoped maps of the identity rules accept the second class of
+    the run's line, and still refuse every other class by name. The NA-23 encounter stays
+    the Cleric's.
+  - Proof: One-time check of Classify and the capital decision for every line; the full
+    gate identical.
+- [ ] **NR-32 - Reward picks by the class's gear rule.** Depends: NR-31
+  - Work: Java first: the reward lists of the route's quests, and how a per-class list is
+    chosen (QuestTemplate, as read for CP-31). A leg's reward pin is the Cleric's; for
+    another class the pick at the same quest is what its gear rule scores highest in the
+    list the server offers it. The four per-class lists (Q2009, Q2900, Q2947, Q28505) are
+    read for the class. Write the table of picks for every class and quest into this
+    document.
+  - Proof: One-time check that prints the table; for the Cleric the rule gives every pin;
+    the full gate identical.
+- [ ] **NR-33 - Protected and kept items by rule.** Depends: NR-32
+  - Work: What a leg protects, keeps or cleans up by item id (the bridge, coin gear,
+    Haramel, the Abyss entry) is derived for another class from its gear rules and from
+    what it wears at the leg's start; the Cleric's lists stay as they are. The inventory
+    policy takes the observed class's rules everywhere it took `cleric`.
+  - Proof: One-time check; the full gate identical.
+- [ ] **NR-34 - The help kit by class from level 10.** Depends: NR-31
+  - Work: NR-Q8. The allowlist's rows get a kind: for every class, for a class that casts
+    from mana, for a class with a reagent skill. The profile says which kinds its class
+    takes. The Cleric's supply is what it was. Write each second class's kit into this
+    document as a manifest.
+  - Proof: One-time check that prints each class's kit at levels 10, 20 and 25; the full
+    gate identical, with help-items.json of the Cleric's scopes unchanged.
+- [ ] **NR-35 - The bridge's shop and stops by class.** Depends: NR-33, NR-34
+  - Work: The Altgard shop stop buys the powder only for a class with a reagent skill and
+    the potions by the class's restock rule; the kept accessories come from the gear rule.
+  - Proof: One-time check; gate b identical.
+- [ ] **NR-36 - A shot in flight by role.** Depends: NR-31
+  - Work: NaturalAirCombat takes its skill from a role the profile names for a ranged
+    attack that may be cast in flight, with that skill's range; a class with no such skill
+    flies into its weapon's reach and swings. Java first: which skills may be used while
+    flying (the skill templates' flight conditions).
+  - Proof: One-time check that prints each starter's and second class's air attack; gate
+    l1 and c identical.
+- [ ] **NR-37 - The patrol rule and the blocked-pull view by profile.** Depends: NR-31
+  - Work: NaturalPatrolPolicy applies to every second class with the profile's swarm
+    limit, and the blocked-pull view asks the profile for its recovery roles.
+  - Proof: The full gate identical.
+- [ ] **NR-38 - Coin gear by class.** Depends: NR-32, NR-33
+  - Work: Java first: the iron-coin and bronze-coin vendors' goods lists by armor type and
+    weapon. The coin-gear leg and the Abyss entry's two tiers buy the pieces of the
+    class's armor type and the weapon of its group that beat what is worn by the class's
+    own stat; counts and the held weapon's identity are observed, not pinned. The Cleric's
+    manifests are what they were.
+  - Proof: One-time check that prints each class's manifest at each tier; gate hm and ax
+    identical.
+- [ ] **NR-39 - The destiny leg by class.** Depends: NR-32
+  - Work: Java first (_2900NoEscapingDestiny.java). The stone, its skill and the reward are
+    read by class; the instance's fight casts the temporary skill by a role. A class whose
+    stone needs a melee weapon and that holds none is recorded as a finding for that class.
+  - Proof: One-time check of the four stones against Java's table; the Cleric's l11 leg
+    replayed from altgard-l10 with an identical outcome.
+- [ ] **NR-40 - Haramel by class.** Depends: NR-33, NR-38
+  - Work: Java first (HaramelInstance.java). The chest by class, the upgrade groups by the
+    class's armor type, Q28505's list by class, and the object ids and coin counts read at
+    the leg's start.
+  - Proof: One-time check of the four chests against Java's table; gate hm identical.
+- [ ] **NR-41 - Leg starts as minimums, and one run through every leg for a line.**
+  Depends: NR-31 to NR-40
+  - Work: A leg's start facts that are receipts of the accepted run (an exact level, coin
+    count or journal) are minimums for another line. The continuous journey takes a class
+    line and plays the legs in the Cleric's order; a capture after a leg is named
+    <the Cleric's snapshot name>-<class>.
+  - Proof: scripts/sim/test-sim-snapshot.ps1 passes; the full gate identical.
+- [ ] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41
+  - Work: No code. The full gate on every recorded scope, and one table in this document
+    of what each class gets at each class-bound point of the route.
+  - Proof: Every scope identical to its baseline.
 
 ### D. One class after another
 
@@ -349,3 +497,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   operator's answers of the same day. Next: NR-00.
 - 2026-10-08 — Loop: NR-00 done. The plan, its CLAUDE.md row and decision D40 are committed;
   seven checks pass. Next: NR-01, the survey of what is the Cleric's alone.
+- 2026-10-08 — Loop: NR-01 done. Survey A1 is written: seven gates name the Cleric, the leg
+  contracts hold its reward pins, coin gear, destiny stone and Haramel chest, and Java gives
+  four stones and four chests by class; only Q2009, Q2900, Q2947 and Q28505 have per-class
+  reward lists and only the dispatch quest has a class limit. The trial is already fought by
+  the class's own rules. Phase C has its items, NR-30 to NR-42. Docs only; seven checks pass.
+  Next: NR-02, the survey of the Priest's and the Cleric's own fight and rest code.
