@@ -4751,7 +4751,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       checkpoint. (c) 20 corpses were not looted: 14 had no safe path and 6 lay 68 to 88 m
       away. (d) Five distance refusals of Ferocious Strike, each answered by closing in.
 - [ ] **CP-56 - Warrior 1-9 at Munin, captured and verified as munin-warrior-s1.** Depends:
-  CP-55
+  CP-55, CP-56a
   - Work: As CP-52 with -Class warrior -Name munin-warrior-s1. Acceptance: a sword or mace
     and chain pieces worn, the weapon and not the shield taken at Q2100, nothing wearable
     and nothing of the help kit sold, the help items listed and both binds traced. The
@@ -4759,6 +4759,48 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
   - Proof: sim-snapshot.ps1 -Action Verify -Name <the accepted name> passes: the restore
     emits CP_CLASS=warrior and no NA_HELP_ITEMS, the resumed character is accepted as a
     level-9 Warrior and the endpoint is reached again.
+  - 2026-10-08, attempt 1: the run failed before the dump, so no snapshot exists and the
+    name munin-warrior-s1 stays free (rule (l)). Run cp56-warrior-a1 at 36729d085
+    (run/cp/CP-56/capture-a1.log; evidence run/snapshots/_capture/cp56-warrior-a1 with its
+    failure.json). It played 2 h 30 min 05 s of game time and stopped in step
+    ni07-natural-return with "No client-observed NPC 700139 at 1 shipped spawn hints ...:
+    No collision-checked route to the current destination."
+    - **Where.** Q2116's Map of Eyvindr 700139 at 1206.3/1885.3, the last quest but the
+      walk to Munin. Two Eyvindr monsters stand 4 and 5 m from the map and 8 m from each
+      other, each inside the other's 10 m circle; an Eyvindr Peon 210736 stands 15 m west
+      of it, and a pair of Eyvindr Sailors 0.5 m apart about 48 m away.
+    - **Why.** The guarded-objective clear hands each blocker to the fight loop. A
+      stand-off class casts from where it is. The Warrior's fight loop answers an unpulled
+      target with a walk to it, and that walk is planned against every other monster's
+      circle: a target that stands inside its neighbour's circle can never be reached, so
+      every blocker ended in a blocked approach (three in the last second of the run),
+      and so did the objective. The Mage pulled the same monsters from range in CP-52.
+    - **Up to there:** 219 encounters, 139 kills, the two deaths of CP-55 at Q2007's
+      generators and no other, 82 life potions. 80 encounters ended without a kill,
+      most of them on a blocked approach. Q2116 comes late in the run's order: the Mage's
+      whole run took 3 h 05 min.
+    - Not a small change, so by rule (i) it is CP-56a below. The first attempt is spent;
+      CP-56 is retried with a fresh two-attempt budget after it.
+- [ ] **CP-56a - A walk-in approach accepts the pack its planner counts.** Depends: CP-55
+  - Work: Java first: the support rule the planner's AddsAt mirrors
+    (AggroEventHandler.onCreatureNeedsSupport, read for CP-40). In the fight loop's approach
+    of a walk-in class (J.Combat, the branch of CP-43a): when the hazard-checked walk to an
+    unpulled target is refused, plan it once more with the circles of the target's pack
+    left out of the hazards. The pack is what NaturalPullPlanner.AddsAt says would join a
+    fight at the target's position, the same count the walk-in planner of CP-40 already
+    accepts as a plan's helpers. Every other circle stays a hazard, and the approach stays
+    refused when the pack would bring the fight to the class's swarm limit. The decision is
+    traced (walk-in-accepts-pack, with the pack's object ids). A stand-off class never
+    reaches the branch. This is not the body pull of CP-Q15: the pack that blocks here
+    stands inside the target's own circle and inside the support range, so stepping into
+    that circle brings it as well. The body pull stays untried.
+  - Proof: SIM probe NaturalStarterFieldProbe, row warrior-pack: a director-leveled level-9
+    Warrior, placed 20 m from Q2116's Map of Eyvindr, takes the monster nearest the map as
+    its target. The trace holds a walk-in-accepts-pack record that names its neighbour, and
+    the fight is fought with no blocked approach; a kill, a retreat and a death are all
+    recorded outcomes. Guards: gate p and class scope mage identical (rule (c)); rows
+    warrior-1, warrior-7, scout-1 and scout-7 play as recorded (rule (k), the branch is
+    CP-43a's).
 - [ ] **CP-57 - Record class scope warrior, twice.** Depends: CP-56
   - Work: As CP-53 with -Set warrior -Item CP-57.
   - Proof: The record run: the two passes of class scope warrior are identical after
@@ -5945,3 +5987,9 @@ report what was done, what is blocked and what you need from me.
   was soul healed there for 71 Kinah. 80 life potions (the kit's 52 and 28 of its own), 25
   sits for health, six shield scrolls, seven running scrolls, Blitzopan four times. Q2007
   took 56 minutes. Evidence and docs only; seven checks pass. Next by rule (h): CP-56.
+- 2026-10-08 — Loop: CP-56, attempt 1 failed before the dump (run cp56-warrior-a1, 2 h 30
+  min of game time): at Q2116's Map of Eyvindr every blocker's walk-in approach was refused,
+  because each guard stands inside its neighbour's aggro circle and the walk is planned
+  against every other circle. No snapshot was written; the name stays free. Not a small
+  change: lettered item CP-56a written after CP-56 and added to its Depends (rule (i)).
+  Docs only. Next by rule (h): CP-56a.
