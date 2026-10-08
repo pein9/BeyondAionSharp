@@ -6,12 +6,27 @@ namespace Aion.Bots.Scenarios.Classes;
 /// <param name="RecoveringMana">The mana sit is on: set below the sit threshold, cleared at the sit target.</param>
 /// <param name="QuietSits">Sits of this rest that no monster interrupted.</param>
 /// <param name="LastPowderSkillId">The powder skill cast last in this rest, so the two alternate.</param>
+/// <param name="LifePotionOwned">CP-37, read by the potion plan only: a life potion is in the bag.</param>
+/// <param name="LifePotionReady">Its use delay has run out (the 30 s of use-delay group 11).</param>
+/// <param name="LifePotionHealing">A life potion's heal over time is still on the bot.</param>
 public sealed record NaturalRestObservation(int Level, int Hp, int MaxHp, int Mp, int MaxMp, bool RecoveringMana, int QuietSits,
 	IReadOnlyDictionary<int, BotSkill> Learned, IReadOnlyDictionary<int, DateTimeOffset> Cooldowns,
-	IReadOnlyDictionary<int, long> ItemCounts, ushort? LastPowderSkillId, DateTimeOffset Now);
+	IReadOnlyDictionary<int, long> ItemCounts, ushort? LastPowderSkillId, DateTimeOffset Now,
+	bool LifePotionOwned = false, bool LifePotionReady = false, bool LifePotionHealing = false);
+
+/// <summary>
+/// CP-37: the rest of a class with no heal of its own (the operator, 2026-10-07: "DO not use bandages, just use Potions,
+/// rest when potion is on cooldown if needed"). Below the HP target it drinks an owned, ready life potion; while the
+/// potion is on its delay, or none is owned, it sits to the target. Sitting restores (level + 3) x 8 x Health / 100 HP
+/// every 6 s (Java PlayerGameStats.getHpRegenRate, LifeStatsRestoreService). There is no bandage step.
+/// </summary>
+/// <param name="HpTargetPercent">The rest goes on while HP is below this.</param>
+/// <param name="UsesMana">The class's attacks need mana, so the mana sit of the rules applies as well.</param>
+public sealed record NaturalPotionRestPlan(int HpTargetPercent, bool UsesMana);
 
 /// <param name="Action"><see cref="NaturalRestRules.Powder"/>, <see cref="NaturalRestRules.CastHeal"/>,
-/// <see cref="NaturalRestRules.SitForMana"/>, <see cref="NaturalRestRules.Done"/> or <see cref="NaturalRestRules.Blocked"/>.</param>
+/// <see cref="NaturalRestRules.SitForMana"/>, <see cref="NaturalRestRules.DrinkLifePotion"/>,
+/// <see cref="NaturalRestRules.SitForHealth"/>, <see cref="NaturalRestRules.Done"/> or <see cref="NaturalRestRules.Blocked"/>.</param>
 /// <param name="Skill">The powder skill or the heal to cast.</param>
 /// <param name="RecoveringMana">The mana sit after this observation.</param>
 /// <param name="ManaRecovered">The mana sit ended with this observation: the next one needs a new rest spot.</param>
@@ -29,15 +44,21 @@ public sealed record NaturalRestDecision(string Action, NaturalPriestSkill? Skil
 /// for at most <paramref name="MaximumQuietSits"/> undisturbed sits.
 /// </summary>
 /// <param name="Skills">The class's skill catalog.</param>
+/// <param name="PotionPlan">CP-37: the plan of a class with no heal of its own; it applies until a skill of the role
+/// <c>heal</c> is observed in the skill list, and from then on the plan above does. Null for the Priest line.</param>
 public sealed record NaturalRestRules(NaturalPriestSkill[] Skills, int HealBelowPercent, int ManaSitBelowPercent, int ManaSitUntilPercent,
-	int MaximumQuietSits)
+	int MaximumQuietSits, NaturalPotionRestPlan? PotionPlan = null)
 {
 	public const string Powder = "powder", CastHeal = "cast-heal", SitForMana = "sit-for-mana", Done = "done", Blocked = "blocked";
+	public const string DrinkLifePotion = "drink-life-potion", SitForHealth = "sit-for-health";
+	public const string NotRecoveredBySitting = "The character could not recover HP/MP before the next pull within the bounded sits.";
 	public const string NoSelfHeal = "Priest has mana but no client-observed usable self-heal between fights.";
 	public const string NotRecovered = "Priest could not recover HP/MP before the next pull within bounded healing and mana-rest attempts.";
 
 	public NaturalRestDecision Decide(NaturalRestObservation state)
 	{
+		if (PotionPlan is { } plan && NaturalPriestSkills.Best("heal", state.Level, state.Learned, Skills) == null)
+			return DecideWithoutHeal(state, plan);
 		bool recovering = state.RecoveringMana, recovered = false;
 		if (state.Mp * 100 < state.MaxMp * ManaSitBelowPercent) recovering = true;
 		if (recovering && state.Mp * 100 >= state.MaxMp * ManaSitUntilPercent)
@@ -65,5 +86,28 @@ public sealed record NaturalRestRules(NaturalPriestSkill[] Skills, int HealBelow
 		return state.QuietSits >= MaximumQuietSits
 			? new(Blocked, null, recovering, recovered, powder, NotRecovered)
 			: new(SitForMana, null, recovering, recovered, powder, null);
+	}
+
+	/// <summary>CP-37: potion, then sit. A potion is asked for only when one is owned, its delay has run out and no
+	/// potion's heal is still running; every sit counts toward <see cref="MaximumQuietSits"/>.</summary>
+	private NaturalRestDecision DecideWithoutHeal(NaturalRestObservation state, NaturalPotionRestPlan plan)
+	{
+		bool recovering = false, recovered = false;
+		if (plan.UsesMana)
+		{
+			recovering = state.RecoveringMana;
+			if (state.Mp * 100 < state.MaxMp * ManaSitBelowPercent) recovering = true;
+			if (recovering && state.Mp * 100 >= state.MaxMp * ManaSitUntilPercent)
+			{
+				recovering = false;
+				recovered = true;
+			}
+		}
+		bool needHealth = state.Hp * 100 < state.MaxHp * plan.HpTargetPercent;
+		if (needHealth && state.LifePotionOwned && state.LifePotionReady && !state.LifePotionHealing)
+			return new(DrinkLifePotion, null, recovering, recovered, null, null);
+		if (!needHealth && !recovering) return new(Done, null, recovering, recovered, null, null);
+		if (state.QuietSits >= MaximumQuietSits) return new(Blocked, null, recovering, recovered, null, NotRecoveredBySitting);
+		return new(needHealth ? SitForHealth : SitForMana, null, recovering, recovered, null, null);
 	}
 }

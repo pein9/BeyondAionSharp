@@ -842,10 +842,17 @@ public sealed partial class NaturalIshalgenJourney
 					await ReviveAtBindAsync(token);
 					return;
 				}
+				// CP-37: the potion plan's three observations; the Priest line's plan has none and reads none.
+				BotInventoryItem? lifePotion = ClassProfile.Rest.PotionPlan == null ? null
+					: NaturalIshalgenPotionPolicy.SelectOwnedPotion(world.Inventory.Values);
+				var lifePotionTemplate = lifePotion == null ? null : runtime.Data.ItemDataDh.GetItemTemplate(lifePotion.ItemId);
 				NaturalRestDecision rest = ClassProfile.Rest.Decide(new NaturalRestObservation(
 					world.Level, world.CurrentHp, world.MaxHp, world.CurrentMp, world.MaxMp, recoveringMana, quietIntervals, world.Skills,
 					cooldowns, world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
-					lastPowderSkill, runtime.Epoch.AddMilliseconds(runtime.NowMillis)));
+					lastPowderSkill, runtime.Epoch.AddMilliseconds(runtime.NowMillis),
+					LifePotionOwned: lifePotionTemplate != null,
+					LifePotionReady: lifePotionTemplate != null && session.Api.Timing.TimeUntilItemUse(lifePotionTemplate) == TimeSpan.Zero,
+					LifePotionHealing: lifePotionTemplate != null && NaturalIshalgenPotionPolicy.HasActiveHealing(world.VisibleEffects)));
 				recoveringMana = rest.RecoveringMana;
 				if (rest.ManaRecovered) locatedForManaRest = false;
 				// NA-18 (OD-9): a Cleric rests with powder first. Sitting and Healing Light stay the fallback below.
@@ -881,7 +888,23 @@ public sealed partial class NaturalIshalgenJourney
 					}
 				}
 				if (rest.Action == NaturalRestRules.Blocked) throw new InvalidDataException(rest.BlockedReason);
-				if (rest.Action != NaturalRestRules.SitForMana)
+				if (rest.Action == NaturalRestRules.DrinkLifePotion)
+				{
+					// CP-37: an item use, so it resets no chain and needs no rest spot. A refusal (stunned) leaves the
+					// potion in the bag; either way the next observation decides again.
+					long before = ItemCount(world, lifePotion!.ItemId);
+					await session.SendPacketAsync(session.Api.UseItem(lifePotion.ObjectId, lifePotionTemplate!), token);
+					await session.SynchronizeAsync(token);
+					long after = ItemCount(world, lifePotion.ItemId);
+					session.TraceDiagnostic("rest-life-potion", new Dictionary<string, object?>
+					{
+						["itemId"] = lifePotion.ItemId, ["before"] = before, ["after"] = after,
+						["hp"] = world.CurrentHp, ["maxHp"] = world.MaxHp, ["sharedUseDelayId"] = NaturalIshalgenPotionPolicy.SharedUseDelayId,
+					});
+					if (after != before - 1) await session.AdvanceAsync(TimeSpan.FromMilliseconds(1000), token);
+					continue;
+				}
+				if (rest.Action is not (NaturalRestRules.SitForMana or NaturalRestRules.SitForHealth))
 				{
 					if (rest is { Action: NaturalRestRules.CastHeal, Skill: { } heal })
 					{

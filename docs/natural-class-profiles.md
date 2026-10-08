@@ -3631,7 +3631,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - Guard: gate p, run guard-a1, identical to its baseline of 49cf15b60. Bundle: the
       seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and Fast passes
       (run cp36-fast).
-- [ ] **CP-37 - Rest without a heal: potion, then sit.** Depends: CP-17
+- [x] **CP-37 - Rest without a heal: potion, then sit.** Depends: CP-17
   - Work: The operator, 2026-10-07: "DO not use bandages, just use Potions, rest when potion
     is on cooldown if needed". Java first, and written into the doc: sitting restores HP
     every 6 s: (level + 3) x 8 x Health/100, cut to a whole number
@@ -3659,6 +3659,35 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     and code path do not change.
   - Proof: Neutral gate, set m+c. The new plan's decisions are covered by the state-sweep
     unit test; the executor's two new choices are first shown in play by CP-42.
+  - 2026-10-07: done. Java and data read again: PlayerGameStats.getHpRegenRate is (level +
+    3), times 8 while resting, times Health / 100; LifeStatsRestoreService runs it every
+    6,000 ms. Major Life Potion 162000006 has usedelay 30000 on usedelayid 11 and casts
+    skill 9893: 154 HP at once, then 154 every 2,000 ms for 20,000 ms.
+    - **Built.** NaturalRestRules takes an optional NaturalPotionRestPlan (HP target, and
+      whether the class's attacks need mana). While no skill of the role heal is in the
+      observed skill list, the plan decides: below the HP target it asks for a life potion
+      only when one is owned, its delay has run out and no potion's heal is still running;
+      otherwise it sits for health, and for mana when the plan uses mana; every sit counts
+      toward MaximumQuietSits, after which it is blocked with its own message. Once the
+      heal is observed the Priest line's plan decides. There is no bandage step. The rest
+      observation has three optional fields for it (potion owned, ready, healing).
+    - **The rest loop** (J.Combat RestAsync) has two new steps. drink-life-potion uses the
+      potion SelectOwnedPotion picks, so the kit's potion goes first, and traces
+      rest-life-potion; a refused use waits a second and decides again. sit-for-health
+      sits by the same cadence and at the same rest spot as the mana sit. The three potion
+      observations are read only for a profile with a potion plan, so the Priest line's
+      path is as it was.
+    - **Proof by rule (n): no unit test.** A one-time sweep from an uncommitted test file
+      (run/cp/CP-37/check-a1.log), 68,992 states over HP, MP, potion owned, ready and
+      healing, quiet sits 0 to 13, the mana sit carried over, the heal learned or not, and
+      a plan with and without mana: none wrong. A potion is never asked for when none is
+      owned, when the delay runs, while a heal runs or at the HP target; no sit is asked
+      for at the bound; a plan without mana never sits for mana; done only at the HP
+      target; with the heal learned the potion plan decides nothing.
+    - **Gate, set p+m+c, run gate-a1** (run/cp/CP-37/gate-a1/verdict.json): verdict pass; p (37,222 records), m (112,397) and c (96,166) are identical to their baselines of 49cf15b60. p is
+      the guard of rule (c); m and c are the item's proof.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and
+      Fast passes (run cp37-fast). The two new steps are first played by CP-42.
 - [ ] **CP-38 - Casting with any weapon.** Depends: CP-15
   - Work: Copy the ItemGroup to BotWeaponMotionType mapping of
     SimT/SimulationSkillSweepTests.cs:349-363 into Aion.Bots and leave the sweep's own code
@@ -5036,3 +5065,8 @@ report what was done, what is blocked and what you need from me.
   defend) and one finding (Rage is cast on the bot, so its chain is not bound to a target).
   Guard guard-a1, set p: identical. Seven checks, unit suite and Fast (cp36-fast) pass. Next
   by rule (h): CP-37.
+- 2026-10-07 — Loop: CP-37 done. A class with no heal rests by potion, then sit: an optional
+  potion plan on NaturalRestRules, and two new steps in the rest loop (drink-life-potion,
+  sit-for-health). A one-time sweep, not committed (rule (n)): 68,992 states, none wrong. Gate
+  gate-a1, set p+m+c: identical in all three. Seven checks, unit suite and Fast (cp37-fast)
+  pass. Next by rule (h): CP-38.
