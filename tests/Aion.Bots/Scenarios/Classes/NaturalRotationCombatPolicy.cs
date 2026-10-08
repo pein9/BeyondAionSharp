@@ -108,7 +108,7 @@ public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjac
 
 /// <summary>
 /// CP-36: the fight decision of a class whose profile is a rule table. Pure and deterministic, like the Priest's policy,
-/// and read by the same fight loop. NR-14: the Priest and the Chanter use it; the Cleric does not yet.
+/// and read by the same fight loop. NR-14 and NR-16: the Priest, the Chanter and the Cleric use it too.
 /// <para>
 /// Order of one decision: death and incomplete life statistics; the swarm limit; the recovery ladder; the flee limit;
 /// the mana potion; with no target, upkeep or ready; with one, a ready follow-up before anything else (any non-chain
@@ -281,7 +281,9 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		// NR-11: the ranged hold. A target that attacks from range does not come closer, and walking up to it under fire
 		// with nothing ready takes the bot off checked ground.
 		// NR-14: holding is for a target some listed attack reaches from here; a target none reaches is gone to.
-		bool reaches = adjacent || line.Any(skill => distance <= NaturalSkillCatalog.Reach(skill, state));
+		// NR-16: a follow-up does not count, because it needs its opener to reach first (Divine Touch reaches the weapon's
+		// range farther than Slashing Wind).
+		bool reaches = adjacent || line.Any(skill => skill.RequiresChainCategory == null && distance <= NaturalSkillCatalog.Reach(skill, state));
 		if (rules.RangedHoldWithin is float within && !adjacent && state.TargetRanged && state.ConservativeRangedHold && reaches &&
 			(distance <= within || state.NearbyAggressors >= 2))
 			return Choice("wait", null, "The target attacks from range and nothing is ready; hold checked ground until an attack is.");

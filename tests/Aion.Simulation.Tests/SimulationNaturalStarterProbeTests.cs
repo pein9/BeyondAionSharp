@@ -9,6 +9,7 @@ using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion.ServerPackets;
+using Aion.GameServer.Services;
 using Aion.GameServer.TestKit;
 
 namespace Aion.Simulation.Tests;
@@ -36,6 +37,10 @@ public sealed partial class SimulationFastScenarioTests
 		new("scout-two", NaturalClassLine.Scout, ProbeAccountA, "Asimtwodagger"),
 		new("priest-1", NaturalClassLine.PriestCleric, ProbeAccountA, "Asimonepriest"),
 		new("priest-7", NaturalClassLine.PriestCleric, ProbeAccountB, "Asimsevpriest"),
+		new("cleric-10", NaturalClassLine.PriestCleric, ProbeAccountA, "Asimtencleric"),
+		new("cleric-16", NaturalClassLine.PriestCleric, ProbeAccountB, "Asimsixcleric"),
+		new("cleric-20", NaturalClassLine.PriestCleric, ProbeAccountA, "Asimtwecleric"),
+		new("cleric-25", NaturalClassLine.PriestCleric, ProbeAccountB, "Asimtfcleric"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -49,7 +54,8 @@ public sealed partial class SimulationFastScenarioTests
 	/// session. The director's setup acts are a level change, an HP cut and a placement; a row says which it used.
 	/// </summary>
 	private sealed class StarterProbe(SimulationWorldFixture fixture, SimulationL0Session session, Player player, NaturalJourneyRuntime runtime,
-		NaturalClassLine line, string tracePath, Func<float, float, float, Task> placeAsync, CancellationToken token)
+		NaturalClassLine line, string tracePath, Func<float, float, float, Task> placeAsync,
+		Func<int, float, float, float, Task<BotNavigationGeometry>> moveAsync, CancellationToken token)
 	{
 		public SimulationL0Session Session => session;
 		public Player Server => player;
@@ -82,6 +88,28 @@ public sealed partial class SimulationFastScenarioTests
 		}
 
 		public long Owned(int itemId) => session.Api.World.Inventory.Values.Where(item => item.ItemId == itemId).Sum(item => item.Count);
+
+		/// <summary>NR-16: the director makes the character its second class at a level, with the skills of every level up
+		/// to it. The client sees the class with its next SM_PLAYER_INFO, which the move to the row's map sends.</summary>
+		public async Task BecomeAsync(PlayerClass second, int level)
+		{
+			Assert.True(ClassChangeService.SetClass(player, second, validate: false, updateDaevaStatus: true));
+			player.GetCommonData().SetLevel(level);
+			SkillLearnService.LearnNewSkills(player, 1, level);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(level, session.Api.World.Level);
+		}
+
+		/// <summary>NR-16: the director places the character on another map, on the ground at a spot; the row's geometry
+		/// is that map's from then on.</summary>
+		public Task<BotNavigationGeometry> MoveToMapAsync(int map, float x, float y, float z) => moveAsync(map, x, y, z);
+
+		/// <summary>NR-16: the director sets the character's DP; the client sees the DP update.</summary>
+		public async Task SetDpAsync(int dp)
+		{
+			player.GetCommonData().SetDp(dp);
+			await session.SynchronizeAsync(token);
+		}
 
 
 		/// <summary>The trace records of one step: client packets by name, and diagnostics by kind.</summary>
@@ -154,7 +182,20 @@ public sealed partial class SimulationFastScenarioTests
 			() => fixture.Clock.NowMillis, fixture.Epoch, () => geometry, _ => Task.FromResult(false), policy.AssertClean,
 			() => policy.SnapshotProblems(), trace, dashboard);
 		var probe = new StarterProbe(fixture, session, player, runtime, row.Line, tracePath,
-			(x, y, z) => TeleportForSetupAsync(session, player, player.GetWorldId(), x, y, z, token), token);
+			(x, y, z) => TeleportForSetupAsync(session, player, player.GetWorldId(), x, y, z, token),
+			async (map, x, y, z) =>
+			{
+				// The runtime reads this variable, so the journey gets the new map's geometry.
+				geometry = BotNavigationGeometry.ForServerWorld(fixture.World.GetWorldMap(map).GetMainWorldMapInstance().GetInstanceId(), Race.ASMODIANS);
+				BotPosition ground = geometry.SnapToGround(map, new BotPosition(x, y, z + 1, 0))
+					?? throw new InvalidDataException($"No ground at {x}/{y}/{z} on map {map}.");
+				session.Api.World.BeginWorldReload();
+				await TeleportForSetupAsync(session, player, map, ground.X, ground.Y, ground.Z, token);
+				session.AcceptTeleportPosition();
+				await session.SynchronizeAsync(token);
+				Assert.Equal(row.Line.Second, player.GetPlayerClass());
+				return geometry;
+			}, token);
 		switch (row.Name)
 		{
 			case "warrior-rest": await WarriorRestRowAsync(probe, id, token); break;
@@ -172,6 +213,10 @@ public sealed partial class SimulationFastScenarioTests
 			case "scout-two": await ScoutTwoDaggersRowAsync(probe, id, geometry, token); break;
 			case "priest-1": await PriestLevelOneRowAsync(probe, id, geometry, token); break;
 			case "priest-7": await PriestLevelSevenRowAsync(probe, id, geometry, token); break;
+			case "cleric-10": await ClericLevelTenRowAsync(probe, id, token); break;
+			case "cleric-16": await ClericLevelSixteenRowAsync(probe, id, token); break;
+			case "cleric-20": await ClericLevelTwentyRowAsync(probe, id, token); break;
+			case "cleric-25": await ClericLevelTwentyFiveRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -785,6 +830,244 @@ public sealed partial class SimulationFastScenarioTests
 			$"Casts {order}. First fight heal decided at {healedAt}% HP; Smite first from {firedFrom:F1} m; life potions in the fight {potions}. " +
 			$"Decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}. " +
 			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	private const int ClericProbeMap = 220030000;
+	private const string ClericTable = "natural-cleric-v1:";
+
+	/// <summary>One fight of a Cleric row, with what the trace says of it.</summary>
+	private sealed record ClericFight(NaturalCombatDiagnosticResult Result, IReadOnlyList<StarterTraceRecord> Records, StarterTraceRecord[] Decided,
+		List<(int SkillId, TimeSpan At)> Casts, IReadOnlyDictionary<string, int> Decisions)
+	{
+		public string Order => string.Join(" ", Casts.Select(cast => $"{cast.SkillId}@{cast.At.TotalSeconds:F1}"));
+		public string Counts => string.Join(" ", Decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"));
+
+		/// <summary>The first place where the casts follow one another in this order, or -1.</summary>
+		public int Run(params int[][] steps) => Enumerable.Range(0, Math.Max(0, Casts.Count - steps.Length + 1))
+			.FirstOrDefault(start => steps.Select((step, offset) => step.Contains(Casts[start + offset].SkillId)).All(found => found), -1);
+	}
+
+	/// <summary>Fights one monster through the journey's fight, in its own step, and reads the step's trace. Every decision
+	/// must be the Cleric table's.</summary>
+	private static async Task<ClericFight> ClericFightAsync(StarterProbe probe, string step, string name, Func<Task<int>> target, CancellationToken token)
+	{
+		probe.Session.BeginStep(step, name);
+		NaturalCombatDiagnosticResult result = await probe.Journey.RunObservedCombatAsync(_ => target(), token);
+		IReadOnlyList<StarterTraceRecord> records = probe.TraceOf(step);
+		StarterTraceRecord[] decided = DecidedIn(records);
+		Assert.NotEmpty(decided);
+		Assert.All(decided, record => Assert.StartsWith(ClericTable, record.Fields.GetProperty("policyVersion").GetString()));
+		return new(result, records, decided, probe.CastsOf(step).ToList(), probe.DecisionsOf(step));
+	}
+
+	/// <summary>Prepared by the director: monsters of a kind spawned 4 m from the character and set on it. They are
+	/// removed again by <see cref="RemoveSetOn"/>.</summary>
+	private async Task<Npc[]> SpawnSetOnAsync(StarterProbe probe, BotNavigationGeometry geometry, int template, int count, CancellationToken token)
+	{
+		BotPosition[] around = geometry.GroundAround(ClericProbeMap, probe.Session.CurrentPosition, [4f]).OrderBy(point => point.X).ThenBy(point => point.Y).ToArray();
+		Assert.True(around.Length >= count, $"Only {around.Length} places 4 m from the character.");
+		Npc[] set = Enumerable.Range(0, count).Select(index => around[count == 1 ? 0 : index * (around.Length - 1) / (count - 1)]).Select(point => Assert.IsType<Npc>(
+			Aion.GameServer.SpawnEngine.SpawnEngine.SpawnObject(new Aion.GameServer.Model.Templates.Spawns.SpawnTemplate(
+				new Aion.GameServer.Model.Templates.Spawns.SpawnGroup(ClericProbeMap, template, 0, null), point.X, point.Y, point.Z, 0, 0, null, 0),
+				probe.Server.GetInstanceId()), exactMatch: false)).ToArray();
+		foreach (Npc member in set) member.GetAggroList().AddHate(probe.Server, 1);
+		await probe.Session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+		await probe.Session.SynchronizeAsync(token);
+		return set;
+	}
+
+	private void RemoveSetOn(IEnumerable<Npc> set)
+	{
+		foreach (Npc member in set.Where(member => member.IsSpawned())) fixture.World.Despawn(member);
+	}
+
+	/// <summary>
+	/// NR-16, row cleric-10. Prepared by the director: the Priest is made a level-10 Cleric with the skills of every level
+	/// up to it and is placed in Altgard at a pull spot of the recorded leg, by the ice crasaurs (210415, level 11). The
+	/// first fight is the journey's alone, by the Cleric's rule table: Smite and then Flashbolt at once, inside its 3 s.
+	/// Before the second begins the director spawns one more ice crasaur 4 m away and sets it on the Cleric, so that the
+	/// Cleric is being hit whether or not the first crasaur reached it: Light of Rejuvenation goes up while it is hit,
+	/// and is not cast again while it lasts.
+	/// </summary>
+	private async Task ClericLevelTenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int crasaur = 210415, flashbolt = 4025, rejuvenation = 3939;
+		int[] smites = [4012, 4013];
+		probe.Session.BeginStep("s01", "director-makes-a-level-ten-cleric-in-altgard");
+		await probe.BecomeAsync(PlayerClass.CLERIC, 10);
+		Assert.All(new[] { flashbolt, rejuvenation, 4061, 4083, 4127, 3922 }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 10."));
+		BotNavigationGeometry geometry = await probe.MoveToMapAsync(ClericProbeMap, 1473.2f, 1765.2f, 247.5f);
+		Npc target = NearestLiving(probe, crasaur);
+		ClericFight fight = await ClericFightAsync(probe, "s02", "fight-an-ice-crasaur", () => Task.FromResult(target.GetObjectId()), token);
+		int pair = fight.Run(smites, [flashbolt]);
+		Assert.True(pair >= 0, $"Flashbolt did not follow Smite at once: {fight.Order}.");
+		TimeSpan gap = fight.Casts[pair + 1].At - fight.Casts[pair].At;
+		Assert.True(gap <= TimeSpan.FromSeconds(3), $"Flashbolt came {gap.TotalMilliseconds:F0} ms after Smite: {fight.Order}.");
+		Assert.True(fight.Result.Killed, $"The ice crasaur was not killed: {fight.Result}; casts {fight.Order}.");
+		Assert.Equal(0, fight.Result.Deaths);
+
+		Npc[] set = [];
+		ClericFight hit = await ClericFightAsync(probe, "s03", "fight-an-ice-crasaur-that-is-on-the-cleric", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: one ice crasaur 4 m away, set on the Cleric.
+			set = await SpawnSetOnAsync(probe, geometry, crasaur, 1, token);
+			return set[0].GetObjectId();
+		}, token);
+		RemoveSetOn(set);
+		// It lasts 30 s, so the second fight casts it only when the first did not, or when it has run out: in the two
+		// fights together it goes up at least once, each time under attack and never while it is seen on the Cleric.
+		StarterTraceRecord[] kept = fight.Decided.Concat(hit.Decided).Where(record => Decided(record, "cast-self", rejuvenation)).ToArray();
+		Assert.True(kept.Length > 0, $"Light of Rejuvenation was not cast: {fight.Order}, then {hit.Order}; decisions {fight.Counts}, then {hit.Counts}.");
+		Assert.All(kept, record => Assert.True(record.Fields.GetProperty("observedState").GetProperty("Aggro").GetBoolean()));
+		Assert.All(kept, record => Assert.False(record.Fields.GetProperty("observedState").GetProperty("HasRejuvenation").GetBoolean()));
+		Assert.Contains(fight.Casts.Concat(hit.Casts), cast => cast.SkillId == rejuvenation);
+		Assert.Contains(hit.Decided, record => record.Fields.GetProperty("observedState").GetProperty("Aggro").GetBoolean());
+		Assert.Equal(0, hit.Result.Deaths);
+		Console.WriteLine($"{id}: level {probe.World.Level} Cleric, max HP {probe.World.MaxHp}. First ice crasaur: {fight.Result}; casts {fight.Order}; " +
+			$"Flashbolt {gap.TotalMilliseconds:F0} ms after Smite; decisions {fight.Counts}. Second, spawned 4 m away and set on the Cleric: {hit.Result}; " +
+			$"casts {hit.Order}; decisions {hit.Counts}. Light of Rejuvenation decided {kept.Length} time(s) in the two fights, under attack and not yet on the Cleric each time. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-16, row cleric-16. Prepared by the director: a level-16 Cleric at a pull spot of the recorded leg, by the tusked
+	/// mosbears (210437, level 14). Every other act is the journey's: the Holy Servant is summoned on a target that is
+	/// above 50% HP, and Smite and Flashbolt go together. A kill, a retreat and a death are recorded outcomes: the spot
+	/// brings two more monsters, and with three on it the Cleric leaves.
+	/// </summary>
+	private async Task ClericLevelSixteenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210437, servant = 4106;
+		int[] smites = [4014, 4015], flashbolts = [4025, 4026];
+		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-cleric-in-altgard");
+		await probe.BecomeAsync(PlayerClass.CLERIC, 16);
+		Assert.All(new[] { servant, 4015, 4026, 1841 }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 16."));
+		await probe.MoveToMapAsync(ClericProbeMap, 1427.2f, 789.9f, 249.9f);
+		Npc target = NearestLiving(probe, mosbear);
+		ClericFight fight = await ClericFightAsync(probe, "s02", "fight-a-tusked-mosbear", () => Task.FromResult(target.GetObjectId()), token);
+		StarterTraceRecord[] summoned = fight.Decided.Where(record => Decided(record, "cast-target", servant)).ToArray();
+		Assert.True(summoned.Length > 0, $"The Holy Servant was not summoned: {fight.Order}; decisions {fight.Counts}.");
+		int?[] targetHp = summoned.Select(record => record.Fields.GetProperty("observedState").GetProperty("TargetHpPercent") is { ValueKind: JsonValueKind.Number } hp
+			? hp.GetInt32() : (int?)null).ToArray();
+		Assert.All(targetHp, hp => Assert.True(hp is null or > 50, $"The servant was decided with the target at {hp}% HP."));
+		Assert.Contains(fight.Casts, cast => cast.SkillId == servant);
+		int pair = fight.Run(smites, flashbolts);
+		Assert.True(pair >= 0, $"Flashbolt did not follow Smite at once: {fight.Order}.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Cleric, max HP {probe.World.MaxHp}, one tusked mosbear: {fight.Result}. Casts {fight.Order}; " +
+			$"the servant decided with the target at {string.Join(", ", targetHp.Select(hp => hp?.ToString() ?? "unseen"))}% HP. " +
+			$"Decisions {fight.Counts}. HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-16, row cleric-20. Prepared by the director: a level-20 Cleric at a pull spot of the recorded leg, by the starved
+	/// mosbears (210564, level 13). Before the first fight begins the director gives 2,000 DP and cuts HP to 30%; before
+	/// the second, with the DP spent, it cuts HP to 50%. Every other act is the journey's, by the ladder: Salvation in the
+	/// emergency, and Healing Grace, or Healing Light after a cancelled Grace, at or below the heal percentage.
+	/// </summary>
+	private async Task ClericLevelTwentyRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, salvation = 3922, grace = 4203;
+		int[] heals = [1840, 1841];
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-cleric-in-altgard");
+		await probe.BecomeAsync(PlayerClass.CLERIC, 20);
+		Assert.All(new[] { salvation, grace, 1841, 4027 }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 20."));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		Npc first = NearestLiving(probe, mosbear);
+		ClericFight emergency = await ClericFightAsync(probe, "s02", "fight-a-starved-mosbear-from-three-tenths-hp-with-dp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 2,000 DP and 30% HP as the fight begins.
+			await probe.SetDpAsync(2000);
+			await probe.CutHpAsync(30);
+			return first.GetObjectId();
+		}, token);
+		StarterTraceRecord[] saved = emergency.Decided.Where(record => Decided(record, "cast-self", salvation)).ToArray();
+		Assert.True(saved.Length > 0, $"Salvation was not cast: {emergency.Order}; decisions {emergency.Counts}.");
+		JsonElement at = saved[0].Fields.GetProperty("observedState");
+		Assert.True(at.GetProperty("InEmergency").GetBoolean(), "Salvation was decided outside an emergency.");
+		Assert.True(at.GetProperty("Dp").GetInt32() >= 2000, $"Salvation was decided with {at.GetProperty("Dp").GetInt32()} DP.");
+		Assert.Contains(emergency.Casts, cast => cast.SkillId == salvation);
+		int savedAt = at.GetProperty("Hp").GetInt32() * 100 / at.GetProperty("MaxHp").GetInt32();
+		Assert.Equal(0, emergency.Result.Deaths);
+		Assert.True(probe.World.CurrentDp < 2000, $"The DP was not spent: {probe.World.CurrentDp}.");
+
+		Npc second = NearestLiving(probe, mosbear);
+		ClericFight hurt = await ClericFightAsync(probe, "s03", "fight-a-starved-mosbear-from-half-hp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: half HP as the fight begins. The DP is spent.
+			await probe.CutHpAsync(50);
+			return second.GetObjectId();
+		}, token);
+		StarterTraceRecord[] healed = hurt.Decided.Where(record => Decided(record, "cast-self", [grace, .. heals])).ToArray();
+		Assert.True(healed.Length > 0, $"Neither Healing Grace nor Healing Light was decided: {hurt.Order}; decisions {hurt.Counts}.");
+		Assert.DoesNotContain(hurt.Decided, record => Decided(record, "cast-self", salvation));
+		JsonElement healState = healed[0].Fields.GetProperty("observedState");
+		int healedAt = healState.GetProperty("Hp").GetInt32() * 100 / healState.GetProperty("MaxHp").GetInt32();
+		Assert.True(healedAt <= 70, $"The first heal of the second fight was decided at {healedAt}% HP.");
+		Assert.Equal(0, hurt.Result.Deaths);
+		Console.WriteLine($"{id}: level {probe.World.Level} Cleric, max HP {probe.World.MaxHp}. First starved mosbear: {emergency.Result}; Salvation decided at {savedAt}% HP " +
+			$"in an emergency with {at.GetProperty("Dp").GetInt32()} DP; casts {emergency.Order}; decisions {emergency.Counts}. " +
+			$"Second: {hurt.Result}; skill {healed[0].Fields.GetProperty("skillId").GetInt32()} decided at {healedAt}% HP; casts {hurt.Order}; decisions {hurt.Counts}. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, DP {probe.World.CurrentDp}.");
+	}
+
+	/// <summary>
+	/// NR-16, row cleric-25. Prepared by the director: a level-25 Cleric at a pull spot of the recorded leg, by the starved
+	/// mosbears (210564, level 13). The first fights are the journey's alone, one mosbear after another until Divine Spark
+	/// follows Flashbolt: the server opens that step one time in ten (Java Skill.java 629-640 rolls the template's
+	/// chain_skill_prob, 10 for Flashbolt), so a single fight seldom shows it. Then, before one more fight begins, the
+	/// director spawns three more starved mosbears 4 m from the Cleric and sets them on it; one of them is the journey's
+	/// target. With three attackers the journey casts Root on its target and leaves.
+	/// </summary>
+	private async Task ClericLevelTwentyFiveRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, flashbolt = 4028, spark = 4037, root = 4127, mostFights = 60;
+		int[] smites = [4016];
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-five-cleric-in-altgard");
+		await probe.BecomeAsync(PlayerClass.CLERIC, 25);
+		Assert.All(new[] { 4016, flashbolt, spark, root, 3951, 4204 }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 25."));
+		BotNavigationGeometry geometry = await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		ClericFight? chain = null;
+		int fights = 0, kills = 0, flashbolts = 0, pairs = 0;
+		while (chain == null && fights < mostFights)
+		{
+			fights++;
+			Npc next = NearestLiving(probe, mosbear);
+			ClericFight fight = await ClericFightAsync(probe, $"s02-{fights:D2}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			Assert.Equal(0, fight.Result.Deaths);
+			kills += fight.Result.Killed ? 1 : 0;
+			flashbolts += fight.Casts.Count(cast => cast.SkillId == flashbolt);
+			pairs += fight.Run(smites, [flashbolt]) >= 0 ? 1 : 0;
+			// Divine Spark is cast whenever Flashbolt opened it, and at no other time.
+			Assert.All(Enumerable.Range(0, fight.Casts.Count).Where(index => fight.Casts[index].SkillId == spark),
+				index => Assert.True(index > 0 && fight.Casts[index - 1].SkillId == flashbolt, $"Divine Spark did not follow Flashbolt: {fight.Order}."));
+			if (fight.Run(smites, [flashbolt], [spark]) >= 0) chain = fight;
+		}
+		Assert.True(chain != null, $"Divine Spark never followed Flashbolt in {fights} fights with {flashbolts} Flashbolts.");
+		int run = chain.Run(smites, [flashbolt], [spark]);
+		TimeSpan second = chain.Casts[run + 1].At - chain.Casts[run].At, third = chain.Casts[run + 2].At - chain.Casts[run + 1].At;
+		Assert.True(second <= TimeSpan.FromSeconds(3) && third <= TimeSpan.FromSeconds(3),
+			$"Flashbolt came {second.TotalMilliseconds:F0} ms after Smite and Divine Spark {third.TotalMilliseconds:F0} ms after Flashbolt: {chain.Order}.");
+
+		Npc[] pack = [];
+		ClericFight swarm = await ClericFightAsync(probe, "s03", "fight-a-pack-of-three-starved-mosbears", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: three starved mosbears 4 m away, set on the Cleric.
+			pack = await SpawnSetOnAsync(probe, geometry, mosbear, 3, token);
+			return pack[0].GetObjectId();
+		}, token);
+		RemoveSetOn(pack);
+		int rooted = Array.FindIndex(swarm.Decided, record => Decided(record, "cast-target", root));
+		Assert.True(rooted >= 0, $"Root was not cast: {swarm.Order}; decisions {swarm.Counts}.");
+		string? reason = swarm.Decided[rooted].Fields.GetProperty("reason").GetString();
+		Assert.StartsWith("Hold the target before retreating", reason);
+		Assert.Contains(swarm.Decided.Skip(rooted + 1), record => record.Fields.GetProperty("action").GetString() == "retreat");
+		Assert.Contains(swarm.Casts, cast => cast.SkillId == root);
+		Console.WriteLine($"{id}: level {probe.World.Level} Cleric, max HP {probe.World.MaxHp}. {fights} fights with starved mosbears, {kills} kills: Flashbolt followed Smite at once in {pairs}, " +
+			$"was cast {flashbolts} times and opened Divine Spark in fight {fights}: casts {chain.Order}; Flashbolt {second.TotalMilliseconds:F0} ms after Smite, " +
+			$"Divine Spark {third.TotalMilliseconds:F0} ms after Flashbolt; decisions {chain.Counts}. " +
+			$"Then one more, against {pack.Length} starved mosbears the director spawned 4 m away and set on the Cleric: " +
+			$"{swarm.Result}; Root decided with {swarm.Decided[rooted].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32()} attackers: {reason} " +
+			$"Casts {swarm.Order}; decisions {swarm.Counts}. HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, dead {probe.Server.IsDead()}.");
 	}
 
 	/// <summary>The living monster of a template nearest to another monster.</summary>

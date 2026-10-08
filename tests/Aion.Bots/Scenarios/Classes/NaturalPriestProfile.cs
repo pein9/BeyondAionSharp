@@ -7,7 +7,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// The accepted line's two profiles. NR-13: their catalogs are generated from the shipped skill data, as every other
 /// class's is, with the roles below; a generated row equals its hand-typed row of <see cref="NaturalPriestSkills.All"/> and
 /// <see cref="NaturalClericSkills.All"/> in every field that row holds. NR-14: the Priest fights by the rule table
-/// <see cref="PriestRules"/>; the Cleric is still an adapter over the static <see cref="NaturalPriestCombatPolicy"/>.
+/// <see cref="PriestRules"/>. NR-16: the Cleric fights by <see cref="ClericRules"/>, and its catalog reaches level 26.
 /// </summary>
 public static class NaturalPriestProfile
 {
@@ -19,10 +19,10 @@ public static class NaturalPriestProfile
 		[1684] = "blessing", [1814] = "infernal",
 	};
 
-	/// <summary>The Cleric's own active skills from level 10 to level 24, by role, beside the Priest's it keeps: the
+	/// <summary>The Cleric's own active skills from level 10 to level 26, by role, beside the Priest's it keeps: the
 	/// powder skills Herb Treatment and MP Recovery, Salvation, Light of Rejuvenation, Flashbolt (the follow-up of Smite),
 	/// Slashing Wind, Earth's Wrath, Root, Penance, the Holy Servant, Divine Touch, Healing Grace, Divine Spark and Flash
-	/// of Recovery, and the later ranks of the Priest's roles. The ranks of levels 25 and 26 have no role yet.</summary>
+	/// of Recovery, and the later ranks of the Priest's roles. NR-16: the ten ranks of levels 25 and 26 are the last line.</summary>
 	internal static readonly IReadOnlyDictionary<int, string> ClericRoles = new Dictionary<int, string>(PriestRoles)
 	{
 		[246] = "herb", [247] = "herb", [251] = "herb", [249] = "mp-recovery", [250] = "mp-recovery", [252] = "mp-recovery",
@@ -33,6 +33,16 @@ public static class NaturalPriestProfile
 		[1815] = "infernal", [1816] = "infernal", [1817] = "infernal", [1616] = "hallowed", [1617] = "hallowed", [1618] = "hallowed",
 		[3867] = "penance", [3868] = "penance", [4106] = "servant", [4108] = "servant", [4073] = "touch", [4074] = "touch",
 		[4203] = "grace", [4204] = "grace", [4037] = "spark", [3951] = "flash-recovery",
+		[253] = "herb", [254] = "mp-recovery", [3869] = "penance", [3942] = "rejuvenation", [4028] = "followup", [4064] = "wind",
+		[4086] = "wrath", [4110] = "servant", [1843] = "heal", [4017] = "smite",
+	};
+
+	/// <summary>NR-16: the two skills of levels 25 and 26 the Cleric does not cast, beside
+	/// <see cref="NaturalClericSkills.Excluded"/>.</summary>
+	private static readonly IReadOnlyDictionary<int, string> ClericExcludedFromLevel25 = new Dictionary<int, string>
+	{
+		[4006] = "Splendor of Flight restores flight time over 15 s; the rule table is for fights on the ground.",
+		[3880] = "Stability III: as Stability I.",
 	};
 
 	/// <summary>
@@ -62,8 +72,47 @@ public static class NaturalPriestProfile
 		EmergencyPercent: 35, EmergencyClearPercent: 45, EmergencySeasonedPairPercent: 55,
 		Finisher: new("smite", 15, FromRun: true), ReserveRole: "heal", ManaPotionReserveMargin: 10, RangedHoldWithin: 12);
 
-	/// <summary>The Cleric's catalog reaches this level; the hand-typed table it replaces did.</summary>
-	private const int ClericCatalogTopLevel = 24;
+	/// <summary>
+	/// NR-16: the Cleric's fight as a table, saying what the static rule said. A follow-up that is open goes first:
+	/// Divine Spark after Flashbolt, Flashbolt after Smite, Divine Touch after Slashing Wind, each inside 3 s. Smite is
+	/// brought to the front while Flashbolt is off cooldown and both can be paid for beside the heal; at other times it is
+	/// the last filler. The Holy Servant is summoned on a target above 50% HP. Then, with the monster on the Cleric:
+	/// Infernal Blaze, Hallowed Strike, Slashing Wind, Earth's Wrath (a 1.5 s cast, last where a hit can cancel it); from
+	/// range: Earth's Wrath, Slashing Wind. The mace swings between skills. Blessing of Guardianship goes up before the
+	/// first hit, and Light of Rejuvenation is kept up while the Cleric is being hit.
+	/// <para>
+	/// The ladder: the Anti-Shock scroll at 50% HP; Salvation, paid with DP, at 25% or in an emergency; the life potion at
+	/// 90%; Flash of Recovery in an emergency only; Healing Grace at 55% against one attacker and at 70% against two or
+	/// more, passed over once after it was cancelled; Healing Light at the same percentages. The potion's percentage and
+	/// the heal percentages are the run's. Once a fight has had a Healing Light and the target is at or below 15% HP (the
+	/// run's), Smite finishes it in a heal's place. An emergency runs from 35% until 45%, and from 55% until 65% against
+	/// two or more attackers on a Seasoned target. Healing Light's cost is kept back from every attack; a mana potion is
+	/// drunk below that cost and 10. The Cleric leaves at three attackers, or at 30% HP with nothing of the ladder left,
+	/// and casts Root on its target first. Against a target that attacks from range it holds within 12 m, or with two
+	/// attackers on it, when the run asks for the hold; otherwise it walks up.
+	/// </para>
+	/// </summary>
+	internal static readonly NaturalRotationRules ClericRules = new("natural-cleric-v1",
+		Adjacent: ["spark", "followup", "touch", "servant", "infernal", "hallowed", "wind", "wrath", "smite"],
+		AtRange: ["spark", "followup", "touch", "servant", "wrath", "wind", "smite"],
+		Upkeep: [new("blessing"), new("rejuvenation", DuringFight: true, UnderAttackOnly: true)],
+		Recovery:
+		[
+			new(NaturalRecoveryKind.ShieldScroll, 50),
+			new(NaturalRecoveryKind.Skill, 25, "salvation"),
+			new(NaturalRecoveryKind.LifePotion, 90, FromRun: NaturalRunPercent.LifePotion),
+			new(NaturalRecoveryKind.Skill, 35, "flash-recovery", EmergencyOnly: true),
+			new(NaturalRecoveryKind.Skill, 55, "grace", HpPercentMultiple: 70, PassOverWhenCancelled: true, FinishInstead: true,
+				FromRun: NaturalRunPercent.Heal),
+			new(NaturalRecoveryKind.Skill, 55, "heal", HpPercentMultiple: 70, FinishInstead: true, FromRun: NaturalRunPercent.Heal),
+		],
+		SwarmAttackers: 3, FleeHpPercent: 30, AutoAttack: NaturalAutoAttack.Filler, ControlRole: "root",
+		EmergencyPercent: 35, EmergencyClearPercent: 45, EmergencySeasonedPairPercent: 55,
+		Finisher: new("smite", 15, FromRun: true), ReserveRole: "heal", ManaPotionReserveMargin: 10,
+		Openers: ["smite"], OnlyWhileTargetAbove: new Dictionary<string, int> { ["servant"] = 50 }, RangedHoldWithin: 12);
+
+	/// <summary>The Cleric's catalog reaches this level: the level the recorded Cleric ends its Abyss-entry leg at.</summary>
+	private const int ClericCatalogTopLevel = 26;
 
 	/// <summary>The Priest's catalog, which a Chanter keeps as well.</summary>
 	internal static NaturalPriestSkill[] PriestCatalog(StaticData data) =>
@@ -138,15 +187,17 @@ public static class NaturalPriestProfile
 	public static NaturalClassProfile CreateCleric(StaticData data)
 	{
 		ArgumentNullException.ThrowIfNull(data);
-		var excluded = NaturalSkillCatalog.CommonExcluded.Concat(NaturalClericSkills.Excluded).ToDictionary(entry => entry.Key, entry => entry.Value);
+		var excluded = NaturalSkillCatalog.CommonExcluded.Concat(NaturalClericSkills.Excluded).Concat(ClericExcludedFromLevel25)
+			.ToDictionary(entry => entry.Key, entry => entry.Value);
 		NaturalPriestSkill[] skills = NaturalSkillCatalog.Build(data, PlayerClass.CLERIC, ClericRoles, excluded);
-		NaturalProfileValidator.Require(data, PlayerClass.CLERIC, ClericCatalogTopLevel, skills, excluded, [], NaturalGearRules.Cleric);
+		NaturalProfileValidator.Require(data, PlayerClass.CLERIC, ClericCatalogTopLevel, skills, excluded, ClericRules.Lines(skills),
+			NaturalGearRules.Cleric);
 		return new NaturalClassProfile
 		{
 			Class = PlayerClass.CLERIC,
 			Skills = skills,
 			Excluded = excluded,
-			Combat = new StaticPolicy(skills),
+			Combat = new NaturalRotationCombatPolicy(ClericRules, skills, PriestLineMovement),
 			// OD-13: the approved kit at every level.
 			HelpItems = new(NaturalHelpItemAllowlist.AllLevels.ToArray(), null),
 			Upkeep = [Blessing],

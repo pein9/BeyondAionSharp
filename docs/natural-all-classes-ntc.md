@@ -863,13 +863,136 @@ to the endpoint. The close of phase B is NR-21.
       recorded scope ever reached a template's six failed pulls. Scope b is left out
       until NR-17. Bundle at the code commit: the seven pre-commit checks pass,
       Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run nr15-fast, 11 passed).
-- [ ] **NR-16 - The Cleric on the table.** Depends: NR-15
+- [x] **NR-16 - The Cleric on the table.** Depends: NR-15
   - Work: Write the Cleric's rule table into this document first, then build it, with the
     Cleric's rest by NR-12's kinds. SIM probe rows on prepared Clerics at levels 10, 16,
     20 and 25 against monsters of the legs: the chain Smite, Flashbolt, Divine Spark; the
     servant; the heal ladder with Salvation; Root before a retreat.
   - Proof: The four probe rows pass with those shown in play; guard: p, m and the five
     class scopes identical.
+  - 2026-10-08: done. The Cleric fights by the rule table, and its catalog reaches level
+    26.
+    - **Java.**
+      - Skill.java 629-640: when a chain skill is cast by a player, the server rolls the
+        template's chain_skill_prob, and only a success keeps the chain; a failure resets
+        it. Smite, Slashing Wind and Divine Touch have 100. Flashbolt has 10, in every
+        rank. So Divine Spark is open after one Flashbolt in ten.
+      - ChainCondition.validate and ChainSkills.updateChain: a chain expires by the time
+        of the step cast last, and Smite carries none. So Java takes Flashbolt at any
+        time after Smite. The table casts a follow-up only inside the follow-up's own
+        3 s, which is the default of CP-Q17 and always legal on Java.
+    - **The Cleric's rule table, natural-cleric-v1** (NaturalPriestProfile.ClericRules).
+      Written here first, then built.
+
+      | Part | What the table says |
+      |---|---|
+      | An open follow-up | Cast before anything else: Divine Spark after Flashbolt, Flashbolt after Smite, Divine Touch after Slashing Wind, each inside 3 s. |
+      | Smite as the opener | Brought to the front while Flashbolt is off cooldown and Smite, Flashbolt and the heal can all be paid for. At other times it is the last filler. |
+      | The Holy Servant | Summoned first of the rest, on a target above 50% HP or of unseen HP. |
+      | With the monster on it | Infernal Blaze, Hallowed Strike, Slashing Wind, Earth's Wrath, Smite, in that order. |
+      | From range | Earth's Wrath, Slashing Wind, Smite. |
+      | The weapon | Swung whenever no skill is ready and the monster is on the Cleric. |
+      | Buffs | Blessing of Guardianship before the first hit. Light of Rejuvenation while the Cleric is being hit and it is not seen on it. |
+      | Ladder, first | The Anti-Shock scroll at 50% HP. |
+      | Ladder, second | Salvation, paid with 2,000 DP, at 25% HP or in an emergency. |
+      | Ladder, third | The life potion at 90% HP (the run's). |
+      | Ladder, fourth | Flash of Recovery, in an emergency only. |
+      | Ladder, fifth | Healing Grace at 55% HP, and at 70% against two or more attackers (the run's). Passed over once after it was cancelled. |
+      | Ladder, sixth | Healing Light at the same percentages. |
+      | Finisher | Smite in a heal's place, outside an emergency, once the fight has had a Healing Light and the target is at or below 15% HP (the run's). |
+      | Emergency | From 35% HP until 45%. Against two or more attackers on a Seasoned target, from 55% until 65%. Every ladder step is tried at once. |
+      | Mana kept back | Healing Light's cost, from every attack, from both buffs and from Root. |
+      | Mana potion | Below Healing Light's cost and 10. |
+      | Leaves | At three attackers. At 30% HP when nothing of the ladder is available. Root is cast on the target first, when it can be. |
+      | A target that attacks from range | With nothing ready: holds within 12 m, or with two attackers, when the run asks for the hold. Otherwise walks up to it. |
+
+    - **The rest** is unchanged: the Cleric's rest already names its rest-only skills by
+      kind (NR-12).
+    - **The catalog to level 26** (found by NR-13). Ten ranks get the role of the rank
+      before them: Herb Treatment 253, MP Recovery 254, Penance 3869, Light of
+      Rejuvenation 3942, Flashbolt 4028, Slashing Wind 4064, Earth's Wrath 4086 and the
+      Holy Servant 4110 at level 25, Healing Light 1843 and Smite 4017 at 26. Two are
+      left out with a reason: Splendor of Flight 4006 restores flight time, and Stability
+      3880 is the third rank of a skill already left out. The profile is validated to
+      level 26: 60 rows, 12 exclusions.
+      - The powder skills of level 25 use Odella Powder (169300004), where the ranks
+        below use Lesser Odella Powder (169300003). The approved kit has supplied Odella
+        Powder from level 25 all along, and until now no skill of the catalog used it.
+    - **One rule of the table policy adjusted, for every class.** Holding for a target is
+      now decided by the listed attacks that need no open chain. Divine Touch reaches the
+      weapon's range farther than Slashing Wind, which opens it, so a target at 26 m was
+      held for although nothing could be cast at it. No other table has a follow-up that
+      reaches farther than its opener.
+    - **One-time check, not committed** (run/nr/NR-16/check-a3.log; a1 and a2 are the
+      same sample before the adjustment above and before an impossible cooldown on
+      Healing Light was taken out of the sample). The table and the old rule each decided
+      600,000 sampled Cleric states with a target, at levels 10 to 24. 577,634 are the
+      same decision. The other 22,366 are six differences, and every choice of the table
+      is in its own list of legal candidates.
+      - 7,014: Smite's chain is older than 3 s. The old rule still cast Flashbolt; the
+        table casts Smite again first (CP-Q17).
+      - 5,148: under attack with a follow-up open and Light of Rejuvenation not up. The
+        old rule cast the heal over time, which resets the chain; the table casts the
+        follow-up first.
+      - 3,919: no attacker yet and the Blessing not seen: cast before the first hit, as
+        for the Priest (NR-14).
+      - 3,288: an unpulled target with no attack that can be paid for: walked up to, as
+        for the Priest.
+      - 2,489: at or below 30% HP with no heal and no potion, and the Anti-Shock scroll
+        ready: the scroll first, then leave, as for the Priest.
+      - 508: Divine Touch open with the target between 25 m and 26.5 m. The old rule held
+        its range to be 25 m; the template adds the weapon's.
+    - **Code.** NaturalPriestProfile builds the Cleric with NaturalRotationCombatPolicy
+      over the generated catalog and validates the table's two lines to level 26. The
+      static rule is no longer used by any profile; NR-18 removes it. Four probe rows are
+      added to the starter field probe, with three director acts: make the character its
+      second class at a level, place it on another map, and spawn monsters 4 m away and
+      set them on it.
+    - **Proof, the probe** (SIM, seed 1, the two probe accounts, two rows a process; runs
+      nr16-probe-a6 and nr16-probe-a6b, logs run/nr/NR-16/probe-a6.log and probe-a6b.log).
+      All four rows pass, and every fight decision in them is the table's. Each Cleric is
+      prepared by the director from a fresh Priest and placed in Altgard at a pull spot of
+      the recorded legs; it wears what a new Priest wears.
+      - cleric-10 (690 HP), ice crasaurs (210415, level 11). First fight: Smite, then
+        Flashbolt 735 ms later, Earth's Wrath, Slashing Wind, Smite, Light of Rejuvenation
+        once the crasaur is on the Cleric, Infernal Blaze; a kill in 9.6 s. Second fight,
+        against a crasaur the director set on the Cleric: a kill, and the heal over time is
+        not cast again while it lasts.
+      - cleric-16 (1,074 HP), a tusked mosbear (210437, level 14). Smite, Light of
+        Rejuvenation under attack, the Holy Servant, then Smite and Flashbolt together,
+        Infernal Blaze. The spot brings two more monsters: with three attackers the Cleric
+        casts Root and leaves. No kill, no death; that is the outcome.
+      - cleric-20 (1,372 HP), starved mosbears (210564, level 13). First fight, from 30%
+        HP with 2,000 DP: Salvation at 29% in the emergency, then the life potion, and a
+        kill in 8.3 s with the DP spent. Second fight, from 50% HP: Healing Grace at 50%,
+        and a kill.
+      - cleric-25 (1,789 HP), starved mosbears. Eight fights, eight kills; Flashbolt
+        followed Smite at once in every one and opened Divine Spark in the eighth: Smite,
+        Flashbolt 735 ms later, Divine Spark 1,169 ms after that. Then a fight against
+        three mosbears the director spawned 4 m away and set on the Cleric: with three
+        attackers, Root, then the retreat. No death.
+    - **The attempts before a6.** Five, and every change was to a row's preparation or
+      to what it checks; the table was not changed for a row.
+      - a1 and a1b: cleric-10 and cleric-20 passed. cleric-16 asked for a kill and got
+        the retreat above. cleric-25 asked for Divine Spark in one fight; Flashbolt's
+        result carried no chain flag, which led to the Java lines above.
+      - a2b: Divine Spark shown after eight fights. The pack was three monsters set on
+        the Cleric from where they stood, and none came in 90 s (a3b the same).
+      - a3: two rows named on one probe account; the second was refused at login. That
+        was the loop's pairing mistake.
+      - a4: cleric-25 passed with the spawned pack. cleric-10 ran second in its process
+        and its crasaur died before it reached the Cleric, so nothing was kept up.
+      - a5: cleric-10 with the second fight, which found the heal over time still on.
+    - **Seen, not acted on.**
+      - Twice a first Smite did no damage and opened no chain (cleric-16, and cleric-10's
+        second fight). Not looked into.
+      - The recorded pull spot by the tusked mosbears brings three attackers at once.
+    - **Guard, rule (c).** Run guard-a1, gate p+m+mage+warrior+artist+engineer+scout
+      (run/nr/NR-16/guard-a1/verdict.json): seven scopes identical to their baselines (p
+      35,463, m 109,039, mage 23,555, warrior 24,199, artist 23,104, engineer 24,580,
+      scout 27,592). Scopes b, l1, c, hm and ax change with this item; NR-17 replays and
+      re-records them. Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests
+      passes (4,675 passed, 16 skipped) and Fast passes (run nr16-fast, 11 passed).
 - [ ] **NR-17 - The Cleric's scopes replayed and re-recorded.** Depends: NR-16
   - Work: No code beyond one small change an attempt. Replay b, l1, c, hm and ax, each to
     its endpoint, two attempts each; a scope that fails twice becomes a lettered item with
@@ -1180,3 +1303,12 @@ report what was done, what is parked or blocked, and what the operator must deci
   pass. Re-recorded at 3ac9e756f, two passes each: p 35,463 records, m
   109,039. Scope b still differs until NR-17. Next: NR-16, the Cleric on
   the table.
+- 2026-10-08 — Loop: NR-16 done. The Cleric fights by the rule table natural-cleric-v1,
+  written into the plan, and its catalog reaches level 26 (ten new ranks, two exclusions).
+  Beside the old rule on 600,000 sampled states it decides 577,634 the same; the rest are
+  six named differences. Java: Flashbolt opens Divine Spark one time in ten. Probe a6 and
+  a6b: rows cleric-10, cleric-16, cleric-20 and cleric-25 pass, with the chain, the
+  servant, Salvation and Root before a retreat in play; five earlier attempts changed the
+  rows, not the table. Guard guard-a1, seven scopes: identical. Seven checks, unit suite
+  and Fast (nr16-fast) pass. Scopes b, l1, c, hm and ax now differ from their baselines.
+  Next: NR-17, the Cleric's scopes replayed and re-recorded.
