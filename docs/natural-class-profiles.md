@@ -4886,10 +4886,25 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       baselines (p 37,222 records, mage 23,555). Bundle: the seven pre-commit checks
       pass, Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run cp56a-fast, 11 passed).
     - CP-56 is retried next with a fresh two-attempt budget.
-- [ ] **CP-57 - Record class scope warrior, twice.** Depends: CP-56
+- [x] **CP-57 - Record class scope warrior, twice.** Depends: CP-56
   - Work: As CP-53 with -Set warrior -Item CP-57.
   - Proof: The record run: the two passes of class scope warrior are identical after
     normalization (run/cp/CP-57/<run-id>/verdict.json).
+  - 2026-10-08: done. Run record-a1 at dd98e97e4 on a clean tree: the gate played class
+    scope warrior twice (run/cp/CP-57/record-a1-warrior-pass1 and -pass2) and the two
+    passes are identical after normalization: 24,199 records, SHA-256
+    cc7b1fb5b302244d685f004817ba4cf3e8e61af940a91a8985435f48277a8abf
+    (run/cp/CP-57/record-a1/verdict.json, verdict pass). The Q2004 stop of CP-54 landed on
+    the status-5 stop, so the scope is recorded as defined. Its row is written into
+    parity-artifacts/e2e/natural-neutral-baseline.json with an empty ignore list and these
+    counts: no death, no retreat, 6 pull plans, 7 life potions in fights, 5 running
+    scrolls, 2 speed scrolls, 3 help items supplied, 2 binds. They are CP-54's: the pack
+    rule of CP-56a is not reached before Q2004.
+    - From here the guard of rule (c) runs gate p and the class scopes mage and warrior.
+    - Evidence only. The seven pre-commit checks pass, and so do the trace comparer's
+      tests and the snapshot and gate contract tests, which read the baseline file.
+    - This is the second report point: the Mage and the Warrior stand at Munin
+      (munin-mage-s1, munin-warrior-s1) and both class scopes are recorded.
 - [ ] **CP-58 - Artist to the Q2004 checkpoint.** Depends: CP-47, CP-53
   - Work: Run Replay -Class artist -StopAt 2004:5:0 -Item CP-58. Trainer Sona 801219 (var 6)
     and the harp rewards of Q2100, Q2002 and Q2134 have never been played by a bot; whatever
@@ -6093,3 +6108,9 @@ report what was done, what is blocked and what you need from me.
   retreats; 85 life potions, 22 running scrolls, Blitzopan seven times; nothing sold and
   nothing bought. With the pack rule of CP-56a Q2007 went without a death. Restore prints
   CP_CLASS=warrior and no NA_HELP_ITEMS. Evidence only. Next by rule (h): CP-57.
+- 2026-10-08 — Loop: CP-57 done. Class scope warrior recorded at dd98e97e4 (run record-a1):
+  two passes of Replay -Class warrior -StopAt 2004:5:0, identical after normalization, 24,199
+  records, SHA-256 cc7b1fb5...277a8abf. The guard of rule (c) now runs p, mage and warrior.
+  Evidence only; seven checks and the two script tests that read the baseline pass. This is
+  the second report point: Mage and Warrior at Munin, both class scopes recorded. Next by
+  rule (h): CP-58.

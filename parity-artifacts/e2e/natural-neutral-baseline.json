@@ -344,6 +344,49 @@
         "binds": 2,
         "soulHeals": 0
       }
+    },
+    {
+      "scope": "warrior",
+      "line": "warrior",
+      "replay": {
+        "Class": "warrior",
+        "StopAt": "2004:5:0"
+      },
+      "snapshot": null,
+      "commit": "dd98e97e4e7e8dca748261fa1600e4f644c0dd3e",
+      "environment": {
+        "AION_SIM_SEED": "1",
+        "NA_HELP_ITEMS": null,
+        "AION_BOT_DASHBOARD_PORT": null,
+        "AION_SIM_PROCESS_KEY": null
+      },
+      "ignore": [],
+      "records": 24199,
+      "sha256": "cc7b1fb5b302244d685f004817ba4cf3e8e61af940a91a8985435f48277a8abf",
+      "counts": {
+        "records": 24200,
+        "deaths": 0,
+        "reviveSteps": 0,
+        "retreats": 0,
+        "retreatRoutes": 0,
+        "restSitsTraced": 0,
+        "restInterrupts": 0,
+        "betweenFightHeals": 0,
+        "powderRestCasts": 0,
+        "vendorBuys": 0,
+        "pullPlans": 6,
+        "patrolWaits": 0,
+        "emergencyDecisions": 0,
+        "atTargetPulls": 0,
+        "lifePotions": 7,
+        "manaPotions": 0,
+        "shieldScrolls": 0,
+        "speedScrolls": 2,
+        "runningScrolls": 5,
+        "helpItemsSupplied": 3,
+        "binds": 2,
+        "soulHeals": 0
+      }
     }
   ]
 }
