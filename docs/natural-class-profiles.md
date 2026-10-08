@@ -3477,7 +3477,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       after it.
     - Bundle: the seven pre-commit checks pass and Fast passes (run cp34-fast).
       Aion.GameServer.Tests was not run: tests/Aion.Bots did not change.
-- [ ] **CP-35 - A skill catalog generated from the shipped data, and the profile
+- [x] **CP-35 - A skill catalog generated from the shipped data, and the profile
   validator.** Depends: CP-08, CP-14
   - Work: This item edits existing bot files, so it waits for the first baselines (CP-08).
     Java first: skillengine/properties/FirstTargetRangeProperty.java:19-64,
@@ -3511,6 +3511,50 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     2219 is 20 m with pistol 101800181 and of Ferocious Strike 2864 is 2.5 m with sword
     100000094; Surprise Attack 3196 is reported as a chain opener; the validator rejects one
     fixture profile per rule.
+  - 2026-10-07: done. Java read as the item names it: FirstTargetRangeProperty adds the
+    attack range in meters when the template sets awr; ChainSkills keeps the current and
+    the previous category; ChainCondition accepts a precategory that matches either, and
+    resets on expiry or on another chain's first step; Skill.canUseSkill resets the chain
+    on a cast with no category.
+    - **Built.** Sc/Classes/NaturalSkillCatalog.cs: AutoLearned and AutoLearnedCastable
+      (the class's own skill-tree rows, and for a second class its starter's rows to level
+      9), Build (one row per role, refusing a skill the class does not auto-learn or one
+      that is also excluded), Row, Reach and IsChainOpener, and CommonExcluded: Return
+      243, Bandage Heal 245 and Escape 302, which every class auto-learns at level 1 and no
+      rotation holds. Sc/Classes/NaturalProfileValidator.cs: Problems and Require, the five
+      rules of the Work line; the rotation lines are a parameter, because CP-36 defines
+      them. NaturalPriestSkill has eight optional trailing fields (target kind, cast
+      millis, required weapon groups, add-weapon-range, self count, activation, counter
+      status, out-of-combat only) and NaturalCombatObservation two (weapon attack range
+      and speed, in millis). No caller passes any of them.
+    - **Where a row's fields come from:** mana from the mp condition (the templates hold
+      it under endconditions) or an mpuse action; range from first_target_range, 0 when
+      the template has none; chain category, precategory, time and selfcount from the
+      chain condition; DP from the dp condition; the reagent from the itemuse action; cast
+      time from the template's duration; out-of-combat from a combatcheck condition.
+    - **Proof by rule (n): no unit test.** A one-time check was run from an uncommitted
+      test file and removed (run/cp/CP-35/check-a1.log and check-a2.log). The generator
+      reproduces all 8 rows of NaturalPriestSkills.All and all 50 of
+      NaturalClericSkills.All in the thirteen old fields, and no frozen row has a new
+      field set. The data fills them: 1614 has awr, six weapon groups, target TARGET and
+      range 1; 1838 has a 2,000 ms cast. Direct Shot 2219 has range 0 and reaches 20 m
+      with pistol 101800181 (attack range 20,000); Ferocious Strike 2864 reaches 2.5 m
+      with sword 100000094 (1,500). Surprise Attack 3196 is an opener (SRA_CHAINN_1TH);
+      Counterattack 3209 is a DODGE counter; Stealth 3222 is out of combat only. The
+      validator finds the Priest's profile to level 9 and the Cleric's to level 24 valid
+      with the common exclusions, and names the problem of one fixture per rule: a skill
+      with no role, an exclusion with no reason, a follow-up without its opener, a counter
+      and an out-of-combat skill in a rotation, a non-chain cast and another chain's opener
+      between an opener and its follow-up, and a spellbook on a Priest.
+    - **Read from the data for the later profile items** (check-a1.log lists every
+      castable skill of each starter to level 9): the Engineer's Rapidfire 2142 follows
+      Gunshot within 2,000 ms, not 3,000; the Artist's Fiery Descant 4300 is a CHARGE
+      skill, so no rotation may hold it; the Mage has two chains (Flame Bolt to Blaze,
+      Ice Chain to Frozen Shock); the Chanter's eight castable level-10 skills are the
+      ones its profile excludes.
+    - Guard: gate p, run guard-a1, identical to its baseline of 49cf15b60. Bundle: the
+      seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and Fast passes
+      (run cp35-fast).
 - [ ] **CP-36 - A table-driven combat policy for the new classes.** Depends: CP-19, CP-35
   - Work: Add Sc/Classes/NaturalRotationCombatPolicy.cs implementing INaturalCombatPolicy
     from one rule table per profile: ordered attack lists for adjacent and at range with
@@ -4927,3 +4971,10 @@ report what was done, what is blocked and what you need from me.
   30,693, c 96,166, hm 39,564, ax 15,762 records. The baseline sha is 49cf15b60. Finding for
   later items: no scope reaches a Priest's death any more. Phase C is complete. Next by rule
   (h): CP-35.
+- 2026-10-07 — Loop: CP-35 done. NaturalSkillCatalog builds a class's skill rows from the
+  shipped skill tree and templates, and NaturalProfileValidator holds the five rules a new
+  profile must pass. A one-time check, not committed (rule (n)): all 58 frozen Priest and
+  Cleric rows are reproduced; reach is 20 m for Direct Shot with the pistol and 2.5 m for
+  Ferocious Strike with the sword; one fixture per validator rule is refused. Guard guard-a1,
+  set p: identical. Seven checks, unit suite and Fast (cp35-fast) pass. Next by rule (h):
+  CP-36.

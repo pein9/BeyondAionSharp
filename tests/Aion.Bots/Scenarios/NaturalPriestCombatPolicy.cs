@@ -4,10 +4,23 @@ namespace Aion.Bots.Scenarios;
 
 /// <param name="DpCost">DP the skill needs and spends (Salvation: startconditions/dp).</param>
 /// <param name="ReagentItemId">Item the skill consumes (Herb Treatment, MP Recovery: actions/itemuse).</param>
+/// <param name="TargetKind">CP-35, filled by <see cref="Classes.NaturalSkillCatalog"/> and left at its default by the frozen
+/// hand-typed rows, as every field after it: the template's first target (<c>TARGET</c>, <c>ME</c>, <c>TARGETORME</c>,
+/// <c>POINT</c>).</param>
+/// <param name="CastMillis">The template's cast time.</param>
+/// <param name="RequiredWeaponGroups">The item groups one of which must be held (startconditions/weapon); null for none.</param>
+/// <param name="AddWeaponRange">The server adds the main-hand weapon's attack range to <paramref name="Range"/> (awr).</param>
+/// <param name="SelfCount">How often the chain step may be cast in a row (chain/selfcount); 0 without a chain.</param>
+/// <param name="Activation">The template's activation (<c>ACTIVE</c>, <c>CHARGE</c>, <c>TOGGLE</c>).</param>
+/// <param name="CounterStatus">The attack status that must just have happened (<c>DODGE</c>, <c>PARRY</c>, <c>BLOCK</c>).</param>
+/// <param name="OutOfCombatOnly">The template refuses the cast in combat (startconditions/combatcheck).</param>
 public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role, int ManaCost,
 	float Range, int CooldownId, int CooldownDeciseconds, string? ChainCategory = null,
 	string? RequiresChainCategory = null, int ChainWindowMillis = 0, int DpCost = 0,
-	int ReagentItemId = 0, int ReagentCount = 0)
+	int ReagentItemId = 0, int ReagentCount = 0,
+	string? TargetKind = null, int CastMillis = 0, IReadOnlyList<string>? RequiredWeaponGroups = null,
+	bool AddWeaponRange = false, int SelfCount = 0, string? Activation = null, string? CounterStatus = null,
+	bool OutOfCombatOnly = false)
 {
 	/// <summary>Skills cast on the bot itself; every other role targets the monster.</summary>
 	public bool TargetsSelf => Role is "heal" or "blessing" or "rejuvenation" or "salvation" or "herb" or "mp-recovery"
@@ -55,6 +68,9 @@ public static class NaturalPriestSkills
 /// recovered to <see cref="NaturalPriestCombatPolicy.EmergencyClearPercent"/> yet: sustain only.</param>
 /// <param name="ShieldScrollReady">NA-19: <see cref="NaturalHelpItemPolicy.DecideShield"/> chose an owned, ready
 /// Anti-Shock tier (HP at or below 50%, no shield active, not casting).</param>
+/// <param name="WeaponAttackRangeMillis">CP-35: the main-hand weapon's attack range, for a skill that adds it to its
+/// range. Unset until CP-39 fills it in the journey; the Priest's policy does not read it.</param>
+/// <param name="WeaponAttackSpeedMillis">CP-35: the main-hand weapon's attack speed; unset and unread likewise.</param>
 public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int Mp, int MaxMp,
 	bool Dead, bool Aggro, float? TargetDistance, int? TargetObjectId,
 	IReadOnlyDictionary<int, BotSkill> Learned, IReadOnlyDictionary<int, DateTimeOffset> Cooldowns,
@@ -65,7 +81,8 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	bool HasHotPotion = false, bool HotPotionReady = false, bool HotPotionActive = false,
 	bool Cornered = false, bool TargetAdjacent = false, bool InEmergency = false, bool TargetSeasoned = false,
 	bool TargetRanged = false, bool ConservativeRangedHold = false, int Dp = 0, bool? HasRejuvenation = null,
-	bool ShieldScrollReady = false, ushort? LastCancelledSkillId = null);
+	bool ShieldScrollReady = false, ushort? LastCancelledSkillId = null,
+	int? WeaponAttackRangeMillis = null, int? WeaponAttackSpeedMillis = null);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);
