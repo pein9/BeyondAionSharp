@@ -480,7 +480,7 @@ playing as recorded (NR-10 to NR-13). Then the Priest moves, then the Cleric, ea
 scopes re-recorded (rule (p)). Then the old rule is removed and the generic Cleric is played
 to the endpoint. The close of phase B is NR-21.
 
-- [ ] **NR-10 - The recovery ladder can say what the Priest's heal rule says.** Depends:
+- [x] **NR-10 - The recovery ladder can say what the Priest's heal rule says.** Depends:
   NR-02
   - Work: NaturalRotationRules and NaturalRecoveryStep are widened as Survey A2's table
     says for recovery: a second percentage for two or more attackers; an emergency entry
@@ -491,6 +491,48 @@ to the endpoint. The close of phase B is NR-21.
     class plays differently.
   - Proof: One-time check, not committed, of each new rule on a table that sets it; guard:
     gate p and the five class scopes identical.
+  - 2026-10-08: done. No server behavior is involved. Sc/Classes/
+    NaturalRotationCombatPolicy.cs alone is changed; no profile sets a new value.
+    - **A ladder step** (NaturalRecoveryStep) may now give: a second percentage for two or
+      more attackers (HpPercentMultiple); that it is for emergencies only (EmergencyOnly);
+      that a skill cancelled last is passed over for the next step until another cast
+      completes (PassOverWhenCancelled, read from the fight loop's last cancelled cast);
+      that the finisher may be cast in its place (FinishInstead); and that the run's heal
+      or life potion percentage replaces its own (FromRun). A table that takes a number
+      from the run must state the run's baseline, so the table still says what is played;
+      the policy refuses one that does not.
+    - **The rules** (NaturalRotationRules) may now give: a second emergency entry for two
+      or more attackers on a Seasoned target, ending as far above it as the ordinary
+      emergency ends above its own (EmergencySeasonedPairPercent); a finisher, the attack
+      cast in place of a marked step once the fight has had a recovery cast and the target
+      is at or below a percentage, which the run may replace (Finisher); the recovery role
+      whose cost is kept back from attacks, where today it is the first learned skill of
+      the ladder (ReserveRole); and a margin over that cost below which a mana potion is
+      drunk (ManaPotionReserveMargin).
+    - **Not carried over from the Priest's rule.** With a raised potion percentage, the
+      old rule kept the baseline percentage in three cases (no attacker yet, one attacker
+      on a target below 60% HP, the stun ready). They apply only to a tuning run and are
+      left out; at the baseline parameters the potion is drunk at 90% as before. The old
+      rule also asked for the mana potion before it left at critical HP; the table leaves
+      first.
+    - **One-time check, not committed** (run/nr/NR-10/check-a1.log, 21 cases, all as
+      expected on the first run), on the Cleric's own skill rows at level 25 with a table
+      that sets every new value. At 60% HP the bot attacks against one attacker and casts
+      Healing Grace against two; at 54% it casts Grace, and Healing Light when Grace was
+      cancelled last. In an emergency it casts Salvation while DP pays for it and Flash of
+      Recovery when not; Flash is not cast at 54% outside an emergency; Salvation is cast
+      at 24%. With a heal already cast in the fight and the target at 10% it casts Smite,
+      at 20% Grace, and Smite again when the run finishes at 25%; without an earlier heal,
+      or in an emergency, it does not finish. The run's heal percentage of 65 makes it heal
+      at 60%, and the run's potion percentage of 80 keeps the potion at 85%. With 70 MP
+      against a heal of 65 and a margin of 10 it drinks the mana potion; with no margin it
+      swings. The emergency is 55 to 65 against two on a Seasoned target and 35 to 45
+      otherwise. A table that states 60 for the run's heal percentage, and one that marks
+      a step for a finisher it does not name, are refused by name.
+    - **Guard, rule (c).** Run guard-a1, gate p and the five class scopes: all six
+      identical to their baselines (p 37,222, mage 23,555, warrior 24,199, artist 23,104,
+      engineer 24,580, scout 27,592). Bundle: the seven pre-commit checks pass,
+      Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run nr10-fast, 11 passed).
 - [ ] **NR-11 - The attack list can say what the Cleric's rotation says.** Depends: NR-10
   - Work: An opener brought forward while a follow-up it opens can be cast after it; a
     role with a least target HP; an upkeep for the time under attack only; the stand-off
@@ -801,3 +843,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   to its row. Full gate gate-a1, twelve scopes: identical, which also covers the Cleric's
   legs after NR-03 and NR-04. Seven checks, the two script tests and Fast (nr05-fast) pass.
   Phase A is closed. Next: NR-10, the recovery ladder widened to say the Priest's heal rule.
+- 2026-10-08 — Loop: NR-10 done. The recovery ladder can give a second percentage for two
+  attackers, an emergency-only step, a cancelled skill passed over, a finisher in a step's
+  place and a percentage from the run; the rules can give the emergency on a Seasoned
+  target, the reserve role and the mana potion's margin. No profile sets any of it. One-time
+  check of 21 cases on the Cleric's skill rows, not committed. Guard guard-a1, p and five
+  class scopes: identical. Seven checks, unit suite and Fast (nr10-fast) pass. Next: NR-11,
+  the attack list widened to say the Cleric's rotation.

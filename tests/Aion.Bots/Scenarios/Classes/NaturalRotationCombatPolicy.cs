@@ -11,9 +11,36 @@ public enum NaturalRecoveryKind
 	Skill,
 }
 
+/// <summary>Which of the run's parameters may replace a step's percentage (NR-10). At the baseline parameters the
+/// run's value is the table's own, so the table still says the number.</summary>
+public enum NaturalRunPercent
+{
+	/// <summary>The table's percentage stands.</summary>
+	None,
+	/// <summary>The run's heal percentages, for one attacker and for two or more.</summary>
+	Heal,
+	/// <summary>The run's life potion percentage.</summary>
+	LifePotion,
+}
+
 /// <summary>One step of the recovery ladder: used in a fight when HP is at or below <paramref name="HpPercent"/>.</summary>
 /// <param name="Role">The skill role of a <see cref="NaturalRecoveryKind.Skill"/> step.</param>
-public sealed record NaturalRecoveryStep(NaturalRecoveryKind Kind, int HpPercent, string? Role = null);
+/// <param name="HpPercentMultiple">NR-10: the percentage against two or more attackers; null for the same one.</param>
+/// <param name="EmergencyOnly">NR-10: the step is tried in an emergency and at no other time.</param>
+/// <param name="PassOverWhenCancelled">NR-10: a skill step whose skill was the cast cancelled last is passed over for
+/// the next step, until another cast completes (a cancelled cast did nothing and started no cooldown).</param>
+/// <param name="FinishInstead">NR-10: when the step is due outside an emergency, the table's finisher is cast in its
+/// place if its conditions hold.</param>
+/// <param name="FromRun">NR-10: the run's parameter that replaces the percentage.</param>
+public sealed record NaturalRecoveryStep(NaturalRecoveryKind Kind, int HpPercent, string? Role = null, int? HpPercentMultiple = null,
+	bool EmergencyOnly = false, bool PassOverWhenCancelled = false, bool FinishInstead = false,
+	NaturalRunPercent FromRun = NaturalRunPercent.None);
+
+/// <summary>NR-10: the attack cast in place of a recovery step that says so, once the fight has had a recovery cast and
+/// the target is nearly dead: the kill ends the damage sooner than another heal.</summary>
+/// <param name="TargetHpPercent">The target's HP at or below which the finisher is cast.</param>
+/// <param name="FromRun">The run's finish percentage replaces <paramref name="TargetHpPercent"/>.</param>
+public sealed record NaturalFinisher(string Role, int TargetHpPercent, bool FromRun = false);
 
 /// <summary>A buff the rotation keeps up: the best learned skill of the role, cast when the client's effect list is
 /// observed without it.</summary>
@@ -47,10 +74,18 @@ public enum NaturalAutoAttack
 /// <param name="HoldOpenChain">CP-48: while a follow-up of the open chain only cools down and clears inside its chain time,
 /// nothing else is cast or swung, and outside an emergency no recovery skill is cast while a follow-up is ready or so
 /// awaited (the Engineer's Rapidfire, twice inside 2 s each: a Direct Shot or a Bullet Resistance between resets it).</param>
+/// <param name="EmergencySeasonedPairPercent">NR-10: the emergency's entry against two or more attackers on a Seasoned
+/// or better target; it ends as far above this as the ordinary emergency ends above its entry. Null for one entry.</param>
+/// <param name="Finisher">NR-10: the attack cast in place of a recovery step marked for it; null for none.</param>
+/// <param name="ReserveRole">NR-10: the recovery role whose mana cost is kept back from attacks; null for the first
+/// learned skill of the ladder.</param>
+/// <param name="ManaPotionReserveMargin">NR-10: a mana potion is also drunk when mana is below the reserve role's cost
+/// and this much; null for the cheapest attack alone.</param>
 public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjacent, IReadOnlyList<string> AtRange,
 	IReadOnlyList<NaturalRotationUpkeep> Upkeep, IReadOnlyList<NaturalRecoveryStep> Recovery, int SwarmAttackers, int FleeHpPercent,
 	NaturalAutoAttack AutoAttack, string? ControlRole = null, int EmergencyPercent = 35, int EmergencyClearPercent = 45,
-	IReadOnlyDictionary<string, int>? OnlyWhenHurt = null, bool HoldOpenChain = false)
+	IReadOnlyDictionary<string, int>? OnlyWhenHurt = null, bool HoldOpenChain = false, int? EmergencySeasonedPairPercent = null,
+	NaturalFinisher? Finisher = null, string? ReserveRole = null, int? ManaPotionReserveMargin = null)
 {
 	/// <summary>The table's two attack lists as lines of skill ids, every rank of a role in level order, for
 	/// <see cref="NaturalProfileValidator"/>.</summary>
@@ -92,12 +127,24 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		IEnumerable<string> named = rules.Adjacent.Concat(rules.AtRange).Concat(rules.Upkeep.Select(upkeep => upkeep.Role))
 			.Concat(rules.OnlyWhenHurt?.Keys ?? [])
 			.Concat(rules.Recovery.Where(step => step.Kind == NaturalRecoveryKind.Skill).Select(step => step.Role ?? ""))
-			.Concat(rules.ControlRole == null ? [] : [rules.ControlRole]);
+			.Concat(rules.ControlRole == null ? [] : [rules.ControlRole])
+			.Concat(rules.Finisher == null ? [] : [rules.Finisher.Role])
+			.Concat(rules.ReserveRole == null ? [] : [rules.ReserveRole]);
 		foreach (string role in named.Distinct())
 			if (!this.catalog.Any(skill => skill.Role == role))
 				throw new InvalidDataException($"Rotation table {rules.Id} names the role '{role}', which its catalog does not hold.");
 		if (rules.EmergencyClearPercent < rules.EmergencyPercent || rules.SwarmAttackers < 1)
 			throw new InvalidDataException($"Rotation table {rules.Id} has an emergency or swarm limit that cannot be met.");
+		// NR-10: a number the run may replace is the run's baseline in the table, so the table still says what is played.
+		NaturalMauPolicyParameters baseline = NaturalMauPolicyParameters.Baseline;
+		foreach (NaturalRecoveryStep step in rules.Recovery)
+			if (step.FromRun == NaturalRunPercent.Heal && (step.HpPercent, step.HpPercentMultiple) != (baseline.HealSinglePercent, baseline.HealMultiplePercent) ||
+				step.FromRun == NaturalRunPercent.LifePotion && step.HpPercent != baseline.HotPotionPercent)
+				throw new InvalidDataException($"Rotation table {rules.Id} takes a recovery percentage from the run and states another than the run's baseline.");
+		if (rules.Finisher is { FromRun: true } finisher && finisher.TargetHpPercent != baseline.FinishTargetHpPercent)
+			throw new InvalidDataException($"Rotation table {rules.Id} takes its finish percentage from the run and states another than the run's baseline.");
+		if (rules.Recovery.Any(step => step.FinishInstead) && rules.Finisher == null)
+			throw new InvalidDataException($"Rotation table {rules.Id} marks a recovery step for a finisher it does not name.");
 	}
 
 	public string PolicyVersion(NaturalMauPolicyParameters parameters) => $"{rules.Id}:{parameters.Id}";
@@ -105,9 +152,11 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 	/// <summary>CP-56a: attackers at which the class leaves; a walk-in approach takes on no pack that reaches it.</summary>
 	public int SwarmAttackers => rules.SwarmAttackers;
 
-	public int EmergencyEnterPercent(int attackers, bool targetSeasoned) => rules.EmergencyPercent;
+	public int EmergencyEnterPercent(int attackers, bool targetSeasoned) =>
+		attackers >= 2 && targetSeasoned && rules.EmergencySeasonedPairPercent is int pair ? pair : rules.EmergencyPercent;
 
-	public int EmergencyExitPercent(int attackers, bool targetSeasoned) => rules.EmergencyClearPercent;
+	public int EmergencyExitPercent(int attackers, bool targetSeasoned) =>
+		EmergencyEnterPercent(attackers, targetSeasoned) + (rules.EmergencyClearPercent - rules.EmergencyPercent);
 
 	public NaturalCombatChoice Decide(NaturalCombatObservation state, DateTimeOffset now, NaturalMauPolicyParameters parameters)
 	{
@@ -151,16 +200,22 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		{
 			foreach (NaturalRecoveryStep step in rules.Recovery)
 			{
-				if (!state.InEmergency && !HpAtOrBelow(step.HpPercent)) continue;
-				string at = state.InEmergency ? "Emergency" : $"HP is at or below {step.HpPercent}%";
+				int percent = StepPercent(step, state, parameters);
+				if (!state.InEmergency && (step.EmergencyOnly || !HpAtOrBelow(percent))) continue;
+				string at = state.InEmergency ? "Emergency" : $"HP is at or below {percent}%";
 				switch (step.Kind)
 				{
 					case NaturalRecoveryKind.ShieldScroll when state.ShieldScrollReady:
 						return Choice("shield-scroll", null, $"{at}: use the owned Anti-Shock damage shield.");
 					case NaturalRecoveryKind.LifePotion when LifePotionUsable(state):
 						return Choice("hot-potion", null, $"{at}: drink the owned life potion.");
-					case NaturalRecoveryKind.Skill when (state.InEmergency || !ChainHeld()) && Best(step.Role!, state) is { } recovery && Ready(recovery):
-						return Cast(recovery, $"{at}: {step.Role}.");
+					case NaturalRecoveryKind.Skill when (state.InEmergency || !ChainHeld()) && Best(step.Role!, state) is { } recovery:
+						// NR-10: a cast that was cancelled did nothing; the next step is tried before the same cast again.
+						if (step.PassOverWhenCancelled && state.LastCancelledSkillId == recovery.Id) break;
+						if (step.FinishInstead && Finish() is { } finish)
+							return Cast(finish, $"The target is at or below {FinishPercent(parameters)}% HP and this fight has had its recovery cast: finish it.");
+						if (Ready(recovery)) return Cast(recovery, $"{at}: {step.Role}.");
+						break;
 				}
 			}
 			// Nothing above was available at its threshold. At the flee limit the class leaves; cornered, it fights on.
@@ -169,6 +224,8 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		}
 		if (ManaShort(state) && state.HasManaPotion && state.ManaPotionReady)
 			return Choice("mana-potion", null, "Mana is below the cheapest attack; consume an owned mana potion.");
+		if (ReserveShort(state) && state.HasManaPotion && state.ManaPotionReady)
+			return Choice("mana-potion", null, "Mana is below the recovery reserve; consume an owned mana potion.");
 		if (state.TargetObjectId is not int || state.TargetDistance is not float distance)
 		{
 			if (state.Aggro || state.NearbyAggressors > 0) return Choice("defend", null, "Aggression observed without a target; reacquire before pulling.");
@@ -209,6 +266,12 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		return holds
 			? Choice("wait", null, "Nothing is ready; hold position until a cooldown clears.")
 			: Choice("approach", null, "Nothing is ready and the target is out of reach: close in.");
+
+		// NR-10: the finisher, when the table names one: outside an emergency, after a recovery cast of this fight, on a
+		// target at or below its percentage.
+		NaturalPriestSkill? Finish() => rules.Finisher is { } finisher && !state.InEmergency && state.HasHealedThisFight &&
+			state.TargetObjectId != null && state.TargetHpPercent is > 0 and int targetHp && targetHp <= FinishPercent(parameters) &&
+			Best(finisher.Role, state) is { } skill && Ready(skill) ? skill : null;
 
 		NaturalPriestSkill? Upkeep(bool duringFight)
 		{
@@ -323,12 +386,31 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 
 	/// <summary>The mana kept back from attacks: the best learned recovery skill's cost and the run's extra. A class with no
 	/// learned recovery skill keeps nothing back.</summary>
-	private int Reserve(NaturalCombatObservation state, NaturalMauPolicyParameters parameters)
-	{
-		NaturalPriestSkill? recovery = rules.Recovery.Where(step => step.Kind == NaturalRecoveryKind.Skill)
+	private int Reserve(NaturalCombatObservation state, NaturalMauPolicyParameters parameters) =>
+		ReserveSkill(state) is { } recovery ? recovery.ManaCost + parameters.ManaReserveExtra : 0;
+
+	/// <summary>The recovery skill the reserve is kept for: the table's reserve role (NR-10), or the first learned skill of
+	/// the ladder.</summary>
+	private NaturalPriestSkill? ReserveSkill(NaturalCombatObservation state) => rules.ReserveRole != null ? Best(rules.ReserveRole, state)
+		: rules.Recovery.Where(step => step.Kind == NaturalRecoveryKind.Skill)
 			.Select(step => Best(step.Role!, state)).OfType<NaturalPriestSkill>().FirstOrDefault();
-		return recovery == null ? 0 : recovery.ManaCost + parameters.ManaReserveExtra;
-	}
+
+	/// <summary>NR-10: the table asks for a mana potion below the reserve, and mana is below the reserve skill's cost and
+	/// the table's margin.</summary>
+	private bool ReserveShort(NaturalCombatObservation state) => rules.ManaPotionReserveMargin is int margin &&
+		ReserveSkill(state) is { } recovery && state.Mp < recovery.ManaCost + margin;
+
+	/// <summary>NR-10: the percentage a ladder step is due at: the run's parameter when the step names one, else the
+	/// table's, with its second value against two or more attackers.</summary>
+	private static int StepPercent(NaturalRecoveryStep step, NaturalCombatObservation state, NaturalMauPolicyParameters parameters) => step.FromRun switch
+	{
+		NaturalRunPercent.Heal => state.NearbyAggressors >= 2 ? parameters.HealMultiplePercent : parameters.HealSinglePercent,
+		NaturalRunPercent.LifePotion => parameters.HotPotionPercent,
+		_ => state.NearbyAggressors >= 2 && step.HpPercentMultiple is int multiple ? multiple : step.HpPercent,
+	};
+
+	private int FinishPercent(NaturalMauPolicyParameters parameters) =>
+		rules.Finisher is { FromRun: true } ? parameters.FinishTargetHpPercent : rules.Finisher?.TargetHpPercent ?? 0;
 
 	/// <summary>The class has attacks that cost mana and cannot pay for the cheapest learned one.</summary>
 	private bool ManaShort(NaturalCombatObservation state)
