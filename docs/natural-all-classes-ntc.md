@@ -228,6 +228,72 @@ the route's quests; per-class reward lists on Q2009, Q2900, Q2947 and Q28505. No
 out; no leg casts it. The ring course's boost skill 265 and the poison of leg 2 (skill 255)
 have no class input.
 
+### Survey A2: what the Priest and the Cleric decide in their own code (NR-02, 2026-10-08)
+
+Read: Sc/NaturalPriestCombatPolicy.cs (the fight rule and the two hand-typed skill tables
+with it and in Sc/NaturalClericSkills.cs), Sc/Classes/NaturalRotationCombatPolicy.cs (the
+table rule), Sc/Classes/NaturalPriestProfile.cs (the two adapters), Sc/Classes/
+NaturalRestRules.cs with NaturalPowderRestPolicy, Sc/NaturalMauPolicyParameters.cs, and the
+fight loop in Sc/NaturalIshalgenJourney.Combat.cs. No server behavior is involved; no Java
+was needed.
+
+**What is already shared.** The rest is one rule for every class (NaturalRestRules, CP-17
+and CP-37). Ranges, readiness, movement, campaign numbers, restock, gear, the patrol rule
+and the buff kept up between fights are profile data for the Priest line as for the others.
+The fight loop asks the profile's policy and does not know which kind it is, except in the
+places listed last.
+
+**What the Priest's fight rule decides that the table cannot say.**
+
+| The Priest's and the Cleric's rule | The table today | How the table is widened, for every class |
+|---|---|---|
+| Heal at 55% HP against one attacker and at 70% against two or more. | One percentage a ladder step. | A step may give a second percentage for two or more attackers. |
+| An emergency starts at 35%, or at 55% with two attackers on a Seasoned target, and ends ten points higher. | One emergency percentage. | The emergency may give a second entry for two attackers on a Seasoned target. |
+| Salvation, paid with DP, in an emergency or at 25% HP. Flash of Recovery in an emergency only. | A skill step is tried at its percentage and in every emergency. | A step may be for emergencies only. The DP cost is already checked. |
+| Healing Grace is passed over once after it was cancelled, for the shorter Healing Light. | No memory of a cancelled cast. | A cast-time recovery skill that was cancelled last is passed over for the next step. |
+| The finisher: when a heal is due outside an emergency, the fight has already had one, and the target is at or below 15% HP, Smite is cast instead. | Nothing. | The rules may name a finishing role and a target percentage. |
+| A mana potion when mana is below the heal's cost plus 10. | A mana potion when the cheapest attack cannot be paid. | The mana potion is also due when the recovery reserve cannot be paid. |
+| Leave at 25% HP when no heal can be cast, and at 30% when neither heal nor potion is there. | One flee percentage, when no ladder step is available. | Covered: the flee percentage, 30. |
+| Light of Rejuvenation is kept up while the bot is being hit. | Upkeep before the first hit, or during the fight from the moment a target is selected. | An upkeep may be for the time under attack only. |
+| The opener Smite goes first while its follow-up is learned, off cooldown and payable with the reserve; otherwise it is the filler at the end. | Fixed order. | An attack role may be marked as an opener that is brought forward while a follow-up it opens can be cast after it. |
+| The Holy Servant is summoned only on a target above 50% HP. | A role may depend on the bot's own HP only. | A role may be given a least target HP. |
+| Against a target that attacks from range: hold while it is within 12 m or two attackers are there, when the run asks for the hold. | A stand-off holds unless the target is ranged. | The stand-off answer reads the profile's ranged hold. |
+| The run's parameters (the Mau course) set the two heal percentages, the potion percentage, the finisher percentage and the extra mana reserve. | Only the extra mana reserve is read. | A ladder step and the finisher may take their percentage from a run parameter, so the tuning course works for any class. |
+
+Not carried over, because the fight loop never reaches them: the rule's between-fights
+answers (rest below 50% mana, heal below 90% HP, the blessing with no target) are the
+rest's and the buff check's, and its instant life potion step reads a field the fight loop
+never sets.
+
+**The skills.** The Priest's eight rows and the Cleric's 42 more are typed by hand; every other
+class has a catalog generated from the skill templates with a role per skill id. Three
+members of the shared skill record decide by role name: TargetsSelf, IsPowderRest and
+IsRestSkill. A generated row carries the template's own target, and the rest rule can name
+its rest-only roles.
+
+**The rest.** NaturalPowderRestPolicy names the Cleric's roles: herb and mp-recovery (cast
+with Lesser Odella Powder, cancelled by any hit, sharing one cooldown), penance (HP for
+mana, from 70% HP) and heal. As data: reagent skills for health and for mana, and a skill
+that trades health for mana.
+
+**The fight loop's own branches for the Priest line** (Sc/NaturalIshalgenJourney.Combat.cs,
+`profile.TableDriven`): the chain is tracked with an expiry instead of the table's chain
+state; the weapon swings at a fixed interval instead of the weapon's speed; the wait after
+a cast leaves out the animation's last hit; the observation carries HasBlessing and
+HasRejuvenation instead of the list of active effects; and `healedThisFight` is set by the
+role name "heal". With the Priest line on the table these branches have one side left.
+
+**What is tied to the old rule and goes with it.** NaturalPriestCombatPolicyTests and the
+policy's cases in NaturalIshalgenPotionPolicyTests; the Mau course (SimulationMauCourseTests
+and scripts/sim/run-mau-phase*.ps1), which keeps running on the run parameters the table
+reads; tools/Aion.LiveBots, which reads NaturalPriestSkills.All; and the Chanter's
+placeholder profile, which borrows the Priest's adapter.
+
+**The accepted run, for scale.** altgard-rc-complete-s1 was one continuous run of
+73,044,001 game ms (20 h 17 min) from creation to the Altgard endpoint
+(sim-snapshot.ps1 -Action Capture -ContinuousJourney -LaterCapital, fourteen stages), and
+the Abyss entry was one more capture from it. The generic Cleric is played the same way.
+
 ## NR checklist
 
 ### A. Open
@@ -254,7 +320,7 @@ have no class input.
   - 2026-10-08: done. No code changed. "Survey A1" stands above the checklist, and phase C
     has thirteen items, NR-30 to NR-42, written from it. Seven pre-commit checks pass
     (run/nr/NR-01/checks.log).
-- [ ] **NR-02 - Survey: what the Priest and the Cleric do that the table policy does not.**
+- [x] **NR-02 - Survey: what the Priest and the Cleric do that the table policy does not.**
   Depends: NR-00
   - Work: No code. Set NaturalPriestCombatPolicy, the journey's rest and heal code, the
     buff check, the mana rules and the Cleric's leg-specific fights (air combat, the arena
@@ -262,6 +328,9 @@ have no class input.
     class profile. List what the table cannot say today, and for each say how the table is
     widened for every class (rule (s)). Write "Survey A2" and the items of phase B from it.
   - Proof: The list stands in this document; phase B has its items; seven checks pass.
+  - 2026-10-08: done. No code changed. "Survey A2" stands above the checklist, and phase B
+    has twelve items, NR-10 to NR-21, written from it. Seven pre-commit checks pass
+    (run/nr/NR-02/checks.log).
 - [ ] **NR-03 - The off hand in keep-and-sell and in upgrades.** Depends: NR-00
   - Work: Java first (Equipment.java, as read for CP-68). The inventory policy keeps what
     the class's off-hand mode holds: one shield for mode Shield, two weapons for mode
@@ -285,15 +354,96 @@ have no class input.
 
 ### B. The Cleric on the generic rules
 
-- [ ] **NR-10 - Phase B's items.** Depends: NR-02
-  - Work: Written by NR-02 (rule (q)). They must end with: the Priest and the Cleric
-    profiles built from a generated catalog and a rule table like every other class;
-    NaturalPriestCombatPolicy and the Priest-only rest code no longer called; the seven
-    scopes re-recorded (rule (p)); and a fresh-create run of the generic Priest who becomes
-    a Cleric, through every leg to the endpoint, captured leg by leg under new names and
-    preserved at the end as ntc-ready-cleric-s1.
-  - Proof: Each item's own; the phase closes with the gate on the re-recorded scopes and
-    the Verify of ntc-ready-cleric-s1.
+Written by NR-02 from Survey A2 (rule (q)). The table is widened first, with every class
+playing as recorded (NR-10 to NR-13). Then the Priest moves, then the Cleric, each with its
+scopes re-recorded (rule (p)). Then the old rule is removed and the generic Cleric is played
+to the endpoint. The close of phase B is NR-21.
+
+- [ ] **NR-10 - The recovery ladder can say what the Priest's heal rule says.** Depends:
+  NR-02
+  - Work: NaturalRotationRules and NaturalRecoveryStep are widened as Survey A2's table
+    says for recovery: a second percentage for two or more attackers; an emergency entry
+    for two attackers on a Seasoned target; a step for emergencies only; a cancelled
+    cast-time recovery skill passed over once; the finishing role with its target
+    percentage; the mana potion due below the recovery reserve; a percentage that may come
+    from a run parameter. Every new value is unset in the five tables that exist, so no
+    class plays differently.
+  - Proof: One-time check, not committed, of each new rule on a table that sets it; guard:
+    gate p and the five class scopes identical.
+- [ ] **NR-11 - The attack list can say what the Cleric's rotation says.** Depends: NR-10
+  - Work: An opener brought forward while a follow-up it opens can be cast after it; a
+    role with a least target HP; an upkeep for the time under attack only; the stand-off
+    answer reading the profile's ranged hold. Unset in the five tables.
+  - Proof: One-time check of each rule; guard: gate p and the five class scopes identical.
+- [ ] **NR-12 - The skill record and the rest rule without role names.** Depends: NR-10
+  - Work: Whether a skill is cast on the bot comes from the catalog's target kind for
+    every row, and the rest rule names its rest-only skills by kind (a reagent skill for
+    health, one for mana, a skill that trades health for mana) with the numbers
+    NaturalPowderRestPolicy holds. TargetsSelf, IsPowderRest and IsRestSkill no longer
+    read a role name. The Priest and the Cleric rest as they did.
+  - Proof: The full gate identical: the rest is unchanged for every class.
+- [ ] **NR-13 - Generated catalogs for the Priest and the Cleric.** Depends: NR-12
+  - Work: The Priest's and the Cleric's catalogs are generated from the skill templates
+    with a role per skill id, as the other classes' are, with the reason for every active
+    skill left out. A one-time check sets each generated row beside its hand-typed row
+    (cost, range, cooldown group and time, chain category, required category, chain time,
+    DP and reagent); every difference is written into this document with the template
+    line, and the template wins. The profiles still use the old fight rule in this item.
+  - Proof: The list of differences; when it is empty the full gate is identical, and when
+    it is not, the scopes it changes are re-recorded (rule (p)).
+- [ ] **NR-14 - The Priest on the table.** Depends: NR-11, NR-13
+  - Work: Write the Priest's rule table into this document first, then build it:
+    NaturalPriestProfile.Priest takes NaturalRotationCombatPolicy with the generated
+    catalog. The roles, percentages and order are the old rule's, said by the table. The
+    Chanter's placeholder takes the same table. SIM probe rows priest-1 and priest-7 on
+    the probe accounts, as the other starters have.
+  - Proof: The two probe rows pass, with the heal, the stun and the slow shown in play;
+    guard: the five class scopes identical. The Priest's scopes are NR-15's.
+- [ ] **NR-15 - The Priest's Ishalgen replayed and re-recorded.** Depends: NR-14
+  - Work: No code beyond one small change (rule (e)). Replay scope m (the Priest from
+    creation to Munin); two attempts. Compare its ledger with the old baseline's run:
+    deaths, retreats, potions, game time. Then re-record p and m twice (rule (p)). Scope b
+    changes too and is left out of every guard until NR-17 re-records it.
+  - Proof: Scope m reaches Munin; p and m repeat in two passes each.
+- [ ] **NR-16 - The Cleric on the table.** Depends: NR-15
+  - Work: Write the Cleric's rule table into this document first, then build it, with the
+    Cleric's rest by NR-12's kinds. SIM probe rows on prepared Clerics at levels 10, 16,
+    20 and 25 against monsters of the legs: the chain Smite, Flashbolt, Divine Spark; the
+    servant; the heal ladder with Salvation; Root before a retreat.
+  - Proof: The four probe rows pass with those shown in play; guard: p, m and the five
+    class scopes identical.
+- [ ] **NR-17 - The Cleric's scopes replayed and re-recorded.** Depends: NR-16
+  - Work: No code beyond one small change an attempt. Replay b, l1, c, hm and ax, each to
+    its endpoint, two attempts each; a scope that fails twice becomes a lettered item with
+    the step where it stopped. Compare each ledger with the old one. Then re-record the
+    five twice (rule (p)).
+  - Proof: Every scope reaches its endpoint and repeats in two passes.
+- [ ] **NR-18 - The old rule removed.** Depends: NR-17
+  - Work: Delete NaturalPriestCombatPolicy.Decide and CandidateActions, the StaticPolicy
+    adapter, the two hand-typed skill tables and the one-sided branches of the fight loop
+    listed in Survey A2. tools/Aion.LiveBots reads the profile's catalog. The tests of the
+    deleted rule go with it; the Mau course runs on the table with the run's parameters.
+    Nothing plays differently.
+  - Proof: The whole solution builds and its tests pass; the full gate identical.
+- [ ] **NR-19 - The generic Cleric from creation to the Altgard endpoint.** Depends: NR-18
+  - Work: One continuous capture from committed code (sim-snapshot.ps1 -Action Capture
+    -ContinuousJourney -LaterCapital), named altgard-complete-cleric-s1. Two attempts; a
+    stop inside a leg becomes a lettered item for that leg. Acceptance from the receipt
+    before Verify: a Cleric at the Altgard endpoint with the accepted run's quests
+    complete; the ledger of deaths, retreats, potions and game time beside the accepted
+    run's 20 h 17 min.
+  - Proof: sim-snapshot.ps1 -Action Verify -Name altgard-complete-cleric-s1 passes.
+- [ ] **NR-20 - The generic Cleric through the Abyss entry.** Depends: NR-19
+  - Work: Capture the ax leg from altgard-complete-cleric-s1 as ntc-ready-cleric-s1. The
+    leg's start facts that are receipts of the accepted run are met by the new run or
+    become lettered items here; phase C opens them for other classes.
+  - Proof: Verify of ntc-ready-cleric-s1: a Cleric of level 25 or higher, alive at Morheim
+    Ice Fortress, with Q2945, Q2946, Q2947 and Q2042 complete.
+- [ ] **NR-21 - Phase B closed.** Depends: NR-10 to NR-20
+  - Work: No code. The full gate on every recorded scope. Write into this document the
+    seven re-recorded baselines with their commits and record counts, and the generic
+    Cleric beside the accepted one: game time, deaths, retreats and consumables.
+  - Proof: Every scope identical to its baseline.
 
 ### C. The legs opened by class line
 
@@ -503,3 +653,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   reward lists and only the dispatch quest has a class limit. The trial is already fought by
   the class's own rules. Phase C has its items, NR-30 to NR-42. Docs only; seven checks pass.
   Next: NR-02, the survey of the Priest's and the Cleric's own fight and rest code.
+- 2026-10-08 — Loop: NR-02 done. Survey A2 is written: what the Priest's fight rule decides
+  that the table cannot say yet (heal by attackers, the emergency on a Seasoned
+  target, emergency-only steps, a cancelled heal passed over, the finisher, the opener
+  brought forward, the servant's target HP, upkeep under attack, the ranged hold, the run's
+  parameters), three role-name reads in the skill record, the powder rest's roles, and five
+  one-sided branches of the fight loop. The rest, the ranges and the gear are already
+  shared. Phase B has its items, NR-10 to NR-21. Docs only; seven checks pass. Next: NR-03,
+  the off hand in keep-and-sell and in upgrades.
