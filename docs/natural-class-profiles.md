@@ -365,6 +365,23 @@ names a scope for the code it moves; this table is where to check that the scope
 Reached by no scope: the Ishalgen vendor buy, a mana potion drunk by the Priest, a patrol
 wait by the Priest, a revive at the map's first spawn point, the village's Soul Healer,
 and the environment-gated Mau course and Cleric encounter.
+
+Since the re-record of CP-29a (49cf15b60, the table gear rules) the columns p, m and b
+read differently; l1, c, hm and ax are as the table has them. From the comparer's counts,
+old value first:
+
+- p: retreat decisions 2 to 0, between-fight heals 1 to 3, pull plans 5 to 9, life potions
+  18 to 16, running scrolls 7 to 8.
+- m: deaths 1 to 0, soul heals 1 to 0, emergency decisions 7 to 0, walks to a rest spot 6
+  to 2, pull plans 148 to 103, life potions 69 to 36, shield scrolls 3 to 1, speed scrolls
+  7 to 6, running scrolls 20 to 21. So no scope reaches a Priest's death, its revive or a
+  soul heal any more; c and hm still reach a Cleric's death and c its soul
+  heal.
+- b: retreat decisions 3 to 2, walks to a rest spot 1 to 3, between-fight heals 1 to 3,
+  pull plans 112 to 132, patrol waits 21 to 36, life potions 26 to 24, speed scrolls 6 to
+  7, running scrolls 8 to 9.
+- The rows the comparer does not count (game time, fight decisions, gear equips, binds,
+  returns, vendor trades) were not measured again for p, m and b.
 - The gate pins its environment and writes it beside each baseline: `NA_HELP_ITEMS` unset
   for every line, because help items are on for every class line (Standing rules),
   `AION_BOT_DASHBOARD_PORT` and `AION_SIM_PROCESS_KEY`. A run with `NA_HELP_ITEMS=0` is not
@@ -3016,7 +3033,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       type over a level-8 piece of a lower type.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,814 with 16 skipped),
       and Fast passes (run cp29-fast). The guard of rule (c), gate p, is in the gate run.
-- [ ] **CP-29a - The Priest and the Cleric on the table gear rules.** Depends: CP-29
+- [x] **CP-29a - The Priest and the Cleric on the table gear rules.** Depends: CP-29
   - Work: The operator, 2026-10-07: "I'd like the Priest/Cleric to be no different from the
     others. Nothing special except of course what needs to be different (playstyle,
     mechanics, etc)." This replaces the last sentence of CP-29's Work. Give the Priest and
@@ -3125,6 +3142,20 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       journey reads and passes the Cleric's rules.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with
       16 skipped) and Fast passes on its second run (cp29a-fast-a2), after the probe edit.
+  - 2026-10-07: done. Code commit 49cf15b60. **The seven scopes are re-recorded at
+    49cf15b60** (49cf15b605650c6dea264ae8eff139641a4ab26e), run record-a1 with -Record
+    -ReRecord on a clean tree (run/cp/CP-29a/record-a1/verdict.json): verdict pass, every
+    scope repeats in its two passes, and each digest equals the one gate-a1 played, so
+    every scope was played three times with one result. This is the one re-record CP-Q22
+    allows. Every row carries 49cf15b60, the baseline sha from here on, and the journey is
+    held to these baselines. The traces are in
+    run/cp/baseline/49cf15b605650c6dea264ae8eff139641a4ab26e/ and in the second copy.
+    - Records: p 37,222, m 112,397, b 144,048, l1 30,693, c 96,166, hm 39,564, ax 15,762.
+      Digests: p 013a56ff..., m 4dc9a548..., b 778a20a6..., l1 de1137ed..., c ac176b83...,
+      hm 67286f62..., ax a5c564a2.... l1 and hm keep the digests of be9837cd8.
+    - Step counts against the rows of be9837cd8: l1, c, hm and ax are equal in all 21. The
+      changes of p, m and b are listed under the scope table of section 8.
+    - CP-Q24 was answered the same day: item level first. No snapshot was recaptured.
 - [x] **CP-30 - Parameterize the capital scenario by the contract.** Depends: CP-08, CP-25
   - Work: This item edits an existing scenario file, so it waits for the first baselines
     (CP-08). Parameterize CapitalAscensionScenario.RunAsmodianAsync by the contract: the
@@ -4273,6 +4304,9 @@ as replaced and the Answer rules.
     Cleric wears on those legs and needs the baselines re-recorded again.
   - Also asked with it: the Warrior now takes the sword before the mace (the table's
     weapon order), where the physical stat alone preferred the mace by 4 points.
+  - Answer (2026-10-07): "item level first is fine, keep going". Armor ranks by item
+    level first and by the class's type second, for every class. The operator was told of
+    the Warrior's sword before the mace in the same report and did not object.
 
 ## Blocked / questions for the operator
 
@@ -4887,3 +4921,9 @@ report what was done, what is blocked and what you need from me.
   baseline's counts; p, m and b change from Q2001's reward (leather), and the Priest reaches
   Munin with no death and 36 potions against 69. Seven checks, unit suite and Fast
   (cp29a-fast-a2) pass. The re-record of the seven scopes follows from this commit.
+- 2026-10-07 — Operator: CP-Q24 answered, "item level first is fine, keep going". Loop:
+  CP-29a done. Code commit 49cf15b60; the seven scopes re-recorded there, run record-a1: pass,
+  every scope repeats and equals what gate-a1 played. p 37,222, m 112,397, b 144,048, l1
+  30,693, c 96,166, hm 39,564, ax 15,762 records. The baseline sha is 49cf15b60. Finding for
+  later items: no scope reaches a Priest's death any more. Phase C is complete. Next by rule
+  (h): CP-35.
