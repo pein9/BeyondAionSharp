@@ -5172,7 +5172,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       (CP-66). Gate p, run guard-a1: identical to its baseline. The seven pre-commit
       checks pass, Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run cp64-fast,
       11 passed).
-- [ ] **CP-65 - Scout 1-9 at Munin, captured and verified as munin-scout-s1.** Depends:
+- [x] **CP-65 - Scout 1-9 at Munin, captured and verified as munin-scout-s1.** Depends:
   CP-64
   - Work: As CP-52 with -Class scout -Name munin-scout-s1. Acceptance: a dagger and leather
     pieces worn, nothing wearable and nothing of the help kit sold, the help items listed
@@ -5180,6 +5180,49 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     lettered checkpoint item.
   - Proof: sim-snapshot.ps1 -Action Verify -Name <the accepted name> passes as a level-9
     Scout, with CP_CLASS=scout and no NA_HELP_ITEMS emitted by the restore.
+  - 2026-10-08: done, first attempt. Snapshot **munin-scout-s1**, captured at c7c9d66cd
+    (CP-64's commit, bundle green) on a clean tree by run cp65-scout-a1
+    (run/cp/CP-65/capture-a1.log; evidence run/snapshots/_capture/cp65-scout-a1). Character
+    133266, 12,056,995 game ms (3 h 20 min 57 s), 132,995 trace records, dump SHA-256
+    d7fbbf19583413f03867fca2919ebb4733ee0dbad0935678c2f79270cc70ffa1, receipt SHA-256
+    933372ad9c8bd6647d76ed0095d4d24132449e0f52447122ce8a4578498e38b2, classLine scout in
+    snapshot.json.
+    - **Acceptance, from the receipt and the trace before Verify.** Class id 3, level 9,
+      728 HP; 41 quests completed, Q2008 at START/0; the last decision is
+      journey-complete, standing at the client-observed Munin. Worn: the dagger 100200126
+      (Q2134), the leather pieces 110301182 (Q2007), 113300791 (Q2005), 114300805 (Q2006)
+      and 111300768 (Q2129), and the accessories 122000869 and 121000749; nothing in the
+      off hand. The trace holds no sale, no discard and no vendor visit; the replaced
+      daggers and the starter pieces are still in the cube. help-items.json lists the kit
+      at the start (30 life potions 162000006, 30 Anti-Shock scrolls 164000067, 20
+      Greater Running Scrolls 164000076) and four refills at level 9 (life potions three
+      times: 23, 23 and 21; 16 running scrolls). Both Ishalgen binds are in the trace:
+      the village obelisk 700063 at 4:16 for 43 Kinah and the outpost obelisk 700064 at
+      19:31 for 134. Accepted.
+    - **Ledger.** 184 encounters, 154 kills, no death, 7 retreats, each at three
+      attackers (three in Q2003, four at Q2116's map); 20 encounters ended on a blocked
+      approach. 2,079 decisions: 1,141 dagger swings, 580 casts on a target, 110 on
+      itself, 189 approaches, 51 life potions, 7 retreats, 1 shield scroll. Casts: Swift
+      Edge 339, Soul Slash 235, Devotion 86, Focused Evasion 21. Devotion (level 9) and
+      the shield scroll are shown on the Scout for the first time. 157 pull plans: 102
+      pulls, 43 waits, 12 with no plan. The pack rule of CP-56a was asked 27 times: 7
+      accepted a pack of one, 11 refused a pack of two, 9 had no pack. Lowest HP 49% (309
+      of 628, at Q2007's violet generator). Used: 75 life potions (51 in fights, 24 in
+      rests); six sits for health; one Anti-Shock scroll; the Greater Running Scroll 21
+      times; Blitzopan seven times; Return twice. No restock. 40,413 Kinah at the end.
+    - **Proof.** Restore prints CP_CLASS=scout and no NA_HELP_ITEMS (run/cp/CP-65/
+      restore.txt; that copy was dropped). Verify, run cp65-scout-verify-a1, passes
+      (run/cp/CP-65/verify-a1.log; evidence run/snapshots/_verify/cp65-scout-verify-a1):
+      the run's context reads classLine scout, the resumed character is observed as class
+      id 3 at level 9 with the Scout's skills, 41 quests completed and Q2008 at START/0,
+      and the endpoint is reached again.
+    - **Findings, not fixed.** (a) Seven corpses were not looted (4 with no safe path, 2
+      far, 1 gone). (b) Five distance refusals of Swift Edge, each answered by closing
+      in. (c) The receipt's 16-bit EquipmentSlot hides the accessory 123000864, as for
+      the other classes.
+    - All five new starters now stand at Munin: munin-mage-s1, munin-warrior-s1,
+      munin-artist-s1, munin-engineer-s1 and munin-scout-s1. No code changed in this
+      item, so this commit is evidence only. The class scope is CP-66's.
 - [ ] **CP-66 - Record class scope scout, twice.** Depends: CP-65
   - Work: As CP-53 with -Set scout -Item CP-66.
   - Proof: The record run: the two passes of class scope scout are identical after
@@ -6382,3 +6425,11 @@ report what was done, what is blocked and what you need from me.
   completed in 41 min 25 s; 39 encounters, 30 kills, no death, 3 retreats at three
   attackers; Focused Evasion cast eight times; 18 life potions. Guard guard-a1, set p:
   identical. Seven checks, unit suite and Fast (cp64-fast) pass. Next by rule (h): CP-65.
+- 2026-10-08 — Loop: CP-65 done, first attempt. Snapshot munin-scout-s1 captured at c7c9d66cd
+  (run cp65-scout-a1) and verified (run cp65-scout-verify-a1): a Scout created by packets
+  plays all 41 Ishalgen quests in 3 h 21 min of game time and stands at Munin at level 9 with
+  Q2008 at START/0, in its Q2134 dagger and four leather pieces. 184 encounters, 154 kills,
+  no death, 7 retreats at three attackers; lowest HP 49%. Devotion and the shield scroll are
+  shown in play. 75 life potions, 21 running scrolls, Blitzopan seven times; nothing sold and
+  nothing bought. Restore prints CP_CLASS=scout and no NA_HELP_ITEMS. All five new starters
+  now stand at Munin. Evidence only. Next by rule (h): CP-66.
