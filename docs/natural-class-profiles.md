@@ -4462,7 +4462,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
 
 ### F. Levels 1-9 to Munin, one preserved snapshot per class
 
-- [ ] **CP-50 - Mage to the Q2004 checkpoint.** Depends: CP-10, CP-20, CP-21, CP-23, CP-24,
+- [x] **CP-50 - Mage to the Q2004 checkpoint.** Depends: CP-10, CP-20, CP-21, CP-23, CP-24,
   CP-27, CP-28, CP-34, CP-41, CP-46
   - Work: It waits for the full gate of CP-41, like every class journey. Run
     sim-snapshot.ps1 -Action Replay -Class mage -StopAt 2004:5:0 -Item CP-50 (seed 1, bridge
@@ -4482,6 +4482,43 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     (J:857 requires Q2004 completed) plus the trace's creation step and its Q2132 and Q2004
     turn-in records. The same holds for the Q2004 and Q2007 checkpoints of the other
     classes.
+  - 2026-10-08: done on the first attempt, with no code change. Run journey-a1 at
+    7c15e4dd0 on a clean tree, CP_CLASS=mage and NI08_STOP_AT=2004:5:0, seed 1, bridge off,
+    help items on (run/cp/CP-50/journey-a1/: replay.json passed, schema dropped). The
+    status-5 stop landed and wrote its receipt; the -StopAfterQuest fallback was not used.
+    - **The stop.** resume-receipt.json: class id 6, level 8, 375 HP and 1,205 MP.
+      Completed: Q2000 to Q2004, Q2100 to Q2104 and Q2132, turned in at the Mage's trainer
+      at 14:22. Q2005 and Q2006 are in the journal and Q2005 is next. 30 min 45 s of game
+      time, 23,556 trace records.
+    - **Fights.** 28 encounters, 26 kills, no death, 2 retreats. 85 decisions: 78 casts on
+      a target, 4 life potions, 2 retreats, 1 approach. Casts: Flame Bolt 33, Ice Chain
+      18, Erosion 12, Blaze 5, Frozen Shock 2, Root 2, Stone Skin 2 (Frozen Shock and
+      Stone Skin arrive at level 7). Four pull plans with policy natural-mage-v1: one for
+      Q2002's Sprigg Gatherers 210377 and three for Q2004's 210402, each a pull.
+    - **Retreats.** Both at two attackers, both after Root on the target, both got away.
+      (1) 18:08, Q2003's first kill, eight seconds after the bind at the outpost: Erosion
+      was refused for an obstacle at 10.3 m, the Mage closed in as the Priest does, and a
+      second attacker joined at 161 of 298 HP, the lowest of the run (54%). (2) 24:43, at
+      Q2004's Derot check, at full HP: one approach along a ranged route, then two
+      attackers; it left in two legs.
+    - **Ledger.** Supplied at the start: 30 life potions 162000006, 30 Anti-Shock scrolls
+      164000067, 20 Greater Running Scrolls 164000076 (help-items.json). Used: the life
+      potion seven times, 30 to 23: three in a rest below 90% HP (6:24, 7:21, 19:15) and
+      four in a fight at or below 75% (10:43, 19:45, 20:49, 21:48). One sit for health, at
+      6:48 with the potion 6.0 s from ready. The Greater Running Scroll five times, 20 to
+      15. Castafodin 164002118 once, at the start. Not shown: the shield scroll (HP never
+      reached 50%), the mana potion and the mana sit (MP never ran short).
+    - **Gear and picks.** Worn: the spellbook 100600047 from Q2100 at 4:09, the robe piece
+      114100794 from Q2001 at 7:53, the spellbook 100600531 from Q2002 at 14:22, as CP-46
+      lists them.
+    - **Binds and Kinah.** The village obelisk 700063 at 4:06 for 43 Kinah, on arrival
+      for work; the outpost obelisk 700064 at 18:00 for 134 Kinah. 2,380 Kinah before the
+      first bind, 4,093 at the stop.
+    - **Findings, not fixed.** (a) One corpse was not looted: a 210404 killed at 19:37,
+      after the first retreat, lay 90.9 m away when the loot sweep ran at 20:15 and was
+      skipped as far. (b) Erosion's obstacle refusal is answered by closing in to melee, which is
+      the Priest's answer and brings a cloth class to the monster. (c) The comparer still
+      counts no sit for health (restSitsTraced 0 with one rest-sit-for-health record).
 - [ ] **CP-51 - Mage to the Q2007 checkpoint.** Depends: CP-50
   - Work: Run Replay -Class mage -StopAt 2007:5:0 -Item CP-51. This passes the Q2005
     stalkers and the Q2007 generators, the first fights whose attempt budgets were sized on
@@ -5700,3 +5737,10 @@ report what was done, what is blocked and what you need from me.
   apart, twice, and kills a Fanged Karnif in 12.1 s. No shared fight code changed. Guard
   guard-a1, set p: identical. Seven checks, unit suite and Fast (cp49-fast) pass. Phase E is
   closed. Next by rule (h): CP-50.
+- 2026-10-08 — Loop: CP-50 done on the first attempt, no code change. The Mage, created by
+  packets, played to the Q2004 stop in 30 min 45 s of game time (run journey-a1): class id 6,
+  level 8, Q2000 to Q2004, Q2100 to Q2104 and Q2132 completed. 28 encounters, 26 kills, no
+  death, 2 retreats at two attackers, each after Root. Seven life potions (three in rests,
+  four in fights), one sit for health, five running scrolls, Castafodin once; the shield
+  scroll and the mana potion were not needed. Bound at the village (43 Kinah) and the outpost
+  (134 Kinah). Evidence and docs only; seven checks pass. Next by rule (h): CP-51.
