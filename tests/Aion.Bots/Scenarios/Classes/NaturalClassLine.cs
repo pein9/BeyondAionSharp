@@ -20,8 +20,12 @@ public sealed record NaturalClassLine(string Id, PlayerClass Starter, PlayerClas
 	/// its name, up to the class choice at Munin; a run plays one line on its own schema, so the two never meet.</summary>
 	public static NaturalClassLine PriestChanter { get; } = new("priest-chanter", PlayerClass.PRIEST, PlayerClass.CHANTER, 41, "Asimnjour");
 
+	/// <summary>CP-42: the Warrior, levels 1-9. It takes no second class in this plan and stops at Munin (CP-Q19 for
+	/// the account and the name).</summary>
+	public static NaturalClassLine Warrior { get; } = new("warrior", PlayerClass.WARRIOR, null, 41, "Asimwar");
+
 	/// <summary>Every line a run can name. Each class's first profile item adds its line here.</summary>
-	public static IReadOnlyList<NaturalClassLine> All { get; } = [PriestCleric, PriestChanter];
+	public static IReadOnlyList<NaturalClassLine> All { get; } = [PriestCleric, PriestChanter, Warrior];
 
 	public static NaturalClassLine Default => All[0];
 

@@ -3843,7 +3843,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       reads, custom quest drafts), the fidelity check, the thirteen Python tests, the
       thirteen PowerShell tests, the NavBake check of the baked maps and Fast (run
       cp41-fast) pass.
-- [ ] **CP-42 - Starter probe harness, and the potion-and-sit rest shown in play.**
+- [x] **CP-42 - Starter probe harness, and the potion-and-sit rest shown in play.**
   Depends: CP-05, CP-21, CP-24, CP-29, CP-31, CP-36, CP-37, CP-38
   - Work: This is the first run of the rest executor of CP-37. A potion is an item use and
     needs no weapon motion, but every later row of this harness casts with the class's own
@@ -3874,6 +3874,53 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     forced rest must show a life potion drunk. The director halves the HP again while the
     potion's 30 s delay still runs, so no potion is ready: that second rest must show a sit
     to the HP target and no potion. Neither rest throws.
+  - 2026-10-08: done. No server behavior beyond what CP-37 read is relied on.
+    - **The line.** NaturalClassLine.Warrior: id warrior, starter WARRIOR, no second
+      class, account 41, name Asimwar (CP-Q19, on its default).
+    - **The profile, everything but the fight** (Sc/Classes/NaturalWarriorProfile.cs). Its
+      catalog is generated, so the profile is built from the run's static data:
+      NaturalClassProfiles.For takes the data from the fight loop and builds a generated
+      profile once. The catalog is empty and the six castable Warrior skills to level 9
+      carry "rotation added by CP-43", beside the three common exclusions; the validator
+      passes. The table (natural-warrior-v0): no attack role, the weapon as filler, the
+      shield scroll at 50% HP, the life potion at or below 75%, leave at three attackers
+      or at 25% HP with neither ready (CP-Q11). Movement: walk-in, melee reach 3 m, close
+      to 2 m after a distance refusal. Rest: the potion plan, HP target 90%, no mana
+      target, at most 12 quiet sits. Help items: the level 1-9 kit with the Courage family
+      in the shared speed slot, which is Blitzopan. Readiness, HP only: 80% before a pull
+      and before a named target, 60% before a use bar and between adds. Gear: the Warrior
+      table of CP-29 and CP-29a (sword before mace, chain first; the life potions and the
+      kit kept, bandages not). Restock: the Minor Life Elixir of list 721 at 5 or fewer
+      up to 12, with a Kinah floor of 500. The engage distances and the campaign numbers
+      start as the Priest line's and are tuned when the Warrior first fights and journeys
+      (CP-43, CP-44).
+    - **The harness.** SimT/SimulationNaturalStarterProbeTests.cs: theory
+      NaturalStarterFieldProbe, rows chosen by CP_PROBE_ROWS, each on one of the two probe
+      accounts. A row gets a character of its line created by packets, with no kit, and a
+      journey runtime over its session; the director may set a level and cut HP, and
+      nothing else. NaturalIshalgenJourney.RunObservedRestAsync runs the journey's
+      ordinary rest and nothing else.
+    - **Probe, row warrior-rest**, on account 98 as Asimrestwar. Attempt 1
+      (run/cp/CP-42/probe-a1.log) failed in the probe's own check, not in the rest: both
+      rests played as wanted, but the check counted sit packets in the trace, and the
+      trace does not record them. The one small change: a sit for health now writes a
+      rest-sit-for-health record (the Priest line's mana sit writes none, as before), and
+      the check counts that. Attempt 2 (probe-a2.log, trace beside it): pass. A level-1
+      Warrior has 284 HP. First rest, from 142 HP: one Minor Life Potion, 100 to 99
+      (rest-life-potion), then one sit; full HP after 6 s, the rest ends at 10.35 s. The
+      director halves the HP again with 19.65 s of the potion's delay left: the second
+      rest drinks nothing and sits once; the sit's first tick restores 35 HP, which is
+      (1 + 3) x 8 x 110 / 100, and the first potion's heal over time adds the rest. Both
+      rests end at 284/284 and neither throws. After the first rest the buff check uses
+      one Blitzopan (50 to 49).
+    - **Rule (k).** The trace record is a change to the rest loop of CP-37, so gate m+c is
+      the guard, run with p: run guard-a1 (run/cp/CP-42/guard-a1/verdict.json), verdict pass; p (37,222 records), m (112,397) and c (96,166) are identical to their baselines of 49cf15b60.
+    - **Finding, not fixed.** The comparer's lifePotions counts combat-hot-potion only and
+      its restSitsTraced counts rest-relocate; neither counts rest-life-potion or
+      rest-sit-for-health. A class scope's step counts will not show the potions drunk or
+      the sits made in a rest until the comparer learns the two records.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and
+      Fast passes (run cp42-fast).
 - [ ] **CP-43 - Warrior profile, with the kill and chain rows.** Depends: CP-21, CP-24,
   CP-39, CP-40, CP-42
   - Work: Finish Sc/Classes/NaturalWarriorProfile.cs and take out the temporary exclusions
@@ -5188,3 +5235,10 @@ report what was done, what is blocked and what you need from me.
   scopes identical to their baselines of 49cf15b60. The whole check list of CLAUDE.md, run
   once: all 35 entries pass (run/cp/CP-41/checks.log). The refactor is checked; no new class
   has fought yet. Next by rule (h): CP-42.
+- 2026-10-08 — Loop: CP-42 done. Line warrior and the Warrior's profile without its fight; the
+  starter probe harness. Probe row warrior-rest, second attempt (the first failed in the
+  probe's own check of sit packets): a level-1 Warrior with 284 HP drinks one Minor Life Potion
+  in the first rest and, cut again with 19.65 s of the delay left, sits and drinks nothing in
+  the second; both end at full HP. Guard guard-a1, set p+m+c: identical. Seven checks, unit
+  suite and Fast (cp42-fast) pass. Finding: the comparer counts neither rest potion nor sit for
+  health. Next by rule (h): CP-43.

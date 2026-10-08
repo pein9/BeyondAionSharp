@@ -120,7 +120,7 @@ public sealed partial class NaturalIshalgenJourney
 		/// <summary>CP-15: the profile of the class the client observes now. It is read again on every use, because the
 		/// starter becomes its second class inside one run.</summary>
 		public NaturalClassProfile ClassProfile => NaturalClassProfiles.For(
-			session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass, classLine);
+			session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass, classLine, runtime.Data);
 		/// <summary>NA-18: the observed class chooses the catalog (the Cleric adds its level 10 skills).</summary>
 		private NaturalPriestSkill[] Catalog => ClassProfile.Skills;
 		public int CompletedRetreats => completedRetreats;
@@ -965,6 +965,16 @@ public sealed partial class NaturalIshalgenJourney
 					await MoveToRestSpotAsync(token);
 					locatedForManaRest = true;
 				}
+				// CP-42: the trace does not record the sit packet itself, so a sit for health says so. The mana sit of the
+				// Priest line is traced as it always was, by what follows it.
+				if (rest.Action == NaturalRestRules.SitForHealth)
+					session.TraceDiagnostic("rest-sit-for-health", new Dictionary<string, object?>
+					{
+						["hp"] = world.CurrentHp, ["maxHp"] = world.MaxHp, ["quietSits"] = quietIntervals,
+						["lifePotionOwned"] = lifePotion != null,
+						["lifePotionReadyInMillis"] = lifePotionTemplate == null ? null
+							: (long)session.Api.Timing.TimeUntilItemUse(lifePotionTemplate).TotalMilliseconds,
+					});
 				int attackHistoryStart = 0;
 				NaturalRestOutcome outcome = await NaturalRestCadence.RunAsync(
 					async (resting, waitToken) =>

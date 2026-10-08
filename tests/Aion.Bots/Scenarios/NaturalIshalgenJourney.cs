@@ -132,6 +132,22 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		return new(killed, combat.ReviveCount, combat.CompletedRetreats, runtime.NowMillis - started);
 	}
 
+	/// <summary>CP-42: a controlled probe runs the journey's ordinary rest and nothing else, for the class line of the
+	/// options. A rest that ends in death revives at the bind point, as in a journey.</summary>
+	public async Task RunObservedRestAsync(CancellationToken token)
+	{
+		int map = session.Api.World.MapId ?? throw new InvalidDataException("Rest map unobserved.");
+		BotNavigationGeometry geometry = runtime.CreateGeometry();
+		var navigator = new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, [], geometry), geometry, runtime,
+			stopOnDeath: false);
+		var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry, stopOnDeath: false,
+			conservativeRangedHold: false, NaturalMauPolicyParameters.Baseline, ClassLine)
+		{
+			ApproachMapId = map,
+		};
+		await combat.RestAsync(token);
+	}
+
 	public async Task RunAsync(CancellationToken token)
 	{
 		NaturalCapitalDecisionEngine.ValidateScope(options, runtime.Profile);

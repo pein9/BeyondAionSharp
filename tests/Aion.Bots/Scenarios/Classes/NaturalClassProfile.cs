@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
 
 namespace Aion.Bots.Scenarios.Classes;
@@ -130,21 +131,37 @@ public static class NaturalClassProfiles
 		[PlayerClass.CHANTER] = NaturalChanterProfile.Chanter,
 	};
 
+	/// <summary>CP-42: the classes whose catalog is generated from the shipped data. Each is built once, from the static
+	/// data of the first run that asks for it.</summary>
+	private static readonly Dictionary<PlayerClass, Func<StaticData, NaturalClassProfile>> Generated = new()
+	{
+		[PlayerClass.WARRIOR] = NaturalWarriorProfile.Create,
+	};
+
+	private static readonly ConcurrentDictionary<PlayerClass, NaturalClassProfile> Built = new();
+	private static volatile StaticData? shipped;
+
 	/// <summary>
 	/// The profile of the class the client observes now. It is looked up at every decision and never kept, because a
 	/// starter becomes its second class inside one run. An unobserved class is the line's starter; a class outside the
 	/// line, or one without a profile, is refused.
 	/// </summary>
-	public static NaturalClassProfile For(byte? observedClassId, NaturalClassLine line)
+	/// <param name="data">The run's static data, for a class with a generated catalog. A caller without it gets the
+	/// profile a caller with it already built; the fight loop asks with it at every decision.</param>
+	public static NaturalClassProfile For(byte? observedClassId, NaturalClassLine line, StaticData? data = null)
 	{
 		ArgumentNullException.ThrowIfNull(line);
+		if (data != null) shipped = data;
 		PlayerClass playerClass = observedClassId is byte classId
 			? PlayerClassExtensions.GetPlayerClassById(classId, true)
 				?? throw new InvalidDataException($"The client observed class id {classId}, which is no player class.")
 			: line.Starter;
 		if (!line.Holds(playerClass))
 			throw new InvalidDataException($"The client observed {playerClass}, which is outside the class line {line.Id}.");
-		return Profiles.TryGetValue(playerClass, out NaturalClassProfile? profile) ? profile
-			: throw new InvalidDataException($"{playerClass} has no natural class profile.");
+		if (Profiles.TryGetValue(playerClass, out NaturalClassProfile? profile)) return profile;
+		if (!Generated.TryGetValue(playerClass, out Func<StaticData, NaturalClassProfile>? create))
+			throw new InvalidDataException($"{playerClass} has no natural class profile.");
+		return Built.GetOrAdd(playerClass, _ => create(shipped
+			?? throw new InvalidDataException($"The {playerClass} profile is generated from the shipped data, and no run has supplied it yet.")));
 	}
 }
