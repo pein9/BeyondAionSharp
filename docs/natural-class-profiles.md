@@ -4650,7 +4650,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       class's own profile file.
     - Evidence only. The seven pre-commit checks pass, and so do the trace comparer's
       tests and the snapshot and gate contract tests, which read the baseline file.
-- [ ] **CP-54 - Warrior to the Q2004 checkpoint.** Depends: CP-45, CP-53
+- [x] **CP-54 - Warrior to the Q2004 checkpoint.** Depends: CP-45, CP-53
   - Work: Run Replay -Class warrior -StopAt 2004:5:0 -Item CP-54. The Ishalgen code written
     for a ranged puller is the likely blocker: ApproachShippedCombatSpawnAsync
     (J:5217-5274), the Sprigg hunt (J:6433-6510), Q2004's approaches (J:6794) and
@@ -4665,6 +4665,39 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     what the receipt holds when the class was not observed
     (Sc/NaturalJourneyCheckpoint.cs:12, 35). On the -StopAfterQuest fallback the proof is
     the passing run plus the trace's creation step and its turn-in records, as in CP-50.
+  - 2026-10-08: done on the first attempt, with no code change and no lettered item: none
+    of the four sites written for a ranged puller stopped the run. Run journey-a1 at
+    37df518d2 on a clean tree, CP_CLASS=warrior and NI08_STOP_AT=2004:5:0, seed 1, bridge
+    off, help items on (run/cp/CP-54/journey-a1/: replay.json passed, schema dropped). The
+    status-5 stop landed and wrote its receipt.
+    - **The stop.** resume-receipt.json: class id 0, level 8, 676 HP; the Skills hold
+      Ferocious Strike 2864 and 2865, Robust Blow 2877 and 2878, Body Smash 2890 and Rage
+      2903, so the class was observed. Completed: Q2000 to Q2004, Q2100 to Q2104 and
+      Q2132; Q2005 and Q2006 are in the journal. 32 min 14 s of game time, 24,200 trace
+      records.
+    - **Fights.** 28 encounters, 27 kills, no death, no retreat; one encounter of Q2003
+      (21:36) ended without a kill. 276 decisions: 21 approaches, 91 casts, 157 swings, 7
+      life potions. Casts: Ferocious Strike 38, Robust Blow 32, Body Smash 20. Rage was
+      learned at level 7 and not cast: it goes only at or below 80% HP in its place after
+      Robust Blow. Six pull plans with policy natural-warrior-v1, all pulls: three for
+      Q2002's Sprigg Gatherers and three for Q2004's 210402.
+    - **Ledger.** Supplied at the start: 30 life potions 162000006, 30 Anti-Shock scrolls
+      164000067, 20 Greater Running Scrolls 164000076. Used: the life potion 12 times, 30
+      to 18: five in rests below 90% HP, as in CP-44, and seven in fights at or below 75%
+      (18:49, 20:26, 22:44, 23:54, 26:14, 29:37, 30:10), which CP-44 had not shown. No sit
+      for health: the potion was ready at every rest. The Greater Running Scroll five
+      times, Blitzopan twice. Not shown: the shield scroll; the lowest HP was 65% (362 of
+      555, in Q2003's fourth kill).
+    - **Gear and picks.** As in CP-44: Raider's Sword 100000107 from Q2100, the chain
+      piece 114500766 from Q2001, Ulgorn's Sword 100000639 from Q2002.
+    - **Binds and Kinah.** The village obelisk 700063 at 4:23 for 43 Kinah, the outpost
+      obelisk 700064 at 18:32 for 134. 4,093 Kinah at the stop.
+    - **Findings, not fixed.** (a) One distance refusal: Ferocious Strike 2865 at 18:38
+      with the target 11.8 m away by the client's position; the target counted as on the
+      Warrior because it had just hit. The Warrior closed in and went on. (b) Two corpses
+      were not looted, each about 91 m away when the sweep ran. (c) The Sprigg hunt and
+      the Q2004 approaches still select a stand-off before the Warrior walks in (six
+      combat-standoff-selected records), as CP-44 found.
 - [ ] **CP-55 - Warrior to the Q2007 checkpoint.** Depends: CP-54
   - Work: Run Replay -Class warrior -StopAt 2007:5:0 -Item CP-55. The stalker (Q2005) and
     generator (Q2007) fights are the expected trouble for a melee class without a heal;
@@ -5857,3 +5890,9 @@ report what was done, what is blocked and what you need from me.
   records, SHA-256 7d0a9c0b...345d8f09. The scope is on in the baseline file, so the guard
   of rule (c) now runs p and mage. Evidence only; seven checks and the two script tests that
   read the baseline pass. Next by rule (h): CP-54.
+- 2026-10-08 — Loop: CP-54 done on the first attempt, no code change, no lettered item. The
+  Warrior played from creation to the Q2004 stop in 32 min 14 s of game time (run
+  journey-a1): class id 0 with its skills observed, level 8, Q2000 to Q2004, Q2100 to Q2104
+  and Q2132 completed. 28 encounters, 27 kills, no death, no retreat. 12 life potions (five
+  in rests, seven in fights), five running scrolls, Blitzopan twice; lowest HP 65%. Evidence
+  and docs only; seven checks pass. Next by rule (h): CP-55.
