@@ -5246,7 +5246,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
 
 ### G. Close-out
 
-- [ ] **CP-67 - The other nine second classes through the class choice, on prepared
+- [x] **CP-67 - The other nine second classes through the class choice, on prepared
   characters.** Depends: CP-31, CP-67a
   - Work: Add nine rows to NaturalClassChoiceProbe, built with ForChoice: Gladiator
     (SETPRO7), Templar (SETPRO8), Assassin (9), Ranger (10), Sorcerer (11), Spirit Master
@@ -5335,6 +5335,38 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       identical to their baselines (p 37,222, mage 23,555, warrior 24,199, artist 23,104,
       engineer 24,580, scout 31,082). Bundle: the seven pre-commit checks pass,
       Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run cp67-fast, 11 passed).
+  - 2026-10-08: done, on the first attempt of the fresh budget, at 126f88955 (CP-67a's
+    commit, bundle green) on a clean tree. All nine rows pass in one pass of five
+    processes (run/cp/CP-67/probe-b1-p1.log to probe-b1-p5.log). No code changed, so this
+    commit is evidence only.
+
+    | Row | Class (id) | HP at 10 | Q2009 var, preceptor | Weapon paid | Dispatch at Doman | Attacks on Hellion (bound) |
+    |---|---|---|---|---|---|---|
+    | gladiator | GLADIATOR (1) | 911 | 10, 204080 | 100900488 | Q2901 START/1 | 131 (600) |
+    | templar | TEMPLAR (2) | 881 | 10, 204080 | 100000640 | Q2901 START/1 | 128 (600) |
+    | assassin | ASSASSIN (4) | 670 | 20, 204081 | 100200605 | Q2902 START/1 | 1,393 (2,000) |
+    | ranger | RANGER (5) | 521 | 20, 204081 | 101700515 | Q2902 START/1 | 1,365 (2,000) |
+    | sorcerer | SORCERER (7) | 458 | 30, 204082 | 100600532 | Q2903 START/1 | 80 (600) |
+    | spiritmaster | SPIRIT_MASTER (8) | 493 | 30, 204082 | 100600532 | Q2903 START/1 | 81 (600) |
+    | gunner | GUNNER (14) | 688 | 50, 801220 | 101800506 | Q29070 START/1 | 84 (600) |
+    | rider | RIDER (13) | 782 | 50, 801220 | 102100489 | Q29070 START/1 | 85 (600) |
+    | bard | BARD (16) | 596 | 60, 801221 | 102000523 | Q29071 START/1 | 56 (600) |
+
+    - Each row checks, on the server and in the client's view: the chosen class id, a
+      Daeva at level 10, every level-9 mastery of the class, Q2008 and Q2009 complete, the
+      picked weapon in the inventory and at its place in the class's own reward list, the
+      reward group that starts the dispatch quest, that quest at START/1 after Doman, all
+      four quest movies played and answered, and a clean log policy.
+    - **For the next plan.** (a) Every second class of the Asmodian side can be chosen and
+      sent to Altgard by packets today; nothing on the server stopped a row. (b) The
+      starter's masteries stay in the skill list beside the second class's. (c) A Scout
+      cannot win the trial with normal attacks in a sensible time: about 1,400 swings,
+      70 minutes of game time at the scenario's pace. A natural Scout must use its skills
+      there, which the table policy already does in the field. The Priest needs about 380
+      swings, the Warrior 130, and the three casters and the Gunner under 90. (d) The
+      ceremony picks of these rows are the probe's; each class's pick is still to be
+      decided. (e) The scenario's step name "choose-cleric-and-leave-ataxiar" is used for
+      every class; it is a label and was not renamed.
 - [x] **CP-67a - The two Scout rows through the trial.** Depends: CP-31
   - Work: Java first, before anything is widened: what a normal attack of a level-9 Scout
     with the starter dagger does to Brigade General Hellion 205041 in Java
@@ -6606,3 +6638,10 @@ report what was done, what is blocked and what you need from me.
   6, Q2902 at var 1 at Doman. Rows cleric and gladiator pass with the bound unset; guard
   guard-a1, p and five class scopes: identical. Seven checks, unit suite and Fast
   (cp67a-fast) pass. Next by rule (h): CP-67, retried.
+- 2026-10-08 — Loop: CP-67 done on the first attempt of its fresh budget, at 126f88955. All
+  nine rows of NaturalClassChoiceProbe pass in one pass (probe-b1-p1 to p5): Gladiator,
+  Templar, Assassin, Ranger, Sorcerer, Spirit Master, Gunner, Rider and Bard each end as
+  their class at level 10 with the picked weapon paid at their own preceptor and their
+  dispatch quest (Q2901, Q2902, Q2903, Q29070, Q29071) at var 1 at Doman. Attacks on
+  Hellion: 56 to 131 for seven rows, 1,393 and 1,365 for the two Scout rows. Evidence only;
+  seven checks pass. Next by rule (h): CP-68.
