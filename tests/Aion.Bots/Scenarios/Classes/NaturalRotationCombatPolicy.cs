@@ -63,13 +63,16 @@ public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjac
 /// Order of one decision: death and incomplete life statistics; the swarm limit; the recovery ladder; the flee limit;
 /// the mana potion; with no target, upkeep or ready; with one, a ready follow-up before anything else (any non-chain
 /// cast, and another chain's first step, resets the open chain: Java Skill.canUseSkill, ChainCondition.shouldReset), the
-/// in-fight upkeep, the attack list for the target's place, the weapon, and last a movement answer by the pull style.
+/// in-fight upkeep, the attack list for the target's place, the weapon, a wait for a listed
+	/// attack that is in reach and only cooling down, and last a movement answer by the pull style.
 /// A follow-up is legal when its required category is the current or the previous chain category (Java
 /// ChainCondition.validate accepts either) on the same target, inside its own chain time (CP-Q17).
 /// </para>
 /// </summary>
 public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 {
+	private const string CoolingDown = "Client-observed cooldown is active.";
+
 	private readonly NaturalRotationRules rules;
 	private readonly NaturalPriestSkill[] catalog;
 	private readonly NaturalFightMovement movement;
@@ -172,6 +175,10 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		bool swing = swingLegal && (rules.AutoAttack == NaturalAutoAttack.Filler ||
 			!line.Any(skill => skill.RequiresChainCategory == null && state.Mp >= skill.ManaCost + Reserve(state, parameters)));
 		if (swing) return Choice("attack", null, "No skill is ready; swing the weapon.");
+		// CP-47: a listed attack that reaches the target and only cools down is waited for where the class stands (the
+		// Artist's Pulse, 2 s). Going to the target is for an attack that cannot be cast from here at all.
+		if (line.Any(skill => skill.RequiresChainCategory == null && Refusals(skill, state, now, parameters) is [CoolingDown]))
+			return Choice("wait", null, "A listed attack is in reach and only cools down; hold position.");
 		// Nothing can be cast or swung from here. An unpulled target never closes by itself, so the class goes to it.
 		if (!state.Aggro) return Choice("approach", null, "Nothing reaches the unpulled target from here: go to it.");
 		bool holds = movement.Style switch
@@ -259,7 +266,7 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 				NaturalSkillCatalog.Reach(skill, state) <= movement.MeleeReach && Adjacent(state)))
 				reasons.Add("Target is outside the skill's reach.");
 		}
-		if (state.Cooldowns.TryGetValue(skill.CooldownId, out DateTimeOffset until) && until > now) reasons.Add("Client-observed cooldown is active.");
+		if (state.Cooldowns.TryGetValue(skill.CooldownId, out DateTimeOffset until) && until > now) reasons.Add(CoolingDown);
 		if (state.Dp < skill.DpCost) reasons.Add("Observed DP is below the skill's cost.");
 		// The reserve is kept for a recovery skill; a recovery skill itself spends it.
 		int reserve = rules.Recovery.Any(step => step.Role == skill.Role) ? 0 : Reserve(state, parameters);

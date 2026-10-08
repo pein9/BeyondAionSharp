@@ -4204,7 +4204,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - Guard: gate p, run guard-a1, identical to its baseline of 49cf15b60. Bundle: the
       seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and Fast passes
       (run cp46-fast).
-- [ ] **CP-47 - Artist profile.** Depends: CP-21, CP-24, CP-46
+- [x] **CP-47 - Artist profile.** Depends: CP-21, CP-24, CP-46
   - Work: Add line artist and Sc/Classes/NaturalArtistProfile.cs: stand-off at 22 m; Pulse
     4408/4409 as pull and filler, Song of Ice 4221/4222, Soothing Melody 4339 as the heal
     from level 5, so the ladder and the rest plan switch when the skill is observed in the
@@ -4219,6 +4219,73 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     in CP-46 (the first shows the life potion drunk, the second, inside the potion's delay,
     the sit). Row 5: a director-leveled level-5 Artist at half HP heals itself with Soothing
     Melody 4339 and then kills one Fanged Karnif 210389 (478 HP, level 6).
+  - 2026-10-08: done. Both rows passed on the first attempt; one rule was added to the
+    table policy after it and the rows were run again. Java: FirstTargetProperty, case
+    TARGETORME with relation FRIEND, turns the cast onto the caster when the selected
+    target is an enemy, so Soothing Melody heals the Artist whatever it has selected; the
+    bot sends it with itself as the target. The chain and range rules were read for CP-35.
+    - **The line.** NaturalClassLine.Artist: id artist, starter ARTIST, no second class,
+      account 41, name Asimartist (CP-Q19, on its default).
+    - **The profile** (Sc/Classes/NaturalArtistProfile.cs), built from the run's static
+      data. Catalog: Pulse 4408/4409 (pulse), Song of Ice 4221/4222 (ice), Soothing Melody
+      4339 (heal). Excluded: the three common skills and Fiery Descant 4300, a charge
+      skill (CP-Q16). The validator passes. Table natural-artist-v1: from range and with
+      the monster on it alike, Song of Ice whenever its 12 s cooldown is over, then Pulse.
+      The harp swings only as a last resort. Ladder: the shield scroll at 50% HP, the life
+      potion at or below 75%, Soothing Melody at or below 55% (the Priest's number for one
+      attacker). The heal's step is passed over until the skill is in the observed skill
+      list, and from then on the attacks keep its 49 MP back; nothing reads the level. It
+      leaves at two attackers or at 25% HP with nothing ready. The mana potion goes only
+      when the cheapest attack cannot be paid. Rest: until the heal is observed, the
+      potion plan with a 90% HP target; after it, Soothing Melody below 90% HP; at every
+      level the mana sit below 40% until 80%. Movement, engage distances, readiness and
+      campaign numbers: the Priest line's, a stand-off at 22 m with skills that reach
+      25 m. Help items: the level 1-9 kit of CP-05 with the Awakening family in the shared
+      speed slot (Castafodin; every Artist skill has a 1 s cast). Restock: the Minor Life
+      Elixir of list 721 at 5 or fewer up to 12, Kinah floor 500.
+    - **Gear.** The Artist table of CP-29 (harp by magic boost, robe then clothes) now
+      keeps the mana potions as supplies. The gear check only ever puts a better harp in
+      the main hand and takes nothing off, so the hand is never empty. Its reward picks
+      are the ones CP-29 lists: the harps at Q2100, Q2002 and Q2134 (102000207,
+      102000522, 102000208), the robe piece at Q2001, Q2005, Q2006, Q2007 and Q2129
+      (114100794, 113100773, 114100795, 110101250, 111100763), and the Minor Life Elixir
+      at Q2117 and Q2124.
+    - **A rule added to the table policy** (Sc/Classes/NaturalRotationCombatPolicy.cs).
+      In the first attempt the level-5 Artist, with Song of Ice and Pulse both cooling
+      down and the Karnif on its way but not yet hitting, was told four times to go to the
+      target: the table sent every class to an unpulled target it could not cast on. Pulse
+      is the first filler with a cooldown (2 s); Flame Bolt has none, so the Mage never
+      met this. Now a listed attack that reaches the target and is refused for its
+      cooldown alone is waited for where the class stands. Rule (k): the Warrior's and the
+      Mage's rows were run again and play as recorded (warrior-1 6,631, 7,331 and 8,901
+      ms; warrior-7 the same five casts and 14,008 ms; mage-1 2,575, 2,832 and 2,575 ms;
+      mage-5 the same three casts and 6,127 ms), and the gate ran p+m+c.
+    - **The probe row of CP-46 is shared.** Row mage-1's body is now
+      CasterLevelOneRowAsync, played by mage-1 and artist-1 with the class's first attack.
+      It asks for one potion drunk in the two rests and reports the bag's count, in place
+      of asking that the bag lost exactly one.
+    - **Probe, rows artist-1 and artist-5** (run/cp/CP-47: probe-a1.log is the first
+      attempt, probe-a2.log the run after the rule; probe-warrior.log and probe-mage.log
+      are the rule (k) rows; traces beside them).
+      - Row artist-1, on account 98 as Asimoneart. Prepared: placed 18 m from a Sprigg
+        Worker's spot; HP halved before the second and the third kill. A level-1 Artist
+        has 179 HP and 392 MP. Each of three Sprigg Workers 210363 dies to one Pulse,
+        fired from 10.6, 18.3 and 10.6 m, in 1.6, 1.8 and 1.6 s. The rest before the
+        second kill drinks one Minor Life Potion and sits once; the rest before the third,
+        inside the potion's 30 s delay, drinks nothing and sits once. Life potions 100
+        to 99.
+      - Row artist-5, on account 100 as Asimfiveart. Prepared: level 5, placed 20 m from a
+        Fanged Karnif's spot, HP halved. A level-5 Artist has 339 HP and 812 MP. The rest
+        casts Soothing Melody 4339 once, from 169 to 339 HP, and drinks no potion and does
+        not sit. It then casts Song of Ice 4221 from 20.6 m, Pulse 4408, waits three
+        decisions (1.5 s) for Pulse and casts it again; the Karnif 210389 (478 HP) is dead
+        after 7.1 s. Decisions: cast-target 3, wait 3, no approach. It ends at 299 of 339
+        HP and 697 of 812 MP. No fight heal was needed, so the ladder's heal step is
+        built and not yet shown in play.
+    - Guard: gate p+m+c, run guard-a1, each identical to its baseline of 49cf15b60 (p
+      37,222, m 112,397, c 96,166 records). Bundle: the seven pre-commit checks pass,
+      Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run
+      cp47-fast, 11 passed).
 - [ ] **CP-48 - Engineer profile.** Depends: CP-21, CP-24, CP-46
   - Work: Add line engineer and Sc/Classes/NaturalEngineerProfile.cs: stand-off at 18 m,
     inside the planner's bound and the pistol's 20 m; Direct Shot 2219/2220 as pull and
@@ -5467,3 +5534,13 @@ report what was done, what is blocked and what you need from me.
   its two forced rests drink one potion and then sit; a level-5 Mage casts Ice Chain, Flame
   Bolt and Blaze (1.1 s after) and kills a Fanged Karnif in 6.1 s. Guard guard-a1, set p:
   identical. Seven checks, unit suite and Fast (cp46-fast) pass. Next by rule (h): CP-47.
+- 2026-10-08 — Loop: CP-47 done. Line artist and the Artist's profile on the table policy:
+  Song of Ice, then Pulse as pull and filler; the shield scroll, the life potion and, once it
+  is in the skill list, Soothing Melody on the ladder; the potion-and-sit rest until the heal
+  is observed and the heal after it. One rule added to the table policy: a listed attack in
+  reach that only cools down is waited for, where before the class went to an unpulled
+  target. Probe: a level-1 Artist kills three Sprigg Workers with one Pulse each from range,
+  and its two forced rests drink one potion and then sit; a level-5 Artist at half HP heals
+  itself with Soothing Melody in the rest and kills a Fanged Karnif in 7.1 s with no
+  approach. Warrior and Mage rows play as recorded. Guard guard-a1, set p+m+c: identical.
+  Seven checks, unit suite and Fast (cp47-fast) pass. Next by rule (h): CP-48.

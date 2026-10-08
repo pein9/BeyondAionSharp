@@ -71,8 +71,9 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 		["ROBE", "CLOTHES"], DefaultConsumableOrder, NaturalIshalgenPotionPolicy.ManaPotionIds);
 	public static NaturalClassGearTable Engineer { get; } = new(PlayerClass.ENGINEER, ["GUN"], NaturalWeaponStat.Magical,
 		["LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder);
+	// CP-47: the Artist casts from mana, so it keeps the mana potions too.
 	public static NaturalClassGearTable Artist { get; } = new(PlayerClass.ARTIST, ["HARP"], NaturalWeaponStat.Magical,
-		["ROBE", "CLOTHES"], DefaultConsumableOrder);
+		["ROBE", "CLOTHES"], DefaultConsumableOrder, NaturalIshalgenPotionPolicy.ManaPotionIds);
 
 	/// <summary>The default table of each new starter.</summary>
 	public static IReadOnlyList<NaturalClassGearTable> Starters { get; } = [Warrior, Scout, Mage, Engineer, Artist];
