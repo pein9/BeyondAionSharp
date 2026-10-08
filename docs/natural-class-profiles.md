@@ -120,9 +120,10 @@ and dispatched today.
 - Warrior: Gladiator or Templar. Plate after Ascension; the greatsword for a Gladiator; sword
   and shield for a Templar, which needs the off-hand mode turned on and the keep-and-sell
   rule taught the shield.
-- Scout: Assassin or Ranger. It must fight the Ascension trial with its skills: with normal
-  attacks Hellion takes about 1,400 swings. The second dagger waits for the operator's word
-  (CP-68); a Ranger takes a bow, a ranged weapon the Scout's walk-in profile does not cover.
+- Scout: Assassin or Ranger. In the probe Hellion took about 1,400 normal attacks, but that
+  was the level-1 Training Dagger on a prepared character; see "After the close" below. The
+  second dagger waits for the operator's word (CP-68); a Ranger takes a bow, a ranged weapon
+  the Scout's walk-in profile does not cover.
 - Mage: Sorcerer or Spirit Master. Its open findings are the attacker that is not the target
   and the missing search for another sight line; a Spirit Master also has a spirit, which
   nothing in the policy handles.
@@ -144,6 +145,66 @@ cpNN-fast (cp29a-fast-a2 among them) with their trace files beside them, about 1
 entries in all. The Fast folders and their traces are stray: each item's result is in
 its fast.log under run/cp. Whether a throwaway schema was left in the database was not
 checked; every run of this plan dropped its own.
+
+### After the close: the operator's answers (2026-10-08)
+
+The operator read the closing report and answered the same day. These are decisions for
+the next plan; nothing here was implemented.
+
+**Weapon by class** (the operator's words, with the item group each means):
+
+| Class | The operator's rule | What it means for the table |
+|---|---|---|
+| Cleric, Chanter | "Staff" | STAFF, as today. |
+| Templar | "Whatever plus shield" | The best one-hand weapon of its groups (SWORD or MACE) with a shield: off-hand mode Shield. |
+| Gladiator | "Best damage two-handed (greatsword?)" | GREATSWORD or POLEARM, by damage. Open: per swing the ceremony's Karmic Spear is ahead (71-133 at 2.8 s against the Greatsword's 93-99 at 2.4 s); per second the Greatsword is. The table ranks per swing today (CP-Q7). |
+| Sorcerer, Spirit Master | "Spellbook" | SPELLBOOK. |
+| Ranger | "Bow" | BOW. |
+| Assassin | "Dagger (can we have 2?)" | DAGGER, two of them: off-hand mode SecondWeapon. The server allows it from Scout level 5 (skill 55), so yes. |
+| Gunner, Rider, Bard | "whatever is the most damage and goes with their skills they unlock" | The weapon their skills need, best damage first. The ceremony offers each only one: a pistol, a keyblade, a harp. |
+
+At the ceremony this gives: Templar the Karmic Sword, Sorcerer and Spirit Master the
+spellbook, Ranger the bow, Assassin the dagger, and the Gladiator one of the two two-hand
+weapons once the open point above is settled. Before the off hand is turned on for a class,
+the keep-and-sell rule must learn it and one run must equip an off-hand item by packets
+(CP-68's findings). Whether the Scout already holds two daggers from level 5 is not said;
+doing so changes how the recorded Scout plays, so it would be a new scope and a new
+snapshot name.
+
+**"All classes should be able to follow the Cleric's legs just the same."** The bridge and
+every leg from Altgard on are to be opened to every class line. Today they are the Cleric's
+(the seam, section 6, and the bridge findings above). This is the first work of the next
+plan; the Cleric's own scopes must stay identical while it is done.
+
+**The Scout at the trial: measured, nothing is wrong on the server.** The operator asked
+whether the Scout held a weapon, whether its stats were off and whether it was attacking.
+The rows were run once more with a temporary printout that is not committed
+(run/cp/scout-trial/measure-m1.log and measure-m2.log).
+
+| Row | Main hand | Power | Displayed attack | Attacks on Hellion | Damage by value on Hellion |
+|---|---|---|---|---|---|
+| Scout (assassin, ranger) | Training Dagger 100200112, 15-17 | 100 | 19 | 1,365 | 1 x 1,317, 3 x 48 |
+| Priest (cleric) | Training Mace 100100011, 16-24 | 95 | 23 | 363 | 1 x 117, 2 to 8 x 245, 17 x 1 |
+| Warrior (templar) | Training Sword 100000094, 16-20 | 110 | 29 | 129 | 8 to 14 x 119, 18 to 29 x 9, 1 x 1 |
+
+- It held its weapon and it attacked: every one of the 1,365 attacks the server carried out
+  produced a damage packet. 201 more swings were refused while it was stunned.
+- Hellion's physical defence is 184, so 18.4 comes off every hit, and a hit below 1 is
+  raised to 1. The Scout's attack of 19 sits just above that line: 1,317 hits of 1 and 48
+  critical hits of 3. The Warrior's 29 clears it by ten. Against the four guardian
+  assassins (defence 153) the same dagger did 2 to 4 a hit.
+- The cause is the probe, not the class: it sets a fresh character to level 9, so the Scout
+  holds the level-1 Training Dagger. The natural Scout of munin-scout-s1 stands at Munin
+  with the Aldelle Dagger 100200126 (28-32). By the same rule that is roughly 100 swings on
+  Hellion; an estimate, not a run. And a natural Scout uses its skills.
+- What was compared with Java by reading: the damage step and the npc defence
+  (CP-67a). The attack value of 19 was measured in the port only; Java was not run.
+- Seen while reading, not acted on: in AttackUtil.adjustDamageByStatModifiers an npc that
+  blocks gets reduceRatio 10 where a player's shield gives a fraction below 1, so by the
+  arithmetic a blocked hit on an npc is multiplied by ten instead of reduced. Java and the
+  port have the same line. The trial's opponents have block 0, so it played no part here.
+  It is a possible defect shared with Java and needs the operator's decision before
+  anything is changed.
 
 ## The request
 
