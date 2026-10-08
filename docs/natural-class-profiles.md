@@ -3722,7 +3722,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - **Gate, set p+c, run gate-a1** (run/cp/CP-38/gate-a1/verdict.json): verdict pass; p (37,222 records) and c (96,166) are identical to their baselines of 49cf15b60.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and
       Fast passes (run cp38-fast).
-- [ ] **CP-39 - Chain timing, swing and reach for table profiles.** Depends: CP-19, CP-36,
+- [x] **CP-39 - Chain timing, swing and reach for table profiles.** Depends: CP-19, CP-36,
   CP-38
   - Work: Java first: PlayerController's attack rules (C# twin
     src/Aion.GameServer/Controllers/PlayerController.cs:391-429). For profiles on the table
@@ -3737,6 +3737,38 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     code.
   - Proof: Neutral gate, set m+c. This item edits the fight loop that CP-19 proves on m+c,
     and p holds few of its branches. The new paths are first shown in play by CP-43.
+  - 2026-10-07: done. Java read: PlayerController.attackTarget allows a swing at 1 m plus
+    the weapon's attack range (more while the target does not hate the player yet),
+    refuses one sooner than the attack speed less 300 ms after the last, and answers with
+    the attack counter; ChainSkills and ChainCondition as for CP-35.
+    - **Chain, for a table-driven profile.** Sc/Classes/NaturalChainState.cs holds the
+      current and the previous chain category, the target the chain was opened on, when
+      the current step was cast and how often. The fight loop moves it at three moments
+      of every cast: sent (a cast with no chain category resets it), started (a first
+      step resets another chain, or its own once used up to the self count) and
+      completed (the chain flag of the result makes the skill the current step; without
+      the flag the chain is gone). A step cast on the bot keeps the chain's target. The
+      loop keeps this state beside the Priest line's openChain for every cast, and the
+      observation is filled from one or the other by NaturalClassProfile.TableDriven, so
+      the Priest line's chain is as it was.
+    - **Observation.** The main-hand weapon's attack range and speed are filled for every
+      profile, from the weapon's tooltip. The previous chain category, the step time, the
+      use count and the skill ids of the effects on the bot are filled for a table-driven
+      profile only. The trace's observedState lists its fields by name and gains none.
+    - **Swing, for a table-driven profile.** The attack is sent with the weapon's attack
+      speed as its time and waits that long plus 100 ms; without a weapon it is 2,500 ms.
+      The attack number is a counter that wraps at 256. The Priest line keeps 2,500 and
+      2,600 ms and the turn number, with its known overflow at turn 256.
+    - **Movement.** An approach asks the movement helper of CP-19 as before. Its Hold
+      answer, a weapon-range class inside its hold distance, now waits 500 ms where the
+      loop threw. The other missing executor, another sight line after an obstacle
+      refusal for a weapon-range class, still throws; it stays with the first
+      weapon-range class (the Engineer).
+    - **Gate, set p+m+c, run gate-a1** (run/cp/CP-39/gate-a1/verdict.json): verdict pass; p (37,222 records), m (112,397) and c (96,166) are identical to their baselines of 49cf15b60. p is
+      the guard of rule (c); m and c are the item's proof.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and
+      Fast passes (run cp39-fast). No profile is table-driven yet, so the new paths are
+      first played by CP-43.
 - [ ] **CP-40 - Walk-in pull for melee.** Depends: CP-19, CP-36
   - Work: Java first: AggroEventHandler.java:19, 52, the assist rule the planner mirrors.
     Add NaturalPullPlanner.WalkIn beside Plan (Nav/NaturalPullPlanner.cs:77-133) with unit
@@ -5095,3 +5127,8 @@ report what was done, what is blocked and what you need from me.
   committed (rule (n)): 113 hit times over every starter's castable skills and weapons, none
   failed. Gate gate-a1, set p+c: identical. Seven checks, unit suite and Fast (cp38-fast)
   pass. Next by rule (h): CP-39.
+- 2026-10-07 — Loop: CP-39 done. For a table-driven profile the fight loop keeps the chain
+  the server's way (current and previous category, step time, use count), swings at the
+  weapon's speed with a wrapping attack number, and fills the weapon and chain fields of the
+  observation. The Hold approach waits instead of throwing. Gate gate-a1, set p+m+c: identical
+  in all three. Seven checks, unit suite and Fast (cp39-fast) pass. Next by rule (h): CP-40.
