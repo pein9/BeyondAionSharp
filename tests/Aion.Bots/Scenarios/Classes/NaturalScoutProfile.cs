@@ -34,13 +34,15 @@ public static class NaturalScoutProfile
 	/// <para>
 	/// The ladder, CP-Q11: Focused Evasion (5 s in which every hit misses, no mana) at or below 70% HP, the shield scroll
 	/// at 50%, the life potion at or below 75%. The table holds an open chain, so Focused Evasion is not cast while Soul
-	/// Slash is open, outside an emergency. The Scout leaves at two attackers, or at 25% HP with nothing ready.
+	/// Slash is open, outside an emergency. The Scout leaves at three attackers, as the Warrior does, or at 25% HP with
+	/// nothing ready. CP-64: at two it left every walk-in on Q2003's ghosts as soon as a second one joined (21 retreats and
+	/// two deaths on the way out, 29 kills in 62 encounters), and it could accept no pack at all (CP-56a).
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-scout-v1", Adjacent: ["devotion", "edge", "slash"], AtRange: [],
 		Upkeep: [],
 		Recovery: [new(NaturalRecoveryKind.Skill, 70, "evasion"), new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
-		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler, HoldOpenChain: true);
+		SwarmAttackers: 3, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler, HoldOpenChain: true);
 
 	/// <summary>CP-Q11: the Minor Life Elixir of trade list 721, bought at 5 or fewer up to 12, and no purchase takes
 	/// Kinah below 500.</summary>

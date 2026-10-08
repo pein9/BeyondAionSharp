@@ -5122,13 +5122,56 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       artist and engineer.
     - Evidence only. The seven pre-commit checks pass, and so do the trace comparer's
       tests and the snapshot and gate contract tests, which read the baseline file.
-- [ ] **CP-64 - Scout to the Q2004 checkpoint.** Depends: CP-49, CP-57
+- [x] **CP-64 - Scout to the Q2004 checkpoint.** Depends: CP-49, CP-57
   - Work: Run Replay -Class scout -StopAt 2004:5:0 -Item CP-64; Q2132 is turned in at Wiokan
     203528 with var 2. It reuses every melee fix the Warrior needed; anything new is a
     lettered item. Rule (e) applies.
   - Proof: One contained run under run/cp/CP-64/<run-id>: resume-receipt.json shows class id
     3 with Q2132 and Q2004 completed. On the -StopAfterQuest fallback the proof is the
     passing run plus the trace's creation step and its turn-in records, as in CP-50.
+  - 2026-10-08: done on the second attempt, after one profile number. Both attempts
+    reached the stop; the second is the one the item keeps.
+    - **Attempt 1** (run journey-a1 at 5d6118c9e, clean tree; run/cp/CP-64/journey-a1/).
+      The receipt shows class id 3 at level 8 with Q2132 and Q2004 completed, so the
+      proof held, but the play did not: 70 min 57 s of game time, 62 encounters with 29
+      kills, 21 retreats and 2 deaths. Q2003's ghost field took 44 minutes of it. The
+      Scout's table left at two attackers, so every walk-in on a Vengeful Ghost ended as
+      soon as a second one joined, and it died twice on the way out (39:39 and 1:00:59;
+      each time it revived at the outpost obelisk and the soul heal ran, 22 and 35
+      Kinah). It used 28 life potions and one shield scroll.
+    - **The one small change (rule (e)).** NaturalScoutProfile: SwarmAttackers 2 to 3,
+      the Warrior's number. A walk-in class fights where its target's pack stands; at
+      two it also could accept no pack under CP-56a. Nothing else changed.
+    - **Attempt 2** (run journey-a2, the same commit with that one file changed;
+      run/cp/CP-64/journey-a2/: replay.json passed, schema dropped; the status-5 stop
+      landed and wrote its receipt). Class id 3, level 8, 555 HP; completed Q2000 to
+      Q2004, Q2100 to Q2104 and Q2132, turned in at the Scout's trainer at 15:40. 41 min
+      25 s of game time, 31,083 trace records. Q2003 took 15 minutes.
+    - **Fights, attempt 2.** 39 encounters, 30 kills, no death, 3 retreats, each at
+      three attackers in Q2003; lowest HP 59% (265 of 449). 414 decisions: 278 dagger
+      swings, 90 casts on a target, 22 approaches, 13 life potions, 8 casts of Focused
+      Evasion, 3 retreats. Casts: Swift Edge 73, Soul Slash 12 (learned at level 7),
+      Focused Evasion 8: the ladder's evasion step is shown in play for the first time.
+      Four pull plans with policy natural-scout-v1, all pulls. No walk-in needed the
+      pack rule.
+    - **Ledger, attempt 2.** Supplied at the start: 30 life potions 162000006, 30
+      Anti-Shock scrolls 164000067, 20 Greater Running Scrolls 164000076. Used: 18 life
+      potions, 30 to 12 (5 in rests, 13 in fights); one sit for health; the Greater
+      Running Scroll five times; Blitzopan twice. Not shown: the shield scroll, Devotion
+      (level 9).
+    - **Gear and picks.** Worn: the dagger 100200125 from Q2100 at 4:19, the leather
+      piece 114300804 from Q2001 at 8:35, the dagger 100200604 from Q2002 at 15:40, as
+      CP-49 lists them.
+    - **Binds and Kinah.** The village obelisk 700063 at 4:16 for 43 Kinah, the outpost
+      obelisk 700064 at 19:31 for 134. 4,093 Kinah at the stop.
+    - **Findings, not fixed.** (a) Five distance refusals of Swift Edge in attempt 2 (14
+      in attempt 1), each answered by closing in, as for the Warrior. (b) Nine of the 39
+      encounters ended without a kill.
+    - **Guard and bundle.** The change is in the Scout's own profile file, so by rule
+      (c) the other class scopes are skipped; the Scout's scope is not recorded yet
+      (CP-66). Gate p, run guard-a1: identical to its baseline. The seven pre-commit
+      checks pass, Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run cp64-fast,
+      11 passed).
 - [ ] **CP-65 - Scout 1-9 at Munin, captured and verified as munin-scout-s1.** Depends:
   CP-64
   - Work: As CP-52 with -Class scout -Name munin-scout-s1. Acceptance: a dagger and leather
@@ -6332,3 +6375,10 @@ report what was done, what is blocked and what you need from me.
   24,580 records, SHA-256 3bab7969...5a24a00e. The guard of rule (c) now runs p, mage,
   warrior, artist and engineer. Evidence only; seven checks and the two script tests that
   read the baseline pass. Next by rule (h): CP-64.
+- 2026-10-08 — Loop: CP-64 done on the second attempt. Attempt 1 reached the stop in 71
+  minutes with 21 retreats and 2 deaths: the Scout left every walk-in on Q2003's ghosts at
+  two attackers. One profile number changed (the Scout's swarm limit, 2 to 3, the Warrior's).
+  Attempt 2 (run journey-a2): class id 3, level 8, Q2000 to Q2004, Q2100 to Q2104 and Q2132
+  completed in 41 min 25 s; 39 encounters, 30 kills, no death, 3 retreats at three
+  attackers; Focused Evasion cast eight times; 18 life potions. Guard guard-a1, set p:
+  identical. Seven checks, unit suite and Fast (cp64-fast) pass. Next by rule (h): CP-65.
