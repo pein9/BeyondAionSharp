@@ -206,6 +206,12 @@ The rows were run once more with a temporary printout that is not committed
   It is a possible defect shared with Java and needs the operator's decision before
   anything is changed.
 
+**Answered the same day.** The Scout holds two daggers ("they don't have to match, but
+when we consider upgrades, we will have to handle replacing the worst one vs the new
+item"), and the next plan is a loop that puts the Cleric on the generic rules and takes
+every class to the Cleric's endpoint: [natural-all-classes-ntc.md](natural-all-classes-ntc.md),
+decision D40.
+
 ## The request
 
 The operator, 2026-10-06: "OK, so now the next goal is to be able to create Class profiles
