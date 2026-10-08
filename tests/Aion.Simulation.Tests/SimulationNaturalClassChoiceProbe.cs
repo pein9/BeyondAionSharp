@@ -22,8 +22,17 @@ public sealed partial class SimulationFastScenarioTests
 	/// <param name="CeremonyItemId">The weapon taken at the ceremony; null for the reviewed bridge's pick.</param>
 	/// <param name="Masteries">How many masteries the second class is given at level 9, as read from Java's skill tree.</param>
 	/// <param name="Item">The checklist item the row belongs to; it names the row's run.</param>
+	/// <param name="TrialSwings">The normal attacks Hellion is given; null for the scenario's own bound of 600.</param>
 	private sealed record ClassChoiceRow(string Name, PlayerClass Starter, PlayerClass Second, int Account, string CharacterName, int? CeremonyItemId,
-		int Masteries = 6, string Item = "CP31");
+		int Masteries = 6, string Item = "CP31", int? TrialSwings = null);
+
+	/// <summary>
+	/// CP-67a: the Scout's bound for Hellion. The Training Dagger does 15 to 17 at the Scout's power of 100, and Hellion's
+	/// physical defence of 184 takes 18.4 off a swing (Java AttackUtil.adjustDamageByStatModifiers, with the defence from
+	/// NpcStatCalculation: 9 x 17 x 1.2), so every swing does the minimum of 1, as in Java. Measured in CP-67: 600 swings
+	/// took 38% of his 1,461 HP, which is about 1,570 swings for all of it.
+	/// </summary>
+	private const int ScoutTrialSwings = 2000;
 
 	private static readonly ClassChoiceRow[] ClassChoiceRows =
 	[
@@ -36,8 +45,8 @@ public sealed partial class SimulationFastScenarioTests
 		// for the Gunner, the Bard and the Rider.
 		new("gladiator", PlayerClass.WARRIOR, PlayerClass.GLADIATOR, ProbeAccountA, "Asimpickglad", 100900488, 10, "CP67"),
 		new("templar", PlayerClass.WARRIOR, PlayerClass.TEMPLAR, ProbeAccountB, "Asimpicktemplar", 100000640, 7, "CP67"),
-		new("assassin", PlayerClass.SCOUT, PlayerClass.ASSASSIN, ProbeAccountA, "Asimpicksin", 100200605, 4, "CP67"),
-		new("ranger", PlayerClass.SCOUT, PlayerClass.RANGER, ProbeAccountB, "Asimpickranger", 101700515, 4, "CP67"),
+		new("assassin", PlayerClass.SCOUT, PlayerClass.ASSASSIN, ProbeAccountA, "Asimpicksin", 100200605, 4, "CP67", ScoutTrialSwings),
+		new("ranger", PlayerClass.SCOUT, PlayerClass.RANGER, ProbeAccountB, "Asimpickranger", 101700515, 4, "CP67", ScoutTrialSwings),
 		new("sorcerer", PlayerClass.MAGE, PlayerClass.SORCERER, ProbeAccountA, "Asimpicksorc", 100600532, 3, "CP67"),
 		new("spiritmaster", PlayerClass.MAGE, PlayerClass.SPIRIT_MASTER, ProbeAccountB, "Asimpickspirit", 100600532, 3, "CP67"),
 		new("gunner", PlayerClass.ENGINEER, PlayerClass.GUNNER, ProbeAccountA, "Asimpickgunner", 101800506, 1, "CP67"),
@@ -124,15 +133,19 @@ public sealed partial class SimulationFastScenarioTests
 					.Select(packet => packet.Get<int>("cutsceneId")).Where(contract.Movies.Contains).Order());
 				Assert.False(player.IsInCustomState(CustomPlayerState.WATCHING_CUTSCENE));
 				int[] starterMasteries = NaturalClassLineContract.LoadDefault().Starter(row.Starter).Masteries.Select(mastery => mastery.SkillId).ToArray();
+				// The attacks the server carried out for this character, by opponent: the four guardian assassins and Hellion.
+				int[] swings = session.PacketHistory.Where(packet => packet.PacketType == typeof(SM_ATTACK) && packet.Get<int>("attackerObjId") == session.CharacterId)
+					.GroupBy(packet => packet.Get<int>("targetObjId")).Select(group => group.Count()).OrderDescending().ToArray();
 				Console.WriteLine($"{id}: class {player.GetPlayerClass()} ({(int)player.GetPlayerClass().GetClassId()}), level {player.GetLevel()}, " +
 					$"HP {player.GetLifeStats().GetCurrentHp()}/{player.GetLifeStats().GetMaxHp()}, " +
 					$"class page {contract.ClassChoice.ClassPageId}, action {contract.ClassChoice.Action}, masteries {string.Join(' ', contract.ClassChoice.MasterySkillIds)}, " +
 					$"Q{contract.CeremonyReward.QuestId} var {ceremony.Var} at preceptor {ceremony.NpcId}, " +
 					$"starter masteries still held {string.Join(' ', starterMasteries.Where(mastery => player.GetSkillList().IsSkillPresent(mastery)))}, " +
 					$"ceremony item {contract.CeremonyReward.ItemId} by {contract.CeremonyReward.Action} from {contract.CeremonyReward.SelectableList}, " +
-					$"Q{contract.Dispatch.QuestId} {dispatch.GetStatus()}/{dispatch.GetQuestVarById(0)}.");
+					$"Q{contract.Dispatch.QuestId} {dispatch.GetStatus()}/{dispatch.GetQuestVarById(0)}. " +
+					$"Swings carried out in the trial, by opponent: {string.Join(' ', swings)} (Hellion's bound {row.TrialSwings ?? 600}).");
 			});
-		await CapitalAscensionScenario.RunAsmodianAsync(driver, contract, token, stopAtDispatchStart: true);
+		await CapitalAscensionScenario.RunAsmodianAsync(driver, contract, token, stopAtDispatchStart: true, trialSwings: row.TrialSwings);
 		policy.AssertClean();
 	}
 }

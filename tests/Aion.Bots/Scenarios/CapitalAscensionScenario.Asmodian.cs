@@ -20,8 +20,10 @@ public static partial class CapitalAscensionScenario
 {
 	/// <param name="stopAtDispatchStart">The short endpoint: stop once Doman's SETPRO1 has moved the dispatch quest from
 	/// var 0 to var 1, before his teleporter is used. The driver's own check then ends the scenario in Pandaemonium.</param>
+	/// <param name="trialSwings">CP-67a: the normal attacks Hellion is given; unset means the scenario's 600. A caller whose
+	/// starter weapon does less than the Priest's mace names its own bound, with its reason.</param>
 	public static async Task RunAsmodianAsync(ICapitalAscensionDriver driver, NaturalAscensionContract contract,
-		CancellationToken token = default, bool stopAtDispatchStart = false)
+		CancellationToken token = default, bool stopAtDispatchStart = false, int? trialSwings = null)
 	{
 		NaturalAscensionStep Step(string key) => contract.Steps.Single(step => step.Key == key);
 		static BotPosition At(float[] position) => new(position[0], position[1], position[2], 0);
@@ -99,7 +101,7 @@ public static partial class CapitalAscensionScenario
 			int hellion = driver.Api.World.Objects.Values.Single(npc => npc.TemplateId == contract.Instance.Trial[1].NpcId).ObjectId;
 			// 1,461 HP against a level-nine Priest's mace (about five per swing, with stuns): a wider bound than the
 			// Gladiator needs for Orissan.
-			await DefeatAsync(driver, hellion, ct, maxAttacks: 600);
+			await DefeatAsync(driver, hellion, ct, maxAttacks: trialSwings ?? 600);
 			// Movie 152 arrives with the kill, inside the attack loop; the driver's final check finds it in history.
 			await WaitStateAsync(driver, ascension, 3, 6, ct);
 		}, token);

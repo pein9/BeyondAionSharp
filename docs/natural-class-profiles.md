@@ -5335,7 +5335,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       identical to their baselines (p 37,222, mage 23,555, warrior 24,199, artist 23,104,
       engineer 24,580, scout 31,082). Bundle: the seven pre-commit checks pass,
       Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run cp67-fast, 11 passed).
-- [ ] **CP-67a - The two Scout rows through the trial.** Depends: CP-31
+- [x] **CP-67a - The two Scout rows through the trial.** Depends: CP-31
   - Work: Java first, before anything is widened: what a normal attack of a level-9 Scout
     with the starter dagger does to Brigade General Hellion 205041 in Java
     (StatFunctions.calculateAttackDamage and the dagger's and Hellion's stats), set beside
@@ -5354,6 +5354,48 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     swings it used. Guards: rows cleric and gladiator pass with the bound unset (rule
     (k)); gate p and the five class scopes identical (rule (c), the scenario is in
     tests/Aion.Bots).
+  - 2026-10-08: done, on the first attempt. The port matches Java, so there is no server
+    defect and the two rows name their own bound.
+    - **Java, read first, beside the port.** A normal attack is
+      AttackUtil.calculatePhysAttackResult (AttackUtil.java:45-53). The swing's damage is
+      StatFunctions.calculateAttackDamage (StatFunctions.java:272-330): for a player with a
+      weapon, PlayerGameStats.getMainHandPAttack (lines 151-170), a random value between
+      the weapon's minimum and maximum damage with the attack stat's modifiers.
+      adjustDamageByStatModifiers (AttackUtil.java:55-131) then takes a tenth of the
+      target's physical defence off it and raises anything below 1 to 1. An npc template
+      with no defence gets NpcStatCalculation.calculateStat (NpcData.java:75-76): level x
+      17, times the rank's modifier. The port has the same lines in the same order
+      (StatFunctions.cs, AttackUtil.cs:30-133, PlayerGameStats.cs:161-186, NpcData.cs:78-79,
+      NpcStatCalculation.cs), and reads the same data files. This is a reading of both
+      sources; Java was not run.
+    - **The numbers.** Hellion 205041 is level 9, SEASONED, NORMAL, with no defence in his
+      template: 9 x 17 x 1.2 = 184, so 18.4 comes off every swing. The Scout's Training
+      Dagger 100200112 does 15 to 17, and the Scout's power is 100, so a swing never passes
+      18.4 and does the minimum of 1. The Priest's Training Mace does 16 to 24 with up to
+      three hits, and the Warrior's Training Sword 16 to 20 at power 110 with two, which is
+      why 600 swings were enough for them. A real Scout uses skills here; the scenario
+      swings only, on purpose.
+    - **The change.** CapitalAscensionScenario.RunAsmodianAsync takes an optional
+      trialSwings; unset means the 600 it had, so CAPITAL-ASMO and the nine other rows play
+      as they did. Rows assassin and ranger name 2,000 (ScoutTrialSwings in
+      SimT/SimulationNaturalClassChoiceProbe.cs, with the numbers above in its comment):
+      CP-67 measured 38% of Hellion's 1,461 HP in 600 swings, about 1,570 for all of it.
+      Every row now prints the attacks the server carried out for it, by opponent. No
+      skill is cast and no weapon is handed over.
+    - **Probe, rows assassin and ranger** (run/cp/CP-67a/probe-a1.log): both pass.
+      Assassin: class id 4, level 10, 670 HP, the dagger 100200605 by pick 1 of
+      assassin_selectable_reward at preceptor 204081 with Q2009 at var 20, Q2902 at START/1
+      after Doman; 1,393 attacks on Hellion and 49 to 56 on each guardian assassin.
+      Ranger: class id 5, level 10, 521 HP, the bow 101700515 by pick 3 of
+      ranger_selectable_reward at the same preceptor, Q2902 at START/1; 1,365 attacks on
+      Hellion and 45 to 54 on each assassin. The scenario waited for reward window 6 and
+      was sent it. Each row took 10 s of real time, inside the step's 30 s.
+    - **Rule (k).** Rows cleric and gladiator pass with the bound unset: 379 and 131 attacks on Hellion, inside the 600. They share probe account 98, so the pair in one process (run/cp/CP-67a/probe-k1.log) passed the cleric row and refused the gladiator row at login ("Fresh simulation account sim-player-98 already has a character"), the loop's own pairing mistake; the gladiator row then passed alone (probe-k2.log).
+    - **Guard, rule (c).** Run guard-a1, gate p and the five class scopes: all six
+      identical to their baselines (p 37,222, mage 23,555, warrior 24,199, artist 23,104,
+      engineer 24,580, scout 31,082). Bundle: the seven pre-commit checks pass,
+      Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run cp67a-fast, 11 passed).
+    - CP-67 is retried next with a fresh budget: all nine rows in one pass.
 - [ ] **CP-68 - Off hand: shield and second weapon in the gear rules.** Depends: CP-29,
   CP-57, CP-66
   - Work: Java first: Equipment.java's rules for shields and dual wield. The table gear rule
@@ -6555,3 +6597,12 @@ report what was done, what is blocked and what you need from me.
   item CP-67a written after CP-67 and added to its Depends (rule (i)). Rows cleric and
   chanter pass again; guard guard-a1, p and five class scopes: identical. Seven checks, unit
   suite and Fast (cp67-fast) pass. Next by rule (h): CP-67a.
+- 2026-10-08 — Loop: CP-67a done on the first attempt. Java and the port were read side by
+  side: a swing is the weapon's damage less a tenth of the target's physical defence, at
+  least 1, in both. Hellion's defence is 184 and the Scout's Training Dagger does 15 to 17,
+  so every swing does 1: no server defect. The capital scenario takes an optional swing
+  bound for Hellion (unset: its 600) and the assassin and ranger rows name 2,000. Both pass:
+  1,393 and 1,365 attacks on Hellion, the weapon paid at preceptor 204081 with reward window
+  6, Q2902 at var 1 at Doman. Rows cleric and gladiator pass with the bound unset; guard
+  guard-a1, p and five class scopes: identical. Seven checks, unit suite and Fast
+  (cp67a-fast) pass. Next by rule (h): CP-67, retried.
