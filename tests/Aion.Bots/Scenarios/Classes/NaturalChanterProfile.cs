@@ -6,8 +6,8 @@ namespace Aion.Bots.Scenarios.Classes;
 /// <summary>
 /// CP-32: the Chanter, the Priest's other choice at Ascension (docs/natural-class-profiles.md). The line priest-chanter
 /// plays the accepted Priest's levels 1-9, sends SETPRO13 at Munin and stops after the ceremony; it has no leg of its own
-/// yet. So the Chanter fights, rests and moves as the Priest it was: the Priest catalog through the Priest adapter, the
-/// Priest rest plan and the Priest line's distances, thresholds and restock table. Its own skills are all excluded
+/// yet. So the Chanter fights, rests and moves as the Priest it was: the Priest catalog with the Priest's rule table
+/// (NR-14), the Priest rest plan and the Priest line's distances, thresholds and restock table. Its own skills are all excluded
 /// until a Chanter leg exists. Only its gear is its own: the table form, with mace or staff by the physical stat.
 /// </summary>
 public static class NaturalChanterProfile
@@ -44,7 +44,7 @@ public static class NaturalChanterProfile
 			Class = PlayerClass.CHANTER,
 			Skills = skills,
 			Excluded = Excluded,
-			Combat = new NaturalPriestProfile.StaticPolicy(skills),
+			Combat = new NaturalRotationCombatPolicy(NaturalPriestProfile.PriestRules, skills, NaturalPriestProfile.PriestLineMovement),
 			HelpItems = new(NaturalHelpItemAllowlist.AllLevels.ToArray(), null),
 			Upkeep = [NaturalPriestProfile.Blessing],
 			PatrolRule = NaturalPatrolRule.Baseline,

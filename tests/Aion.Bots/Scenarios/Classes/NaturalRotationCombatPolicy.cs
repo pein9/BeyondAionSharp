@@ -108,14 +108,15 @@ public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjac
 
 /// <summary>
 /// CP-36: the fight decision of a class whose profile is a rule table. Pure and deterministic, like the Priest's policy,
-/// and read by the same fight loop. The Priest, the Cleric and the Chanter do not use it.
+/// and read by the same fight loop. NR-14: the Priest and the Chanter use it; the Cleric does not yet.
 /// <para>
 /// Order of one decision: death and incomplete life statistics; the swarm limit; the recovery ladder; the flee limit;
 /// the mana potion; with no target, upkeep or ready; with one, a ready follow-up before anything else (any non-chain
 /// cast, and another chain's first step, resets the open chain: Java Skill.canUseSkill, ChainCondition.shouldReset), the
 /// held chain's wait (<see cref="NaturalRotationRules.HoldOpenChain"/>), the in-fight upkeep, the attack list for the
 /// target's place, the weapon, a wait for a listed attack that is in reach and only cooling down, and last a movement
-/// answer by the pull style.
+/// answer by the pull style. NR-14: that wait does not keep a class that fills with its weapon out of the weapon's reach
+/// of a target that attacks from range, and a target no listed attack reaches is never held for.
 /// A follow-up is legal when its required category is the current or the previous chain category (Java
 /// ChainCondition.validate accepts either) on the same target, inside its own chain time (CP-Q17).
 /// </para>
@@ -271,12 +272,17 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		if (swing) return Choice("attack", null, "No skill is ready; swing the weapon.");
 		// CP-47: a listed attack that reaches the target and only cools down is waited for where the class stands (the
 		// Artist's Pulse, 2 s). Going to the target is for an attack that cannot be cast from here at all.
-		if (line.Any(skill => skill.RequiresChainCategory == null && Refusals(skill, state, now, parameters) is [CoolingDown]))
+		// NR-14: a class that fills with its weapon is not kept out of the weapon's reach by a cooldown when the target
+		// attacks from range. That target does not come, and the swing is what the class does between its skills.
+		bool weaponWanted = rules.AutoAttack == NaturalAutoAttack.Filler && state.TargetRanged && !swingLegal;
+		if (!weaponWanted && line.Any(skill => skill.RequiresChainCategory == null && Refusals(skill, state, now, parameters) is [CoolingDown]))
 			return Choice("wait", null, "A listed attack is in reach and only cools down; hold position.");
 		// Nothing can be cast or swung from here. An unpulled target never closes by itself, so the class goes to it.
 		// NR-11: the ranged hold. A target that attacks from range does not come closer, and walking up to it under fire
 		// with nothing ready takes the bot off checked ground.
-		if (rules.RangedHoldWithin is float within && !adjacent && state.TargetRanged && state.ConservativeRangedHold &&
+		// NR-14: holding is for a target some listed attack reaches from here; a target none reaches is gone to.
+		bool reaches = adjacent || line.Any(skill => distance <= NaturalSkillCatalog.Reach(skill, state));
+		if (rules.RangedHoldWithin is float within && !adjacent && state.TargetRanged && state.ConservativeRangedHold && reaches &&
 			(distance <= within || state.NearbyAggressors >= 2))
 			return Choice("wait", null, "The target attacks from range and nothing is ready; hold checked ground until an attack is.");
 		if (!state.Aggro) return Choice("approach", null, "Nothing reaches the unpulled target from here: go to it.");
@@ -284,7 +290,7 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		{
 			NaturalPullStyle.WalkIn => adjacent,
 			NaturalPullStyle.WeaponRangeStandOff => swingLegal,
-			_ => !state.TargetRanged,
+			_ => !state.TargetRanged && reaches,
 		};
 		return holds
 			? Choice("wait", null, "Nothing is ready; hold position until a cooldown clears.")

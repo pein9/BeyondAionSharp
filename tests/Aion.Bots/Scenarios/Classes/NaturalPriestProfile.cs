@@ -4,10 +4,10 @@ using Aion.GameServer.Model;
 namespace Aion.Bots.Scenarios.Classes;
 
 /// <summary>
-/// The accepted line's two profiles. Both are still adapters over the static <see cref="NaturalPriestCombatPolicy"/>.
-/// NR-13: their catalogs are generated from the shipped skill data, as every other class's is, with the roles below; a
-/// generated row equals its hand-typed row of <see cref="NaturalPriestSkills.All"/> and <see cref="NaturalClericSkills.All"/>
-/// in every field that row holds.
+/// The accepted line's two profiles. NR-13: their catalogs are generated from the shipped skill data, as every other
+/// class's is, with the roles below; a generated row equals its hand-typed row of <see cref="NaturalPriestSkills.All"/> and
+/// <see cref="NaturalClericSkills.All"/> in every field that row holds. NR-14: the Priest fights by the rule table
+/// <see cref="PriestRules"/>; the Cleric is still an adapter over the static <see cref="NaturalPriestCombatPolicy"/>.
 /// </summary>
 public static class NaturalPriestProfile
 {
@@ -34,6 +34,33 @@ public static class NaturalPriestProfile
 		[3867] = "penance", [3868] = "penance", [4106] = "servant", [4108] = "servant", [4073] = "touch", [4074] = "touch",
 		[4203] = "grace", [4204] = "grace", [4037] = "spark", [3951] = "flash-recovery",
 	};
+
+	/// <summary>
+	/// NR-14: the Priest's fight as a table, saying what the static rule said. With the monster on it: Infernal Blaze
+	/// (instant, a stun), Hallowed Strike (instant, a 30% attack-speed slow) and Smite, and the mace between skills. From
+	/// range: Smite, which is the pull, while the monster comes. Blessing of Guardianship goes up before the first hit.
+	/// <para>
+	/// The ladder: the Anti-Shock scroll at 50% HP, the life potion at 90%, Healing Light at 55% against one attacker and
+	/// at 70% against two or more; the potion's percentage and the two heal percentages are the run's. Once a fight has
+	/// had its heal and the target is at or below 15% HP (the run's), Smite finishes it in the heal's place. An emergency
+	/// runs from 35% until 45%, and from 55% until 65% against two or more attackers on a Seasoned target. Healing Light's
+	/// cost is kept back from every attack; a mana potion is drunk below that cost and 10, or below the cheapest attack.
+	/// The Priest leaves at three attackers, or at 30% HP with nothing of the ladder left. Against a target that attacks
+	/// from range it holds within 12 m, or with two attackers on it, when the run asks for the hold; otherwise it walks up.
+	/// </para>
+	/// </summary>
+	internal static readonly NaturalRotationRules PriestRules = new("natural-priest-v1",
+		Adjacent: ["infernal", "hallowed", "smite"], AtRange: ["smite"],
+		Upkeep: [new("blessing")],
+		Recovery:
+		[
+			new(NaturalRecoveryKind.ShieldScroll, 50),
+			new(NaturalRecoveryKind.LifePotion, 90, FromRun: NaturalRunPercent.LifePotion),
+			new(NaturalRecoveryKind.Skill, 55, "heal", HpPercentMultiple: 70, FinishInstead: true, FromRun: NaturalRunPercent.Heal),
+		],
+		SwarmAttackers: 3, FleeHpPercent: 30, AutoAttack: NaturalAutoAttack.Filler,
+		EmergencyPercent: 35, EmergencyClearPercent: 45, EmergencySeasonedPairPercent: 55,
+		Finisher: new("smite", 15, FromRun: true), ReserveRole: "heal", ManaPotionReserveMargin: 10, RangedHoldWithin: 12);
 
 	/// <summary>The Cleric's catalog reaches this level; the hand-typed table it replaces did.</summary>
 	private const int ClericCatalogTopLevel = 24;
@@ -85,13 +112,14 @@ public static class NaturalPriestProfile
 	{
 		ArgumentNullException.ThrowIfNull(data);
 		NaturalPriestSkill[] skills = PriestCatalog(data);
-		NaturalProfileValidator.Require(data, PlayerClass.PRIEST, 9, skills, NaturalSkillCatalog.CommonExcluded, [], NaturalGearRules.Priest);
+		NaturalProfileValidator.Require(data, PlayerClass.PRIEST, 9, skills, NaturalSkillCatalog.CommonExcluded, PriestRules.Lines(skills),
+			NaturalGearRules.Priest);
 		return new NaturalClassProfile
 		{
 			Class = PlayerClass.PRIEST,
 			Skills = skills,
 			Excluded = NaturalSkillCatalog.CommonExcluded,
-			Combat = new StaticPolicy(skills),
+			Combat = new NaturalRotationCombatPolicy(PriestRules, skills, PriestLineMovement),
 			// CP-06: the level 1-9 kit, and nothing from level 10 on.
 			HelpItems = new(NaturalHelpItemAllowlist.Starter, NaturalHelpItemAllowlist.StarterMaxLevel),
 			Upkeep = [Blessing],

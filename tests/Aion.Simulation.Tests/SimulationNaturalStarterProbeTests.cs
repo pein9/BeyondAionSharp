@@ -34,6 +34,8 @@ public sealed partial class SimulationFastScenarioTests
 		new("scout-7", NaturalClassLine.Scout, ProbeAccountB, "Asimsevenscout"),
 		new("warrior-pack", NaturalClassLine.Warrior, ProbeAccountA, "Asimpackwar"),
 		new("scout-two", NaturalClassLine.Scout, ProbeAccountA, "Asimtwodagger"),
+		new("priest-1", NaturalClassLine.PriestCleric, ProbeAccountA, "Asimonepriest"),
+		new("priest-7", NaturalClassLine.PriestCleric, ProbeAccountB, "Asimsevpriest"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -168,6 +170,8 @@ public sealed partial class SimulationFastScenarioTests
 			case "scout-7": await ScoutLevelSevenRowAsync(probe, id, geometry, token); break;
 			case "warrior-pack": await WarriorPackRowAsync(probe, id, geometry, token); break;
 			case "scout-two": await ScoutTwoDaggersRowAsync(probe, id, geometry, token); break;
+			case "priest-1": await PriestLevelOneRowAsync(probe, id, geometry, token); break;
+			case "priest-7": await PriestLevelSevenRowAsync(probe, id, geometry, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -660,6 +664,127 @@ public sealed partial class SimulationFastScenarioTests
 			$"One Fanged Karnif: {result}. Swings sent {sent}, carried out {carriedOut}. " +
 			$"Decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}. " +
 			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
+	}
+
+	/// <summary>The fight decisions of one step, in order.</summary>
+	private static StarterTraceRecord[] DecidedIn(IReadOnlyList<StarterTraceRecord> records) =>
+		records.Where(record => record is { Direction: "action", Packet: "combat-decision" }).ToArray();
+
+	private static bool Decided(StarterTraceRecord record, string action, params int[] skills) =>
+		record.Fields.GetProperty("action").GetString() == action &&
+		record.Fields.GetProperty("skillId") is { ValueKind: JsonValueKind.Number } skill && skills.Contains(skill.GetInt32());
+
+	/// <summary>
+	/// NR-14, row priest-1. Prepared by the director: the level-1 Priest is placed 18 m from a Sprigg Worker's shipped
+	/// spot, and its HP is halved before the second and before the third kill. Every other act is the journey's, by the
+	/// Priest's rule table: three Sprigg Workers (210363, 143 HP) killed through RunObservedCombatAsync with Smite from
+	/// range as the pull. Each forced rest heals with Healing Light and drinks no potion.
+	/// </summary>
+	private async Task PriestLevelOneRowAsync(StarterProbe probe, string id, BotNavigationGeometry geometry, CancellationToken token)
+	{
+		const int map = 220010000, sprigg = 210363, smite = 4012, heal = 1838;
+		Assert.Equal(1, probe.World.Level);
+		probe.Session.BeginStep("s01", "director-places-by-sprigg-workers");
+		BotPosition spot = GroundNear(geometry, map, new BotPosition(145.856f, 2560.26f, 307.891f, 0), 18);
+		await probe.PlaceAsync(spot.X, spot.Y, spot.Z);
+		var lines = new List<string>();
+		for (int kill = 1; kill <= 3; kill++)
+		{
+			string step = "s0" + (kill + 1);
+			probe.Session.BeginStep(step, $"kill-sprigg-worker-{kill}");
+			// Prepared by the director: half HP before the second and the third kill, so that their rests are forced.
+			if (kill > 1) await probe.CutHpAsync(50);
+			Npc target = NearestLiving(probe, sprigg);
+			NaturalCombatDiagnosticResult result = await probe.Journey.RunObservedCombatAsync(_ => Task.FromResult(target.GetObjectId()), token);
+			Assert.True(result.Killed, $"Sprigg Worker {kill} was not killed: {result}.");
+			Assert.True(target.IsDead());
+			Assert.Equal(0, result.Deaths);
+			IReadOnlyList<StarterTraceRecord> records = probe.TraceOf(step);
+			var casts = probe.CastsOf(step);
+			IReadOnlyDictionary<string, int> decisions = probe.DecisionsOf(step);
+			StarterTraceRecord[] decided = DecidedIn(records);
+			Assert.All(decided, record => Assert.StartsWith("natural-priest-v1:", record.Fields.GetProperty("policyVersion").GetString()));
+			Assert.All(casts, cast => Assert.Contains(cast.SkillId, new[] { smite, heal }));
+			// From range: the first attack is Smite, decided with the target outside melee reach.
+			StarterTraceRecord first = decided.First(record => record.Fields.GetProperty("action").GetString() == "cast-target");
+			Assert.Equal(smite, first.Fields.GetProperty("skillId").GetInt32());
+			double firedFrom = first.Fields.GetProperty("targetDistance").GetDouble();
+			Assert.True(firedFrom > 5, $"Kill {kill} began at {firedFrom:F1} m.");
+			Assert.DoesNotContain(records, record => record is { Direction: "action", Packet: "combat-range-rejected" });
+			StarterTraceRecord[] restHeals = records.Where(record => record is { Direction: "action", Packet: "between-fights-heal" }).ToArray();
+			if (kill > 1)
+			{
+				Assert.NotEmpty(restHeals);
+				Assert.All(restHeals, record => Assert.Equal(heal, record.Fields.GetProperty("skillId").GetInt32()));
+				Assert.DoesNotContain(records, record => record is { Direction: "action", Packet: "rest-life-potion" });
+				JsonElement pull = decided[0].Fields.GetProperty("observedState");
+				Assert.True(pull.GetProperty("Hp").GetInt32() * 100 >= pull.GetProperty("MaxHp").GetInt32() * 90,
+					$"Kill {kill} began at {pull.GetProperty("Hp").GetInt32()}/{pull.GetProperty("MaxHp").GetInt32()} HP.");
+			}
+			lines.Add($"kill {kill}: {result.ElapsedMillis} ms, Smite first from {firedFrom:F1} m, {casts.Count(cast => cast.SkillId == smite)} Smite, " +
+				$"{restHeals.Length} Healing Light in the rest and {decided.Count(record => Decided(record, "cast-self", heal))} in the fight, " +
+				$"decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}, " +
+				$"HP {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+		Assert.False(probe.Server.IsDead());
+		Console.WriteLine($"{id}: level {probe.World.Level} Priest, max HP {probe.World.MaxHp}, three Sprigg Workers. " + string.Join("; ", lines) + ".");
+	}
+
+	/// <summary>
+	/// NR-14, row priest-7. Prepared by the director: level 7, a place 20 m from a Vengeful Ghost's shipped spot, and 40%
+	/// HP at the moment the fight begins, so that the life potion's first tick leaves the Priest below the heal's 55%.
+	/// Every other act is the journey's, by the Priest's rule table, on one Vengeful Ghost (210593, 719 HP, level 8):
+	/// Healing Light in the fight, Smite from range as the pull, and with the monster on the Priest, Infernal Blaze (the
+	/// stun) and Hallowed Strike (the slow). A Fanged Karnif (478 HP) died to two Smites and the Blaze before the Strike.
+	/// </summary>
+	private async Task PriestLevelSevenRowAsync(StarterProbe probe, string id, BotNavigationGeometry geometry, CancellationToken token)
+	{
+		const int map = 220010000, ghost = 210593, blaze = 1814, strike = 1614, blessing = 1684;
+		int[] heals = [1838, 1839], smites = [4012, 4013];
+		probe.Session.BeginStep("s01", "director-sets-level-seven-and-places-by-a-ghost");
+		await probe.SetLevelAsync(7);
+		Assert.All(new[] { 1839, 4013, blaze, strike, blessing }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 7."));
+		BotPosition spot = GroundNear(geometry, map, new BotPosition(540.176f, 1865.25f, 293.628f, 0), 20);
+		await probe.PlaceAsync(spot.X, spot.Y, spot.Z);
+		probe.Session.BeginStep("s02", "fight-a-vengeful-ghost-from-two-fifths-hp");
+		Npc target = NearestLiving(probe, ghost);
+		NaturalCombatDiagnosticResult result = await probe.Journey.RunObservedCombatAsync(async _ =>
+		{
+			// Prepared by the director, after the journey's own rest: 40% HP as the fight begins.
+			await probe.CutHpAsync(40);
+			return target.GetObjectId();
+		}, token);
+		IReadOnlyList<StarterTraceRecord> records = probe.TraceOf("s02");
+		var casts = probe.CastsOf("s02").ToList();
+		IReadOnlyDictionary<string, int> decisions = probe.DecisionsOf("s02");
+		StarterTraceRecord[] decided = DecidedIn(records);
+		string order = string.Join(" ", casts.Select(cast => $"{cast.SkillId}@{cast.At.TotalSeconds:F1}"));
+		Assert.All(decided, record => Assert.StartsWith("natural-priest-v1:", record.Fields.GetProperty("policyVersion").GetString()));
+		// The heal, in the fight: decided by the ladder at or below its percentage.
+		StarterTraceRecord[] healed = decided.Where(record => Decided(record, "cast-self", heals)).ToArray();
+		Assert.True(healed.Length > 0, $"No Healing Light was decided in the fight: {order}.");
+		JsonElement firstHeal = healed[0].Fields.GetProperty("observedState");
+		int healedAt = firstHeal.GetProperty("Hp").GetInt32() * 100 / firstHeal.GetProperty("MaxHp").GetInt32();
+		Assert.True(healedAt <= 70, $"The first fight heal was decided at {healedAt}% HP.");
+		Assert.Contains(casts, cast => heals.Contains(cast.SkillId));
+		// The pull: Smite from range.
+		StarterTraceRecord first = decided.First(record => record.Fields.GetProperty("action").GetString() == "cast-target");
+		Assert.Contains(first.Fields.GetProperty("skillId").GetInt32(), smites);
+		double firedFrom = first.Fields.GetProperty("targetDistance").GetDouble();
+		Assert.True(firedFrom > 5, $"The fight began at {firedFrom:F1} m.");
+		// The stun and the slow: both completed, and both decided with the monster on the Priest.
+		Assert.True(casts.Any(cast => cast.SkillId == blaze), $"Infernal Blaze was not cast: {order}.");
+		Assert.True(casts.Any(cast => cast.SkillId == strike), $"Hallowed Strike was not cast: {order}.");
+		Assert.All(decided.Where(record => Decided(record, "cast-target", blaze, strike)),
+			record => Assert.True(record.Fields.GetProperty("targetAdjacent").GetBoolean()));
+		Assert.True(result.Killed, $"The Vengeful Ghost was not killed: {result}; casts {order}.");
+		Assert.True(target.IsDead());
+		Assert.Equal(0, result.Deaths);
+		int potions = records.Count(record => record is { Direction: "action", Packet: "combat-hot-potion" });
+		Console.WriteLine($"{id}: level {probe.World.Level} Priest, max HP {probe.World.MaxHp}, one Vengeful Ghost in {result.ElapsedMillis} ms. " +
+			$"Casts {order}. First fight heal decided at {healedAt}% HP; Smite first from {firedFrom:F1} m; life potions in the fight {potions}. " +
+			$"Decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
 	}
 
 	/// <summary>The living monster of a template nearest to another monster.</summary>

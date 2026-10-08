@@ -679,7 +679,7 @@ to the endpoint. The close of phase B is NR-21.
       15,762, mage 23,555, warrior 24,199, artist 23,104, engineer 24,580, scout 27,592).
       Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and
       Fast passes (run nr13-fast, 11 passed).
-- [ ] **NR-14 - The Priest on the table.** Depends: NR-11, NR-13
+- [x] **NR-14 - The Priest on the table.** Depends: NR-11, NR-13
   - Work: Write the Priest's rule table into this document first, then build it:
     NaturalPriestProfile.Priest takes NaturalRotationCombatPolicy with the generated
     catalog. The roles, percentages and order are the old rule's, said by the table. The
@@ -687,6 +687,98 @@ to the endpoint. The close of phase B is NR-21.
     the probe accounts, as the other starters have.
   - Proof: The two probe rows pass, with the heal, the stun and the slow shown in play;
     guard: the five class scopes identical. The Priest's scopes are NR-15's.
+  - 2026-10-08: done. The Priest and the Chanter placeholder fight by the rule table.
+    - **Java.** Nothing new of the server is relied on. What the table side of the fight
+      loop does was read for earlier items: a swing no sooner than the weapon's speed less
+      300 ms (PlayerController.attackTarget, CP-39 and NR-04), and the chain rule
+      (ChainCondition, CP-36). The Priest's four attacks open chains and none follows
+      another, so no chain is kept.
+    - **The Priest's rule table, natural-priest-v1** (NaturalPriestProfile.PriestRules).
+      Written here first, then built.
+
+      | Part | What the table says |
+      |---|---|
+      | With the monster on it | Infernal Blaze (the stun), Hallowed Strike (the slow), Smite, in that order. |
+      | From range | Smite. It is the pull, and the filler while the monster comes. |
+      | The weapon | Swung whenever no skill is ready and the monster is on the Priest. |
+      | Buff | Blessing of Guardianship, before the first hit, when the effects are seen without it. |
+      | Ladder, first | The Anti-Shock scroll at 50% HP. |
+      | Ladder, second | The life potion at 90% HP (the run's potion percentage). |
+      | Ladder, third | Healing Light at 55% HP, and at 70% against two or more attackers (the run's two heal percentages). |
+      | Finisher | Smite in Healing Light's place, outside an emergency, once the fight has had a heal and the target is at or below 15% HP (the run's). |
+      | Emergency | From 35% HP until 45%. Against two or more attackers on a Seasoned target, from 55% until 65%. Every ladder step is tried at once. |
+      | Mana kept back | Healing Light's cost, from every attack and from the Blessing. |
+      | Mana potion | Below Healing Light's cost and 10, or below the cheapest attack. |
+      | Leaves | At three attackers. At 30% HP when nothing of the ladder is available. Nothing is cast first; Root is the Cleric's. |
+      | A target that attacks from range | With nothing ready: holds within 12 m, or with two attackers, when the run asks for the hold. Otherwise walks up to it. |
+
+    - **Two rules added to the table policy, for every class** (Sc/Classes/
+      NaturalRotationCombatPolicy.cs). Survey A2 had not listed them; the old rule had
+      both.
+      - The wait for an attack that only cools down no longer keeps a class that fills
+        with its weapon out of the weapon's reach of a target that attacks from range.
+        That target does not come, so the class walks up, as the old Priest did between
+        two Smites.
+      - Holding is for a target some listed attack reaches from where the bot stands. A
+        target none reaches is gone to: the old rule's approach beyond 25 m.
+      - No recorded class scope holds a decision either rule changes. The five baseline
+        traces hold no stand-off wait at all, and the only cooldown waits are the
+        Artist's 86, and the Artist swings as a last resort. The guard below confirms it.
+    - **One-time check, not committed** (run/nr/NR-14/check-a1.log and check-a2.log, the
+      same sample with the facts of each class printed). The table and the old rule each
+      decided 400,000 sampled Priest states with a target: levels 1 to 9, HP, mana,
+      attackers, distance, a ranged target, the hold, cooldowns, potion, scroll, mana
+      potion, emergency, an earlier heal, the target's HP, cornered, and the Blessing.
+      392,275 are the same decision. The other 7,725 are four differences, and every
+      choice of the table is in its own list of legal candidates.
+      - 3,289: an unpulled target that is not on the Priest, with no attack that can be
+        paid for. The old rule waited for a monster that was not coming. The table walks
+        up to it, as it does for every class.
+      - 2,706: at or below 30% HP with no heal and no potion, and the Anti-Shock scroll
+        ready. The old rule left first. The table uses the scroll and leaves at the next
+        decision.
+      - 1,157: levels 1 and 2 with 23 or 24 MP. The table drinks the mana potion below
+        Smite's 25 MP, its cheapest attack then; the old rule drank it below 23.
+      - 573: from level 5, with no attacker yet and the Blessing not seen. The table
+        casts it before the first hit; the old rule left it to the check between fights.
+      - Not in the sample, and already written under NR-10: the three tuned-potion cases
+        and the mana potion before leaving.
+    - **What changes with the table in the fight loop.** The Priest now takes the table
+      side of the loop's branches (Survey A2): the weapon swings at its own speed where
+      a fixed 2.5 s stood; the wait after a cast includes the animation's last hit; the
+      effects seen on the bot are given to the rule as a list. The profile's Blessing
+      check between fights and the rest are unchanged.
+    - **Code.** NaturalPriestProfile builds the Priest with NaturalRotationCombatPolicy
+      over the generated catalog and validates the table's two lines; NaturalChanterProfile
+      takes the same table. The Cleric still fights by the old rule. Two probe rows are
+      added to the starter field probe.
+    - **Proof, the probe** (SIM, seed 1, the two probe accounts, one process).
+      - Attempt a1 (run nr14-probe-a1, run/nr/NR-14/probe-a1.log): row priest-1 passed;
+        row priest-7 failed on the row's own design, not on the rule. The row cut HP to
+        50% and fought a Fanged Karnif (478 HP). The life potion's first tick took HP from
+        265 to 302 of 531, above the heal's 55%, so no heal was due, and the Karnif died
+        to two Smites and Infernal Blaze before Hallowed Strike. The row now cuts HP to
+        40% and fights a Vengeful Ghost (210593, 719 HP, level 8).
+      - Attempt a2 (run nr14-probe-a2, run/nr/NR-14/probe-a2.log): both rows pass.
+      - priest-1: a level-1 Priest, 201 HP, three Sprigg Workers. Each dies to one Smite,
+        cast from 10.6 m, 18.3 m and 18.1 m, in 2,100 ms. Before the second and the third
+        kill the director halves HP, and each rest heals with one Healing Light and
+        drinks no potion. Every decision is the table's.
+      - priest-7: a level-7 Priest, 531 HP, cut to 40% as the fight begins. The life
+        potion at 212 HP, then Healing Light at 249 HP (46%), which leaves 490. Smite from
+        20.3 m, a wait of 1.5 s for its cooldown, Smite again; with the Ghost at 2.9 m
+        Infernal Blaze, Hallowed Strike and Smite, and the Ghost is dead 11,767 ms after
+        the fight began. The Ghost never hit the Priest. Decisions: 1 heal, 5 attacks, 1
+        potion, 3 waits.
+    - **Seen, not acted on.** A Smite takes 3.6 s from one to the next at range: 1.5 s to
+      cast, 0.6 s for the animation's last hit, and 1.5 s of waiting for its 2 s cooldown.
+    - **Guard, rule (c).** Run guard-a1, gate mage+warrior+artist+engineer+scout
+      (run/nr/NR-14/guard-a1/verdict.json): all five identical to their baselines (mage
+      23,555, warrior 24,199, artist 23,104, engineer 24,580, scout 27,592). Scopes p, m
+      and b change with this item and are left out until NR-15 and NR-17 re-record them;
+      l1, c, hm and ax start from a Cleric, which still fights by the old rule. Bundle:
+      the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast
+      passes (run nr14-fast, 11 passed).
 - [ ] **NR-15 - The Priest's Ishalgen replayed and re-recorded.** Depends: NR-14
   - Work: No code beyond one small change (rule (e)). Replay scope m (the Priest from
     creation to Munin); two attempts. Compare its ledger with the old baseline's run:
@@ -993,3 +1085,12 @@ report what was done, what is parked or blocked, and what the operator must deci
   by the old rule. Found for NR-16: twelve Cleric skills of levels 25 and 26 have no role
   yet. Full gate gate-a1, twelve scopes: identical. Seven checks, unit suite and Fast
   (nr13-fast) pass. Next: NR-14, the Priest on the table.
+- 2026-10-08 — Loop: NR-14 done. The Priest and the Chanter placeholder fight by the rule
+  table natural-priest-v1, written into the plan. Beside the old rule on 400,000 sampled
+  states it decides 392,275 the same; the rest are four named differences. Two rules were
+  added to the table policy for every class (walk up to a ranged target between skills
+  when the weapon is a filler; never hold for a target no attack reaches). Probe a2: rows
+  priest-1 and priest-7 pass, with the heal, the stun and the slow in play; a1 failed on
+  the row's design. Guard guard-a1, five class scopes: identical. Seven checks, unit suite
+  and Fast (nr14-fast) pass. Scopes p, m and b now differ from their baselines until
+  NR-15 and NR-17. Next: NR-15, the Priest's Ishalgen replayed and re-recorded.
