@@ -33,8 +33,11 @@ public sealed record NaturalClassLine(string Id, PlayerClass Starter, PlayerClas
 	/// <summary>CP-48: the Engineer, levels 1-9, to Munin (CP-Q19 for the account and the name).</summary>
 	public static NaturalClassLine Engineer { get; } = new("engineer", PlayerClass.ENGINEER, null, 41, "Asimengi");
 
+	/// <summary>CP-49: the Scout, levels 1-9, to Munin (CP-Q19 for the account and the name).</summary>
+	public static NaturalClassLine Scout { get; } = new("scout", PlayerClass.SCOUT, null, 41, "Asimscout");
+
 	/// <summary>Every line a run can name. Each class's first profile item adds its line here.</summary>
-	public static IReadOnlyList<NaturalClassLine> All { get; } = [PriestCleric, PriestChanter, Warrior, Mage, Artist, Engineer];
+	public static IReadOnlyList<NaturalClassLine> All { get; } = [PriestCleric, PriestChanter, Warrior, Mage, Artist, Engineer, Scout];
 
 	public static NaturalClassLine Default => All[0];
 

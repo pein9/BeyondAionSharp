@@ -30,6 +30,8 @@ public sealed partial class SimulationFastScenarioTests
 		new("artist-5", NaturalClassLine.Artist, ProbeAccountB, "Asimfiveart"),
 		new("engineer-1", NaturalClassLine.Engineer, ProbeAccountA, "Asimoneengi"),
 		new("engineer-5", NaturalClassLine.Engineer, ProbeAccountB, "Asimfiveengi"),
+		new("scout-1", NaturalClassLine.Scout, ProbeAccountA, "Asimonescout"),
+		new("scout-7", NaturalClassLine.Scout, ProbeAccountB, "Asimsevenscout"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -160,6 +162,8 @@ public sealed partial class SimulationFastScenarioTests
 			case "artist-5": await ArtistLevelFiveRowAsync(probe, id, geometry, token); break;
 			case "engineer-1": await CasterLevelOneRowAsync(probe, id, geometry, "Engineer", "Direct Shot", 2219, token); break;
 			case "engineer-5": await EngineerLevelFiveRowAsync(probe, id, geometry, token); break;
+			case "scout-1": await ScoutLevelOneRowAsync(probe, id, geometry, token); break;
+			case "scout-7": await ScoutLevelSevenRowAsync(probe, id, geometry, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -473,5 +477,96 @@ public sealed partial class SimulationFastScenarioTests
 			$"Casts {order}; Rapidfire {first.TotalMilliseconds:F0} ms after Gunshot and again {second.TotalMilliseconds:F0} ms later. " +
 			$"Decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}. " +
 			$"Distance refusals {refusals}. HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// CP-49, row scout-1. Prepared by the director: the level-1 Scout is placed 15 m from a Sprigg Worker's shipped spot,
+	/// and its HP is halved before the second and before the third kill. Every other act is the journey's: three Sprigg
+	/// Workers (210363, 143 HP) killed through RunObservedCombatAsync, each after a walk to the dagger's reach, with Swift
+	/// Edge and dagger swings. Each kill begins with the journey's ordinary rest: the first forced rest drinks a Minor
+	/// Life Potion; the second comes while the potion's 30 s delay still runs, so it sits to the HP target and drinks
+	/// nothing.
+	/// </summary>
+	private async Task ScoutLevelOneRowAsync(StarterProbe probe, string id, BotNavigationGeometry geometry, CancellationToken token)
+	{
+		const int map = 220010000, sprigg = 210363, edge = 3182, potion = NaturalIshalgenPotionPolicy.StarterLifePotionId;
+		Assert.Equal(1, probe.World.Level);
+		long owned = probe.Owned(potion);
+		probe.Session.BeginStep("s01", "director-places-by-sprigg-workers");
+		BotPosition spot = GroundNear(geometry, map, new BotPosition(145.856f, 2560.26f, 307.891f, 0), 15);
+		await probe.PlaceAsync(spot.X, spot.Y, spot.Z);
+		var lines = new List<string>();
+		int edges = 0, restPotions = 0;
+		for (int kill = 1; kill <= 3; kill++)
+		{
+			string step = "s0" + (kill + 1);
+			probe.Session.BeginStep(step, $"kill-sprigg-worker-{kill}");
+			// Prepared by the director: half HP before the second and the third kill, so that their rests are forced.
+			if (kill > 1) await probe.CutHpAsync(50);
+			Npc target = NearestLiving(probe, sprigg);
+			NaturalCombatDiagnosticResult result = await probe.Journey.RunObservedCombatAsync(_ => Task.FromResult(target.GetObjectId()), token);
+			Assert.True(result.Killed, $"Sprigg Worker {kill} was not killed: {result}.");
+			Assert.True(target.IsDead());
+			Assert.Equal(0, result.Deaths);
+			IReadOnlyList<StarterTraceRecord> records = probe.TraceOf(step);
+			var casts = probe.CastsOf(step);
+			IReadOnlyDictionary<string, int> decisions = probe.DecisionsOf(step);
+			// Swift Edge has a 7 s cooldown, so a kill that begins inside it is made with the dagger alone.
+			Assert.All(casts, cast => Assert.Equal(edge, cast.SkillId));
+			edges += casts.Count;
+			Assert.True(decisions.GetValueOrDefault("attack") > 0, $"Kill {kill} swung no weapon: {string.Join(", ", decisions)}.");
+			Assert.True(decisions.Values.Sum() < 200, $"Kill {kill} took {decisions.Values.Sum()} decisions.");
+			int potions = records.Count(record => record is { Direction: "action", Packet: "rest-life-potion" });
+			StarterTraceRecord[] sits = records.Where(record => record is { Direction: "action", Packet: "rest-sit-for-health" }).ToArray();
+			restPotions += potions;
+			if (kill == 2) Assert.Equal(1, potions);
+			if (kill == 3)
+			{
+				Assert.Equal(0, potions);
+				Assert.NotEmpty(sits);
+				// The sit says why it sat: the potion's delay was still running.
+				Assert.True(sits[0].Fields.GetProperty("lifePotionReadyInMillis").GetInt64() > 0, "The second forced rest sat with the potion ready.");
+			}
+			lines.Add($"kill {kill}: {result.ElapsedMillis} ms, {casts.Count} Swift Edge, rest potions {potions} sits {sits.Length}, " +
+				$"decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}, " +
+				$"HP {probe.World.CurrentHp}/{probe.World.MaxHp}");
+		}
+		Assert.Equal(1, restPotions);
+		Assert.True(edges > 0, "No Swift Edge was cast in three kills.");
+		Assert.False(probe.Server.IsDead());
+		Console.WriteLine($"{id}: level {probe.World.Level} Scout, max HP {probe.World.MaxHp}, three Sprigg Workers. " +
+			string.Join("; ", lines) + $". Life potions {owned} to {probe.Owned(potion)}.");
+	}
+
+	/// <summary>
+	/// CP-49, row scout-7. Prepared by the director: level 7 and a place 18 m from a Fanged Karnif's shipped spot. Every
+	/// other act is the journey's: Swift Edge and then Soul Slash, at once and inside its 3 s, on one Fanged Karnif
+	/// (210389, 478 HP, level 6). A death or a retreat is a recorded outcome; a cast that never starts throws in the fight
+	/// loop and fails the row.
+	/// </summary>
+	private async Task ScoutLevelSevenRowAsync(StarterProbe probe, string id, BotNavigationGeometry geometry, CancellationToken token)
+	{
+		const int map = 220010000, karnif = 210389, slash = 3223;
+		int[] edges = [3182, 3183];
+		probe.Session.BeginStep("s01", "director-sets-level-seven-and-places-by-a-karnif");
+		await probe.SetLevelAsync(7);
+		Assert.All(new[] { 3183, slash }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 7."));
+		BotPosition spot = GroundNear(geometry, map, new BotPosition(884.051f, 1652f, 272.994f, 0), 18);
+		await probe.PlaceAsync(spot.X, spot.Y, spot.Z);
+		probe.Session.BeginStep("s02", "fight-a-fanged-karnif");
+		Npc target = NearestLiving(probe, karnif);
+		NaturalCombatDiagnosticResult result = await probe.Journey.RunObservedCombatAsync(_ => Task.FromResult(target.GetObjectId()), token);
+		var casts = probe.CastsOf("s02").ToList();
+		IReadOnlyDictionary<string, int> decisions = probe.DecisionsOf("s02");
+		string order = string.Join(" ", casts.Select(cast => $"{cast.SkillId}@{cast.At.TotalSeconds:F1}"));
+		int first = casts.FindIndex(cast => edges.Contains(cast.SkillId));
+		Assert.True(first >= 0, $"No Swift Edge was cast: {order}.");
+		Assert.True(first + 1 < casts.Count && casts[first + 1].SkillId == slash, $"Soul Slash did not follow Swift Edge at once: {order}.");
+		TimeSpan gap = casts[first + 1].At - casts[first].At;
+		Assert.True(gap <= TimeSpan.FromSeconds(3), $"Soul Slash came {gap.TotalMilliseconds:F0} ms after Swift Edge: {order}.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Scout, max HP {probe.World.MaxHp}, one Fanged Karnif: {result}. " +
+			$"Casts {order}; Soul Slash {gap.TotalMilliseconds:F0} ms after Swift Edge. " +
+			$"Decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
 	}
 }

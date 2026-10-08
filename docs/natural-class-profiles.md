@@ -4390,7 +4390,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - Guard: gate p+m+c, run guard-a1, each identical to its baseline of 49cf15b60 (p
       37,222, m 112,397, c 96,166 records). Bundle: the seven pre-commit checks pass,
       Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run cp48-fast, 11 passed).
-- [ ] **CP-49 - Scout profile.** Depends: CP-21, CP-24, CP-43, CP-46
+- [x] **CP-49 - Scout profile.** Depends: CP-21, CP-24, CP-43, CP-46
   - Work: Add line scout and Sc/Classes/NaturalScoutProfile.cs: walk-in pull; Devotion 3235
     before the opener; Swift Edge 3182/3183 then Soul Slash 3223 at once; Focused Evasion
     3195 on the ladder, never between the two; dagger swings as filler; one dagger by the
@@ -4409,6 +4409,56 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     the second, inside the potion's delay, the sit). Row 7: a director-leveled level-7 Scout
     casts Swift Edge then Soul Slash on one Fanged Karnif 210389 (478 HP, level 6) with no
     cast-start timeout.
+  - 2026-10-08: done on the first probe attempt. Java: Skill.endCast rolls the chain on the
+    cast skill's own chain_skill_prob, so Swift Edge (100) always opens the chain and Soul
+    Slash's 10 only decides whether its own later follow-ups open; ChainCondition.validate
+    was read for CP-39.
+    - **The line.** NaturalClassLine.Scout: id scout, starter SCOUT, no second class,
+      account 41, name Asimscout (CP-Q19, on its default).
+    - **The profile** (Sc/Classes/NaturalScoutProfile.cs), built from the run's static
+      data. Catalog: Swift Edge 3182/3183 (edge), Soul Slash 3223 (slash), Devotion 3235
+      (devotion), Focused Evasion 3195 (evasion). Excluded with reasons: the three common
+      skills, Surprise Attack 3196/3197, Counterattack 3209 and Stealth 3222 (CP-Q16). The
+      validator passes. Table natural-scout-v1, with the monster in reach: Devotion when
+      ready (level 9), Swift Edge, Soul Slash; an open follow-up is always cast first, so
+      Devotion goes before the opener and never between the two; the dagger swings
+      whenever no skill is ready; nothing is cast from range. Ladder: Focused Evasion at or
+      below 70% HP, the shield scroll at 50%, the life potion at or below 75%. The table
+      holds an open chain, so Focused Evasion is not cast while Soul Slash is open, outside
+      an emergency. It leaves at two attackers or at 25% HP with nothing ready. Movement
+      and readiness are the Warrior's: walk-in, melee reach 3 m, HP-only thresholds. Rest:
+      the potion plan, HP target 90%, no mana target. Help items: the level 1-9 kit of
+      CP-05 with the Courage family in the shared speed slot (Blitzopan). Engage distances
+      and campaign numbers: the Priest line's, as the Warrior starts with. Restock: the
+      Minor Life Elixir of list 721 at 5 or fewer up to 12, Kinah floor 500.
+    - **Gear.** The Scout table of CP-29 as it is: one dagger by the physical stat;
+      leather, then robe, then clothes; nothing in the off hand until CP-68. Reward picks
+      as CP-29 lists them: the daggers at Q2100, Q2002 and Q2134 (100200125, 100200604,
+      100200126), the leather piece at Q2001, Q2005, Q2006, Q2007 and Q2129 (114300804,
+      113300791, 114300805, 110301182, 111300768), and the Minor Life Elixir at Q2117 and
+      Q2124.
+    - **No shared fight code changed.** The Warrior profile's movement and readiness are
+      now visible to the Scout's file; nothing else outside the new profile was touched.
+    - **Probe, rows scout-1 and scout-7** (run/cp/CP-49/probe-a1.log, traces beside it).
+      - Row scout-1, on account 98 as Asimonescout. Prepared: placed 15 m from a Sprigg
+        Worker's spot; HP halved before the second and the third kill. A level-1 Scout has
+        219 HP. Three Sprigg Workers 210363 die in 4.6, 6.6 and 4.7 s, each to one walk to
+        reach, one Swift Edge and two or three dagger swings; it ends each at full HP. The
+        rest before the second kill drinks one Minor Life Potion and sits once; the rest
+        before the third drinks nothing and sits once, and its record shows the potion's
+        delay still running. Life potions 100 to 99.
+      - Row scout-7, on account 100 as Asimsevenscout. Prepared: level 7, placed 18 m from
+        a Fanged Karnif's spot. A level-7 Scout has 501 HP. It walks in, casts Swift Edge
+        3183 at 2.8 s and Soul Slash 3223 at 3.5 s, 701 ms after it, swings five times,
+        and casts the pair again at 10.7 and 11.4 s; the Karnif 210389 (478 HP) is dead
+        after 12.1 s. Decisions: approach 1, cast-target 4, attack 5. Lowest HP 384 of 501
+        (77%), above every ladder step; it ends at 394. No cast without a start.
+    - **Built and not shown in play:** Focused Evasion and the rest of the ladder (HP never
+      reached 75%), Devotion (level 9).
+    - Guard: gate p, run guard-a1, identical to its baseline of 49cf15b60. Bundle: the
+      seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes
+      (run cp49-fast, 11 passed).
+    - Phase E is closed: all five new starters have a line, a profile and two probe rows.
 
 ### F. Levels 1-9 to Munin, one preserved snapshot per class
 
@@ -5641,3 +5691,12 @@ report what was done, what is blocked and what you need from me.
   (902 and 1,078 ms apart) and kills a Vengeful Ghost in 7.0 s untouched. Warrior, Mage and
   Artist rows play as recorded. Guard guard-a1, set p+m+c: identical. Seven checks, unit
   suite and Fast (cp48-fast) pass. Next by rule (h): CP-49.
+- 2026-10-08 — Loop: CP-49 done on the first probe attempt. Line scout and the Scout's
+  profile, a walk-in on the Warrior's movement: Devotion before the opener, Swift Edge, Soul
+  Slash at once, dagger swings between; Focused Evasion, the shield scroll and the life
+  potion on the ladder, with the chain held; the potion-and-sit rest. Probe: a level-1 Scout
+  walks in and kills three Sprigg Workers with Swift Edge and the dagger, and its two forced
+  rests drink one potion and then sit; a level-7 Scout casts Swift Edge and Soul Slash 701 ms
+  apart, twice, and kills a Fanged Karnif in 12.1 s. No shared fight code changed. Guard
+  guard-a1, set p: identical. Seven checks, unit suite and Fast (cp49-fast) pass. Phase E is
+  closed. Next by rule (h): CP-50.

@@ -36,11 +36,11 @@ public static class NaturalWarriorProfile
 		OnlyWhenHurt: new Dictionary<string, int> { ["rage"] = 80 });
 
 	/// <summary>It walks to the target and fights at the weapon's reach; after a distance refusal it comes inside reach.</summary>
-	private static readonly NaturalFightMovement Movement = new(NaturalPullStyle.WalkIn,
+	internal static readonly NaturalFightMovement Movement = new(NaturalPullStyle.WalkIn,
 		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, RangedRouteBeyond: 0, RangeRefusalCloseIn: 2);
 
 	/// <summary>HP only: its attacks need no mana worth resting for.</summary>
-	private static readonly NaturalReadinessThresholds Readiness = new(
+	internal static readonly NaturalReadinessThresholds Readiness = new(
 		BeforePull: new(80), BeforeUseBar: new(60), BetweenAdds: new(60), BeforeNamedTarget: new(80));
 
 	/// <summary>CP-Q11: the Minor Life Elixir of trade list 721, bought at 5 or fewer up to 12, and no purchase takes
