@@ -189,6 +189,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		NaturalCapitalContract capitalContract = NaturalCapitalContract.LoadDefault();
 		// CP-20: what the server decides for the line's starter (the Q2132 var and trainer).
 		NaturalStarterClass starterFacts = NaturalClassLineContract.LoadDefault().Starter(ClassLine.Starter);
+		// NR-13: every class's profile is generated from the shipped data.
+		NaturalClassProfiles.Supply(runtime.Data);
 		// CP-26: the line's Ascension bridge, loaded once when the run first needs it. The accepted line's is the reviewed
 		// contract; a line that takes no second class has none and is refused there by name.
 		NaturalAscensionContract? lineBridge = null;

@@ -1,3 +1,4 @@
+using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
 
 namespace Aion.Bots.Scenarios.Classes;
@@ -33,23 +34,28 @@ public static class NaturalChanterProfile
 	private static readonly NaturalGearRules ChanterGear = NaturalClassGearTable.Chanter.Rules(NaturalClassLineContract.LoadDefault(),
 		NaturalHelpItemAllowlist.AllLevels, NaturalPriestSkills.All);
 
-	public static NaturalClassProfile Chanter { get; } = new()
+	public static NaturalClassProfile Create(StaticData data)
 	{
-		Class = PlayerClass.CHANTER,
-		// A Chanter keeps what it learned as a Priest.
-		Skills = NaturalPriestSkills.All,
-		Excluded = Excluded,
-		Combat = new NaturalPriestProfile.StaticPolicy(NaturalPriestSkills.All),
-		HelpItems = new(NaturalHelpItemAllowlist.AllLevels.ToArray(), null),
-		Upkeep = [NaturalPriestProfile.Blessing],
-		PatrolRule = NaturalPatrolRule.Baseline,
-		RangedHold = NaturalRangedHold.RunOption,
-		Rest = NaturalPriestProfile.RestWith(NaturalPriestSkills.All),
-		Ranges = NaturalPriestProfile.PriestLineRanges,
-		Readiness = NaturalPriestProfile.PriestLineReadiness,
-		Movement = NaturalPriestProfile.PriestLineMovement,
-		Campaign = NaturalPriestProfile.PriestLineCampaign,
-		Gear = ChanterGear,
-		Restock = NaturalPriestProfile.PriestLineRestock,
-	};
+		ArgumentNullException.ThrowIfNull(data);
+		// A Chanter keeps what it learned as a Priest (NR-13: the Priest's generated catalog).
+		NaturalPriestSkill[] skills = NaturalPriestProfile.PriestCatalog(data);
+		return new NaturalClassProfile
+		{
+			Class = PlayerClass.CHANTER,
+			Skills = skills,
+			Excluded = Excluded,
+			Combat = new NaturalPriestProfile.StaticPolicy(skills),
+			HelpItems = new(NaturalHelpItemAllowlist.AllLevels.ToArray(), null),
+			Upkeep = [NaturalPriestProfile.Blessing],
+			PatrolRule = NaturalPatrolRule.Baseline,
+			RangedHold = NaturalRangedHold.RunOption,
+			Rest = NaturalPriestProfile.RestWith(skills),
+			Ranges = NaturalPriestProfile.PriestLineRanges,
+			Readiness = NaturalPriestProfile.PriestLineReadiness,
+			Movement = NaturalPriestProfile.PriestLineMovement,
+			Campaign = NaturalPriestProfile.PriestLineCampaign,
+			Gear = ChanterGear,
+			Restock = NaturalPriestProfile.PriestLineRestock,
+		};
+	}
 }

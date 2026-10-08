@@ -1,14 +1,47 @@
+using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
 
 namespace Aion.Bots.Scenarios.Classes;
 
 /// <summary>
-/// The accepted line's two profiles. Both are adapters over the static <see cref="NaturalPriestCombatPolicy"/> and its
-/// frozen hand-typed skill tables, which stay as they are: the Priest with <see cref="NaturalPriestSkills.All"/>, the
-/// Cleric with <see cref="NaturalClericSkills.All"/>.
+/// The accepted line's two profiles. Both are still adapters over the static <see cref="NaturalPriestCombatPolicy"/>.
+/// NR-13: their catalogs are generated from the shipped skill data, as every other class's is, with the roles below; a
+/// generated row equals its hand-typed row of <see cref="NaturalPriestSkills.All"/> and <see cref="NaturalClericSkills.All"/>
+/// in every field that row holds.
 /// </summary>
 public static class NaturalPriestProfile
 {
+	/// <summary>The Priest's eight active skills of levels 1 to 8: Healing Light, Smite, Hallowed Strike, Blessing of
+	/// Guardianship and Infernal Blaze, with their second ranks.</summary>
+	internal static readonly IReadOnlyDictionary<int, string> PriestRoles = new Dictionary<int, string>
+	{
+		[1838] = "heal", [1839] = "heal", [4012] = "smite", [4013] = "smite", [1614] = "hallowed", [1615] = "hallowed",
+		[1684] = "blessing", [1814] = "infernal",
+	};
+
+	/// <summary>The Cleric's own active skills from level 10 to level 24, by role, beside the Priest's it keeps: the
+	/// powder skills Herb Treatment and MP Recovery, Salvation, Light of Rejuvenation, Flashbolt (the follow-up of Smite),
+	/// Slashing Wind, Earth's Wrath, Root, Penance, the Holy Servant, Divine Touch, Healing Grace, Divine Spark and Flash
+	/// of Recovery, and the later ranks of the Priest's roles. The ranks of levels 25 and 26 have no role yet.</summary>
+	internal static readonly IReadOnlyDictionary<int, string> ClericRoles = new Dictionary<int, string>(PriestRoles)
+	{
+		[246] = "herb", [247] = "herb", [251] = "herb", [249] = "mp-recovery", [250] = "mp-recovery", [252] = "mp-recovery",
+		[3922] = "salvation", [3939] = "rejuvenation", [3940] = "rejuvenation", [3941] = "rejuvenation",
+		[4025] = "followup", [4026] = "followup", [4027] = "followup", [4061] = "wind", [4062] = "wind", [4063] = "wind",
+		[4083] = "wrath", [4084] = "wrath", [4085] = "wrath", [4127] = "root",
+		[1840] = "heal", [1841] = "heal", [1842] = "heal", [4014] = "smite", [4015] = "smite", [4016] = "smite",
+		[1815] = "infernal", [1816] = "infernal", [1817] = "infernal", [1616] = "hallowed", [1617] = "hallowed", [1618] = "hallowed",
+		[3867] = "penance", [3868] = "penance", [4106] = "servant", [4108] = "servant", [4073] = "touch", [4074] = "touch",
+		[4203] = "grace", [4204] = "grace", [4037] = "spark", [3951] = "flash-recovery",
+	};
+
+	/// <summary>The Cleric's catalog reaches this level; the hand-typed table it replaces did.</summary>
+	private const int ClericCatalogTopLevel = 24;
+
+	/// <summary>The Priest's catalog, which a Chanter keeps as well.</summary>
+	internal static NaturalPriestSkill[] PriestCatalog(StaticData data) =>
+		NaturalSkillCatalog.Build(data, PlayerClass.PRIEST, PriestRoles, NaturalSkillCatalog.CommonExcluded);
+
 	/// <summary>Blessing of Guardianship, kept up between fights as the recorded human did.</summary>
 	internal static readonly NaturalUpkeepBuff Blessing = new("blessing", "buff-blessing");
 
@@ -48,46 +81,59 @@ public static class NaturalPriestProfile
 		]),
 	]);
 
-	public static NaturalClassProfile Priest { get; } = new()
+	public static NaturalClassProfile CreatePriest(StaticData data)
 	{
-		Class = PlayerClass.PRIEST,
-		Skills = NaturalPriestSkills.All,
-		Excluded = new Dictionary<int, string>(),
-		Combat = new StaticPolicy(NaturalPriestSkills.All),
-		// CP-06: the level 1-9 kit, and nothing from level 10 on.
-		HelpItems = new(NaturalHelpItemAllowlist.Starter, NaturalHelpItemAllowlist.StarterMaxLevel),
-		Upkeep = [Blessing],
-		PatrolRule = NaturalPatrolRule.Baseline,
-		RangedHold = NaturalRangedHold.RunOption,
-		Rest = RestWith(NaturalPriestSkills.All),
-		Ranges = PriestLineRanges,
-		Readiness = PriestLineReadiness,
-		Movement = PriestLineMovement,
-		Campaign = PriestLineCampaign,
-		Gear = NaturalGearRules.Priest,
-		Restock = PriestLineRestock,
-	};
+		ArgumentNullException.ThrowIfNull(data);
+		NaturalPriestSkill[] skills = PriestCatalog(data);
+		NaturalProfileValidator.Require(data, PlayerClass.PRIEST, 9, skills, NaturalSkillCatalog.CommonExcluded, [], NaturalGearRules.Priest);
+		return new NaturalClassProfile
+		{
+			Class = PlayerClass.PRIEST,
+			Skills = skills,
+			Excluded = NaturalSkillCatalog.CommonExcluded,
+			Combat = new StaticPolicy(skills),
+			// CP-06: the level 1-9 kit, and nothing from level 10 on.
+			HelpItems = new(NaturalHelpItemAllowlist.Starter, NaturalHelpItemAllowlist.StarterMaxLevel),
+			Upkeep = [Blessing],
+			PatrolRule = NaturalPatrolRule.Baseline,
+			RangedHold = NaturalRangedHold.RunOption,
+			Rest = RestWith(skills),
+			Ranges = PriestLineRanges,
+			Readiness = PriestLineReadiness,
+			Movement = PriestLineMovement,
+			Campaign = PriestLineCampaign,
+			Gear = NaturalGearRules.Priest,
+			Restock = PriestLineRestock,
+		};
+	}
 
-	public static NaturalClassProfile Cleric { get; } = new()
+	public static NaturalClassProfile CreateCleric(StaticData data)
 	{
-		Class = PlayerClass.CLERIC,
-		Skills = NaturalClericSkills.All,
-		Excluded = NaturalClericSkills.Excluded,
-		Combat = new StaticPolicy(NaturalClericSkills.All),
-		// OD-13: the approved kit at every level.
-		HelpItems = new(NaturalHelpItemAllowlist.AllLevels.ToArray(), null),
-		Upkeep = [Blessing],
-		// NA-22 (OD-14).
-		PatrolRule = NaturalPatrolRule.HoldAndAssess,
-		RangedHold = NaturalRangedHold.RunOption,
-		Rest = RestWith(NaturalClericSkills.All),
-		Ranges = PriestLineRanges,
-		Readiness = PriestLineReadiness,
-		Movement = PriestLineMovement,
-		Campaign = PriestLineCampaign,
-		Gear = NaturalGearRules.Cleric,
-		Restock = PriestLineRestock,
-	};
+		ArgumentNullException.ThrowIfNull(data);
+		var excluded = NaturalSkillCatalog.CommonExcluded.Concat(NaturalClericSkills.Excluded).ToDictionary(entry => entry.Key, entry => entry.Value);
+		NaturalPriestSkill[] skills = NaturalSkillCatalog.Build(data, PlayerClass.CLERIC, ClericRoles, excluded);
+		NaturalProfileValidator.Require(data, PlayerClass.CLERIC, ClericCatalogTopLevel, skills, excluded, [], NaturalGearRules.Cleric);
+		return new NaturalClassProfile
+		{
+			Class = PlayerClass.CLERIC,
+			Skills = skills,
+			Excluded = excluded,
+			Combat = new StaticPolicy(skills),
+			// OD-13: the approved kit at every level.
+			HelpItems = new(NaturalHelpItemAllowlist.AllLevels.ToArray(), null),
+			Upkeep = [Blessing],
+			// NA-22 (OD-14).
+			PatrolRule = NaturalPatrolRule.HoldAndAssess,
+			RangedHold = NaturalRangedHold.RunOption,
+			Rest = RestWith(skills),
+			Ranges = PriestLineRanges,
+			Readiness = PriestLineReadiness,
+			Movement = PriestLineMovement,
+			Campaign = PriestLineCampaign,
+			Gear = NaturalGearRules.Cleric,
+			Restock = PriestLineRestock,
+		};
+	}
 
 	/// <summary>Calls the static policy with the class's catalog and the run's parameters, and reports the run's policy id.</summary>
 	internal sealed class StaticPolicy(NaturalPriestSkill[] catalog) : INaturalCombatPolicy

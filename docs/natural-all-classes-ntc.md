@@ -610,7 +610,7 @@ to the endpoint. The close of phase B is NR-21.
       15,762, mage 23,555, warrior 24,199, artist 23,104, engineer 24,580, scout 27,592).
       Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and
       Fast passes (run nr12-fast, 11 passed).
-- [ ] **NR-13 - Generated catalogs for the Priest and the Cleric.** Depends: NR-12
+- [x] **NR-13 - Generated catalogs for the Priest and the Cleric.** Depends: NR-12
   - Work: The Priest's and the Cleric's catalogs are generated from the skill templates
     with a role per skill id, as the other classes' are, with the reason for every active
     skill left out. A one-time check sets each generated row beside its hand-typed row
@@ -619,6 +619,66 @@ to the endpoint. The close of phase B is NR-21.
     line, and the template wins. The profiles still use the old fight rule in this item.
   - Proof: The list of differences; when it is empty the full gate is identical, and when
     it is not, the scopes it changes are re-recorded (rule (p)).
+  - 2026-10-08: done. The list of differences is empty.
+    - **Java.** Nothing new of the server is relied on. A catalog reads the skill tree as
+      Java's SkillLearnService does (learnNewSkills calls autoLearnSkills, lines 84-93):
+      the rows of the class the character is at each level. A new rank is added and the
+      old one is kept (addSkill at line 91, and no removal), which is why the highest
+      learned rank of a role is the one cast.
+    - **The comparison** (one-time check, not committed; run/nr/NR-13/compare-a1.log). Each
+      generated row was set beside its hand-typed row in eleven fields: level, mana cost,
+      range, cooldown group, cooldown time, chain category, required category, chain time,
+      DP, reagent and reagent count. Priest: 8 rows against 8, 0 differences. Cleric: 50
+      rows against 50 (its own 42 and the Priest's 8), 0 differences. So no template line
+      is written here and no scope is re-recorded.
+    - **What a generated row holds beside those fields.** The hand-typed rows held none of
+      this, and the old fight rule reads none of it.
+      - First target. The caster: Herb Treatment, MP Recovery, Salvation, Penance. A
+        friend or the caster: Healing Light, Blessing of Guardianship, Light of
+        Rejuvenation, Healing Grace, Flash of Recovery. The target: every attack and the
+        Holy Servant.
+      - Cast time. Healing Light 2 s, Smite 1.5 s, Earth's Wrath 1.5 s, Healing Grace 3 s,
+        Herb Treatment and MP Recovery 4 s. Every other row is instant.
+      - Weapon. Hallowed Strike adds the weapon's range to its 1 m and needs a greatsword,
+        dagger, mace, polearm, staff or sword. Divine Touch adds the weapon's range to its
+        25 m. No row is a counter skill, a charge skill or barred in combat.
+    - **The one place the fight loop reads such a field for the old rule.** After the
+      server refuses a cast for distance, the loop closes to 2 m for a skill that reaches
+      3 m or less and to 10 m for any other. Hallowed Strike now reaches 2.5 m with a mace
+      and 3 m with a staff where the hand-typed row said 1 m, and Divine Touch 27 m where
+      it said 25 m: the answer is the same for both. The recorded scopes p, m and b hold
+      1, 8 and 1 such refusals, and the gate below shows them unchanged.
+    - **Code.** NaturalPriestProfile holds the two role tables (8 skill ids for the Priest,
+      50 for the Cleric) and builds both profiles from the run's static data;
+      NaturalChanterProfile takes the Priest's generated catalog. NaturalClassProfiles has
+      one table now: all eight profiles are built from the shipped data, once, and a run
+      hands its static data over when it starts (Supply), so no caller without it comes
+      first. The validator runs when a profile is built: the Priest to level 9, the Cleric
+      to level 24. The Priest now names the three common exclusions (Return, Bandage Heal,
+      Escape); the Cleric names those and its own seven. All three still fight by the old
+      rule (StaticPolicy).
+    - **Second one-time check, on the built profiles** (run/nr/NR-13/check-a2.log; not
+      committed). Priest 8 rows, Cleric 50, Chanter 8; 0 differences with the role
+      included, so the typed role tables say what the hand-typed rows said. The old rule's
+      best rank of every role at every level from 1 to 26 is the same from either table
+      (130, 494 and 130 picks).
+    - **Found, for NR-16.** The catalog stops at level 24, as the hand-typed table did,
+      and the Cleric plays to 26. Twelve skills of levels 25 and 26 have neither a role
+      nor an exclusion: the next ranks of Herb Treatment (253), MP Recovery (254), Penance
+      (3869), Light of Rejuvenation (3942), Flashbolt (4028), Slashing Wind (4064),
+      Earth's Wrath (4086) and Summon Holy Servant (4110) at 25, of Healing Light (1843)
+      and Smite (4017) at 26, and the new skills Splendor of Flight (4006) at 25 and
+      Stability (3880) at 26. The recorded Cleric casts the level-24 ranks at 25 and 26.
+      NR-16 gives each its role or its reason and validates to level 26.
+    - **Left for NR-18.** The hand-typed tables remain. They are read by the old rule's
+      defaults, by the static Priest and Cleric gear rules (ids and levels only) and by
+      the existing tests.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, run gate-a1
+      (run/nr/NR-13/gate-a1/verdict.json): verdict pass, all twelve scopes identical to
+      their baselines (p 37,222, m 112,397, b 144,048, l1 30,693, c 96,166, hm 39,564, ax
+      15,762, mage 23,555, warrior 24,199, artist 23,104, engineer 24,580, scout 27,592).
+      Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and
+      Fast passes (run nr13-fast, 11 passed).
 - [ ] **NR-14 - The Priest on the table.** Depends: NR-11, NR-13
   - Work: Write the Priest's rule table into this document first, then build it:
     NaturalPriestProfile.Priest takes NaturalRotationCombatPolicy with the generated
@@ -927,3 +987,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   names in its own code until NR-18. Full gate gate-a1, twelve scopes: identical, so the
   Priest and the Cleric rest as they did. Seven checks, unit suite and Fast (nr12-fast)
   pass. Next: NR-13, generated catalogs for the Priest and the Cleric.
+- 2026-10-08 — Loop: NR-13 done. The Priest's, the Cleric's and the Chanter placeholder's
+  catalogs are generated from the skill templates; the comparison with the hand-typed rows
+  found 0 differences in 8 and 50 rows, so nothing was re-recorded. All three still fight
+  by the old rule. Found for NR-16: twelve Cleric skills of levels 25 and 26 have no role
+  yet. Full gate gate-a1, twelve scopes: identical. Seven checks, unit suite and Fast
+  (nr13-fast) pass. Next: NR-14, the Priest on the table.

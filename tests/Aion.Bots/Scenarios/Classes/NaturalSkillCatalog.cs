@@ -11,8 +11,8 @@ namespace Aion.Bots.Scenarios.Classes;
 /// <summary>
 /// CP-35: a class's skill rows read from the shipped skill tree and skill templates (docs/natural-class-profiles.md). A
 /// profile supplies only what the data cannot say: the role of each skill it casts and the reason for each it does not.
-/// The learned SM_SKILL_LIST stays the authority: a catalog never grants a skill. The Priest's and the Cleric's tables stay
-/// hand-typed and frozen; a catalog built here for them equals those rows in the fields they hold.
+/// The learned SM_SKILL_LIST stays the authority: a catalog never grants a skill. NR-13: the Priest's and the Cleric's
+/// catalogs are built here too; each row equals the hand-typed row it replaced in the fields that row held.
 /// </summary>
 public static class NaturalSkillCatalog
 {
