@@ -45,7 +45,9 @@ public sealed record NaturalFinisher(string Role, int TargetHpPercent, bool From
 /// <summary>A buff the rotation keeps up: the best learned skill of the role, cast when the client's effect list is
 /// observed without it.</summary>
 /// <param name="DuringFight">Also cast in a fight; otherwise only before a target is hit.</param>
-public sealed record NaturalRotationUpkeep(string Role, bool DuringFight = false);
+/// <param name="UnderAttackOnly">NR-11: a fight upkeep that is cast only while the bot is being attacked (a heal over
+/// time is wasted on a target that has not been pulled yet).</param>
+public sealed record NaturalRotationUpkeep(string Role, bool DuringFight = false, bool UnderAttackOnly = false);
 
 /// <summary>When the weapon swings.</summary>
 public enum NaturalAutoAttack
@@ -81,11 +83,21 @@ public enum NaturalAutoAttack
 /// learned skill of the ladder.</param>
 /// <param name="ManaPotionReserveMargin">NR-10: a mana potion is also drunk when mana is below the reserve role's cost
 /// and this much; null for the cheapest attack alone.</param>
+/// <param name="Openers">NR-11: attack roles brought to the front of the list while a follow-up of the list that they
+/// open is off cooldown and both can be paid for beside the reserve; at other times they stay in their place. Any other
+/// chain's first step resets an open chain (Java ChainCondition.shouldReset), so the opener goes first only when its
+/// follow-up can follow at once. Null for none.</param>
+/// <param name="OnlyWhileTargetAbove">NR-11: attack roles left out of the list once the target's observed HP is at or
+/// below the percentage given (a summon that fights on for seconds). Null for none.</param>
+/// <param name="RangedHoldWithin">NR-11: with nothing to cast or swing at a target that attacks from range, hold where
+/// the bot stands while the profile's ranged hold is on and the target is within this many metres or two attackers
+/// are there, where a stand-off would walk up to it. Null for no hold.</param>
 public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjacent, IReadOnlyList<string> AtRange,
 	IReadOnlyList<NaturalRotationUpkeep> Upkeep, IReadOnlyList<NaturalRecoveryStep> Recovery, int SwarmAttackers, int FleeHpPercent,
 	NaturalAutoAttack AutoAttack, string? ControlRole = null, int EmergencyPercent = 35, int EmergencyClearPercent = 45,
 	IReadOnlyDictionary<string, int>? OnlyWhenHurt = null, bool HoldOpenChain = false, int? EmergencySeasonedPairPercent = null,
-	NaturalFinisher? Finisher = null, string? ReserveRole = null, int? ManaPotionReserveMargin = null)
+	NaturalFinisher? Finisher = null, string? ReserveRole = null, int? ManaPotionReserveMargin = null,
+	IReadOnlyList<string>? Openers = null, IReadOnlyDictionary<string, int>? OnlyWhileTargetAbove = null, float? RangedHoldWithin = null)
 {
 	/// <summary>The table's two attack lists as lines of skill ids, every rank of a role in level order, for
 	/// <see cref="NaturalProfileValidator"/>.</summary>
@@ -129,7 +141,8 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			.Concat(rules.Recovery.Where(step => step.Kind == NaturalRecoveryKind.Skill).Select(step => step.Role ?? ""))
 			.Concat(rules.ControlRole == null ? [] : [rules.ControlRole])
 			.Concat(rules.Finisher == null ? [] : [rules.Finisher.Role])
-			.Concat(rules.ReserveRole == null ? [] : [rules.ReserveRole]);
+			.Concat(rules.ReserveRole == null ? [] : [rules.ReserveRole])
+			.Concat(rules.Openers ?? []).Concat(rules.OnlyWhileTargetAbove?.Keys ?? []);
 		foreach (string role in named.Distinct())
 			if (!this.catalog.Any(skill => skill.Role == role))
 				throw new InvalidDataException($"Rotation table {rules.Id} names the role '{role}', which its catalog does not hold.");
@@ -237,6 +250,8 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		// A role that is cast only when hurt is left out of the line while HP is above its percentage.
 		NaturalPriestSkill[] line = list
 			.Where(role => rules.OnlyWhenHurt == null || !rules.OnlyWhenHurt.TryGetValue(role, out int percent) || HpAtOrBelow(percent))
+			.Where(role => rules.OnlyWhileTargetAbove == null || !rules.OnlyWhileTargetAbove.TryGetValue(role, out int least) ||
+				state.TargetHpPercent is not int targetHp || targetHp > least)
 			.Select(role => Best(role, state)).OfType<NaturalPriestSkill>().ToArray();
 		foreach (NaturalPriestSkill followUp in line.Where(skill => skill.RequiresChainCategory != null))
 			if (Ready(followUp)) return Cast(followUp, $"The {followUp.Role} follow-up is open; cast it before the chain resets.");
@@ -244,7 +259,10 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			return Choice("wait", null, "An open follow-up only cools down and clears inside its chain time; hold the chain for it.");
 		if (!state.Aggro && Upkeep(duringFight: false) is { } before) return Cast(before, $"The {before.Role} buff goes up before the first hit.");
 		if (Upkeep(duringFight: true) is { } during) return Cast(during, $"The {during.Role} buff is absent from the observed effects.");
-		foreach (NaturalPriestSkill attack in line.Where(skill => skill.RequiresChainCategory == null))
+		IEnumerable<NaturalPriestSkill> attacks = line.Where(skill => skill.RequiresChainCategory == null);
+		// NR-11: an opener whose follow-up can be cast after it goes first; the sort keeps every other place.
+		if (rules.Openers is { Count: > 0 }) attacks = attacks.OrderBy(skill => OpensNow(skill) ? 0 : 1);
+		foreach (NaturalPriestSkill attack in attacks)
 			if (Ready(attack)) return Cast(attack, adjacent ? $"Learned {attack.Role} is ready at melee." : $"Learned {attack.Role} is in reach and ready.");
 		bool swingLegal = InWeaponReach(state, distance, adjacent);
 		// A last-resort swing waits while a listed attack only cools down and could be paid for.
@@ -256,6 +274,11 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		if (line.Any(skill => skill.RequiresChainCategory == null && Refusals(skill, state, now, parameters) is [CoolingDown]))
 			return Choice("wait", null, "A listed attack is in reach and only cools down; hold position.");
 		// Nothing can be cast or swung from here. An unpulled target never closes by itself, so the class goes to it.
+		// NR-11: the ranged hold. A target that attacks from range does not come closer, and walking up to it under fire
+		// with nothing ready takes the bot off checked ground.
+		if (rules.RangedHoldWithin is float within && !adjacent && state.TargetRanged && state.ConservativeRangedHold &&
+			(distance <= within || state.NearbyAggressors >= 2))
+			return Choice("wait", null, "The target attacks from range and nothing is ready; hold checked ground until an attack is.");
 		if (!state.Aggro) return Choice("approach", null, "Nothing reaches the unpulled target from here: go to it.");
 		bool holds = movement.Style switch
 		{
@@ -273,11 +296,19 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			state.TargetObjectId != null && state.TargetHpPercent is > 0 and int targetHp && targetHp <= FinishPercent(parameters) &&
 			Best(finisher.Role, state) is { } skill && Ready(skill) ? skill : null;
 
+		// NR-11: the opener is in the table's list of openers, and a follow-up of this line that it opens is off cooldown
+		// and can be paid for with it, beside the reserve.
+		bool OpensNow(NaturalPriestSkill opener) => rules.Openers!.Contains(opener.Role) && opener.ChainCategory != null &&
+			line.Any(followUp => followUp.RequiresChainCategory == opener.ChainCategory &&
+				!(state.Cooldowns.TryGetValue(followUp.CooldownId, out DateTimeOffset until) && until > now) &&
+				state.Mp >= opener.ManaCost + followUp.ManaCost + Reserve(state, parameters));
+
 		NaturalPriestSkill? Upkeep(bool duringFight)
 		{
 			if (state.ActiveEffectSkillIds is not { } active) return null;
 			foreach (NaturalRotationUpkeep upkeep in rules.Upkeep.Where(upkeep => upkeep.DuringFight == duringFight))
 			{
+				if (upkeep.UnderAttackOnly && !state.Aggro) continue;
 				if (catalog.Any(skill => skill.Role == upkeep.Role && active.Contains(skill.Id))) continue;
 				if (Best(upkeep.Role, state) is { } buff && Ready(buff)) return buff;
 			}

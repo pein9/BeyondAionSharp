@@ -533,11 +533,44 @@ to the endpoint. The close of phase B is NR-21.
       identical to their baselines (p 37,222, mage 23,555, warrior 24,199, artist 23,104,
       engineer 24,580, scout 27,592). Bundle: the seven pre-commit checks pass,
       Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run nr10-fast, 11 passed).
-- [ ] **NR-11 - The attack list can say what the Cleric's rotation says.** Depends: NR-10
+- [x] **NR-11 - The attack list can say what the Cleric's rotation says.** Depends: NR-10
   - Work: An opener brought forward while a follow-up it opens can be cast after it; a
     role with a least target HP; an upkeep for the time under attack only; the stand-off
     answer reading the profile's ranged hold. Unset in the five tables.
   - Proof: One-time check of each rule; guard: gate p and the five class scopes identical.
+  - 2026-10-08: done. Sc/Classes/NaturalRotationCombatPolicy.cs alone is changed; no
+    profile sets a new value.
+    - **Java, as the old rule cites it.** Any other chain's first step resets an open
+      chain (ChainCondition.shouldReset, read for CP-36 and CP-48), which is why an opener
+      is brought forward only when its follow-up can follow at once. Nothing new on the
+      server is relied on.
+    - **The rules may now give:** openers, attack roles brought to the front of the list
+      while a follow-up of the list that they open is off cooldown and opener, follow-up
+      and reserve can all be paid, and left in their place otherwise (Openers); a least
+      target HP for a role, at or below which it is left out (OnlyWhileTargetAbove); a
+      fight upkeep that is cast only while the bot is being attacked (UnderAttackOnly on
+      an upkeep); and a distance for the ranged hold: with nothing to cast or swing at a
+      target that attacks from range, the bot holds while the profile's ranged hold is on
+      and the target is within that distance or two attackers are there
+      (RangedHoldWithin).
+    - **One-time check, not committed** (run/nr/NR-11/check-a1.log, 21 cases, all as
+      expected on the first run), on the Cleric's skill rows at level 25 with a table that
+      sets every new value, beside the same table without them. With everything ready
+      Smite goes first, at melee and at 20 m; without an opener in the table the Holy
+      Servant does. With Flashbolt cooling down the servant is summoned, and Infernal
+      Blaze on a target at 40% HP; without the least target HP the servant is summoned at
+      40% too. At 162 MP Smite is not brought forward and at 163 it is (Smite 52,
+      Flashbolt 46, the heal's 65). With Smite's chain open Flashbolt is cast. Under
+      attack with no heal over time observed, Light of Rejuvenation is cast; on a target
+      not yet pulled it is not, where a plain fight upkeep casts it; with it observed it
+      is not cast again. With nothing payable: at 10 m from a ranged target the bot waits,
+      and walks up without a hold in the table, with the profile's hold off, or at 20 m
+      against one attacker; at 20 m against two it waits. A table that names an opener its
+      catalog does not hold is refused by name.
+    - **Guard, rule (c).** Run guard-a1, gate p and the five class scopes: all six
+      identical to their baselines (p 37,222, mage 23,555, warrior 24,199, artist 23,104,
+      engineer 24,580, scout 27,592). Bundle: the seven pre-commit checks pass,
+      Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run nr11-fast, 11 passed).
 - [ ] **NR-12 - The skill record and the rest rule without role names.** Depends: NR-10
   - Work: Whether a skill is cast on the bot comes from the catalog's target kind for
     every row, and the rest rule names its rest-only skills by kind (a reagent skill for
@@ -850,3 +883,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   check of 21 cases on the Cleric's skill rows, not committed. Guard guard-a1, p and five
   class scopes: identical. Seven checks, unit suite and Fast (nr10-fast) pass. Next: NR-11,
   the attack list widened to say the Cleric's rotation.
+- 2026-10-08 — Loop: NR-11 done. The rules can give openers brought forward while their
+  follow-up can follow at once, a least target HP for a role, a fight upkeep for the time
+  under attack only, and the ranged hold's distance. No profile sets any of it. One-time
+  check of 21 cases on the Cleric's skill rows, not committed. Guard guard-a1, p and five
+  class scopes: identical. Seven checks, unit suite and Fast (nr11-fast) pass. Next: NR-12,
+  the skill record and the rest rule without role names.
