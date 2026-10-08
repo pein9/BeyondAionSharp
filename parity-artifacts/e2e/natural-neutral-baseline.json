@@ -301,6 +301,49 @@
         "binds": 1,
         "soulHeals": 0
       }
+    },
+    {
+      "scope": "mage",
+      "line": "mage",
+      "replay": {
+        "Class": "mage",
+        "StopAt": "2004:5:0"
+      },
+      "snapshot": null,
+      "commit": "473e39dc47a05a94ee138c070df12441b7afa6e6",
+      "environment": {
+        "AION_SIM_SEED": "1",
+        "NA_HELP_ITEMS": null,
+        "AION_BOT_DASHBOARD_PORT": null,
+        "AION_SIM_PROCESS_KEY": null
+      },
+      "ignore": [],
+      "records": 23555,
+      "sha256": "7d0a9c0b1acf1e09973389c97c46bc1c99b7d34a5ed62c504753a5c5345d8f09",
+      "counts": {
+        "records": 23556,
+        "deaths": 0,
+        "reviveSteps": 0,
+        "retreats": 2,
+        "retreatRoutes": 3,
+        "restSitsTraced": 0,
+        "restInterrupts": 0,
+        "betweenFightHeals": 0,
+        "powderRestCasts": 0,
+        "vendorBuys": 0,
+        "pullPlans": 4,
+        "patrolWaits": 0,
+        "emergencyDecisions": 0,
+        "atTargetPulls": 0,
+        "lifePotions": 4,
+        "manaPotions": 0,
+        "shieldScrolls": 0,
+        "speedScrolls": 1,
+        "runningScrolls": 5,
+        "helpItemsSupplied": 3,
+        "binds": 2,
+        "soulHeals": 0
+      }
     }
   ]
 }

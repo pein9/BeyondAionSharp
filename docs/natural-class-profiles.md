@@ -4623,7 +4623,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       123000864, put on in slot 65536 at 2:05:28, reads as slot 0 in completion.json. (d)
       The 12 s wait of CP-51 at the blue generator is in this run as well.
     - No code changed, so this commit is evidence only. The class scope is CP-53's.
-- [ ] **CP-53 - Record class scope mage, twice.** Depends: CP-52
+- [x] **CP-53 - Record class scope mage, twice.** Depends: CP-52
   - Work: No code changes. On a clean tree run run-neutral-gate.ps1 -Set mage -Record -Item
     CP-53. The gate plays class scope mage (Replay -Class mage -StopAt 2004:5:0) twice,
     compares the two passes and writes the scope's row into
@@ -4636,6 +4636,20 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     share it.
   - Proof: The record run: the two passes of class scope mage are identical after
     normalization (run/cp/CP-53/<run-id>/verdict.json).
+  - 2026-10-08: done. Run record-a1 at 473e39dc4 on a clean tree: the gate played class
+    scope mage twice (run/cp/CP-53/record-a1-mage-pass1 and -pass2) and the two passes are
+    identical after normalization: 23,555 records, SHA-256
+    7d0a9c0b1acf1e09973389c97c46bc1c99b7d34a5ed62c504753a5c5345d8f09
+    (run/cp/CP-53/record-a1/verdict.json, verdict pass). The Q2004 stop of CP-50 landed on
+    the status-5 stop, so the scope is recorded as defined. The scope's row is written
+    into parity-artifacts/e2e/natural-neutral-baseline.json with an empty ignore list and
+    these counts: no death, 2 retreats, 4 pull plans, 4 life potions in fights, 5 running
+    scrolls, 1 speed scroll, 3 help items supplied, 2 binds. They are CP-50's.
+    - From here the guard of rule (c) runs gate p and class scope mage for every commit
+      that edits tests/Aion.Bots or the journey test, except one that changes only another
+      class's own profile file.
+    - Evidence only. The seven pre-commit checks pass, and so do the trace comparer's
+      tests and the snapshot and gate contract tests, which read the baseline file.
 - [ ] **CP-54 - Warrior to the Q2004 checkpoint.** Depends: CP-45, CP-53
   - Work: Run Replay -Class warrior -StopAt 2004:5:0 -Item CP-54. The Ishalgen code written
     for a ranged puller is the likely blocker: ApproachShippedCombatSpawnAsync
@@ -5838,3 +5852,8 @@ report what was done, what is blocked and what you need from me.
   death, 9 retreats; 11 life potions, 20 running scrolls, Castafodin six times; nothing sold
   and nothing bought. Restore prints CP_CLASS=mage and no NA_HELP_ITEMS. Evidence only.
   Next by rule (h): CP-53.
+- 2026-10-08 — Loop: CP-53 done. Class scope mage recorded at 473e39dc4 (run record-a1): two
+  passes of Replay -Class mage -StopAt 2004:5:0, identical after normalization, 23,555
+  records, SHA-256 7d0a9c0b...345d8f09. The scope is on in the baseline file, so the guard
+  of rule (c) now runs p and mage. Evidence only; seven checks and the two script tests that
+  read the baseline pass. Next by rule (h): CP-54.
