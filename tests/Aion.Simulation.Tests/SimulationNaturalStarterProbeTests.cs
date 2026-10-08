@@ -33,6 +33,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("scout-1", NaturalClassLine.Scout, ProbeAccountA, "Asimonescout"),
 		new("scout-7", NaturalClassLine.Scout, ProbeAccountB, "Asimsevenscout"),
 		new("warrior-pack", NaturalClassLine.Warrior, ProbeAccountA, "Asimpackwar"),
+		new("scout-two", NaturalClassLine.Scout, ProbeAccountA, "Asimtwodagger"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -166,6 +167,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "scout-1": await ScoutLevelOneRowAsync(probe, id, geometry, token); break;
 			case "scout-7": await ScoutLevelSevenRowAsync(probe, id, geometry, token); break;
 			case "warrior-pack": await WarriorPackRowAsync(probe, id, geometry, token); break;
+			case "scout-two": await ScoutTwoDaggersRowAsync(probe, id, geometry, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -607,6 +609,55 @@ public sealed partial class SimulationFastScenarioTests
 		Console.WriteLine($"{id}: level {probe.World.Level} Warrior, max HP {probe.World.MaxHp}, placed {MathF.Sqrt(MathF.Pow(spot.X - pair.X, 2) + MathF.Pow(spot.Y - pair.Y, 2)):F1} m from the pair. " +
 			$"Walk-in accepted the pack {string.Join(",", pack)} {accepts.Length} time(s) after: {first.GetProperty("refused").GetString()} " +
 			$"Result {result}. Target dead {target.IsDead()}, neighbour dead {neighbour.IsDead()}. " +
+			$"Decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
+	}
+
+	/// <summary>
+	/// NR-04, row scout-two. Prepared by the director: level 5, at which the Scout learns the dual-wield skill 55, two
+	/// daggers in the bag (Raider's 100200125 and Ulgorn's 100200604, the rewards of Q2100 and Q2002) beside the Training
+	/// Dagger it holds, and a place 18 m from a Fanged Karnif's shipped spot. Every other act is the journey's: its
+	/// equipment check puts the best dagger in the main hand and the next in the off hand by packets, and the fight is
+	/// fought with both. A swing the server refuses for coming too early shows as a swing sent with no attack carried out.
+	/// </summary>
+	private async Task ScoutTwoDaggersRowAsync(StarterProbe probe, string id, BotNavigationGeometry geometry, CancellationToken token)
+	{
+		const int map = 220010000, karnif = 210389, training = 100200112, raiders = 100200125, ulgorns = 100200604;
+		probe.Session.BeginStep("s01", "director-sets-level-five-gives-two-daggers-and-places-by-a-karnif");
+		await probe.SetLevelAsync(5);
+		Assert.True(probe.World.Skills.Keys.Any(NaturalGearPolicy.DualWieldSkillIds.Contains), "No dual-wield skill was learned by level 5.");
+		foreach (int dagger in new[] { raiders, ulgorns })
+			Assert.Equal(0, Aion.GameServer.Services.Items.ItemService.AddItem(probe.Server, dagger, 1, allowInventoryOverflow: true));
+		await probe.Session.SynchronizeAsync(token);
+		BotPosition spot = GroundNear(geometry, map, new BotPosition(884.051f, 1652f, 272.994f, 0), 18);
+		await probe.PlaceAsync(spot.X, spot.Y, spot.Z);
+		int Held(long slot) => probe.World.Inventory.Values.SingleOrDefault(item => item.Details.EquippedSlot == slot)?.ItemId ?? 0;
+		Assert.Equal((training, 0), (Held(1), Held(2)));
+
+		probe.Session.BeginStep("s02", "equipment-check");
+		IReadOnlyList<NaturalGearUpgrade> worn = await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		string asked = string.Join(", ", worn.Select(upgrade => $"{upgrade.ItemId} to slot {upgrade.Slot}"));
+		// The client's view and the server's: the better dagger in the main hand, the other in the off hand.
+		Assert.Equal((ulgorns, raiders), (Held(1), Held(2)));
+		Assert.Equal(ulgorns, probe.Server.GetEquipment().GetMainHandWeapon()?.GetItemId());
+		Assert.Equal(raiders, probe.Server.GetEquipment().GetOffHandWeapon()?.GetItemId());
+		Assert.Equal(1, probe.Owned(training));
+		int serverSwingMillis = probe.Server.GetGameStats().GetAttackSpeed().GetCurrent();
+
+		probe.Session.BeginStep("s03", "fight-a-fanged-karnif-with-two-daggers");
+		Npc target = NearestLiving(probe, karnif);
+		NaturalCombatDiagnosticResult result = await probe.Journey.RunObservedCombatAsync(_ => Task.FromResult(target.GetObjectId()), token);
+		IReadOnlyList<StarterTraceRecord> records = probe.TraceOf("s03");
+		IReadOnlyDictionary<string, int> decisions = probe.DecisionsOf("s03");
+		int sent = records.Count(record => record is { Direction: ">", Packet: "CM_ATTACK" });
+		int carriedOut = records.Count(record => record is { Direction: "<", Packet: "SM_ATTACK" } &&
+			record.Fields.GetProperty("attackerObjId").GetInt32() == probe.Session.CharacterId);
+		Assert.True(sent > 0, "The fight had no swing.");
+		Assert.Equal(sent, carriedOut);
+		Assert.Equal((ulgorns, raiders), (Held(1), Held(2)));
+		Console.WriteLine($"{id}: level {probe.World.Level} Scout, max HP {probe.World.MaxHp}. The equipment check asked for {asked}; " +
+			$"main hand {Held(1)}, off hand {Held(2)}, Training Daggers in the bag {probe.Owned(training)}; the server's swing time is {serverSwingMillis} ms. " +
+			$"One Fanged Karnif: {result}. Swings sent {sent}, carried out {carriedOut}. " +
 			$"Decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}. " +
 			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
 	}

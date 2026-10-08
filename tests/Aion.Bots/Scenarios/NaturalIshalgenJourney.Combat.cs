@@ -317,6 +317,11 @@ public sealed partial class NaturalIshalgenJourney
 				bool tableDriven = profile.TableDriven;
 				BotInventoryItem? mainHand = world.Inventory.Values.SingleOrDefault(item => item.Details.EquippedSlot is 1 or 3);
 				var weaponStats = mainHand == null ? null : runtime.Data.ItemDataDh.GetItemTemplate(mainHand.ItemId)?.GetWeaponStats();
+				// NR-04: a second weapon in the off hand adds a quarter of its own speed to the swing (Java
+				// PlayerGameStats.getAttackSpeed), and the server refuses a swing that comes sooner.
+				int offHandSwingMillis = world.Inventory.Values.SingleOrDefault(item => item.Details.EquippedSlot == 2) is { } offHand &&
+					runtime.Data.ItemDataDh.GetItemTemplate(offHand.ItemId) is { } offTemplate && offTemplate.IsWeapon()
+					? (offTemplate.GetWeaponStats()?.GetAttackSpeed() ?? 0) / 4 : 0;
 				var observation = new NaturalCombatObservation(
 					world.Level, world.CurrentHp, world.MaxHp, world.CurrentMp, world.MaxMp, world.IsDead,
 					nearbyAttackers > 0 || recentAttacks.Length > 0,
@@ -336,7 +341,7 @@ public sealed partial class NaturalIshalgenJourney
 					ShieldScrollReady: shieldChoice?.Item != null,
 					HasManaPotion: manaPotion != null, ManaPotionReady: manaReady,
 					LastCancelledSkillId: lastCancelledSkillId,
-					WeaponAttackRangeMillis: weaponStats?.GetAttackRange(), WeaponAttackSpeedMillis: weaponStats?.GetAttackSpeed(),
+					WeaponAttackRangeMillis: weaponStats?.GetAttackRange(), WeaponAttackSpeedMillis: weaponStats?.GetAttackSpeed() + offHandSwingMillis,
 					PreviousChainCategory: tableDriven ? tableChain.Previous : null, ChainStepAt: tableDriven ? tableChain.StepAt : null,
 					OpenChainUseCount: tableDriven && tableChain.Current != null ? tableChain.UseCount : null,
 					ActiveEffectSkillIds: tableDriven ? world.VisibleEffects?.Select(effect => effect.SkillId).ToHashSet() : null);

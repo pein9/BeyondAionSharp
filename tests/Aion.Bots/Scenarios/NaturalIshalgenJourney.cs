@@ -132,6 +132,19 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		return new(killed, combat.ReviveCount, combat.CompletedRetreats, runtime.NowMillis - started);
 	}
 
+	/// <summary>NR-04: a controlled probe runs the equipment check of the observed class's gear rules and nothing else:
+	/// the same requests the journey's own check sends after a turn-in, over the whole observed inventory.</summary>
+	public Task<IReadOnlyList<NaturalGearUpgrade>> RunObservedEquipmentCheckAsync(CancellationToken token)
+	{
+		BotWorldModel world = session.Api.World;
+		BotKnownObject? self = world.SelfObjectId is int selfId ? world.Objects.GetValueOrDefault(selfId) : null;
+		NaturalGearRules gear = NaturalClassProfiles.For(self?.PlayerClass, ClassLine, runtime.Data).Gear;
+		var race = self?.Race is byte raceId ? (Race)raceId : Race.ASMODIANS;
+		return NaturalInventoryCheck.EquipAsync(session, world.Inventory.Values,
+			itemId => NaturalInventoryCheck.Describe(runtime.Data.ItemDataDh.GetItemTemplate(itemId), gear.Class, race),
+			(long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF, [], token, gear);
+	}
+
 	/// <summary>CP-42: a controlled probe runs the journey's ordinary rest and nothing else, for the class line of the
 	/// options. A rest that ends in death revives at the bind point, as in a journey.</summary>
 	public async Task RunObservedRestAsync(CancellationToken token)

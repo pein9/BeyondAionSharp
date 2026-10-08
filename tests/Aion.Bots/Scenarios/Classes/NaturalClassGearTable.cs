@@ -75,11 +75,13 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 	public static NaturalClassGearTable Chanter { get; } = new(PlayerClass.CHANTER, ["STAFF", "MACE"], NaturalWeaponStat.Magical,
 		["CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies);
 
-	// The defaults of CP-Q10 for the five new starters. Each holds one weapon and nothing in the off hand.
+	// The defaults of CP-Q10 for the five new starters. Each holds one weapon and nothing in the off hand, but the Scout.
 	public static NaturalClassGearTable Warrior { get; } = new(PlayerClass.WARRIOR, ["SWORD", "MACE"], NaturalWeaponStat.Physical,
 		["CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder);
+	// NR-04 (the operator, 2026-10-08: "Yes two daggers, they don't have to match"): a second dagger in the off hand once
+	// the dual-wield skill is observed, which the Scout learns at level 5.
 	public static NaturalClassGearTable Scout { get; } = new(PlayerClass.SCOUT, ["DAGGER"], NaturalWeaponStat.Physical,
-		["LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder);
+		["LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, OffHand: NaturalOffHand.SecondWeapon);
 	// CP-46: the Mage casts from mana, so it keeps the mana potions too.
 	public static NaturalClassGearTable Mage { get; } = new(PlayerClass.MAGE, ["SPELLBOOK"], NaturalWeaponStat.Magical,
 		["ROBE", "CLOTHES"], DefaultConsumableOrder, NaturalIshalgenPotionPolicy.ManaPotionIds);
