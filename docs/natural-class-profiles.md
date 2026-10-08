@@ -3814,7 +3814,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       the guard of rule (c); m and c are the item's proof.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and
       Fast passes (run cp40-fast). No profile walks in yet; CP-44 plays it first.
-- [ ] **CP-41 - Full gate after the refactor.** Depends: CP-16, CP-17, CP-18, CP-19, CP-20,
+- [x] **CP-41 - Full gate after the refactor.** Depends: CP-16, CP-17, CP-18, CP-19, CP-20,
   CP-21, CP-22, CP-23, CP-24, CP-25, CP-26, CP-27, CP-28, CP-29, CP-37, CP-38, CP-39, CP-40
   - Work: No bot code changes. Every refactor item that edits code the Priest or the Cleric
     runs is ticked by now and no new class has fought yet (the Chanter line of CP-32 may
@@ -3827,6 +3827,22 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
   - Proof: Neutral gate, set all: every scope kept in CP-08 and CP-09 is identical to its
     baseline. Set all holds p, m, b, l1, c, hm and ax. Before the close-out l1 is compared
     nowhere else, and hm only in CP-18.
+  - 2026-10-08: done, at HEAD 84efe80ec with no code change. The pin-test check of the
+    Work line is void by rule (n).
+    - **Gate, set all, run gate-a1** (run/cp/CP-41/gate-a1/verdict.json): verdict pass.
+      Every scope is identical to its baseline of 49cf15b60: p 37,222 records, m 112,397,
+      b 144,048, l1 30,693, c 96,166, hm 39,564, ax 15,762. Those baselines are the ones
+      CP-29a re-recorded on the table gear rules; the refactor items since then (CP-35 to
+      CP-40) changed none of them.
+    - **The whole check list of CLAUDE.md, once** (run/cp/CP-41/checks.log, one log per
+      check beside it): all 35 entries exit 0. dotnet build and dotnet test of
+      AionServer.slnx pass: Aion.GameServer.Tests 4,675 with 16 skipped, Aion.Commons.Tests
+      303, Aion.LoginServer.Tests 135 with 7 skipped, Aion.ChatServer.Tests 41 with 1
+      skipped, Aion.Simulation.Tests 145 with 129 skipped (its database tests need
+      AION_SIM_DB_INTEGRATION). The four ratchets (warning baseline, null loggers, clock
+      reads, custom quest drafts), the fidelity check, the thirteen Python tests, the
+      thirteen PowerShell tests, the NavBake check of the baked maps and Fast (run
+      cp41-fast) pass.
 - [ ] **CP-42 - Starter probe harness, and the potion-and-sit rest shown in play.**
   Depends: CP-05, CP-21, CP-24, CP-29, CP-31, CP-36, CP-37, CP-38
   - Work: This is the first run of the rest executor of CP-37. A potion is an item use and
@@ -5168,3 +5184,7 @@ report what was done, what is blocked and what you need from me.
   one-time check, not committed (rule (n)), shows the plan on eight scenes. Gate gate-a1, set
   p+m+c: identical in all three. Seven checks, unit suite and Fast (cp40-fast) pass. Next by
   rule (h): CP-41, the full gate after the refactor.
+- 2026-10-08 — Loop: CP-41 done, with no code change. Full gate gate-a1, set all: all seven
+  scopes identical to their baselines of 49cf15b60. The whole check list of CLAUDE.md, run
+  once: all 35 entries pass (run/cp/CP-41/checks.log). The refactor is checked; no new class
+  has fought yet. Next by rule (h): CP-42.
