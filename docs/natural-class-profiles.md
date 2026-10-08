@@ -5105,10 +5105,23 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       refused for distance. (c) The receipt's 16-bit EquipmentSlot hides the accessory
       123000864, as for the other classes.
     - No code changed, so this commit is evidence only. The class scope is CP-63's.
-- [ ] **CP-63 - Record class scope engineer, twice.** Depends: CP-62
+- [x] **CP-63 - Record class scope engineer, twice.** Depends: CP-62
   - Work: As CP-53 with -Set engineer -Item CP-63.
   - Proof: The record run: the two passes of class scope engineer are identical after
     normalization (run/cp/CP-63/<run-id>/verdict.json).
+  - 2026-10-08: done. Run record-a1 at 646134842 on a clean tree: the gate played class
+    scope engineer twice (run/cp/CP-63/record-a1-engineer-pass1 and -pass2) and the two
+    passes are identical after normalization: 24,580 records, SHA-256
+    3bab79697f45dbd9b6beeb6a83ea70215fb1a0122a40583628e14d7a5a24a00e
+    (run/cp/CP-63/record-a1/verdict.json, verdict pass). The Q2004 stop of CP-61 landed on
+    the status-5 stop, so the scope is recorded as defined. Its row is written into
+    parity-artifacts/e2e/natural-neutral-baseline.json with an empty ignore list and these
+    counts: no death, 3 retreats, 7 pull plans, 2 life potions in fights, 4 running
+    scrolls, 2 speed scrolls, 3 help items supplied, 2 binds. They are CP-61's.
+    - From here the guard of rule (c) runs gate p and the class scopes mage, warrior,
+      artist and engineer.
+    - Evidence only. The seven pre-commit checks pass, and so do the trace comparer's
+      tests and the snapshot and gate contract tests, which read the baseline file.
 - [ ] **CP-64 - Scout to the Q2004 checkpoint.** Depends: CP-49, CP-57
   - Work: Run Replay -Class scout -StopAt 2004:5:0 -Item CP-64; Q2132 is turned in at Wiokan
     203528 with var 2. It reuses every melee fix the Warrior needed; anything new is a
@@ -6314,3 +6327,8 @@ report what was done, what is blocked and what you need from me.
   Bullet Resistance and the shield scroll are shown in play. 22 life potions, 18 running
   scrolls, Blitzopan six times; nothing sold and nothing bought. Restore prints
   CP_CLASS=engineer and no NA_HELP_ITEMS. Evidence only. Next by rule (h): CP-63.
+- 2026-10-08 — Loop: CP-63 done. Class scope engineer recorded at 646134842 (run record-a1):
+  two passes of Replay -Class engineer -StopAt 2004:5:0, identical after normalization,
+  24,580 records, SHA-256 3bab7969...5a24a00e. The guard of rule (c) now runs p, mage,
+  warrior, artist and engineer. Evidence only; seven checks and the two script tests that
+  read the baseline pass. Next by rule (h): CP-64.

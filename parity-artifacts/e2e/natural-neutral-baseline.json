@@ -430,6 +430,49 @@
         "binds": 2,
         "soulHeals": 0
       }
+    },
+    {
+      "scope": "engineer",
+      "line": "engineer",
+      "replay": {
+        "Class": "engineer",
+        "StopAt": "2004:5:0"
+      },
+      "snapshot": null,
+      "commit": "646134842a10a29f8fa3af3d34609d47e46237d3",
+      "environment": {
+        "AION_SIM_SEED": "1",
+        "NA_HELP_ITEMS": null,
+        "AION_BOT_DASHBOARD_PORT": null,
+        "AION_SIM_PROCESS_KEY": null
+      },
+      "ignore": [],
+      "records": 24580,
+      "sha256": "3bab79697f45dbd9b6beeb6a83ea70215fb1a0122a40583628e14d7a5a24a00e",
+      "counts": {
+        "records": 24581,
+        "deaths": 0,
+        "reviveSteps": 0,
+        "retreats": 3,
+        "retreatRoutes": 3,
+        "restSitsTraced": 0,
+        "restInterrupts": 0,
+        "betweenFightHeals": 0,
+        "powderRestCasts": 0,
+        "vendorBuys": 0,
+        "pullPlans": 7,
+        "patrolWaits": 0,
+        "emergencyDecisions": 0,
+        "atTargetPulls": 0,
+        "lifePotions": 2,
+        "manaPotions": 0,
+        "shieldScrolls": 0,
+        "speedScrolls": 2,
+        "runningScrolls": 4,
+        "helpItemsSupplied": 3,
+        "binds": 2,
+        "soulHeals": 0
+      }
     }
   ]
 }
