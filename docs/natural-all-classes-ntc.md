@@ -993,12 +993,71 @@ to the endpoint. The close of phase B is NR-21.
       scout 27,592). Scopes b, l1, c, hm and ax change with this item; NR-17 replays and
       re-records them. Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests
       passes (4,675 passed, 16 skipped) and Fast passes (run nr16-fast, 11 passed).
-- [ ] **NR-17 - The Cleric's scopes replayed and re-recorded.** Depends: NR-16
+- [x] **NR-17 - The Cleric's scopes replayed and re-recorded.** Depends: NR-16
   - Work: No code beyond one small change an attempt. Replay b, l1, c, hm and ax, each to
     its endpoint, two attempts each; a scope that fails twice becomes a lettered item with
     the step where it stopped. Compare each ledger with the old one. Then re-record the
     five twice (rule (p)).
   - Proof: Every scope reaches its endpoint and repeats in two passes.
+  - 2026-10-08: done. All five scopes reach their endpoints on the first attempt, with no
+    change to the code, and all five are re-recorded.
+    - **Java.** Nothing of the server is relied on beyond what NR-16 read.
+    - **The replays** (runs b-a1, l1-a1, c-a1, hm-a1 and ax-a1 at 60115ff14, under
+      run/nr/NR-17/). Each passed and wrote its completion file, verified.
+      - b: the Ishalgen quests and the early Ascension, a Cleric of level 13.
+      - l1: Altgard leg 1, level 13, 56 quests, no death.
+      - c: leg l4, level 19, 85 quests, 3 deaths.
+      - hm: Haramel, leg l12, level 25, 156 quests, no death.
+      - ax: the Abyss entry, level 26 in Morheim with Q24020, Q2945, Q2946, Q2947 and
+        Q2042 complete, no death.
+    - **The ledger, old baseline run beside the new one.** From the baseline traces of
+      49cf15b60 and of 60115ff14.
+
+      | Scope | Rule | Game time | Fights | Kills | Fight decisions | Deaths | Retreats | Life potions | Shield scrolls | Powder-rest casts | Lowest HP, % |
+      |---|---|---|---|---|---|---|---|---|---|---|---|
+      | b | old | 3 h 44 min | 171 | 165 | 765 | 0 | 2 | 24 | 0 | 6 | 77 |
+      | b | table | 3 h 28 min | 155 | 149 | 670 | 0 | 3 | 19 | 0 | 4 | 81 |
+      | l1 | old | 0 h 39 min | 45 | 45 | 280 | 0 | 0 | 4 | 0 | 8 | 84 |
+      | l1 | table | 0 h 37 min | 41 | 41 | 252 | 0 | 0 | 2 | 0 | 6 | 88 |
+      | c | old | 2 h 29 min | 213 | 188 | 1,590 | 1 | 25 | 102 | 4 | 60 | 8 |
+      | c | table | 2 h 56 min | 253 | 221 | 1,917 | 3 | 37 | 109 | 7 | 88 | 20 |
+      | hm | old | 1 h 50 min | 138 | 128 | 528 | 1 | 8 | 15 | 0 | 11 | 67 |
+      | hm | table | 1 h 41 min | 140 | 129 | 555 | 0 | 10 | 10 | 0 | 9 | 83 |
+      | ax | old | 0 h 16 min | 10 | 10 | 18 | 0 | 0 | 2 | 0 | 0 | 65 |
+      | ax | table | 0 h 16 min | 10 | 10 | 15 | 0 | 0 | 2 | 0 | 0 | 69 |
+
+    - **Four scopes are as good or better.** b is 16 minutes shorter with fewer potions.
+      hm has no death where the old run had one, and is 9 minutes shorter. l1 and ax are
+      as they were.
+    - **Scope c is worse: 3 deaths against 1, 37 retreats against 25, 27 minutes more.**
+      It reaches its endpoint, and a death is an outcome. The three deaths:
+      - 1:59:43, at the grave robbers' camp (af-062-hunt). The journey stood in the second
+        of four 15 s holds for a patrol, with two grave robbing sentries hitting the
+        Cleric. It did not answer, and it went on holding for 30 s after the death.
+      - 2:17:32, on the way back. After a kill and a rest the journey stood for 60 s in a
+        loot sweep and was killed there.
+      - 2:30:51, on the way back again: four attackers, no way out, and the Cleric died
+        inside Healing Grace's 3 s cast at 59% HP.
+      - The old run's one death was at the same camp, in a fight with five attackers.
+    - **Found, not acted on (rule (f)): the journey does not answer an attack while it
+      holds for a patrol or sweeps loot.** It is not the table's: the old runs took such
+      hits too. Hits on the Cleric while the last thing the journey did was a patrol hold
+      or a loot sweep, old run then new: b 0 then 8; c 29 then 49; hm 187 then 290. In
+      the new c it killed the Cleric twice. This is the first thing to fix in the journey
+      for every class that reaches Altgard.
+    - **Re-recorded, rule (p).** Run record-a1 at 60115ff14 on a clean tree
+      (run/nr/NR-17/record-a1/verdict.json): two passes of each scope, identical after
+      normalization, and each with the counts of its first replay.
+      - b: 131,197 records, SHA-256 904bc164e98c38cfcacbb6dc1cc5eba5f3a691ec7450fcc6240fe9ec63eefcaa.
+      - l1: 29,797 records, SHA-256 d0510830f33ea43479e013696d0b19504b328a30656d43bb0065ee31b6fac12f.
+      - c: 112,256 records, SHA-256 14f670d3cf63da3bcf42335ae1c64c1919d17e02a1ed425eaacf952b3d4c9204.
+      - hm: 37,510 records, SHA-256 8da8a690323675b2610e0fa5df6246bd258990ab5000340455f183545dd41511.
+      - ax: 15,715 records, SHA-256 cd5d6c8aef5d43f1a047d23e319657d77d08fb2adb8ac26004ccda0ee850e40c.
+      The five rows of parity-artifacts/e2e/natural-neutral-baseline.json are replaced;
+      the traces are under run/cp/baseline/60115ff14... With p and m of NR-15, all seven
+      Priest and Cleric scopes are now recorded with the rule table, and rule (c) guards
+      them again.
+    - **No bundle.** The item changes no code: this is an evidence commit.
 - [ ] **NR-18 - The old rule removed.** Depends: NR-17
   - Work: Delete NaturalPriestCombatPolicy.Decide and CandidateActions, the StaticPolicy
     adapter, the two hand-typed skill tables and the one-sided branches of the fight loop
@@ -1312,3 +1371,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   rows, not the table. Guard guard-a1, seven scopes: identical. Seven checks, unit suite
   and Fast (nr16-fast) pass. Scopes b, l1, c, hm and ax now differ from their baselines.
   Next: NR-17, the Cleric's scopes replayed and re-recorded.
+- 2026-10-08 — Loop: NR-17 done. Replays b, l1, c, hm and ax at 60115ff14 all reach their
+  endpoints on the first attempt, with no code change. Four are as good or better than the
+  old runs; c has 3 deaths against 1 and 37 retreats against 25. Found: the journey does
+  not answer an attack while it holds for a patrol or sweeps loot, in the old runs too;
+  two of c's deaths are that. Re-recorded, two passes each: b 131,197, l1
+  29,797, c 112,256, hm 37,510, ax 15,715 records. All seven
+  Priest and Cleric scopes are recorded with the rule table. Next: NR-18, the old rule
+  removed.
