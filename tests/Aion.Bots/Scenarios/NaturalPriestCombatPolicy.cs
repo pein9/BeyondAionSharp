@@ -71,6 +71,11 @@ public static class NaturalPriestSkills
 /// <param name="WeaponAttackRangeMillis">CP-35: the main-hand weapon's attack range, for a skill that adds it to its
 /// range. Unset until CP-39 fills it in the journey; the Priest's policy does not read it.</param>
 /// <param name="WeaponAttackSpeedMillis">CP-35: the main-hand weapon's attack speed; unset and unread likewise.</param>
+/// <param name="PreviousChainCategory">CP-36, read by the table policy only and unset until CP-39 fills it, as the three
+/// fields after it: the chain category before <paramref name="OpenChainCategory"/> (Java ChainSkills keeps both).</param>
+/// <param name="ChainStepAt">When the current chain step was cast; a follow-up counts its own chain time from it.</param>
+/// <param name="OpenChainUseCount">How often the current chain step was cast in a row.</param>
+/// <param name="ActiveEffectSkillIds">The skill ids of the effects the client shows on the bot; null when unobserved.</param>
 public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int Mp, int MaxMp,
 	bool Dead, bool Aggro, float? TargetDistance, int? TargetObjectId,
 	IReadOnlyDictionary<int, BotSkill> Learned, IReadOnlyDictionary<int, DateTimeOffset> Cooldowns,
@@ -82,7 +87,9 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	bool Cornered = false, bool TargetAdjacent = false, bool InEmergency = false, bool TargetSeasoned = false,
 	bool TargetRanged = false, bool ConservativeRangedHold = false, int Dp = 0, bool? HasRejuvenation = null,
 	bool ShieldScrollReady = false, ushort? LastCancelledSkillId = null,
-	int? WeaponAttackRangeMillis = null, int? WeaponAttackSpeedMillis = null);
+	int? WeaponAttackRangeMillis = null, int? WeaponAttackSpeedMillis = null,
+	string? PreviousChainCategory = null, DateTimeOffset? ChainStepAt = null, int? OpenChainUseCount = null,
+	IReadOnlySet<int>? ActiveEffectSkillIds = null);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);

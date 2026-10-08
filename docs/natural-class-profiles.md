@@ -3555,7 +3555,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - Guard: gate p, run guard-a1, identical to its baseline of 49cf15b60. Bundle: the
       seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and Fast passes
       (run cp35-fast).
-- [ ] **CP-36 - A table-driven combat policy for the new classes.** Depends: CP-19, CP-35
+- [x] **CP-36 - A table-driven combat policy for the new classes.** Depends: CP-19, CP-35
   - Work: Add Sc/Classes/NaturalRotationCombatPolicy.cs implementing INaturalCombatPolicy
     from one rule table per profile: ordered attack lists for adjacent and at range with
     opener and follow-up pairs; an upkeep list; a recovery ladder that may be empty, with HP
@@ -3580,6 +3580,57 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     an unpulled target; an empty ladder retreats at the flee limit; a ready follow-up is
     chosen before any non-chain cast; every rotation and ladder line of the fixture is hit
     by an example state.
+  - 2026-10-07: done. The Java this rests on was read for CP-35 (ChainSkills,
+    ChainCondition, Skill.canUseSkill, FirstTargetRangeProperty); nothing new on the server
+    is relied on.
+    - **Built.** Sc/Classes/NaturalRotationCombatPolicy.cs: NaturalRotationRules (the
+      table: attack roles for a target on the bot and for one that is not, upkeep buffs,
+      the recovery ladder, swarm and flee limits, the weapon as filler or last resort, an
+      optional control role, the emergency percentages) and the policy that reads it.
+      Nothing calls it yet; the Priest, the Cleric and the Chanter keep their policy.
+    - **Order of one decision:** death and incomplete life statistics; the swarm limit;
+      the ladder (shield scroll, life potion or a recovery skill, each at its HP
+      percentage, every step at once in an emergency); the flee limit when no step was
+      available, never when cornered; the mana potion when the cheapest learned attack
+      cannot be paid; with no target, defend, upkeep or ready; with one, an open follow-up
+      first, then upkeep, the attack list, the weapon, and last a movement answer. A
+      retreat casts the control role first when it is ready.
+    - **Movement answer.** With nothing to cast or swing, an unpulled target is always
+      approached. A pulled one: a walk-in class approaches until it is adjacent, a
+      weapon-range class until the weapon reaches, and a stand-off class waits unless the
+      target attacks from range.
+    - **Chain legality.** A follow-up is legal when its required category is the current
+      or the previous chain category, inside its own chain time counted from the step
+      before it. A follow-up cast on a target follows only on the target the chain was
+      opened on; one cast on the bot follows on any. The Warrior's Rage 2903 is such a
+      self-cast follow-up (first target ME), found by the check below. A follow-up that
+      is the current step repeats only while its self count allows. The observation has
+      four more optional fields for this, unset until CP-39 fills them: the previous chain
+      category, when the current step was cast, how often it was cast, and the skill ids
+      of the effects seen on the bot (upkeep reads these and casts nothing while they are
+      unobserved).
+    - **The actions it returns** are the ones the fight loop executes: cast-self,
+      cast-target, attack, approach, wait, retreat, shield-scroll, mana-potion and
+      hot-potion, which is the loop's name for drinking the owned life potion. The
+      weapon-range hold still has no executor in the loop (J.Combat throws for it); that
+      stays with the first weapon-range class.
+    - **Proof by rule (n): no unit test.** A one-time check from an uncommitted test file
+      (run/cp/CP-36/check-a1.log and check-a2.log), on a Warrior and a Mage table built
+      from the shipped data with CP-35's generator, both valid by the validator. Sweep of
+      115,200 states: the chosen action is one legal candidate in every state. The first
+      run of the sweep found 3,228 states answered "ready" with an attacker near and no
+      target, which the candidate list calls illegal; such a state now answers "defend".
+      Example states: a walk-in class approaches an unpulled target at 20 m and a pulled
+      one at 8 m; Robust Blow follows Ferocious Strike inside 3 s and not after 4 s; Rage
+      follows Robust Blow by the previous category; Blaze goes before a ready non-chain
+      Erosion while Flame Bolt's chain is open; an empty ladder roots and then retreats at
+      the flee limit; the ladder takes the potion at 55% and the shield scroll at 45%; a
+      cornered class fights on; Stone Skin goes up before the first hit; a stand-off class
+      waits at 10 m with everything cooling down, drinks the mana potion when it cannot
+      pay, and swings only when it cannot; a table that names an unknown role is refused.
+    - Guard: gate p, run guard-a1, identical to its baseline of 49cf15b60. Bundle: the
+      seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and Fast passes
+      (run cp36-fast).
 - [ ] **CP-37 - Rest without a heal: potion, then sit.** Depends: CP-17
   - Work: The operator, 2026-10-07: "DO not use bandages, just use Potions, rest when potion
     is on cooldown if needed". Java first, and written into the doc: sitting restores HP
@@ -4978,3 +5029,10 @@ report what was done, what is blocked and what you need from me.
   Ferocious Strike with the sword; one fixture per validator rule is refused. Guard guard-a1,
   set p: identical. Seven checks, unit suite and Fast (cp35-fast) pass. Next by rule (h):
   CP-36.
+- 2026-10-07 — Loop: CP-36 done. NaturalRotationCombatPolicy plays a class from one rule
+  table: attack lists, upkeep, a recovery ladder, swarm and flee limits, the weapon, and a
+  movement answer by pull style. A one-time check, not committed (rule (n)): 115,200 states,
+  every choice a legal candidate, after one fix (an attacker with no target now answers
+  defend) and one finding (Rage is cast on the bot, so its chain is not bound to a target).
+  Guard guard-a1, set p: identical. Seven checks, unit suite and Fast (cp36-fast) pass. Next
+  by rule (h): CP-37.
