@@ -8283,7 +8283,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					SweptQuestItems.TryGetValue(session.Api.World, out Dictionary<int, List<int>>? swept)
 					? swept.Where(entry => entry.Value.Contains(collection.ItemId)).Select(entry => (int?)entry.Key).LastOrDefault()
 					: null;
-				int unsuccessfulKills = 0, tacticalRetreats = 0;
+				int unsuccessfulKills = 0, tacticalRetreats = 0, walkedHome = 0;
 				var failedTargets = new Dictionary<int, int>();
 				for (int attempt = 1; ; attempt++)
 				{
@@ -8303,6 +8303,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						return CollectedSource(target);
 					int revives = combat.ReviveCount;
 					int retreats = combat.CompletedRetreats;
+					int returns = combat.TargetReturns;
 					int evidenceStart = session.PacketHistory.Count;
 					bool killed = await PullAndKillAsync(target, $"kill-{templateId}");
 					// Pull planning may defend against this very target as an add, then report
@@ -8344,6 +8345,15 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					{
 						if (++tacticalRetreats >= 12)
 							throw new InvalidDataException($"NPC {templateId} remains guarded after {tacticalRetreats} disengagement retreats.");
+					}
+					// NR-15: the fight ended because the target gave up and walks home. An attack on a returning monster only
+					// starts its return again (Java AttackEventHandler.onAttack, state RETURNING), so it could not be fought:
+					// that is not one of the six failed pulls. After a retreat a whole pack walks home, and three of its
+					// members used up the six in 28 s. The same monster twice is still left for another, as above.
+					else if (!died && combat.TargetReturns > returns)
+					{
+						if (++walkedHome >= 12)
+							throw new InvalidDataException($"NPC {templateId}: {walkedHome} targets gave up and walked home (last target {target}).");
 					}
 					else if (++unsuccessfulKills >= 6)
 						throw new InvalidDataException($"NPC {templateId} was not killed in {unsuccessfulKills} non-retreat attempts (last target {target}).");

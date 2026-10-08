@@ -124,6 +124,8 @@ public sealed partial class NaturalIshalgenJourney
 		/// <summary>NA-18: the observed class chooses the catalog (the Cleric adds its level 10 skills).</summary>
 		private NaturalPriestSkill[] Catalog => ClassProfile.Skills;
 		public int CompletedRetreats => completedRetreats;
+		/// <summary>NR-15: fights that ended because the target gave up and walked home.</summary>
+		public int TargetReturns { get; private set; }
 		public bool InCombat { get; private set; }
 		public Func<CancellationToken, Task>? MaintainInventoryAsync { get; set; }
 		/// <summary>Leave the pack; when no checked escape leads away from it (a pocket, a ledge, more
@@ -281,6 +283,7 @@ public sealed partial class NaturalIshalgenJourney
 					observedTargetHpPercent == 0) return true;
 				if (targetReturned)
 				{
+					TargetReturns++;
 					session.TraceDiagnostic("combat-target-returned", new Dictionary<string, object?>
 					{
 						["targetObjectId"] = target, ["npcId"] = targetTemplate?.GetTemplateId(),
