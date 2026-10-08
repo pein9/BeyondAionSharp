@@ -53,6 +53,8 @@ COUNTS = (
     ('emergencyDecisions', 'combat-decision with inEmergency'),
     ('atTargetPulls', 'adds-that-would-join whose purpose ends in -at-target'),
     ('lifePotions', 'combat-hot-potion'),
+    ('restLifePotions', 'rest-life-potion: a life potion drunk between fights by a class with no heal of its own'),
+    ('restSitsForHealth', 'rest-sit-for-health: a sit for HP while the potion is on its delay or none is owned'),
     ('manaPotions', 'combat-mana-potion'),
     ('shieldScrolls', 'help-item-used, family anti-shock, one item consumed'),
     ('speedScrolls', 'help-item-used, family awakening or courage, one item consumed'),
@@ -181,6 +183,10 @@ def counts(source):
             totals['atTargetPulls'] += str(fields.get('purpose') or '').endswith('-at-target')
         elif packet == 'combat-hot-potion':
             totals['lifePotions'] += 1
+        elif packet == 'rest-life-potion':
+            totals['restLifePotions'] += 1
+        elif packet == 'rest-sit-for-health':
+            totals['restSitsForHealth'] += 1
         elif packet == 'combat-mana-potion':
             totals['manaPotions'] += 1
         elif packet == 'help-item-used':

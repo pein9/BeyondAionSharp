@@ -443,12 +443,35 @@ the Abyss entry was one more capture from it. The generic Cleric is played the s
       passes (4,675 passed, 16 skipped) and Fast passes (run nr04-fast, 11 passed). At the
       baseline commit: the seven checks, scripts/sim/trace/test_compare_traces.py and
       scripts/sim/test-sim-snapshot.ps1.
-- [ ] **NR-05 - The comparer counts the rest's potions and sits.** Depends: NR-00
+- [x] **NR-05 - The comparer counts the rest's potions and sits.** Depends: NR-00
   - Work: scripts/sim/trace/compare_traces.py counts rest-life-potion and
     rest-sit-for-health among its step counts, so a class scope shows them. The digest of a
     trace must not change; if it would, the item stops and says so.
   - Proof: scripts/sim/trace/test_compare_traces.py passes and every recorded scope's
     digest is unchanged (gate, set all plus the five class scopes).
+  - 2026-10-08: done. No server behavior is involved.
+    - **The change.** compare_traces.py --counts has two more counts, after lifePotions:
+      restLifePotions (rest-life-potion records) and restSitsForHealth
+      (rest-sit-for-health records). The digest and the comparison do not read the counts
+      and are untouched. The existing counts test in test_compare_traces.py has three more
+      records and the two new names; no test was added.
+    - **What the counts show on the recorded traces** (run/nr/NR-05/stored-digests.txt,
+      read from run/cp/baseline): the seven Priest and Cleric scopes have neither record,
+      as they heal by skill. Mage 3 rest potions and 1 sit for health, Warrior 5 and 0,
+      Artist 1 and 0, Engineer 5 and 1, Scout 5 and 0. The counts stored in the baseline
+      file's rows are from each row's own recording and gain the two names when a row is
+      recorded again; the gate compares the digest, not the counts.
+    - **Proof.** test_compare_traces.py passes (10 tests). With the changed script, the
+      digest of every stored baseline trace equals its row. Gate, set
+      all+mage+warrior+artist+engineer+scout, run gate-a1
+      (run/nr/NR-05/gate-a1/verdict.json): verdict pass, all twelve scopes identical to
+      their baselines (p 37,222, m 112,397, b 144,048, l1 30,693, c 96,166, hm 39,564, ax
+      15,762, mage 23,555, warrior 24,199, artist 23,104, engineer 24,580, scout 27,592).
+      This is also the first full gate since NR-03 and NR-04: the Cleric's legs play as
+      recorded with the off-hand rules in the inventory policy.
+    - Bundle: the seven pre-commit checks, test-sim-snapshot.ps1 and Fast (run nr05-fast,
+      11 passed) pass.
+    - Phase A is closed. Phase B starts with NR-10.
 
 ### B. The Cleric on the generic rules
 
@@ -773,3 +796,8 @@ report what was done, what is parked or blocked, and what the operator must deci
   re-recorded at 5917ca9b1, two passes identical, 27,592 records; munin-scout-s1 is
   untouched. Guard: p and the four other class scopes identical. Next: NR-05, the comparer
   counts the rest's potions and sits.
+- 2026-10-08 — Loop: NR-05 done. The comparer's counts gain restLifePotions and
+  restSitsForHealth; the digest is untouched and every stored baseline trace still hashes
+  to its row. Full gate gate-a1, twelve scopes: identical, which also covers the Cleric's
+  legs after NR-03 and NR-04. Seven checks, the two script tests and Fast (nr05-fast) pass.
+  Phase A is closed. Next: NR-10, the recovery ladder widened to say the Priest's heal rule.

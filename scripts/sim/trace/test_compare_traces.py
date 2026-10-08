@@ -186,12 +186,16 @@ class CompareTracesTests(unittest.TestCase):
             record(45, 'service-bind-result', outcome='refused'),
             record(46, 'service-soul-heal', outcome='done'),
             record(47, 'service-soul-heal', outcome='refused'),
+            record(48, 'rest-life-potion', itemId=162000006),
+            record(49, 'rest-sit-for-health', hp=40),
+            record(50, 'rest-sit-for-health', hp=55),
         ]
         path = self.write('counts', trace)
         expected = {
-            'records': 48, 'deaths': 1, 'reviveSteps': 3, 'retreats': 1, 'retreatRoutes': 2, 'restSitsTraced': 2,
+            'records': 51, 'deaths': 1, 'reviveSteps': 3, 'retreats': 1, 'retreatRoutes': 2, 'restSitsTraced': 2,
             'restInterrupts': 2, 'betweenFightHeals': 1, 'powderRestCasts': 1, 'vendorBuys': 3, 'pullPlans': 2,
-            'patrolWaits': 3, 'emergencyDecisions': 2, 'atTargetPulls': 1, 'lifePotions': 2, 'manaPotions': 1,
+            'patrolWaits': 3, 'emergencyDecisions': 2, 'atTargetPulls': 1, 'lifePotions': 2, 'restLifePotions': 1,
+            'restSitsForHealth': 2, 'manaPotions': 1,
             'shieldScrolls': 1, 'speedScrolls': 2, 'runningScrolls': 1, 'helpItemsSupplied': 2, 'binds': 1, 'soulHeals': 1,
         }
         self.assertEqual(expected, compare_traces.counts(path))
