@@ -4698,7 +4698,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       were not looted, each about 91 m away when the sweep ran. (c) The Sprigg hunt and
       the Q2004 approaches still select a stand-off before the Warrior walks in (six
       combat-standoff-selected records), as CP-44 found.
-- [ ] **CP-55 - Warrior to the Q2007 checkpoint.** Depends: CP-54
+- [x] **CP-55 - Warrior to the Q2007 checkpoint.** Depends: CP-54
   - Work: Run Replay -Class warrior -StopAt 2007:5:0 -Item CP-55. The stalker (Q2005) and
     generator (Q2007) fights are the expected trouble for a melee class without a heal;
     Q2005's firing-edge search (J:6896-6913) is fixed as a lettered item if it stops the
@@ -4709,6 +4709,47 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     is also what the receipt holds when the class was not observed
     (Sc/NaturalJourneyCheckpoint.cs:12, 35). On the -StopAfterQuest fallback the proof is
     the passing run plus the trace's creation step and its turn-in records, as in CP-50.
+  - 2026-10-08: done on the first attempt, with no code change, no budget override and no
+    lettered item: Q2005's firing-edge search did not stop the run. Run journey-a1 at
+    c9be73ee9 on a clean tree, CP_CLASS=warrior and NI08_STOP_AT=2007:5:0, seed 1, bridge
+    off, help items on (run/cp/CP-55/journey-a1/: replay.json passed, schema dropped). The
+    status-5 stop landed and wrote its receipt.
+    - **The stop.** resume-receipt.json: class id 0, level 9, 757 HP; the Skills hold
+      Ferocious Strike 2864 and 2865, Robust Blow 2877 and 2878, Body Smash 2890 and Rage
+      2903. Completed: Q2000 to Q2007, Q2100 to Q2104 and Q2132; Q2008 is in the journal
+      at START/0. 108 min 30 s of game time, 64,326 trace records. Q2005 took from 32:14
+      to 45:00, Q2006 to 52:05, and Q2007 to 1:48:29: 56 minutes, where the Mage needed 18.
+    - **Fights, whole run.** 112 encounters, 100 kills, 2 deaths, 3 retreats. 1,973
+      decisions: 1,043 swings, 684 casts on a target, 47 on itself, 124 approaches, 64 life
+      potions, 8 shield scrolls, 3 retreats; 46 of them in an emergency. Casts: Ferocious
+      Strike 238, Robust Blow 223, Body Smash 193, Rage 45. 112 pull plans: 68 pulls, 35
+      waits, 9 with no plan. Eight encounters ended on a blocked approach and were taken
+      up again by the journey.
+    - **Deaths, both at Q2007's generators, both with two monsters on it.** (1) 1:11:40 at
+      the violet generator: the potion was on its delay, the shield scroll went at 352 of
+      757 HP, Rage and the chain followed, and at 168 HP (22%) it chose to leave and was
+      killed 7 s later. (2) 1:32:19, in the step that rejoins the generators after the
+      first death: the same course, leaving at 181 HP and killed 8 s later. Each time it revived at the outpost obelisk it is bound
+      to and the soul heal ran at the Soul Healer 203680 beside it: 287 XP back for 71
+      Kinah. It then rested by sitting and the potion, and went back. A third time, at
+      1:42:47, it left at 151 HP and lived, at 24 HP (3%), the lowest of the run.
+    - **Ledger.** Supplied: 30 life potions 162000006, 30 Anti-Shock scrolls 164000067
+      and 20 Greater Running Scrolls 164000076 at the start, and a refill of 22 life
+      potions at the level-9 checkpoint after Q2006 (help-items.json). Used: 80 life
+      potions. All 52 of the kit's (34 in fights, 18 in rests; the last at 1:22:37), and
+      then 28 of the starter's own Minor Life Potions 162000002 (23 in fights, 5 in rests;
+      75 of 103 left). 25 sits for health. Six Anti-Shock scrolls, 30 to 24, from eight
+      decisions: the shield scroll is shown on the Warrior for the first time. The Greater
+      Running Scroll seven times, Blitzopan four times.
+    - **Gear and picks.** Worn after the Q2004 stop: the accessory 122000869 from Q2004,
+      the chain pieces 113500762 from Q2005 at 45:00 and 114500767 from Q2006 at 52:05.
+    - **Binds and Kinah.** As in CP-54: the village for 43 Kinah, the outpost for 134.
+      4,093 Kinah before the deaths, 3,951 at the stop after the two soul heals.
+    - **Findings, not fixed.** (a) The Warrior leaves at three attackers and at 25% HP;
+      at Q2007's generators two monsters at once cost it two deaths and most of its
+      potions. (b) The kit's life potions ran out inside Q2007; the refill comes only at a
+      checkpoint. (c) 20 corpses were not looted: 14 had no safe path and 6 lay 68 to 88 m
+      away. (d) Five distance refusals of Ferocious Strike, each answered by closing in.
 - [ ] **CP-56 - Warrior 1-9 at Munin, captured and verified as munin-warrior-s1.** Depends:
   CP-55
   - Work: As CP-52 with -Class warrior -Name munin-warrior-s1. Acceptance: a sword or mace
@@ -5896,3 +5937,11 @@ report what was done, what is blocked and what you need from me.
   and Q2132 completed. 28 encounters, 27 kills, no death, no retreat. 12 life potions (five
   in rests, seven in fights), five running scrolls, Blitzopan twice; lowest HP 65%. Evidence
   and docs only; seven checks pass. Next by rule (h): CP-55.
+- 2026-10-08 — Loop: CP-55 done on the first attempt, no code change, no budget override, no
+  lettered item. The Warrior played from creation to the Q2007 stop in 108 min 30 s of game
+  time (run journey-a1): class id 0 with its skills observed, level 9, Q2000 to Q2007
+  completed, Q2008 at START/0. 112 encounters, 100 kills, 2 deaths and 3 retreats, all at
+  Q2007's generators with two monsters on it; each death revived at the outpost obelisk and
+  was soul healed there for 71 Kinah. 80 life potions (the kit's 52 and 28 of its own), 25
+  sits for health, six shield scrolls, seven running scrolls, Blitzopan four times. Q2007
+  took 56 minutes. Evidence and docs only; seven checks pass. Next by rule (h): CP-56.
