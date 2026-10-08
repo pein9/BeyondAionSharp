@@ -3769,7 +3769,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and
       Fast passes (run cp39-fast). No profile is table-driven yet, so the new paths are
       first played by CP-43.
-- [ ] **CP-40 - Walk-in pull for melee.** Depends: CP-19, CP-36
+- [x] **CP-40 - Walk-in pull for melee.** Depends: CP-19, CP-36
   - Work: Java first: AggroEventHandler.java:19, 52, the assist rule the planner mirrors.
     Add NaturalPullPlanner.WalkIn beside Plan (Nav/NaturalPullPlanner.cs:77-133) with unit
     facts: stage outside every aggro circle, list what AddsAt says would join at the
@@ -3784,6 +3784,36 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     DefendAgainstEngagedAsync (J:5508-5517) branch on style.
   - Proof: Neutral gate, set m+c: the ranged path is unchanged. The walk-in itself is first
     played in CP-44.
+  - 2026-10-07: done. Java read: AggroEventHandler.onCreatureNeedsSupport lets a supporter
+    help when it is within its aggro range plus SUPPORT_RANGE_OFFSET (2 m) of the monster
+    asking or of its attacker, in sight; the planner's Helpers and AddsAt mirror that.
+    - **Built.** NaturalPullPlanner.WalkIn beside Plan (Nav/NaturalPullPlanner.cs); Plan
+      keeps its signature, its 22 m cap and its filter. WalkIn stages outside every aggro
+      circle, the target's included, in sight of the target: where the bot stands when
+      that is within 22 m, else on rings 3, 6 and 10 m outside the target's circle, the
+      nearest that is clear, visible and reachable. Its helpers are what AddsAt says would
+      join at the target's position with melee reach, nearest to the staging spot first.
+      Among several targets the one with the fewest adds wins, earlier entries on a tie.
+    - **In the journey, each behind the profile's pull style.** MoveToPullSpotAsync asks
+      WalkIn for a walk-in profile and Plan otherwise; the patrol waits, the trace and the
+      walk to the spot are shared. PullAndKillAsync counts the adds where the target
+      stands for a walk-in profile and where the bot stands otherwise; its
+      fight-at-the-target block is not moved or edited. The fight-through reach test
+      takes the fight-through pull range for a walk-in profile in place of spell range
+      plus 3 m. The 2 s spell-range wait of DefendAgainstEngagedAsync is skipped for a
+      walk-in profile, which takes the wait-for-the-attacker answer below it.
+    - **Proof by rule (n): no unit facts.** A one-time check from an uncommitted test file
+      (run/cp/CP-40/check-a1.log): alone, the bot stages 18 m from a target with an 8 m
+      circle when it comes from 40 m, and stays where it is at 15 m; a supporter of the
+      target's tribe 6 m from it is listed as an add, and so is another tribe's monster
+      whose circle reaches the fight; of two targets the one without adds is taken; no
+      plan without a reachable spot or without sight; no staging spot lies inside a
+      circle; the audit lists every spot evaluated. The ranged plan for the same scene is
+      its usual spot at 20.9 m.
+    - **Gate, set p+m+c, run gate-a1** (run/cp/CP-40/gate-a1/verdict.json): verdict pass; p (37,222 records), m (112,397) and c (96,166) are identical to their baselines of 49cf15b60. p is
+      the guard of rule (c); m and c are the item's proof.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and
+      Fast passes (run cp40-fast). No profile walks in yet; CP-44 plays it first.
 - [ ] **CP-41 - Full gate after the refactor.** Depends: CP-16, CP-17, CP-18, CP-19, CP-20,
   CP-21, CP-22, CP-23, CP-24, CP-25, CP-26, CP-27, CP-28, CP-29, CP-37, CP-38, CP-39, CP-40
   - Work: No bot code changes. Every refactor item that edits code the Priest or the Cleric
@@ -5132,3 +5162,9 @@ report what was done, what is blocked and what you need from me.
   weapon's speed with a wrapping attack number, and fills the weapon and chain fields of the
   observation. The Hold approach waits instead of throwing. Gate gate-a1, set p+m+c: identical
   in all three. Seven checks, unit suite and Fast (cp39-fast) pass. Next by rule (h): CP-40.
+- 2026-10-07 — Loop: CP-40 done. NaturalPullPlanner.WalkIn stages a melee class outside every
+  aggro circle and counts the adds at the target; the journey takes it by pull style in the
+  pull-spot move, the adds count, the fight-through reach test and the engaged-defense wait. A
+  one-time check, not committed (rule (n)), shows the plan on eight scenes. Gate gate-a1, set
+  p+m+c: identical in all three. Seven checks, unit suite and Fast (cp40-fast) pass. Next by
+  rule (h): CP-41, the full gate after the refactor.

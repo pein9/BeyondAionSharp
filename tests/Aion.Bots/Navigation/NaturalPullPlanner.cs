@@ -132,6 +132,65 @@ public static class NaturalPullPlanner
 			: a.Order >= b.Order;
 	}
 
+	/// <summary>
+	/// CP-40: the pull of a class that fights at the target (a walk-in). It stages outside every aggro circle, the
+	/// target's own included, in sight of the target, and from there walks in; the fight is where the target stands. The
+	/// plan's <see cref="NaturalPullPlan.FiringPosition"/> is the staging spot and its
+	/// <see cref="NaturalPullPlan.Helpers"/> are what <see cref="AddsAt"/> says would join at the target's position with
+	/// <paramref name="meleeReach"/>, nearest to the staging spot first: the server's assist rule (Java
+	/// AggroEventHandler.onCreatureNeedsSupport: a supporter within its aggro range + 2 m of the target or of the
+	/// attacker, in sight) and every circle that reaches the fight. The best target is the one with the fewest adds;
+	/// earlier entries win ties. Staging candidates: where the bot stands, when that is within spell range, and rings
+	/// 3, 6 and 10 m outside the target's circle; the nearest that is clear, visible and reachable is taken.
+	/// </summary>
+	public static NaturalPullPlan? WalkIn(BotPosition current, IReadOnlyList<NaturalPullMonster> targets,
+		IReadOnlyList<NaturalPullMonster> monsters, Func<string, string, bool> canSupport,
+		Func<BotPosition, BotPosition, bool> lineOfSight, Func<BotPosition, BotPosition?> snapToGround,
+		Func<BotPosition, bool> reachable, float meleeReach = 3f, int sectors = 16, Action<NaturalPullCandidate>? audit = null)
+	{
+		ArgumentNullException.ThrowIfNull(targets);
+		ArgumentNullException.ThrowIfNull(monsters);
+		NaturalPullPlan? best = null;
+		for (int order = 0; order < targets.Count; order++)
+		{
+			NaturalPullMonster target = targets[order];
+			IReadOnlyList<NaturalPullMonster> adds = AddsAt(target, target.Npc.Position, monsters, canSupport, lineOfSight, meleeReach);
+			if (best != null && adds.Count >= best.Helpers.Count) continue;
+			var spots = new List<BotPosition>();
+			if (Horizontal(current, target.Npc.Position) <= SpellRange) spots.Add(current);
+			float edge = MathF.Max(target.AggroRadius, meleeReach);
+			foreach (float beyond in (float[])[3f, 6f, 10f])
+				for (int sector = 0; sector < sectors; sector++)
+				{
+					float angle = sector * 2 * MathF.PI / sectors;
+					var raw = target.Npc.Position with
+					{
+						X = target.Npc.Position.X + (edge + beyond) * MathF.Cos(angle),
+						Y = target.Npc.Position.Y + (edge + beyond) * MathF.Sin(angle),
+					};
+					if (snapToGround(raw) is BotPosition ground) spots.Add(ground);
+				}
+			// Cheap filters first; sight and reachability (a route search) nearest first, until one holds.
+			foreach (BotPosition spot in spots
+				.Where(p => Horizontal(p, target.Npc.Position) >= target.AggroRadius + 1)
+				.Where(p => monsters.All(m => !Near(m, p, m.AggroRadius + 1, null)))
+				.OrderBy(p => Horizontal(current, p)))
+			{
+				float clearance = monsters.Where(m => m.Npc.ObjectId != target.Npc.ObjectId)
+					.Select(m => m.Npc.PossiblePositions().Min(at => Horizontal(spot, at)) - m.AggroRadius).DefaultIfEmpty(99).Min();
+				bool visible = lineOfSight(spot, target.Npc.Position);
+				bool route = visible && reachable(spot);
+				audit?.Invoke(new NaturalPullCandidate(target.Npc.ObjectId, spot, adds.Select(add => add.Npc.ObjectId).ToArray(), clearance,
+					visible && route, !visible ? "No collision-checked line of sight." : !route ? "No checked route to staging spot." : null));
+				if (!visible || !route) continue;
+				best = new NaturalPullPlan(target, spot,
+					adds.OrderBy(add => add.Npc.PossiblePositions().Min(at => Horizontal(spot, at))).ToArray(), clearance);
+				break;
+			}
+		}
+		return best;
+	}
+
 	// A patrol comes by anywhere on the path it was seen walking: measure from the nearest point of it.
 	private static bool Near(NaturalPullMonster monster, BotPosition point, float range,
 		Func<BotPosition, BotPosition, bool>? lineOfSight)

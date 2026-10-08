@@ -5617,6 +5617,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					int? engagementStart = altgardLegId == "l10" ? Math.Max(0, session.PacketHistory.Count - 400) : null;
 					try { killed = await combat.TryKillAsync(attacker, token, session.CurrentPosition, engagementStart); }
 					catch (NaturalCombatApproachBlockedException) when (
+						// CP-40: a walk-in class has no spell to wait for; it takes the answer below.
+						combat.ClassProfile.PullStyle != NaturalPullStyle.WalkIn &&
 						navigator.Observe().Npcs.Any(npc => npc.ObjectId == attacker &&
 							Distance(session.CurrentPosition, npc.Position) <= combat.ClassProfile.Ranges.SpellRange))
 					{
@@ -5763,7 +5765,29 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					// more there meets the patrol or the respawn, as the Hatata fights that went wrong did.
 					bool avoidSpawns = combat.HostileSpawns.Count > 0;
 					var evaluatedPullCandidates = new List<NaturalPullCandidate>();
-					NaturalPullPlan? PlanOnce() => NaturalPullPlanner.Plan(session.CurrentPosition, pullTargets, monsters, stagingPoints, CanSupport,
+					// CP-40: a walk-in class stages outside every circle and fights at the target; its plan's helpers are
+					// the adds at the target's position. Every other style keeps the firing-spot plan.
+					NaturalPullPlan? PlanOnce() => combat.ClassProfile.PullStyle == NaturalPullStyle.WalkIn
+						? NaturalPullPlanner.WalkIn(session.CurrentPosition, pullTargets, monsters, CanSupport,
+							(a, b) => geometry.HasLineOfSight(contract.MapId, a, b),
+							point => geometry.SnapToGround(contract.MapId, point), PullSpotReachable,
+							combat.ClassProfile.Ranges.MeleeReach, audit: evaluatedPullCandidates.Add)
+						: PlanFiringSpotOnce();
+					bool PullSpotReachable(BotPosition spot)
+					{
+						if (avoidDeaths && combat.DeathSpots.Any(death => Distance(death, spot) < DeathSpotAvoidance)) return false;
+						if (avoidSpawns && combat.HostileSpawns.Any(spawn => spawn.DistanceTo(spot) <= spawn.Radius + NaturalPullPlanner.SupportRangeOffset)) return false;
+						var key = ((int)MathF.Round(spot.X), (int)MathF.Round(spot.Y));
+						if (!reachable.TryGetValue(key, out bool ok))
+							reachable[key] = ok = Distance(session.CurrentPosition, spot) < 1 ||
+								(geometry.NavMesh is { } router && router.NavMeshes.Get(contract.MapId) is { } mesh
+									? mesh.IslandOf(spot) >= 0 && mesh.IslandOf(spot) == mesh.IslandOf(session.CurrentPosition) &&
+										router.FindPath(contract.MapId, session.CurrentPosition, spot,
+											BotNavQuery.Default with { Hazards = hazards }).Count > 0
+									: geometry.FindJourneyPathAvoiding(contract.MapId, session.CurrentPosition, spot, hazards).Count > 0);
+						return ok;
+					}
+					NaturalPullPlan? PlanFiringSpotOnce() => NaturalPullPlanner.Plan(session.CurrentPosition, pullTargets, monsters, stagingPoints, CanSupport,
 						(a, b) => geometry.HasLineOfSight(contract.MapId, a, b),
 						point => geometry.SnapToGround(contract.MapId, point),
 						spot =>
@@ -6065,8 +6089,11 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					: next == null ? [] : [next.Monster.Npc];
 				NaturalPullPlan? pull = await MoveToPullSpotAsync(blockers, next?.Staging ?? [], "fight-through");
 				if (LostTravel()) return false;
+				// CP-40: a walk-in class reaches what it can walk to from its staging spot, the fight-through's pull range;
+				// every other style reaches what its spell does.
 				bool OutOfReach(NaturalNavigationObject npc) =>
-					Distance(session.CurrentPosition, npc.Position) > combat.ClassProfile.Ranges.SpellRange + 3 ||
+					Distance(session.CurrentPosition, npc.Position) > (combat.ClassProfile.PullStyle == NaturalPullStyle.WalkIn
+						? combat.ClassProfile.Ranges.FightThroughPullRange : combat.ClassProfile.Ranges.SpellRange + 3) ||
 					!geometry.HasLineOfSight(contract.MapId, session.CurrentPosition, npc.Position);
 				NaturalNavigationObject? target;
 				if (pull == null)
@@ -8383,13 +8410,16 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					NaturalPullMonster[] monsters = ObservedPullMonsters();
 					NaturalPullMonster pullTarget = monsters.FirstOrDefault(m => m.Npc.ObjectId == target) ?? PullMonsterOf(
 						navigator.Observe().Npcs.FirstOrDefault(n => n.ObjectId == target) ?? npc);
-					IReadOnlyList<NaturalPullMonster> adds = NaturalPullPlanner.AddsAt(pullTarget, session.CurrentPosition, monsters,
+					// CP-40: a walk-in class fights where the target stands, so the adds are counted there; every other
+					// style brings the target to its firing spot.
+					BotPosition fightSpot = combat.ClassProfile.PullStyle == NaturalPullStyle.WalkIn ? pullTarget.Npc.Position : session.CurrentPosition;
+					IReadOnlyList<NaturalPullMonster> adds = NaturalPullPlanner.AddsAt(pullTarget, fightSpot, monsters,
 						CanSupport, (a, b) => geometry.HasLineOfSight(contract.MapId, a, b), combat.ClassProfile.Ranges.MeleeReach);
 					session.TraceDiagnostic("adds-that-would-join", new Dictionary<string, object?>
 					{
 						["purpose"] = purpose,
 						["target"] = $"{pullTarget.Npc.TemplateId}/{pullTarget.Npc.ObjectId}",
-						["firingPosition"] = session.CurrentPosition,
+						["firingPosition"] = fightSpot,
 						["adds"] = adds.Select(a => $"{a.Npc.TemplateId}/{a.Npc.ObjectId}").ToArray(),
 					});
 					if (adds.Count == 0) break;
