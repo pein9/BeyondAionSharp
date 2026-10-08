@@ -779,12 +779,90 @@ to the endpoint. The close of phase B is NR-21.
       l1, c, hm and ax start from a Cleric, which still fights by the old rule. Bundle:
       the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast
       passes (run nr14-fast, 11 passed).
-- [ ] **NR-15 - The Priest's Ishalgen replayed and re-recorded.** Depends: NR-14
+- [x] **NR-15 - The Priest's Ishalgen replayed and re-recorded.** Depends: NR-14
   - Work: No code beyond one small change (rule (e)). Replay scope m (the Priest from
     creation to Munin); two attempts. Compare its ledger with the old baseline's run:
     deaths, retreats, potions, game time. Then re-record p and m twice (rule (p)). Scope b
     changes too and is left out of every guard until NR-17 re-records it.
   - Proof: Scope m reaches Munin; p and m repeat in two passes each.
+  - 2026-10-08: done. Scope m reaches Munin on the second attempt, with one small change;
+    p and m are re-recorded.
+    - **Java.** AttackEventHandler.onAttack (lines 32-37): an npc in the state RETURNING
+      that is attacked aborts its move, goes idle and is told it is not at home.
+      ReturningEventHandler.onNotAtHome then sets RETURNING again, sends the two emotes of
+      EmoteManager.emoteStartReturning and walks on. CreatureEventHandler.checkAggro lets a
+      returning npc take no aggro. So a monster that is walking home cannot be pulled
+      before it is home. It sends the same two emotes when it arrives
+      (emoteStartIdling), so one emote does not tell the client which of the two happened.
+    - **Attempt a1** (run m-a1 at 1216d6c87, run/nr/NR-15/m-a1; kept): stopped at Q2128
+      after 2 h 08 min 42 s, with 38 quests done, level 9 and no death: "NPC 210391 was
+      not killed in 6 non-retreat attempts".
+      - At 2:07:49 the Priest pulled a dundun farmer (210391, level 7). Its two neighbours
+        came with it, though the pull plan named no adds. With three on it after 7.9 s the
+        Priest left, as the table and the old rule both say, with the target at 26% HP.
+      - From 2:08:15 the kill loop pulled the three while they walked home: six fights
+        of one Smite each, every one ended by the target giving up, in 28 s. The sixth was
+        the template's last allowed failed pull.
+      - The old baseline run met the same pack at 2:13:34 and opened the same way (two
+        Smites, Infernal Blaze). There the third farmer's first hit came later; the Priest
+        killed its target with two on it and left in the next fight. The table's Priest
+        decides a quarter of a second later after an instant skill, because it waits for
+        the animation's last hit. The weakness is the kill loop's and not the table's.
+    - **The one small change, rule (e)** (commit 3ac9e756f, Sc/NaturalIshalgenJourney.cs
+      and its fight loop). A fight that ended because the target gave up and walks home is
+      not one of a template's six failed pulls. It has its own bound of twelve. The rule
+      that leaves a monster after it failed twice stands, so the hunt goes on to another
+      of its kind.
+    - **Attempt a2** (run m-a2, run/nr/NR-15/m-a2, with the change not yet committed):
+      passed. "All included quests complete; standing at client-observed Munin", 41
+      quests, level 9, 769 of 769 HP, no death, 9,980,890 ms of game time. At Q2128 the
+      same retreat and the same six fights; the next pull went to another dundun farmer
+      and killed it with one attacker.
+    - **Re-recorded, rule (p).** Run record-a1 at 3ac9e756f on a clean tree
+      (run/nr/NR-15/record-a1/verdict.json): two passes of each scope, identical after
+      normalization. p: 35,463 records, SHA-256
+      ce9e6ec6c8fa1027a134d6d9c9249294bda015f3be6aa26f5951f4a8a88c069c. m: 109,039 records, SHA-256
+      53790cf7c92275430fbc6f19af3a6c14bdf77d143c10b1aecde5b181f2d33a2e. The recorded m has the counts of attempt a2. Both rows of
+      parity-artifacts/e2e/natural-neutral-baseline.json are replaced; the traces are
+      under run/cp/baseline/3ac9e756f...
+    - **The ledger, old baseline run beside the new one.** From the baseline traces of
+      49cf15b60 and of 3ac9e756f.
+
+      | | p, old rule | p, table | m, old rule | m, table |
+      |---|---|---|---|---|
+      | Game time | 1 h 03 min 48 s | 1 h 01 min 03 s | 2 h 51 min 38 s | 2 h 46 min 20 s |
+      | Fights | 45 | 43 | 150 | 146 |
+      | Kills | 44 | 42 | 136 | 133 |
+      | Seconds in fights | 386 | 346 | 1,541 | 1,397 |
+      | Fight decisions | 274 | 257 | 1,133 | 1,121 |
+      | Deaths | 0 | 0 | 0 | 0 |
+      | Retreats | 0 | 1 | 1 | 1 |
+      | Life potions in fights | 16 | 14 | 36 | 34 |
+      | Shield scrolls | 0 | 0 | 1 | 0 |
+      | Heals between fights | 3 | 0 | 15 | 6 |
+      | Pull plans | 9 | 6 | 103 | 110 |
+      | Lowest HP seen at a decision, % | 77 | 81 | 41 | 53 |
+      | Smite | 91 | 88 | 366 | 365 |
+      | Hallowed Strike | 45 | 42 | 148 | 136 |
+      | Infernal Blaze | 15 | 15 | 76 | 71 |
+      | Healing Light, rest included | 2 | 0 | 19 | 10 |
+      | Weapon swings | 37 | 36 | 126 | 116 |
+      | Waits | 55 | 51 | 295 | 327 |
+      | Targets that gave up and walked home | 0 | 0 | 3 | 7 |
+
+    - **Found, not acted on (rule (f)).**
+      - The bot pulls monsters that are walking home, and learns it only from the wasted
+        cast. A rule that leaves a pack alone until it is home would save those casts and
+        the six fights above.
+      - The pull plan named no adds for a dundun farmer whose two neighbours came with it.
+      - After leaving a pack at the swarm limit, the kill loop goes back to the same pack.
+    - **Guard, rule (c)**, for the small change. Run guard-a1, gate
+      l1+c+hm+ax+mage+warrior+artist+engineer+scout (run/nr/NR-15/guard-a1/verdict.json):
+      nine scopes identical to their baselines (l1 30,693, c 96,166, hm 39,564, ax 15,762,
+      mage 23,555, warrior 24,199, artist 23,104, engineer 24,580, scout 27,592). No
+      recorded scope ever reached a template's six failed pulls. Scope b is left out
+      until NR-17. Bundle at the code commit: the seven pre-commit checks pass,
+      Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run nr15-fast, 11 passed).
 - [ ] **NR-16 - The Cleric on the table.** Depends: NR-15
   - Work: Write the Cleric's rule table into this document first, then build it, with the
     Cleric's rest by NR-12's kinds. SIM probe rows on prepared Clerics at levels 10, 16,
@@ -1094,3 +1172,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   the row's design. Guard guard-a1, five class scopes: identical. Seven checks, unit suite
   and Fast (nr14-fast) pass. Scopes p, m and b now differ from their baselines until
   NR-15 and NR-17. Next: NR-15, the Priest's Ishalgen replayed and re-recorded.
+- 2026-10-08 — Loop: NR-15 done. Replay m-a1 stopped at Q2128: after leaving a pack of
+  three, the kill loop used its six failed pulls on monsters that were walking home. One
+  small change (3ac9e756f): such a fight is not a failed pull. Replay m-a2 reaches Munin,
+  41 quests, no death, 2 h 46 min 20 s against 2 h 51 min 38 s by the old rule.
+  Guard guard-a1, nine scopes: identical. Seven checks, unit suite and Fast (nr15-fast)
+  pass. Re-recorded at 3ac9e756f, two passes each: p 35,463 records, m
+  109,039. Scope b still differs until NR-17. Next: NR-16, the Cleric on
+  the table.
