@@ -66,8 +66,9 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 		["CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder);
 	public static NaturalClassGearTable Scout { get; } = new(PlayerClass.SCOUT, ["DAGGER"], NaturalWeaponStat.Physical,
 		["LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder);
+	// CP-46: the Mage casts from mana, so it keeps the mana potions too.
 	public static NaturalClassGearTable Mage { get; } = new(PlayerClass.MAGE, ["SPELLBOOK"], NaturalWeaponStat.Magical,
-		["ROBE", "CLOTHES"], DefaultConsumableOrder);
+		["ROBE", "CLOTHES"], DefaultConsumableOrder, NaturalIshalgenPotionPolicy.ManaPotionIds);
 	public static NaturalClassGearTable Engineer { get; } = new(PlayerClass.ENGINEER, ["GUN"], NaturalWeaponStat.Magical,
 		["LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder);
 	public static NaturalClassGearTable Artist { get; } = new(PlayerClass.ARTIST, ["HARP"], NaturalWeaponStat.Magical,

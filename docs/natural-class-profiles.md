@@ -4130,7 +4130,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
 
 ### E. Profiles for Mage, Artist, Engineer and Scout
 
-- [ ] **CP-46 - Mage profile.** Depends: CP-21, CP-24, CP-39, CP-42
+- [x] **CP-46 - Mage profile.** Depends: CP-21, CP-24, CP-39, CP-42
   - Work: Add line mage and Sc/Classes/NaturalMageProfile.cs: stand-off pull at 22 m (its
     targeted skills reach 25 m, so the planner is unchanged); Flame Bolt 1282 then Blaze
     1403, Ice Chain 1363 then Frozen Shock 1226, each follow-up at once; Erosion 1447 only
@@ -4155,6 +4155,55 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     210389 (478 HP, level 6) with no cast-start timeout. Karnif 210389 is the one that
     spawns in Ishalgen (spawns/Npcs/220010000_Ishalgen.xml:474); 210655 (577 HP) has a
     template but no spawn.
+  - 2026-10-08: done on the first probe attempt. Java: the chain and range rules were read
+    for CP-35 and the rest for CP-37; nothing new on the server is relied on.
+    - **The line.** NaturalClassLine.Mage: id mage, starter MAGE, no second class, account
+      41, name Asimmage (CP-Q19, on its default).
+    - **The profile** (Sc/Classes/NaturalMageProfile.cs), built from the run's static data
+      like the Warrior's. Catalog: Flame Bolt 1282 (bolt), Blaze 1403 (blaze), Ice Chain
+      1363 (ice), Frozen Shock 1226 (shock), Erosion 1447 (erosion), Root 1328 (root),
+      Stone Skin 1155 (skin); the three common skills are excluded; the validator passes.
+      Table natural-mage-v1. From range: ice, shock, bolt, blaze. With the monster on it:
+      erosion, ice, shock, bolt, blaze. An open follow-up always goes first, so Blaze
+      follows Flame Bolt and Frozen Shock follows Ice Chain at once and nothing comes
+      between. Ice Chain opens because its snare keeps the monster away longer; Flame
+      Bolt has no cooldown and fills the rest. Stone Skin is upkeep, before the first hit
+      and between fights. Root is the control skill, cast only before a retreat. Ladder:
+      the shield scroll at 50% HP, the life potion at or below 75%; it leaves at two
+      attackers or at 25% HP with nothing ready (CP-Q11). The mana potion goes only when
+      the cheapest attack cannot be paid, after the ladder (CP-Q12). The spellbook swings
+      only as a last resort. Movement, engage distances, readiness and campaign numbers:
+      the Priest line's, a stand-off at 22 m with skills that reach 25 m. Rest: the potion
+      plan with a 90% HP target and the mana sit below 40% until 80%. Help items: the level
+      1-9 kit with the Awakening family in the shared speed slot, which is Castafodin.
+      Restock: the Minor Life Elixir of list 721 at 5 or fewer up to 12, Kinah floor 500.
+    - **Two things the item names that the table does not do.** Erosion is in the list
+      for a monster on the Mage only: Flame Bolt has no cooldown, so an attack listed
+      after it is never reached, and before it Erosion would be cast every 3 s at twice
+      Flame Bolt's mana. Root on a second attacker is not built: the table casts on the
+      fight's target only, so Root is cast on the way out and nowhere else.
+    - **Gear.** The Mage table of CP-29 (spellbook by magic boost, robe then clothes) now
+      keeps the mana potions as supplies, which closes finding (a) of CP-29 for the Mage.
+      Its reward picks are the ones CP-29 lists: the spellbooks at Q2100, Q2002 and Q2134
+      (100600047, 100600531, 100600048), the robe piece at Q2001, Q2005, Q2006, Q2007 and
+      Q2129 (114100794, 113100773, 114100795, 110101250, 111100763), and the Minor Life
+      Elixir at Q2117 and Q2124.
+    - **Probe, rows mage-1 and mage-5** (run/cp/CP-46/probe-a1.log, traces beside it).
+      - Row mage-1, on account 98 as Asimonemage. Prepared: placed 18 m from a Sprigg
+        Worker's spot; HP halved before the second and the third kill. A level-1 Mage has
+        132 HP and 452 MP. Each of three Sprigg Workers 210363 dies to one Flame Bolt,
+        fired from 10.6, 18.3 and 10.6 m, in 2.6, 2.8 and 2.6 s, and it ends each at
+        full HP. The
+        rest before the second kill drinks one Minor Life Potion and sits once; the rest
+        before the third, inside the potion's 30 s delay, drinks nothing and sits once.
+      - Row mage-5, on account 100 as Asimfivemage. Prepared: level 5, placed 20 m from a
+        Fanged Karnif's spot. A level-5 Mage has 262 HP and 872 MP. It casts Ice Chain
+        1363 at 1.8 s, Flame Bolt 1282 at 4.3 s and Blaze 1403 at 5.4 s, 1,085 ms after
+        Flame Bolt; the Karnif 210389 (478 HP) is dead after 6.1 s without reaching the
+        Mage. No cast timed out.
+    - Guard: gate p, run guard-a1, identical to its baseline of 49cf15b60. Bundle: the
+      seven pre-commit checks pass, Aion.GameServer.Tests passes (4,675 with 16 skipped) and Fast passes
+      (run cp46-fast).
 - [ ] **CP-47 - Artist profile.** Depends: CP-21, CP-24, CP-46
   - Work: Add line artist and Sc/Classes/NaturalArtistProfile.cs: stand-off at 22 m; Pulse
     4408/4409 as pull and filler, Song of Ice 4221/4222, Soothing Melody 4339 as the heal
@@ -5411,3 +5460,10 @@ report what was done, what is blocked and what you need from me.
   are not the natural journey and in the live Priest scenario. Docs only.
   This is the first report point: the seam is closed with a Warrior in the field, and the
   Chanter capture CP-33 is ticked. Next by rule (h): CP-46.
+- 2026-10-08 — Loop: CP-46 done. Line mage and the Mage's profile on the table policy: Ice
+  Chain and Frozen Shock, Flame Bolt and Blaze, Erosion with the monster on it, Stone Skin as
+  upkeep, Root before a retreat, the potion-and-sit rest with a mana sit. Probe, first
+  attempt: a level-1 Mage kills three Sprigg Workers with one Flame Bolt each from range, and
+  its two forced rests drink one potion and then sit; a level-5 Mage casts Ice Chain, Flame
+  Bolt and Blaze (1.1 s after) and kills a Fanged Karnif in 6.1 s. Guard guard-a1, set p:
+  identical. Seven checks, unit suite and Fast (cp46-fast) pass. Next by rule (h): CP-47.

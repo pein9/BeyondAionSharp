@@ -136,6 +136,7 @@ public static class NaturalClassProfiles
 	private static readonly Dictionary<PlayerClass, Func<StaticData, NaturalClassProfile>> Generated = new()
 	{
 		[PlayerClass.WARRIOR] = NaturalWarriorProfile.Create,
+		[PlayerClass.MAGE] = NaturalMageProfile.Create,
 	};
 
 	private static readonly ConcurrentDictionary<PlayerClass, NaturalClassProfile> Built = new();

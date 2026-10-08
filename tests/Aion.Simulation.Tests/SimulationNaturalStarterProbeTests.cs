@@ -24,6 +24,8 @@ public sealed partial class SimulationFastScenarioTests
 		new("warrior-rest", NaturalClassLine.Warrior, ProbeAccountA, "Asimrestwar"),
 		new("warrior-1", NaturalClassLine.Warrior, ProbeAccountA, "Asimonewar"),
 		new("warrior-7", NaturalClassLine.Warrior, ProbeAccountB, "Asimsevenwar"),
+		new("mage-1", NaturalClassLine.Mage, ProbeAccountA, "Asimonemage"),
+		new("mage-5", NaturalClassLine.Mage, ProbeAccountB, "Asimfivemage"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -148,6 +150,8 @@ public sealed partial class SimulationFastScenarioTests
 			case "warrior-rest": await WarriorRestRowAsync(probe, id, token); break;
 			case "warrior-1": await WarriorLevelOneRowAsync(probe, id, geometry, token); break;
 			case "warrior-7": await WarriorLevelSevenRowAsync(probe, id, geometry, token); break;
+			case "mage-1": await MageLevelOneRowAsync(probe, id, geometry, token); break;
+			case "mage-5": await MageLevelFiveRowAsync(probe, id, geometry, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -284,5 +288,95 @@ public sealed partial class SimulationFastScenarioTests
 			$"Casts {order}; Rage {gap.TotalMilliseconds:F0} ms after Robust Blow. " +
 			$"Decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}. " +
 			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
+	}
+
+	/// <summary>
+	/// CP-46, row mage-1. Prepared by the director: the level-1 Mage is placed 18 m from a Sprigg Worker's shipped spot,
+	/// and its HP is halved before the second and before the third kill. Every other act is the journey's: three Sprigg
+	/// Workers (210363, 143 HP) killed through RunObservedCombatAsync with Flame Bolt from range. Each kill begins with
+	/// the journey's ordinary rest: the first forced rest drinks a Minor Life Potion; the second comes while the potion's
+	/// 30 s delay still runs, so it sits to the HP target and drinks nothing.
+	/// </summary>
+	private async Task MageLevelOneRowAsync(StarterProbe probe, string id, BotNavigationGeometry geometry, CancellationToken token)
+	{
+		const int map = 220010000, sprigg = 210363, bolt = 1282, potion = NaturalIshalgenPotionPolicy.StarterLifePotionId;
+		Assert.Equal(1, probe.World.Level);
+		long owned = probe.Owned(potion);
+		probe.Session.BeginStep("s01", "director-places-by-sprigg-workers");
+		BotPosition spot = GroundNear(geometry, map, new BotPosition(145.856f, 2560.26f, 307.891f, 0), 18);
+		await probe.PlaceAsync(spot.X, spot.Y, spot.Z);
+		var lines = new List<string>();
+		long potionAt = 0;
+		for (int kill = 1; kill <= 3; kill++)
+		{
+			string step = "s0" + (kill + 1);
+			probe.Session.BeginStep(step, $"kill-sprigg-worker-{kill}");
+			// Prepared by the director: half HP before the second and the third kill, so that their rests are forced.
+			if (kill > 1) await probe.CutHpAsync(50);
+			long cutAt = probe.NowMillis;
+			Npc target = NearestLiving(probe, sprigg);
+			NaturalCombatDiagnosticResult result = await probe.Journey.RunObservedCombatAsync(_ => Task.FromResult(target.GetObjectId()), token);
+			Assert.True(result.Killed, $"Sprigg Worker {kill} was not killed: {result}.");
+			Assert.True(target.IsDead());
+			Assert.Equal(0, result.Deaths);
+			IReadOnlyList<StarterTraceRecord> records = probe.TraceOf(step);
+			var casts = probe.CastsOf(step);
+			IReadOnlyDictionary<string, int> decisions = probe.DecisionsOf(step);
+			Assert.NotEmpty(casts);
+			Assert.All(casts, cast => Assert.Equal(bolt, cast.SkillId));
+			// From range: the first cast is decided with the target outside melee reach.
+			StarterTraceRecord first = records.First(record => record is { Direction: "action", Packet: "combat-decision" } &&
+				record.Fields.GetProperty("action").GetString() == "cast-target");
+			double firedFrom = first.Fields.GetProperty("targetDistance").GetDouble();
+			Assert.True(firedFrom > 5, $"Kill {kill} began at {firedFrom:F1} m.");
+			int potions = records.Count(record => record is { Direction: "action", Packet: "rest-life-potion" });
+			int sits = records.Count(record => record is { Direction: "action", Packet: "rest-sit-for-health" });
+			if (kill == 2)
+			{
+				Assert.Equal(1, potions);
+				potionAt = cutAt;
+			}
+			if (kill == 3)
+			{
+				Assert.True(cutAt - potionAt < 30_000, $"The third kill's rest began {cutAt - potionAt} ms after the potion; its delay has run out.");
+				Assert.Equal(0, potions);
+				Assert.True(sits >= 1, "The second forced rest did not sit for health.");
+			}
+			lines.Add($"kill {kill}: {result.ElapsedMillis} ms, first cast from {firedFrom:F1} m, {casts.Count} Flame Bolt, rest potions {potions} sits {sits}, " +
+				$"decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}, " +
+				$"HP {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+		Assert.Equal(owned - 1, probe.Owned(potion));
+		Assert.False(probe.Server.IsDead());
+		Console.WriteLine($"{id}: level {probe.World.Level} Mage, three Sprigg Workers. " + string.Join("; ", lines) + ".");
+	}
+
+	/// <summary>
+	/// CP-46, row mage-5. Prepared by the director: level 5 and a place 20 m from a Fanged Karnif's shipped spot. Every
+	/// other act is the journey's: Flame Bolt and then Blaze, at once, on one Fanged Karnif (210389, 478 HP, level 6). A
+	/// death or a retreat is a recorded outcome; the row asks for the pair and for no cast that never started.
+	/// </summary>
+	private async Task MageLevelFiveRowAsync(StarterProbe probe, string id, BotNavigationGeometry geometry, CancellationToken token)
+	{
+		const int map = 220010000, karnif = 210389, bolt = 1282, blaze = 1403;
+		probe.Session.BeginStep("s01", "director-sets-level-five-and-places-by-a-karnif");
+		await probe.SetLevelAsync(5);
+		Assert.All(new[] { bolt, blaze, 1363, 1447 }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 5."));
+		BotPosition spot = GroundNear(geometry, map, new BotPosition(884.051f, 1652f, 272.994f, 0), 20);
+		await probe.PlaceAsync(spot.X, spot.Y, spot.Z);
+		probe.Session.BeginStep("s02", "fight-a-fanged-karnif");
+		Npc target = NearestLiving(probe, karnif);
+		NaturalCombatDiagnosticResult result = await probe.Journey.RunObservedCombatAsync(_ => Task.FromResult(target.GetObjectId()), token);
+		var casts = probe.CastsOf("s02").ToList();
+		IReadOnlyDictionary<string, int> decisions = probe.DecisionsOf("s02");
+		string order = string.Join(" ", casts.Select(cast => $"{cast.SkillId}@{cast.At.TotalSeconds:F1}"));
+		int pair = Enumerable.Range(0, Math.Max(0, casts.Count - 1)).FirstOrDefault(index => casts[index].SkillId == bolt && casts[index + 1].SkillId == blaze, -1);
+		Assert.True(pair >= 0, $"Blaze did not follow Flame Bolt at once: {order}.");
+		TimeSpan gap = casts[pair + 1].At - casts[pair].At;
+		Assert.True(gap <= TimeSpan.FromSeconds(3), $"Blaze came {gap.TotalMilliseconds:F0} ms after Flame Bolt: {order}.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Mage, max HP {probe.World.MaxHp}, one Fanged Karnif: {result}. " +
+			$"Casts {order}; Blaze {gap.TotalMilliseconds:F0} ms after Flame Bolt. " +
+			$"Decisions {string.Join(" ", decisions.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key} {entry.Value}"))}. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
 	}
 }
