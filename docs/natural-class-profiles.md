@@ -4997,10 +4997,24 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       Descant 4300 is learned at level 7 and stays excluded. (d) The receipt's 16-bit
       EquipmentSlot hides the accessory 123000864, as for the other classes.
     - No code changed, so this commit is evidence only. The class scope is CP-60's.
-- [ ] **CP-60 - Record class scope artist, twice.** Depends: CP-59
+- [x] **CP-60 - Record class scope artist, twice.** Depends: CP-59
   - Work: As CP-53 with -Set artist -Item CP-60.
   - Proof: The record run: the two passes of class scope artist are identical after
     normalization (run/cp/CP-60/<run-id>/verdict.json).
+  - 2026-10-08: done. Run record-a1 at 84bf4bcee on a clean tree: the gate played class
+    scope artist twice (run/cp/CP-60/record-a1-artist-pass1 and -pass2) and the two passes
+    are identical after normalization: 23,104 records, SHA-256
+    1b955d9e0bca60eed07698c0ad547b9ccea630578a02924ae2ae37373992875c
+    (run/cp/CP-60/record-a1/verdict.json, verdict pass). The Q2004 stop of CP-58 landed on
+    the status-5 stop, so the scope is recorded as defined. Its row is written into
+    parity-artifacts/e2e/natural-neutral-baseline.json with an empty ignore list and these
+    counts: no death, no retreat, 4 pull plans, 5 life potions in fights, 3 heals between
+    fights, 5 running scrolls, 1 speed scroll, 3 help items supplied, 2 binds. They are
+    CP-58's.
+    - From here the guard of rule (c) runs gate p and the class scopes mage, warrior and
+      artist.
+    - Evidence only. The seven pre-commit checks pass, and so do the trace comparer's
+      tests and the snapshot and gate contract tests, which read the baseline file.
 - [ ] **CP-61 - Engineer to the Q2004 checkpoint.** Depends: CP-48, CP-53
   - Work: Run Replay -Class engineer -StopAt 2004:5:0 -Item CP-61. Trainer Wild Wilhelm
     801218 (var 5) and the pistol rewards have never been played by a bot. A site that still
@@ -6205,3 +6219,8 @@ report what was done, what is blocked and what you need from me.
   rest heals), and the heal is cast four times in a fight. 38 life potions, three shield
   scrolls, 20 running scrolls. Restore prints CP_CLASS=artist and no NA_HELP_ITEMS. Evidence
   only. Next by rule (h): CP-60.
+- 2026-10-08 — Loop: CP-60 done. Class scope artist recorded at 84bf4bcee (run record-a1):
+  two passes of Replay -Class artist -StopAt 2004:5:0, identical after normalization, 23,104
+  records, SHA-256 1b955d9e...3992875c. The guard of rule (c) now runs p, mage, warrior and
+  artist. Evidence only; seven checks and the two script tests that read the baseline pass.
+  Next by rule (h): CP-61.

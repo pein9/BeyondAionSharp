@@ -387,6 +387,49 @@
         "binds": 2,
         "soulHeals": 0
       }
+    },
+    {
+      "scope": "artist",
+      "line": "artist",
+      "replay": {
+        "Class": "artist",
+        "StopAt": "2004:5:0"
+      },
+      "snapshot": null,
+      "commit": "84bf4bcee99a9488c53ebb8fbbdd02807eaef4c8",
+      "environment": {
+        "AION_SIM_SEED": "1",
+        "NA_HELP_ITEMS": null,
+        "AION_BOT_DASHBOARD_PORT": null,
+        "AION_SIM_PROCESS_KEY": null
+      },
+      "ignore": [],
+      "records": 23104,
+      "sha256": "1b955d9e0bca60eed07698c0ad547b9ccea630578a02924ae2ae37373992875c",
+      "counts": {
+        "records": 23105,
+        "deaths": 0,
+        "reviveSteps": 0,
+        "retreats": 0,
+        "retreatRoutes": 0,
+        "restSitsTraced": 0,
+        "restInterrupts": 0,
+        "betweenFightHeals": 3,
+        "powderRestCasts": 0,
+        "vendorBuys": 0,
+        "pullPlans": 4,
+        "patrolWaits": 0,
+        "emergencyDecisions": 0,
+        "atTargetPulls": 0,
+        "lifePotions": 5,
+        "manaPotions": 0,
+        "shieldScrolls": 0,
+        "speedScrolls": 1,
+        "runningScrolls": 5,
+        "helpItemsSupplied": 3,
+        "binds": 2,
+        "soulHeals": 0
+      }
     }
   ]
 }
