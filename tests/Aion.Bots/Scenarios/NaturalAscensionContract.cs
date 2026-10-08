@@ -136,7 +136,10 @@ public sealed record NaturalAscensionContract(
 				Position = from.Ceremony.PreceptorPosition,
 				TalkRange = from.Ceremony.TalkRange,
 				Actions = Swap(step.Actions, core.CeremonyReward.Action, pickAction),
-				Pages = Swap(step.Pages, coreFrom.Ceremony.PageId, from.Ceremony.PageId),
+				// CP-67: the reward window is the reward group's (Java AbstractQuestHandler.sendQuestEndDialog with
+				// DialogPage.getRewardPageByIndex), and the group is the starter's.
+				Pages = Swap(Swap(step.Pages, coreFrom.Ceremony.PageId, from.Ceremony.PageId),
+					RewardPage(coreFrom.Ceremony.RewardGroup), RewardPage(from.Ceremony.RewardGroup)),
 			}
 			: step.QuestId == oldDispatch ? step with
 			{
@@ -184,6 +187,9 @@ public sealed record NaturalAscensionContract(
 			},
 		});
 	}
+
+	/// <summary>The reward window the server shows for a quest's reward group: 5 to 8 for groups 0 to 3, then 45 and up.</summary>
+	private static int RewardPage(int rewardGroup) => DialogPageExtensions.GetRewardPageByIndex(rewardGroup).Id();
 
 	/// <summary>The values with the one occurrence of <paramref name="old"/> replaced; the reviewed bridge must hold it once.</summary>
 	private static T[] Swap<T>(T[] values, T old, T replacement)

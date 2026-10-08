@@ -5247,7 +5247,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
 ### G. Close-out
 
 - [ ] **CP-67 - The other nine second classes through the class choice, on prepared
-  characters.** Depends: CP-31
+  characters.** Depends: CP-31, CP-67a
   - Work: Add nine rows to NaturalClassChoiceProbe, built with ForChoice: Gladiator
     (SETPRO7), Templar (SETPRO8), Assassin (9), Ranger (10), Sorcerer (11), Spirit Master
     (12), Gunner (15), Bard (16) and Rider (17), each with its class page, Q2009 var,
@@ -5264,6 +5264,96 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     All six Asmodian dispatch handlers register the same quest-completed start and the same
     Doman talk as Q2904's (JAVA/data/handlers/quest/ascension/_2901 to _2904, _29070 and
     _29071, lines 23-25).
+  - 2026-10-08, first pass: seven of the nine rows pass and two cannot finish the trial
+    inside the swing bound, so the item is not ticked. The rows and one fix are committed
+    with their bundle green; the two Scout rows are CP-67a below (rule (i)).
+    - **Java, read first.** _2008Ascension.java:141-162: SETPRO7 to SETPRO17 each set one
+      second class at var 6. _2009ACeremonyinPandaemonium.java:136-178: in REWARD only the
+      preceptor of the quest's var answers (204080 at 10, 204081 at 20, 204082 at 30,
+      204083 at 40, 801220 at 50, 801221 at 60), USE_OBJECT with its own page and every
+      other action with sendQuestEndDialog. AbstractQuestHandler.java:466-471: that sends
+      DialogPage.getRewardPageByIndex of the quest's reward group, and DialogPage.java:85-
+      100 maps groups 0 to 5 to pages 5, 6, 7, 8, 45 and 46. The six dispatch handlers
+      register onQuestCompleted, Doman 204191 and Meiyer 203559 alike (lines 23-25).
+    - **The rows** (SimT/SimulationNaturalClassChoiceProbe.cs), two to a process on
+      accounts 98 and 100: gladiator and templar; assassin and ranger; sorcerer and
+      spiritmaster; gunner and bard; rider. Prepared as in CP-31: created by packets as
+      the starter, then set to level 9 and placed by Munin by the test. Every later step
+      is a client action, with the starter's first weapon in hand. The row checks the
+      number of level-9 masteries against the class-line contract's reading of Java's
+      skill tree (10, 7, 4, 4, 3, 3, 1, 1, 2).
+    - **The ceremony weapon of each row is the probe's pick, not an operator decision.**
+      Gladiator the greatsword 100900488, Templar the sword 100000640, Sorcerer and Spirit
+      Master the spellbook 100600532 (the gear rules of 2026-10-07 name these types);
+      Assassin the dagger 100200605 and Ranger the bow 101700515 (the loop's choice);
+      Gunner 101800506, Bard 102000523 and Rider 102100489 are the only weapon offered.
+      The next plan decides each class's pick before a natural character takes one.
+    - **Attempt a1, rows gladiator and templar: both failed at the ceremony**
+      (run/cp/CP-67/probe-a1-p1.log). At preceptor 204080 SELECT_QUEST_REWARD was answered
+      with page 5 and the scenario waited for page 8. The bridge of CP-25
+      (NaturalAscensionContract.ForChoice) replaced the preceptor's own page and kept the
+      Priest's reward window. That window is the reward group's, and the group is the
+      starter's. **Fixed here, one line:** ForChoice now also replaces the reward window
+      with the starter's group's page, read from the server's port of
+      getRewardPageByIndex. The two Priest pairs keep page 8, so the Cleric's and the
+      Chanter's bridges are value for value what they were. It was not seen before
+      because the Chanter is the only other pair a bot had run, and it is a Priest's.
+    - **Attempt a2, all nine rows** (run/cp/CP-67/probe-a2-p1.log to probe-a2-p5.log).
+      Seven pass, each ending with the chosen class id on the server and in the client's
+      view, a Daeva at level 10, the masteries on the server and in the skill list sent,
+      the picked weapon paid at the row's own preceptor from the class's own list, and
+      its dispatch quest at START/0 after the ceremony and START/1 after Doman:
+
+      | Row | Class (id) | Class page, action | Q2009 var, preceptor, reward window | Weapon | Dispatch | HP at 10 |
+      |---|---|---|---|---|---|---|
+      | gladiator | GLADIATOR (1) | 3057, SETPRO7 | 10, 204080, 5 | 100900488, pick 2 of fighter | Q2901 | 911 |
+      | templar | TEMPLAR (2) | 3057, SETPRO8 | 10, 204080, 5 | 100000640, pick 1 of knight | Q2901 | 881 |
+      | sorcerer | SORCERER (7) | 3739, SETPRO11 | 30, 204082, 7 | 100600532, pick 1 of wizard | Q2903 | 458 |
+      | spiritmaster | SPIRIT_MASTER (8) | 3739, SETPRO12 | 30, 204082, 7 | 100600532, pick 1 of elementalist | Q2903 | 493 |
+      | gunner | GUNNER (14) | 3569, SETPRO15 | 50, 801220, 45 | 101800506, pick 1 of gunner | Q29070 | 688 |
+      | bard | BARD (16) | 3910, SETPRO16 | 60, 801221, 46 | 102000523, pick 1 of bard | Q29071 | 596 |
+      | rider | RIDER (13) | 3569, SETPRO17 | 50, 801220, 45 | 102100489, pick 1 of rider | Q29070 | 782 |
+
+      The reward window column is the page the scenario waited for and was sent. It is
+      the first run of the Engineer and Artist class pages, preceptors and dispatch
+      quests by any bot, and of reward windows 45 and 46. The starter's masteries stay in
+      the skill list beside the new ones, as CP-31 found for the Priest.
+    - **Rows assassin and ranger cannot finish the trial inside the swing bound; reported,
+      not widened** (run/cp/CP-67/probe-a2-p2.log). Both pass Munin, the three Norns, the
+      flight and the four guardian assassins (177 HP each, inside the 180 swings a kill is
+      given). Brigade General Hellion 205041 (1,461 HP) then outlasts the scenario's 600
+      swings: the hits of the Scout's starter dagger in the log are 1 to 3 each, and
+      Hellion stands at 61% (ranger) and 62% (assassin) when the bound ends. The Scout is
+      at 610 of 612 HP: the trial hits for 1. No row died. Whether 1 to 3 a swing is what
+      Java gives a level-9 Scout's dagger against Hellion has not been read yet; that
+      reading comes first in CP-67a, and it decides between a fix of the server and a
+      bound of the row's own.
+    - **Rule (k), the fix is in CP-25's code.** Rows cleric and chanter of CP-31 pass again
+      (run/cp/CP-67/probe-k1.log), both at preceptor 204083 as before. CP-25's own unit
+      tests were removed under rule (n); its guard was gate p, which is in the guard below.
+    - **Guard, rule (c).** Run guard-a1, gate p and the five class scopes: all six
+      identical to their baselines (p 37,222, mage 23,555, warrior 24,199, artist 23,104,
+      engineer 24,580, scout 31,082). Bundle: the seven pre-commit checks pass,
+      Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run cp67-fast, 11 passed).
+- [ ] **CP-67a - The two Scout rows through the trial.** Depends: CP-31
+  - Work: Java first, before anything is widened: what a normal attack of a level-9 Scout
+    with the starter dagger does to Brigade General Hellion 205041 in Java
+    (StatFunctions.calculateAttackDamage and the dagger's and Hellion's stats), set beside
+    what the port does (1 to 3 a swing in run/cp/CP-67/probe-a2-p2.log). If the port does
+    less than Java, that is a server defect: it stops this item, goes under Blocked with
+    the Java lines, and is fixed Java-first under its own lettered item. If the port
+    matches Java, the trial's swing bound becomes a value a row may name
+    (CapitalAscensionScenario.RunAsmodianAsync; unset means the 600 it has today, so
+    CAPITAL-ASMO and the nine other rows play as they do), and the assassin and ranger
+    rows name the bound their dagger needs, with the measured damage as the reason in the
+    row's comment. Nothing else changes: no skill is cast, no weapon is handed over, and
+    the two rows keep the starter dagger.
+  - Proof: SIM probe NaturalClassChoiceProbe, rows assassin and ranger pass, each ending as
+    CP-67's Proof line says (class ids 4 and 5, the picked weapon paid at preceptor 204081
+    with reward window 6, Q2902 at START/0 and then var 1 at Doman), and the row prints the
+    swings it used. Guards: rows cleric and gladiator pass with the bound unset (rule
+    (k)); gate p and the five class scopes identical (rule (c), the scenario is in
+    tests/Aion.Bots).
 - [ ] **CP-68 - Off hand: shield and second weapon in the gear rules.** Depends: CP-29,
   CP-57, CP-66
   - Work: Java first: Equipment.java's rules for shields and dual wield. The table gear rule
@@ -6454,3 +6544,14 @@ report what was done, what is blocked and what you need from me.
   records, SHA-256 85d3c597...f5747d36. The baseline file holds twelve scopes and the guard
   of rule (c) runs p and all five class scopes. Evidence only; seven checks and the two
   script tests that read the baseline pass. Phase F is closed. Next by rule (h): CP-67.
+- 2026-10-08 — Loop: CP-67, first pass, not ticked. Nine rows added to
+  NaturalClassChoiceProbe. Seven pass (Gladiator, Templar, Sorcerer, Spirit Master, Gunner,
+  Bard, Rider): each ends as its second class at level 10 with its weapon paid at its own
+  preceptor and its dispatch quest at var 1 at Doman; the first run of the Engineer and
+  Artist pages by any bot. One fix on the way: ForChoice kept the Priest's reward window (8)
+  for every starter, and Java shows the window of the starter's reward group (5, 6, 7, 8, 45,
+  46). The Assassin and Ranger rows cannot finish the trial: Hellion stands at 61-62% after
+  the 600 swings, at 1 to 3 a swing from the starter dagger. Reported, not widened: lettered
+  item CP-67a written after CP-67 and added to its Depends (rule (i)). Rows cleric and
+  chanter pass again; guard guard-a1, p and five class scopes: identical. Seven checks, unit
+  suite and Fast (cp67-fast) pass. Next by rule (h): CP-67a.

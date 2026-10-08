@@ -20,13 +20,29 @@ public sealed partial class SimulationFastScenarioTests
 	private const int ProbeAccountA = 98, ProbeAccountB = 100;
 
 	/// <param name="CeremonyItemId">The weapon taken at the ceremony; null for the reviewed bridge's pick.</param>
-	private sealed record ClassChoiceRow(string Name, PlayerClass Starter, PlayerClass Second, int Account, string CharacterName, int? CeremonyItemId);
+	/// <param name="Masteries">How many masteries the second class is given at level 9, as read from Java's skill tree.</param>
+	/// <param name="Item">The checklist item the row belongs to; it names the row's run.</param>
+	private sealed record ClassChoiceRow(string Name, PlayerClass Starter, PlayerClass Second, int Account, string CharacterName, int? CeremonyItemId,
+		int Masteries = 6, string Item = "CP31");
 
 	private static readonly ClassChoiceRow[] ClassChoiceRows =
 	[
 		new("cleric", PlayerClass.PRIEST, PlayerClass.CLERIC, ProbeAccountA, "Asimpickcleric", null),
 		// CP-Q7, on its default: the Chanter takes the Karmic Staff.
 		new("chanter", PlayerClass.PRIEST, PlayerClass.CHANTER, ProbeAccountB, "Asimpickchanter", 101500498),
+		// CP-67: the other nine second classes, two rows to a process. The weapon each takes is this probe's pick from
+		// the class's own list, not an operator decision: the weapon of the class type where the gear rules name one
+		// (greatsword, sword, spellbook), the dagger and the bow for the two Scout classes, and the only weapon offered
+		// for the Gunner, the Bard and the Rider.
+		new("gladiator", PlayerClass.WARRIOR, PlayerClass.GLADIATOR, ProbeAccountA, "Asimpickglad", 100900488, 10, "CP67"),
+		new("templar", PlayerClass.WARRIOR, PlayerClass.TEMPLAR, ProbeAccountB, "Asimpicktemplar", 100000640, 7, "CP67"),
+		new("assassin", PlayerClass.SCOUT, PlayerClass.ASSASSIN, ProbeAccountA, "Asimpicksin", 100200605, 4, "CP67"),
+		new("ranger", PlayerClass.SCOUT, PlayerClass.RANGER, ProbeAccountB, "Asimpickranger", 101700515, 4, "CP67"),
+		new("sorcerer", PlayerClass.MAGE, PlayerClass.SORCERER, ProbeAccountA, "Asimpicksorc", 100600532, 3, "CP67"),
+		new("spiritmaster", PlayerClass.MAGE, PlayerClass.SPIRIT_MASTER, ProbeAccountB, "Asimpickspirit", 100600532, 3, "CP67"),
+		new("gunner", PlayerClass.ENGINEER, PlayerClass.GUNNER, ProbeAccountA, "Asimpickgunner", 101800506, 1, "CP67"),
+		new("bard", PlayerClass.ARTIST, PlayerClass.BARD, ProbeAccountB, "Asimpickbard", 102000523, 1, "CP67"),
+		new("rider", PlayerClass.ENGINEER, PlayerClass.RIDER, ProbeAccountA, "Asimpickrider", 102100489, 2, "CP67"),
 	];
 
 	public static TheoryData<string> ClassChoiceRowNames => new(ClassChoiceRows.Select(row => row.Name));
@@ -41,6 +57,10 @@ public sealed partial class SimulationFastScenarioTests
 	/// starter, then set to level 9 and placed by Munin by the test (the scenario's own setup step). From there every
 	/// step is a client action: Q2008 with the row's class choice, the Q2009 ceremony with the row's weapon, and Doman's
 	/// SETPRO1 on the dispatch quest.
+	/// <para>
+	/// CP-67: a row of another starter holds that starter's first weapon and fights the trial with it, inside the
+	/// scenario's own swing bound.
+	/// </para>
 	/// </summary>
 	[SkippableTheory]
 	[MemberData(nameof(ClassChoiceRowNames))]
@@ -52,7 +72,7 @@ public sealed partial class SimulationFastScenarioTests
 		NaturalAscensionContract reviewed = NaturalAscensionContract.LoadDefault();
 		NaturalAscensionContract contract = NaturalAscensionContract.ForChoice(reviewed, NaturalClassLineContract.LoadDefault(),
 			row.Starter, row.Second, row.CeremonyItemId);
-		string id = "CP31-" + row.Name;
+		string id = $"{row.Item}-{row.Name}";
 		using var policy = NewEconomyPolicy(id, includeHistory: false);
 		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(3));
 		var token = timeout.Token;
@@ -80,7 +100,7 @@ public sealed partial class SimulationFastScenarioTests
 				Assert.True(player.GetCommonData().IsDaeva());
 				Assert.True(player.GetLevel() >= contract.Endpoint.MinimumLevel);
 				// The second class's level-9 masteries, on the server and in the skill list the client was sent.
-				Assert.Equal(6, contract.ClassChoice.MasterySkillIds.Length);
+				Assert.Equal(row.Masteries, contract.ClassChoice.MasterySkillIds.Length);
 				Assert.All(contract.ClassChoice.MasterySkillIds, mastery =>
 				{
 					Assert.True(player.GetSkillList().IsSkillPresent(mastery), $"{row.Second} has no mastery {mastery}.");
@@ -105,7 +125,9 @@ public sealed partial class SimulationFastScenarioTests
 				Assert.False(player.IsInCustomState(CustomPlayerState.WATCHING_CUTSCENE));
 				int[] starterMasteries = NaturalClassLineContract.LoadDefault().Starter(row.Starter).Masteries.Select(mastery => mastery.SkillId).ToArray();
 				Console.WriteLine($"{id}: class {player.GetPlayerClass()} ({(int)player.GetPlayerClass().GetClassId()}), level {player.GetLevel()}, " +
-					$"action {contract.ClassChoice.Action}, masteries {string.Join(' ', contract.ClassChoice.MasterySkillIds)}, " +
+					$"HP {player.GetLifeStats().GetCurrentHp()}/{player.GetLifeStats().GetMaxHp()}, " +
+					$"class page {contract.ClassChoice.ClassPageId}, action {contract.ClassChoice.Action}, masteries {string.Join(' ', contract.ClassChoice.MasterySkillIds)}, " +
+					$"Q{contract.CeremonyReward.QuestId} var {ceremony.Var} at preceptor {ceremony.NpcId}, " +
 					$"starter masteries still held {string.Join(' ', starterMasteries.Where(mastery => player.GetSkillList().IsSkillPresent(mastery)))}, " +
 					$"ceremony item {contract.CeremonyReward.ItemId} by {contract.CeremonyReward.Action} from {contract.CeremonyReward.SelectableList}, " +
 					$"Q{contract.Dispatch.QuestId} {dispatch.GetStatus()}/{dispatch.GetQuestVarById(0)}.");
