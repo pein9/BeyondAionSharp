@@ -45,6 +45,11 @@ public sealed class NaturalGearRules
 	/// <summary>CP-68: what the equipment check puts in the off hand beside a one-hand weapon; nothing for every class today.</summary>
 	public NaturalOffHand OffHand { get; init; }
 
+	/// <summary>NR-03: a class that holds two weapons may hold this one in either hand: a one-hand weapon of its groups
+	/// (the item group's own answer, as Java ItemTemplate.isOneHandWeapon reads it).</summary>
+	public bool IsSecondWeapon(NaturalItem item) => OffHand == NaturalOffHand.SecondWeapon && WeaponGroups.Contains(item.Group) &&
+		Enum.TryParse(item.Group, out ItemGroup parsed) && parsed.GetItemSubType() == ItemSubType.ONE_HAND;
+
 	/// <summary><see cref="Score"/> over the client's tooltip view of an item, for the equipment check.</summary>
 	public required Func<NaturalGearInfo, long> UpgradeScore { get; init; }
 

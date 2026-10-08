@@ -48,22 +48,31 @@ public static class NaturalInventoryCheck
 		var worn = new List<NaturalGearUpgrade>();
 		if (world.IsDead) return worn;
 		bool dualWield = world.Skills.Keys.Any(NaturalGearPolicy.DualWieldSkillIds.Contains);
-		foreach (NaturalGearUpgrade upgrade in NaturalGearPolicy.SelectUpgrades(wearable, world.Level, describe, offHandSlots, refused, rules, dualWield))
+		// NR-03: a class with an off-hand mode looks again after a pass that wore something, twice at most. A weapon the
+		// main-hand pick took out is in the bag only then, and it may be better than what the off hand holds: in the end
+		// the worse of the two held weapons is the one that left. The inventory is read anew each pass. A class with no
+		// mode has one pass, as it always had.
+		int passes = rules is { OffHand: not NaturalOffHand.None } ? 3 : 1;
+		for (int pass = 0, wornBefore = -1; pass < passes && worn.Count > wornBefore; pass++)
 		{
-			await session.SendPacketAsync(session.Api.Equip(0, upgrade.Slot, upgrade.ObjectId), token);
-			await session.SynchronizeAsync(token);
-			bool isWorn = world.Inventory.TryGetValue(upgrade.ObjectId, out BotInventoryItem? after) && (after.Details.EquippedSlot ?? 0) > 0;
-			if (isWorn) worn.Add(upgrade);
-			else refused.Add(upgrade.ObjectId);
-			session.TraceDiagnostic("gear-equip", new Dictionary<string, object?>
+			wornBefore = worn.Count;
+			foreach (NaturalGearUpgrade upgrade in NaturalGearPolicy.SelectUpgrades(wearable, world.Level, describe, offHandSlots, refused, rules, dualWield))
 			{
-				["itemId"] = upgrade.ItemId,
-				["objectId"] = upgrade.ObjectId,
-				["slot"] = upgrade.Slot,
-				["itemLevel"] = upgrade.ItemLevel,
-				["replacesItemLevel"] = upgrade.ReplacesItemLevel,
-				["worn"] = isWorn,
-			});
+				await session.SendPacketAsync(session.Api.Equip(0, upgrade.Slot, upgrade.ObjectId), token);
+				await session.SynchronizeAsync(token);
+				bool isWorn = world.Inventory.TryGetValue(upgrade.ObjectId, out BotInventoryItem? after) && (after.Details.EquippedSlot ?? 0) > 0;
+				if (isWorn) worn.Add(upgrade);
+				else refused.Add(upgrade.ObjectId);
+				session.TraceDiagnostic("gear-equip", new Dictionary<string, object?>
+				{
+					["itemId"] = upgrade.ItemId,
+					["objectId"] = upgrade.ObjectId,
+					["slot"] = upgrade.Slot,
+					["itemLevel"] = upgrade.ItemLevel,
+					["replacesItemLevel"] = upgrade.ReplacesItemLevel,
+					["worn"] = isWorn,
+				});
+			}
 		}
 		return worn;
 	}

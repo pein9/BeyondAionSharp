@@ -207,6 +207,18 @@ public sealed class NaturalIshalgenInventoryPolicy
 		// level for it.
 		long BestScore(string? slot) => slot != null && best.TryGetValue(slot, out int objectId)
 			? rules.Score(items[observed.First(item => item.ObjectId == objectId).ItemId]) : long.MinValue;
+		// NR-03: a class that holds two weapons keeps its two best one-hand weapons. The second is the one a new weapon
+		// has to beat (the operator, 2026-10-08: "replacing the worst one vs the new item"); with one weapon owned, any
+		// second is welcome. The two need not be the same item.
+		bool holdsTwo = best.TryGetValue("WEAPON", out int firstWeapon) &&
+			rules.IsSecondWeapon(items[observed.First(item => item.ObjectId == firstWeapon).ItemId]);
+		int? secondWeapon = !holdsTwo ? null : observed.Where(item => item.ObjectId != firstWeapon &&
+				items.TryGetValue(item.ItemId, out var template) && rules.Usable(template, level) && rules.IsSecondWeapon(template))
+			.OrderByDescending(item => rules.Score(items[item.ItemId])).ThenBy(item => item.ObjectId)
+			.Select(item => (int?)item.ObjectId).FirstOrDefault();
+		long ScoreToBeat(NaturalItem template) => holdsTwo && rules.IsSecondWeapon(template)
+			? secondWeapon is int second ? rules.Score(items[observed.First(item => item.ObjectId == second).ItemId]) : long.MinValue
+			: BestScore(rules.Slot(template));
 		var decisions = new List<NaturalInventoryDecision>();
 		foreach (BotInventoryItem item in observed.OrderBy(item => item.ObjectId))
 		{
@@ -224,9 +236,10 @@ public sealed class NaturalIshalgenInventoryPolicy
 			else if (template.IsAccessory && (item.ItemMask & 4) != 0 && template.Sellable) (action, reason) = ("sell", "surplus-accessory");
 			else if (best.TryGetValue(rules.Slot(template) ?? "", out int winner) && winner == item.ObjectId)
 				(action, reason) = ("equip", rules.EquipReason);
+			else if (secondWeapon == item.ObjectId) (action, reason) = ("hold", "second-weapon");
 			// CP-29: gear for a later level is kept while it beats the slot's best.
 			else if (template.RequiredLevelFor(rules.Class) > level && rules.UsableNowOrLater(template, level) &&
-				rules.Score(template) > BestScore(rules.Slot(template))) (action, reason) = ("hold", "gear-for-later");
+				rules.Score(template) > ScoreToBeat(template)) (action, reason) = ("hold", "gear-for-later");
 			else if (rules.Supplies.Contains(item.ItemId) || bridgeSupplies.Contains(item.ItemId)) (action, reason) = ("hold", "combat-supply");
 			else if ((item.ItemMask & 4) == 0 || !template.Sellable) (action, reason) = ("hold", "not-sellable");
 			else (action, reason) = ("sell", rules.IsGear(template) ? "surplus-gear" : "unneeded-or-unusable");
@@ -254,12 +267,19 @@ public sealed class NaturalIshalgenInventoryPolicy
 			return Array.IndexOf(list, ceremony.ItemId);
 		if (!rewards.TryGetValue(questId, out int[]? choices) || choices.Length == 0) return -1;
 		NaturalGearRules rules = rewardRules ?? NaturalGearRules.Priest;
-		var owned = inventory.Where(item => items.TryGetValue(item.ItemId, out var template) && rules.UsableNowOrLater(template, level))
+		BotInventoryItem[] held = inventory.ToArray();
+		var owned = held.Where(item => items.TryGetValue(item.ItemId, out var template) && rules.UsableNowOrLater(template, level))
 			.GroupBy(item => rules.Slot(items[item.ItemId]))
 			.ToDictionary(group => group.Key!, group => group.Max(item => rules.Score(items[item.ItemId])));
+		// NR-03: a class that holds two weapons compares a weapon with the worse of its two; with fewer than two, any
+		// one-hand weapon of its groups is an upgrade.
+		long[] twoHands = held.Where(item => items.TryGetValue(item.ItemId, out var template) && rules.UsableNowOrLater(template, level) &&
+			rules.IsSecondWeapon(template)).Select(item => rules.Score(items[item.ItemId])).OrderDescending().ToArray();
+		long ScoreToBeat(NaturalItem item) => rules.IsSecondWeapon(item)
+			? twoHands.Length >= 2 ? twoHands[1] : long.MinValue
+			: owned.GetValueOrDefault(rules.Slot(item)!, long.MinValue);
 		bool Wearable(int id, out NaturalItem item) => items.TryGetValue(id, out item!) && rules.UsableNowOrLater(item, level);
-		bool Upgrade(int id, out NaturalItem item) => Wearable(id, out item) &&
-			rules.Score(item) > owned.GetValueOrDefault(rules.Slot(item)!, long.MinValue);
+		bool Upgrade(int id, out NaturalItem item) => Wearable(id, out item) && rules.Score(item) > ScoreToBeat(item);
 		int ConsumablePlace(int id)
 		{
 			for (int index = 0; index < rules.ConsumableOrder.Count; index++)

@@ -151,7 +151,8 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 		return new NaturalGearRules
 		{
 			Class = Class,
-			GearGroups = WeaponGroups.Concat(armorGroups).ToHashSet(),
+			// NR-03: a class that holds a shield treats shields as gear: the best one is kept and worn, the rest are spare.
+			GearGroups = WeaponGroups.Concat(armorGroups).Concat(OffHand == NaturalOffHand.Shield ? ["SHIELD"] : []).ToHashSet(),
 			WeaponGroups = WeaponGroups.ToHashSet(),
 			// A starter cannot pass level 9, so gear for a later level is not its gear.
 			HighestRequiredLevel = starter ? 9 : null,

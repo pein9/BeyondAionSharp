@@ -331,7 +331,7 @@ the Abyss entry was one more capture from it. The generic Cleric is played the s
   - 2026-10-08: done. No code changed. "Survey A2" stands above the checklist, and phase B
     has twelve items, NR-10 to NR-21, written from it. Seven pre-commit checks pass
     (run/nr/NR-02/checks.log).
-- [ ] **NR-03 - The off hand in keep-and-sell and in upgrades.** Depends: NR-00
+- [x] **NR-03 - The off hand in keep-and-sell and in upgrades.** Depends: NR-00
   - Work: Java first (Equipment.java, as read for CP-68). The inventory policy keeps what
     the class's off-hand mode holds: one shield for mode Shield, two weapons for mode
     SecondWeapon. With two weapons held, SelectUpgrades compares a new weapon with the
@@ -339,6 +339,52 @@ the Abyss entry was one more capture from it. The generic Cleric is played the s
     profile still has mode None, so every scope stays identical.
   - Proof: One-time check, not committed, of the keep-and-sell and worst-of-two cases;
     guard: gate p and the five class scopes identical.
+  - 2026-10-08: done. Every profile still has mode None.
+    - **Java.** Equipment.java, as read for CP-68, and nothing new: equipping into a hand
+      takes out only what that hand holds (equip and getUnequipSlots, lines 181-222), and
+      an item that is already worn cannot be asked for again (equipItem, line 64). So two
+      held weapons cannot change hands in one request, and a weapon taken out of the main
+      hand is in the bag for the next request.
+    - **Keep and sell** (Sc/NaturalIshalgenInventoryPolicy.cs, Decide). A class that holds
+      a shield has SHIELD among its gear groups (Sc/Classes/NaturalClassGearTable.cs), so
+      its best usable shield is kept to be worn and the others are spare. A class that
+      holds two weapons keeps its two best usable one-hand weapons of its own groups; the
+      second is held with the reason second-weapon. A weapon for a later level is kept
+      when it beats the second, and with one weapon owned any second is kept.
+    - **The reward choice** (ChooseReward). For a class that holds two weapons, a one-hand
+      weapon of its groups is an upgrade when it beats the worse of the two it owns, or
+      when it owns fewer than two. A shield is scored like armor for a class that holds
+      one, and a weapon upgrade still comes first, which keeps CP-Q10.
+    - **The equipment check** (Sc/NaturalInventoryCheck.cs, EquipAsync). A class with an
+      off-hand mode looks again after a pass that wore something, twice at most, because a
+      weapon the main-hand pick took out is in the bag only then. In the end the worse of
+      the two held weapons has left, and the better of the pair is in the main hand unless
+      it was already in the off hand. SelectUpgrades itself is CP-68's. A class with no
+      mode has its one pass.
+    - **One-time check, not committed** (run/nr/NR-03/check-a3.log, run with the existing
+      NaturalGearPolicyTests and NaturalIshalgenInventoryPolicyTests: 18 tests pass; a1 and
+      a2 failed on the check's own expectations, not on the code). On real item templates.
+      Scout with two weapons, Aldelle Dagger worn, three daggers in the bag: Ulgorn's is
+      held as the second weapon, the other two are sold; with no off hand all three are
+      sold. With Aldelle and Ulgorn's worn, a worse dagger is sold. Warrior in shield
+      mode with two shields: the level-8 one is kept to be worn and the other sold; with
+      no off hand both are sold. At Q2100: a Warrior in shield mode with the Training
+      Sword takes the sword; with the Aldelle Sword and no shield it takes the shield;
+      with a better shield worn, the sword. The equipment check, pass after pass: with
+      Mercenary and Training held and Aldelle in the bag, Aldelle goes to the main hand
+      and Mercenary to the off hand in the second pass, and Training is left in the bag;
+      with Aldelle and Training held, Ulgorn's replaces Training in the off hand; with
+      Training in the main hand and Aldelle in the off hand, Ulgorn's replaces Training
+      in the main hand; a dagger worse than both is not asked for; with no dual-wield
+      skill only the main hand is filled.
+    - **Not shown by the check.** The Scout's reward pick at Q2100 is the dagger with and
+      without the mode, because no Asmodian quest offers a dagger beside another upgrade a
+      Scout could take; the changed comparison decides only when two upgrades compete.
+      No off-hand item has been equipped by packets yet: NR-04 does that.
+    - **Guard, rule (c).** Run guard-a1, gate p and the five class scopes: all six
+      identical to their baselines (p 37,222, mage 23,555, warrior 24,199, artist 23,104,
+      engineer 24,580, scout 31,082). Bundle: the seven pre-commit checks pass,
+      Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run nr03-fast, 11 passed).
 - [ ] **NR-04 - The Scout holds two daggers from level 5.** Depends: NR-03
   - Work: Turn mode SecondWeapon on for the Scout line (NR-Q6). SIM probe row on a prepared
     level-5 Scout with two daggers in the bag: both are equipped by packets and a fight is
@@ -661,3 +707,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   one-sided branches of the fight loop. The rest, the ranges and the gear are already
   shared. Phase B has its items, NR-10 to NR-21. Docs only; seven checks pass. Next: NR-03,
   the off hand in keep-and-sell and in upgrades.
+- 2026-10-08 — Loop: NR-03 done. Keep-and-sell keeps a shield for a class that holds one and
+  the two best one-hand weapons for a class that holds two; the reward choice and gear for
+  a later level compare a weapon with the worse of the two; the equipment check looks again
+  after a pass that wore something, so the worse of two held weapons is the one that
+  leaves. One-time check on real items, not committed. Every profile still has mode None;
+  guard guard-a1, p and five class scopes: identical. Seven checks, unit suite and Fast
+  (nr03-fast) pass. Next: NR-04, the Scout holds two daggers from level 5.
