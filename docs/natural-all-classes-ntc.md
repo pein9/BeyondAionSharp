@@ -385,12 +385,64 @@ the Abyss entry was one more capture from it. The generic Cleric is played the s
       identical to their baselines (p 37,222, mage 23,555, warrior 24,199, artist 23,104,
       engineer 24,580, scout 31,082). Bundle: the seven pre-commit checks pass,
       Aion.GameServer.Tests passes (4,675 passed, 16 skipped) and Fast passes (run nr03-fast, 11 passed).
-- [ ] **NR-04 - The Scout holds two daggers from level 5.** Depends: NR-03
+- [x] **NR-04 - The Scout holds two daggers from level 5.** Depends: NR-03
   - Work: Turn mode SecondWeapon on for the Scout line (NR-Q6). SIM probe row on a prepared
     level-5 Scout with two daggers in the bag: both are equipped by packets and a fight is
     fought. Then the Scout's scope is re-recorded twice by rule (j).
   - Proof: The probe row passes with both hands filled, observed in the client's view; the
     Scout scope repeats in two passes; gate p and the other four class scopes identical.
+  - 2026-10-08: done, every run on its first attempt. Two commits by rule (j): the code
+    at 5917ca9b1 with its bundle green, then the re-recorded baseline.
+    - **Java, read first.** skill_tree.xml:90: the Scout learns skill 55 at level 5, and
+      its wpndual effect is what Equipment.equipItem asks for before it leaves a one-hand
+      weapon in the off hand (lines 70-71, CP-68). PlayerGameStats.getBaseAttackSpeed (lines
+      85-97): with a second weapon the swing takes the main weapon's speed and a quarter
+      of the off-hand weapon's. PlayerController.attackTarget (lines 423-431): a swing
+      that comes more than 300 ms sooner than that is dropped with no message. The port
+      has the same lines.
+    - **The change.** The Scout's gear table takes mode SecondWeapon
+      (Sc/Classes/NaturalClassGearTable.cs). The fight loop's swing time adds a quarter of
+      the off-hand weapon's speed, so two 1.2 s daggers swing every 1.5 s; nothing changes
+      with an empty off hand. A probe can run the journey's ordinary equipment check
+      (NaturalIshalgenJourney.RunObservedEquipmentCheckAsync).
+    - **Probe, row scout-two** (run/nr/NR-04/probe-a1.log, trace beside it), on account
+      98 as Asimtwodagger. Prepared: level 5, Raider's and Ulgorn's daggers put in the bag,
+      a place 18 m from a Fanged Karnif. The equipment check asks for Ulgorn's Dagger
+      100200604 in slot 1 and Raider's Dagger 100200125 in slot 2; the client's inventory
+      and the server's equipment both show them there, and the Training Dagger is in the
+      bag. The server's swing time is 1,500 ms. The Karnif is killed in 12.9 s: 5 swings
+      sent and 5 carried out, two casts on the target, one on the bot and one potion; no
+      death, 359 of 399 HP at the end.
+    - **The journey, run journey-a1** (run/nr/NR-04/journey-a1): the Scout from creation to
+      Q2004 complete, beside the scope as it was recorded:
+
+      | | Recorded (e1ff5f857) | Two daggers |
+      |---|---|---|
+      | Game time | 41 min 25 s | 36 min 34 s |
+      | Encounters, kills | 39, 30 | 34, 29 |
+      | Swings | 278 | 205 |
+      | Casts on a target | 90 | 84 |
+      | Life potions in fights, in rests | 13, 5 | 11, 5 |
+      | Sits for health | 1 | 0 |
+      | Retreats, deaths | 3, 0 | 2, 0 |
+
+      The equipment check wears Raider's Dagger at Q2100 as before, takes the Training
+      Dagger into the off hand at 10:38, when level 5 is reached, and at 15:18 puts
+      Ulgorn's Dagger in the main hand and, in the second pass, Raider's in the off hand:
+      the Training Dagger, the worse of the two, is the one that leaves.
+    - **Re-recorded, rule (j).** Run record-a1 at 5917ca9b1 on a clean tree
+      (run/nr/NR-04/record-a1/verdict.json): two passes of scope scout, identical after
+      normalization, 27,592 records, SHA-256 4cbd457f311b2cf45cb5b7ee3ea74106e98f6db4260993792cebc5a2c50a485c. The row of
+      parity-artifacts/e2e/natural-neutral-baseline.json is replaced; the trace is kept
+      under run/cp/baseline/5917ca9b1... The snapshot munin-scout-s1 is as it was: it
+      holds the Scout who played with one dagger.
+    - **Rule (k) and the guard.** Rows scout-1 and scout-7 pass as before
+      (run/nr/NR-04/probe-k1.log). Guard guard-a1, gate p and the four other class scopes:
+      identical (p 37,222, mage 23,555, warrior 24,199, artist 23,104, engineer 24,580).
+      Bundle at the code commit: the seven pre-commit checks pass, Aion.GameServer.Tests
+      passes (4,675 passed, 16 skipped) and Fast passes (run nr04-fast, 11 passed). At the
+      baseline commit: the seven checks, scripts/sim/trace/test_compare_traces.py and
+      scripts/sim/test-sim-snapshot.ps1.
 - [ ] **NR-05 - The comparer counts the rest's potions and sits.** Depends: NR-00
   - Work: scripts/sim/trace/compare_traces.py counts rest-life-potion and
     rest-sit-for-health among its step counts, so a class scope shows them. The digest of a
@@ -714,3 +766,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   leaves. One-time check on real items, not committed. Every profile still has mode None;
   guard guard-a1, p and five class scopes: identical. Seven checks, unit suite and Fast
   (nr03-fast) pass. Next: NR-04, the Scout holds two daggers from level 5.
+- 2026-10-08 — Loop: NR-04 done. The Scout's table takes the second weapon. Probe row
+  scout-two: a level-5 Scout puts two daggers on by packets, the server's swing time is
+  1,500 ms and every swing sent is carried out. The journey to Q2004 with two daggers takes
+  36 min 34 s against 41 min 25 s, with 205 swings against 278 and no death. Scope scout
+  re-recorded at 5917ca9b1, two passes identical, 27,592 records; munin-scout-s1 is
+  untouched. Guard: p and the four other class scopes identical. Next: NR-05, the comparer
+  counts the rest's potions and sits.

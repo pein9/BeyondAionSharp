@@ -482,7 +482,7 @@
         "StopAt": "2004:5:0"
       },
       "snapshot": null,
-      "commit": "e1ff5f8571a2b971fdca0e98da6b880c10d207ce",
+      "commit": "5917ca9b19bed156c1dbe0da59f3ede0b081cae6",
       "environment": {
         "AION_SIM_SEED": "1",
         "NA_HELP_ITEMS": null,
@@ -490,13 +490,13 @@
         "AION_SIM_PROCESS_KEY": null
       },
       "ignore": [],
-      "records": 31082,
-      "sha256": "85d3c5974e2c108c5a056ce96015a7bbf3172c31d3e21a19aca9a143f5747d36",
+      "records": 27592,
+      "sha256": "4cbd457f311b2cf45cb5b7ee3ea74106e98f6db4260993792cebc5a2c50a485c",
       "counts": {
-        "records": 31083,
+        "records": 27593,
         "deaths": 0,
         "reviveSteps": 0,
-        "retreats": 3,
+        "retreats": 2,
         "retreatRoutes": 3,
         "restSitsTraced": 0,
         "restInterrupts": 0,
@@ -507,7 +507,7 @@
         "patrolWaits": 0,
         "emergencyDecisions": 0,
         "atTargetPulls": 0,
-        "lifePotions": 13,
+        "lifePotions": 11,
         "manaPotions": 0,
         "shieldScrolls": 0,
         "speedScrolls": 2,
