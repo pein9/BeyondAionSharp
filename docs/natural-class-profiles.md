@@ -4905,13 +4905,41 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       tests and the snapshot and gate contract tests, which read the baseline file.
     - This is the second report point: the Mage and the Warrior stand at Munin
       (munin-mage-s1, munin-warrior-s1) and both class scopes are recorded.
-- [ ] **CP-58 - Artist to the Q2004 checkpoint.** Depends: CP-47, CP-53
+- [x] **CP-58 - Artist to the Q2004 checkpoint.** Depends: CP-47, CP-53
   - Work: Run Replay -Class artist -StopAt 2004:5:0 -Item CP-58. Trainer Sona 801219 (var 6)
     and the harp rewards of Q2100, Q2002 and Q2134 have never been played by a bot; whatever
     fails is logged and becomes its own lettered item, not widened here. Rule (e) applies.
   - Proof: One contained run under run/cp/CP-58/<run-id>: resume-receipt.json shows class id
     15 with Q2132 and Q2004 completed. On the -StopAfterQuest fallback the proof is the
     passing run plus the trace's creation step and its turn-in records, as in CP-50.
+  - 2026-10-08: done on the first attempt, with no code change and no lettered item. Run
+    journey-a1 at 2ca9d81f9 on a clean tree, CP_CLASS=artist and NI08_STOP_AT=2004:5:0,
+    seed 1, bridge off, help items on (run/cp/CP-58/journey-a1/: replay.json passed, schema
+    dropped). The status-5 stop landed and wrote its receipt.
+    - **The stop.** resume-receipt.json: class id 15, level 8, 478 HP and 1,145 MP.
+      Completed: Q2000 to Q2004, Q2100 to Q2104 and Q2132, turned in at the Artist's
+      trainer at 14:43, the first time a bot has played that trainer in a journey. Q2005
+      and Q2006 are in the journal. 30 min 00 s of game time, 23,105 trace records.
+    - **Fights.** 27 encounters, 27 kills, no death, no retreat. 168 decisions: 77 casts
+      on a target, 86 waits for Pulse's cooldown (the rule of CP-47), 5 life potions.
+      Casts: Pulse 57, Song of Ice 19, Soothing Melody 3. Four pull plans with policy
+      natural-artist-v1, all pulls.
+    - **The heal switch, in play.** Up to level 5 the rests used the potion plan (one
+      potion in a rest at 7:37). From level 5 on the rest healed with Soothing Melody
+      three times (21:14, 27:42, 28:00) and drank no potion in a rest. In fights the life
+      potion went five times at or below 75% HP; the heal's own step was not reached: the
+      lowest HP was 65% (280 of 429), above its 55%.
+    - **Ledger.** Supplied at the start: 30 life potions 162000006, 30 Anti-Shock scrolls
+      164000067, 20 Greater Running Scrolls 164000076. Used: six life potions, 30 to 24;
+      the Greater Running Scroll five times; Castafodin once. Not shown: the shield
+      scroll, the mana potion, a sit for health or for mana.
+    - **Gear and picks.** Worn: the harp 102000207 from Q2100 at 4:15, the robe piece
+      114100794 from Q2001 at 8:21, the harp 102000522 from Q2002 at 14:43, as CP-47
+      lists them. The harp rewards had never been taken by a bot.
+    - **Binds and Kinah.** The village obelisk 700063 at 4:11 for 43 Kinah, the outpost
+      obelisk 700064 at 18:13 for 134. 4,093 Kinah at the stop.
+    - **Finding, not fixed.** One corpse was not looted, 90.9 m away when the sweep ran,
+      the same 210404 as in the Mage's and the Warrior's runs.
 - [ ] **CP-59 - Artist 1-9 at Munin, captured and verified as munin-artist-s1.** Depends:
   CP-58
   - Work: As CP-52 with -Class artist -Name munin-artist-s1. Acceptance: a harp and robe
@@ -6114,3 +6142,10 @@ report what was done, what is blocked and what you need from me.
   Evidence only; seven checks and the two script tests that read the baseline pass. This is
   the second report point: Mage and Warrior at Munin, both class scopes recorded. Next by
   rule (h): CP-58.
+- 2026-10-08 — Loop: CP-58 done on the first attempt, no code change. The Artist played from
+  creation to the Q2004 stop in 30 min 00 s of game time (run journey-a1): class id 15, level
+  8, Q2000 to Q2004, Q2100 to Q2104 and Q2132 completed, its trainer and its harp rewards
+  played for the first time. 27 encounters, 27 kills, no death, no retreat. From level 5 the
+  rests heal with Soothing Melody (three times) where they drank a potion before; six life
+  potions, five running scrolls, Castafodin once. Evidence and docs only; seven checks pass.
+  Next by rule (h): CP-59.
