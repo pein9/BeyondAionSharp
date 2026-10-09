@@ -352,6 +352,10 @@ public sealed class BotNavMeshRouter(BotNavMeshSet navMeshes, BotNavigationGeome
 		var parent = new Dictionary<(int, int), (int, int)>();
 		var height = new Dictionary<(int, int), float>();
 		var surface = new Dictionary<(int, int), float>();
+		// NR-46d: whether a cell is forbidden, and what a step onto it costs, depend on where the cell lies and not on
+		// the cell the search came from. They are worked out once for a cell, not again from each of its eight
+		// neighbours; with forty observed circles that was a third of a run's wall time. Negative: forbidden.
+		var zone = new Dictionary<(int, int), float>();
 		(int, int) origin = (0, 0);
 		cost[origin] = 0;
 		height[origin] = a.Z;
@@ -374,12 +378,22 @@ public sealed class BotNavMeshRouter(BotNavMeshSet navMeshes, BotNavigationGeome
 					float step = MathF.Sqrt(dx * dx + dy * dy) * Cell;
 					if (!float.IsFinite(nz) || MathF.Abs(nz - cz) > step * 1.2f) continue;
 					var point = new BotPosition(nx, ny, nz, 0);
-					if (forbidden.Any(h => Horizontal(point, h.Position) < h.Radius + 0.5f)) continue;
-					float factor = 1;
-					foreach (BotNavigationHazard h in escaping)
-						if (Horizontal(point, h.Position) < h.Radius) factor += 20;
-					foreach (BotNavDanger d in heavy)
-						if (InZone(point, d)) factor = MathF.Max(factor, d.Weight);
+					if (!zone.TryGetValue(next, out float factor))
+					{
+						// Every test below reads the point's X and Y alone, so the answer is the cell's.
+						factor = 1;
+						foreach (BotNavigationHazard h in forbidden)
+							if (Horizontal(point, h.Position) < h.Radius + 0.5f) { factor = -1; break; }
+						if (factor > 0)
+						{
+							foreach (BotNavigationHazard h in escaping)
+								if (Horizontal(point, h.Position) < h.Radius) factor += 20;
+							foreach (BotNavDanger d in heavy)
+								if (InZone(point, d)) factor = MathF.Max(factor, d.Weight);
+						}
+						zone[next] = factor;
+					}
+					if (factor < 0) continue;
 					float candidate = cost[cell] + step * factor;
 					if (cost.TryGetValue(next, out float known) && known <= candidate) continue;
 					cost[next] = candidate;

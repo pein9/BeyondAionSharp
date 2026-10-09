@@ -1875,7 +1875,7 @@ can use them. The order below is the order of work: the item that saves time com
         decides is under 3%.
     - **Nothing to fix here.** No part of the journey's own code is a tenth of the run.
       The router is NR-46d's, whose text is brought up to these numbers.
-- [ ] **NR-46d - Navmesh routes.** Depends: NR-48
+- [x] **NR-46d - Navmesh routes.** Depends: NR-48
   - Work: The navmesh router is 36% of scope c without its edge traces, and most of the
     remaining 32% of edge traces are its leg checks (NR-46c): 1,178 paths at 64 ms, 495 of
     them asked directly by the journey, mostly by the pull for each firing spot. First
@@ -1885,6 +1885,41 @@ can use them. The order below is the order of work: the item that saves time com
     is certain to be the same, and make cheaper what the count shows, with the same
     paths.
   - Proof: The full gate with -Parallel 8 identical. Scope c's wall time before and after.
+  - 2026-10-09: done. Scope c plays in 2 min 25 s where it took 3 min 28 s, and every
+    recorded scope is identical. Since NR-46 it has halved, from 4 min 55 s.
+    - **Java.** No server behavior is involved.
+    - **The count** (a one-time probe, removed; run/nr/NR-46d/split-c.txt and
+      count-c.txt, scope c):
+      - 1,178 paths take 88.7 seconds. The 727 asked with observed hazards take 81.0 of
+        them; the 451 without take 7.7.
+      - 364 paths end "hazard rejected" and take 62.5 seconds; the 802 that route take
+        21.8.
+      - A path asked again at the same instant with the same arguments: 30 times, 0.4
+        seconds. There is nothing to gain by keeping answers.
+      - Where a path's time goes: the local detour around hazards 76.6 seconds over 1,587
+        detours; the corridor and its corners 7.9; resolving zones, checking legs and
+        accepting edges under a second together.
+    - **Why the detour cost so much.** It searches a grid of one-metre cells around the
+      place where a route breaks the hazard rule. For every neighbour of every cell it
+      opened it asked again whether that neighbour lies in a forbidden circle and what a
+      step onto it costs: a test against every observed hazard, forty and more in leg 4,
+      up to eight times for one cell.
+    - **The change** (tests/Aion.Bots/Navigation/NavMesh/BotNavMeshRouter.cs,
+      LocalDetour): the answer is kept for the cell. Every one of those tests reads the
+      point's X and Y alone, so the answer does not depend on the cell the search came
+      from. The cells are opened in the same order with the same costs, and the detours
+      are the same.
+    - **Proof.**
+      - Scope c alone, run after-c: identical; the journey takes 2 min 25 s against 3 min
+        28 s after NR-46a, 30% less.
+      - Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run guard-p8
+        (run/nr/NR-46d/guard-p8/verdict.json): verdict pass, all twelve scopes identical to
+        their baselines, in 391 seconds.
+      - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+        passed, 16 skipped) and Fast passes (run nr46d-fast, 11 passed).
+    - **What is left.** The server's own work is now the largest single part of a run.
+      The grid search still walks its ground once when it fails, and a path with hazards
+      still costs most where no detour exists.
 - [x] **NR-44 - Bots take turns in one world.** Depends: NR-45
   - Work: Survey C1, parts 4 to 6. Java first: who gets a quest's kill when two players
     hit one monster. The turn table; the wait that can yield; a bot id, options, trace
@@ -2567,3 +2602,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   scope c. The fifth NR-46 saw was the navmesh router asked directly: 1,178 paths, 36% of
   the scope without their edge traces, and most of the 32% of edge traces are its leg
   checks. NR-46d's text is brought up to these numbers. Next: NR-46d, navmesh routes.
+- 2026-10-09 — Loop: NR-46d done. A path's time was the local detour around hazards, which
+  asked for every neighbour of every cell whether it lies in a forbidden circle; the
+  answer is now kept for the cell. Scope c: 2 min 25 s against 3 min 28 s, and against
+  4 min 55 s before NR-46a. Full gate guard-p8: twelve scopes identical in 391
+  seconds. Seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr46d-fast)
+  pass. The items for several bots at once are done. Next: NR-30, the class line carries
+  the pair, the pick and the dispatch.
