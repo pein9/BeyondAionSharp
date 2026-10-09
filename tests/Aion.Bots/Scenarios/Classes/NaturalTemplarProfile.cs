@@ -31,9 +31,11 @@ public static class NaturalTemplarProfile
 		[3038] = "wrath", [3039] = "wrath",
 		[3019] = "chastise", [3020] = "chastise", [3021] = "chastise", [3022] = "chastise",
 		[3129] = "armor",
+		// NR-50a: the two powder skills, cast only in a rest.
+		[246] = "herb", [247] = "herb", [251] = "herb", [253] = "herb",
+		[249] = "mp-recovery", [250] = "mp-recovery", [252] = "mp-recovery", [254] = "mp-recovery",
 	};
 
-	private const string Powder = "a class with no heal rests by the potion plan, which has no powder step yet (NR-50a).";
 	private const string Shield = "it needs a shield in the left hand (startconditions/lefthandweapon), which the skill row and the fight's observation do not say yet (NR-50b).";
 	private const string Counter = "the client offers it only after a block or a resist (counter_skill BLOCK,RESIST), which the bot does not observe. " +
 		"Java reads a counter of two statuses as none and would accept it at any time; the bot does not send what a client could not.";
@@ -42,10 +44,6 @@ public static class NaturalTemplarProfile
 	/// <summary>Every other active skill a Templar learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
-		[246] = "Herb Treatment I: " + Powder, [247] = "Herb Treatment II: " + Powder, [251] = "Herb Treatment III: " + Powder,
-		[253] = "Herb Treatment IV: " + Powder,
-		[249] = "MP Recovery I: " + Powder, [250] = "MP Recovery II: " + Powder, [252] = "MP Recovery III: " + Powder,
-		[254] = "MP Recovery IV: " + Powder,
 		[2981] = "Taunt I: " + Enmity, [2982] = "Taunt II: " + Enmity, [2983] = "Taunt III: " + Enmity, [2984] = "Taunt IV: " + Enmity,
 		[3010] = "Provoking Roar: " + Enmity,
 		[3072] = "Shield Bash I: " + Shield, [3073] = "Shield Bash II: " + Shield, [3074] = "Shield Bash III: " + Shield,
@@ -71,6 +69,11 @@ public static class NaturalTemplarProfile
 	/// <para>
 	/// The ladder: the shield scroll at 50% HP, the life potion at or below 75%, and Empyrean Armor in an emergency only
 	/// (35% until 45%), whose 113 MP are kept back from Rage. It leaves at three attackers, or at 25% HP with nothing ready.
+	/// </para>
+	/// <para>
+	/// NR-50a, between fights: Herb Treatment below 90% HP and MP Recovery from below 25% MP until 50%, each for the powder
+	/// it owns and while their shared 16 s are not running; then the life potion below 90% HP, then sitting. A quarter of
+	/// its mana pays for the armor and several Rages at every level from 13 (1,050 MP) on.
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-templar-v1",
@@ -111,9 +114,9 @@ public static class NaturalTemplarProfile
 			PatrolRule = NaturalPatrolRule.HoldAndAssess,
 			Patrol = NaturalPatrolView.From(Rules, skills, PlayerClass.TEMPLAR),
 			RangedHold = NaturalRangedHold.Never,
-			// As the Warrior: the life potion below 90% HP, then sitting. The powder is NR-50a's.
-			Rest = new NaturalRestRules(skills, HealBelowPercent: 90, ManaSitBelowPercent: 50, ManaSitUntilPercent: 80, MaximumQuietSits: 12,
-				PotionPlan: new NaturalPotionRestPlan(HpTargetPercent: 90, UsesMana: false)),
+			// NR-50a: the powder first, then as the Warrior: the life potion below 90% HP, then sitting.
+			Rest = new NaturalRestRules(skills, HealBelowPercent: 90, ManaSitBelowPercent: 25, ManaSitUntilPercent: 50, MaximumQuietSits: 12,
+				PotionPlan: new NaturalPotionRestPlan(HpTargetPercent: 90, UsesMana: true), RestSkills: NaturalRestSkills.ReagentOnly(90)),
 			Ranges = NaturalPriestProfile.PriestLineRanges,
 			Readiness = NaturalWarriorProfile.Readiness,
 			Movement = NaturalWarriorProfile.Movement,

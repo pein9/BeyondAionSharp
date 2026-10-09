@@ -3311,7 +3311,7 @@ The template:
       Seven pre-commit checks pass, the three script tests pass
       (run/nr/NR-50/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
       skipped) and Fast passes (run nr50-fast, 11 passed).
-- [ ] **NR-50a - A rest with the powder for a class without a heal.** Depends: NR-50
+- [x] **NR-50a - A rest with the powder for a class without a heal.** Depends: NR-50
   - Work: Java first: the two powder skills' templates and what they spend, as read for
     NA-18. The potion plan of NaturalRestRules gets a powder step: a class that has
     learned a reagent skill and owns the powder casts Herb Treatment below its HP target
@@ -3323,6 +3323,62 @@ The template:
   - Proof: One-time check of the rest's decisions for a Templar at chosen HP, MP and
     powder counts, and for a Warrior, which has no reagent skill and rests as before; the
     full gate identical.
+  - 2026-10-09: done. A class on the potion plan that has learned a powder skill casts it
+    first. The Templar's eight powder skills have their roles: 43 of its 63 active skills
+    have a role now and 20 are left out.
+    - **Java.** The templates (skill_templates.xml): Herb Treatment heals 281, 342, 382
+      and 411 HP by rank for one powder; MP Recovery restores 206, 233, 265 and 297 MP at
+      once and 31 to 47 more every 3 s for 10 s, for two powder. Both are 4 s casts on a
+      shared 16 s cooldown (group 1153). Ranks 1 to 3 (levels 10, 15, 20) spend Lesser
+      Odella Powder 169300003 and rank 4 (level 25) Odella Powder 169300004.
+      ItemUseAction.canAct 43-49 refuses the cast when the bag holds fewer than the count
+      and act 32-40 takes them. The port is the same. No server change.
+    - **The change.**
+      - Sc/Classes/NaturalRestRules.cs: the potion plan (DecideWithoutHeal) asks the powder
+        policy first when the class's rest skills are named and one is learned. A powder
+        skill it gives is cast; otherwise the plan goes on as before: the life potion,
+        then the sit. NaturalRestSkills may name no heal and no health-for-mana skill;
+        ReagentOnly gives the two powder skills alone.
+      - Sc/NaturalClericSkills.cs, NaturalPowderRestPolicy: with no heal named there is
+        none to fall back on, and with no health-for-mana skill none to start with. The
+        Cleric's answers and their wording are unchanged.
+      - Sc/Classes/NaturalTemplarProfile.cs: roles herb and mp-recovery for the eight
+        skills; the rest names the two powder skills, casts from mana, and has the mana
+        floor below.
+    - **The Templar's numbers.** Herb Treatment below 90% HP, the plan's HP target. MP
+      Recovery from below 25% MP until 50%. Its pool is 840 MP at level 10, 1,050 at 13,
+      1,261 at 16, 1,542 at 20 and 1,963 at 26, so a quarter pays for Empyrean Armor (113
+      MP) and several Rages at every level, and one MP Recovery brings it from the floor
+      to about half. With no powder it sits for mana below the floor.
+    - **Proof, the one-time check** (run/nr/NR-50a/check.log; the check file is not
+      committed; check-a1.log is a first run that failed on the check's own rounding of
+      90% and 50%). Base HP and MP of the level, powder skills of the level.
+
+      | The character | The rest says |
+      |---|---|
+      | Templar 10, 16, 20 at 60% HP, full MP, lesser powder | Herb Treatment 246, 247, 251 |
+      | Templar 25 at 60% HP, Odella powder | Herb Treatment 253 |
+      | Templar 25 at 60% HP, only the lesser powder | the life potion |
+      | Templar 16 at 91% HP, 26% MP | done |
+      | Templar 16 at 95% HP, 20% MP | MP Recovery 250, and the mana rest is on |
+      | Templar 16 at 95% HP, 40% MP, mana rest on | MP Recovery 250 |
+      | Templar 16 at 95% HP, 51% MP, mana rest on | done |
+      | Templar 16 at 95% HP, 20% MP, one powder | sits for mana |
+      | Templar 16 at 60% HP, 20% MP | MP Recovery first, the larger deficit; then Herb Treatment, the one not cast last |
+      | Templar 16 at 60% HP, the shared cooldown running | the life potion; with its heal still running, sits |
+      | Templar 16 at 60% HP, powder ready, the potion's heal running | Herb Treatment 247 |
+      | Templar 16 at 60% HP, no powder | the life potion; with none, sits; after 12 sits, blocked |
+      | Warrior 9 at 60% HP, powder in the bag or not | the life potion; on its delay, sits; no powder is asked about |
+      | Cleric 16 at 60% HP | Herb Treatment 247; cooling down, Healing Light 1841; at 80% HP and 40% MP, Penance 3867 |
+
+    - **Not proven here.** No Templar has rested in a world; the journey's rest loop
+      casts a powder skill the same way for any class, and the Cleric's is the one played.
+      NR-51 plays it.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-50a/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical, the Cleric's five and the five starters among them. Seven pre-commit
+      checks pass, Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and Fast passes
+      (run nr50a-fast, 11 passed).
 - [ ] **NR-50b - A skill's off-hand condition.** Depends: NR-50a
   - Work: Java first: LeftHandCondition, and what the server answers a cast without the
     shield. The skill row carries the template's left-hand condition (SHIELD or DUAL);
@@ -3813,3 +3869,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   port ask nothing for. Full gate guard-p8 (twelve scopes identical), seven checks, script
   tests, unit suite (4,629 passed, 16 skipped) and Fast (nr50-fast) pass. Next: NR-50a, a
   rest with the powder for a class without a heal.
+- 2026-10-09 — Loop: NR-50a done. A class on the potion plan that has learned a powder
+  skill casts it before the life potion and the sit; the rest skills may name no heal. The
+  Templar casts Herb Treatment below 90% HP and MP Recovery from below 25% MP until 50%;
+  43 of its 63 active skills have a role. One-time check of the rest for a Templar, a
+  Warrior and a Cleric; full gate guard-p8 (twelve scopes identical), seven checks, unit
+  suite (4,629 passed, 16 skipped) and Fast (nr50a-fast) pass. Next: NR-50b, a skill's
+  off-hand condition.

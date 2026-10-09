@@ -87,20 +87,22 @@ public static class NaturalPowderRestPolicy
 			ordered = last == herb.Id ? [mana, herb] : last == mana.Id ? [herb, mana] : ordered;
 		NaturalPriestSkill[] usable = ordered.OfType<NaturalPriestSkill>()
 			.Where(skill => state.ItemCounts.GetValueOrDefault(skill.ReagentItemId) >= skill.ReagentCount).ToArray();
-		NaturalPriestSkill? heal = NaturalPriestSkills.Best(kinds.Heal.Role, state.Level, state.Learned, skills);
+		// NR-50a: a class with no heal has none to fall back on, and one with no health-for-mana skill has none to start with.
+		NaturalPriestSkill? heal = kinds.Heal == null ? null : NaturalPriestSkills.Best(kinds.Heal.Role, state.Level, state.Learned, skills);
 		bool healAffordable = heal != null && state.Mp >= heal.ManaCost;
 		// AC-00: Penance first when mana is needed: instant, about 1,150 MP over 30 s for about 570 HP, on a 3 min
 		// cooldown. Only with HP to spare; the powder and Healing Light put the HP back.
-		NaturalPriestSkill? penance = needMp ? NaturalPriestSkills.Best(kinds.HealthForMana.Role, state.Level, state.Learned, skills) : null;
+		NaturalPriestSkill? penance = needMp && kinds.HealthForMana != null
+			? NaturalPriestSkills.Best(kinds.HealthForMana.Role, state.Level, state.Learned, skills) : null;
 		if (penance != null && state.Hp * 100 >= state.MaxHp * kinds.HealthForManaMinimumHpPercent &&
 			!(state.Cooldowns.TryGetValue(penance.CooldownId, out DateTimeOffset penanceReadyAt) && penanceReadyAt > now))
-			return new(penance.Role, penance, $"MP deficit {mpDeficit:P0} and HP to spare: {kinds.HealthForMana.Name} trades HP for mana over 30 s.");
+			return new(penance.Role, penance, $"MP deficit {mpDeficit:P0} and HP to spare: {kinds.HealthForMana!.Name} trades HP for mana over 30 s.");
 		if (usable.Length > 0)
 		{
 			if (state.Cooldowns.TryGetValue(kinds.SharedCooldownId, out DateTimeOffset readyAt) && readyAt > now)
 			{
 				if (!needMp && healAffordable)
-					return new("light-heal", heal, $"Only HP is missing and the powder skills are cooling down: {kinds.Heal.Name}.", readyAt);
+					return new("light-heal", heal, $"Only HP is missing and the powder skills are cooling down: {kinds.Heal!.Name}.", readyAt);
 				return new("sit", null, "The shared powder cooldown is running and recovery is still needed: sit until it clears.", readyAt);
 			}
 			NaturalPriestSkill chosen = usable[0];
@@ -111,6 +113,7 @@ public static class NaturalPowderRestPolicy
 		bool powderSkill = herb != null || mana != null;
 		string why = powderSkill ? "Out of powder" : "No powder skill is learned";
 		if (needMp) return new("sit", null, $"{why}: sit to recover mana.");
+		if (kinds.Heal == null) return new("sit", null, $"{why}: the life potion or a sit for HP.");
 		return healAffordable
 			? new("light-heal", heal, $"{why}: {kinds.Heal.Name} for HP.")
 			: new("sit", null, $"{why} and {kinds.Heal.Name} is unaffordable: sit.");
