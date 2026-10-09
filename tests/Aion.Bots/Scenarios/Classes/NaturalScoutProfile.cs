@@ -66,6 +66,7 @@ public static class NaturalScoutProfile
 			HelpItems = new(NaturalHelpItemAllowlist.Starter, NaturalHelpItemAllowlist.StarterMaxLevel, SharedSlotFamily: "courage"),
 			Upkeep = [],
 			PatrolRule = NaturalPatrolRule.Baseline,
+			Patrol = NaturalPatrolView.From(Rules, skills, PlayerClass.SCOUT),
 			RangedHold = NaturalRangedHold.Never,
 			// CP-Q11: a life potion below 90% HP when it is ready, a sit to 90% while it is on its delay. No mana target:
 			// only Devotion costs mana. No bandage.

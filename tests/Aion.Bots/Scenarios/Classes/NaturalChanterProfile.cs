@@ -50,7 +50,9 @@ public static class NaturalChanterProfile
 			Upkeep = [NaturalPriestProfile.Blessing],
 			// NR-36: what it shoots with in flight.
 			AirAttackRoles = ["smite"],
-			PatrolRule = NaturalPatrolRule.Baseline,
+			// NR-37: every second class holds for a patrol and assesses the fight, by its own table.
+			PatrolRule = NaturalPatrolRule.HoldAndAssess,
+			Patrol = NaturalPatrolView.From(NaturalPriestProfile.PriestRules, skills, PlayerClass.CHANTER),
 			RangedHold = NaturalRangedHold.RunOption,
 			Rest = NaturalPriestProfile.RestWith(skills),
 			Ranges = NaturalPriestProfile.PriestLineRanges,

@@ -2653,10 +2653,53 @@ can use them. The order below is the order of work: the item that saves time com
       guard-p8 (run/nr/NR-36/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical, l1 and c among them. Seven pre-commit checks pass, Aion.GameServer.Tests
       passes (4,629 passed, 16 skipped) and Fast passes (run nr36-fast, 11 passed).
-- [ ] **NR-37 - The patrol rule and the blocked-pull view by profile.** Depends: NR-31
+- [x] **NR-37 - The patrol rule and the blocked-pull view by profile.** Depends: NR-31
   - Work: NaturalPatrolPolicy applies to every second class with the profile's swarm
     limit, and the blocked-pull view asks the profile for its recovery roles.
   - Proof: The full gate identical.
+  - 2026-10-09: done. The patrol rule reads the class's own fight table. The Cleric's
+    answers are word for word what they were.
+    - **Java.** None read: when the bot waits for a patrol is no server behavior.
+    - **The change.**
+      - Sc/NaturalPatrolPolicy.cs: NaturalPatrolView, what the rule asks a class about. From
+        a fight table it takes the heal (the table's reserve role, or else the last ladder
+        skill paid with mana that is not for emergencies only), the heal kept up under
+        attack, the first ladder skill paid with DP, and the pull limit, one fewer than
+        the attackers the table leaves at. The assessment uses the view's limit and names,
+        and asks nothing about a recovery the class does not have. With no view given it
+        is the Cleric's, in NA-22's words.
+      - Sc/Classes/NaturalClassProfile.cs: every profile has its Patrol view, made from
+        its table. The Cleric's keeps the recorded wording ("Healing Light", "the heal over
+        time or Salvation").
+      - J, the blocked-pull view: the three recovery lookups ask the view's roles in place
+        of "heal", "rejuvenation" and "salvation".
+      - The rule's on-switch was already the profile's (PatrolRule). The Chanter's profile
+        now holds and assesses, as the Cleric's does. A class's first item writes
+        HoldAndAssess into its second class's profile; the starters keep the run's short
+        waits.
+    - **What each profile's view is** (a one-time check, run/nr/NR-37/check.log; the check
+      file is not committed):
+
+      | Profile | Rule | Heal | Under attack | Paid with DP | Pull limit |
+      |---|---|---|---|---|---|
+      | Cleric | hold and assess | heal | rejuvenation | salvation | 2 |
+      | Chanter | hold and assess | heal | none | none | 2 |
+      | Priest | baseline | heal | none | none | 2 |
+      | Warrior | baseline | none | none | none | 2 |
+      | Scout | baseline | evasion | none | none | 2 |
+      | Mage | baseline | none | none | none | 1 |
+      | Engineer | baseline | resist | none | none | 1 |
+      | Artist | baseline | heal | none | none | 1 |
+
+      The Scout's and the Engineer's "heal" is the one mana-paid skill of their recovery
+      ladder, a defence and not a heal; it matters only once such a line holds and
+      assesses, and its second class's first item names its own. The Cleric's view equals
+      the one the rule had built in, and its assessment of a blocked pull of three reads
+      as before, line for line.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-37/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
+      16 skipped) and Fast passes (run nr37-fast, 11 passed).
 - [ ] **NR-38 - Coin gear by class.** Depends: NR-32, NR-33
   - Work: Java first: the iron-coin and bronze-coin vendors' goods lists by armor type and
     weapon. The coin-gear leg and the Abyss entry's two tiers buy the pieces of the
@@ -3077,3 +3120,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   flight conditions. Full gate guard-p8: twelve scopes identical. Seven checks, unit suite
   (4,629 passed, 16 skipped) and Fast (nr36-fast) pass. Next: NR-37, the patrol rule and
   the blocked-pull view by profile.
+- 2026-10-09 — Loop: NR-37 done. The patrol rule asks each class's own fight table for its
+  heal, its heal under attack, its DP rescue and its pull limit, and asks nothing about a
+  recovery the class lacks. The Cleric's view and wording are as recorded; the Chanter now
+  holds and assesses too. Full gate guard-p8: twelve scopes identical. Seven checks, unit
+  suite (4,629 passed, 16 skipped) and Fast (nr37-fast) pass. Next: NR-38, coin gear by
+  class.

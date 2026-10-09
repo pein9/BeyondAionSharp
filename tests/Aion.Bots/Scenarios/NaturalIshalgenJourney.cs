@@ -6028,9 +6028,12 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					skill = NaturalPriestSkills.Best(role, world.Level, world.Skills, profile.Skills);
 					return skill != null;
 				}
-				bool heal = Learned("heal", out NaturalPriestSkill? healSkill) && world.CurrentMp >= healSkill!.ManaCost;
-				bool hot = Learned("rejuvenation", out NaturalPriestSkill? hotSkill) && world.CurrentMp >= hotSkill!.ManaCost;
-				bool salvation = Learned("salvation", out NaturalPriestSkill? salvationSkill) && world.CurrentDp >= salvationSkill!.DpCost;
+				// NR-37: the recovery the class's own fight table names; a role it does not have is not ready.
+				NaturalPatrolView view = profile.Patrol;
+				NaturalPriestSkill? healSkill = null, hotSkill = null, salvationSkill = null;
+				bool heal = view.HealRole != null && Learned(view.HealRole, out healSkill) && world.CurrentMp >= healSkill!.ManaCost;
+				bool hot = view.HealOverTimeRole != null && Learned(view.HealOverTimeRole, out hotSkill) && world.CurrentMp >= hotSkill!.ManaCost;
+				bool salvation = view.RescueRole != null && Learned(view.RescueRole, out salvationSkill) && world.CurrentDp >= salvationSkill!.DpCost;
 				var effects = world.VisibleEffects ?? [];
 				bool buffs = profile.Upkeep.All(buff => effects.Any(effect => profile.EffectIds(buff.Role).Contains(effect.SkillId))) &&
 					effects.Any(effect => NaturalHelpItemPolicy.All.Any(item => item.SkillId == effect.SkillId &&
@@ -6041,7 +6044,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				// spot with the fewest helpers, so here no other way is known.
 				return new(profile.PatrolRule == NaturalPatrolRule.HoldAndAssess, completedWaits, world.Level, world.CurrentHp, world.MaxHp, world.CurrentMp, world.MaxMp,
 					levels, heal, hot, salvation, buffs, NaturalIshalgenPotionPolicy.TotalHealingCount(world.Inventory.Values),
-					RerouteAvailable: false);
+					RerouteAvailable: false, View: view);
 			}
 
 			// Fight your way in: when observed monsters close every hostile-free route, take the route that fights

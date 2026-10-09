@@ -64,6 +64,7 @@ public static class NaturalWarriorProfile
 			HelpItems = new(NaturalHelpItemAllowlist.Starter, NaturalHelpItemAllowlist.StarterMaxLevel, SharedSlotFamily: "courage"),
 			Upkeep = [],
 			PatrolRule = NaturalPatrolRule.Baseline,
+			Patrol = NaturalPatrolView.From(Rules, skills, PlayerClass.WARRIOR),
 			RangedHold = NaturalRangedHold.Never,
 			// CP-Q11, answered: a life potion below 90% HP when it is ready, a sit to 90% while it is on its delay. No mana
 			// target and no bandage.

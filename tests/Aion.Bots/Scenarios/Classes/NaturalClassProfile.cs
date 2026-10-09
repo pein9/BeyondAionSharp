@@ -83,6 +83,9 @@ public sealed class NaturalClassProfile
 
 	public required NaturalPatrolRule PatrolRule { get; init; }
 
+	/// <summary>NR-37: what the patrol rule asks this class about: its recovery roles and its pull limit, from its fight table.</summary>
+	public required NaturalPatrolView Patrol { get; init; }
+
 	public required NaturalRangedHold RangedHold { get; init; }
 
 	/// <summary>How the class recovers between fights.</summary>

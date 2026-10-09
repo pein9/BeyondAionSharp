@@ -63,6 +63,7 @@ public static class NaturalMageProfile
 			// NR-36: what it shoots with in flight.
 			AirAttackRoles = Rules.AtRange,
 			PatrolRule = NaturalPatrolRule.Baseline,
+			Patrol = NaturalPatrolView.From(Rules, skills, PlayerClass.MAGE),
 			RangedHold = NaturalRangedHold.RunOption,
 			// CP-Q11 and CP-Q12, answered: a life potion below 90% HP when it is ready and a sit to 90% while it is on its
 			// delay; a sit for mana below 40% until 80%. No bandage.

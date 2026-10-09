@@ -67,6 +67,7 @@ public static class NaturalArtistProfile
 			// NR-36: what it shoots with in flight.
 			AirAttackRoles = Rules.AtRange,
 			PatrolRule = NaturalPatrolRule.Baseline,
+			Patrol = NaturalPatrolView.From(Rules, skills, PlayerClass.ARTIST),
 			RangedHold = NaturalRangedHold.RunOption,
 			// Until Soothing Melody is observed in the skill list: a life potion below 90% HP when it is ready and a sit
 			// to 90% while it is on its delay (CP-Q11). From then on: Soothing Melody below 90% HP, as the Priest heals.

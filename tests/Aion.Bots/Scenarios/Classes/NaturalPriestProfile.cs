@@ -175,6 +175,7 @@ public static class NaturalPriestProfile
 			// NR-36: Smite is the shot in flight, as the fungus fight has always cast it.
 			AirAttackRoles = ["smite"],
 			PatrolRule = NaturalPatrolRule.Baseline,
+			Patrol = NaturalPatrolView.From(PriestRules, skills, PlayerClass.PRIEST),
 			RangedHold = NaturalRangedHold.RunOption,
 			Rest = RestWith(skills),
 			Ranges = PriestLineRanges,
@@ -208,6 +209,11 @@ public static class NaturalPriestProfile
 			AirAttackRoles = ["smite"],
 			// NA-22 (OD-14).
 			PatrolRule = NaturalPatrolRule.HoldAndAssess,
+			// NR-37: the roles and the limit come from the table; the assessment keeps the words NA-22 recorded.
+			Patrol = NaturalPatrolView.From(ClericRules, skills, PlayerClass.CLERIC) with
+			{
+				HealName = NaturalPatrolView.Cleric.HealName, PairNeeds = NaturalPatrolView.Cleric.PairNeeds,
+			},
 			RangedHold = NaturalRangedHold.RunOption,
 			Rest = RestWith(skills),
 			Ranges = PriestLineRanges,
