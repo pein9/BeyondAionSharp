@@ -3505,7 +3505,7 @@ The template:
       identical, the warrior scope among them. Seven pre-commit checks pass,
       Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and Fast passes (run
       nr50c-fast, 11 passed).
-- [ ] **NR-50d - A toggle kept on.** Depends: NR-50c
+- [x] **NR-50d - A toggle kept on.** Depends: NR-50c
   - Work: Java first: how a toggle skill is turned on and off, what it costs while on,
     what ends it, and what the client is told of it (the skill engine's toggle handling
     and the packets it sends). The bot's world state observes which toggles are on. A
@@ -3514,6 +3514,39 @@ The template:
     Templar, with a shield worn. Generic: the Chanter's mantras use the same form.
   - Proof: One-time check, or one probe row on a probe account, that shows the toggle on
     after the rule ran once and not cast again; the full gate identical.
+  - 2026-10-09: done by reading, with no code: the Templar's one toggle is a stance that
+    any skill cast ends, so its table leaves it off. The form that keeps a toggle on is
+    left to the first class that keeps one, the Chanter (NR-70).
+    - **Java, a toggle.** It is cast like any skill. When its effect starts,
+      Effect.startEffect 670-678 sends the caster SM_SKILL_ACTIVATION(skill, true)
+      (activateToggleSkill 694-696) and the effect lasts for the template's toggle timer,
+      or with none until it is ended. A client turns it off with
+      CM_TOGGLE_SKILL_DEACTIVATE (runImpl 31-42: the effect is removed), not by casting it
+      again. Effect.endEffect 735-737 sends SM_SKILL_ACTIVATION(skill, false)
+      (deactivateToggleSkill 701-703). A toggle whose slot is NOSHOW is not dispelled
+      (EffectController.isNoShowToggle 600-602).
+    - **Java, a stance.** A template with stance="true" starts a stance when it is cast
+      (Skill.java 624-625; PlayerController.startStance 694-699). StanceObserver 31-49
+      ends it (stopStance 701-708 removes the effect) when the player starts to cast any
+      skill that is not an item's, a remedy's or a potion's, uses an item that has no
+      skill, such as a mount, or is put into a state that forbids stances. The port has
+      the same observer (Controllers/Observer/StanceObserver.cs). No server change.
+    - **Stubborn Spirit** (3000 to 3003, levels 10, 15, 20, 25) is a toggle and a stance:
+      it needs a shield worn, costs nothing, has no timer and an 8 s cooldown, and gives
+      500 block, a tenth more physical defence and resistances. The Templar's table casts
+      a skill whenever one is ready, every second or two of a fight, and the first cast
+      would end the stance. It is worth having only while nothing but the weapon swings.
+      So it stays off, and it is in no rule. 17 skills in the data are stances.
+    - **Who keeps a toggle.** Of the skills a class learns by itself to level 26: the
+      Chanter's four mantras, the Gladiator's Defense Preparation and Slaughter, the
+      Assassin's Sprinting and the Rider's Embark, Kinetic Battery and Mounting
+      Frustration are toggles and no stances. The Sorcerer, the Spirit Master, the Ranger,
+      the Gunner, the Bard and the Cleric have none. The first of them in the order of
+      NR-Q1 is the Chanter, whose survey writes the form: the world state observes
+      SM_SKILL_ACTIVATION, a profile names the toggles it keeps on, and the journey casts
+      one that is observed off and never one that is on.
+    - **Proof.** Nothing to check in play: no code changed and no rule names the stance.
+      Seven pre-commit checks pass at the head of NR-50c (run/nr/NR-50d/checks.log).
 - [ ] **NR-51 - Templar: probe rows.** Depends: NR-50a to NR-50d
   - Work: Rows templar-10, templar-16, templar-20 and templar-25 beside the Cleric's in
     SimulationNaturalStarterProbeTests: prepared Templars on the two probe accounts, in
@@ -4007,3 +4040,8 @@ report what was done, what is parked or blocked, and what the operator must deci
   shield is split off as NR-54a, before the coin-gear leg. One-time check; full gate
   guard-p8 (twelve scopes identical), seven checks, unit suite (4,629 passed, 16 skipped)
   and Fast (nr50c-fast) pass. Next: NR-50d, a toggle kept on.
+- 2026-10-09 — Loop: NR-50d done by reading, no code. Stubborn Spirit is a toggle and a
+  stance, and Java ends a stance when the player starts to cast any skill, so the
+  Templar's table leaves it off. The form that keeps a toggle on is left to the Chanter's
+  survey (NR-70): its mantras, and later the Gladiator's, the Assassin's and the Rider's
+  toggles. Seven checks pass. Next: NR-51, the Templar's probe rows.
