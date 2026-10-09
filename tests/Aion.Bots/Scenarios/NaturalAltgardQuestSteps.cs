@@ -119,7 +119,16 @@ public static class NaturalAltgardQuestSteps
 		return before - world.Kinah;
 	}
 
-	/// <summary>Q2208: use the Mau Secret Remedy (anywhere); three seconds later the quest moves to var 1.</summary>
+	/// <summary>
+	/// Q2208: use the Mau Secret Remedy (anywhere); three seconds later the quest moves to var 1.
+	/// <para>
+	/// NR-19: an item with a use area can be refused for its place although the character stands in the area. The server
+	/// refreshes a creature's zones every 500 ms (Java ZoneUpdateService), and the use area is tested against that list
+	/// (PlayerRestrictions.canUseItem, MapRegion.isInsideItemUseZone, ZoneInstance.isInsideCreature). A use sent in the
+	/// first half second inside the area gets STR_CANNOT_USE_ITEM_INVALID_LOCATION. The use time has passed by then, so
+	/// the item is used again, three times at most.
+	/// </para>
+	/// </summary>
 	public static async Task UseQuestItemAsync(INaturalJourneySession session, NaturalAltgardItemUse use, ItemTemplate template,
 		CancellationToken token)
 	{
@@ -128,11 +137,22 @@ public static class NaturalAltgardQuestSteps
 			?? throw new InvalidDataException($"Q{use.QuestId}: item {use.ItemId} is not in the inventory.");
 		if (State(world, use.QuestId) is not (3, int current) || current != use.Var)
 			throw new InvalidDataException($"Q{use.QuestId} is not at var {use.Var}.");
-		await session.SendPacketAsync(session.Api.UseItem(remedy.ObjectId, template), token);
-		await session.AdvanceAsync(TimeSpan.FromMilliseconds(use.UseMillis + 100), token);
-		await session.SynchronizeAsync(token);
-		if (State(world, use.QuestId) is not (3, int next) || next != use.NextVar)
-			throw new InvalidDataException($"Q{use.QuestId}: using item {use.ItemId} did not move the quest to var {use.NextVar}.");
+		for (int attempt = 1; ; attempt++)
+		{
+			int start = session.PacketHistory.Count;
+			await session.SendPacketAsync(session.Api.UseItem(remedy.ObjectId, template), token);
+			await session.AdvanceAsync(TimeSpan.FromMilliseconds(use.UseMillis + 100), token);
+			await session.SynchronizeAsync(token);
+			if (State(world, use.QuestId) is (3, int next) && next == use.NextVar) return;
+			bool refusedForPlace = session.PacketHistory.Skip(Math.Min(start, session.PacketHistory.Count)).Any(packet =>
+				packet.PacketType == typeof(SM_SYSTEM_MESSAGE) && packet.Get<object>("name") is "STR_CANNOT_USE_ITEM_INVALID_LOCATION");
+			if (!refusedForPlace || attempt == 3)
+				throw new InvalidDataException($"Q{use.QuestId}: using item {use.ItemId} did not move the quest to var {use.NextVar}.");
+			session.TraceDiagnostic("quest-item-use-area-not-yet", new Dictionary<string, object?>
+			{
+				["questId"] = use.QuestId, ["itemId"] = use.ItemId, ["attempt"] = attempt, ["position"] = session.CurrentPosition,
+			});
+		}
 	}
 
 	/// <summary>
