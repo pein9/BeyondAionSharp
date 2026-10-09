@@ -278,6 +278,8 @@ public sealed class NaturalIshalgenInventoryPolicy
 	/// it. With no upgrade offered, the class's own gear is still preferred to another class's, then a consumable by the
 	/// rules' order, then (NR-32) the piece whose bonus lines suit the class, then the sale price. The bonus lines decide
 	/// between two pieces of one score, and among what the rules do not score: accessories and hats.
+	/// NR-50c (NR-Q15): a class that holds a shield and owns none takes an offered shield before anything else. A weapon is
+	/// offered again at later quests; on the route a shield is offered once (Q2100).
 	/// </summary>
 	/// <param name="rewardRules">CP-23: the rules the choices are scored by (the profile's
 	/// <see cref="NaturalClassProfile.Gear"/>); the Priest's when not given.</param>
@@ -301,6 +303,7 @@ public sealed class NaturalIshalgenInventoryPolicy
 			: owned.GetValueOrDefault(rules.Slot(item)!, long.MinValue);
 		bool Wearable(int id, out NaturalItem item) => items.TryGetValue(id, out item!) && rules.UsableNowOrLater(item, level);
 		bool Upgrade(int id, out NaturalItem item) => Wearable(id, out item) && rules.Score(item) > ScoreToBeat(item);
+		bool lacksShield = rules.OffHand == NaturalOffHand.Shield && !owned.ContainsKey("SHIELD");
 		int ConsumablePlace(int id)
 		{
 			for (int index = 0; index < rules.ConsumableOrder.Count; index++)
@@ -308,7 +311,8 @@ public sealed class NaturalIshalgenInventoryPolicy
 			return int.MaxValue;
 		}
 		return choices.Select((id, index) => (id, index))
-			.OrderByDescending(choice => Upgrade(choice.id, out NaturalItem item) && rules.Slot(item) == "WEAPON")
+			.OrderByDescending(choice => lacksShield && Wearable(choice.id, out NaturalItem item) && rules.Slot(item) == "SHIELD")
+			.ThenByDescending(choice => Upgrade(choice.id, out NaturalItem item) && rules.Slot(item) == "WEAPON")
 			.ThenByDescending(choice => Upgrade(choice.id, out NaturalItem item) ? rules.Score(item) : long.MinValue)
 			.ThenByDescending(choice => Wearable(choice.id, out NaturalItem item) ? rules.Score(item) : long.MinValue)
 			.ThenBy(choice => ConsumablePlace(choice.id))

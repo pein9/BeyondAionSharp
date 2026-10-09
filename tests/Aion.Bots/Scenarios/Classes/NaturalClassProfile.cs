@@ -64,7 +64,7 @@ public enum NaturalRangedHold
 /// How one class plays (docs/natural-class-profiles.md, the seam, section 2). A profile holds pure decisions and data;
 /// the shared executor in the journey sends every packet and never names a class.
 /// </summary>
-public sealed class NaturalClassProfile
+public sealed record NaturalClassProfile
 {
 	public required PlayerClass Class { get; init; }
 
@@ -154,6 +154,9 @@ public static class NaturalClassProfiles
 	};
 
 	private static readonly ConcurrentDictionary<PlayerClass, NaturalClassProfile> Built = new();
+
+	/// <summary>NR-50c: the starters of a line whose second class holds a shield, with a shield in their gear rules.</summary>
+	private static readonly ConcurrentDictionary<PlayerClass, NaturalClassProfile> ShieldLineStarters = new();
 	private static volatile StaticData? shipped;
 
 	/// <summary>NR-13: a run hands its static data over when it starts, so a caller without it never comes first.</summary>
@@ -178,7 +181,13 @@ public static class NaturalClassProfiles
 			throw new InvalidDataException($"The client observed {playerClass}, which is outside the class line {line.Id}.");
 		if (!Generated.TryGetValue(playerClass, out Func<StaticData, NaturalClassProfile>? create))
 			throw new InvalidDataException($"{playerClass} has no natural class profile.");
-		return Built.GetOrAdd(playerClass, _ => create(shipped
+		NaturalClassProfile built = Built.GetOrAdd(playerClass, _ => create(shipped
 			?? throw new InvalidDataException($"The {playerClass} profile is generated from the shipped data, and no run has supplied it yet.")));
+		// NR-50c (NR-Q15): a line whose second class holds a shield holds one from the start, so its starter keeps and
+		// wears the shield the route offers. Everything else of the starter's profile is the starter's.
+		return playerClass == line.Starter && line.Second is { } second && built.Gear.OffHand == NaturalOffHand.None &&
+			NaturalClassGearTable.Of(second)?.OffHand == NaturalOffHand.Shield
+			? ShieldLineStarters.GetOrAdd(playerClass, _ => built with { Gear = built.Gear.HoldingShield() })
+			: built;
 	}
 }

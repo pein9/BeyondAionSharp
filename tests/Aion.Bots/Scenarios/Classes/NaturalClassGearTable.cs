@@ -118,6 +118,12 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 	/// <summary>The default table of each new starter.</summary>
 	public static IReadOnlyList<NaturalClassGearTable> Starters { get; } = [Warrior, Scout, Mage, Engineer, Artist];
 
+	/// <summary>NR-50c: every class's table; a class's first item adds its own.</summary>
+	public static IReadOnlyList<NaturalClassGearTable> All { get; } = [Priest, Cleric, Chanter, Templar, Warrior, Scout, Mage, Engineer, Artist];
+
+	/// <summary>The class's table; null for a class that has none yet.</summary>
+	public static NaturalClassGearTable? Of(PlayerClass playerClass) => All.FirstOrDefault(table => table.Class == playerClass);
+
 	/// <summary>The physical stat of CP-Q7, doubled so that it stays whole: minimum plus maximum damage is twice the
 	/// mean of a swing, and the flat physical-attack bonus is counted twice with it.</summary>
 	public static int PhysicalStat(int minimumDamage, int maximumDamage, int physicalAttack) => minimumDamage + maximumDamage + 2 * physicalAttack;

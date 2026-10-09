@@ -9,7 +9,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// policy's one decision path, the item's own gear members and the equipment check all read these rules; nothing else
 /// tests for a class. CP-29a: every class's rules are built from its <see cref="NaturalClassGearTable"/>.
 /// </summary>
-public sealed class NaturalGearRules
+public sealed record NaturalGearRules
 {
 	/// <summary>The class whose column of an item's restrict row gives the level it may wear the item at.</summary>
 	public required PlayerClass Class { get; init; }
@@ -39,8 +39,14 @@ public sealed class NaturalGearRules
 	/// never ask the server for an item of a group the class has no mastery for.</summary>
 	public required IReadOnlySet<string> MasteryUnlocks { get; init; }
 
-	/// <summary>CP-68: what the equipment check puts in the off hand beside a one-hand weapon; nothing for every class today.</summary>
+	/// <summary>CP-68: what the equipment check puts in the off hand beside a one-hand weapon.</summary>
 	public NaturalOffHand OffHand { get; init; }
+
+	/// <summary>NR-50c: the same rules for a class that holds a shield from now on: shields are its gear, the best one is
+	/// worn and kept. The class needs the shield mastery.</summary>
+	public NaturalGearRules HoldingShield() => !MasteryUnlocks.Contains("SHIELD")
+		? throw new InvalidDataException($"The {Class} cannot hold a shield: it has no mastery for one.")
+		: this with { OffHand = NaturalOffHand.Shield, GearGroups = GearGroups.Append("SHIELD").ToHashSet() };
 
 	/// <summary>NR-03: a class that holds two weapons may hold this one in either hand: a one-hand weapon of its groups
 	/// (the item group's own answer, as Java ItemTemplate.isOneHandWeapon reads it).</summary>

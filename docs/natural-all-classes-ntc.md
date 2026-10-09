@@ -179,11 +179,13 @@ by a lettered item. Answers already given are quoted.
   holds nothing in the off hand (CP-Q10), so it passes over the Raider's Shield of Q2100;
   no quest after it offers a shield; the coin vendors sell one at every tier and no leg
   buys it (NR-38a, NR-38b). Default, NR-50c: a line whose second class holds a shield
-  holds one from the start, so its Warrior takes the shield a reward list offers when its
-  sword is no worse; and each coin tier buys the vendor's shield from the coins left
-  after the armor and the weapon. Nothing is bought with Kinah and no coin is added. To
-  decide: whether a Templar may buy a shield with Kinah from an armor merchant at
-  Ascension, or is supplied the coins for one.
+  holds one from the start, and a class that holds a shield and owns none takes an offered
+  shield before a weapon. So the Templar's Warrior takes the Raider's Shield at Q2100, its
+  own pick there as the class-profile plan foresaw (CP-Q10), and its swords at Q2002 and
+  Q2134 as the Warrior does. NR-54a: each coin tier buys the vendor's shield from the
+  coins left after the armor and the weapon. Nothing is bought with Kinah (CP-Q10) and
+  no coin is added. To decide: whether a Templar may buy a shield with Kinah from an
+  armor merchant at Ascension, or is supplied the coins for one.
 
 ## Standing rules
 
@@ -3442,7 +3444,7 @@ The template:
       guard-p8 (run/nr/NR-50b/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
       16 skipped) and Fast passes (run nr50b-fast, 11 passed).
-- [ ] **NR-50c - The shield of a line whose class holds one.** Depends: NR-50b
+- [x] **NR-50c - The shield of a line whose class holds one.** Depends: NR-50b
   - Work: NR-Q15's default. Java first: Equipment.java as read for CP-68 and NR-03, and
     the reward shops as read for NR-38. A line whose second class's table holds a shield
     holds one from the start: its starter's gear rules get that off-hand mode, so the
@@ -3453,6 +3455,56 @@ The template:
   - Proof: One-time check of the pick at Q2100 for both Warrior lines and of each tier's
     purchases for a Templar from a prepared bag; the full gate identical, the warrior
     scope among it.
+  - 2026-10-09: done for the line and its pick. The coin tiers are split off as NR-54a
+    (rule (q)): a shield is on another trade tab than the armor, the legs' purchases are
+    written for one tab, and nothing before the coin-gear leg needs it.
+    - **Java.** Equipment.equip 181-213 puts an item into the slot asked for and takes
+      out only what that slot holds (getUnequipSlots 215-222: both hands only when a
+      two-hand weapon is held), after checkAvailableEquipSkills (85, 323) found the
+      mastery; a Warrior has Basic Shield Training (43) from level 1. So a one-hand sword
+      and a shield are worn together by two requests. The reward index is NR-32's
+      (QuestService.getRewardIndex). No server change.
+    - **What the reading changed.** The Work line said the Warrior takes the shield at
+      Q2100 "when its sword is no worse". It holds the Training Sword there and Raider's
+      Sword is offered beside the shield, so by that rule it would take the sword and
+      never see a shield again: Q2100 is the only quest of the route that offers one. The
+      class-profile plan foresaw the Templar's own pick at Q2100 (CP-Q10: the Templar
+      "makes its own Q2100 pick"; the operator's "Warrior does take weapon" is the
+      Warrior line's). So the rule is: a class that holds a shield and owns none takes an
+      offered shield before a weapon. NR-Q15 says so now.
+    - **The change.**
+      - Sc/Classes/NaturalClassProfile.cs, NaturalClassProfiles.For: the starter of a line
+        whose second class's gear table holds a shield gets the starter's own profile with
+        a shield in its gear rules. The profile and the gear rules are records now, so the
+        copy differs in nothing else. Sc/Classes/NaturalGearRules.cs, HoldingShield;
+        Sc/Classes/NaturalClassGearTable.cs, All and Of: every class's table by class.
+      - Sc/NaturalIshalgenInventoryPolicy.cs, ChooseReward: one key before the others: a
+        shield the class can wear, when it holds shields and owns none. A class that holds
+        no shield, and one that owns a shield, choose as before.
+      - Keep and sell and the equipment check were made for a shield in NR-03.
+    - **Proof, the one-time check** (run/nr/NR-50c/check.log; the check file is not
+      committed; check-a1.log is a first run that failed on the check's own expectation
+      that the Warrior line sells a shield, which is not sellable and is held).
+
+      | Line | Its Warrior's off hand | At Q2100 with the Training Sword | At Q2002 | At Q2134 |
+      |---|---|---|---|---|
+      | warrior-templar | a shield | choice 5, Raider's Shield 115000024 | choice 2, sword 100000639 | choice 2, sword 100000108 |
+      | warrior | nothing | choice 1, Raider's Sword 100000107 | choice 2, sword 100000639 | choice 2, sword 100000108 |
+
+      With a shield already worn, or in the bag, the Templar's Warrior takes Raider's
+      Sword at Q2100. After the turn-in its keep-and-sell says equip for the shield and
+      the equipment check puts it into the off hand beside the sword; a better sword then
+      goes into the main hand and the shield stays. The Warrior line holds a shield it is
+      handed and does not wear it. The two Warrior profiles share their fight table,
+      skills, rest and help rules; only the gear rules differ, by the shield. No starter
+      of any other line holds a shield (the Scout holds its second dagger, NR-04).
+    - **Not proven here.** No Warrior has worn a shield in a world. The round that takes
+      the line to Altgard plays it (NR-52).
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-50c/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical, the warrior scope among them. Seven pre-commit checks pass,
+      Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and Fast passes (run
+      nr50c-fast, 11 passed).
 - [ ] **NR-50d - A toggle kept on.** Depends: NR-50c
   - Work: Java first: how a toggle skill is turned on and off, what it costs while on,
     what ends it, and what the client is told of it (the skill engine's toggle handling
@@ -3484,8 +3536,19 @@ The template:
 - [ ] **NR-54 - Templar: Altgard legs l6 to l11.** Depends: NR-53; ticked by its round
   - Work: As NR-53. Leg 11 is the destiny quest: its stone is 140000003 (NR-39).
   - Proof: Each capture verifies.
-- [ ] **NR-55 - Templar: coin gear and Haramel.** Depends: NR-54; ticked by its round
-  - Work: The coin-gear leg at Lateni (plate, and the shield by NR-50c) and Haramel with
+- [ ] **NR-54a - The coin tiers buy the shield.** Depends: NR-50c
+  - Work: Split from NR-50c. Java first: the reward shops as read for NR-38
+    (TradeService.performBuyFromShop and validateBuyItems), and which trade tab of
+    Lateni 203659 and of Nott 204360 holds the shield. For a class that holds a shield,
+    the coin-gear leg and the two tiers of the Abyss entry buy the manifest's shield
+    when it beats the one worn, from the coins left after the armor and the weapon, on
+    its own tab, and wear it in the off hand; the leg's end check holds it. No Kinah
+    purchase; no coin added (NR-Q14, NR-Q15). The Cleric's legs are the contracts
+    themselves.
+  - Proof: One-time check of each tier's purchases for a Templar from a prepared bag, with
+    coins to spare and without; gates hm and ax identical with the full gate.
+- [ ] **NR-55 - Templar: coin gear and Haramel.** Depends: NR-54, NR-54a; ticked by its round
+  - Work: The coin-gear leg at Lateni (plate, and the shield by NR-54a) and Haramel with
     chest 700829 (NR-40), captured as altgard-coingear-templar and
     altgard-rc-complete-s1-templar.
   - Proof: Each capture verifies.
@@ -3937,3 +4000,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   Strike; 47 of its 63 active skills have a role. One-time check; full gate guard-p8
   (twelve scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
   (nr50b-fast) pass. Next: NR-50c, the shield of a line whose class holds one.
+- 2026-10-09 — Loop: NR-50c done for the line and its pick. The Warrior of
+  warrior-templar holds a shield from the start, and a class that holds a shield and owns
+  none takes an offered shield before a weapon: Raider's Shield at Q2100, the only one
+  the route offers; the warrior line is as recorded. NR-Q15 says so. The coin tiers'
+  shield is split off as NR-54a, before the coin-gear leg. One-time check; full gate
+  guard-p8 (twelve scopes identical), seven checks, unit suite (4,629 passed, 16 skipped)
+  and Fast (nr50c-fast) pass. Next: NR-50d, a toggle kept on.
