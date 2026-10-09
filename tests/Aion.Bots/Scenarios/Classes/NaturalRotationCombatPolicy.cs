@@ -378,6 +378,10 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		if (skill.CounterStatus != null) reasons.Add($"Counter skill: it needs a {skill.CounterStatus} the bot does not observe.");
 		if (skill.Activation == "CHARGE") reasons.Add("Charge skill: the fight loop holds no charge.");
 		if (skill.OutOfCombatOnly && Fighting(state)) reasons.Add("The skill cannot be cast in combat.");
+		// NR-50b: the server refuses the cast without it (Java LeftHandCondition).
+		if (skill.RequiredOffHand != null && state.OffHand != skill.RequiredOffHand)
+			reasons.Add(skill.RequiredOffHand == "SHIELD" ? "The skill needs a shield, and none is worn."
+				: "The skill needs a second weapon or a two-hand weapon, and neither is held.");
 		if (!self)
 		{
 			if (target == null || state.TargetDistance is not float distance) reasons.Add("No client-observed target position.");

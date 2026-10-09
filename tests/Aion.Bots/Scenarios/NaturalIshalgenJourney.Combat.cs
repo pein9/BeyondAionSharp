@@ -360,7 +360,9 @@ public sealed partial class NaturalIshalgenJourney
 					WeaponAttackRangeMillis: weaponStats?.GetAttackRange(), WeaponAttackSpeedMillis: weaponStats?.GetAttackSpeed() + offHandSwingMillis,
 					PreviousChainCategory: tableChain.Previous, ChainStepAt: tableChain.StepAt,
 					OpenChainUseCount: tableChain.Current != null ? tableChain.UseCount : null,
-					ActiveEffectSkillIds: world.VisibleEffects?.Select(effect => effect.SkillId).ToHashSet());
+					ActiveEffectSkillIds: world.VisibleEffects?.Select(effect => effect.SkillId).ToHashSet(),
+					// NR-50b: a shield, or a second weapon or a two-hand weapon, for the skills that ask for one.
+					OffHand: NaturalSkillCatalog.OffHandHeld(world.Inventory.Values, runtime.Data.ItemDataDh.GetItemTemplate));
 				NaturalCombatChoice choice = policy.Decide(observation, now, mauPolicy);
 				NaturalCombatCandidate[] candidates = policy.CandidateActions(observation, now, choice, mauPolicy);
 				if (!candidates.Any(candidate => candidate.Action == choice.Action &&

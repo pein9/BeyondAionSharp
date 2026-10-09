@@ -3379,7 +3379,7 @@ The template:
       identical, the Cleric's five and the five starters among them. Seven pre-commit
       checks pass, Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and Fast passes
       (run nr50a-fast, 11 passed).
-- [ ] **NR-50b - A skill's off-hand condition.** Depends: NR-50a
+- [x] **NR-50b - A skill's off-hand condition.** Depends: NR-50a
   - Work: Java first: LeftHandCondition, and what the server answers a cast without the
     shield. The skill row carries the template's left-hand condition (SHIELD or DUAL);
     the fight's observation says what the off hand holds; the table refuses such a skill
@@ -3387,6 +3387,61 @@ The template:
     in the Templar's table. Generic: the Assassin's dual-wield skills use the same field.
   - Proof: One-time check: Shield Bash is refused with an empty off hand and is legal
     with a shield worn; the validator accepts the profile; the full gate identical.
+  - 2026-10-09: done. A skill row says what its template asks of the left hand, the fight
+    observes what the bot holds, and the table refuses the skill without it. Shield Bash
+    is in the Templar's table: 47 of its 63 active skills have a role and 16 are left out.
+    - **Java.** LeftHandCondition.validate 25-50: type SHIELD asks
+      Equipment.isShieldEquipped (504-510: the off-hand item's sub type is SHIELD) and
+      answers STR_SKILL_NEED_SHIELD without it; type DUAL asks for a weapon in the off
+      hand or a two-hand weapon in the main hand and answers STR_SKILL_NEED_DUAL_WEAPON.
+      The port is the same (SkillEngine/Condition/LeftHandCondition.cs). In the data 238
+      skills carry the condition, 61 SHIELD and 177 DUAL. Of the skills a class learns by
+      itself to level 26, the Templar has 14 (Shield Bash, Shield Counter, Courageous
+      Shield, Avenging Blow, Stubborn Spirit) and the Gunner 17, all DUAL, from level 10.
+      No server change.
+    - **The change.**
+      - The skill row (Sc/NaturalPriestCombatPolicy.cs) has RequiredOffHand, read by
+        Sc/Classes/NaturalSkillCatalog.cs with the other conditions: SHIELD, DUAL or
+        nothing. OffHandHeld gives what the worn gear holds, by the server's own rule: a
+        shield in the off hand is SHIELD; a weapon in the off hand, or a two-hand weapon,
+        is DUAL.
+      - The fight's observation has OffHand; J builds it from the worn items at every
+        decision. It is not written into the decision record, so no trace changes.
+      - Sc/Classes/NaturalRotationCombatPolicy.cs, Refusals: a skill that asks for what
+        the bot does not hold is refused by name ("The skill needs a shield, and none is
+        worn."), and so is never chosen and never waited for.
+      - Sc/Classes/NaturalTemplarProfile.cs: Shield Bash has the role bash, after Dazing
+        Severe Blow and its follow-up and before Ferocious Strike: a 2 s stun once a
+        minute for 30 to 49 MP. It is another chain's first step, so it goes only when no
+        follow-up is ready, like every opener.
+    - **Proof, the one-time check** (run/nr/NR-50b/check.log; the check file is not
+      committed). The Templar's profile is accepted with the four ranks of Shield Bash as
+      rows that need SHIELD. No other profile has a row with the condition (Priest,
+      Cleric, Chanter, Warrior, Mage, Artist, Engineer, Scout). The Gunner's Trunk Shot
+      reads DUAL.
+
+      | Worn | The condition is given |
+      |---|---|
+      | A sword, nothing in the off hand; the same with a shield in the bag; nothing | nothing |
+      | A sword and a shield | SHIELD |
+      | Two daggers; a greatsword in both hands | DUAL |
+
+      A level-10 Templar on its target with Dazing Severe Blow cooling down:
+
+      | It holds | It casts | Shield Bash |
+      |---|---|---|
+      | A shield | Shield Bash 3072 | legal |
+      | Nothing in the off hand | Ferocious Strike 2865 | refused: the skill needs a shield, and none is worn |
+      | A second weapon | Ferocious Strike 2865 | refused the same way |
+      | A shield, Shield Bash cooling down | Ferocious Strike 2865 | refused: the cooldown |
+      | A shield, 20 MP | Ferocious Strike 2865 | refused: mana |
+
+    - **Not proven here.** No Shield Bash has been cast in a world. NR-51 plays it, with
+      and without a shield.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-50b/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
+      16 skipped) and Fast passes (run nr50b-fast, 11 passed).
 - [ ] **NR-50c - The shield of a line whose class holds one.** Depends: NR-50b
   - Work: NR-Q15's default. Java first: Equipment.java as read for CP-68 and NR-03, and
     the reward shops as read for NR-38. A line whose second class's table holds a shield
@@ -3876,3 +3931,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   Warrior and a Cleric; full gate guard-p8 (twelve scopes identical), seven checks, unit
   suite (4,629 passed, 16 skipped) and Fast (nr50a-fast) pass. Next: NR-50b, a skill's
   off-hand condition.
+- 2026-10-09 — Loop: NR-50b done. A skill row carries its left-hand condition (SHIELD or
+  DUAL), the fight observes what the bot holds, and the table refuses the skill without
+  it. Shield Bash is in the Templar's table, after Dazing Severe Blow and before Ferocious
+  Strike; 47 of its 63 active skills have a role. One-time check; full gate guard-p8
+  (twelve scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
+  (nr50b-fast) pass. Next: NR-50c, the shield of a line whose class holds one.

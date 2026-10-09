@@ -18,7 +18,7 @@ public static class NaturalTemplarProfile
 	/// chain; Robust Blow and Rage are its second steps and Wrath Strike (level 19) follows Robust Blow. Body Smash opens
 	/// a chain of its own. Dazing Severe Blow (level 10) opens a third and Divine Blow (level 11) follows it. Empyrean
 	/// Chastisement is paid with 2,000 DP. Empyrean Armor (level 13) heals a quarter of its HP and raises the most it
-	/// has by half for three minutes.
+	/// has by half for three minutes. Shield Bash (level 10) stuns for 2 s and needs a shield worn (NR-50b).
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
@@ -31,12 +31,12 @@ public static class NaturalTemplarProfile
 		[3038] = "wrath", [3039] = "wrath",
 		[3019] = "chastise", [3020] = "chastise", [3021] = "chastise", [3022] = "chastise",
 		[3129] = "armor",
+		[3072] = "bash", [3073] = "bash", [3074] = "bash", [3075] = "bash",
 		// NR-50a: the two powder skills, cast only in a rest.
 		[246] = "herb", [247] = "herb", [251] = "herb", [253] = "herb",
 		[249] = "mp-recovery", [250] = "mp-recovery", [252] = "mp-recovery", [254] = "mp-recovery",
 	};
 
-	private const string Shield = "it needs a shield in the left hand (startconditions/lefthandweapon), which the skill row and the fight's observation do not say yet (NR-50b).";
 	private const string Counter = "the client offers it only after a block or a resist (counter_skill BLOCK,RESIST), which the bot does not observe. " +
 		"Java reads a counter of two statuses as none and would accept it at any time; the bot does not send what a client could not.";
 	private const string Enmity = "it raises enmity and deals no damage; alone, the monster is already on the Templar.";
@@ -46,8 +46,6 @@ public static class NaturalTemplarProfile
 	{
 		[2981] = "Taunt I: " + Enmity, [2982] = "Taunt II: " + Enmity, [2983] = "Taunt III: " + Enmity, [2984] = "Taunt IV: " + Enmity,
 		[3010] = "Provoking Roar: " + Enmity,
-		[3072] = "Shield Bash I: " + Shield, [3073] = "Shield Bash II: " + Shield, [3074] = "Shield Bash III: " + Shield,
-		[3075] = "Shield Bash IV: " + Shield,
 		[3094] = "Shield Counter I: " + Counter, [3095] = "Shield Counter II: " + Counter, [3096] = "Shield Counter III: " + Counter,
 		[3097] = "Shield Counter IV: " + Counter,
 		[3048] = "Courageous Shield: " + Counter,
@@ -62,8 +60,9 @@ public static class NaturalTemplarProfile
 	/// Strike, then Rage when it is hurt, at or below 80% HP, then Wrath Strike, each inside 3 s. Rage stands before Wrath
 	/// Strike because it follows Ferocious Strike or Robust Blow and not Wrath Strike, and Wrath Strike still follows
 	/// Robust Blow after it (Java ChainCondition.validate: the current or the previous chain step). Of the openers,
-	/// Dazing Severe Blow goes first (it slows the target's attacks and lowers its defence for 12 s), then Ferocious
-	/// Strike, then Body Smash. Empyrean Chastisement goes last and only at or below 70% HP: its 2,000 DP also buy a
+	/// Dazing Severe Blow goes first (it slows the target's attacks and lowers its defence for 12 s), then Shield Bash
+	/// while a shield is worn (a 2 s stun once a minute, 30 to 49 MP), then Ferocious Strike, then Body Smash. Empyrean
+	/// Chastisement goes last and only at or below 70% HP: its 2,000 DP also buy a
 	/// shield that takes half of every hit for 15 s. The weapon swings whenever no skill is ready. Nothing reaches a
 	/// target that is not on the Templar, so it walks in.
 	/// <para>
@@ -77,7 +76,7 @@ public static class NaturalTemplarProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-templar-v1",
-		Adjacent: ["dazing", "divine", "strike", "robust", "rage", "wrath", "smash", "chastise"], AtRange: [],
+		Adjacent: ["dazing", "divine", "bash", "strike", "robust", "rage", "wrath", "smash", "chastise"], AtRange: [],
 		Upkeep: [],
 		Recovery:
 		[

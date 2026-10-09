@@ -1,5 +1,7 @@
+using Aion.Bots.World;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
+using Aion.GameServer.Model.Templates.Items;
 using Aion.GameServer.Model.Templates.Items.Enums;
 using Aion.GameServer.SkillEngine.Action;
 using Aion.GameServer.SkillEngine.Condition;
@@ -117,7 +119,25 @@ public static class NaturalSkillCatalog
 			OutOfCombatOnly: conditions.OfType<CombatCheckCondition>().Any(),
 			GroundOnly: conditions.OfType<NoFlyingCondition>().Any() ||
 				conditions.OfType<SelfFlyingCondition>().Any(self => self.Restriction == FlyingRestriction.GROUND),
-			TargetFlight: conditions.OfType<TargetFlyingCondition>().FirstOrDefault()?.Restriction.ToString());
+			TargetFlight: conditions.OfType<TargetFlyingCondition>().FirstOrDefault()?.Restriction.ToString(),
+			RequiredOffHand: conditions.OfType<LeftHandCondition>().FirstOrDefault()?.type.ToString());
+	}
+
+	/// <summary>
+	/// NR-50b: what the worn gear gives a skill's left-hand condition, as the server reads it (Java LeftHandCondition.validate,
+	/// Equipment.isShieldEquipped): <c>SHIELD</c> with a shield in the off hand; <c>DUAL</c> with a weapon in the off hand or
+	/// a two-hand weapon in both; null otherwise.
+	/// </summary>
+	/// <param name="template">An item's shipped template; null for an item that has none.</param>
+	public static string? OffHandHeld(IEnumerable<BotInventoryItem> inventory, Func<int, ItemTemplate?> template)
+	{
+		ArgumentNullException.ThrowIfNull(inventory);
+		ArgumentNullException.ThrowIfNull(template);
+		BotInventoryItem[] worn = inventory.Where(item => item.Details.EquippedSlot is 1 or 2 or 3).ToArray();
+		ItemTemplate? offHand = worn.FirstOrDefault(item => item.Details.EquippedSlot == 2) is { } held ? template(held.ItemId) : null;
+		if (offHand?.GetItemSubType() == ItemSubType.SHIELD) return "SHIELD";
+		if (offHand?.IsWeapon() == true) return "DUAL";
+		return worn.Any(item => item.Details.EquippedSlot is 1 or 3 && template(item.ItemId)?.IsTwoHandWeapon() == true) ? "DUAL" : null;
 	}
 
 	/// <summary>

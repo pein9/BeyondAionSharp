@@ -18,13 +18,16 @@ namespace Aion.Bots.Scenarios;
 /// selfflying with restriction GROUND; Java NoFlyingCondition, SelfFlyingCondition).</param>
 /// <param name="TargetFlight">NR-36: what the template asks of the target's flight (startconditions/targetflying:
 /// <c>FLY</c> or <c>GROUND</c>); null when it asks nothing.</param>
+/// <param name="RequiredOffHand">NR-50b: what the template asks of the left hand (startconditions/lefthandweapon; Java
+/// LeftHandCondition): <c>SHIELD</c>, a shield worn, or <c>DUAL</c>, a second weapon or a two-hand weapon held; null when
+/// it asks nothing.</param>
 public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role, int ManaCost,
 	float Range, int CooldownId, int CooldownDeciseconds, string? ChainCategory = null,
 	string? RequiresChainCategory = null, int ChainWindowMillis = 0, int DpCost = 0,
 	int ReagentItemId = 0, int ReagentCount = 0,
 	string? TargetKind = null, int CastMillis = 0, IReadOnlyList<string>? RequiredWeaponGroups = null,
 	bool AddWeaponRange = false, int SelfCount = 0, string? Activation = null, string? CounterStatus = null,
-	bool OutOfCombatOnly = false, bool GroundOnly = false, string? TargetFlight = null);
+	bool OutOfCombatOnly = false, bool GroundOnly = false, string? TargetFlight = null, string? RequiredOffHand = null);
 
 /// <summary>
 /// NR-18: every class's catalog is generated from the shipped skill data (<see cref="Classes.NaturalSkillCatalog"/>); the
@@ -57,6 +60,8 @@ public static class NaturalPriestSkills
 /// <param name="ChainStepAt">When the current chain step was cast; a follow-up counts its own chain time from it.</param>
 /// <param name="OpenChainUseCount">How often the current chain step was cast in a row.</param>
 /// <param name="ActiveEffectSkillIds">The skill ids of the effects the client shows on the bot; null when unobserved.</param>
+/// <param name="OffHand">NR-50b: what the bot holds for a skill's left-hand condition
+/// (<see cref="Classes.NaturalSkillCatalog.OffHandHeld"/>): <c>SHIELD</c>, <c>DUAL</c> or null.</param>
 public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int Mp, int MaxMp,
 	bool Dead, bool Aggro, float? TargetDistance, int? TargetObjectId,
 	IReadOnlyDictionary<int, BotSkill> Learned, IReadOnlyDictionary<int, DateTimeOffset> Cooldowns,
@@ -70,7 +75,7 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	bool ShieldScrollReady = false, ushort? LastCancelledSkillId = null,
 	int? WeaponAttackRangeMillis = null, int? WeaponAttackSpeedMillis = null,
 	string? PreviousChainCategory = null, DateTimeOffset? ChainStepAt = null, int? OpenChainUseCount = null,
-	IReadOnlySet<int>? ActiveEffectSkillIds = null);
+	IReadOnlySet<int>? ActiveEffectSkillIds = null, string? OffHand = null);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);
