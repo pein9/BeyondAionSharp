@@ -3154,6 +3154,9 @@ Gunner NR-120, Rider NR-130, Bard NR-140. The class's survey item writes the oth
 2. The probe rows NR-x1 of the classes are played side by side, each in its own world.
    The Templar's rows (NR-51) are played first and alone, before the other surveys: they
    are the first fights of a second class without a heal, on forms the other profiles copy.
+   For the same reason the Templar plays its first stage, to the Altgard bind (NR-52),
+   alone and before the other surveys: no line but the Priest's has passed the trial, the
+   class choice, the ceremony and the dispatch, and what stops it there stops every class.
 3. Then the rounds, numbered NR-R1, NR-R2 and so on, written by the loop as it goes. A
    round takes every class that is not parked from where its last capture stands to the
    next stage: first from creation to the Altgard bind, then the legs in the Cleric's
@@ -3547,7 +3550,7 @@ The template:
       one that is observed off and never one that is on.
     - **Proof.** Nothing to check in play: no code changed and no rule names the stance.
       Seven pre-commit checks pass at the head of NR-50c (run/nr/NR-50d/checks.log).
-- [ ] **NR-51 - Templar: probe rows.** Depends: NR-50a to NR-50d
+- [x] **NR-51 - Templar: probe rows.** Depends: NR-50a to NR-50d
   - Work: Rows templar-10, templar-16, templar-20 and templar-25 beside the Cleric's in
     SimulationNaturalStarterProbeTests: prepared Templars on the two probe accounts, in
     the gear the route has given by that level, with and without a shield at level 10,
@@ -3557,6 +3560,70 @@ The template:
     leash, the toggle's worth, the mana floor. A fix is one small change (rule (i)).
   - Proof: The four rows end with the monster dead or a recorded retreat, no refused
     cast repeats, and the numbers are written here; the full gate identical.
+  - 2026-10-09: done on the second attempt. The four rows pass; the table changed in one
+    place: Empyrean Chastisement goes first when the Templar is hurt.
+    - **Java.** Nothing new is relied on; what a row met is read below (the chain after
+      Rage).
+    - **The rows** (SimT/SimulationNaturalStarterProbeTests.cs: templar-10, templar-16,
+      templar-20, templar-25, on the probe accounts 98 and 100, at the places and monsters
+      of the Cleric's rows). The director makes the Warrior a Templar of the level with
+      the skills of every level up to it, puts gear of the route into its bag, and
+      places it. From there the journey's equipment check, fight and rest act. New
+      director acts: items into the bag, and an MP cut. Run with CP_PROBE_ROWS, two rows
+      to a process, the two processes side by side: `bash run/nr/NR-51/probe.sh <attempt>`.
+    - **First attempt** (runs nr51-probe-a1 and a1b; logs probe-a1.log, probe-a1b.log).
+      Rows 10, 16 and 25 passed. Row 20 failed: in a fight begun at 45% HP with 2,000 DP,
+      Empyrean Chastisement was not cast. It stood last in the list, and the starved
+      mosbear was dead after the seven skills before it (3057 3132 2867 2880 2905 3038
+      2893). The one change (rule (i)): at or below 70% HP it goes before every other
+      opener, where its shield takes half of the hits that follow. The level-16 row had
+      a second fight that named the monster the Templar had just left; it was walking
+      home, and the fight ended at once with nothing done. That was the row's own
+      mistake, and the row now has its one fight, as the Cleric's has.
+    - **Second attempt** (runs nr51-probe-a2 and a2b; logs probe-a2.log, probe-a2b.log;
+      the eight traces are under run/nr/NR-51/).
+
+      | Row | Prepared by the director | What the journey did | Outcome |
+      |---|---|---|---|
+      | templar-10 | Level 10, the ceremony's sword; then Raider's Shield; then 20 powder and half HP | No shield: Dazing Severe Blow, Ferocious Strike, Robust Blow, Body Smash, then six swings; Shield Bash refused at the first decision ("The skill needs a shield, and none is worn.") and never sent. With the shield, worn by the equipment check: Dazing Severe Blow, Shield Bash, Ferocious Strike, Robust Blow, Body Smash, three swings. Rest from 440 of 881 HP: Herb Treatment once for one powder, one sit, no potion. | An ice crasaur (level 11) killed in 15.4 s, lowest HP 705 of 881; the next in 12.6 s, lowest HP 807. 881 of 881 HP after the rest. |
+      | templar-16 | Level 16; the sword of Q24013, the plate shoes and breastplate of Q24011 and Q24012, the shield; 30% HP as the fight begins | The check wore all four. The life potion, then Empyrean Armor at 32% HP in the emergency (489 HP became 1,255 of 2,187), the walk in, Dazing Severe Blow, Divine Blow, Shield Bash. The tusked mosbear's two neighbours came: with three attackers it left. | A retreat, alive at 1,807 of 2,187 HP. The Cleric's row leaves the same spot the same way. |
+      | templar-20 | Level 20; the sword of Q24016, the shield, 20 powder; then 2,000 DP and 45% HP; then a tenth of its mana | Unhurt: Dazing Severe Blow, Divine Blow, Shield Bash, Ferocious Strike, Robust Blow 0.8 s later, Wrath Strike 0.7 s after that. Hurt: the life potion, Empyrean Chastisement first at 54% HP, Dazing Severe Blow, Divine Blow, Ferocious Strike, Robust Blow, Rage at 55% HP, Body Smash; DP 7 left. Rest from 156 of 1,562 MP: MP Recovery once for two powder, a sit, the life potion. | A starved mosbear (level 13) killed in 8.3 s, lowest HP 1,750 of 1,852; the next in 13.6 s. After the rest 1,671 of 1,852 HP and 1,049 of 1,562 MP. |
+      | templar-25 | Level 25; the same sword and shield, 20 Odella Powder; then three starved mosbears set on it; then half HP | Three fights alone: Dazing Severe Blow, Divine Blow, Shield Bash once (its minute), Ferocious Strike, Robust Blow, Wrath Strike, Body Smash. Against the pack: one swing, then it left, with three attackers. Rest: the fourth rank of Herb Treatment for one Odella Powder, the life potion, a sit. | Three kills in 14.2 s, 16.0 s and 13.6 s; 2,498 HP became 2,371 over the three. One retreat, no death. |
+
+      In no fight was a skill decided more than twice running, and the server answered
+      no cast with a missing shield. Every decision carries the table natural-templar-v1.
+    - **What the rows decide.**
+      - **Empyrean Chastisement** goes first when the Templar is at or below 70% HP
+        (Sc/Classes/NaturalTemplarProfile.cs). Unhurt it is not cast.
+      - **The mana floor of NR-50a stands.** One MP Recovery brought a tenth of its mana
+        to two thirds. The fights cost little: its mana was 13 to 15 lower after a kill
+        at levels 20 and 25, where only Shield Bash and Rage cost anything.
+      - **The shield** is worth its place: the level-10 kill was 2.8 s shorter with Shield
+        Bash, and the lowest HP 807 against 705.
+      - **Aether Leash stays out.** Every monster of the rows was walked up to. None of
+        them attacks from range; the legs have some, and the round that meets them says
+        whether the leash gets a rule. Its reason in the profile stands.
+      - **Stubborn Spirit** is NR-50d's: off.
+    - **Found, and logged (rule (f)).**
+      - **Rage after Empyrean Chastisement ends the chain.** In the hurt fight Rage's
+        result came without the chain flag, the chain was gone, and Wrath Strike did not
+        follow (trace a2b, templar-20, step s04). Java ends the chain when every effect of
+        a step is resisted or dodged (Skill.java 601-609 and 630-639). Rage's shield
+        and the veil Empyrean Chastisement leaves on the Templar have one effect id
+        (154), so the likely reading is that Rage's shield was refused beside the veil; in the
+        Warrior's traces Rage keeps the chain. It costs one Rage and one Wrath Strike for
+        each 2,000 DP. No rule yet: the table cannot say "not while an effect is seen"
+        for an attack role.
+      - **Three attackers.** A level-25 Templar left three level-13 monsters at once, by
+        the Warrior's limit. Whether a Templar should stand against more is for the
+        rounds to show; the limit is one number of its table.
+      - **A monster that is walking home ends a fight at once** (combat-target-returned).
+        It is the journey's ordinary give-up and the caller plans again; here it was the
+        row that asked for such a monster.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-51/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
+      16 skipped) and Fast passes (run nr51-fast, 11 passed).
 - [ ] **NR-52 - Templar: to Altgard.** Depends: NR-51; ticked by the round that gives it
   - Work: A fresh Asimtemplar plays Ishalgen as a Warrior, the trial, the Templar choice
     at Munin, the ceremony with the sword and the dispatch Q2901, and is captured at the
@@ -4045,3 +4112,12 @@ report what was done, what is parked or blocked, and what the operator must deci
   Templar's table leaves it off. The form that keeps a toggle on is left to the Chanter's
   survey (NR-70): its mantras, and later the Gladiator's, the Assassin's and the Rider's
   toggles. Seven checks pass. Next: NR-51, the Templar's probe rows.
+- 2026-10-09 — Loop: NR-51 done on the second attempt. Four probe rows, templar-10 to
+  templar-25, at the Cleric's places: five kills, two retreats at three attackers, no
+  death; the three chains, Shield Bash only with a shield worn, Empyrean Armor in the
+  emergency, Rage and Empyrean Chastisement only when hurt, and the rest with the powder
+  all shown. One change: Empyrean Chastisement goes first when hurt (it stood last and a
+  monster was dead before its turn). Found: Rage after it ends the chain. Full gate
+  guard-p8 (twelve scopes identical), seven checks, unit suite (4,629 passed, 16 skipped)
+  and Fast (nr51-fast) pass. Next: NR-52, the Templar to Altgard, alone, as the first
+  play of the bridge by a line that is not the Priest's.

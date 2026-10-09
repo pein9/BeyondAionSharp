@@ -41,6 +41,10 @@ public sealed partial class SimulationFastScenarioTests
 		new("cleric-16", NaturalClassLine.PriestCleric, ProbeAccountB, "Asimsixcleric"),
 		new("cleric-20", NaturalClassLine.PriestCleric, ProbeAccountA, "Asimtwecleric"),
 		new("cleric-25", NaturalClassLine.PriestCleric, ProbeAccountB, "Asimtfcleric"),
+		new("templar-10", NaturalClassLine.WarriorTemplar, ProbeAccountA, "Asimtentemp"),
+		new("templar-16", NaturalClassLine.WarriorTemplar, ProbeAccountB, "Asimsixtemp"),
+		new("templar-20", NaturalClassLine.WarriorTemplar, ProbeAccountA, "Asimtwetemp"),
+		new("templar-25", NaturalClassLine.WarriorTemplar, ProbeAccountB, "Asimtftemp"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -77,6 +81,14 @@ public sealed partial class SimulationFastScenarioTests
 			player.GetLifeStats().SetCurrentHpPercent(percent);
 			await session.SynchronizeAsync(token);
 			Assert.True(session.Api.World.CurrentHp * 100 <= session.Api.World.MaxHp * percent, $"HP was not cut to {percent}%.");
+		}
+
+		/// <summary>NR-51: the director cuts the character's MP to a percentage of its maximum; the client sees the MP update.</summary>
+		public async Task CutMpAsync(int percent)
+		{
+			player.GetLifeStats().SetCurrentMpPercent(percent);
+			await session.SynchronizeAsync(token);
+			Assert.True(session.Api.World.CurrentMp * 100 <= session.Api.World.MaxMp * percent, $"MP was not cut to {percent}%.");
 		}
 
 		/// <summary>The director places the character on its map; the client takes the position the teleport gave it.</summary>
@@ -218,6 +230,10 @@ public sealed partial class SimulationFastScenarioTests
 			case "cleric-16": await ClericLevelSixteenRowAsync(probe, id, token); break;
 			case "cleric-20": await ClericLevelTwentyRowAsync(probe, id, token); break;
 			case "cleric-25": await ClericLevelTwentyFiveRowAsync(probe, id, token); break;
+			case "templar-10": await TemplarLevelTenRowAsync(probe, id, token); break;
+			case "templar-16": await TemplarLevelSixteenRowAsync(probe, id, token); break;
+			case "templar-20": await TemplarLevelTwentyRowAsync(probe, id, token); break;
+			case "templar-25": await TemplarLevelTwentyFiveRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -836,7 +852,7 @@ public sealed partial class SimulationFastScenarioTests
 	private const int ClericProbeMap = 220030000;
 	private const string ClericTable = "natural-cleric-v1:";
 
-	/// <summary>One fight of a Cleric row, with what the trace says of it.</summary>
+	/// <summary>One fight of a Cleric row, with what the trace says of it. NR-51: and of any row that fights by a rule table.</summary>
 	private sealed record ClericFight(NaturalCombatDiagnosticResult Result, IReadOnlyList<StarterTraceRecord> Records, StarterTraceRecord[] Decided,
 		List<(int SkillId, TimeSpan At)> Casts, IReadOnlyDictionary<string, int> Decisions)
 	{
@@ -850,14 +866,19 @@ public sealed partial class SimulationFastScenarioTests
 
 	/// <summary>Fights one monster through the journey's fight, in its own step, and reads the step's trace. Every decision
 	/// must be the Cleric table's.</summary>
-	private static async Task<ClericFight> ClericFightAsync(StarterProbe probe, string step, string name, Func<Task<int>> target, CancellationToken token)
+	private static Task<ClericFight> ClericFightAsync(StarterProbe probe, string step, string name, Func<Task<int>> target, CancellationToken token) =>
+		TableFightAsync(probe, ClericTable, step, name, target, token);
+
+	/// <summary>NR-51: one fight through the journey's fight, in its own step. Every decision must be the named table's.</summary>
+	private static async Task<ClericFight> TableFightAsync(StarterProbe probe, string table, string step, string name, Func<Task<int>> target,
+		CancellationToken token)
 	{
 		probe.Session.BeginStep(step, name);
 		NaturalCombatDiagnosticResult result = await probe.Journey.RunObservedCombatAsync(_ => target(), token);
 		IReadOnlyList<StarterTraceRecord> records = probe.TraceOf(step);
 		StarterTraceRecord[] decided = DecidedIn(records);
 		Assert.NotEmpty(decided);
-		Assert.All(decided, record => Assert.StartsWith(ClericTable, record.Fields.GetProperty("policyVersion").GetString()));
+		Assert.All(decided, record => Assert.StartsWith(table, record.Fields.GetProperty("policyVersion").GetString()));
 		return new(result, records, decided, probe.CastsOf(step).ToList(), probe.DecisionsOf(step));
 	}
 
@@ -1069,6 +1090,282 @@ public sealed partial class SimulationFastScenarioTests
 			$"Then one more, against {pack.Length} starved mosbears the director spawned 4 m away and set on the Cleric: " +
 			$"{swarm.Result}; Root decided with {swarm.Decided[rooted].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32()} attackers: {reason} " +
 			$"Casts {swarm.Order}; decisions {swarm.Counts}. HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, dead {probe.Server.IsDead()}.");
+	}
+
+	private const string TemplarTable = "natural-templar-v1:";
+	private const int TemplarShield = 115000024, LesserOdellaPowder = 169300003, OdellaPowder = 169300004;
+
+	/// <summary>NR-51: prepared by the director: items put into the character's bag. The journey's equipment check wears
+	/// what its gear rules choose.</summary>
+	private static async Task GiveAsync(StarterProbe probe, CancellationToken token, params (int ItemId, long Count)[] items)
+	{
+		foreach ((int itemId, long count) in items)
+			Assert.Equal(0, Aion.GameServer.Services.Items.ItemService.AddItem(probe.Server, itemId, count, allowInventoryOverflow: true));
+		await probe.Session.SynchronizeAsync(token);
+	}
+
+	private static int Held(StarterProbe probe, long slot) =>
+		probe.World.Inventory.Values.SingleOrDefault(item => item.Details.EquippedSlot == slot)?.ItemId ?? 0;
+
+	/// <summary>NR-51: no skill was decided three times running, which is what a cast the server refuses looks like (a cast
+	/// that is carried out starts its cooldown and is not chosen again), and the server never said a shield was missing.</summary>
+	private static void AssertNoRefusedCastRepeats(ClericFight fight)
+	{
+		int run = 0, longest = 0, last = 0;
+		foreach (StarterTraceRecord record in fight.Decided)
+		{
+			int skill = record.Fields.GetProperty("action").GetString() is "cast-target" or "cast-self" &&
+				record.Fields.GetProperty("skillId") is { ValueKind: JsonValueKind.Number } id ? id.GetInt32() : 0;
+			run = skill != 0 && skill == last ? run + 1 : skill != 0 ? 1 : 0;
+			last = skill;
+			longest = Math.Max(longest, run);
+		}
+		Assert.True(longest <= 2, $"A skill was decided {longest} times running: {fight.Order}; decisions {fight.Counts}.");
+		Assert.DoesNotContain(fight.Records, record => record is { Direction: "<", Packet: "SM_SYSTEM_MESSAGE" } &&
+			record.Fields.GetProperty("name").GetString() is "STR_SKILL_NEED_SHIELD" or "STR_SKILL_NEED_DUAL_WEAPON");
+	}
+
+	/// <summary>What the table said of a skill at the fight's first decision: legal, or the reasons it was refused.</summary>
+	private static string CandidateAtStart(ClericFight fight, int skillId)
+	{
+		JsonElement candidate = fight.Decided[0].Fields.GetProperty("candidateActions").EnumerateArray()
+			.Single(entry => entry.GetProperty("SkillId") is { ValueKind: JsonValueKind.Number } id && id.GetInt32() == skillId);
+		return candidate.GetProperty("Legal").GetBoolean() ? "legal"
+			: string.Join(" ", candidate.GetProperty("IllegalReasons").EnumerateArray().Select(reason => reason.GetString()));
+	}
+
+	/// <summary>The journey's rest in its own step, with the powder skills it cast.</summary>
+	private static async Task<(IReadOnlyList<StarterTraceRecord> Records, int[] Casts)> RestStepAsync(StarterProbe probe, string step, string name,
+		CancellationToken token)
+	{
+		probe.Session.BeginStep(step, name);
+		await probe.Journey.RunObservedRestAsync(token);
+		return (probe.TraceOf(step), probe.CastsOf(step).Select(cast => cast.SkillId).ToArray());
+	}
+
+	private static string Outcome(ClericFight fight) => $"{fight.Result}; casts {fight.Order}; decisions {fight.Counts}";
+
+	/// <summary>
+	/// NR-51, row templar-10. Prepared by the director: the Warrior is made a level-10 Templar with the skills of every
+	/// level up to it, is given the ceremony's sword (100000640) and is placed in Altgard by the ice crasaurs (210415,
+	/// level 11), where the Cleric's row fights. The first fight is fought with nothing in the off hand: Shield Bash is
+	/// refused by the table and never sent. Then the director gives Raider's Shield, the journey's equipment check wears
+	/// it, and the second fight casts Shield Bash. Last the director gives powder and halves the HP, and the journey's
+	/// rest casts Herb Treatment. A kill and a retreat are recorded outcomes.
+	/// </summary>
+	private async Task TemplarLevelTenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int crasaur = 210415, sword = 100000640, dazing = 3055, bash = 3072, strike = 2865, robust = 2878, herb = 246;
+		probe.Session.BeginStep("s01", "director-makes-a-level-ten-templar-in-altgard");
+		await probe.BecomeAsync(PlayerClass.TEMPLAR, 10);
+		Assert.All(new[] { dazing, bash, strike, robust, 2891, 2903, 3019, herb, 249 }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 10."));
+		await GiveAsync(probe, token, (sword, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1473.2f, 1765.2f, 247.5f);
+		probe.Session.BeginStep("s02", "equipment-check-with-the-sword");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal((sword, 0), (Held(probe, 1), Held(probe, 2)));
+
+		Npc first = NearestLiving(probe, crasaur);
+		ClericFight bare = await TableFightAsync(probe, TemplarTable, "s03", "fight-an-ice-crasaur-with-no-shield", () => Task.FromResult(first.GetObjectId()), token);
+		AssertNoRefusedCastRepeats(bare);
+		Assert.DoesNotContain(bare.Casts, cast => cast.SkillId == bash);
+		string refused = CandidateAtStart(bare, bash);
+		Assert.Contains("needs a shield", refused);
+		Assert.Contains(bare.Casts, cast => cast.SkillId == dazing);
+		Assert.True(bare.Run([strike], [robust]) >= 0, $"Robust Blow did not follow Ferocious Strike at once: {bare.Order}.");
+		Assert.True(bare.Result.Killed || bare.Result.Retreats > 0, $"The first fight ended neither way: {bare.Result}.");
+
+		probe.Session.BeginStep("s04", "director-gives-a-shield-then-equipment-check");
+		await GiveAsync(probe, token, (TemplarShield, 1));
+		IReadOnlyList<NaturalGearUpgrade> worn = await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal((sword, TemplarShield), (Held(probe, 1), Held(probe, 2)));
+		Assert.True(probe.Server.GetEquipment().IsShieldEquipped());
+
+		Npc second = NearestLiving(probe, crasaur);
+		ClericFight shielded = await TableFightAsync(probe, TemplarTable, "s05", "fight-an-ice-crasaur-with-the-shield", () => Task.FromResult(second.GetObjectId()), token);
+		AssertNoRefusedCastRepeats(shielded);
+		Assert.Contains(shielded.Casts, cast => cast.SkillId == bash);
+		Assert.True(shielded.Result.Killed || shielded.Result.Retreats > 0, $"The second fight ended neither way: {shielded.Result}.");
+
+		// Prepared by the director: powder, and half HP. The rest is the journey's.
+		await GiveAsync(probe, token, (LesserOdellaPowder, 20));
+		await probe.CutHpAsync(50);
+		int hpBefore = probe.World.CurrentHp;
+		(IReadOnlyList<StarterTraceRecord> rest, int[] restCasts) = await RestStepAsync(probe, "s06", "director-gives-powder-and-halves-hp-then-rest", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+		Assert.True(probe.World.CurrentHp * 100 >= probe.World.MaxHp * 90, $"The rest ended at {probe.World.CurrentHp}/{probe.World.MaxHp}.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Templar, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}. No shield: {Outcome(bare)}; Shield Bash at the first decision: {refused} " +
+			$"With the shield (the check asked for {string.Join(", ", worn.Select(upgrade => $"{upgrade.ItemId} to slot {upgrade.Slot}"))}): {Outcome(shielded)}. " +
+			$"Rest from {hpBefore} HP: casts {string.Join(" ", restCasts)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left, " +
+			$"life potions drunk {rest.Count(record => record is { Direction: "action", Packet: "rest-life-potion" })}, sits {rest.Count(record => record is { Direction: "action", Packet: "rest-sit-for-health" })}. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-51, row templar-16. Prepared by the director: a level-16 Templar with the sword of Q24013, the plate shoes and
+	/// breastplate of Q24011 and Q24012 and Raider's Shield in the bag, by the tusked mosbears (210437, level 14) of the
+	/// Cleric's row. The journey's equipment check wears them. Before the first fight begins the director cuts HP to 30%:
+	/// by the ladder the life potion is drunk and Empyrean Armor is cast in the emergency. Then Divine Blow follows
+	/// Dazing Severe Blow, and Shield Bash is cast. A kill, a retreat and a death are recorded outcomes: the spot brings
+	/// two more monsters, and with three on it the Templar leaves, as the Cleric does there.
+	/// </summary>
+	private async Task TemplarLevelSixteenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210437, sword = 100001735, shoes = 114601575, torso = 110601622, armor = 3129, dazing = 3056, divine = 3132, bash = 3073;
+		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-templar-in-altgard");
+		await probe.BecomeAsync(PlayerClass.TEMPLAR, 16);
+		Assert.All(new[] { armor, dazing, divine, bash, 2867, 2879, 2904 }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 16."));
+		await GiveAsync(probe, token, (sword, 1), (TemplarShield, 1), (shoes, 1), (torso, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1427.2f, 789.9f, 249.9f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		IReadOnlyList<NaturalGearUpgrade> worn = await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal((sword, TemplarShield), (Held(probe, 1), Held(probe, 2)));
+		Assert.All(new[] { shoes, torso }, piece => Assert.Contains(probe.World.Inventory.Values, item => item.ItemId == piece && item.Details.EquippedSlot.GetValueOrDefault() != 0));
+
+		Npc first = NearestLiving(probe, mosbear);
+		ClericFight emergency = await TableFightAsync(probe, TemplarTable, "s03", "fight-a-tusked-mosbear-from-three-tenths-hp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 30% HP as the fight begins.
+			await probe.CutHpAsync(30);
+			return first.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(emergency);
+		StarterTraceRecord[] armored = emergency.Decided.Where(record => Decided(record, "cast-self", armor)).ToArray();
+		Assert.True(armored.Length > 0, $"Empyrean Armor was not cast: {emergency.Order}; decisions {emergency.Counts}.");
+		JsonElement at = armored[0].Fields.GetProperty("observedState");
+		Assert.True(at.GetProperty("InEmergency").GetBoolean(), "Empyrean Armor was decided outside an emergency.");
+		int armoredAt = at.GetProperty("Hp").GetInt32() * 100 / at.GetProperty("MaxHp").GetInt32();
+		Assert.Contains(emergency.Casts, cast => cast.SkillId == armor);
+
+		Assert.All(armored, record => Assert.True(record.Fields.GetProperty("observedState").GetProperty("InEmergency").GetBoolean()));
+		Assert.True(emergency.Run([dazing], [divine]) >= 0, $"Divine Blow did not follow Dazing Severe Blow at once: {emergency.Order}.");
+		Assert.Contains(emergency.Casts, cast => cast.SkillId == bash);
+		StarterTraceRecord? left = emergency.Decided.FirstOrDefault(record => record.Fields.GetProperty("action").GetString() == "retreat");
+		Console.WriteLine($"{id}: level {probe.World.Level} Templar, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}; the check asked for " +
+			$"{string.Join(", ", worn.Select(upgrade => $"{upgrade.ItemId} to slot {upgrade.Slot}"))}. From 30% HP: {Outcome(emergency)}; Empyrean Armor decided at {armoredAt}% HP in an emergency. " +
+			$"It left: {left?.Fields.GetProperty("reason").GetString() ?? "no"} HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>
+	/// NR-51, row templar-20. Prepared by the director: a level-20 Templar with the sword of Q24016 and Raider's Shield, by
+	/// the starved mosbears (210564, level 13) of the Cleric's row, with powder in the bag. The first fight is the
+	/// journey's alone: Wrath Strike follows Robust Blow, which follows Ferocious Strike. Before the second begins the
+	/// director gives 2,000 DP and cuts HP to 45%: Rage is cast in its chain and Empyrean Chastisement once nothing else
+	/// is ready, both only while it is hurt. Then the director cuts MP to 10% and the journey's rest casts MP Recovery.
+	/// </summary>
+	private async Task TemplarLevelTwentyRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, sword = 100001737, strike = 2867, robust = 2880, wrath = 3038, rage = 2905, chastise = 3021, recovery = 252;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-templar-in-altgard");
+		await probe.BecomeAsync(PlayerClass.TEMPLAR, 20);
+		Assert.All(new[] { strike, robust, wrath, rage, chastise, recovery, 251, 3057, 3074 }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 20."));
+		await GiveAsync(probe, token, (sword, 1), (TemplarShield, 1), (LesserOdellaPowder, 20));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal((sword, TemplarShield), (Held(probe, 1), Held(probe, 2)));
+
+		Npc first = NearestLiving(probe, mosbear);
+		ClericFight plain = await TableFightAsync(probe, TemplarTable, "s03", "fight-a-starved-mosbear", () => Task.FromResult(first.GetObjectId()), token);
+		AssertNoRefusedCastRepeats(plain);
+		int chain = plain.Run([strike], [robust], [wrath]);
+		Assert.True(chain >= 0, $"Wrath Strike did not follow Robust Blow and Ferocious Strike at once: {plain.Order}.");
+		TimeSpan second = plain.Casts[chain + 1].At - plain.Casts[chain].At, third = plain.Casts[chain + 2].At - plain.Casts[chain + 1].At;
+		Assert.True(second <= TimeSpan.FromSeconds(3) && third <= TimeSpan.FromSeconds(3), $"The chain's steps came {second.TotalMilliseconds:F0} ms and {third.TotalMilliseconds:F0} ms apart: {plain.Order}.");
+		Assert.DoesNotContain(plain.Casts, cast => cast.SkillId == chastise);
+		Assert.Equal(0, plain.Result.Deaths);
+
+		Npc next = NearestLiving(probe, mosbear);
+		ClericFight hurt = await TableFightAsync(probe, TemplarTable, "s04", "fight-a-starved-mosbear-from-under-half-hp-with-dp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 2,000 DP and 45% HP as the fight begins.
+			await probe.SetDpAsync(2000);
+			await probe.CutHpAsync(45);
+			return next.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(hurt);
+		int HpPercent(StarterTraceRecord record) => record.Fields.GetProperty("observedState").GetProperty("Hp").GetInt32() * 100 /
+			record.Fields.GetProperty("observedState").GetProperty("MaxHp").GetInt32();
+		StarterTraceRecord[] raged = hurt.Decided.Where(record => Decided(record, "cast-self", rage)).ToArray();
+		StarterTraceRecord[] chastised = hurt.Decided.Where(record => Decided(record, "cast-target", chastise)).ToArray();
+		Assert.All(raged, record => Assert.True(HpPercent(record) <= 80, $"Rage was decided at {HpPercent(record)}% HP."));
+		Assert.All(chastised, record => Assert.True(HpPercent(record) <= 70, $"Empyrean Chastisement was decided at {HpPercent(record)}% HP."));
+		Assert.True(raged.Length > 0, $"Rage was not cast while hurt: {hurt.Order}; decisions {hurt.Counts}.");
+		Assert.True(chastised.Length > 0, $"Empyrean Chastisement was not cast while hurt with 2,000 DP: {hurt.Order}; decisions {hurt.Counts}.");
+		Assert.True(probe.World.CurrentDp < 2000, $"The DP was not spent: {probe.World.CurrentDp}.");
+		Assert.Equal(0, hurt.Result.Deaths);
+
+		// Prepared by the director: a tenth of its mana. The rest is the journey's.
+		probe.Session.BeginStep("s05", "director-cuts-mp");
+		await probe.CutMpAsync(10);
+		int mpBefore = probe.World.CurrentMp;
+		(IReadOnlyList<StarterTraceRecord> rest, int[] restCasts) = await RestStepAsync(probe, "s06", "rest-from-a-tenth-of-its-mana", token);
+		Assert.Contains(recovery, restCasts);
+		Assert.True(probe.World.CurrentMp * 100 >= probe.World.MaxMp * 50, $"The rest ended at {probe.World.CurrentMp}/{probe.World.MaxMp} MP.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Templar, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}. Unhurt: {Outcome(plain)}; " +
+			$"Robust Blow {second.TotalMilliseconds:F0} ms after Ferocious Strike, Wrath Strike {third.TotalMilliseconds:F0} ms after Robust Blow. " +
+			$"From 45% HP with 2,000 DP: {Outcome(hurt)}; Rage decided at {string.Join(", ", raged.Select(HpPercent))}% HP, " +
+			$"Empyrean Chastisement at {string.Join(", ", chastised.Select(HpPercent))}% HP; DP left {probe.World.CurrentDp}. " +
+			$"Rest from {mpBefore} MP: casts {string.Join(" ", restCasts)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left, " +
+			$"mana sits {rest.Count(record => record is { Direction: ">", Packet: "CM_EMOTION" })}. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-51, row templar-25. Prepared by the director: a level-25 Templar with the sword of Q24016 and Raider's Shield, by
+	/// the starved mosbears (210564, level 13), with Odella Powder in the bag. Three fights are the journey's alone, for
+	/// the numbers. Then, before one more begins, the director spawns three starved mosbears 4 m from the Templar and sets
+	/// them on it: with three attackers the journey leaves. Last the director halves the HP and the rest casts the fourth
+	/// rank of Herb Treatment, which spends Odella Powder.
+	/// </summary>
+	private async Task TemplarLevelTwentyFiveRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, sword = 100001737, herb = 253;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-five-templar-in-altgard");
+		await probe.BecomeAsync(PlayerClass.TEMPLAR, 25);
+		Assert.All(new[] { 2868, 2881, 3039, 2906, 2894, 3022, 3058, 3133, 3075, herb, 254 }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 25."));
+		await GiveAsync(probe, token, (sword, 1), (TemplarShield, 1), (OdellaPowder, 20));
+		BotNavigationGeometry geometry = await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal((sword, TemplarShield), (Held(probe, 1), Held(probe, 2)));
+
+		var lines = new List<string>();
+		for (int fights = 1; fights <= 3; fights++)
+		{
+			Npc next = NearestLiving(probe, mosbear);
+			int hp = probe.World.CurrentHp;
+			ClericFight fight = await TableFightAsync(probe, TemplarTable, $"s03-{fights}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			Assert.Equal(0, fight.Result.Deaths);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0, $"Fight {fights} ended neither way: {fight.Result}.");
+			lines.Add($"fight {fights}: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}");
+		}
+
+		Npc[] pack = [];
+		ClericFight swarm = await TableFightAsync(probe, TemplarTable, "s04", "fight-a-pack-of-three-starved-mosbears", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: three starved mosbears 4 m away, set on the Templar.
+			pack = await SpawnSetOnAsync(probe, geometry, mosbear, 3, token);
+			return pack[0].GetObjectId();
+		}, token);
+		RemoveSetOn(pack);
+		int left = Array.FindIndex(swarm.Decided, record => record.Fields.GetProperty("action").GetString() == "retreat");
+		Assert.True(left >= 0, $"The Templar did not leave three attackers: {swarm.Order}; decisions {swarm.Counts}.");
+		int attackers = swarm.Decided[left].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32();
+		Assert.True(attackers >= 3, $"It left with {attackers} attackers: {swarm.Decided[left].Fields.GetProperty("reason").GetString()}");
+
+		// Prepared by the director: half HP. The rest is the journey's.
+		probe.Session.BeginStep("s05", "director-halves-hp");
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		(IReadOnlyList<StarterTraceRecord> _, int[] restCasts) = await RestStepAsync(probe, "s06", "rest-from-half-hp-with-odella-powder", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(OdellaPowder) < 20, "No Odella Powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Templar, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}. " + string.Join("; ", lines) +
+			$". Then against {pack.Length} starved mosbears the director spawned 4 m away and set on it: {Outcome(swarm)}; it left with {attackers} attackers: " +
+			$"{swarm.Decided[left].Fields.GetProperty("reason").GetString()} Rest: casts {string.Join(" ", restCasts)}, Odella Powder {probe.Owned(OdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, dead {probe.Server.IsDead()}.");
 	}
 
 	/// <summary>The living monster of a template nearest to another monster.</summary>

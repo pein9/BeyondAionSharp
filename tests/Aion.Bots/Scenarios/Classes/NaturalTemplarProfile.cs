@@ -62,9 +62,10 @@ public static class NaturalTemplarProfile
 	/// Robust Blow after it (Java ChainCondition.validate: the current or the previous chain step). Of the openers,
 	/// Dazing Severe Blow goes first (it slows the target's attacks and lowers its defence for 12 s), then Shield Bash
 	/// while a shield is worn (a 2 s stun once a minute, 30 to 49 MP), then Ferocious Strike, then Body Smash. Empyrean
-	/// Chastisement goes last and only at or below 70% HP: its 2,000 DP also buy a
-	/// shield that takes half of every hit for 15 s. The weapon swings whenever no skill is ready. Nothing reaches a
-	/// target that is not on the Templar, so it walks in.
+	/// Chastisement is cast only at or below 70% HP, and then before every other opener: its 2,000 DP also buy a shield
+	/// that takes half of every hit for 15 s, which is worth most at the start of what is left of the fight. NR-51: it
+	/// stood last at first, and a monster of the route was dead before its turn came. The weapon swings whenever no
+	/// skill is ready. Nothing reaches a target that is not on the Templar, so it walks in.
 	/// <para>
 	/// The ladder: the shield scroll at 50% HP, the life potion at or below 75%, and Empyrean Armor in an emergency only
 	/// (35% until 45%), whose 113 MP are kept back from Rage. It leaves at three attackers, or at 25% HP with nothing ready.
@@ -76,7 +77,7 @@ public static class NaturalTemplarProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-templar-v1",
-		Adjacent: ["dazing", "divine", "bash", "strike", "robust", "rage", "wrath", "smash", "chastise"], AtRange: [],
+		Adjacent: ["chastise", "dazing", "divine", "bash", "strike", "robust", "rage", "wrath", "smash"], AtRange: [],
 		Upkeep: [],
 		Recovery:
 		[
