@@ -6620,6 +6620,18 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				// a dead player's cast (CM_CASTSPELL: STR_SKILL_CANT_CAST, DEAD). A bind revive lands at the same bind
 				// point Return goes to, so it replaces the cast; the death is recorded, not failed (OD-12).
 				if (await RevivedInsteadOfReturnAsync()) return;
+				// NR-54b: a fight lost while Return cools down ends in a bind revive too, inside the defence. That revive
+				// stands at the bind point Return goes to, so it replaces the cast in the same way.
+				int bindRevivesBefore = combat.BindReviveCount;
+				bool RevivedAtBindMeanwhile()
+				{
+					if (combat.BindReviveCount == bindRevivesBefore) return false;
+					session.TraceDiagnostic("natural-return-replaced-by-bind-revive", new Dictionary<string, object?>
+					{
+						["position"] = session.CurrentPosition, ["bindRevives"] = combat.BindReviveCount - bindRevivesBefore,
+					});
+					return true;
+				}
 				// A checked route can fail again soon after a prior Return. Honor the
 				// SM_CASTSPELL_RESULT cooldown while staying ready to fight nearby monsters.
 				TimeSpan remainingCooldown = session.Api.Timing.TimeUntilCast(returnSkillId);
@@ -6642,6 +6654,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						await session.SynchronizeAsync(token);
 					}
 				}
+				if (RevivedAtBindMeanwhile()) return;
 				BotPosition origin = session.CurrentPosition;
 				int packetStart;
 				DecodedBotServerPacket result;
@@ -6649,7 +6662,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				// player fights it off, recovers and casts again.
 				for (int attempt = 1; ; attempt++)
 				{
-					if (await RevivedInsteadOfReturnAsync()) return;
+					if (await RevivedInsteadOfReturnAsync() || RevivedAtBindMeanwhile()) return;
 					packetStart = session.PacketHistory.Count;
 					TimeSpan castGate = session.Api.Timing.TimeUntilCast(returnSkillId);
 					if (castGate > TimeSpan.Zero) await session.AdvanceAsync(castGate + TimeSpan.FromMilliseconds(1), token);

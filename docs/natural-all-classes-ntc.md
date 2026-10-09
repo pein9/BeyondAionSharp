@@ -3915,6 +3915,55 @@ The template:
 - [ ] **NR-54 - Templar: Altgard legs l6 to l11.** Depends: NR-53; ticked by its round
   - Work: As NR-53. Leg 11 is the destiny quest: its stone is 140000003 (NR-39).
   - Proof: Each capture verifies.
+  - 2026-10-09, legs l6 to l8 captured; leg l9 stopped, and with NR-54b a replay played it
+    to its end.
+    - **Captured** from the committed code at dd96cca3d, each with -LaterCapital from the
+      capture before it (runs nr54-l6-a1, nr54-l7-a1, nr54-l8-a1; logs
+      run/nr/NR-54/l6-a1.log and so on; character 133266):
+
+      | Snapshot | From | The leg | At its end | Dump sha256 |
+      |---|---|---|---|---|
+      | altgard-rc-l6-templar | altgard-rc-l5-templar | 2 h 02 min, no death | level 21, 119 quests, 46,882,001 ms of game time | 64f2165f563bda5c |
+      | altgard-rc-l7-templar | altgard-rc-l6-templar | 47 min, no death | level 22, 135 quests, 49,727,001 ms | aacce3a374a5fb7b |
+      | altgard-rc-l8-templar | altgard-rc-l7-templar | 24 min, no death | level 22, 142 quests, 51,189,226 ms | e20c2b9790429446 |
+
+    - **Leg l9, attempt 1** (capture run nr54-l9-a1 from altgard-rc-l8-templar; nothing
+      captured; evidence run/nr/NR-54/l9-a1/). At the robe's clothing, far from the hub,
+      a walk was blocked and the journey asked for Return, which had 10 min 49 s of its
+      cooldown left. While it waited, monsters came three at a time; the Templar
+      retreated, was cornered and died, and was revived at its bind in the hub. The
+      wait then ended and Return was cast where it stood: "Return completed but did not
+      move the Warrior out of the checked-route pocket." NR-54b.
+- [x] **NR-54b - A bind revive while Return cools down replaces the cast.** Depends: NR-53c
+  - Work: The stop of leg l9. Java first: nothing new; Return goes to the bind point and
+    a bind revive stands there (as read for NA-27). The journey already lets a death at
+    the moment of the cast take Return's place. A fight lost during the wait for
+    Return's cooldown is revived inside the defence, and the cast went on after it.
+  - Proof: The Templar's leg l9 is played to its end in a replay; the full gate
+    identical.
+  - 2026-10-09: done.
+    - **The change.** J, UseLearnedReturnToBindAsync: it counts the fight's bind revives
+      as it starts. After the cooldown wait, and before each attempt at the cast, a
+      count that has risen ends the helper: the character is at its bind, which is where
+      Return goes (natural-return-replaced-by-bind-revive). A run with no death in the
+      wait is as before.
+    - **Proof, the replay** (l9-a2 from altgard-rc-l8-templar; evidence
+      run/nr/NR-54b/l9-a2/, replay.json: passed; its receipt carries the label NR-54a,
+      given before this item had its letter). Leg l9 complete and verified: level 23,
+      152 quests, 1 h 04 min of game time, 38,102 records, 96 fights, six retreats, one
+      death, and Return replaced by the bind revive once.
+    - **Found, and logged (rule (f)).**
+      - **Eleven minutes of waiting in a monster's field.** The wait for Return's
+        cooldown is spent where the walk was blocked. It is the Cleric's rule too; the
+        Templar pays for it with a death here.
+      - **57 of 96 fights of the leg ended with the approach refused**, 33 with a kill.
+        The leg still ends; what refuses so many approaches is not looked into here.
+      - **Still the ceremony's sword at level 23.** Legs l6 to l9 have no stop that
+        wears what is in the bag (NR-53b).
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-54b/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
+      16 skipped) and Fast passes (run nr54b-fast, 11 passed).
 - [ ] **NR-54a - The coin tiers buy the shield.** Depends: NR-50c
   - Work: Split from NR-50c. Java first: the reward shops as read for NR-38
     (TradeService.performBuyFromShop and validateBuyItems), and which trade tab of
@@ -4447,3 +4496,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   21, 109 quests, 10 h 58 min of game time since
   creation. The Templar's five first Altgard legs are captured, after three lettered items
   (NR-53a to NR-53c). Next: NR-54, the Templar's legs l6 to l11.
+- 2026-10-09 — Loop: NR-54 legs l6 to l8 captured, NR-54b done. altgard-rc-l6-templar,
+  altgard-rc-l7-templar and altgard-rc-l8-templar are captured at dd96cca3d: levels 21,
+  22 and 22, no death. Leg l9 stopped: the Templar died while it waited out Return's
+  cooldown, was revived at its bind, and Return was then cast on the spot. A bind revive
+  during that wait now takes Return's place. Replay l9-a2 played the leg to its end:
+  level 23, 152 quests, one death. Full gate guard-p8 (twelve scopes identical), seven
+  checks, unit suite (4,629 passed, 16 skipped) and Fast (nr54b-fast) pass. Next: NR-54,
+  the captures of legs l9 to l11 from the committed code.
