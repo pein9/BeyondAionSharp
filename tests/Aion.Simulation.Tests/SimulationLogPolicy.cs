@@ -189,6 +189,22 @@ public sealed class SimulationLogPolicy : IDisposable
 	/// <summary>Read-only diagnosis; does not consume allowance counts or change the verdict.</summary>
 	public IReadOnlyList<SimulationProblem> SnapshotProblems() => CollectProblems();
 
+	/// <summary>
+	/// NR-44a: in a world of several bots, whose problems this policy answers for. The argument is the "bot" of the log
+	/// scope a problem was raised in: a bot's id inside that bot's own play, and empty while the world's clock runs
+	/// between turns. A virtual timer's failure is the world's. Null answers for every problem, as the one policy of a
+	/// scenario always did.
+	/// </summary>
+	public Func<string?, bool>? Owns { get; init; }
+
+	/// <summary>NR-44a: the problems the allowlist does not cover, read without completing the policy.</summary>
+	public IReadOnlyList<SimulationProblem> SnapshotUnallowlisted()
+	{
+		IReadOnlyList<SimulationProblem> problems = CollectProblems();
+		bool[] allowed = ClassifyAllowances(problems);
+		return problems.Where((_, index) => !allowed[index]).ToArray();
+	}
+
 	private IReadOnlyList<SimulationProblem> CollectProblems()
 	{
 		var problems = new List<SimulationProblem>(syntheticProblems);
@@ -197,6 +213,8 @@ public sealed class SimulationLogPolicy : IDisposable
 		{
 			if (entry.Exception != null && faults.Any(fault => ReferenceEquals(fault.Exception, entry.Exception)))
 				continue; // Report scheduler failures once, below, with their virtual due time.
+			if (Owns != null && !Owns(entry.Scopes.GetValueOrDefault("bot")))
+				continue; // Another bot's, or the world's.
 			bool selected = entry.Level >= LogLevel.Error ||
 				(entry.Level == LogLevel.Warning && entry.Exception != null) ||
 				(options.FailOnWarnings && entry.Level == LogLevel.Warning) ||
@@ -218,6 +236,7 @@ public sealed class SimulationLogPolicy : IDisposable
 
 		foreach (VirtualThreadPoolFault fault in faults)
 		{
+			if (Owns != null && !Owns(null)) break; // A timer's failure is the world's.
 			string template = $"Virtual {fault.Kind} timer failed";
 			LogFingerprintResult fingerprint = LogFingerprint.Create(template, fault.Exception, template);
 			problems.Add(new SimulationProblem(

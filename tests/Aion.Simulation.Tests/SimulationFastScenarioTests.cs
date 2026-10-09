@@ -781,7 +781,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		});
 
 	private SimulationLogPolicy NewPolicy(string scenario, bool includeHistory,
-		SimulationLogPolicyOptions? options = null) => new(
+		SimulationLogPolicyOptions? options = null, Func<string?, bool>? owns = null) => new(
 		Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? "sim-fast",
 		scenario,
 		fixture.Clock,
@@ -790,7 +790,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		captureProvider: fixture.LogCapture,
 		loggerFactory: fixture.LoggerFactory,
 		includeHistory: includeHistory,
-		evidence: evidence);
+		evidence: evidence) { Owns = owns };
 
 	private SimulationEvidenceWriter? OpenEvidence(string? directory)
 	{

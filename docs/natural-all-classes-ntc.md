@@ -1927,13 +1927,40 @@ can use them. The order below is the order of work: the item that saves time com
         seen by each of them. NR-44a.
       - **The Cleric's and the Chanter's lines share a character name**, so they cannot be
         in one world as they are. NR-47 gives a round's bots their names.
-- [ ] **NR-44a - A server problem is laid to the bot whose turn raised it.** Depends: NR-47
+- [x] **NR-44a - A server problem is laid to the bot whose turn raised it.** Depends: NR-47
   - Work: The turn table knows whose turn it is when a problem is logged. A problem raised
     in a bot's turn is that bot's alone; one raised while the clock moves is the world's,
     is written into the round's record, and stops no bot that did not meet it.
   - Proof: A one-time check, not committed, that logs a server problem in one bot's turn
     of a two-bot round: that bot stops and the other reaches its end. The full gate
     identical.
+  - 2026-10-09: done. A bot answers for the problems raised in its own play; the world's
+    are written into the round's record and stop no bot.
+    - **Java.** No server behavior is involved.
+    - **How a problem is laid to a bot.** The turn table did not have to be asked. A log
+      entry carries the scope it was raised in, and the scope follows a bot's play from
+      turn to turn. A bot's whole play in a round is now marked with its bot id. An entry
+      raised while the table moves the clock between turns has no bot.
+    - **The change.**
+      - tests/Aion.Simulation.Tests/SimulationLogPolicy.cs: Owns, a test on the "bot" of
+        the scope a problem was raised in. A policy with it answers only for the problems
+        it owns; a virtual timer's failure is the world's. Without it a policy answers for
+        every problem, as before. SnapshotUnallowlisted reads the problems the allowlist
+        does not cover without completing the policy.
+      - The round test: each bot's policy owns the entries of its own bot id, and its play
+        is marked for as long as it lasts. A policy of the world owns the entries with no
+        bot. After the round its problems are printed and written into round-outcome.json
+        as worldProblems. They do not fail the round.
+    - **Proof, the one-time check** (two lines, not committed; run nr44a-check,
+      run/nr/NR-44a/check-a1, round file run/nr/NR-44/round-2.json): an error logged in the
+      Mage's play and one logged outside any bot's play, before the round's first turn.
+      - The Mage stopped: its journey's own end check found "1 unallowlisted problem".
+      - The Warrior, in the same world, reached Q2004.
+      - The world's problem is in round-outcome.json's worldProblems and stopped neither.
+    - **Guard.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-44a/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical to their baselines. Seven pre-commit checks pass; Fast passes (run
+      nr44a-fast, 11 passed).
 - [x] **NR-47 - The round: runner, outcome records and round snapshots.** Depends: NR-44
   - Work: Survey C1, parts 7 and 8. The round file, the runner that starts its worlds side
     by side, the progress line and the outcome record for each bot, the round snapshot
@@ -2431,3 +2458,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   Engineer stops again. Four of the six stops so far are a bot meeting what another bot
   has taken. Written: NR-48 for it; NR-46c and NR-46d wait for it. Next: NR-44a, a server
   problem laid to the bot whose turn raised it.
+- 2026-10-09 — Loop: NR-44a done. A bot's play in a round is marked in the log's scope, and
+  its problem policy answers only for what was raised there; the world's problems are
+  written into the round's record and stop no bot. One-time check: the Mage with a problem
+  in its play stopped, the Warrior beside it reached its end. Full gate guard-p8: twelve
+  scopes identical. Seven checks and Fast (nr44a-fast) pass. Next: NR-48, a bot meets
+  what another bot has taken.

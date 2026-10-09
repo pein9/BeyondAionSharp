@@ -66,6 +66,9 @@ public sealed partial class SimulationFastScenarioTests
 			File.WriteAllText(Path.Combine(evidence, "monitor.json"), $"{{\"url\":\"{dashboardHost.Url}\",\"port\":{dashboardHost.Port}}}");
 		}
 
+		// NR-44a: the world's own problems, raised while its clock runs between turns. They are written into the round's
+		// record and stop no bot. A bot answers for the problems raised in its own play (PlayRoundBotAsync).
+		using var worldPolicy = NewPolicy("NR-ROUND-world", includeHistory: true, owns: string.IsNullOrEmpty);
 		// One journey has 45 minutes of real time. The bots of a world play one after another on one thread.
 		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(45 * round.Bots.Length));
 		var turns = new SimulationTurnTable(fixture.Clock);
@@ -104,8 +107,12 @@ public sealed partial class SimulationFastScenarioTests
 		}
 		// The world's clock: what it had when it was restored, and what this round played on top.
 		long restoredAt = long.TryParse(Environment.GetEnvironmentVariable("AION_SIM_NI08_ELAPSED_MS"), out long elapsed) && elapsed >= 0 ? elapsed : 0;
+		var worldProblems = worldPolicy.SnapshotUnallowlisted()
+			.Select(problem => new { problem.Fingerprint, problem.Kind, Level = problem.Level.ToString(), problem.Message }).ToArray();
+		foreach (var problem in worldProblems)
+			Console.WriteLine($"Natural round {run}: a problem of the world, {problem.Kind} {problem.Level}: {problem.Message}");
 		File.WriteAllText(Path.Combine(evidence, "round-outcome.json"),
-			JsonSerializer.Serialize(new { run, seed = fixture.Seed, worldElapsedMillis = restoredAt + fixture.Clock.NowMillis, bots = outcomes }, RoundJson));
+			JsonSerializer.Serialize(new { run, seed = fixture.Seed, worldElapsedMillis = restoredAt + fixture.Clock.NowMillis, worldProblems, bots = outcomes }, RoundJson));
 	}
 
 	/// <summary>The account of a round's first seat; the next seats follow. Clear of the solo account 41 and the probe accounts.</summary>
@@ -124,7 +131,10 @@ public sealed partial class SimulationFastScenarioTests
 		long began = fixture.Clock.NowMillis;
 		using var trace = BotActionTraceWriter.Open(tracePath, run, bot, $"sim-player-{account}",
 			virtualTime: () => TimeSpan.FromMilliseconds(fixture.Clock.NowMillis));
-		using var policy = NewPolicy($"NR-ROUND-{line.Id}", includeHistory: true);
+		// NR-44a: this bot answers for the problems raised in its own play, and for no other's. Its play is marked in
+		// the log's scope for as long as it lasts; the mark follows the bot from turn to turn.
+		using var policy = NewPolicy($"NR-ROUND-{line.Id}", includeHistory: true, owns: raisedBy => raisedBy == bot);
+		using var turn = policy.BeginBotStep(bot, "round");
 		SimulationL0Session? session = null;
 		string outcome = "stopped";
 		Exception? stop = null;
