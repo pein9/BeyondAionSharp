@@ -345,6 +345,29 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						["coins"] = new[] { classGear.IncomingCoins, classGear.RewardCoins, classGear.EndpointCoins },
 					});
 				}
+				// NR-38b: the Abyss entry's two coin tiers are the class's own: its vendor, its pieces and its weapon.
+				if (own.AbyssEntry is { } abyss)
+				{
+					NaturalAbyssCoinArmor armor = abyss.CoinArmor;
+					IReadOnlyList<int> vendors = NaturalCoinManifests.VendorsBeside(runtime.Data, NaturalAbyssEntry.Morheim, armor.VendorNpcId, armor.CoinItemId);
+					NaturalIshalgenInventoryPolicy sold = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot,
+						vendors.SelectMany(npc => NaturalCoinManifests.Sold(runtime.Data, npc)), ClassLine);
+					NaturalCoinManifest[] manifests = [.. armor.Tiers.Select(tier =>
+						NaturalCoinManifests.For(runtime.Data, vendors, armor.CoinItemId, tier.Level, rules, sold.Item))];
+					int Tab(int itemId) => runtime.Data.TradeListDataDh.GetTradeListTemplate(manifests[0].VendorNpcId).GetTradeTablist()
+						.Select(entry => entry.GetId()).First(id => runtime.Data.GoodsListDataDh.GetGoodsListById(id)?.GetItemIdList().Contains(itemId) == true);
+					NaturalCoinPiece weapon = manifests[0].Weapon ?? throw new InvalidDataException($"No coin vendor in Morheim sells the {observedClass} a weapon.");
+					ushort weaponSlot = Aion.GameServer.Model.Templates.Items.Enums.ItemGroupExtensions.GetItemSubType(
+						Enum.Parse<Aion.GameServer.Model.Templates.Items.Enums.ItemGroup>(weapon.Group)) ==
+						Aion.GameServer.Model.Templates.Items.Enums.ItemSubType.TWO_HAND ? (ushort)3 : (ushort)1;
+					NaturalAbyssCoinArmor classArmor = armor.ForClass(manifests, Tab(manifests[0].Armor[0].ItemId), Tab(weapon.ItemId), weaponSlot);
+					own = own with { AbyssEntry = abyss with { CoinArmor = classArmor } };
+					session.TraceDiagnostic("leg-coin-manifest", new Dictionary<string, object?>
+					{
+						["leg"] = leg.Leg, ["class"] = observedClass.ToString(), ["vendor"] = classArmor.VendorNpcId,
+						["tabs"] = new[] { classArmor.GoodsListId, classArmor.StaffGoodsListId }, ["tiers"] = classArmor.Tiers,
+					});
+				}
 				if (!ReferenceEquals(own, picked))
 					session.TraceDiagnostic("leg-protected-items", new Dictionary<string, object?>
 					{
@@ -1727,6 +1750,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				BotWorldModel world = session.Api.World;
 				string folder = Path.GetDirectoryName(combatTracePath)!;
 				var services = new NaturalServiceSteps(session);
+				var weaponNumbers = new Dictionary<int, int>();
 				Require.True(combat.IsLineSecondClass, $"The Abyss-entry leg needs the {ClassLine.SecondName}; the character is {combat.ObservedCharacter}.");
 				NaturalAltgardObservation Observed() => NaturalAltgardObservation.Observe(world, session.CurrentPosition);
 				// AX-13: quit, log back in, and require that the character survived as it was. A relog gives the session a new world
@@ -1860,8 +1884,17 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				}
 				int PhysicalDefence(int itemId) => NaturalAbyssCoinArmorPolicy.PhysicalDefence(runtime.Data.ItemDataDh.GetItemTemplate(itemId));
 				// AX-12c: a staff's magic boost, the stat the staff rule and the coin staff are decided by.
-				int StaffMagicBoost(int itemId) => runtime.Data.ItemDataDh.GetItemTemplate(itemId) is { } template && template.GetItemGroup().ToString() == "STAFF"
-					? template.GetWeaponStats()?.GetBoostMagicalSkill() ?? 0 : 0;
+				// NR-38b: a class other than the contract's is asked for its own weapon number, the one its gear rules wear by.
+				int StaffMagicBoost(int itemId)
+				{
+					if (scope.CoinArmor.StaffBetter != NaturalAbyssCoinArmorPolicy.ClassWeaponStat)
+						return runtime.Data.ItemDataDh.GetItemTemplate(itemId) is { } template && template.GetItemGroup().ToString() == "STAFF"
+							? template.GetWeaponStats()?.GetBoostMagicalSkill() ?? 0 : 0;
+					if (!weaponNumbers.TryGetValue(itemId, out int number))
+						weaponNumbers[itemId] = number = combat.ClassProfile.Gear.WeaponNumber(
+							NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, [itemId], ClassLine).Item(itemId));
+					return number;
+				}
 				// AX-04: the inventory check the operator asked for after every quest turn-in (2026-10-06), and once at the start so
 				// the leg begins with the best owned gear worn. AX-06: also after a coin armor purchase, to wear it.
 				async Task InventoryCheckAsync(string trigger, bool turnIn = true)

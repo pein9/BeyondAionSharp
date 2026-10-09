@@ -165,6 +165,15 @@ by a lettered item. Answers already given are quoted.
     Courage scroll up only while it owns one. To decide: whether the Courage scrolls
     164000072 (20 to 29) and 164000073 (30 to 39) are approved in the Awakening scroll's
     counts.
+- **NR-Q14. Bronze Coins for another class.** Asked by NR-38b. The operator approved 44
+  Bronze Coins for the Abyss entry (the AX-Q5 revision), and the leg refuses a supply
+  beyond that. The recorded Cleric needed 33: it arrived wearing quest rewards that most
+  of the level-21 tier and the level-26 hauberk do not beat. A class that arrives worse
+  dressed needs more: from the worst bag, the whole level-16 coin set and the arena
+  weapon, every class would buy 55 to 74 coins' worth and need 48 to 67 supplied. Default:
+  the 44 stands and no rule trims the purchases; a run that needs more stops at the
+  vendor with the leg's own refusal and is reported. To decide, if that happens: more
+  coins, or a rule for what to leave unbought.
 
 ## Standing rules
 
@@ -2837,7 +2846,7 @@ can use them. The order below is the order of work: the item that saves time com
       guard-p8 (run/nr/NR-38a/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical, hm among them. Seven pre-commit checks pass, Aion.GameServer.Tests passes
       (4,629 passed, 16 skipped) and Fast passes (run nr38a-fast, 11 passed).
-- [ ] **NR-38b - The Abyss entry's two tiers shop by the class's manifest.** Depends:
+- [x] **NR-38b - The Abyss entry's two tiers shop by the class's manifest.** Depends:
   NR-38a
   - Work: For a class other than the contract's, the two coin-armor tiers of the Abyss
     entry take the vendor and the manifests of levels 21 and 26, and the weapon is the
@@ -2846,6 +2855,54 @@ can use them. The order below is the order of work: the item that saves time com
     and the weapon and the shield only from coins left over; nothing more is supplied.
   - Proof: One-time check of each class's purchases at each tier from a prepared bag;
     gate ax identical.
+  - 2026-10-09: done, without the trimming rule the Work line named: see NR-Q14. For a
+    class other than the contract's, the two tiers are made from its manifests when the
+    leg is taken up. The Cleric's leg is the contract itself.
+    - **Java.** As NR-38. No server change.
+    - **The change.**
+      - Sc/NaturalAbyssEntry.cs, NaturalAbyssCoinArmor.ForClass: the vendor, the armor tab
+        and the weapon tab are the manifests'; each tier's five pieces and its weapon are
+        the class's, the weapon with the slot it is worn in.
+      - Sc/Classes/NaturalGearRules.cs, WeaponNumber: a weapon as one whole number that
+        rises with the gear score, the group's place and then the class's weapon stat. It
+        is what the equipment check wears by, so a weapon the tier calls better is one the
+        check then puts on.
+      - Sc/NaturalAbyssCoinArmor.cs: the tier's weapon is compared by magic boost for the
+        contract's class and by the weapon number for another (the rule name
+        "weapon-number"); the wording follows; the weapon is bought from the weapon tab
+        whatever its rule.
+      - J: the step that gives another class its picks gives it these tiers too
+        (leg-coin-manifest), and the leg's weapon comparison asks the class's number.
+      - **Not done:** a shield is not part of a tier, so a class that holds one buys none
+        here. And no rule trims a tier that costs more coins than are approved (NR-Q14).
+    - **Proof, the one-time check** (run/nr/NR-38b/check.log; the check file is not
+      committed). The worst bag: the whole level-16 coin set worn, the arena weapon held,
+      seven Bronze Coins. The leg's own rule is asked at level 21, the purchases are worn,
+      and it is asked at level 26; after each tier's purchases are worn it has nothing
+      more to buy there.
+
+      | Class | Vendor; armor tab, weapon tab | Weapon slot | Level 21 | Level 26 | All |
+      |---|---|---|---|---|---|
+      | Cleric | 204425; 991, 989 | 3 | buys 5 for 11 | buys 6 for 63 | 74 coins, 67 to supply |
+      | Chanter | 204425; 991, 989 | 3 | buys 5 for 11 | buys 6 for 63 | 74 coins, 67 to supply |
+      | Gladiator | 204360; 990, 988 | 3 | buys 5 for 11 | buys 5 for 44, the weapon left | 55 coins, 48 to supply |
+      | Templar | 204360; 990, 988 | 1 | buys 5 for 11 | buys 6 for 63 | 74 coins, 67 to supply |
+      | Assassin | 204360; 990, 988 | 1 | buys 5 for 11 | buys 6 for 63 | 74 coins, 67 to supply |
+      | Ranger | 204360; 990, 988 | 3 | buys 5 for 11 | buys 6 for 63 | 74 coins, 67 to supply |
+      | Sorcerer | 204425; 991, 989 | 3 | buys 4 for 9 | buys 6 for 63 | 72 coins, 65 to supply |
+      | Spirit Master | 204425; 991, 989 | 3 | buys 4 for 9 | buys 6 for 63 | 72 coins, 65 to supply |
+      | Gunner | 204360; 990, 988 | 1 | buys 5 for 11 | buys 6 for 63 | 74 coins, 67 to supply |
+      | Rider | 204360; 990, 988 | 3 | buys 5 for 11 | buys 6 for 63 | 74 coins, 67 to supply |
+      | Bard | 204425; 991, 989 | 3 | buys 4 for 9 | buys 6 for 63 | 72 coins, 65 to supply |
+
+      The Gladiator leaves the level-26 greatsword because the arena greatsword's number is
+      as high. For the Cleric the rule returns the contract's vendor, tabs, pieces and
+      staffs. The recorded Cleric, which arrives better dressed than this bag, was supplied
+      33 coins (run/nr/NR-38b/guard-p8-ax/help-items.json).
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-38b/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical, ax among them. Seven pre-commit checks pass, Aion.GameServer.Tests passes
+      (4,629 passed, 16 skipped) and Fast passes (run nr38b-fast, 11 passed).
 - [ ] **NR-39 - The destiny leg by class.** Depends: NR-32
   - Work: Java first (_2900NoEscapingDestiny.java). The stone, its skill and the reward are
     read by class; the instance's fight casts the temporary skill by a role. A class whose
@@ -3279,3 +3336,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   contract. Full gate guard-p8: twelve scopes identical. Seven checks, unit suite (4,629
   passed, 16 skipped) and Fast (nr38a-fast) pass. Next: NR-38b, the Abyss entry's two
   tiers shop by the class's manifest.
+- 2026-10-09 — Loop: NR-38b done. For a class other than the contract's, the Abyss entry's
+  two coin tiers are its own manifests: its vendor and tabs, its five pieces and its
+  weapon, the weapon compared by the number its equipment check wears by. No rule trims a
+  tier that costs more than the approved 44 Bronze Coins; the leg's refusal stands, and
+  the question is NR-Q14 (the recorded Cleric needed 33; the worst bag needs 48 to 67).
+  Full gate guard-p8: twelve scopes identical. Seven checks, unit suite (4,629 passed, 16
+  skipped) and Fast (nr38b-fast) pass. Next: NR-39, the destiny leg by class.

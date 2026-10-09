@@ -47,6 +47,13 @@ public sealed class NaturalGearRules
 	public bool IsSecondWeapon(NaturalItem item) => OffHand == NaturalOffHand.SecondWeapon && WeaponGroups.Contains(item.Group) &&
 		Enum.TryParse(item.Group, out ItemGroup parsed) && parsed.GetItemSubType() == ItemSubType.ONE_HAND;
 
+	/// <summary>
+	/// NR-38b: a weapon as one whole number that rises with <see cref="Score"/>: the place of its group in the class's
+	/// order, then the stat the class ranks a weapon by. Of two weapons, the one with the higher number is the one the
+	/// equipment check wears; an equal number is not better.
+	/// </summary>
+	public int WeaponNumber(NaturalItem item) => checked((int)(Score(item) / 1_000_000L));
+
 	/// <summary><see cref="Score"/> over the client's tooltip view of an item, for the equipment check.</summary>
 	public required Func<NaturalGearInfo, long> UpgradeScore { get; init; }
 

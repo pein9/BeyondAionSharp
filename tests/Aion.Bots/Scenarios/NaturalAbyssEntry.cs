@@ -110,7 +110,28 @@ public sealed record NaturalAbyssSupply(int ItemId, string Family, int MaxCount,
 
 /// <param name="StaffGoodsListId">AX-12c: the vendor's weapon tab, where each tier's staff is sold.</param>
 public sealed record NaturalAbyssCoinArmor(int CoinItemId, int IncomingCoins, int VendorNpcId, float[] VendorPosition, int GoodsListId,
-	string Better, bool Weapons, NaturalAbyssCoinTier[] Tiers, int StaffGoodsListId = 0, string StaffBetter = "magic-boost");
+	string Better, bool Weapons, NaturalAbyssCoinTier[] Tiers, int StaffGoodsListId = 0, string StaffBetter = "magic-boost")
+{
+	/// <summary>
+	/// NR-38b: the same two tiers for a class other than the contract's, made when the leg is taken up. The vendor, the
+	/// two trade tabs and each tier's pieces and weapon are the class's manifests (NR-38); the weapon is compared by the
+	/// class's own weapon number. What is bought is still what beats the piece worn, and the coins are still the leg's
+	/// approved supply.
+	/// </summary>
+	/// <param name="manifests">The class's manifest at each tier's level.</param>
+	/// <param name="weaponSlot">The slot the class's weapon is worn in: 3 with both hands, 1 with one.</param>
+	public NaturalAbyssCoinArmor ForClass(IReadOnlyList<NaturalCoinManifest> manifests, int armorGoodsListId, int weaponGoodsListId,
+		ushort weaponSlot) => this with
+	{
+		VendorNpcId = manifests[0].VendorNpcId, GoodsListId = armorGoodsListId, StaffGoodsListId = weaponGoodsListId,
+		StaffBetter = NaturalAbyssCoinArmorPolicy.ClassWeaponStat,
+		Tiers = [.. Tiers.Select(tier => manifests.Single(manifest => manifest.ItemLevel == tier.Level) is var manifest ? tier with
+		{
+			Pieces = [.. manifest.Armor.Select(piece => new NaturalCoinGearPurchase(piece.ItemId, piece.Cost, NaturalCoinGear.BodySlotMasks[piece.Slot]))],
+			Staff = manifest.Weapon is { } weapon ? new(weapon.ItemId, weapon.Cost, weaponSlot) : null,
+		} : tier)],
+	};
+}
 
 /// <param name="Staff">AX-12c: the tier's best staff. It is not part of <see cref="Cost"/>, the tier's armor.</param>
 public sealed record NaturalAbyssCoinTier(int Level, string When, string Name, NaturalCoinGearPurchase[] Pieces, NaturalCoinGearPurchase? Staff = null)

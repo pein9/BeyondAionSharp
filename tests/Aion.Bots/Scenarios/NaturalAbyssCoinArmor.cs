@@ -39,12 +39,19 @@ public static class NaturalAbyssCoinArmorPolicy
 
 	public const string DefenceStat = "physical-defence", BoostStat = "magic-boost";
 
+	/// <summary>NR-38b: the weapon rule of a class other than the contract's: its own weapon number
+	/// (<see cref="Classes.NaturalGearRules.WeaponNumber"/>), given as the function the staff's magic boost is given as.</summary>
+	public const string ClassWeaponStat = "weapon-number";
+
 	/// <summary>"Better" is the leg's default: more physical defence. A tie is not better, so nothing is bought for it.
 	/// AX-12c: the tier's staff by the staff rule, more magic boost than the worn staff.</summary>
 	public static NaturalAbyssCoinManifest Plan(NaturalAbyssCoinArmor armor, NaturalAbyssCoinTier tier, IReadOnlyList<NaturalJourneyItem> inventory,
 		Func<int, int> physicalDefence, Func<int, int> staffMagicBoost)
 	{
-		if (armor.Better != DefenceStat || armor.StaffBetter != BoostStat) throw new InvalidDataException($"Unknown coin gear rule '{armor.Better}', '{armor.StaffBetter}'.");
+		if (armor.Better != DefenceStat || armor.StaffBetter is not (BoostStat or ClassWeaponStat))
+			throw new InvalidDataException($"Unknown coin gear rule '{armor.Better}', '{armor.StaffBetter}'.");
+		// NR-38b: the contract's class compares a staff by magic boost; another class its weapon by its own number.
+		(string weaponName, string statName) = armor.StaffBetter == BoostStat ? ("staff", "magic boost") : ("weapon", "weapon number");
 		var slots = new List<NaturalAbyssCoinSlot>();
 		foreach (NaturalCoinGearPurchase piece in tier.Pieces)
 		{
@@ -62,13 +69,13 @@ public static class NaturalAbyssCoinArmorPolicy
 		{
 			NaturalJourneyItem? held = inventory.FirstOrDefault(item => item.EquipmentSlot != NotWorn && (item.EquipmentSlot & 1) != 0);
 			int heldBoost = held == null ? 0 : staffMagicBoost(held.ItemId), coinBoost = staffMagicBoost(staff.ItemId);
-			if (coinBoost <= 0) throw new InvalidDataException($"The coin staff {staff.ItemId} has no magic boost.");
-			(string action, string reason) = held?.ItemId == staff.ItemId ? ("keep", "The staff is worn.")
+			if (coinBoost <= 0) throw new InvalidDataException($"The coin {weaponName} {staff.ItemId} has no {statName}.");
+			(string action, string reason) = held?.ItemId == staff.ItemId ? ("keep", $"The {weaponName} is worn.")
 				: coinBoost <= heldBoost ? ("keep", coinBoost == heldBoost
-					? $"A tie at {coinBoost} magic boost is not better." : $"The worn staff has {heldBoost} magic boost against {coinBoost}.")
-				: inventory.Any(item => item.ItemId == staff.ItemId) ? ("wear", $"Owned and not worn: {coinBoost} magic boost against {heldBoost}.")
-				: ("buy", $"{coinBoost} magic boost against {heldBoost} worn.");
-			slots.Add(new(staff.Slot, held?.ItemId ?? 0, heldBoost, staff.ItemId, coinBoost, staff.Cost, action, reason, BoostStat));
+					? $"A tie at {coinBoost} {statName} is not better." : $"The worn {weaponName} has {heldBoost} {statName} against {coinBoost}.")
+				: inventory.Any(item => item.ItemId == staff.ItemId) ? ("wear", $"Owned and not worn: {coinBoost} {statName} against {heldBoost}.")
+				: ("buy", $"{coinBoost} {statName} against {heldBoost} worn.");
+			slots.Add(new(staff.Slot, held?.ItemId ?? 0, heldBoost, staff.ItemId, coinBoost, staff.Cost, action, reason, armor.StaffBetter));
 		}
 		return new(tier.Level, tier.Name, [.. slots], inventory.Where(item => item.ItemId == armor.CoinItemId).Sum(item => item.Count));
 	}
@@ -104,7 +111,7 @@ public static class NaturalAbyssCoinArmorSteps
 		foreach (NaturalAbyssCoinSlot slot in manifest.Buys)
 		{
 			// The armor is on the vendor's chain tab and the staff on its weapon tab.
-			int tab = slot.Stat == NaturalAbyssCoinArmorPolicy.BoostStat ? armor.StaffGoodsListId : armor.GoodsListId;
+			int tab = slot.Stat != NaturalAbyssCoinArmorPolicy.DefenceStat ? armor.StaffGoodsListId : armor.GoodsListId;
 			var offered = data.GoodsListDataDh.GetGoodsListById(tab)?.GetItemIdList() ?? [];
 			Acquisition? cost = data.ItemDataDh.GetItemTemplate(slot.CoinItemId)?.GetAcquisition();
 			if (!offered.Contains(slot.CoinItemId) || cost == null || cost.Type != AcquisitionType.REWARD || cost.ItemId != armor.CoinItemId ||
