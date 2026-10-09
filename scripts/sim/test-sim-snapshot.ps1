@@ -44,6 +44,38 @@ try {
 	Assert-True ($again.database -ne $restored.database) 'Every restore must be a fresh copy.'
 	Assert-True ($restored.environment.PSObject.Properties.Name -notcontains 'AF_HM_PROGRESS') 'Historical snapshots gained a Haramel selector.'
 	Assert-True ($restored.environment.PSObject.Properties.Name -notcontains 'PC_CAPITAL') 'Historical snapshots gained a capital selector.'
+	Assert-True ($restored.environment.PSObject.Properties.Name -notcontains 'NI08_RESUME_ACCOUNT') 'A snapshot of one character gained a round account.'
+
+	# NR-47: a character captured in a round is a record that points at its world's round snapshot.
+	$roundWorld = Join-Path $snapshots 'round-mock-w1'
+	New-Item -ItemType Directory -Path $roundWorld | Out-Null
+	[IO.File]::WriteAllBytes((Join-Path $roundWorld 'dump.sql.gz'), [byte[]](9, 9, 9))
+	[ordered]@{ schemaVersion = 1; name = 'round-mock-w1'; source = 'natural-round'; elapsedMillis = 5000
+		dumpSha256 = (Get-FileHash -Algorithm SHA256 (Join-Path $roundWorld 'dump.sql.gz')).Hash.ToLowerInvariant()
+		characters = @(
+			[ordered]@{ seat = 'b01'; line = 'mage'; account = 111; name = 'Asimmage'; characterId = 7001; outcome = 'reached' },
+			[ordered]@{ seat = 'b02'; line = 'warrior'; account = 112; name = 'Asimwar'; characterId = 7002; outcome = 'stopped' }) } |
+		ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $roundWorld 'snapshot.json')
+	$pointer = Join-Path $snapshots 'munin-mage-mock'
+	New-Item -ItemType Directory -Path $pointer | Out-Null
+	function Set-Pointer([hashtable]$Changes) {
+		$record = [ordered]@{ schemaVersion = 1; name = 'munin-mage-mock'; source = 'natural-round-character'; roundSnapshot = 'round-mock-w1'
+			classLine = 'mage'; characterId = 7001; account = 111; characterName = 'Asimmage' }
+		foreach ($key in $Changes.Keys) { $record[$key] = $Changes[$key] }
+		$record | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $pointer 'snapshot.json')
+	}
+	Set-Pointer @{}
+	$fromRound = & $script -Action Restore -Name munin-mage-mock -Docker $fake -SnapshotRoot $snapshots | ConvertFrom-Json
+	Assert-True ($fromRound.characterId -eq 7001 -and $fromRound.environment.NI08_RESUME_CHARACTER -eq '7001') 'A round character restore lost its character.'
+	Assert-True ($fromRound.environment.NI08_RESUME_ACCOUNT -eq '111' -and $fromRound.environment.NI08_RESUME_NAME -eq 'Asimmage') 'A round character restore lost its seat account or name.'
+	Assert-True ($fromRound.environment.CP_CLASS -eq 'mage' -and $fromRound.environment.AION_SIM_NI08_ELAPSED_MS -eq '25000') 'A round character restore lost its line or its world clock.'
+	Assert-True ((Get-Content -LiteralPath $log)[-2] -like "cp *round-mock-w1*dump.sql.gz aion-mysql:/tmp/$($fromRound.database).sql.gz") 'A round character restore did not import its world dump.'
+	Set-Pointer @{ characterId = 7999 }
+	Assert-Throws { & $script -Action Restore -Name munin-mage-mock -Docker $fake -SnapshotRoot $snapshots } '*does not hold*' 'A character its round snapshot does not hold was restored.'
+	Set-Pointer @{ account = 112 }
+	Assert-Throws { & $script -Action Restore -Name munin-mage-mock -Docker $fake -SnapshotRoot $snapshots } '*does not hold*' 'A character was restored on another seat account.'
+	Set-Pointer @{ roundSnapshot = 'round-gone-w1' }
+	Assert-Throws { & $script -Action Restore -Name munin-mage-mock -Docker $fake -SnapshotRoot $snapshots } '*round snapshot that is missing*' 'A capture of a missing round snapshot was restored.'
 	Assert-True ($restored.environment.PSObject.Properties.Name -notcontains 'RC_CAPITAL') 'Historical snapshots gained later capital scope.'
 
 	# Later capital prefixes retain explicit scope and an immutable packet-state receipt.

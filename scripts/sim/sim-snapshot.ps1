@@ -132,7 +132,9 @@ function Invoke-NaturalJourney([string]$Db, [string]$RunId, [string]$Evidence, [
 		# monitor or the SIM process key. Cleared, the supply is on and the monitor is at its default port.
 		'NA_HELP_ITEMS', 'AION_BOT_DASHBOARD_PORT', 'AION_SIM_PROCESS_KEY',
 		# CP-15: an inherited CP_CLASS would play another class line. Cleared, the journey plays the accepted line.
-		'CP_CLASS')
+		'CP_CLASS',
+		# NR-47: the account and name of a character captured in a round. Cleared, they are the line's own.
+		'NI08_RESUME_ACCOUNT', 'NI08_RESUME_NAME')
 	$prior = @{}
 	foreach ($variable in $names) {
 		$prior[$variable] = [Environment]::GetEnvironmentVariable($variable)
@@ -196,6 +198,28 @@ function Restore-Snapshot([string]$SnapshotName = $Name) {
 	if (-not $SnapshotName) { throw "$Action needs -Name." }
 	$directory = Join-Path $SnapshotRoot $SnapshotName
 	$metadata = Get-Content -Raw -LiteralPath (Join-Path $directory 'snapshot.json') | ConvertFrom-Json
+	# NR-47: a character captured in a round (scripts/sim/run-round.ps1) is a record that points at the round snapshot
+	# of its world. The dump and the clock are the round's. The record names the one character to resume, with the
+	# account and the name of its seat. The other characters of that world are restored with it and stay logged out.
+	$roundCharacter = $null
+	if ($metadata.PSObject.Properties.Name -contains 'source' -and $metadata.source -eq 'natural-round-character') {
+		$roundCharacter = $metadata
+		$directory = Join-Path $SnapshotRoot ([string]$roundCharacter.roundSnapshot)
+		$roundFile = Join-Path $directory 'snapshot.json'
+		if (-not (Test-Path -LiteralPath $roundFile)) {
+			throw "Snapshot $SnapshotName points at a round snapshot that is missing: $($roundCharacter.roundSnapshot)."
+		}
+		$round = Get-Content -Raw -LiteralPath $roundFile | ConvertFrom-Json
+		$held = @($round.characters | Where-Object { $_.characterId -eq $roundCharacter.characterId -and $_.line -eq $roundCharacter.classLine -and
+			$_.account -eq $roundCharacter.account -and $_.name -eq $roundCharacter.characterName })
+		if ($round.source -ne 'natural-round' -or $held.Count -ne 1) {
+			throw "Snapshot $SnapshotName names a character its round snapshot $($roundCharacter.roundSnapshot) does not hold."
+		}
+		$metadata = [pscustomobject]@{
+			source = 'natural-round-character'; dumpSha256 = $round.dumpSha256; characterId = $roundCharacter.characterId
+			elapsedMillis = $round.elapsedMillis; classLine = [string]$roundCharacter.classLine
+		}
+	}
 	$dump = Join-Path $directory 'dump.sql.gz'
 	$hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $dump).Hash.ToLowerInvariant()
 	if ($hash -ne $metadata.dumpSha256) { throw "Snapshot $Name dump hash changed; refusing to restore an edited snapshot." }
@@ -297,6 +321,10 @@ function Restore-Snapshot([string]$SnapshotName = $Name) {
 		$environment.RC_CAPITAL = '1'
 	}
 	if ($classLine) { $environment.CP_CLASS = $classLine }
+	if ($roundCharacter) {
+		$environment.NI08_RESUME_ACCOUNT = "$($roundCharacter.account)"
+		$environment.NI08_RESUME_NAME = [string]$roundCharacter.characterName
+	}
 	[pscustomobject]@{
 		snapshot = $SnapshotName
 		database = $db

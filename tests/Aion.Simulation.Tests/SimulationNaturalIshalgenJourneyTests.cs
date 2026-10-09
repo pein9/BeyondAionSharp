@@ -40,12 +40,17 @@ public sealed partial class SimulationFastScenarioTests
 		// CP-15: CP_CLASS names the class line; unset, it is the accepted Priest and Cleric line.
 		NaturalClassLine line = NaturalClassLine.Parse(Environment.GetEnvironmentVariable(NaturalClassLine.EnvironmentVariable));
 		string starter = line.Starter.ToString().ToLowerInvariant();
+		// NR-47: a character captured in a round lives on its seat's account, and may have its seat's name. A run that
+		// resumes it alone, as Verify does, is told both; unset, they are the line's as always.
+		int accountId = int.TryParse(Environment.GetEnvironmentVariable("NI08_RESUME_ACCOUNT"), out int roundAccount) && roundAccount > 0
+			? roundAccount : line.SimAccountId;
+		string characterName = Environment.GetEnvironmentVariable("NI08_RESUME_NAME") is { Length: > 0 } roundName ? roundName : line.CharacterName;
 		string combatTracePath = Path.Combine(
 			Environment.GetEnvironmentVariable("AION_NI07_COMBAT_DIR") ??
 				Path.Combine(Aion.GameServer.TestKit.RealStaticData.RepoRoot(), "run", "ni07-combat"),
 			$"{DateTimeOffset.UtcNow:yyyyMMddTHHmmssfffZ}-{Guid.NewGuid():N}.trace.jsonl");
 		using var combatTrace = BotActionTraceWriter.Open(combatTracePath,
-			Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? "ni07", "b01", $"sim-player-{line.SimAccountId}",
+			Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? "ni07", "b01", $"sim-player-{accountId}",
 			virtualTime: () => TimeSpan.FromMilliseconds(fixture.Clock.NowMillis));
 		Console.WriteLine($"NI-07 combat trace: {combatTracePath}");
 		using var policy = NewPolicy("NI07", includeHistory: true);
@@ -56,7 +61,7 @@ public sealed partial class SimulationFastScenarioTests
 			stopAfterQ2004 ? 6 : stopAfterQ2005 ? 8 : stopAfterQ2006 ? 16 : stopAfterQ2007 ? 20 : continuousAltgard ? 90 : 45));
 		CancellationToken token = timeout.Token;
 		await using var session = new SimulationL0Session(
-			fixture, policy, "b01", accountId: line.SimAccountId, line.CharacterName, Race.ASMODIANS,
+			fixture, policy, "b01", accountId: accountId, characterName, Race.ASMODIANS,
 			combatTrace, combatTracePath) { IdentityClassLine = line };
 		var dashboard = new LiveBotDashboardState();
 		int dashboardPort = int.Parse(Environment.GetEnvironmentVariable("AION_BOT_DASHBOARD_PORT") ?? "17880");
@@ -127,13 +132,13 @@ public sealed partial class SimulationFastScenarioTests
 				var retained = list.Get<List<IReadOnlyDictionary<string, object?>>>("characters")
 					.SingleOrDefault(c => Get<int>(c, "objectId") == retainedId)
 					?? throw new InvalidDataException($"NI-08 retained character {retainedId} is missing; refusing to create a replacement.");
-				if (Get<string>(retained, "name") != line.CharacterName || Get<int>(retained, "race") != (int)Race.ASMODIANS ||
+				if (Get<string>(retained, "name") != characterName || Get<int>(retained, "race") != (int)Race.ASMODIANS ||
 					Get<int>(retained, "deletionTimeSeconds") != 0)
 					throw new InvalidDataException($"NI-08 retained character {retainedId} identity changed.");
 				// The Priest, or the Cleric it became at Ascension (NA-07); for another line, its starter or its second class.
 				NaturalJourneyIdentityRules.Classify(line, Get<int>(retained, "playerClass"), Get<ushort>(retained, "level"),
 					Get<int>(retained, "mapId"), session.IdentityAltgardLegId);
-				session.SelectCharacter(retainedId, line.CharacterName);
+				session.SelectCharacter(retainedId, characterName);
 			}
 			else
 			{

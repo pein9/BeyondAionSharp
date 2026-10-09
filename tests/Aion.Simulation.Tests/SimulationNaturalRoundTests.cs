@@ -11,8 +11,14 @@ namespace Aion.Simulation.Tests;
 
 public sealed partial class SimulationFastScenarioTests
 {
-	/// <summary>One bot of a round: its class line, when it starts, how far it plays, and a stop on purpose.</summary>
-	private sealed record NaturalRoundBot(string Line, double StartAfterMinutes = 0, string? StopAt = null, double? StopAfterMinutes = null);
+	/// <summary>
+	/// One bot of a round: its class line, when it starts, how far it plays, and a stop on purpose.
+	/// NR-47: <c>Account</c> and <c>Name</c> are the seat's own when given; a seat's account is otherwise 111 and up, and its
+	/// name its line's. <c>ResumeCharacter</c> is a character of the round snapshot the world was restored from: the bot
+	/// logs it in on its account instead of creating one.
+	/// </summary>
+	private sealed record NaturalRoundBot(string Line, double StartAfterMinutes = 0, string? StopAt = null, double? StopAfterMinutes = null,
+		int? Account = null, string? Name = null, int? ResumeCharacter = null);
 
 	private sealed record NaturalRoundFile(NaturalRoundBot[] Bots);
 
@@ -24,6 +30,8 @@ public sealed partial class SimulationFastScenarioTests
 	/// Each bot is a class line's own character, created by packets. The bots take turns on the world's clock
 	/// (<see cref="SimulationTurnTable"/>). Each has a folder of its own under the run's evidence, named for its line,
 	/// with its trace, the journey's receipts and outcome.json. A bot that stops is an outcome, not a failure of the round.
+	/// NR-47: round-outcome.json also has the world's clock and each character's id, account and name, which is what a
+	/// round snapshot records and what the next round resumes from (scripts/sim/run-round.ps1).
 	/// </summary>
 	[SkippableFact]
 	public async Task NaturalRoundPlaysItsBotsInOneWorld()
@@ -36,9 +44,14 @@ public sealed partial class SimulationFastScenarioTests
 		if (round.Bots is not { Length: > 0 }) throw new InvalidDataException("The round file names no bot.");
 		NaturalClassLine[] lines = round.Bots.Select(bot => NaturalClassLine.Parse(bot.Line)).ToArray();
 		// Every class line plays on the one SIM account of a run alone (CP-Q19), and an account is in a world once. So a
-		// round gives each seat an account of its own. The character keeps its line's name, which a world holds once.
-		if (lines.Select(line => line.CharacterName).Distinct(StringComparer.Ordinal).Count() != lines.Length)
+		// round gives each seat an account of its own. The character has its line's name unless the seat names it: the
+		// Cleric's and the Chanter's lines share a name, and a world holds a name once.
+		int[] accounts = round.Bots.Select((bot, index) => bot.Account ?? RoundAccountBase + index).ToArray();
+		string[] names = round.Bots.Select((bot, index) => string.IsNullOrWhiteSpace(bot.Name) ? lines[index].CharacterName : bot.Name!).ToArray();
+		if (names.Distinct(StringComparer.Ordinal).Count() != names.Length)
 			throw new InvalidDataException("Two bots of this round would have the same character name; a world holds a name once.");
+		if (accounts.Distinct().Count() != accounts.Length || accounts.Any(account => account is < 1 or > 250))
+			throw new InvalidDataException("Each seat of a round needs an account of its own between 1 and 250.");
 
 		string run = Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? "natural-round";
 		string evidence = Environment.GetEnvironmentVariable("AION_NI07_COMBAT_DIR") ??
@@ -64,7 +77,7 @@ public sealed partial class SimulationFastScenarioTests
 			NaturalClassLine line = lines[index];
 			string bot = $"b{index + 1:00}";
 			turns.Add(bot, TimeSpan.FromMinutes(entry.StartAfterMinutes),
-				async token => outcomes[seat] = await PlayRoundBotAsync(turns, bot, RoundAccountBase + seat, line, entry, run, evidence, dashboard, token),
+				async token => outcomes[seat] = await PlayRoundBotAsync(turns, bot, accounts[seat], names[seat], line, entry, run, evidence, dashboard, token),
 				entry.StopAfterMinutes is double stop ? TimeSpan.FromMinutes(stop) : null);
 		}
 
@@ -83,24 +96,26 @@ public sealed partial class SimulationFastScenarioTests
 			// A bot the table ended before it began (stopped on purpose, or a fault of the world) wrote no record.
 			outcomes[index] ??= new NaturalRoundOutcome($"b{index + 1:00}", lines[index].Id, "stopped", played[index].Played.Status.ToString(),
 				played[index].Played.Exception?.GetBaseException().Message ?? "The round ended this bot before it began.", null, 0, 0,
-				fixture.Clock.NowMillis, fixture.Clock.NowMillis);
+				fixture.Clock.NowMillis, fixture.Clock.NowMillis, accounts[index], names[index], round.Bots[index].ResumeCharacter ?? 0);
 			NaturalRoundOutcome outcome = outcomes[index]!;
 			Console.WriteLine($"Natural round {run}: {outcome.Bot} {outcome.Line} {outcome.Outcome}, level {outcome.Level}, " +
 				$"{outcome.CompletedQuests} quests, game time {TimeSpan.FromMilliseconds(outcome.EndedAtMillis - outcome.StartedAtMillis):c}" +
 				(outcome.Message == null ? "" : $": {outcome.Message}"));
 		}
+		// The world's clock: what it had when it was restored, and what this round played on top.
+		long restoredAt = long.TryParse(Environment.GetEnvironmentVariable("AION_SIM_NI08_ELAPSED_MS"), out long elapsed) && elapsed >= 0 ? elapsed : 0;
 		File.WriteAllText(Path.Combine(evidence, "round-outcome.json"),
-			JsonSerializer.Serialize(new { run, seed = fixture.Seed, bots = outcomes }, RoundJson));
+			JsonSerializer.Serialize(new { run, seed = fixture.Seed, worldElapsedMillis = restoredAt + fixture.Clock.NowMillis, bots = outcomes }, RoundJson));
 	}
 
 	/// <summary>The account of a round's first seat; the next seats follow. Clear of the solo account 41 and the probe accounts.</summary>
 	private const int RoundAccountBase = 111;
 
 	private sealed record NaturalRoundOutcome(string Bot, string Line, string Outcome, string? Exception, string? Message, string? Step,
-		int Level, int CompletedQuests, long StartedAtMillis, long EndedAtMillis);
+		int Level, int CompletedQuests, long StartedAtMillis, long EndedAtMillis, int Account, string Name, int CharacterId);
 
 	/// <summary>One bot of a round: the journey's own test, for a class line's fresh character, with a turn at the clock.</summary>
-	private async Task<NaturalRoundOutcome> PlayRoundBotAsync(SimulationTurnTable turns, string bot, int account, NaturalClassLine line,
+	private async Task<NaturalRoundOutcome> PlayRoundBotAsync(SimulationTurnTable turns, string bot, int account, string name, NaturalClassLine line,
 		NaturalRoundBot entry, string run, string evidence, LiveBotDashboardState dashboard, CancellationToken token)
 	{
 		string folder = Path.Combine(evidence, line.Id);
@@ -116,7 +131,7 @@ public sealed partial class SimulationFastScenarioTests
 		try
 		{
 			await using var playing = session = new SimulationL0Session(
-				fixture, policy, bot, accountId: account, line.CharacterName, Race.ASMODIANS,
+				fixture, policy, bot, accountId: account, name, Race.ASMODIANS,
 				trace, tracePath) { IdentityClassLine = line, Turns = turns };
 			playing.Dashboard = dashboard;
 			var legSupplied = new Dictionary<int, long>();
@@ -142,16 +157,37 @@ public sealed partial class SimulationFastScenarioTests
 
 			async Task<bool> EnterAsync(CancellationToken enterToken)
 			{
-				playing.BeginStep("ni07-create", $"create-natural-asmodian-{line.Starter.ToString().ToLowerInvariant()}");
-				await playing.LoginAndAuthenticateAsync(enterToken);
-				await playing.CreateCharacterAsync(enterToken, line.Starter);
+				string starter = line.Starter.ToString().ToLowerInvariant();
+				bool resuming = entry.ResumeCharacter is > 0;
+				playing.BeginStep(resuming ? "ni08-login-existing" : "ni07-create",
+					resuming ? $"reconstruct-retained-{starter}" : $"create-natural-asmodian-{starter}");
+				if (resuming)
+				{
+					// NR-47: the character of a round snapshot, on the account and under the name it was made with.
+					int retainedId = entry.ResumeCharacter!.Value;
+					var list = await playing.LoginCharacterListAsync(enterToken);
+					var retained = list.Get<List<IReadOnlyDictionary<string, object?>>>("characters")
+						.SingleOrDefault(c => Get<int>(c, "objectId") == retainedId)
+						?? throw new InvalidDataException($"The round's character {retainedId} is missing; refusing to create a replacement.");
+					if (Get<string>(retained, "name") != name || Get<int>(retained, "race") != (int)Race.ASMODIANS ||
+						Get<int>(retained, "deletionTimeSeconds") != 0)
+						throw new InvalidDataException($"The round's character {retainedId} is not {name} as its snapshot recorded it.");
+					NaturalJourneyIdentityRules.Classify(line, Get<int>(retained, "playerClass"), Get<ushort>(retained, "level"),
+						Get<int>(retained, "mapId"), playing.IdentityAltgardLegId);
+					playing.SelectCharacter(retainedId, name);
+				}
+				else
+				{
+					await playing.LoginAndAuthenticateAsync(enterToken);
+					await playing.CreateCharacterAsync(enterToken, line.Starter);
+				}
 				await playing.EnterWorldAsync(enterToken);
-				await playing.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), enterToken);
+				if (!resuming) await playing.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), enterToken);
 				await playing.SynchronizeAsync(enterToken);
 				var entered = fixture.World.GetPlayer(playing.CharacterId);
 				NaturalJourneyIdentityRules.Classify(line, entered.GetPlayerClass(), entered.GetLevel(), entered.GetWorldId(), playing.IdentityAltgardLegId);
-				Assert.Equal(line.Starter, entered.GetPlayerClass());
-				return false;
+				if (!resuming) Assert.Equal(line.Starter, entered.GetPlayerClass());
+				return resuming;
 			}
 		}
 		catch (Exception ended)
@@ -160,7 +196,8 @@ public sealed partial class SimulationFastScenarioTests
 			stop = ended;
 		}
 		var record = new NaturalRoundOutcome(bot, line.Id, outcome, stop?.GetType().Name, stop?.Message, session?.CurrentStep,
-			session?.Api.World.Level ?? 0, session?.Api.World.CompletedQuestIds.Count ?? 0, began, fixture.Clock.NowMillis);
+			session?.Api.World.Level ?? 0, session?.Api.World.CompletedQuestIds.Count ?? 0, began, fixture.Clock.NowMillis,
+			account, name, session?.CharacterId ?? entry.ResumeCharacter ?? 0);
 		File.WriteAllText(Path.Combine(folder, "outcome.json"), JsonSerializer.Serialize(record, RoundJson));
 		return record;
 	}
