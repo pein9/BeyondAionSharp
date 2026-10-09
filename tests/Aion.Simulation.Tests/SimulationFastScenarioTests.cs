@@ -1060,6 +1060,31 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		public Task<DecodedBotServerPacket> WaitForPacketAsync(Func<DecodedBotServerPacket, bool> predicate,
 			CancellationToken cancellationToken) => WaitForAsync(null, cancellationToken, predicate);
 
+		/// <summary>
+		/// NR-46b: a wait for a packet that may never come. In this session packets are queued only while it sends or lets
+		/// game time pass. So when the queue runs empty nothing more can arrive, and the wait ends there with the outcome
+		/// its real-time limit would have had, without sitting the limit out.
+		/// </summary>
+		public async Task<DecodedBotServerPacket?> WaitForPacketWithinAsync(Type type, TimeSpan realTime, CancellationToken token,
+			Func<DecodedBotServerPacket, bool> predicate)
+		{
+			if (pendingRead != null)
+			{
+				// An earlier wait left a read pending, and its packet may be on its way to this thread. Keep the limit.
+				using var limit = CancellationTokenSource.CreateLinkedTokenSource(token);
+				limit.CancelAfter(realTime);
+				try { return await WaitForAsync(type, limit.Token, predicate); }
+				catch (OperationCanceledException) when (!token.IsCancellationRequested) { return null; }
+			}
+			queuedPacketsOnly = true;
+			try { return await WaitForAsync(type, token, predicate); }
+			catch (NothingQueuedException) { return null; }
+			finally { queuedPacketsOnly = false; }
+		}
+
+		private bool queuedPacketsOnly;
+		private sealed class NothingQueuedException : Exception;
+
 		public Task SendMovementAsync(MovementPacketData movement, CancellationToken cancellationToken) =>
 			SendAsync(api.MoveTo(movement), cancellationToken);
 
@@ -1167,14 +1192,8 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			await NaturalDialogProtocol.OpenAsync(this, npcObjectId, cancellationToken);
 			DecodedBotServerPacket opened = await WaitForAsync(typeof(SM_DIALOG_WINDOW), cancellationToken);
 			await NaturalDialogProtocol.SelectAsync(this, api.SelectDialog(npcObjectId, 31, questId: questId), cancellationToken);
-			using (var responseTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
 			{
-				responseTimeout.CancelAfter(TimeSpan.FromSeconds(2));
-				try
-				{
-					await WaitForAsync(typeof(SM_DIALOG_WINDOW), responseTimeout.Token);
-				}
-				catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+				if (await WaitForPacketWithinAsync(typeof(SM_DIALOG_WINDOW), TimeSpan.FromSeconds(2), cancellationToken, _ => true) == null)
 				{
 					Player player = fixture.World.GetPlayer(characterId);
 					BotKnownObject target = api.World.Objects[npcObjectId];
@@ -1418,6 +1437,9 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		{
 			IAsyncEnumerator<DecodedBotServerPacket> active = packets
 				?? throw new EndOfStreamException("Simulation game transport ended before the expected packet.");
+			// NR-46b: no read is pending and no packet is queued, so none can come while this wait holds the thread.
+			if (queuedPacketsOnly && pendingRead == null && transport is { QueuedServerPackets: 0 })
+				throw new NothingQueuedException();
 			Task<bool> read = pendingRead ??= active.MoveNextAsync().AsTask();
 			bool moved;
 			try

@@ -24,6 +24,8 @@ public sealed class InProcessBotTransport : IBotTransport
 		new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
 	private readonly object gate = new();
 	private int closeMode;
+	// NR-46b: the server packets serialized and not yet handed to the receive loop.
+	private int queuedServerPackets;
 	private int receiveStarted;
 
 	public InProcessBotTransport(
@@ -117,8 +119,18 @@ public sealed class InProcessBotTransport : IBotTransport
 			throw new InvalidOperationException("An in-process bot transport supports one receive loop.");
 
 		await foreach (DecodedBotServerPacket packet in received.Reader.ReadAllAsync(cancellationToken))
+		{
+			Interlocked.Decrement(ref queuedServerPackets);
 			yield return packet;
+		}
 	}
+
+	/// <summary>
+	/// NR-46b: how many server packets wait for the receive loop. Packets are queued only inside
+	/// <see cref="SendAsync"/>, <see cref="AdvanceAsync"/> and <see cref="DrainAsync"/>, so while the caller does none
+	/// of those, zero stays zero.
+	/// </summary>
+	public int QueuedServerPackets => Volatile.Read(ref queuedServerPackets);
 
 	public ValueTask CloseAsync(CancellationToken cancellationToken = default)
 	{
@@ -202,6 +214,7 @@ public sealed class InProcessBotTransport : IBotTransport
 			DecodedBotServerPacket packet = decoder.DecodeOrRaw(gamePacket) with { ReceivedAt = Aion.GameServer.Utils.SystemClock.UtcNow() };
 			if (!received.Writer.TryWrite(packet))
 				throw new InvalidOperationException("The in-process receive stream is already closed.");
+			Interlocked.Increment(ref queuedServerPackets);
 		}
 	}
 

@@ -31,6 +31,24 @@ public interface INaturalJourneySession
 	Task<DecodedBotServerPacket> WaitForPacketAsync(Type type, CancellationToken token);
 	Task<DecodedBotServerPacket> WaitForPacketAsync(Type type, CancellationToken token, Func<DecodedBotServerPacket, bool> predicate);
 	Task<DecodedBotServerPacket> WaitForPacketAsync(Func<DecodedBotServerPacket, bool> predicate, CancellationToken token);
+
+	/// <summary>
+	/// Waits for a packet that may never come, for at most <paramref name="realTime"/> of wall-clock time. Null when it
+	/// did not come.
+	/// <para>
+	/// NR-46b: a session that knows nothing more can arrive answers at once. The simulated session does: its packets
+	/// come only when it sends or lets game time pass, so once its queue is empty a wait can only sit out its limit.
+	/// This default keeps the limit, for a session on a real connection.
+	/// </para>
+	/// </summary>
+	async Task<DecodedBotServerPacket?> WaitForPacketWithinAsync(Type type, TimeSpan realTime, CancellationToken token,
+		Func<DecodedBotServerPacket, bool> predicate)
+	{
+		using var limit = CancellationTokenSource.CreateLinkedTokenSource(token);
+		limit.CancelAfter(realTime);
+		try { return await WaitForPacketAsync(type, limit.Token, predicate); }
+		catch (OperationCanceledException) when (!token.IsCancellationRequested) { return null; }
+	}
 	Task<int> WaitForNpcAsync(int templateId, CancellationToken token);
 	ValueTask AdvanceAsync(TimeSpan duration, CancellationToken token);
 	Task AdvanceOfflineAsync(TimeSpan duration, CancellationToken token);

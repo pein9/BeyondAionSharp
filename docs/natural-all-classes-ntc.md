@@ -1796,13 +1796,46 @@ can use them. The order below is the order of work: the item that saves time com
         55 s before (run/nr/NR-21/gate-a1-c), 29% less.
       - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
         passed, 16 skipped) and Fast passes (run nr46a-fast, 11 passed).
-- [ ] **NR-46b - A wait that no packet can end.** Depends: NR-46a
+- [x] **NR-46b - A wait that no packet can end.** Depends: NR-46a
   - Work: A wait with a real-time limit (five seconds for a loot list, two for a quest's
     reply) sits out its limit although nothing can arrive. In the SIM session such a wait
     ends at once when no packet is queued, with the same outcome as the limit. The live
     session is not touched.
   - Proof: The full gate with -Parallel 8 identical. Scope mage's wall time before and
     after.
+  - 2026-10-09: done. Scope mage plays in 19 seconds where it took 30, and every recorded
+    scope is identical.
+    - **Java.** No server behavior is involved.
+    - **The three waits.** Two for a loot list, five seconds each
+      (NaturalIshalgenJourney.cs, the loot of a corpse and the loot of a quest item), and
+      one for the reply to a quest's hand-in, two seconds (the SIM session's
+      FinishQuestAsync). No other wait in the bot library has a real-time limit of its
+      own. Every wait still has the session's cap of three minutes, which is a failure.
+    - **The change.**
+      - Sc/INaturalJourneySession.cs: WaitForPacketWithinAsync(type, realTime, token,
+        predicate) waits at most that long of real time and gives null when the packet did
+        not come. Its default body is the limit as it was, so the live session behaves as
+        before and is not edited.
+      - The two loot waits call it. A missing list has the outcome it had: nothing taken,
+        and for a quest item the "quest-loot-list-missing" record.
+      - The SIM session answers it without the wait. Its packets are queued only while it
+        sends or lets game time pass, so once no read is pending and its queue is empty,
+        nothing more can come and the answer is null at once. The quest reply's wait uses
+        the same call and fails as before when no reply is there.
+      - tests/Aion.Bots/Transport/InProcessBotTransport.cs counts the packets it has
+        queued and not yet handed over; the channel it uses cannot be asked.
+      - If an earlier wait left a read pending, the limit is kept: that read's packet may
+        be on its way from another thread. After this change no wait of the journey
+        leaves one.
+    - **Proof.**
+      - Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run guard-p8
+        (run/nr/NR-46b/guard-p8/verdict.json): verdict pass, all twelve scopes identical to
+        their baselines, in 446 seconds.
+      - Scope mage alone, run after-mage: identical; the journey takes 19 seconds against
+        30 before (run/nr/NR-21/gate-a1-mage).
+      - The whole solution builds, the live tool with it. Bundle: the seven pre-commit
+        checks pass, Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and Fast
+        passes (run nr46b-fast, 11 passed).
 - [ ] **NR-46c - The journey's own code.** Depends: NR-47
   - Work: A fifth of scope c is the journey's own code and was not split. Split it with a
     one-time probe (pull planning, movement plans, what it observes each step) and write
@@ -2207,3 +2240,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   against 4 min 55 s. Full gate guard-p8, eight at a time: twelve scopes identical in 459
   seconds. Seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr46a-fast) pass.
   Next: NR-46b, a wait that no packet can end.
+- 2026-10-09 — Loop: NR-46b done. The two loot waits and the quest reply's wait no longer
+  sit out a real-time limit in the SIM session: with no read pending and an empty queue
+  nothing can come, and the answer is given at once. The live session keeps the limit.
+  Scope mage: 19 seconds against 30. Full gate guard-p8, eight at a time: twelve scopes
+  identical in 446 seconds. Seven checks, unit suite (4,629 passed, 16 skipped) and Fast
+  (nr46b-fast) pass. Next: NR-44, bots take turns in one world.

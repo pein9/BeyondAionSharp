@@ -8713,17 +8713,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		IReadOnlySet<int>? additionalItemIds = null)
 	{
 		await session.SendPacketAsync(session.Api.Loot(objectId), token);
-		DecodedBotServerPacket list;
-		using (var lootTimeout = CancellationTokenSource.CreateLinkedTokenSource(token))
-		{
-			lootTimeout.CancelAfter(TimeSpan.FromSeconds(5));
-			try
-			{
-				list = await session.WaitForPacketAsync(typeof(SM_LOOT_ITEMLIST), lootTimeout.Token,
-					packet => packet.Get<int>("targetObjectId") == objectId);
-			}
-			catch (OperationCanceledException) when (!token.IsCancellationRequested) { return []; }
-		}
+		// A corpse with nothing for this character sends no list. Five seconds of real time are the limit for it.
+		if (await session.WaitForPacketWithinAsync(typeof(SM_LOOT_ITEMLIST), TimeSpan.FromSeconds(5), token,
+				packet => packet.Get<int>("targetObjectId") == objectId) is not { } list)
+			return [];
 		var taken = new List<int>();
 		foreach (IReadOnlyDictionary<string, object?> entry in list.Get<List<IReadOnlyDictionary<string, object?>>>("items"))
 		{
@@ -8776,25 +8769,18 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		if (list == null)
 		{
 			await session.SendPacketAsync(session.Api.Loot(objectId), token);
-			using (var lootTimeout = CancellationTokenSource.CreateLinkedTokenSource(token))
+			list = await session.WaitForPacketWithinAsync(typeof(SM_LOOT_ITEMLIST), TimeSpan.FromSeconds(5), token,
+				packet => packet.Get<int>("targetObjectId") == objectId);
+			if (list == null)
 			{
-				lootTimeout.CancelAfter(TimeSpan.FromSeconds(5));
-				try
+				session.TraceDiagnostic("quest-loot-list-missing", new Dictionary<string, object?>
 				{
-					list = await session.WaitForPacketAsync(typeof(SM_LOOT_ITEMLIST), lootTimeout.Token,
-						packet => packet.Get<int>("targetObjectId") == objectId);
-				}
-				catch (OperationCanceledException) when (!token.IsCancellationRequested)
-				{
-					session.TraceDiagnostic("quest-loot-list-missing", new Dictionary<string, object?>
-					{
-						["objectId"] = objectId,
-						["itemId"] = itemId,
-						["inventoryCount"] = beforeCount,
-						["position"] = session.CurrentPosition,
-					});
-					return false;
-				}
+					["objectId"] = objectId,
+					["itemId"] = itemId,
+					["inventoryCount"] = beforeCount,
+					["position"] = session.CurrentPosition,
+				});
+				return false;
 			}
 		}
 		IReadOnlyDictionary<string, object?>? item = list
