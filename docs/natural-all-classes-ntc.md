@@ -2421,12 +2421,61 @@ can use them. The order below is the order of work: the item that saves time com
       identical, so the bonus order changes no recorded pick of the Priest or the five
       starters. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
       16 skipped) and Fast passes (run nr32-fast-a2, 11 passed).
-- [ ] **NR-33 - Protected and kept items by rule.** Depends: NR-32
+- [x] **NR-33 - Protected and kept items by rule.** Depends: NR-32
   - Work: What a leg protects, keeps or cleans up by item id (the bridge, coin gear,
     Haramel, the Abyss entry) is derived for another class from its gear rules and from
     what it wears at the leg's start; the Cleric's lists stay as they are. The inventory
     policy takes the observed class's rules everywhere it took `cleric`.
   - Proof: One-time check; the full gate identical.
+  - 2026-10-09: done. A leg's protected items are its contract's class's; another class
+    gets its own when the leg is taken up. The accepted line plays as recorded.
+    - **Java.** None read: what the bot keeps in its bag is no server behavior.
+    - **What the lists hold.** The check sorted every protected id of the three scopes
+      (run/nr/NR-33/check.log):
+
+      | Scope | Every class carries | The leg's own reward pins | The Cleric's gear |
+      |---|---|---|---|
+      | Coin gear (cg), 19 ids | power shard 169000004, the two coins, the Stigma Support Bundle 188053787 | none | 15: the staff 101501357, seven armor pieces, two earrings, two rings, a necklace, a belt, the helm |
+      | Haramel (l12), 17 ids | the two coins, the bundle | none in the list | 14: the same without the robe leggings |
+      | Abyss entry (ax), 7 ids | scroll 164000079, the two coins, the bundle | 101501224 and 110551147 | 1: the staff 101501357 |
+
+      The Haramel clean-up list is eleven quest items and the Abyss entry's open, discard
+      and keep-sealed lists are bundles and a manastone; they are the same for every class
+      and are not changed. The bridge's protected list holds one piece of gear, the
+      ceremony pick, which ForChoice already swaps for the line's.
+    - **The rule, for a class other than the contract's** (NaturalAltgardContract
+      .ProtectedFor): an id that is a reward pin of the leg becomes the class's pick at
+      the same quest (NR-32); any other gear in the list is dropped; what the character
+      wears when the leg is taken up is added; everything else stays. Gear is a weapon, a
+      shield, armor, a hat or an accessory, by the slots its item group may take
+      (NaturalItem.IsEquipment); a power shard, a stigma stone and wings are not.
+    - **The change.**
+      - Sc/NaturalAltgardContract.cs: ProtectedFor and WithProtectedItems, which gives the
+        coin-gear, Haramel and Abyss-entry scopes their lists for another class.
+      - J: the step that gives another class its reward picks (NR-32) gives it these lists
+        too, and traces them as leg-protected-items. The Cleric's leg is the contract
+        itself, after BindIncoming as before.
+      - J, the bridge: the three kept accessories are the reviewed pair's by item id.
+        Another pair keeps the accessories it wears when the bridge is taken up
+        (bridge-kept-accessories), and its endpoint asks that they are still worn.
+      - Sc/NaturalIshalgenInventoryPolicy.cs: NaturalItem.IsEquipment. Nothing else: the
+        policy's decision has taken the observed class's rules since CP-23 (GearRules), and
+        its `cleric` flag and IsCleric are called by unit tests alone.
+    - **Left to later items, by their own text.** The coin-gear purchases and body slots,
+      and the retained weapon's identity in the coin-gear and Haramel scopes, are NR-38
+      and NR-40; BindIncoming still asks for the Cleric's staff, and Haramel's
+      RequiredIncomingItemIds are still the Cleric's. The bridge's supplies are NR-34 and
+      NR-35. So another class passes this rule and stops at those.
+    - **Proof, the one-time check** (the check file is not committed): for each of the
+      eleven second classes and each scope, the list with nothing worn is what every class
+      carries plus the class's picks, for example the Gladiator at the Abyss entry:
+      164000079, the two coins, the bundle, and its picks 100901214 and 110601626. With the
+      Cleric's gear given as worn, the rule gives the contract's own list back for every
+      class, pick for pin. A leg with none of the three scopes is returned as it is.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-33/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
+      16 skipped) and Fast passes (run nr33-fast, 11 passed).
 - [ ] **NR-34 - The help kit by class from level 10.** Depends: NR-31
   - Work: NR-Q8. The allowlist's rows get a kind: for every class, for a class that casts
     from mana, for a class with a reagent skill. The profile says which kinds its class
@@ -2840,3 +2889,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   eleven second classes at fifteen quests. Full gate guard-p8-a2: twelve scopes identical.
   Seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr32-fast-a2) pass. Next:
   NR-33, protected and kept items by rule.
+- 2026-10-09 — Loop: NR-33 done. For a class other than a leg's contract class, the
+  coin-gear, Haramel and Abyss-entry scopes protect what every class carries, the class's
+  own picks, and what it wears when the leg is taken up; the Cleric's gear ids are dropped.
+  The bridge keeps the accessories another pair wears. The clean-up and bundle lists are the
+  same for every class. The retained weapon's identity and the purchases stay with NR-38
+  and NR-40. Full gate guard-p8: twelve scopes identical. Seven checks, unit suite (4,629
+  passed, 16 skipped) and Fast (nr33-fast) pass. Next: NR-34, the help kit by class from
+  level 10.

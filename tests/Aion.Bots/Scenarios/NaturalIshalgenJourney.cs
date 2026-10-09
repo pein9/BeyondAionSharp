@@ -194,7 +194,26 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		// CP-26: the line's Ascension bridge, loaded once when the run first needs it. The accepted line's is the reviewed
 		// contract; a line that takes no second class has none and is refused there by name.
 		NaturalAscensionContract? lineBridge = null;
-		NaturalAscensionContract LineBridge() => lineBridge ??= NaturalAscensionContract.ForLine(ClassLine);
+		NaturalAscensionContract LineBridge()
+		{
+			if (lineBridge != null) return lineBridge;
+			NaturalAscensionContract bridge = NaturalAscensionContract.ForLine(ClassLine);
+			// NR-33: the kept accessories are the reviewed pair's own, by item id. Another pair keeps the accessories it wears
+			// when the bridge is taken up; its endpoint then asks that they are still worn.
+			if (bridge.SecondClass != NaturalAscensionContract.LoadDefault().SecondClass)
+			{
+				BotWorldModel world = session.Api.World;
+				NaturalIshalgenInventoryPolicy items = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot,
+					world.Inventory.Values.Select(item => item.ItemId), ClassLine);
+				bridge = bridge with
+				{
+					KeptAccessories = [.. NaturalAltgardContinuation.EquippedItemIds(world).Where(id => items.Item(id).IsAccessory).Distinct().Order()],
+				};
+				session.TraceDiagnostic("bridge-kept-accessories", new Dictionary<string, object?>
+				{ ["class"] = bridge.SecondClass.ToString(), ["worn"] = bridge.KeptAccessories });
+			}
+			return lineBridge = bridge;
+		}
 		NaturalJourneyCheckpoint? checkpoint = null;
 		NaturalCoinGearProgress? coinGearProgress = null;
 		NaturalHaramelProgress? haramelProgress = null;
@@ -292,21 +311,36 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			// NR-32: a leg's reward picks are those of the class its contract was written for (start.class). A character of
 			// another class takes, at the same quests, what its gear rules choose from the list the server offers it, decided
 			// when the leg is taken up, from what it then owns.
+			// NR-33: what the leg's coin-gear, Haramel and Abyss-entry scopes protect by item id is that class's too. Another
+			// class protects its own picks and what it wears when the leg is taken up, beside what every class carries.
 			NaturalAltgardContract WithObservedClassRewards(NaturalAltgardContract leg)
 			{
 				BotWorldModel world = session.Api.World;
 				byte? classId = world.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass;
-				if (leg.RewardChoiceList.Length == 0 || classId is not { } observedId ||
-					PlayerClassExtensions.GetPlayerClassById(observedId, true) is not { } observedClass ||
+				if (leg.RewardChoiceList.Length == 0 && leg.CoinGear == null && leg.Haramel == null && leg.AbyssEntry == null ||
+					classId is not { } observedId || PlayerClassExtensions.GetPlayerClassById(observedId, true) is not { } observedClass ||
 					observedClass.ToString() == leg.Start.Class) return leg;
 				NaturalGearRules rules = NaturalClassProfiles.For(classId, ClassLine, runtime.Data).Gear;
+				int[] contractItems = [.. leg.CoinGear?.ProtectedItemIds ?? [], .. leg.Haramel?.ProtectedItemIds ?? [], .. leg.AbyssEntry?.ProtectedItemIds ?? []];
 				NaturalIshalgenInventoryPolicy rewards = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot,
-					world.Inventory.Values.Select(item => item.ItemId), ClassLine);
+					world.Inventory.Values.Select(item => item.ItemId).Concat(contractItems), ClassLine);
 				NaturalAltgardContract picked = leg.WithRewardChoices(choice =>
 					rewards.RewardChoiceFor(choice, world.Level, world.Inventory.Values, rules));
-				session.TraceDiagnostic("leg-reward-picks", new Dictionary<string, object?>
-				{ ["leg"] = leg.Leg, ["class"] = observedClass.ToString(), ["contractClass"] = leg.Start.Class, ["picks"] = picked.RewardChoiceList });
-				return picked;
+				if (leg.RewardChoiceList.Length > 0)
+					session.TraceDiagnostic("leg-reward-picks", new Dictionary<string, object?>
+					{ ["leg"] = leg.Leg, ["class"] = observedClass.ToString(), ["contractClass"] = leg.Start.Class, ["picks"] = picked.RewardChoiceList });
+				Dictionary<int, int> picks = leg.RewardChoiceList.ToDictionary(pin => pin.ItemId,
+					pin => picked.RewardChoiceList.Single(choice => choice.QuestId == pin.QuestId).ItemId);
+				int[] worn = NaturalAltgardContinuation.EquippedItemIds(world);
+				NaturalAltgardContract own = picked.WithProtectedItems(ids =>
+					NaturalAltgardContract.ProtectedFor(ids, picks, id => rewards.Item(id).IsEquipment, worn));
+				if (!ReferenceEquals(own, picked))
+					session.TraceDiagnostic("leg-protected-items", new Dictionary<string, object?>
+					{
+						["leg"] = leg.Leg, ["class"] = observedClass.ToString(), ["contractClass"] = leg.Start.Class, ["worn"] = worn,
+						["coinGear"] = own.CoinGear?.ProtectedItemIds, ["haramel"] = own.Haramel?.ProtectedItemIds, ["abyssEntry"] = own.AbyssEntry?.ProtectedItemIds,
+					});
+				return own;
 			}
 			NaturalAltgardContract? altgardLeg = altgardLegId is { } legId ? NaturalAltgardContract.LoadLeg(legId) : null;
 			if (laterCapital != null && altgardLeg != null)

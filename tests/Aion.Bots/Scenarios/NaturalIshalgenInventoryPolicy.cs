@@ -44,6 +44,13 @@ public sealed record NaturalItem(int Id, string Group, int[] Restrict, int[] Res
 	// NA-09: after Ascension the Cleric also wears chain and staves (masteries 49 and 89). CP-29a: both rule sets are
 	// built from the class's gear table.
 	public bool IsAccessory => Group is "RING" or "EARRING" or "NECKLACE" or "BELT";
+	/// <summary>NR-33: the item is worn or held as gear: a weapon, a shield, a piece of armor, a hat or an accessory, by
+	/// the slots its item group may take. A power shard, a stigma stone, wings and a plume take slots too and are not
+	/// gear of a class's kind.</summary>
+	public bool IsEquipment => Enum.TryParse(Group, out Aion.GameServer.Model.Templates.Items.Enums.ItemGroup group) &&
+		group is not (Aion.GameServer.Model.Templates.Items.Enums.ItemGroup.POWER_SHARDS or Aion.GameServer.Model.Templates.Items.Enums.ItemGroup.STIGMA
+			or Aion.GameServer.Model.Templates.Items.Enums.ItemGroup.WING or Aion.GameServer.Model.Templates.Items.Enums.ItemGroup.PLUME) &&
+		Aion.GameServer.Model.Templates.Items.Enums.ItemGroupExtensions.GetValidEquipmentSlots(group) != 0;
 	public bool IsClericGear => NaturalGearRules.Cleric.IsGear(this);
 	public string? ClericGearSlot => NaturalGearRules.Cleric.Slot(this);
 	public bool UsableByClericAt(int level) => NaturalGearRules.Cleric.Usable(this, level);

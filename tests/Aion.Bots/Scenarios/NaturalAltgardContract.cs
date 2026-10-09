@@ -115,6 +115,32 @@ public sealed record NaturalAltgardContract(
 		};
 	}
 
+	/// <summary>
+	/// NR-33: the same leg with other protected items in its coin-gear, Haramel and Abyss-entry scopes. Those lists are
+	/// the contract class's (<see cref="NaturalAltgardStart.Class"/>); <paramref name="own"/> gives another class's list
+	/// for each (<see cref="ProtectedFor"/>).
+	/// </summary>
+	public NaturalAltgardContract WithProtectedItems(Func<int[], int[]> own) =>
+		CoinGear == null && Haramel == null && AbyssEntry == null ? this : this with
+		{
+			CoinGear = CoinGear == null ? null : CoinGear with { ProtectedItemIds = own(CoinGear.ProtectedItemIds) },
+			Haramel = Haramel == null ? null : Haramel with { ProtectedItemIds = own(Haramel.ProtectedItemIds) },
+			AbyssEntry = AbyssEntry == null ? null : AbyssEntry with { ProtectedItemIds = own(AbyssEntry.ProtectedItemIds) },
+		};
+
+	/// <summary>
+	/// NR-33: what a leg protects for a class other than its contract's. A leg's list names the contract class's gear by
+	/// item id beside things every class carries (coins, bundles, supplies). So for another class: an id that is one of
+	/// the leg's reward pins becomes that class's pick at the same quest; any other gear in the list is dropped; what the
+	/// character wears when the leg is taken up is added; everything else stays.
+	/// </summary>
+	/// <param name="picks">The leg's pinned reward items, each with the class's pick at the same quest.</param>
+	/// <param name="isEquipment">Whether an item id is gear (<see cref="NaturalItem.IsEquipment"/>).</param>
+	/// <param name="worn">The item ids the character wears at the leg's start.</param>
+	public static int[] ProtectedFor(IEnumerable<int> contractIds, IReadOnlyDictionary<int, int> picks, Func<int, bool> isEquipment,
+		IEnumerable<int> worn) => contractIds.Where(id => picks.ContainsKey(id) || !isEquipment(id))
+			.Select(id => picks.GetValueOrDefault(id, id)).Concat(worn).Distinct().Order().ToArray();
+
 	/// <summary>Leg 1 sections, for code that only runs Leg 1.</summary>
 	public NaturalAltgardFlight RequiredFlight => Flight ?? throw new InvalidDataException($"{Leg} has no flight rules.");
 	public NaturalAltgardItemUse RequiredItemUse => ItemUse ?? throw new InvalidDataException($"{Leg} has no item use.");
