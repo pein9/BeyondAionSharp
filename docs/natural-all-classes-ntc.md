@@ -1836,15 +1836,54 @@ can use them. The order below is the order of work: the item that saves time com
       - The whole solution builds, the live tool with it. Bundle: the seven pre-commit
         checks pass, Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and Fast
         passes (run nr46b-fast, 11 passed).
-- [ ] **NR-46c - The journey's own code.** Depends: NR-48
+- [x] **NR-46c - The journey's own code.** Depends: NR-48
   - Work: A fifth of scope c is the journey's own code and was not split. Split it with a
     one-time probe (pull planning, movement plans, what it observes each step) and write
     the table. A part over a tenth of the run that can be made cheaper with the same
     answers is fixed here; otherwise the table closes the item.
   - Proof: The table is in this document; the full gate identical if code changed.
+  - 2026-10-09: done, with no code. The journey's own code is about a fiftieth of the
+    run. What NR-46 measured as a fifth was the navmesh router, which the journey also
+    asks directly, past the place that was measured.
+    - **How it was measured.** The probe of NR-46 again, with sections on the journey's
+      own parts, on scope c in two passes (run/nr/NR-46c/split-c.txt and split-c2.txt;
+      both replays passed). The probe is removed and the tree is clean.
+    - **The first pass** put 30.6 seconds on the pull (44 pulls), 16.3 on the approach to
+      a spawn and 11.4 on the navigator's route search, and under a second on the fight's
+      loop, the rest, the retreat, the hook before every send and the movement plans.
+    - **The second pass** timed the navmesh router itself, and the pull's and the
+      approach's time went to it. Scope c, 208.9 seconds:
+
+      | Part | Seconds | Share | Calls |
+      |---|---|---|---|
+      | The navmesh router finding a path, without its edge traces | 75.2 | 36.0% | 1,178 |
+      | Tracing an edge on the ground | 67.6 | 32.4% | 683,149 |
+      | The server: its clock | 33.2 | 15.9% | 19,114 |
+      | The navigator's route search, its own part | 10.1 | 4.8% | 153 |
+      | The server: handling the bot's packets | 7.2 | 3.5% | 42,076 |
+      | The grid search, without its edge traces | 4.1 | 2.0% | 150 |
+      | The approach to a spawn, its own part | 3.8 | 1.8% | 109 |
+      | The journey, everything not named here | 2.3 | 1.1% | |
+      | The trace | 1.2 | 0.6% | 112,257 |
+      | The pull planner, the pull, the fight's loop, the retreat, the rest, the navigator's observation, the world model, movement, the hook before every send, together | 2.9 | 1.4% | |
+
+      - The router is asked 1,178 times: 683 times through the geometry's route methods
+        and 495 times directly, most of them by the pull, which asks whether each firing
+        spot it considers can be reached. A path costs 64 ms without its traces.
+      - Most of the edge traces that are left are the router's own checks of its legs.
+      - So routes are 71% of this scope now, the server 19%, and everything the journey
+        decides is under 3%.
+    - **Nothing to fix here.** No part of the journey's own code is a tenth of the run.
+      The router is NR-46d's, whose text is brought up to these numbers.
 - [ ] **NR-46d - Navmesh routes.** Depends: NR-48
-  - Work: 683 routes at 51 ms each are 11.7% of scope c. Count how many are asked again
-    with the same arguments, and reuse an answer only where it is certain to be the same.
+  - Work: The navmesh router is 36% of scope c without its edge traces, and most of the
+    remaining 32% of edge traces are its leg checks (NR-46c): 1,178 paths at 64 ms, 495 of
+    them asked directly by the journey, mostly by the pull for each firing spot. First
+    count, with a one-time probe: how many paths are asked again at the same instant with
+    the same arguments, and where a path's time goes (the corridor search, the pulling of
+    the string, the checks and repairs of its legs). Then reuse an answer only where it
+    is certain to be the same, and make cheaper what the count shows, with the same
+    paths.
   - Proof: The full gate with -Parallel 8 identical. Scope c's wall time before and after.
 - [x] **NR-44 - Bots take turns in one world.** Depends: NR-45
   - Work: Survey C1, parts 4 to 6. Java first: who gets a quest's kill when two players
@@ -2524,3 +2563,7 @@ report what was done, what is parked or blocked, and what the operator must deci
   kill looks for the next. Round r3-a2, two worlds of three starters: all six reach Munin.
   Full gate guard-p8: twelve scopes identical. Seven checks, unit suite (4,629 passed, 16
   skipped) and Fast (nr48-fast) pass. Next: NR-46c, the journey's own code.
+- 2026-10-09 — Loop: NR-46c done, no code. The journey's own code is about a fiftieth of
+  scope c. The fifth NR-46 saw was the navmesh router asked directly: 1,178 paths, 36% of
+  the scope without their edge traces, and most of the 32% of edge traces are its leg
+  checks. NR-46d's text is brought up to these numbers. Next: NR-46d, navmesh routes.
