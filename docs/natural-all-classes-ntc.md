@@ -3157,6 +3157,10 @@ Gunner NR-120, Rider NR-130, Bard NR-140. The class's survey item writes the oth
    For the same reason the Templar plays its first stage, to the Altgard bind (NR-52),
    alone and before the other surveys: no line but the Priest's has passed the trial, the
    class choice, the ceremony and the dispatch, and what stops it there stops every class.
+   NR-52 showed it: two stops on the bridge, both at places only the Priest's line had
+   passed. So the Templar is the pilot for the legs too (NR-53 to NR-57): it plays each
+   alone and ahead, and what it meets is mended once. The other classes' surveys and the
+   rounds of all classes follow.
 3. Then the rounds, numbered NR-R1, NR-R2 and so on, written by the loop as it goes. A
    round takes every class that is not parked from where its last capture stands to the
    next stage: first from creation to the Altgard bind, then the legs in the Cleric's
@@ -3624,7 +3628,7 @@ The template:
       guard-p8 (run/nr/NR-51/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
       16 skipped) and Fast passes (run nr51-fast, 11 passed).
-- [ ] **NR-52 - Templar: to Altgard.** Depends: NR-51; ticked by the round that gives it
+- [x] **NR-52 - Templar: to Altgard.** Depends: NR-51; ticked by the round that gives it
   - Work: A fresh Asimtemplar plays Ishalgen as a Warrior, the trial, the Templar choice
     at Munin, the ceremony with the sword and the dispatch Q2901, and is captured at the
     Altgard bind as altgard-templar-s1.
@@ -3658,6 +3662,30 @@ The template:
     - **Found, and logged (rule (f)).** In the trial Body Smash was decided three times
       running against the fifth opponent (1:10:56 to 1:10:58), which is what a cast the
       server did not carry out looks like. The fight went on and won. Not followed here.
+  - 2026-10-09: done. altgard-templar-s1 is captured from committed code, and the capture
+    verified its endpoint. The script's Verify action has no form for a bridge snapshot.
+    - **The capture** (run nr52-capture-a3 at c86110252; sim-snapshot.ps1 -Action Capture
+      -Bridge -Class warrior-templar, as the accepted line's `altgard` was made; log
+      run/nr/NR-52/capture-a3.log, evidence run/snapshots/_capture/nr52-capture-a3).
+      Character 133266, class line warrior-templar, 12,489,286 ms of game time
+      (3 h 28 min), dump sha256 d3520144b20bf26f. A level-14 Templar,
+      alive, bound at the Altgard obelisk, 55 quests complete, the ceremony's sword
+      in the main hand and Raider's Shield in the off hand.
+    - **Proof.** The capture dumps only a verified bridge endpoint: its
+      bridge-completion.json says verified, for this character, and is kept in the
+      snapshot. That is what the accepted line's `altgard` rests on too.
+    - **Found, and logged (rule (f)): Verify has no form for a bridge snapshot.**
+      sim-snapshot.ps1 -Action Verify -Name altgard-templar-s1 (run nr52-verify-a3,
+      run/nr/NR-52/verify-a3/) restored a fresh copy and failed in 29 s: "Natural
+      journey expected 9, observed 14." A restore gives a plain bridge snapshot no
+      NA_ASCENSION, so the resumed run checks the Munin stop of level 9. It is so for
+      every line, the accepted one's `altgard` included, which was never asked. The
+      snapshot is what the next leg starts from, and that leg checks its start (NR-53).
+      The script is not changed here: the restore environment of `altgard` is what the
+      l1 scope of the gate starts on.
+    - **Next for the Templar.** It is the pilot (In rounds, step 2): its legs are played
+      from this snapshot one after another, each captured with -LaterCapital as the
+      accepted line's altgard-rc-l1 and the rest were, before the other classes' rounds.
 - [x] **NR-52a - The capital pass's end check names the line's ceremony weapon.**
   Depends: NR-51
   - Work: The second stop of NR-52. The check at the end of the capital pass asks that
@@ -4182,3 +4210,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   in 3 h 28 min of game time. Full gate guard-p8 (twelve scopes identical), seven checks,
   unit suite (4,629 passed, 16 skipped) and Fast (nr52a-fast) pass. Next: NR-52, the
   capture altgard-templar-s1 from the committed code, and its verification.
+- 2026-10-09 — Loop: NR-52 done. altgard-templar-s1 is captured at c86110252, its endpoint
+  verified by the capture (the Verify action has no form for a bridge snapshot of any line):
+  character 133266 of class line warrior-templar, a level-14 Templar bound at
+  the Altgard obelisk with the ceremony's sword and Raider's Shield, 55 quests,
+  3 h 28 min of game time. The Templar is the pilot for the legs too.
+  Next: NR-53, the Templar's Altgard legs l1 to l5, each from the last capture with
+  -LaterCapital.
