@@ -252,6 +252,8 @@ public sealed partial class NaturalIshalgenJourney
 			int statusPacketCount = session.PacketHistory.Count;
 			int? observedTargetHpPercent = null;
 			bool healedThisFight = false;
+			// NR-53b: what this fight has cast, so that a pull is cast once.
+			var castThisFight = new HashSet<ushort>();
 			bool inEmergency = false;
 			var targetTemplate = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == target) is { } observedTarget
 				? runtime.Data.NpcDataDh.GetNpcTemplate(observedTarget.TemplateId) : null;
@@ -367,7 +369,8 @@ public sealed partial class NaturalIshalgenJourney
 					OpenChainUseCount: tableChain.Current != null ? tableChain.UseCount : null,
 					ActiveEffectSkillIds: world.VisibleEffects?.Select(effect => effect.SkillId).ToHashSet(),
 					// NR-50b: a shield, or a second weapon or a two-hand weapon, for the skills that ask for one.
-					OffHand: NaturalSkillCatalog.OffHandHeld(world.Inventory.Values, runtime.Data.ItemDataDh.GetItemTemplate));
+					OffHand: NaturalSkillCatalog.OffHandHeld(world.Inventory.Values, runtime.Data.ItemDataDh.GetItemTemplate),
+					CastThisFight: castThisFight);
 				NaturalCombatChoice choice = policy.Decide(observation, now, mauPolicy);
 				NaturalCombatCandidate[] candidates = policy.CandidateActions(observation, now, choice, mauPolicy);
 				if (!candidates.Any(candidate => candidate.Action == choice.Action &&
@@ -488,6 +491,7 @@ public sealed partial class NaturalIshalgenJourney
 						}
 						if (!await CastAsync(choice.Skill!, choice.Action == "cast-self" ? session.CharacterId : target, token))
 							return false;
+						if (lastCastCompleted) castThisFight.Add(choice.Skill!.Id);
 						// The fight has had its heal: the class's own heal, the one its rest names (NR-18).
 						if (lastCastCompleted && choice.Action == "cast-self" && choice.Skill!.Role == profile.Rest.HealRole)
 							healedThisFight = true;

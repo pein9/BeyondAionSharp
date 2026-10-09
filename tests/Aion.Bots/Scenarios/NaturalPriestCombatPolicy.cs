@@ -62,6 +62,7 @@ public static class NaturalPriestSkills
 /// <param name="ActiveEffectSkillIds">The skill ids of the effects the client shows on the bot; null when unobserved.</param>
 /// <param name="OffHand">NR-50b: what the bot holds for a skill's left-hand condition
 /// (<see cref="Classes.NaturalSkillCatalog.OffHandHeld"/>): <c>SHIELD</c>, <c>DUAL</c> or null.</param>
+/// <param name="CastThisFight">NR-53b: the skills the bot has cast in this fight; null when the caller does not say.</param>
 public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int Mp, int MaxMp,
 	bool Dead, bool Aggro, float? TargetDistance, int? TargetObjectId,
 	IReadOnlyDictionary<int, BotSkill> Learned, IReadOnlyDictionary<int, DateTimeOffset> Cooldowns,
@@ -75,7 +76,7 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	bool ShieldScrollReady = false, ushort? LastCancelledSkillId = null,
 	int? WeaponAttackRangeMillis = null, int? WeaponAttackSpeedMillis = null,
 	string? PreviousChainCategory = null, DateTimeOffset? ChainStepAt = null, int? OpenChainUseCount = null,
-	IReadOnlySet<int>? ActiveEffectSkillIds = null, string? OffHand = null);
+	IReadOnlySet<int>? ActiveEffectSkillIds = null, string? OffHand = null, IReadOnlySet<ushort>? CastThisFight = null);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);

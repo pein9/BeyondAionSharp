@@ -18,7 +18,8 @@ public static class NaturalTemplarProfile
 	/// chain; Robust Blow and Rage are its second steps and Wrath Strike (level 19) follows Robust Blow. Body Smash opens
 	/// a chain of its own. Dazing Severe Blow (level 10) opens a third and Divine Blow (level 11) follows it. Empyrean
 	/// Chastisement is paid with 2,000 DP. Empyrean Armor (level 13) heals a quarter of its HP and raises the most it
-	/// has by half for three minutes. Shield Bash (level 10) stuns for 2 s and needs a shield worn (NR-50b).
+	/// has by half for three minutes. Shield Bash (level 10) stuns for 2 s and needs a shield worn (NR-50b). NR-53b: Taunt
+	/// (level 10) sets a monster 15 m away on the Templar.
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
@@ -33,25 +34,24 @@ public static class NaturalTemplarProfile
 		[3129] = "armor",
 		[3072] = "bash", [3073] = "bash", [3074] = "bash", [3075] = "bash",
 		// NR-50a: the two powder skills, cast only in a rest.
+		[2981] = "taunt", [2982] = "taunt", [2983] = "taunt", [2984] = "taunt",
 		[246] = "herb", [247] = "herb", [251] = "herb", [253] = "herb",
 		[249] = "mp-recovery", [250] = "mp-recovery", [252] = "mp-recovery", [254] = "mp-recovery",
 	};
 
 	private const string Counter = "the client offers it only after a block or a resist (counter_skill BLOCK,RESIST), which the bot does not observe. " +
 		"Java reads a counter of two statuses as none and would accept it at any time; the bot does not send what a client could not.";
-	private const string Enmity = "it raises enmity and deals no damage; alone, the monster is already on the Templar.";
 
 	/// <summary>Every other active skill a Templar learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
-		[2981] = "Taunt I: " + Enmity, [2982] = "Taunt II: " + Enmity, [2983] = "Taunt III: " + Enmity, [2984] = "Taunt IV: " + Enmity,
-		[3010] = "Provoking Roar: " + Enmity,
+		[3010] = "Provoking Roar raises the enmity of what is already around the Templar and deals no damage; alone they are on it anyway.",
 		[3094] = "Shield Counter I: " + Counter, [3095] = "Shield Counter II: " + Counter, [3096] = "Shield Counter III: " + Counter,
 		[3097] = "Shield Counter IV: " + Counter,
 		[3048] = "Courageous Shield: " + Counter,
 		[3085] = "Avenging Blow: " + Counter,
-		[3123] = "Aether Leash pulls a target from 15 m with a 30 s cooldown. A listed attack at range that only cools down is waited " +
-			"for where the class stands (CP-47), which would hold a class that walks in away from its target; the probe rows decide its rule.",
+		[3123] = "Aether Leash drags its target to the Templar. The server says where only in the cast's result (Java PulledEffect sends " +
+			"no forced move for a monster), which the bot does not read: it took the monster to be where it was and walked there (NR-53b).",
 		[3124] = "Charge raises run speed for 13 s; the journey's travel casts no skill, and the kit's running scroll is its speed.",
 	};
 
@@ -65,7 +65,14 @@ public static class NaturalTemplarProfile
 	/// Chastisement is cast only at or below 70% HP, and then before every other opener: its 2,000 DP also buy a shield
 	/// that takes half of every hit for 15 s, which is worth most at the start of what is left of the fight. NR-51: it
 	/// stood last at first, and a monster of the route was dead before its turn came. The weapon swings whenever no
-	/// skill is ready. Nothing reaches a target that is not on the Templar, so it walks in.
+	/// skill is ready.
+	/// <para>
+	/// NR-53b: it pulls, as a tank does. From range: Taunt (free, 10 s), and then it holds where it stands until the
+	/// monster is on it. Taunt is a pull and no attack: once the fight is on it is not cast again, and a monster that
+	/// does not come, because it attacks from range or runs at its last HP, is walked to. It walked in at first, as the Warrior, and in
+	/// Altgard that put it inside every pack: in leg 4 it left thirteen fights at three attackers and was refused 22
+	/// walks. A target that attacks from range does not come to a Taunt; the Templar walks to that one.
+	/// </para>
 	/// <para>
 	/// The ladder: the shield scroll at 50% HP, the life potion at or below 75%, and Empyrean Armor in an emergency only
 	/// (35% until 45%), whose 113 MP are kept back from Rage. It leaves at three attackers, or at 25% HP with nothing ready.
@@ -77,7 +84,7 @@ public static class NaturalTemplarProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-templar-v1",
-		Adjacent: ["chastise", "dazing", "divine", "bash", "strike", "robust", "rage", "wrath", "smash"], AtRange: [],
+		Adjacent: ["chastise", "dazing", "divine", "bash", "strike", "robust", "rage", "wrath", "smash"], AtRange: ["taunt"],
 		Upkeep: [],
 		Recovery:
 		[
@@ -86,7 +93,21 @@ public static class NaturalTemplarProfile
 			new(NaturalRecoveryKind.Skill, 35, "armor", EmergencyOnly: true),
 		],
 		SwarmAttackers: 3, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler,
-		OnlyWhenHurt: new Dictionary<string, int> { ["rage"] = 80, ["chastise"] = 70 });
+		OnlyWhenHurt: new Dictionary<string, int> { ["rage"] = 80, ["chastise"] = 70 }, PullRoles: ["taunt"]);
+
+	/// <summary>NR-53b: the distances of a pull with a 15 m skill, as the Priest line's are those of 25 m: the planned
+	/// pull opens at 13 m, a far target is approached to 10 m with sight of it, and the stand-off is held at 11 m (15 m
+	/// less the arrival tolerance and the margin). The approach must end inside the stand-off, or no point of its route
+	/// is one to cast from.</summary>
+	private static readonly NaturalEngageRanges Ranges = new(
+		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, SpellRange: 14, PullDistance: 13, FiringRange: 14,
+		SpawnApproachRange: 13, SpawnPullScanRange: 20, FightThroughPullRange: 20,
+		StandoffSpellRange: 15, StandoffArrivalTolerance: 3, StandoffSafetyMargin: 1, RangedApproachRadius: 10);
+
+	/// <summary>NR-53b: a stand-off: a ranged route while the target is farther than 15 m, then up to it; after a distance
+	/// refusal come to 10 m, or inside melee reach for a melee skill.</summary>
+	private static readonly NaturalFightMovement Movement = new(NaturalPullStyle.StandOff,
+		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, RangedRouteBeyond: 15, RangeRefusalCloseIn: 10);
 
 	// NR-Q5, NR-Q7 and NR-Q13: a one-hand weapon and a shield, plate first, and the kit of a class that does not cast
 	// from mana and rests with the powder.
@@ -104,7 +125,7 @@ public static class NaturalTemplarProfile
 			Class = PlayerClass.TEMPLAR,
 			Skills = skills,
 			Excluded = excluded,
-			Combat = new NaturalRotationCombatPolicy(Rules, skills, NaturalWarriorProfile.Movement),
+			Combat = new NaturalRotationCombatPolicy(Rules, skills, Movement),
 			// NR-34, NR-Q13: no mana serum and no Awakening scroll; the powder; Courage in the shared scroll slot.
 			HelpItems = NaturalHelpItemRules.ForKinds(caster: false, reagent: true, sharedSlotFamily: "courage"),
 			Upkeep = [],
@@ -117,9 +138,9 @@ public static class NaturalTemplarProfile
 			// NR-50a: the powder first, then as the Warrior: the life potion below 90% HP, then sitting.
 			Rest = new NaturalRestRules(skills, HealBelowPercent: 90, ManaSitBelowPercent: 25, ManaSitUntilPercent: 50, MaximumQuietSits: 12,
 				PotionPlan: new NaturalPotionRestPlan(HpTargetPercent: 90, UsesMana: true), RestSkills: NaturalRestSkills.ReagentOnly(90)),
-			Ranges = NaturalPriestProfile.PriestLineRanges,
+			Ranges = Ranges,
 			Readiness = NaturalWarriorProfile.Readiness,
-			Movement = NaturalWarriorProfile.Movement,
+			Movement = Movement,
 			Campaign = NaturalPriestProfile.PriestLineCampaign,
 			Gear = Gear,
 			Restock = NaturalWarriorProfile.Restock,

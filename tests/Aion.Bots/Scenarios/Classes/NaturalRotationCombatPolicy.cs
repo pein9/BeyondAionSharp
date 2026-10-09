@@ -92,12 +92,18 @@ public enum NaturalAutoAttack
 /// <param name="RangedHoldWithin">NR-11: with nothing to cast or swing at a target that attacks from range, hold where
 /// the bot stands while the profile's ranged hold is on and the target is within this many metres or two attackers
 /// are there, where a stand-off would walk up to it. Null for no hold.</param>
+/// <param name="PullRoles">NR-53b: attack roles at range that hurt nothing and only set the target on the bot (the
+/// Templar's Taunt). Such a role is cast once in a fight and waited for while it cools down, which is the time the
+/// target has to come. After that, or as soon as the fight is on, with the bot under attack or the target hurt, it is
+/// left out of the list: a target that does not come, because it attacks from range, runs or does not answer, is gone
+/// to. Null for none.</param>
 public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjacent, IReadOnlyList<string> AtRange,
 	IReadOnlyList<NaturalRotationUpkeep> Upkeep, IReadOnlyList<NaturalRecoveryStep> Recovery, int SwarmAttackers, int FleeHpPercent,
 	NaturalAutoAttack AutoAttack, string? ControlRole = null, int EmergencyPercent = 35, int EmergencyClearPercent = 45,
 	IReadOnlyDictionary<string, int>? OnlyWhenHurt = null, bool HoldOpenChain = false, int? EmergencySeasonedPairPercent = null,
 	NaturalFinisher? Finisher = null, string? ReserveRole = null, int? ManaPotionReserveMargin = null,
-	IReadOnlyList<string>? Openers = null, IReadOnlyDictionary<string, int>? OnlyWhileTargetAbove = null, float? RangedHoldWithin = null)
+	IReadOnlyList<string>? Openers = null, IReadOnlyDictionary<string, int>? OnlyWhileTargetAbove = null, float? RangedHoldWithin = null,
+	IReadOnlyList<string>? PullRoles = null)
 {
 	/// <summary>The table's two attack lists as lines of skill ids, every rank of a role in level order, for
 	/// <see cref="NaturalProfileValidator"/>.</summary>
@@ -143,7 +149,7 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			.Concat(rules.ControlRole == null ? [] : [rules.ControlRole])
 			.Concat(rules.Finisher == null ? [] : [rules.Finisher.Role])
 			.Concat(rules.ReserveRole == null ? [] : [rules.ReserveRole])
-			.Concat(rules.Openers ?? []).Concat(rules.OnlyWhileTargetAbove?.Keys ?? []);
+			.Concat(rules.Openers ?? []).Concat(rules.OnlyWhileTargetAbove?.Keys ?? []).Concat(rules.PullRoles ?? []);
 		foreach (string role in named.Distinct())
 			if (!this.catalog.Any(skill => skill.Role == role))
 				throw new InvalidDataException($"Rotation table {rules.Id} names the role '{role}', which its catalog does not hold.");
@@ -248,8 +254,14 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		}
 		bool adjacent = Adjacent(state);
 		IReadOnlyList<string> list = adjacent ? rules.Adjacent : rules.AtRange;
+		// NR-53b: a pull has done its work once the fight is on, or once it was cast in this fight and has cooled down.
+		bool fightIsOn = state.Aggro || state.TargetHpPercent is < 100;
+		bool PullSpent(string role) => rules.PullRoles?.Contains(role) == true && (fightIsOn ||
+			catalog.Any(skill => skill.Role == role && state.CastThisFight?.Contains(skill.Id) == true &&
+				!(state.Cooldowns.TryGetValue(skill.CooldownId, out DateTimeOffset pullReady) && pullReady > now)));
 		// A role that is cast only when hurt is left out of the line while HP is above its percentage.
 		NaturalPriestSkill[] line = list
+			.Where(role => !PullSpent(role))
 			.Where(role => rules.OnlyWhenHurt == null || !rules.OnlyWhenHurt.TryGetValue(role, out int percent) || HpAtOrBelow(percent))
 			.Where(role => rules.OnlyWhileTargetAbove == null || !rules.OnlyWhileTargetAbove.TryGetValue(role, out int least) ||
 				state.TargetHpPercent is not int targetHp || targetHp > least)

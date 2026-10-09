@@ -3728,6 +3728,28 @@ The template:
       records, 43 fights. Five fungus in two sorties, three swings and 4.5 s each: 15
       swings sent, 15 carried out. The Cleric's probe (AF-06) measured two Smites and
       5.7 s a fungus.
+  - 2026-10-09, legs l1 to l3 captured; leg l4 stopped, and with NR-53b a replay played it
+    to its end. Legs l4 and l5 are captured after NR-53b is committed.
+    - **Captured** from the committed code at 23cfb741b, each with -LaterCapital from the
+      capture before it (runs nr53-l1-a2, nr53-l2-a2, nr53-l3-a2; logs
+      run/nr/NR-53/l1-a2.log and so on; character 133266 of class line warrior-templar):
+
+      | Snapshot | From | The leg | At its end | Dump sha256 |
+      |---|---|---|---|---|
+      | altgard-rc-l1-templar | altgard-templar-s1 | 42 min 29 s, no death | level 15, 66 quests, 15,058,334 ms of game time | f0fde6d9cd358771 |
+      | altgard-rc-l2-templar | altgard-rc-l1-templar | 1 h 07 min, no death | level 16, 76 quests, 19,116,099 ms | 3b2a43491589a56d |
+      | altgard-rc-l3-templar | altgard-rc-l2-templar | 18 min 26 s, no death | level 17, 81 quests, 20,242,291 ms | a609a6acbe92b203 |
+
+      Each capture dumps only a verified leg endpoint (altgard-l<n>-completion.json in the
+      snapshot), and each next leg started from it and checked its start.
+    - **Leg l4, attempt 1** (capture run nr53-l4-a2 from altgard-rc-l3-templar; nothing
+      captured; evidence run/nr/NR-53/l4-a2/). No quest, item or level progress for an
+      hour of game time. Q2225's kills were made; at Q2224 the Templar walked into the
+      mosbears' packs. Of 49 fights 14 were kills. The walk to the target was refused 22
+      times ("No collision-checked route": the target stands in its neighbours' circles,
+      and a pack of two or more is not accepted), and it left 13 fights at three or more
+      attackers. One death. By rule (i) the mend is NR-53b: it is the class's way of
+      opening a fight, not a small change.
 - [x] **NR-53a - A swing in flight hovers inside the swing's reach.** Depends: NR-52
   - Work: The first stop of NR-53. Java first: what the server asks of a swing's
     distance. The air attack of a class with no skill for the air is its weapon's swing
@@ -3769,6 +3791,80 @@ The template:
       l1 with its five fungus among them. Seven pre-commit checks pass,
       Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and Fast passes (run
       nr53a-fast, 11 passed).
+- [x] **NR-53b - The Templar pulls from range with Taunt.** Depends: NR-53a
+  - Work: The stop of leg l4. Java first: what Taunt does to a monster and what a drag
+    tells the client. The Templar opens a fight as a tank does: Taunt from range, and the
+    monster comes. The distances of its profile are those of a 15 m skill. A pull is no
+    attack: the rule table says so, generic for every class that pulls.
+  - Proof: The four probe rows pass with the pull; the Templar's leg l4 is played to its
+    end in a replay; the full gate identical.
+  - 2026-10-09: done, after two forms that did not hold (the leash, and a pull that was
+    waited for without end).
+    - **Java.** Taunt's effects are hostileup and targetchange (skill_templates.xml,
+      2981): enmity, and no damage; a monster given enmity fights. Aether Leash's drag is
+      its sub-skill 8441, effect pulled: PulledEffect.calculate 33-53 puts the target 1.5 m
+      from the caster and startEffect 56-72 moves it there, and sends SM_FORCED_MOVE only
+      when the one dragged is a player. For a monster the place is told in the cast's
+      result alone. No server change.
+    - **The change.**
+      - Sc/Classes/NaturalTemplarProfile.cs: Taunt has the role taunt and is the one
+        role at range. The pull style is the stand-off, not the walk-in. Ranges of its
+        own: a planned pull opens at 13 m; a far target is approached to 10 m with sight
+        of it; the stand-off is 11 m (15 m less the arrival tolerance and the margin),
+        and the approach must end inside it, or no point of its route is one to cast
+        from (the first probe attempt stopped on a 12 m approach).
+      - Sc/Classes/NaturalRotationCombatPolicy.cs: PullRoles, a new part of the rule
+        table. A pull role is cast once in a fight and waited for while it cools down,
+        which is the time the target has to come. After that, or as soon as the bot is
+        under attack or the target is hurt, it is left out of the list: a target that
+        does not come is gone to. The fight's observation carries what the fight has
+        cast (J.Combat). No table of a recorded class names a pull role.
+      - Aether Leash is left out again, with its reason in the profile: the bot does not
+        read a dragged monster's new place from the cast's result. It took the monster to
+        be where it was, walked there, and its skills were refused for distance
+        (STR_SKILL_NOT_ENOUGH_DISTANCE) while it believed it stood on the target.
+      - SimT, the Templar's probe rows: the level-20 row no longer asks that Rage is
+        cast in the hurt fight, which now ends before Rage's place in the chain.
+    - **The forms that did not hold** (replays of leg l4 from altgard-rc-l3-templar;
+      evidence run/nr/NR-53/l4-a3/ and run/nr/NR-53b/l4-a4/, l4-a5/):
+      - **l4-a3, Aether Leash before Taunt.** Q2224 was finished in 18 min. At Q2227's
+        lake spirits the leash dragged the spirit to the Templar and the Templar walked
+        to where the spirit had been; Dazing Severe Blow was refused for distance seven
+        times a fight. "NPC 210660 was not killed in 6 non-retreat attempts."
+      - **l4-a4, Taunt alone.** 179 kills, level 19, 94 quests in 3 h 11 min. Then a
+        grave robbing sentry at 1% HP ran 15 m off and the Templar stood taunting it
+        every 10 s: 1,000 actions without a kill.
+      - **l4-a5, a pull left out once the fight is on.** The same place: the sentry was
+        a new fight with nothing known of its HP and no attack, so the pull was still
+        waited for. Hence "cast once in a fight".
+    - **Proof, the replay** (l4-a6; run/nr/NR-53b/l4-a6/replay.json: passed). Leg l4
+      complete and verified: level 20, 95 quests, 2 h 50 min of game time, 104,262
+      records. 270 fights, 212 kills, 30 retreats, 36 approaches refused, two deaths with
+      their soul heals. 91 life potions drunk in fights. The Cleric's recorded leg is
+      112,256 records.
+    - **Proof, the probe rows** (runs nr53b-probe-a3 and a3b; logs
+      run/nr/NR-53b/probe-a3.log, probe-a3b.log; a1 and a2 are the earlier forms). All
+      four pass. Every fight opens with Taunt from inside 15 m and the monster comes:
+      an ice crasaur dead in 14.8 s at level 10; a starved mosbear in 9.2 s at level 20
+      and in 14.3 to 14.8 s at level 25, where the walk-in took 13.6 to 16.0 s.
+    - **Found, and logged (rule (f)).**
+      - **A leg does not wear its rewards.** After leg l4 the Templar is level 20 with
+        the ceremony's level-10 sword in its hand and the Altgard Legionary Sword,
+        Sabatons and Breastplate of Q24013, Q24011 and Q24012 (level 16) in its bag. The
+        recorded Cleric does the same: its leg l4 begins and ends at level 19 with the
+        Karmic Staff. The equipment check runs at a leg's town-service stops and
+        between legs of the continuous journey, not after a turn-in. It is how the legs
+        are; a class that fights with its weapon pays more for it than a caster.
+      - **The leash.** Reading a dragged monster's place from SM_CASTSPELL_RESULT would
+        give the Templar its second pull, which is the one that brings a monster that
+        attacks from range.
+      - **Thirty retreats and two deaths in one leg.** The Templar leaves at three
+        attackers and the mosbears come in threes. Whether it should stand against three
+        is the swarm limit of its table; the rounds will say.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-53b/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
+      16 skipped) and Fast passes (run nr53b-fast, 11 passed).
 - [ ] **NR-54 - Templar: Altgard legs l6 to l11.** Depends: NR-53; ticked by its round
   - Work: As NR-53. Leg 11 is the destiny quest: its stone is 140000003 (NR-39).
   - Proof: Each capture verifies.
@@ -4281,3 +4377,14 @@ report what was done, what is parked or blocked, and what the operator must deci
   (twelve scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
   (nr53a-fast) pass. Next: NR-53, the capture of leg l1 as altgard-rc-l1-templar from the
   committed code, then legs l2 to l5.
+- 2026-10-09 — Loop: NR-53 legs l1 to l3 captured, NR-53b done. altgard-rc-l1-templar,
+  altgard-rc-l2-templar and altgard-rc-l3-templar are captured at 23cfb741b: levels 15, 16
+  and 17, no death. Leg l4 stopped: walking in put the Templar inside every mosbear pack
+  (13 retreats, 22 walks refused, an hour without progress). The Templar now pulls with
+  Taunt from range, with the distances of a 15 m skill, and the rule table has pull
+  roles: cast once in a fight, waited for while cooling, then the target is gone to.
+  Aether Leash stays out: the bot does not read where a dragged monster lands. Replay
+  l4-a6 played the leg to its end: level 20, 95 quests, 212 kills, 30 retreats, two
+  deaths. Probe rows a3 pass. Full gate guard-p8 (twelve scopes identical), seven checks,
+  unit suite (4,629 passed, 16 skipped) and Fast (nr53b-fast) pass. Next: NR-53, the
+  captures of legs l4 and l5 from the committed code.

@@ -1251,8 +1251,9 @@ public sealed partial class SimulationFastScenarioTests
 	/// NR-51, row templar-20. Prepared by the director: a level-20 Templar with the sword of Q24016 and Raider's Shield, by
 	/// the starved mosbears (210564, level 13) of the Cleric's row, with powder in the bag. The first fight is the
 	/// journey's alone: Wrath Strike follows Robust Blow, which follows Ferocious Strike. Before the second begins the
-	/// director gives 2,000 DP and cuts HP to 45%: Rage is cast in its chain and Empyrean Chastisement once nothing else
-	/// is ready, both only while it is hurt. Then the director cuts MP to 10% and the journey's rest casts MP Recovery.
+	/// director gives 2,000 DP and cuts HP to 45%: Empyrean Chastisement goes first, and Rage, when the fight lasts to its
+	/// place in the chain, is cast only while it is hurt. Then the director cuts MP to 10% and the journey's rest casts MP
+	/// Recovery. NR-53b: every fight of the Templar's rows opens with its pull, Taunt or Aether Leash from range.
 	/// </summary>
 	private async Task TemplarLevelTwentyRowAsync(StarterProbe probe, string id, CancellationToken token)
 	{
@@ -1291,7 +1292,6 @@ public sealed partial class SimulationFastScenarioTests
 		StarterTraceRecord[] chastised = hurt.Decided.Where(record => Decided(record, "cast-target", chastise)).ToArray();
 		Assert.All(raged, record => Assert.True(HpPercent(record) <= 80, $"Rage was decided at {HpPercent(record)}% HP."));
 		Assert.All(chastised, record => Assert.True(HpPercent(record) <= 70, $"Empyrean Chastisement was decided at {HpPercent(record)}% HP."));
-		Assert.True(raged.Length > 0, $"Rage was not cast while hurt: {hurt.Order}; decisions {hurt.Counts}.");
 		Assert.True(chastised.Length > 0, $"Empyrean Chastisement was not cast while hurt with 2,000 DP: {hurt.Order}; decisions {hurt.Counts}.");
 		Assert.True(probe.World.CurrentDp < 2000, $"The DP was not spent: {probe.World.CurrentDp}.");
 		Assert.Equal(0, hurt.Result.Deaths);
