@@ -1540,7 +1540,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					Require.True(world.Quests.TryGetValue(old.QuestId, out BotQuestState? current) &&
 						current.Status == old.Status && current.StepAndFlags == old.StepAndFlags, $"Capital pass changed retained Ishalgen Q{old.QuestId}."));
 				Require.True(AtQuestStep(capitalContract.DispatchQuestId, 0), "The capital pass advanced Q2904.");
-				NaturalJourneyItem staff = capitalBefore.Inventory.Single(item => item.ItemId == 101500498 && item.EquipmentSlot > 0);
+				// NR-52: the weapon the line took at the ceremony; the Karmic Staff for the accepted line.
+				int ceremonyWeapon = LineBridge().CeremonyReward.ItemId;
+				NaturalJourneyItem staff = capitalBefore.Inventory.Single(item => item.ItemId == ceremonyWeapon && item.EquipmentSlot > 0);
 				Require.True(world.Inventory.TryGetValue(staff.ObjectId, out BotInventoryItem? stillWorn) &&
 					stillWorn.ItemId == staff.ItemId && stillWorn.Details.EquippedSlot is > 0, "The capital pass replaced the ceremony staff.");
 				Require.True(capitalBefore.BindPoint == null || world.ObeliskBindPoint is { } bound &&
@@ -1690,6 +1692,13 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				}
 				Require.True(target != null, "No trial opponent became visible in Ataxiar.");
 				combat.ScriptedTrial = true;
+				// NR-52: the journey's fight was made for Ishalgen. A class that walks to its opponent walks by this map's
+				// navigator and geometry; the Priest casts from where it stands and never asks for them.
+				combat.EnterObservedMap = () =>
+				{
+					NaturalMapKey key = NaturalMapKey.Observe(session.Api.World);
+					combat.EnterMap(mapNavigators.Enter(key, newEntry: false), runtime.CreateGeometry(), key.MapId);
+				};
 				try
 				{
 					bool killed = await combat.TryKillAsync(target!.Value, token, retreatAnchor: session.CurrentPosition);
@@ -1699,7 +1708,11 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						["quest"] = session.Api.World.Quests.TryGetValue(2008, out BotQuestState? q) ? q.StepAndFlags : null,
 					});
 				}
-				finally { combat.ScriptedTrial = false; }
+				finally
+				{
+					combat.ScriptedTrial = false;
+					combat.EnterObservedMap = null;
+				}
 			}
 
 			// NA-21: the stock check for the approved help items (OD-13): the Cleric from level 10 on and (CP-06, CP-Q12)

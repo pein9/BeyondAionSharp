@@ -52,6 +52,11 @@ public sealed partial class NaturalIshalgenJourney
 		public int ReviveCount => revives;
 		/// <summary>The map a far target is approached on (NA-23 fights in Altgard); Ishalgen for the journey.</summary>
 		public int ApproachMapId { get; set; } = 220010000;
+		/// <summary>NR-52: asked when the bot must go to its target on a map that is not the one this fight was made for.
+		/// The journey then puts the fight on the map the client observes (<see cref="EnterMap"/>). The Ascension trial is
+		/// fought in its own instance by the journey's Ishalgen fight: a class that fights from where it stands never
+		/// asks, and one that walks to its opponent could not reach it.</summary>
+		public Action? EnterObservedMap { get; set; }
 		public Action? AfterBindRevive { get; set; }
 		/// <summary>Revives at the bound obelisk, as against revives inside an instance.</summary>
 		public int BindReviveCount => bindRevives;
@@ -497,6 +502,15 @@ public sealed partial class NaturalIshalgenJourney
 						await session.AdvanceAsync(TimeSpan.FromMilliseconds(interval + 100), token);
 						break;
 					case "approach":
+						if (EnterObservedMap != null && world.MapId is int observedMap && observedMap != ApproachMapId)
+						{
+							int madeFor = ApproachMapId;
+							EnterObservedMap();
+							session.TraceDiagnostic("combat-enters-observed-map", new Dictionary<string, object?>
+							{
+								["from"] = madeFor, ["to"] = ApproachMapId, ["targetObjectId"] = target,
+							});
+						}
 						BotPosition destination = npc.Position;
 						NaturalApproachStep step = profile.Movement.Approach(Distance(session.CurrentPosition, destination));
 						if (step == NaturalApproachStep.Hold)

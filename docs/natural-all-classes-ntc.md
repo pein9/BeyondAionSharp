@@ -3629,6 +3629,58 @@ The template:
     at Munin, the ceremony with the sword and the dispatch Q2901, and is captured at the
     Altgard bind as altgard-templar-s1.
   - Proof: The capture verifies.
+  - 2026-10-09: two attempts stopped, each at a place no line but the Priest's had come
+    to; with both mended a replay reached the Altgard bind. Not captured yet: a capture is
+    made from committed code, which NR-52a commits.
+    - **Attempt 1** (capture run nr52-capture-a1; nothing captured; evidence
+      run/nr/NR-52/capture-a1/). Ishalgen as a Warrior, with Raider's Shield from Q2100,
+      to the Ascension trial at 1 h 10 min, level 9. It stopped at the trial's first
+      opponent, 3.9 m away: "Map, position, or survival state changed during navigation."
+      The journey fights the trial in Ataxiar (320020000) with the fight it made for
+      Ishalgen, whose navigator and map are Ishalgen's. The Priest casts from where it
+      stands and never walks there. The one change (rule (i)): a fight that must go to
+      its target on a map that is not its own asks the journey for the map the client is
+      on (J.Combat, EnterObservedMap; J, FightAscensionTrialAsync). A fight that never
+      walks never asks, so the Priest's trial is as recorded.
+    - **Attempt 2** (replay pilot-a2, with that change; evidence run/nr/NR-52/pilot-a2/).
+      The trial's five opponents, the Templar choice, the ceremony with the sword, and
+      the ten quests of the capital pass, to level 11 at 1 h 25 min. It stopped at the
+      pass's end check, which looked for the Karmic Staff among what was worn before the
+      pass. A second failure, so by rule (i) it is NR-52a.
+    - **Replay pilot-a3** (both changes; run/nr/NR-52/pilot-a3/): reached and verified.
+      The early Ascension ended at 1 h 25 min with no death; the bridge ended at 3 h 28
+      min: a level-14 Templar bound at the Altgard obelisk, 55 quests complete, 128,650
+      records, 149 fights, two retreats, no death. It wears the ceremony's sword, Raider's
+      Shield, chain on four slots, two rings and a necklace. Supplied: 30 life potions,
+      30 shield scrolls, 20 running scrolls, 8 DP jelly and 200 powder, and no mana
+      serum (NR-Q13). In the trial the fight entered the observed map once and killed
+      the first four opponents in 15 s.
+    - **Found, and logged (rule (f)).** In the trial Body Smash was decided three times
+      running against the fifth opponent (1:10:56 to 1:10:58), which is what a cast the
+      server did not carry out looks like. The fight went on and won. Not followed here.
+- [x] **NR-52a - The capital pass's end check names the line's ceremony weapon.**
+  Depends: NR-51
+  - Work: The second stop of NR-52. The check at the end of the capital pass asks that
+    the weapon taken at the ceremony is still worn, and named the Karmic Staff
+    101500498. It asks for the line's own pick now, from the line's bridge. Java first:
+    nothing of the server is relied on; this is the bot's own check.
+  - Proof: The Templar's line passes the capital pass and the bridge in a replay; the
+    full gate identical.
+  - 2026-10-09: done. This commit also carries NR-52's own one change, the fight that
+    enters the observed map: the two are in one file, and the capture NR-52 asks for is
+    made from committed code.
+    - **The change.** J, VerifyCapitalPass: the worn weapon it looks for is
+      LineBridge().CeremonyReward.ItemId, which is 101500498 for the accepted line and
+      100000640 for the Templar's. J.Combat: EnterObservedMap, asked at the approach
+      step when the client's map is not the fight's; the journey sets it for the trial
+      and clears it after.
+    - **Proof.** Replay pilot-a3 (run/nr/NR-52/pilot-a3/replay.json: passed, class line
+      warrior-templar): the numbers are under NR-52. Gate, set
+      all+mage+warrior+artist+engineer+scout, -Parallel 8, run guard-p8
+      (run/nr/NR-52a/guard-p8/verdict.json): verdict pass, all twelve scopes identical,
+      the bridge scope b with the Priest's trial and the capital pass among them. Seven
+      pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and
+      Fast passes (run nr52a-fast, 11 passed).
 - [ ] **NR-53 - Templar: Altgard legs l1 to l5.** Depends: NR-52; ticked by its round
   - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
     with -templar (NR-41). In leg 1 it swings at the fungus in flight.
@@ -4121,3 +4173,12 @@ report what was done, what is parked or blocked, and what the operator must deci
   guard-p8 (twelve scopes identical), seven checks, unit suite (4,629 passed, 16 skipped)
   and Fast (nr51-fast) pass. Next: NR-52, the Templar to Altgard, alone, as the first
   play of the bridge by a line that is not the Priest's.
+- 2026-10-09 — Loop: NR-52 played, NR-52a done. The Templar's line stopped twice on the
+  bridge, at places only the Priest's line had passed: the trial's fight walked by
+  Ishalgen's navigator inside Ataxiar, and the capital pass's end check named the Karmic
+  Staff. Both mended: a fight that must walk on another map than its own asks for the
+  client's map, and the check asks for the line's ceremony weapon. Replay pilot-a3 then
+  reached the Altgard bind: a level-14 Templar with sword and shield, 55 quests, no death,
+  in 3 h 28 min of game time. Full gate guard-p8 (twelve scopes identical), seven checks,
+  unit suite (4,629 passed, 16 skipped) and Fast (nr52a-fast) pass. Next: NR-52, the
+  capture altgard-templar-s1 from the committed code, and its verification.
