@@ -165,7 +165,8 @@ public sealed partial class SimulationFastScenarioTests
 			virtualTime: () => TimeSpan.FromMilliseconds(fixture.Clock.NowMillis));
 		await using var session = new SimulationL0Session(fixture, policy, "b01", row.Account, row.CharacterName, Race.ASMODIANS, trace, tracePath);
 		var dashboard = new LiveBotDashboardState();
-		await using var dashboardHost = new LiveBotDashboardHost(run, [id], dashboard,
+		// NR-45: probe rows of several classes are played side by side; a row beside others takes the next free port.
+		await using var dashboardHost = LiveBotDashboardHost.OpenFirstFree(run, [id], dashboard,
 			int.Parse(Environment.GetEnvironmentVariable("AION_BOT_DASHBOARD_PORT") ?? "17880"));
 		session.Dashboard = dashboard;
 		if (dashboardHost.Enabled) Console.WriteLine($"{id} dashboard: {dashboardHost.Url}");

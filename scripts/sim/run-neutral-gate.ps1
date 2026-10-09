@@ -11,6 +11,10 @@
 #       beside the repository, then write the baseline file once. A Priest or Cleric scope that already has a row is
 #       not recorded again without -ReRecord, which is the operator's decision (rule (j) and the re-record rule).
 #
+#   run-neutral-gate.ps1 -Set all+mage -Parallel 8
+#       NR-45: a comparison can play its scopes several at a time, each Replay in a process of its own, from the one
+#       build. The traces are compared one after another as before. Recording plays one scope at a time.
+#
 # The verdict is written to run/cp/<Item>/<Run>/verdict.json: pass, fail or refused-dirty-record.
 # Set names are joined with +. `all` is every Priest and Cleric scope that has a baseline row.
 param(
@@ -32,7 +36,11 @@ param(
 	[string]$BaselineFile,
 	[string]$BaselineRoot,
 	[string]$SecondCopyRoot,
-	[switch]$NoBuild
+	[switch]$NoBuild,
+	# NR-45: how many scopes a comparison plays at the same time. 1 plays them one after another in this process.
+	[ValidateRange(1, 16)]
+	[int]$Parallel = 1,
+	[string]$PowerShell = 'pwsh'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -45,6 +53,9 @@ if (-not $BaselineRoot) { $BaselineRoot = Join-Path $repoRoot 'run/cp/baseline' 
 if (-not $SecondCopyRoot) { $SecondCopyRoot = Join-Path (Split-Path -Parent $repoRoot) 'BeyondAionSharp-cp-baseline' }
 $snapshotScript = Join-Path $PSScriptRoot 'sim-snapshot.ps1'
 $compareScript = Join-Path $PSScriptRoot 'trace/compare_traces.py'
+. (Join-Path $PSScriptRoot 'sim-run-marker.ps1')
+$markerRoot = Get-SimRunMarkerRoot $repoRoot
+if ($Record -and $Parallel -gt 1) { throw 'Recording plays one scope at a time; leave out -Parallel.' }
 
 # The scope table. Data: what each scope replays, all at seed 1. A class scope is off until its row stands in the
 # baseline file; sim-snapshot.ps1 learns -Class in CP-28, before the first class scope is recorded.
@@ -102,10 +113,29 @@ function Invoke-ScopeReplay([string]$Scope, [string]$ReplayRun) {
 	$failure = $null
 	try { & $snapshotScript @arguments | Out-Null }
 	catch { $failure = "replay failed: $($_.Exception.Message)" }
+	Get-ScopeCandidate $ReplayRun $failure
+}
+
+# What a replay left: its evidence folder and its single trace, or the reason there is none.
+function Get-ScopeCandidate([string]$ReplayRun, [string]$Failure) {
+	$evidence = Join-Path (Join-Path $ReplayRoot $Item) $ReplayRun
+	$failure = $(if ($Failure) { $Failure } else { $null })
 	$traces = @()
 	if (Test-Path -LiteralPath $evidence) { $traces = @(Get-ChildItem -LiteralPath $evidence -Filter '*.trace.jsonl' -File) }
 	if (-not $failure -and $traces.Count -ne 1) { $failure = "replay left $($traces.Count) traces in $evidence" }
 	[pscustomobject]@{ evidence = $evidence; trace = $(if ($traces.Count -eq 1) { $traces[0].FullName } else { $null }); failure = $failure }
+}
+
+# NR-45: the same Replay as a command line, for a process of its own.
+function Get-ReplayCommandLine([string]$Scope, [string]$ReplayRun) {
+	$list = @('-NoProfile', '-File', $snapshotScript, '-Action', 'Replay', '-Item', $Item, '-Run', $ReplayRun, '-NoBuild',
+		'-Docker', $Docker, '-SnapshotRoot', $SnapshotRoot, '-ReplayRoot', $ReplayRoot)
+	foreach ($key in $scopeTable[$Scope].replay.Keys) {
+		$value = $scopeTable[$Scope].replay[$key]
+		if ($value -is [bool]) { if ($value) { $list += "-$key" } }
+		else { $list += @("-$key", [string]$value) }
+	}
+	$list
 }
 
 $known = @($scopeTable.Keys)
@@ -147,7 +177,7 @@ $uncommitted = @(& $Git -C $repoRoot status --porcelain -- src tests game-server
 $verdict = [ordered]@{
 	schemaVersion = 1; item = $Item; run = $Run; mode = $(if ($Record) { 'record' } else { 'compare' })
 	set = $Set; scopes = @(); leftOutOfAll = $leftOut; commit = $sha; uncommitted = $uncommitted
-	environment = $pinned; verdict = $null
+	environment = $pinned; parallel = $Parallel; verdict = $null
 }
 function Save-Verdict([string]$Outcome) {
 	$verdict.verdict = $Outcome
@@ -170,8 +200,22 @@ foreach ($name in $pinnedNames) {
 }
 try {
 	if (-not $NoBuild) {
+		Assert-NoSimRunBeforeBuild $markerRoot
 		& dotnet build (Join-Path $repoRoot 'tests/Aion.Simulation.Tests') -v quiet *> $null
 		if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
+	}
+	# NR-45: play the candidates several at a time. The journey's settings are its process's environment, so each
+	# Replay is a process of its own; this one's pinned environment is what they inherit.
+	$played = @{}
+	if (-not $Record -and $Parallel -gt 1) {
+		$work = @($scopes | ForEach-Object { [pscustomobject]@{ scope = $_; arguments = @(Get-ReplayCommandLine $_ "$Run-$_") } })
+		$finished = @($work | ForEach-Object -ThrottleLimit $Parallel -Parallel {
+			$output = & $using:PowerShell @($_.arguments) 2>&1
+			[pscustomobject]@{ scope = $_.scope; code = $LASTEXITCODE; last = ($output | Select-Object -Last 1 | Out-String).Trim() }
+		})
+		foreach ($done in $finished) {
+			$played[$done.scope] = Get-ScopeCandidate "$Run-$($done.scope)" $(if ($done.code -ne 0) { "replay failed: $($done.last)" } else { '' })
+		}
 	}
 	$results = @()
 	$recorded = @()
@@ -204,7 +248,7 @@ try {
 			$result.baselineRecords = $row.records
 			$result.baselineSha256 = $row.sha256
 			$result.baselineCommit = $row.commit
-			$candidate = Invoke-ScopeReplay $scope "$Run-$scope"
+			$candidate = if ($played.ContainsKey($scope)) { $played[$scope] } else { Invoke-ScopeReplay $scope "$Run-$scope" }
 			if ($candidate.failure) { $result.reason = $candidate.failure }
 			else {
 				$digest = Get-TraceDigest $candidate.trace $rowIgnore

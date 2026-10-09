@@ -140,6 +140,23 @@ public sealed class LiveBotDashboardHost : IAsyncDisposable
 		acceptLoop = AcceptLoopAsync(stop.Token);
 	}
 
+	/// <summary>
+	/// NR-45: runs side by side. A run alone has its monitor at <paramref name="firstPort"/>, as before. A run started
+	/// while another holds that port takes the next free one, up to <paramref name="tries"/> ports on. Port 0 leaves
+	/// the monitor off.
+	/// </summary>
+	public static LiveBotDashboardHost OpenFirstFree(string run, IReadOnlyList<string> scenarios, LiveBotDashboardState state,
+		int firstPort, int tries = 32)
+	{
+		if (firstPort == 0) return new(run, scenarios, state, 0);
+		for (int port = firstPort; ; port++)
+		{
+			try { return new(run, scenarios, state, port); }
+			catch (SocketException taken) when (port < firstPort + tries - 1 &&
+				taken.SocketErrorCode is SocketError.AddressAlreadyInUse or SocketError.AccessDenied) { }
+		}
+	}
+
 	internal static LiveBotDashboardHost StartForTest(
 		string run, IReadOnlyList<string> scenarios, LiveBotDashboardState state) =>
 		new(run, scenarios, state, 0, enabled: true);

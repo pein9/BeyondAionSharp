@@ -60,10 +60,16 @@ public sealed partial class SimulationFastScenarioTests
 			combatTrace, combatTracePath) { IdentityClassLine = line };
 		var dashboard = new LiveBotDashboardState();
 		int dashboardPort = int.Parse(Environment.GetEnvironmentVariable("AION_BOT_DASHBOARD_PORT") ?? "17880");
-		await using var dashboardHost = new LiveBotDashboardHost(
+		await using var dashboardHost = LiveBotDashboardHost.OpenFirstFree(
 			Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? "natural-ishalgen", ["NI-07", "NI-08"], dashboard, dashboardPort);
 		session.Dashboard = dashboard;
-		if (dashboardHost.Enabled) Console.WriteLine($"Natural Ishalgen dashboard: {dashboardHost.Url}");
+		if (dashboardHost.Enabled)
+		{
+			Console.WriteLine($"Natural Ishalgen dashboard: {dashboardHost.Url}");
+			// NR-45: a run beside others is not at the default port. Its evidence says where its monitor is.
+			File.WriteAllText(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "monitor.json"),
+				$"{{\"url\":\"{dashboardHost.Url}\",\"port\":{dashboardHost.Port}}}");
+		}
 		// Leg-scoped help (the ax leg's scroll and Bronze Coins) is approved up to a total, counted here.
 		var legSupplied = new Dictionary<int, long>();
 		var runtime = new NaturalJourneyRuntime(Aion.GameServer.TestKit.RealStaticData.RepoRoot(),

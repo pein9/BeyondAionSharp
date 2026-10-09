@@ -115,9 +115,13 @@ try {
 	. ([scriptblock]::Create($runner.Extent.Text))
 	$repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 	$Seed = 1
+	# NR-45: the runner marks its run while the journey plays. The marks of this test are kept out of the checkout.
+	. (Join-Path $PSScriptRoot 'sim-run-marker.ps1')
+	$markerRoot = Join-Path $root 'sim-running'
 	$pcMockEnvPath = Join-Path $root 'runner-env.json'
 	function dotnet {
-		[ordered]@{ capital=[Environment]::GetEnvironmentVariable('PC_CAPITAL'); ascension=[Environment]::GetEnvironmentVariable('NA_ASCENSION');
+		[ordered]@{ marks=@(Get-LiveSimRuns $markerRoot | ForEach-Object { $_.run }) -join ',';
+			capital=[Environment]::GetEnvironmentVariable('PC_CAPITAL'); ascension=[Environment]::GetEnvironmentVariable('NA_ASCENSION');
 			altgard=[Environment]::GetEnvironmentVariable('AF_ALTGARD'); coin=[Environment]::GetEnvironmentVariable('AF_CG_RECEIPTS');
 			haramel=[Environment]::GetEnvironmentVariable('AF_HM_PROGRESS'); stop=[Environment]::GetEnvironmentVariable('NI08_STOP_AT');
 			later=[Environment]::GetEnvironmentVariable('RC_CAPITAL') } |
@@ -133,6 +137,14 @@ try {
 		Invoke-NaturalJourney 'aion_gs_sim_ni08_mock' 'mock-capital' (Join-Path $root 'runner') @{ NA_ASCENSION='1'; PC_CAPITAL='start' }
 		$child = Get-Content -Raw -LiteralPath $pcMockEnvPath | ConvertFrom-Json
 		Assert-True ($child.capital -eq 'start' -and $child.ascension -eq '1') 'Runner lost its explicit capital scope.'
+		Assert-True ($child.marks -eq 'mock-capital') 'The journey played without its run being marked.'
+		Assert-True (@(Get-LiveSimRuns $markerRoot).Count -eq 0) 'The run stayed marked after its journey.'
+		$held = New-SimRunMarker $markerRoot 'held-run'
+		Assert-Throws { Assert-NoSimRunBeforeBuild $markerRoot } '*held-run*Nothing is built while a run is going*' 'A build was allowed beside a run in progress.'
+		Remove-SimRunMarker $held
+		Set-Content -LiteralPath (Join-Path $markerRoot 'gone.json') -Value '{"pid":2147483600,"processStartUtc":"2026-01-01T00:00:00.0000000Z","run":"gone"}'
+		Assert-NoSimRunBeforeBuild $markerRoot
+		Assert-True (-not (Test-Path -LiteralPath (Join-Path $markerRoot 'gone.json'))) 'The mark of a process that is gone was kept.'
 		Assert-True ($null -eq $child.altgard -and $null -eq $child.coin -and $null -eq $child.haramel -and $null -eq $child.stop -and $null -eq $child.later) 'Runner left non-null conflicting Windows scopes.'
 		Assert-True ($env:AF_ALTGARD -eq 'l12' -and $env:AF_CG_RECEIPTS -eq 'old-coins' -and $env:AF_HM_PROGRESS -eq 'old-haramel') 'Runner did not restore existing environment values.'
 		Assert-True ($null -eq [Environment]::GetEnvironmentVariable('NI08_STOP_AT')) 'Runner restored an absent scope as an empty string.'

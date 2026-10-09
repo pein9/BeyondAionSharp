@@ -1641,7 +1641,7 @@ can use them. The order below is the order of work: the item that saves time com
     - **Written:** rule (w) in full, NR-Q11 with its default, the phase D scheme for
       rounds, and the items NR-45, NR-46, NR-44 and NR-47 below.
     - **Proof.** Seven pre-commit checks pass (run/nr/NR-43/checks.log).
-- [ ] **NR-45 - Separate runs side by side.** Depends: NR-43
+- [x] **NR-45 - Separate runs side by side.** Depends: NR-43
   - Work: Survey C1, part 10. A run takes the first free monitor port from 17880, prints
     its address and writes it into its evidence; a run alone is at 17880 as now. A run in
     progress is marked, and the scripts refuse to build while a mark is live. The gate
@@ -1651,6 +1651,47 @@ can use them. The order below is the order of work: the item that saves time com
   - Proof: The script tests pass. The full gate with eight at a time is identical to the
     baselines, with its wall time beside the serial gate's 45 minutes. One scope played
     alone afterwards is identical too.
+  - 2026-10-09: done. The full gate eight at a time is identical and takes 9 minutes
+    where it took about 45.
+    - **Java.** No server behavior is involved.
+    - **The change.**
+      - **Monitor port** (tests/Aion.Bots/Dashboard/LiveBotDashboard.cs,
+        LiveBotDashboardHost.OpenFirstFree): the journey and the starter probe open the
+        monitor at 17880 and, when another run holds it, at the next free port up to 32
+        on. The journey writes the address into its evidence as monitor.json. The other
+        probes and the live runner open their port as before.
+      - **The mark** (scripts/sim/sim-run-marker.ps1, new): sim-snapshot.ps1 marks a
+        journey under run/.sim-running/ while it plays and takes the mark away after. A
+        mark whose process is gone is dropped. Both run scripts refuse to build while a
+        mark is live. Run by itself the file lists the live runs and exits 1 when there
+        is one, so the loop asks it before any other build.
+      - **The gate** (scripts/sim/run-neutral-gate.ps1): -Parallel n, 1 to 16, default 1.
+        Above 1 a comparison plays its scopes n at a time from the one build, each Replay
+        in a process of its own, because a journey's settings are its process's
+        environment. The traces are then compared one after another as before. Recording
+        with -Parallel is refused. The verdict records the number.
+      - **Captures** (scripts/sim/sim-snapshot.ps1): the commit in a snapshot's record is
+        read before the capture plays. NR-19's capture needed the plan's commit held back
+        for that; it no longer does. The new file is in the list a capture wants
+        committed.
+      - **Script tests** (scripts/sim/test-sim-snapshot.ps1): the runner's test gives it a
+        mark folder of its own and checks the mark while the journey plays, its removal,
+        the refusal to build beside a live mark and the dropping of a dead one. The
+        parallel path starts real processes, which the test's fake dotnet cannot stand
+        in for; the gate below is its proof.
+    - **Proof.**
+      - The script tests pass (run/nr/NR-45/script-tests.log): test-sim-snapshot.ps1,
+        test_compare_traces.py and test-code-coverage.ps1.
+      - Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run gate-p8
+        (run/nr/NR-45/gate-p8/verdict.json): verdict pass, all twelve scopes identical to
+        their baselines, in 544 seconds. The twelve monitors were at ports 17880 to 17887.
+        No mark was left.
+      - One scope alone afterwards, set ax, run solo-ax: identical, 74 seconds, at 17880.
+      - A first try with two at a time, set ax+mage, run smoke-p2: identical, 78 seconds.
+      - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+        passed, 16 skipped) and Fast passes (run nr45-fast, 11 passed).
+    - **From here** the loop plays the guard gate with -Parallel 8, and asks
+      sim-run-marker.ps1 before it builds.
 - [ ] **NR-46 - Where the bot's side of a run goes.** Depends: NR-45
   - Work: No committed code. With a one-time probe on scope c, split the bot's side into
     its parts: reading and decoding packets, the bot's world model, decisions, routes, the
@@ -2030,3 +2071,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   spread over eight worlds). Written: rule (w) in full, the phase D scheme for rounds,
   NR-45 (runs side by side), NR-46 (where the bot's side goes), NR-44 (turns in one
   world), NR-47 (the round and its snapshots). Seven checks pass. Next: NR-45.
+- 2026-10-09 — Loop: NR-45 done. Runs side by side: a monitor port for each run, a mark
+  for a run in progress with no build beside it, the gate's -Parallel, and a capture's
+  commit read at its start. Full gate gate-p8, eight at a time: twelve scopes identical in
+  544 seconds, against about 45 minutes one by one; ax alone afterwards identical. Script
+  tests, seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr45-fast) pass.
+  The guard gate is played with -Parallel 8 from here. Next: NR-46, where the bot's side
+  of a run goes.

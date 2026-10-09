@@ -78,6 +78,9 @@ Set-StrictMode -Version Latest
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 if (-not $SnapshotRoot) { $SnapshotRoot = Join-Path $repoRoot 'run/snapshots' }
 $ownedPattern = '^aion_gs_sim_ni08_[a-z0-9_]+$'
+# NR-45: runs side by side. A journey in progress is marked, and nothing is built while a mark is live.
+. (Join-Path $PSScriptRoot 'sim-run-marker.ps1')
+$markerRoot = Get-SimRunMarkerRoot $repoRoot
 $playsScope = $Action -in @('Capture', 'Replay')
 if ($CapitalStage -and ($Bridge -or $AltgardLeg1 -or -not $playsScope)) {
 	throw 'CapitalStage is a contained Capture scope and cannot be combined with Bridge or AltgardLeg1.'
@@ -137,6 +140,7 @@ function Invoke-NaturalJourney([string]$Db, [string]$RunId, [string]$Evidence, [
 		# The bot's optional scopes require absent variables, so remove them through the provider.
 		Remove-Item -LiteralPath "Env:$variable" -ErrorAction SilentlyContinue
 	}
+	$marker = New-SimRunMarker $markerRoot $RunId
 	try {
 		$env:AION_SIM_DB_INTEGRATION = '1'
 		$env:AION_SIM_NI08_DATABASE = $Db
@@ -153,6 +157,7 @@ function Invoke-NaturalJourney([string]$Db, [string]$RunId, [string]$Evidence, [
 		if ($LASTEXITCODE -ne 0) { throw "Natural journey failed; see $Evidence/journey.log" }
 	}
 	finally {
+		Remove-SimRunMarker $marker
 		foreach ($variable in $names) {
 			if ($null -eq $prior[$variable]) { Remove-Item -LiteralPath "Env:$variable" -ErrorAction SilentlyContinue }
 			else { [Environment]::SetEnvironmentVariable($variable, $prior[$variable]) }
@@ -325,11 +330,14 @@ try {
 		'Capture' {
 			$directory = Get-SnapshotDirectory
 			if (Test-Path -LiteralPath $directory) { throw "Snapshot already exists: $directory (snapshots are never overwritten)" }
-			$runtimeChanges = @(& git -C $repoRoot status --porcelain -- src tests game-server parity-artifacts scripts/sim/sim-snapshot.ps1)
+			$runtimeChanges = @(& git -C $repoRoot status --porcelain -- src tests game-server parity-artifacts scripts/sim/sim-snapshot.ps1 scripts/sim/sim-run-marker.ps1)
 			if ($runtimeChanges.Count) { throw 'Capture requires committed runtime and snapshot code; commit those changes first.' }
+			# NR-45: the commit the capture is built from, read before it plays. A commit made while it plays is not its code.
+			$builtSha = (& git -C $repoRoot rev-parse HEAD).Trim()
 			if (-not $Run) { $Run = "snapshot-$Name-s$Seed" }
 			$evidence = Join-Path $SnapshotRoot "_capture/$Run"
 			if (-not $NoBuild) {
+				Assert-NoSimRunBeforeBuild $markerRoot
 				& dotnet build (Join-Path $repoRoot 'tests/Aion.Simulation.Tests') -v quiet *> $null
 				if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
 			}
@@ -369,7 +377,7 @@ try {
 					$capitalMetadata = [ordered]@{
 						schemaVersion = 1; name = $Name; source = "natural-capital-$CapitalStage"
 						from = $(if ($CapitalStage -eq 'first') { $From } else { $null })
-						run = $Run; seed = $Seed; gitSha = (& git -C $repoRoot rev-parse HEAD).Trim()
+						run = $Run; seed = $Seed; gitSha = $builtSha
 						capturedUtc = (Get-Date).ToUniversalTime().ToString('o'); characterId = [int]$capitalResult.CharacterId
 						elapsedMillis = $baseElapsed + [long]$capitalResult.ElapsedMillis
 						dumpSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $directory 'dump.sql.gz')).Hash.ToLowerInvariant()
@@ -416,7 +424,7 @@ try {
 						from = $From
 						run = $Run
 						seed = $Seed
-						gitSha = (& git -C $repoRoot rev-parse HEAD).Trim()
+						gitSha = $builtSha
 						capturedUtc = (Get-Date).ToUniversalTime().ToString('o')
 						characterId = [int]$legResult.CharacterId
 						elapsedMillis = [long]$base.environment.AION_SIM_NI08_ELAPSED_MS + [long]$legResult.ElapsedMillis
@@ -494,7 +502,7 @@ try {
 					source = $(if ($ContinuousJourney) { 'natural-altgard-l12' } elseif ($Bridge) { 'natural-journey-ascension-bridge' } else { 'natural-ishalgen-journey' })
 					run = $Run
 					seed = $Seed
-					gitSha = (& git -C $repoRoot rev-parse HEAD).Trim()
+					gitSha = $builtSha
 					capturedUtc = (Get-Date).ToUniversalTime().ToString('o')
 					characterId = [int]$completion.CharacterId
 					elapsedMillis = [long]$clock.ElapsedMillis
@@ -535,6 +543,7 @@ try {
 				throw 'This scope creates its own character and cannot start from a snapshot; leave out -From.'
 			}
 			if (-not $NoBuild) {
+				Assert-NoSimRunBeforeBuild $markerRoot
 				& dotnet build (Join-Path $repoRoot 'tests/Aion.Simulation.Tests') -v quiet *> $null
 				if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
 			}
