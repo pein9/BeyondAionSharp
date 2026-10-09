@@ -1163,7 +1163,7 @@ to the endpoint. The close of phase B is NR-21.
       15,715, mage 23,555, warrior 24,199, artist 23,104, engineer 24,580, scout 27,592).
       Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,630 passed, 16 skipped) and
       Fast passes (run nr18-fast, 11 passed).
-- [ ] **NR-19 - The generic Cleric from creation to the Altgard endpoint.** Depends: NR-18,
+- [x] **NR-19 - The generic Cleric from creation to the Altgard endpoint.** Depends: NR-18,
   NR-19a
   - Work: One continuous capture from committed code (sim-snapshot.ps1 -Action Capture
     -ContinuousJourney -LaterCapital), named altgard-complete-cleric-s1. Two attempts; a
@@ -1227,6 +1227,70 @@ to the endpoint. The close of phase B is NR-21.
       To the same point the generic Cleric is an hour faster and has 5 deaths against 13;
       leg l10 alone has 1 against 9. In the whole of a2: 80 retreats, 376 life potions,
       20 shield scrolls, 5 soul heals.
+  - 2026-10-09: done, after NR-19a, on the first of the fresh two attempts.
+    altgard-complete-cleric-s1 is captured and verified.
+    - **Attempt a3** (run nr19-continuous-a3 at 709f33816; evidence under
+      run/snapshots/_capture/nr19-continuous-a3, log run/nr/NR-19/capture-a3.log): all
+      fourteen stages. Snapshot altgard-complete-cleric-s1: character 133266, 69,627,001
+      ms of game time, dump sha256 69f8b8eb95934ef2.
+    - **The two places that stopped a1 and a2.** Q24013's item was refused once for its
+      place and used again. The coin-gear leg ended complete, bound to the Altgard
+      Legionary Handguards 111501698 the Cleric wore as the leg started; Haramel then took
+      the character in and was played to its end, two visits.
+    - **Acceptance from the receipt, before Verify** (run/nr/NR-19/a3-ledger.txt), beside
+      altgard-rc-complete-s1:
+      - the same 176 quests complete, and the same journal: Q2945 started, var 0;
+      - a Cleric of level 25, alive, at the same Altgard bind (1660.43, 1813.49);
+      - 19 iron coins, 7 bronze coins and the sealed bundle;
+      - the same worn gear but for the helm: 125001764 where the accepted Cleric wears
+        125004139. In the bag it has the handguards 111501698 and no cloth gloves;
+      - kinah 739,882 against 748,485; experience 8,332,221 against 8,497,039.
+    - **The ledger, stage by stage.** Game time is at the end of the stage.
+
+      | Stage | Accepted: game time | deaths | level | Generic: game time | deaths | level |
+      |---|---|---|---|---|---|---|
+      | ishalgen-ascension | 3 h 47 min | 0 | 14 | 3 h 40 min | 0 | 14 |
+      | l1 | 4 h 31 min | 0 | 15 | 4 h 30 min | 0 | 15 |
+      | l2 | 5 h 09 min | 0 | 17 | 5 h 07 min | 0 | 17 |
+      | l3 | 5 h 25 min | 0 | 17 | 5 h 22 min | 0 | 17 |
+      | l4 | 8 h 20 min | 2 | 20 | 7 h 50 min | 1 | 19 |
+      | l5 | 10 h 16 min | 2 | 21 | 10 h 00 min | 3 | 21 |
+      | l6 | 11 h 04 min | 3 | 21 | 11 h 00 min | 3 | 21 |
+      | l7 | 11 h 47 min | 3 | 22 | 11 h 37 min | 3 | 22 |
+      | l8 | 12 h 20 min | 4 | 22 | 12 h 08 min | 4 | 22 |
+      | l9 | 13 h 21 min | 4 | 23 | 13 h 10 min | 4 | 23 |
+      | l10 | 18 h 11 min | 13 | 24 | 17 h 10 min | 5 | 24 |
+      | l11 | 18 h 22 min | 13 | 24 | 17 h 21 min | 5 | 24 |
+      | cg | 18 h 35 min | 13 | 24 | 17 h 36 min | 5 | 24 |
+      | l12 | 20 h 17 min | 13 | 25 | 19 h 20 min | 5 | 25 |
+
+    - **The whole journey** (scripts/sim/trace/compare_traces.py --counts;
+      run/nr/NR-19/a3-counts.json and accepted-counts.json):
+
+      | | Accepted | Generic |
+      |---|---|---|
+      | Game time | 20 h 17 min | 19 h 20 min |
+      | Deaths | 13 | 5 |
+      | Retreats | 85 | 88 |
+      | Emergency decisions | 104 | 56 |
+      | Life potions | 340 | 388 |
+      | Mana potions | 8 | 6 |
+      | Shield scrolls | 35 | 20 |
+      | Speed scrolls | 134 | 110 |
+      | Running scrolls | 9 | 15 |
+      | Powder rests | 383 | 309 |
+      | Patrol waits | 613 | 631 |
+      | Soul heals | 0 | 5 |
+      | Binds | 9 | 11 |
+      | Trace records | 736,017 | 715,203 |
+
+      The generic Cleric is 57 minutes faster and dies 5 times against 13; leg l10 has 1
+      death against 9. It drinks more life potions and uses fewer shield scrolls. Its
+      five soul heals are the death rule, which the accepted run did not have yet.
+    - **Proof.** sim-snapshot.ps1 -Action Verify -Name altgard-complete-cleric-s1, run
+      nr19-verify-a1 (run/nr/NR-19/verify-a1.log; evidence under
+      run/snapshots/_verify/nr19-verify-a1): "Verified snapshot
+      altgard-complete-cleric-s1: character 133266 resumed at its endpoint."
 - [x] **NR-19a - The gloves the coin purchase replaced are the character's own.** Depends:
   NR-18
   - Work: Two places ask for the accepted run's cloth gloves, item 111101650, by id: the
@@ -1692,3 +1756,7 @@ report what was done, what is parked or blocked, and what the operator must deci
   world. Rule (w) and NR-43 changed to that: a class's captures come from a round; only
   the recorded scopes and the gate stay one bot in its own world. No code. Next: NR-19, as
   before.
+- 2026-10-09 — Loop: NR-19 done. Attempt a3 (nr19-continuous-a3 at 709f33816) played all
+  fourteen stages: altgard-complete-cleric-s1, 19 h 20 min against the accepted
+  20 h 17 min, 5 deaths against 13, the same 176 quests, level 25 at the same bind.
+  Verify nr19-verify-a1 passes. Next: NR-20, the generic Cleric through the Abyss entry.
