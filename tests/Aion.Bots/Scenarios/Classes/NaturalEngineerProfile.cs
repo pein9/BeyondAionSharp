@@ -82,6 +82,8 @@ public static class NaturalEngineerProfile
 			// speed slot holds the attack-speed scroll (Blitzopan, the Courage family), which quickens the pistol.
 			HelpItems = new(NaturalHelpItemAllowlist.Starter, NaturalHelpItemAllowlist.StarterMaxLevel, SharedSlotFamily: "courage"),
 			Upkeep = [],
+			// NR-36: what it shoots with in flight.
+			AirAttackRoles = Rules.AtRange,
 			PatrolRule = NaturalPatrolRule.Baseline,
 			RangedHold = NaturalRangedHold.RunOption,
 			// CP-Q11: a life potion below 90% HP when it is ready and a sit to 90% while it is on its delay. A sit for mana

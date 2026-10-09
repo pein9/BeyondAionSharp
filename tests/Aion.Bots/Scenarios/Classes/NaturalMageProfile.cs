@@ -60,6 +60,8 @@ public static class NaturalMageProfile
 			HelpItems = new(NaturalHelpItemAllowlist.Starter, NaturalHelpItemAllowlist.StarterMaxLevel),
 			// Stone Skin is kept up between fights as the Priest keeps its Blessing.
 			Upkeep = [new("skin", "buff-stone-skin")],
+			// NR-36: what it shoots with in flight.
+			AirAttackRoles = Rules.AtRange,
 			PatrolRule = NaturalPatrolRule.Baseline,
 			RangedHold = NaturalRangedHold.RunOption,
 			// CP-Q11 and CP-Q12, answered: a life potion below 90% HP when it is ready and a sit to 90% while it is on its

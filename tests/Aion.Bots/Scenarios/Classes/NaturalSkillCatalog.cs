@@ -114,7 +114,10 @@ public static class NaturalSkillCatalog
 			SelfCount: chain?.selfCount ?? 0,
 			Activation: template.GetActivationAttribute().ToString(),
 			CounterStatus: template.GetCounterSkill()?.ToString(),
-			OutOfCombatOnly: conditions.OfType<CombatCheckCondition>().Any());
+			OutOfCombatOnly: conditions.OfType<CombatCheckCondition>().Any(),
+			GroundOnly: conditions.OfType<NoFlyingCondition>().Any() ||
+				conditions.OfType<SelfFlyingCondition>().Any(self => self.Restriction == FlyingRestriction.GROUND),
+			TargetFlight: conditions.OfType<TargetFlyingCondition>().FirstOrDefault()?.Restriction.ToString());
 	}
 
 	/// <summary>

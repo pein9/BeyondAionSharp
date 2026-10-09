@@ -3047,10 +3047,15 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						{
 							// No fungus is visible from the ground: the fight starts from Borender's rock (AF-06).
 							await FlyToAsync(Rock());
+							// NR-36: the class's own air attack: a skill of a role its profile names, or its weapon's swing.
+							var heldWeapon = session.Api.World.Inventory.Values.SingleOrDefault(item => item.Details.EquippedSlot is 1 or 3) is { } held
+								? runtime.Data.ItemDataDh.GetItemTemplate(held.ItemId)?.GetWeaponStats() : null;
+							NaturalAirAttack airAttack = NaturalAirCombat.AttackFor(combat.ClassProfile, session.Api.World.Skills.ContainsKey,
+								heldWeapon?.GetAttackRange(), heldWeapon?.GetAttackSpeed());
 							NaturalAirCombat.Outcome outcome = await NaturalAirCombat.RunAsync(session, geometry, leg.Hub.MapId, zones,
 								leg.RequiredFlight.WaterLevel, new NaturalLandingTarget("platform", Rock()), cruise, leg.RequiredAirKills.QuestId,
 								(origin, skill, level, target) => runtime.CreateSpellCast(session.Api.World, origin, skill, level, target),
-								() => runtime.NowMillis, token);
+								() => runtime.NowMillis, token, attack: airAttack);
 							lastTakeoff = runtime.NowMillis;
 							session.TraceDiagnostic($"altgard-{altgardLegId}-air-kills", new Dictionary<string, object?>
 							{

@@ -172,6 +172,8 @@ public static class NaturalPriestProfile
 			// CP-06: the level 1-9 kit, and nothing from level 10 on.
 			HelpItems = new(NaturalHelpItemAllowlist.Starter, NaturalHelpItemAllowlist.StarterMaxLevel),
 			Upkeep = [Blessing],
+			// NR-36: Smite is the shot in flight, as the fungus fight has always cast it.
+			AirAttackRoles = ["smite"],
 			PatrolRule = NaturalPatrolRule.Baseline,
 			RangedHold = NaturalRangedHold.RunOption,
 			Rest = RestWith(skills),
@@ -202,6 +204,8 @@ public static class NaturalPriestProfile
 			// takes both kinds, which is every row.
 			HelpItems = NaturalHelpItemRules.ForKinds(caster: true, reagent: true),
 			Upkeep = [Blessing],
+			// NR-36: Smite is the shot in flight, as the fungus fight has always cast it.
+			AirAttackRoles = ["smite"],
 			// NA-22 (OD-14).
 			PatrolRule = NaturalPatrolRule.HoldAndAssess,
 			RangedHold = NaturalRangedHold.RunOption,

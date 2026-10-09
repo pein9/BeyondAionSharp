@@ -100,6 +100,13 @@ public sealed class NaturalClassProfile
 	/// <summary>What the class buys at a vendor when its stock runs down: potions only.</summary>
 	public required NaturalRestockRules Restock { get; init; }
 
+	/// <summary>
+	/// NR-36: the roles the class shoots with while it flies, tried in this order. The best learned skill of the first
+	/// role that may be cast in flight is its air attack (<see cref="NaturalAirCombat.AttackFor"/>). A class that names
+	/// none, or has no such skill yet, flies into its weapon's reach and swings.
+	/// </summary>
+	public IReadOnlyList<string> AirAttackRoles { get; init; } = [];
+
 	/// <summary>The numbers of the Ishalgen quest executors and of the wait for Return.</summary>
 	public required NaturalCampaignRules Campaign { get; init; }
 

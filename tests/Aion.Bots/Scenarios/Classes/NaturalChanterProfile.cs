@@ -48,6 +48,8 @@ public static class NaturalChanterProfile
 			// NR-34: as the Cleric, both kinds.
 			HelpItems = NaturalHelpItemRules.ForKinds(caster: true, reagent: true),
 			Upkeep = [NaturalPriestProfile.Blessing],
+			// NR-36: what it shoots with in flight.
+			AirAttackRoles = ["smite"],
 			PatrolRule = NaturalPatrolRule.Baseline,
 			RangedHold = NaturalRangedHold.RunOption,
 			Rest = NaturalPriestProfile.RestWith(skills),

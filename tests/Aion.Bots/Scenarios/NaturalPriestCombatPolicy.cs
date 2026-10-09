@@ -14,13 +14,17 @@ namespace Aion.Bots.Scenarios;
 /// <param name="Activation">The template's activation (<c>ACTIVE</c>, <c>CHARGE</c>, <c>TOGGLE</c>).</param>
 /// <param name="CounterStatus">The attack status that must just have happened (<c>DODGE</c>, <c>PARRY</c>, <c>BLOCK</c>).</param>
 /// <param name="OutOfCombatOnly">The template refuses the cast in combat (startconditions/combatcheck).</param>
+/// <param name="GroundOnly">NR-36: the template refuses the cast while the caster flies (startconditions/noflying, or
+/// selfflying with restriction GROUND; Java NoFlyingCondition, SelfFlyingCondition).</param>
+/// <param name="TargetFlight">NR-36: what the template asks of the target's flight (startconditions/targetflying:
+/// <c>FLY</c> or <c>GROUND</c>); null when it asks nothing.</param>
 public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role, int ManaCost,
 	float Range, int CooldownId, int CooldownDeciseconds, string? ChainCategory = null,
 	string? RequiresChainCategory = null, int ChainWindowMillis = 0, int DpCost = 0,
 	int ReagentItemId = 0, int ReagentCount = 0,
 	string? TargetKind = null, int CastMillis = 0, IReadOnlyList<string>? RequiredWeaponGroups = null,
 	bool AddWeaponRange = false, int SelfCount = 0, string? Activation = null, string? CounterStatus = null,
-	bool OutOfCombatOnly = false);
+	bool OutOfCombatOnly = false, bool GroundOnly = false, string? TargetFlight = null);
 
 /// <summary>
 /// NR-18: every class's catalog is generated from the shipped skill data (<see cref="Classes.NaturalSkillCatalog"/>); the

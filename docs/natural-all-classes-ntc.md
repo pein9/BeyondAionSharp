@@ -2594,13 +2594,65 @@ can use them. The order below is the order of work: the item that saves time com
       guard-p8 (run/nr/NR-35/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical, b among them. Seven pre-commit checks pass, Aion.GameServer.Tests passes
       (4,629 passed, 16 skipped) and Fast passes (run nr35-fast, 11 passed).
-- [ ] **NR-36 - A shot in flight by role.** Depends: NR-31
+- [x] **NR-36 - A shot in flight by role.** Depends: NR-31
   - Work: NaturalAirCombat takes its skill from a role the profile names for a ranged
     attack that may be cast in flight, with that skill's range; a class with no such skill
     flies into its weapon's reach and swings. Java first: which skills may be used while
     flying (the skill templates' flight conditions).
   - Proof: One-time check that prints each starter's and second class's air attack; gate
     l1 and c identical.
+  - 2026-10-09: done. The air fight takes its attack from the class's profile; the Cleric's
+    is the Smite it has always cast, from the same 15 m.
+    - **Java.** A skill's flight conditions are start conditions of its template:
+      NoFlyingCondition (the caster must not fly), SelfFlyingCondition with restriction
+      GROUND or FLY, TargetFlyingCondition for the target (skillengine/condition; 156
+      skills carry one among their start conditions). A weapon swing has none:
+      PlayerController.attackTarget 399-436 asks for range, the weapon's range plus one
+      metre, and for sight. The port has the same conditions
+      (SkillEngine/Condition). No server change.
+    - **The change.**
+      - Sc/Classes/NaturalSkillCatalog.cs and the skill row: GroundOnly and TargetFlight,
+        read from the template with the other conditions.
+      - Sc/Classes/NaturalClassProfile.cs: AirAttackRoles, the roles a class shoots with
+        in flight, in order. The Priest, the Cleric and the Chanter name Smite. The Mage,
+        the Artist and the Engineer name their rotation's roles for a target at range. The
+        Warrior and the Scout name none.
+      - Sc/NaturalAirCombat.cs: AttackFor gives the air attack: of the named roles, the
+        first whose best learned skill is not ground-only, asks nothing of the target's
+        flight and needs no earlier chain step; failing that, the held weapon's swing at
+        the weapon's own speed. NaturalAirAttack gives the hover distance: ten metres
+        inside the reach, no nearer than three metres, and half a metre inside a reach
+        shorter than that. The fight, its flight-time rule and its hover search take that
+        distance; the search still tries two thirds and four thirds of it. A caller that
+        names no attack gets the Cleric's Smite and 15 m, as the probes always had.
+      - J, the air kills of leg 1: the attack is the observed class's.
+    - **Proof, the one-time check** (run/nr/NR-36/check.log; the check file is not
+      committed), with the weapon each class holds as Q24013 hands it out:
+
+      | Profile | Roles named | Air attack |
+      |---|---|---|
+      | Priest | smite | Smite 4013 at level 9, reach 25 m, hover 15 m |
+      | Cleric | smite | Smite 4013 at level 10, 4014 at 11, 4015 at 16, 4016 at 25; reach 25 m, hover 15 m |
+      | Chanter | smite | Smite 4013, the rank it learned as a Priest; reach 25 m, hover 15 m |
+      | Mage | ice, shock, bolt, blaze | 1363 (ice), reach 25 m, hover 15 m. Shock and blaze are later chain steps and are passed over. |
+      | Artist | ice, pulse | 4222 (ice), reach 25 m, hover 15 m |
+      | Engineer | hot, gunshot, rapid, direct | 1942 (hot), reach 20 m with the pistol's range, hover 10 m |
+      | Warrior | none | swings the sword: reach 1.5 m, every 1.4 s, hover 1 m |
+      | Scout | none | swings the dagger: reach 1.5 m, every 1.2 s, hover 1 m |
+
+      The nine second classes without a profile have none to ask; each one's first item
+      names its roles. What the data gives them by level 12: the only skill any of the
+      eleven is refused in flight is 243, and none asks for a flying target. Targeted
+      skills that reach 10 m or more and may be cast in flight: Gladiator and Templar 2981
+      (15 m, from level 10), Assassin 3455 (20 m), Rider 2807 (20 m); Ranger, Sorcerer,
+      Spirit Master, Gunner and Bard have several from 20 to 26 m.
+    - **Not proven here.** No class but the Cleric has fought in the air. The swing in
+      flight, and a hover at one metre from a fungus, are first played when a Warrior or a
+      Scout line reaches leg 1.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-36/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical, l1 and c among them. Seven pre-commit checks pass, Aion.GameServer.Tests
+      passes (4,629 passed, 16 skipped) and Fast passes (run nr36-fast, 11 passed).
 - [ ] **NR-37 - The patrol rule and the blocked-pull view by profile.** Depends: NR-31
   - Work: NaturalPatrolPolicy applies to every second class with the profile's swarm
     limit, and the blocked-pull view asks the profile for its recovery roles.
@@ -3018,3 +3070,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   in place of a list by id, which also replaces NR-33's list. Full gate guard-p8: twelve
   scopes identical. Seven checks, unit suite (4,629 passed, 16 skipped) and Fast
   (nr35-fast) pass. Next: NR-36, a shot in flight by role.
+- 2026-10-09 — Loop: NR-36 done. The air fight's attack is the class's: a skill of a role
+  its profile names that Java lets it cast in flight, hovering inside its reach, or the
+  weapon's swing. The Cleric's is Smite from 15 m, as recorded; Mage, Artist and Engineer
+  name their ranged roles; Warrior and Scout swing. The skill rows carry the template's
+  flight conditions. Full gate guard-p8: twelve scopes identical. Seven checks, unit suite
+  (4,629 passed, 16 skipped) and Fast (nr36-fast) pass. Next: NR-37, the patrol rule and
+  the blocked-pull view by profile.

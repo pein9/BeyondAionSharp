@@ -64,6 +64,8 @@ public static class NaturalArtistProfile
 			// family): every Artist skill has a 1 s cast that the scroll shortens.
 			HelpItems = new(NaturalHelpItemAllowlist.Starter, NaturalHelpItemAllowlist.StarterMaxLevel),
 			Upkeep = [],
+			// NR-36: what it shoots with in flight.
+			AirAttackRoles = Rules.AtRange,
 			PatrolRule = NaturalPatrolRule.Baseline,
 			RangedHold = NaturalRangedHold.RunOption,
 			// Until Soothing Melody is observed in the skill list: a life potion below 90% HP when it is ready and a sit

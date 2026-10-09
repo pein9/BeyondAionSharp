@@ -15,6 +15,21 @@ public sealed record NaturalAirCombatObservation(BotPosition Position, int Fp, f
 public sealed record NaturalAirCombatDecision(string Action, int? Target, string Reason);
 
 /// <summary>
+/// NR-36: how a class kills in flight. With a skill it hovers inside the skill's reach and casts it; with none it flies
+/// into its weapon's reach and swings (Java PlayerController.attackTarget has no flight condition; a skill's are its
+/// template's start conditions).
+/// </summary>
+/// <param name="SkillId">The skill cast, or null for the weapon's swing.</param>
+/// <param name="Reach">How far the skill reaches, or the weapon's attack range.</param>
+/// <param name="SwingMillis">The weapon's attack speed, for a swing.</param>
+public sealed record NaturalAirAttack(ushort? SkillId, float Reach, int SwingMillis = 0)
+{
+	/// <summary>Where the bot hovers: ten metres inside the reach, but no nearer than three metres; with a reach shorter
+	/// than that, half a metre inside it. Smite's 25 m gives the 15 m the fungus fight has always used.</summary>
+	public float HoverDistance => MathF.Max(MathF.Min(Reach - 0.5f, 3f), Reach - 10f);
+}
+
+/// <summary>
 /// AF-06 (docs/natural-altgard-leveling.md): Q24011's Abyss Fungus float over Altgard Fortress. They never fight back
 /// (<c>ai="noaction"</c>, 240 HP), so the only danger is the flight time. The bot takes a fungus only when it can fly to
 /// it, kill it and still reach its landing with the landing reserve left; otherwise it lands and refills first.
@@ -26,12 +41,13 @@ public static class NaturalAirCombatPolicy
 	/// <summary>Seconds to kill one fungus: the AF-06 probe measured 5.7 s (two Smites); one missed cast is allowed for.</summary>
 	public const int KillSeconds = 8;
 
-	public static NaturalAirCombatDecision Decide(NaturalAirCombatObservation state)
+	/// <param name="hoverDistance">NR-36: how near the class's air attack hovers; the Cleric's 15 m when not given.</param>
+	public static NaturalAirCombatDecision Decide(NaturalAirCombatObservation state, float hoverDistance = HoverDistance)
 	{
 		if (state.Targets.Count == 0)
 			return new("wait", null, "No fungus is visible; hold until one respawns (20 s).");
 		(int id, BotPosition at) = state.Targets.OrderBy(target => NaturalFlightPolicy.Distance(state.Position, target.Position)).First();
-		float toTarget = MathF.Max(0, NaturalFlightPolicy.Distance(state.Position, at) - HoverDistance);
+		float toTarget = MathF.Max(0, NaturalFlightPolicy.Distance(state.Position, at) - hoverDistance);
 		float targetToLanding = NaturalFlightPolicy.Distance(at, state.Landing.Position);
 		int cost = (int)MathF.Ceiling(toTarget / state.SpeedMetersPerSecond) + KillSeconds +
 			(int)MathF.Ceiling(targetToLanding / state.SpeedMetersPerSecond);
@@ -45,19 +61,42 @@ public static class NaturalAirCombatPolicy
 public static class NaturalAirCombat
 {
 	public const int AbyssFungusNpcId = 700092;
-	/// <summary>Smite ranks, the highest learned first (AC-00: the Cleric's level 11 and 16 ranks).</summary>
+	/// <summary>Smite ranks, the highest learned first (AC-00: the Cleric's level 11 and 16 ranks). The shot of a caller
+	/// that names no air attack: the Cleric's probes.</summary>
 	private static readonly ushort[] SmiteIds = [4015, 4014, 4013, 4012];
+
+	/// <summary>
+	/// NR-36: the class's air attack. Of the roles its profile names (<see cref="Classes.NaturalClassProfile.AirAttackRoles"/>),
+	/// in order, the first whose best learned skill may be cast in flight at any target and needs no earlier chain step.
+	/// Failing that, the swing of the held weapon.
+	/// </summary>
+	/// <param name="learned">Whether the client's skill list holds a skill id.</param>
+	public static NaturalAirAttack AttackFor(Classes.NaturalClassProfile profile, Func<int, bool> learned, int? weaponAttackRangeMillis,
+		int? weaponAttackSpeedMillis)
+	{
+		foreach (string role in profile.AirAttackRoles)
+		{
+			NaturalPriestSkill? best = profile.Skills.Where(skill => skill.Role == role && learned(skill.Id))
+				.OrderByDescending(skill => skill.MinimumLevel).ThenByDescending(skill => skill.Id).FirstOrDefault();
+			if (best is { GroundOnly: false, TargetFlight: null, RequiresChainCategory: null })
+				return new(best.Id, Classes.NaturalSkillCatalog.Reach(best, weaponAttackRangeMillis));
+		}
+		return new(null, (weaponAttackRangeMillis ?? 1500) / 1000f, weaponAttackSpeedMillis is > 0 and int speed ? speed : 2500);
+	}
 
 	/// <summary>
 	/// Where to shoot a fungus from, and the flight there: a point within Smite range of it, in sight of it, inside the FLY
 	/// zone, that <see cref="NaturalFlightProtocol.Plan"/> can fly to. The shortest flight wins. Fungus near the floating
 	/// island's underside are seen from only a few angles.
 	/// </summary>
+	/// <param name="hoverDistance">NR-36: how near the class's air attack hovers; the Cleric's 15 m when not given. The
+	/// search also tries two thirds and four thirds of it: 10 m and 20 m for the Cleric, as before.</param>
 	public static (BotPosition Hover, NaturalFlightRoute Route)? FindHover(BotNavigationGeometry geometry, int mapId,
-		IReadOnlyList<NaturalFlyZone> zones, BotPosition from, BotPosition fungus, float cruiseZ)
+		IReadOnlyList<NaturalFlyZone> zones, BotPosition from, BotPosition fungus, float cruiseZ,
+		float hoverDistance = NaturalAirCombatPolicy.HoverDistance)
 	{
 		var candidates = new List<BotPosition>();
-		foreach (float radius in new[] { NaturalAirCombatPolicy.HoverDistance, 10f, 20f })
+		foreach (float radius in new[] { hoverDistance, hoverDistance * 2 / 3, hoverDistance * 4 / 3 })
 			foreach (float dz in new[] { 0f, 6f, -6f, -12f, 12f })
 				for (int sector = 0; sector < 16; sector++)
 				{
@@ -80,17 +119,33 @@ public static class NaturalAirCombat
 	/// quest's counter was observed. A target that only leaves view is not a kill, and quest id 0 (the SIM probes) has no
 	/// counter: before, <c>QuestStatus(0)</c> was 0, so "status left START" held after the first cast and a live target
 	/// (Komu, in run-fast) was reported killed.</summary>
+	/// <param name="attack">NR-36: the class's air attack; the Cleric's Smite when not given.</param>
 	public static async Task<bool> ShootDownAsync(INaturalJourneySession session, int target, int questId,
-		Func<BotPosition, ushort, byte, int, SpellCastData> createCast, CancellationToken token, int maximumCasts = 12)
+		Func<BotPosition, ushort, byte, int, SpellCastData> createCast, CancellationToken token, int maximumCasts = 12,
+		NaturalAirAttack? attack = null)
 	{
-		ushort skillId = SmiteIds.First(id => session.Api.World.Skills.ContainsKey(id));
-		byte level = checked((byte)session.Api.World.Skills[skillId].Level);
 		int varBefore = QuestVar(session, questId);
 		int watched = session.PacketHistory.Count;
 		await session.SendPacketAsync(session.Api.Target(target), token);
 		bool DeathSeen() => session.PacketHistory.Skip(watched).Any(packet =>
 			packet.PacketType == typeof(SmAttackStatus) && packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0);
 		bool CounterMoved() => questId > 0 && (QuestVar(session, questId) != varBefore || QuestStatus(session, questId) != 3);
+		if (attack is { SkillId: null })
+		{
+			// NR-36: no skill for the air: swing the weapon, at its own speed, three swings for each cast allowed.
+			for (int swing = 0; swing < maximumCasts * 3; swing++)
+			{
+				if (session.Api.World.IsDead) return false;
+				if (!session.Api.World.Objects.ContainsKey(target)) return DeathSeen() || CounterMoved();
+				await session.SendPacketAsync(session.Api.Attack(target, attack.SwingMillis, (byte)(swing & 0xFF)), token);
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(attack.SwingMillis + 100), token);
+				await session.SynchronizeAsync(token);
+				if (DeathSeen() || CounterMoved()) return true;
+			}
+			return false;
+		}
+		ushort skillId = attack?.SkillId ?? SmiteIds.First(id => session.Api.World.Skills.ContainsKey(id));
+		byte level = checked((byte)session.Api.World.Skills[skillId].Level);
 		for (int cast = 0; cast < maximumCasts; cast++)
 		{
 			if (session.Api.World.IsDead) return false;
@@ -143,9 +198,11 @@ public static class NaturalAirCombat
 	public static async Task<Outcome> RunAsync(INaturalJourneySession session, BotNavigationGeometry geometry, int mapId,
 		IReadOnlyList<NaturalFlyZone> zones, float waterLevel, NaturalLandingTarget landing, float cruiseZ, int questId,
 		Func<BotPosition, ushort, byte, int, SpellCastData> createCast, Func<long> nowMillis, CancellationToken token,
-		int maximumSorties = 6)
+		int maximumSorties = 6, NaturalAirAttack? attack = null)
 	{
 		BotWorldModel world = session.Api.World;
+		// NR-36: the class's air attack decides how near it hovers; the Cleric's Smite when none is given.
+		float hoverDistance = attack?.HoverDistance ?? NaturalAirCombatPolicy.HoverDistance;
 		bool airborne = false;
 		long? lastTakeoff = null;
 		float speed = 0;
@@ -172,7 +229,7 @@ public static class NaturalAirCombat
 			await session.SynchronizeAsync(token);
 			var observation = new NaturalAirCombatObservation(session.CurrentPosition, world.CurrentFlightTime, speed,
 				VisibleFungus(session, shotDown), landing);
-			NaturalAirCombatDecision decision = NaturalAirCombatPolicy.Decide(observation);
+			NaturalAirCombatDecision decision = NaturalAirCombatPolicy.Decide(observation, hoverDistance);
 			session.TraceDiagnostic("air-combat-decision", new Dictionary<string, object?>
 			{
 				["action"] = decision.Action, ["target"] = decision.Target, ["reason"] = decision.Reason, ["fp"] = observation.Fp,
@@ -181,11 +238,11 @@ public static class NaturalAirCombat
 			if (decision.Action == "attack")
 			{
 				BotPosition fungus = observation.Targets.Single(target => target.ObjectId == decision.Target).Position;
-				(BotPosition _, NaturalFlightRoute route) = FindHover(geometry, mapId, zones, session.CurrentPosition, fungus, cruiseZ)
+				(BotPosition _, NaturalFlightRoute route) = FindHover(geometry, mapId, zones, session.CurrentPosition, fungus, cruiseZ, hoverDistance)
 					?? throw new InvalidDataException($"No hover point in sight of fungus {decision.Target} at {fungus}.");
 				await NaturalFlightProtocol.FlyAsync(session, mapId, session.CurrentPosition, route.Waypoints, speed, token);
 				long started = nowMillis();
-				bool killed = await ShootDownAsync(session, decision.Target!.Value, questId, createCast, token);
+				bool killed = await ShootDownAsync(session, decision.Target!.Value, questId, createCast, token, attack: attack);
 				shotDown.Add(decision.Target.Value);
 				if (!killed)
 				{
