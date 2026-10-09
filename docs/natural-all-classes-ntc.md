@@ -2700,7 +2700,7 @@ can use them. The order below is the order of work: the item that saves time com
       guard-p8 (run/nr/NR-37/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
       16 skipped) and Fast passes (run nr37-fast, 11 passed).
-- [ ] **NR-38 - Coin gear by class.** Depends: NR-32, NR-33
+- [x] **NR-38 - Coin gear by class.** Depends: NR-32, NR-33
   - Work: Java first: the iron-coin and bronze-coin vendors' goods lists by armor type and
     weapon. The coin-gear leg and the Abyss entry's two tiers buy the pieces of the
     class's armor type and the weapon of its group that beat what is worn by the class's
@@ -2708,26 +2708,116 @@ can use them. The order below is the order of work: the item that saves time com
     manifests are what they were.
   - Proof: One-time check that prints each class's manifest at each tier; gate hm and ax
     identical.
+  - 2026-10-09: done as the manifest rule, and split by rule (q): the two legs that shop
+    are NR-38a and NR-38b below. No leg reads the rule yet, so every class plays as before.
+    - **Java.** A coin vendor is a reward shop. TradeService.performBuyFromShop 62-75 sends
+      the REWARD type to performBuyTransaction 80-163 without Kinah; validateBuyItems
+      165-180 asks only that the item is in one of the vendor's trade tabs' goods lists.
+      The price is the item template's acquisition: the coin and the count. Nothing asks
+      for the buyer's class or level; wearing the piece does. The port has the same
+      (Services/TradeService.cs). No server change.
+    - **What the data holds.** Each coin tier of the route has two vendors side by side,
+      and the Cleric's contracts name one of each pair:
+
+      | Tier | The contract's vendor | It sells | The vendor beside it | It sells |
+      |---|---|---|---|---|
+      | Iron Coin 186000006, level 16, Altgard | Lohaban 203689 | chain and robe armor; harp, mace, orb, spellbook, staff; a shield | Lateni 203659, 4 m away | plate, leather and chain armor; bow, dagger, greatsword, gun, keyblade, mace, polearm, sword; a shield |
+      | Bronze Coin 186000007, levels 21 and 26, Morheim | Vebna 204425 | the same kinds | Nott 204360, 14 m away | the same kinds, and a cannon at 26 |
+
+      So a class that wears plate or leather, or holds a sword, a bow or a gun, cannot buy
+      from the Cleric's vendor at all. Level 26 has two ranks of every piece; the Elite
+      rank is LEGEND quality and costs about two and a half times the other.
+    - **The change.** Sc/NaturalCoinManifest.cs, new: NaturalCoinManifests reads the
+      shipped data. VendorsBeside gives the contract's vendor and every other reward shop
+      for the same coin within 30 m of it. At gives what one vendor sells a class at a
+      tier: for each of the five body slots and for the weapon, the piece its gear rules
+      rank highest among those it may wear, the better quality and then the dearer of two
+      they rank alike, and a shield for a class that holds one. For gives the class's
+      vendor: the one whose weapon, then whose armor, its gear rules rank highest.
+    - **Proof, the one-time check** (run/nr/NR-38/check.log; the check file is not
+      committed), with the provisional tables of NR-32 for the nine classes without one:
+
+      | Tier | Classes | Vendor | Armor: item, group, coins | Weapon | Shield | All |
+      |---|---|---|---|---|---|---|
+      | iron, level 16 (coin gear leg) | Cleric, Chanter | 203689 | 110501096 CH_TORSO for 2, 111501065 CH_GLOVE for 1, 112501015 CH_SHOULDER for 1, 113501074 CH_PANTS for 2, 114501081 CH_SHOES for 1 | 101500810 STAFF for 3 | none | 10 coins |
+      | iron, level 16 (coin gear leg) | Gladiator | 203659 | 110601078 PL_TORSO for 2, 111601055 PL_GLOVE for 1, 112601029 PL_SHOULDER for 1, 113601039 PL_PANTS for 2, 114601035 PL_SHOES for 1 | 100900782 GREATSWORD for 3 | none | 10 coins |
+      | iron, level 16 (coin gear leg) | Templar | 203659 | 110601078 PL_TORSO for 2, 111601055 PL_GLOVE for 1, 112601029 PL_SHOULDER for 1, 113601039 PL_PANTS for 2, 114601035 PL_SHOES for 1 | 100001040 SWORD for 3 | 115001074 for 2 | 12 coins |
+      | iron, level 16 (coin gear leg) | Assassin | 203659 | 110301126 LT_TORSO for 2, 111301080 LT_GLOVE for 1, 112301026 LT_SHOULDER for 1, 113301098 LT_PANTS for 2, 114301132 LT_SHOES for 1 | 100200920 DAGGER for 3 | none | 10 coins |
+      | iron, level 16 (coin gear leg) | Ranger | 203659 | 110301126 LT_TORSO for 2, 111301080 LT_GLOVE for 1, 112301026 LT_SHOULDER for 1, 113301098 LT_PANTS for 2, 114301132 LT_SHOES for 1 | 101700827 BOW for 3 | none | 10 coins |
+      | iron, level 16 (coin gear leg) | Sorcerer, Spirit Master | 203689 | 110101191 RB_TORSO for 2, 111101081 RB_GLOVE for 1, 112101040 RB_SHOULDER for 1, 113101095 RB_PANTS for 2, 114101122 RB_SHOES for 1 | 100600860 SPELLBOOK for 3 | none | 10 coins |
+      | iron, level 16 (coin gear leg) | Gunner | 203659 | 110301126 LT_TORSO for 2, 111301080 LT_GLOVE for 1, 112301026 LT_SHOULDER for 1, 113301098 LT_PANTS for 2, 114301132 LT_SHOES for 1 | 101800684 GUN for 3 | none | 10 coins |
+      | iron, level 16 (coin gear leg) | Rider | 203659 | 110551016 CH_TORSO for 2, 111501574 CH_GLOVE for 1, 112501516 CH_SHOULDER for 1, 113501592 CH_PANTS for 2, 114501601 CH_SHOES for 1 | 102100606 KEYBLADE for 3 | none | 10 coins |
+      | iron, level 16 (coin gear leg) | Bard | 203689 | 110101191 RB_TORSO for 2, 111101081 RB_GLOVE for 1, 112101040 RB_SHOULDER for 1, 113101095 RB_PANTS for 2, 114101122 RB_SHOES for 1 | 102000721 HARP for 3 | none | 10 coins |
+      | bronze, level 21 (Abyss entry) | Cleric, Chanter | 204425 | 110501097 CH_TORSO for 3, 111501066 CH_GLOVE for 2, 112501016 CH_SHOULDER for 2, 113501075 CH_PANTS for 2, 114501082 CH_SHOES for 2 | 101500811 STAFF for 4 | none | 15 coins |
+      | bronze, level 21 (Abyss entry) | Gladiator | 204360 | 110601079 PL_TORSO for 3, 111601056 PL_GLOVE for 2, 112601030 PL_SHOULDER for 2, 113601040 PL_PANTS for 2, 114601036 PL_SHOES for 2 | 100900783 GREATSWORD for 4 | none | 15 coins |
+      | bronze, level 21 (Abyss entry) | Templar | 204360 | 110601079 PL_TORSO for 3, 111601056 PL_GLOVE for 2, 112601030 PL_SHOULDER for 2, 113601040 PL_PANTS for 2, 114601036 PL_SHOES for 2 | 100001041 SWORD for 4 | 115001075 for 3 | 18 coins |
+      | bronze, level 21 (Abyss entry) | Assassin | 204360 | 110301127 LT_TORSO for 3, 111301081 LT_GLOVE for 2, 112301027 LT_SHOULDER for 2, 113301099 LT_PANTS for 2, 114301133 LT_SHOES for 2 | 100200921 DAGGER for 4 | none | 15 coins |
+      | bronze, level 21 (Abyss entry) | Ranger | 204360 | 110301127 LT_TORSO for 3, 111301081 LT_GLOVE for 2, 112301027 LT_SHOULDER for 2, 113301099 LT_PANTS for 2, 114301133 LT_SHOES for 2 | 101700828 BOW for 4 | none | 15 coins |
+      | bronze, level 21 (Abyss entry) | Sorcerer, Spirit Master | 204425 | 110101192 RB_TORSO for 3, 111101082 RB_GLOVE for 2, 112101041 RB_SHOULDER for 2, 113101096 RB_PANTS for 2, 114101123 RB_SHOES for 2 | 100600861 SPELLBOOK for 4 | none | 15 coins |
+      | bronze, level 21 (Abyss entry) | Gunner | 204360 | 110301127 LT_TORSO for 3, 111301081 LT_GLOVE for 2, 112301027 LT_SHOULDER for 2, 113301099 LT_PANTS for 2, 114301133 LT_SHOES for 2 | 101800685 GUN for 4 | none | 15 coins |
+      | bronze, level 21 (Abyss entry) | Rider | 204360 | 110551017 CH_TORSO for 3, 111501575 CH_GLOVE for 2, 112501517 CH_SHOULDER for 2, 113501593 CH_PANTS for 2, 114501602 CH_SHOES for 2 | 102100607 KEYBLADE for 4 | none | 15 coins |
+      | bronze, level 21 (Abyss entry) | Bard | 204425 | 110101192 RB_TORSO for 3, 111101082 RB_GLOVE for 2, 112101041 RB_SHOULDER for 2, 113101096 RB_PANTS for 2, 114101123 RB_SHOES for 2 | 102000722 HARP for 4 | none | 15 coins |
+      | bronze, level 26 (Abyss entry) | Cleric, Chanter | 204425 | 110501104 CH_TORSO for 13, 111501073 CH_GLOVE for 7, 112501023 CH_SHOULDER for 7, 113501082 CH_PANTS for 10, 114501089 CH_SHOES for 7 | 101500818 STAFF for 19 | none | 63 coins |
+      | bronze, level 26 (Abyss entry) | Gladiator | 204360 | 110601086 PL_TORSO for 13, 111601063 PL_GLOVE for 7, 112601037 PL_SHOULDER for 7, 113601047 PL_PANTS for 10, 114601043 PL_SHOES for 7 | 100900790 GREATSWORD for 19 | none | 63 coins |
+      | bronze, level 26 (Abyss entry) | Templar | 204360 | 110601086 PL_TORSO for 13, 111601063 PL_GLOVE for 7, 112601037 PL_SHOULDER for 7, 113601047 PL_PANTS for 10, 114601043 PL_SHOES for 7 | 100001048 SWORD for 19 | 115001082 for 13 | 76 coins |
+      | bronze, level 26 (Abyss entry) | Assassin | 204360 | 110301134 LT_TORSO for 13, 111301088 LT_GLOVE for 7, 112301034 LT_SHOULDER for 7, 113301106 LT_PANTS for 10, 114301140 LT_SHOES for 7 | 100200928 DAGGER for 19 | none | 63 coins |
+      | bronze, level 26 (Abyss entry) | Ranger | 204360 | 110301134 LT_TORSO for 13, 111301088 LT_GLOVE for 7, 112301034 LT_SHOULDER for 7, 113301106 LT_PANTS for 10, 114301140 LT_SHOES for 7 | 101700835 BOW for 19 | none | 63 coins |
+      | bronze, level 26 (Abyss entry) | Sorcerer, Spirit Master | 204425 | 110101199 RB_TORSO for 13, 111101089 RB_GLOVE for 7, 112101048 RB_SHOULDER for 7, 113101103 RB_PANTS for 10, 114101130 RB_SHOES for 7 | 100600868 SPELLBOOK for 19 | none | 63 coins |
+      | bronze, level 26 (Abyss entry) | Gunner | 204360 | 110301134 LT_TORSO for 13, 111301088 LT_GLOVE for 7, 112301034 LT_SHOULDER for 7, 113301106 LT_PANTS for 10, 114301140 LT_SHOES for 7 | 101800692 GUN for 19 | none | 63 coins |
+      | bronze, level 26 (Abyss entry) | Rider | 204360 | 110551019 CH_TORSO for 13, 111501577 CH_GLOVE for 7, 112501519 CH_SHOULDER for 7, 113501595 CH_PANTS for 10, 114501604 CH_SHOES for 7 | 102100610 KEYBLADE for 19 | none | 63 coins |
+      | bronze, level 26 (Abyss entry) | Bard | 204425 | 110101199 RB_TORSO for 13, 111101089 RB_GLOVE for 7, 112101048 RB_SHOULDER for 7, 113101103 RB_PANTS for 10, 114101130 RB_SHOES for 7 | 102000729 HARP for 19 | none | 63 coins |
+
+      Every class has five armor pieces and a weapon at every tier. For the Cleric the
+      rule gives the contracts' own lists. At level 16 the leg buys three of the five; the
+      two it leaves, the hauberk and the brogans, score no higher than the Legionary pieces
+      it wears. At levels 21 and 26 the rule gives the contract's five pieces and its
+      staff, id for id and coin for coin.
+    - **For NR-38b and the operator.** A full level-26 set is 44 coins of armor and 19 for
+      the weapon; a Templar's shield is 13 more. The supply the operator approved for the
+      Abyss entry is 44 Bronze Coins (AX-Q5). What a class does when its tier costs more
+      is NR-38b's to settle by that item's default, not this one's.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-38/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical, hm and ax among them. Seven pre-commit checks pass, Aion.GameServer.Tests
+      passes (4,629 passed, 16 skipped) and Fast passes (run nr38-fast, 11 passed).
+- [ ] **NR-38a - The coin-gear leg shops by the class's manifest.** Depends: NR-38
+  - Work: For a class other than the contract's, the coin-gear leg (cg) takes its vendor
+    and its level-16 manifest from NaturalCoinManifests, and buys and wears the pieces
+    that beat what it wears by its own gear score. The incoming coins, the reward and the
+    balance at the end are observed, not pinned to 18, 5 and 19. The weapon it holds when
+    the leg starts is the one it must still hold, whatever its item id. The Cleric's
+    receipts and its three purchases are what they were.
+  - Proof: One-time check of the leg's decisions for every class from a prepared bag; gate
+    hm identical.
+- [ ] **NR-38b - The Abyss entry's two tiers shop by the class's manifest.** Depends:
+  NR-38a
+  - Work: For a class other than the contract's, the two coin-armor tiers of the Abyss
+    entry take the vendor and the manifests of levels 21 and 26, and the weapon is the
+    class's own by its own stat. Default for a tier that costs more than the 44 Bronze
+    Coins the operator approved: armor first, the slots it improves, dearest gain first,
+    and the weapon and the shield only from coins left over; nothing more is supplied.
+  - Proof: One-time check of each class's purchases at each tier from a prepared bag;
+    gate ax identical.
 - [ ] **NR-39 - The destiny leg by class.** Depends: NR-32
   - Work: Java first (_2900NoEscapingDestiny.java). The stone, its skill and the reward are
     read by class; the instance's fight casts the temporary skill by a role. A class whose
     stone needs a melee weapon and that holds none is recorded as a finding for that class.
   - Proof: One-time check of the four stones against Java's table; the Cleric's l11 leg
     replayed from altgard-l10 with an identical outcome.
-- [ ] **NR-40 - Haramel by class.** Depends: NR-33, NR-38
+- [ ] **NR-40 - Haramel by class.** Depends: NR-33, NR-38a
   - Work: Java first (HaramelInstance.java). The chest by class, the upgrade groups by the
     class's armor type, Q28505's list by class, and the object ids and coin counts read at
     the leg's start.
   - Proof: One-time check of the four chests against Java's table; gate hm identical.
 - [ ] **NR-41 - Leg starts as minimums, and one run through every leg for a line.**
-  Depends: NR-31 to NR-40
+  Depends: NR-31 to NR-40, NR-38a and NR-38b
   - Work: A leg's start facts that are receipts of the accepted run (an exact level, coin
     count or journal) are minimums for another line. The continuous journey takes a class
     line and plays the legs in the Cleric's order; a capture after a leg is named
     <the Cleric's snapshot name>-<class>.
   - Proof: scripts/sim/test-sim-snapshot.ps1 passes; the full gate identical.
-- [ ] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41, NR-43 to NR-48, NR-44a and
-  NR-46a to NR-46d
+- [ ] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41, NR-38a, NR-38b, NR-43 to NR-48,
+  NR-44a and NR-46a to NR-46d
   - Work: No code. The full gate on every recorded scope, and one table in this document
     of what each class gets at each class-bound point of the route.
   - Proof: Every scope identical to its baseline.
@@ -3126,3 +3216,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   holds and assesses too. Full gate guard-p8: twelve scopes identical. Seven checks, unit
   suite (4,629 passed, 16 skipped) and Fast (nr37-fast) pass. Next: NR-38, coin gear by
   class.
+- 2026-10-09 — Loop: NR-38 done as the manifest rule; the two legs that shop are split off
+  as NR-38a and NR-38b (rule (q)). Each coin tier has two vendors side by side, and the
+  Cleric's sells no plate, no leather and no sword, bow or gun, so every class needs its
+  own vendor and manifest. The rule gives all eleven classes five armor pieces and a weapon
+  at levels 16, 21 and 26, and gives the Cleric its contracts' lists. Full gate guard-p8:
+  twelve scopes identical. Seven checks, unit suite (4,629 passed, 16 skipped) and Fast
+  (nr38-fast) pass. Next: NR-38a, the coin-gear leg shops by the class's manifest.
