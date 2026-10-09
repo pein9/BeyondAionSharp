@@ -3713,6 +3713,62 @@ The template:
   - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
     with -templar (NR-41). In leg 1 it swings at the fungus in flight.
   - Proof: Each capture verifies.
+  - 2026-10-09, leg l1: the first attempt stopped at the kills in flight. With NR-53a a
+    replay played the leg to its end. Not captured yet: the capture is made from
+    committed code.
+    - **Attempt 1** (capture run nr53-l1-a1 from altgard-templar-s1 with -LaterCapital;
+      nothing captured; evidence run/nr/NR-53/l1-a1/). The leg went as the Cleric's to
+      the fungus of Q24011 (step af-037, 36 min in, level 15). The Templar flew to the
+      first fungus and swung 36 times, then to the second and swung 36 times: 72 swings
+      sent, none carried out, the quest's count unmoved, a whole flight time spent on
+      each. At the third: "No hover point in sight of fungus 69377". NR-36 had said it:
+      the swing in flight is first played when a Warrior's line reaches leg 1.
+    - **Replay l1-a2** (with NR-53a; run/nr/NR-53/l1-a2/): the leg complete and
+      verified. 66 quests complete, level 15, no death, 42 min 29 s of game time, 29,438
+      records, 43 fights. Five fungus in two sorties, three swings and 4.5 s each: 15
+      swings sent, 15 carried out. The Cleric's probe (AF-06) measured two Smites and
+      5.7 s a fungus.
+- [x] **NR-53a - A swing in flight hovers inside the swing's reach.** Depends: NR-52
+  - Work: The first stop of NR-53. Java first: what the server asks of a swing's
+    distance. The air attack of a class with no skill for the air is its weapon's swing
+    (NR-36); its reach and its hover point are made what the server accepts.
+  - Proof: The Templar's leg 1 is played to its end in a replay, with every swing in
+    flight carried out; the full gate identical, the l1 scope with the Cleric's Smite
+    among it.
+  - 2026-10-09: done.
+    - **Java.** PlayerController.attackTarget 399-411: a swing is answered
+      TARGET_TOO_FAR_AWAY unless the target is within the weapon's attack range and one
+      metre more ("client allows attacking from +0.9 meters further away"), by
+      PositionUtil.isInAttackRange 275-287, which measures in three dimensions from bound
+      radius to bound radius (isInRange 243-251). Then it asks for sight.
+      PlayerRestrictions.canAttack 206-237 forbids a swing on a flight path or a
+      windstream (checkFly 42-49), and not in free flight. The port has the same lines
+      (Controllers/PlayerController.cs 397-402). No server change.
+    - **What was wrong.** NR-36 gave a swing the weapon's range alone, 1.5 m for a sword,
+      and so a hover at 1 m. And the hover search looks at the fungus's own height and 6
+      m and 12 m above and below it, which Smite's 25 m covers. Coming down from the
+      cruise height the nearest of those points is the one 12 m above the fungus, and
+      the Templar swung from there. The server refused every swing for distance. The bot
+      has no decoder for that answer (SM_ATTACK_RESPONSE), so it saw only that nothing
+      was carried out.
+    - **The change** (Sc/NaturalAirCombat.cs). A swing's reach is the weapon's range and
+      the server's metre: 2.5 m for a sword, and a hover at 2 m. The two bound radii the
+      server adds are left as margin. FindHover takes the attack's reach: a point farther
+      from the fungus than the reach less a quarter metre is no hover point, and a hover
+      nearer than 6 m also looks half its own distance above and below. A fungus no
+      hover point reaches is left for another while another is in view
+      (air-combat-out-of-reach); with no other in view the run stops as before. Smite's
+      25 m keeps every point it had, so the Cleric hovers as recorded.
+    - **Found, and logged (rule (f)).** A refused swing is silent to the bot: it does not
+      decode SM_ATTACK_RESPONSE. A fight on the ground would wait out the same refusal
+      without a word in the trace.
+    - **Proof.** Replay l1-a2, class line warrior-templar, from altgard-templar-s1
+      (run/nr/NR-53/l1-a2/replay.json: passed): the numbers are under NR-53. Gate, set
+      all+mage+warrior+artist+engineer+scout, -Parallel 8, run guard-p8
+      (run/nr/NR-53a/guard-p8/verdict.json): verdict pass, all twelve scopes identical,
+      l1 with its five fungus among them. Seven pre-commit checks pass,
+      Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and Fast passes (run
+      nr53a-fast, 11 passed).
 - [ ] **NR-54 - Templar: Altgard legs l6 to l11.** Depends: NR-53; ticked by its round
   - Work: As NR-53. Leg 11 is the destiny quest: its stone is 140000003 (NR-39).
   - Proof: Each capture verifies.
@@ -4217,3 +4273,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   3 h 28 min of game time. The Templar is the pilot for the legs too.
   Next: NR-53, the Templar's Altgard legs l1 to l5, each from the last capture with
   -LaterCapital.
+- 2026-10-09 — Loop: NR-53 leg l1 played, NR-53a done. The Templar's first Altgard leg
+  stopped at the fungus of Q24011: it hovered 12 m above each and swung 72 times, none
+  carried out. A swing's reach is now the weapon's range and the server's metre, and a
+  hover point lies inside the attack's reach. Replay l1-a2 then played the leg to its end:
+  66 quests, level 15, no death, five fungus at three swings each. Full gate guard-p8
+  (twelve scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
+  (nr53a-fast) pass. Next: NR-53, the capture of leg l1 as altgard-rc-l1-templar from the
+  committed code, then legs l2 to l5.

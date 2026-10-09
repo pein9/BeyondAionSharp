@@ -20,7 +20,9 @@ public sealed record NaturalAirCombatDecision(string Action, int? Target, string
 /// template's start conditions).
 /// </summary>
 /// <param name="SkillId">The skill cast, or null for the weapon's swing.</param>
-/// <param name="Reach">How far the skill reaches, or the weapon's attack range.</param>
+/// <param name="Reach">How far the skill reaches; for a swing, the weapon's attack range and the metre the server adds
+/// to it (NR-53a; Java PlayerController.attackTarget 403-405). The two bodies' bound radii, which the server adds too
+/// (PositionUtil.isInRange 243-251), are left as margin.</param>
 /// <param name="SwingMillis">The weapon's attack speed, for a swing.</param>
 public sealed record NaturalAirAttack(ushort? SkillId, float Reach, int SwingMillis = 0)
 {
@@ -81,7 +83,7 @@ public static class NaturalAirCombat
 			if (best is { GroundOnly: false, TargetFlight: null, RequiresChainCategory: null })
 				return new(best.Id, Classes.NaturalSkillCatalog.Reach(best, weaponAttackRangeMillis));
 		}
-		return new(null, (weaponAttackRangeMillis ?? 1500) / 1000f, weaponAttackSpeedMillis is > 0 and int speed ? speed : 2500);
+		return new(null, (weaponAttackRangeMillis ?? 1500) / 1000f + 1f, weaponAttackSpeedMillis is > 0 and int speed ? speed : 2500);
 	}
 
 	/// <summary>
@@ -91,15 +93,21 @@ public static class NaturalAirCombat
 	/// </summary>
 	/// <param name="hoverDistance">NR-36: how near the class's air attack hovers; the Cleric's 15 m when not given. The
 	/// search also tries two thirds and four thirds of it: 10 m and 20 m for the Cleric, as before.</param>
+	/// <param name="reach">NR-53a: how far the attack reaches. A point farther from the fungus than that, less a quarter
+	/// metre, is no hover point: the search goes 6 m and 12 m above and below, which Smite's 25 m covers and a weapon's
+	/// swing does not. Not given: every point counts, as before.</param>
 	public static (BotPosition Hover, NaturalFlightRoute Route)? FindHover(BotNavigationGeometry geometry, int mapId,
 		IReadOnlyList<NaturalFlyZone> zones, BotPosition from, BotPosition fungus, float cruiseZ,
-		float hoverDistance = NaturalAirCombatPolicy.HoverDistance)
+		float hoverDistance = NaturalAirCombatPolicy.HoverDistance, float? reach = null)
 	{
 		var candidates = new List<BotPosition>();
+		// A hover nearer than 6 m also looks half its own distance above and below.
+		float[] heights = hoverDistance < 6f ? [0f, 6f, -6f, -12f, 12f, hoverDistance / 2, -hoverDistance / 2] : [0f, 6f, -6f, -12f, 12f];
 		foreach (float radius in new[] { hoverDistance, hoverDistance * 2 / 3, hoverDistance * 4 / 3 })
-			foreach (float dz in new[] { 0f, 6f, -6f, -12f, 12f })
+			foreach (float dz in heights)
 				for (int sector = 0; sector < 16; sector++)
 				{
+					if (reach is float limit && MathF.Sqrt(radius * radius + dz * dz) > limit - 0.25f) continue;
 					float angle = sector * MathF.PI / 8;
 					var hover = new BotPosition(fungus.X + radius * MathF.Cos(angle), fungus.Y + radius * MathF.Sin(angle), fungus.Z + dz, 0);
 					if (zones.Any(zone => !zone.Forbids && zone.Contains(hover.X, hover.Y, hover.Z)) && geometry.HasLineOfSight(mapId, hover, fungus))
@@ -209,6 +217,8 @@ public static class NaturalAirCombat
 		int sorties = 0, kills = 0, missed = 0;
 		var shooting = new List<double>();
 		var shotDown = new HashSet<int>();
+		// NR-53a: fungus no hover point reaches, left for another while another is in view.
+		var outOfReach = new HashSet<int>();
 		while (QuestStatus(session, questId) == 3)
 		{
 			if (world.IsDead) throw new InvalidDataException("The bot died during the air fight.");
@@ -228,7 +238,7 @@ public static class NaturalAirCombat
 			}
 			await session.SynchronizeAsync(token);
 			var observation = new NaturalAirCombatObservation(session.CurrentPosition, world.CurrentFlightTime, speed,
-				VisibleFungus(session, shotDown), landing);
+				VisibleFungus(session, outOfReach.Count == 0 ? shotDown : shotDown.Concat(outOfReach).ToHashSet()), landing);
 			NaturalAirCombatDecision decision = NaturalAirCombatPolicy.Decide(observation, hoverDistance);
 			session.TraceDiagnostic("air-combat-decision", new Dictionary<string, object?>
 			{
@@ -238,8 +248,21 @@ public static class NaturalAirCombat
 			if (decision.Action == "attack")
 			{
 				BotPosition fungus = observation.Targets.Single(target => target.ObjectId == decision.Target).Position;
-				(BotPosition _, NaturalFlightRoute route) = FindHover(geometry, mapId, zones, session.CurrentPosition, fungus, cruiseZ, hoverDistance)
-					?? throw new InvalidDataException($"No hover point in sight of fungus {decision.Target} at {fungus}.");
+				(BotPosition Hover, NaturalFlightRoute Route)? found = FindHover(geometry, mapId, zones, session.CurrentPosition, fungus, cruiseZ,
+					hoverDistance, attack?.Reach);
+				if (found == null)
+				{
+					if (observation.Targets.Count == 1)
+						throw new InvalidDataException($"No hover point in sight of fungus {decision.Target} at {fungus}.");
+					outOfReach.Add(decision.Target!.Value);
+					session.TraceDiagnostic("air-combat-out-of-reach", new Dictionary<string, object?>
+					{
+						["target"] = decision.Target, ["position"] = fungus, ["hoverDistance"] = hoverDistance, ["reach"] = attack?.Reach,
+						["others"] = observation.Targets.Count - 1,
+					});
+					continue;
+				}
+				NaturalFlightRoute route = found.Value.Route;
 				await NaturalFlightProtocol.FlyAsync(session, mapId, session.CurrentPosition, route.Waypoints, speed, token);
 				long started = nowMillis();
 				bool killed = await ShootDownAsync(session, decision.Target!.Value, questId, createCast, token, attack: attack);
