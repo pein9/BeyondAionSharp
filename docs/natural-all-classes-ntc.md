@@ -108,7 +108,23 @@ by a lettered item. Answers already given are quoted.
   this document as a manifest before its first use. No stigma stone and no skill book is
   supplied; what a quest of the route itself hands out is used.
 - **NR-Q9. Runs.** Default, as CP-Q3: SIM only, seed 1, fresh-create runs allowed, each on
-  its own throwaway schema that is dropped afterwards. One class run at a time.
+  its own throwaway schema that is dropped afterwards. One class run at a time. Answers
+  (2026-10-09), on that last sentence:
+  - "add it as an item before phase D, and safely do parallel work when possible";
+    "being able to run multiple bots at the same time is a major requirement/spec. Better
+    to build for that sooner than later!"; "Don't stop anything currently running."
+  - Asked whether that means separate worlds or one: "We don't need to do 'group' work,
+    but we can use the same world and run multiple bots in it. If you need to, keep the
+    bots 10 minutes apart so one can get progress and move on before the next starts".
+    And how to use it: "run multiple bots (multiple class testing even at a time), log
+    what happened for each as you go, when all are completed then make code changes, then
+    do another multi-bot in 1 world run."
+  - Asked whether a capture must still be one bot in its own world: "I would rather accept
+    captures straight out of a shared world."
+
+  So: several bots, each playing alone, in one world and one run; no party play. The loop
+  works in rounds by rule (w), from the tick of NR-44 on, and a class's captures, its
+  `ntc-ready-<class>-s1` among them, are taken from a round.
 - **NR-Q10. Unit tests.** As rule (n) of the class-profile plan: no new unit test for bot
   work. A server fix made Java-first gets the kind of test the server code beside it has.
 
@@ -152,6 +168,31 @@ What this plan changes or adds:
   nrNN-fast.
 - (v) **The Progress log carries the state.** The last line names the next item. The loop
   reads it first and trusts the document over its own memory.
+- (w) **Several bots at once** (the operator's answers to NR-Q9, 2026-10-09). Until NR-44
+  is ticked nothing changes: one bot and one run at a time, and no build, check or run
+  while another process holds the build outputs. From then on:
+  - **A round.** Several bots, of several classes when that helps, play in one world in
+    one run. Each plays alone: no party, no trade, no help between them. They start some
+    game minutes apart (the operator's figure: ten) so that one has moved on before the
+    next arrives. Each bot has its own trace and its own outcome line. A bot that stops
+    does not stop the others. Code is changed after the round, when every bot has
+    finished or stopped, and then the next round is played.
+  - **What a round is for.** Finding what to fix (rotation, recovery, route, gear), and,
+    by the operator's answer, the captures: a character that reaches a leg's end or the
+    endpoint in a round is captured from that shared world and verified there. No second
+    run alone is asked of it.
+  - **What stays one bot in its own world.** The recorded scopes and the gate. Their
+    baselines were recorded by a bot alone, and a bot beside others does not meet the same
+    monsters or the same dice, so a round is never compared with a recorded scope.
+  - **Separate runs side by side** (NR-45) are for those: several gate scopes at the same
+    time, each in its own world.
+  - **Always.** A running run is never stopped to make room. Nothing is built while a run
+    is going, unless NR-43 finds a safe way for a run to play from its own copy of a
+    build. A result got beside other runs counts as a solo result only where the same run
+    alone gives the same trace.
+
+  This rule amends rule (r)'s "one class at a time" and two lines of the loop prompt, the
+  one on the build outputs and the one on the monitor's port, and nothing else.
 
 ## The phases
 
@@ -159,7 +200,7 @@ What this plan changes or adds:
 |---|---|---|
 | A. Open | NR-00 to NR-09 | Commit this plan, survey what is the Cleric's alone, and close the tool gaps the later phases need. |
 | B. The Cleric on the generic rules | NR-10 to NR-29 | The Priest and the Cleric play by the table policy, the table rest and the table gear rules alone. Their scopes are re-recorded; a generic Cleric is played to the endpoint and preserved as ntc-ready-cleric-s1. |
-| C. The legs opened by class line | NR-30 to NR-49 | The trial, the class choice, the bridge and every leg take the class from the line: identity, contracts, rewards, coin gear, kit, the leg-specific skills. The Cleric's scopes stay identical. |
+| C. The legs opened by class line | NR-30 to NR-49 | The trial, the class choice, the bridge and every leg take the class from the line: identity, contracts, rewards, coin gear, kit, the leg-specific skills. The Cleric's scopes stay identical. First in the phase: several bots at once (NR-43 to NR-45). |
 | D. One class after another | NR-50 to NR-149 | Ten items reserved for each class in the order of NR-Q1: profile, probes, bridge, legs, endpoint, scope. |
 | E. Close | NR-150 to NR-152 | The whole check list, the full gate, the closing status and the readiness document. |
 
@@ -1274,6 +1315,60 @@ not committed, that prints what the changed rule gives each of the eleven classe
 first class of phase D is the first to play what this phase opens, and what it finds
 becomes lettered items there. Every item depends on the close of phase B.
 
+Worked first in this phase, by the operator's answers to NR-Q9 (2026-10-09). They are
+not about the class line; they are here so that this phase's gates and phase D's classes
+can use them.
+
+- [ ] **NR-43 - Several bots at once: survey.** Depends: the close of phase B
+  - Work: No code (rule (q)). Read the SIM fixture, the session, the journey and the run
+    scripts, and write into this document:
+    - **One world, several bots.** Known when this item was written: several sessions in
+      one world exist already (the social and trade scenarios log several characters into
+      one fixture), but every session moves the one virtual clock itself
+      (fixture.Clock.Advance), so two journeys cannot take turns today. Write the design
+      for taking turns: a bot's wait becomes "wake me at", and the clock moves to the
+      earliest. A bot alone must play exactly as now; say how that is proven.
+    - what each bot needs of its own: account, name, trace file, outcome record, monitor
+      row; how one bot's stop, death or exception is kept from the others; how a server
+      problem is laid to the bot that met it;
+    - what bots in one world share and contend for (monsters, quest objects, spawn timers,
+      the random stream), and where ten game minutes between starts are enough and where
+      they are not;
+    - the round: how it is started, what is logged for each bot as it goes, when it ends,
+      and how phase D's items are rewritten for rounds in place of one class at a time;
+    - captures from a round (the operator's answer): the shared world's schema holds every
+      bot's character. Say when it is dumped, what a snapshot of it is named, how one
+      character's leg end or endpoint is verified in it, what becomes of the characters
+      that stopped short, and how a later round resumes one character or several from it.
+      The snapshot scripts take one character today;
+    - whether a round played twice gives the same traces, and what it would take if not;
+    - **Separate runs side by side**, for the gate and the captures: what two runs share
+      (the build outputs, the monitor's port, which every run opens at 17880, schema
+      names, scratch and evidence folders, trace paths under run/, the development MySQL),
+      what a run reads from the repository after it has started, every wall-clock limit
+      that load could trip, and whether a run can play from its own copy of a build;
+    - the memory and processor time of one world with one bot and with several, and of
+      several worlds, measured; from that the numbers this machine takes.
+
+    Then write rule (w) out in full, correct NR-44 and NR-45 to what was found, and write
+    any further items of this phase for them, each with Depends and Proof.
+  - Proof: The survey and the items are in this document; seven checks pass.
+- [ ] **NR-44 - Several bots in one world.** Depends: NR-43
+  - Work: As the survey designs it. The journeys take turns on the one clock; each bot has
+    its own account, trace, outcome record and monitor row; starts are set apart; a round
+    runner starts the bots of a list of class lines and writes one outcome line for each.
+  - Proof: The full gate identical: a bot alone plays as before. One round of the six
+    starter classes through Ishalgen in one world: every bot's trace and outcome is
+    written, and a bot stopped on purpose leaves the others playing.
+- [ ] **NR-45 - Separate runs side by side.** Depends: NR-43
+  - Work: As the survey confirms it. A run takes its own monitor port and prints and
+    records its address; a run alone is at 17880 as now. A run in progress is marked, and
+    the scripts refuse to build while one is. The gate plays its scopes several at a time
+    in compare mode from one build; recording stays one scope at a time. A capture records
+    the commit it was built from.
+  - Proof: The script tests pass. The full gate played side by side is identical to the
+    baselines, with its wall time beside the serial gate's; the serial gate after it is
+    identical too.
 - [ ] **NR-30 - The class line carries the pair, the pick and the dispatch; the scripts
   accept every line.** Depends: NR-01, the close of phase B
   - Work: A class line with a second class names its ceremony pick, and ForLine passes it
@@ -1352,7 +1447,8 @@ becomes lettered items there. Every item depends on the close of phase B.
     line and plays the legs in the Cleric's order; a capture after a leg is named
     <the Cleric's snapshot name>-<class>.
   - Proof: scripts/sim/test-sim-snapshot.ps1 passes; the full gate identical.
-- [ ] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41
+- [ ] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41, NR-43 to NR-45 and the items
+  NR-43 writes
   - Work: No code. The full gate on every recorded scope, and one table in this document
     of what each class gets at each class-bound point of the route.
   - Proof: Every scope identical to its baseline.
@@ -1361,8 +1457,9 @@ becomes lettered items there. Every item depends on the close of phase B.
 
 For each class, in the order of NR-Q1, ten numbers are reserved: Templar NR-50, Sorcerer
 NR-60, Chanter NR-70, Gladiator NR-80, Assassin NR-90, Ranger NR-100, Spirit Master NR-110,
-Gunner NR-120, Rider NR-130, Bard NR-140. The class's survey item writes the others. The
-template:
+Gunner NR-120, Rider NR-130, Bard NR-140. The class's survey item writes the others. From
+the tick of NR-44 the classes are played in rounds in one world (rule (w)), and NR-43
+rewrites this template for rounds; until then it stands as written. The template:
 
 - [ ] **NR-x0 - <Class>: survey and profile data.** Depends: the close of phase C
   - Work: Java first: the class's skill tree from level 10 to 26, its trainer, its class
@@ -1579,3 +1676,19 @@ report what was done, what is parked or blocked, and what the operator must deci
   coin-gear-complete when bound, and the Haramel receipt begins. Full gate guard-a1,
   twelve scopes: identical. Seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr19a-fast, with
   its three coin probes) pass. Next: NR-19 again, a fresh two attempts.
+- 2026-10-09 — Operator, checking in: runs side by side are approved, as an item before
+  phase D; several bots at the same time is a major requirement; nothing running is to be
+  stopped. Written: the answer to NR-Q9, rule (w), and NR-43 and NR-44 at the head of
+  phase C; NR-42 depends on them. No code. NR-19's attempt a3 (run nr19-continuous-a3 at
+  709f33816) was running and was not touched. Next: NR-19, as before.
+- 2026-10-09 — Operator, a second answer: not party play, but several bots in the same
+  world in one run, each playing alone, ten game minutes apart if needed; log each, change
+  code when all are done, play the next round. Rewritten: the answer to NR-Q9 and rule
+  (w) (rounds; the gate and the captures stay one bot in its own world unless NR-43 finds
+  otherwise), NR-43 (survey), NR-44 (several bots in one world), NR-45 (separate runs
+  side by side). Known already: several sessions in one world exist; each moves the one
+  virtual clock itself, so journeys cannot take turns yet. No code. Next: NR-19, as before.
+- 2026-10-09 — Operator, a third answer: captures are accepted straight out of a shared
+  world. Rule (w) and NR-43 changed to that: a class's captures come from a round; only
+  the recorded scopes and the gate stay one bot in its own world. No code. Next: NR-19, as
+  before.
