@@ -2903,12 +2903,60 @@ can use them. The order below is the order of work: the item that saves time com
       guard-p8 (run/nr/NR-38b/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical, ax among them. Seven pre-commit checks pass, Aion.GameServer.Tests passes
       (4,629 passed, 16 skipped) and Fast passes (run nr38b-fast, 11 passed).
-- [ ] **NR-39 - The destiny leg by class.** Depends: NR-32
+- [x] **NR-39 - The destiny leg by class.** Depends: NR-32
   - Work: Java first (_2900NoEscapingDestiny.java). The stone, its skill and the reward are
     read by class; the instance's fight casts the temporary skill by a role. A class whose
     stone needs a melee weapon and that holds none is recorded as a finding for that class.
   - Proof: One-time check of the four stones against Java's table; the Cleric's l11 leg
     replayed from altgard-l10 with an identical outcome.
+  - 2026-10-09: done. The campaign's stone, the skill it grants and the class reward the
+    server never gives are the class's own. The Cleric's leg is the contract itself.
+    - **Java.** _2900NoEscapingDestiny.java: Heimdall hands the stone of getStoneId
+      (240-262) at SELECT7_1; equipping any of the four moves the quest from 99 to 97
+      (onEquipItemEvent, registered for all four at 31-41); SETPRO8 spawns the enemy for
+      five minutes; its death, by any means, moves 98 to 9 and teleports the player out
+      (onKillEvent). The handler never asks that the stone's skill is used. getStoneId
+      carries a TODO: which stones retail gave each class is not known to Java; that is a
+      retail question and stops no class. The port has the same table
+      (Handlers/Quest/pandaemonium/_2900NoEscapingDestiny.cs 279-298). No server change.
+    - **The table.**
+
+      | Stone | Classes | Skill granted (the one skill of the stone's group) |
+      |---|---|---|
+      | 140000001 Healing Light II | Cleric, Chanter, Bard | 11504 |
+      | 140000002 Flame Cage I | Ranger, Gunner, Rider | 11505 |
+      | 140000003 Ferocious Strike III, which needs a melee weapon | Gladiator, Templar, Assassin | 11506 |
+      | 140000004 Hydro Eruption II | Sorcerer, Spirit Master | 11507 |
+
+      The three classes of the third stone hold a melee weapon by NR-Q5 (greatsword, sword,
+      daggers), so no class is left with a stone it cannot use. The class reward of Q2900
+      that the leg checks was never given (NR-32) is each class's own entry: Gladiator
+      140000008, Templar 140000027, Ranger 140000047, Assassin 140000076, Sorcerer
+      140000131, Spirit Master 140000147, Cleric 140000098, Chanter 140000112, Bard
+      140000859, Gunner 140000943, Rider 140001002.
+    - **The change.**
+      - Sc/NaturalAltgardContract.cs, NaturalAltgardDestiny: StoneFor is Java's table;
+        ForClass gives the campaign for a class with its stone, the skill of the stone's
+        group from the shipped skill data, and its class reward entry from quest_data.
+      - J: the step that gives another class its picks gives it this campaign too
+        (leg-destiny-stone), and the coin-gear leg's "this stigma skill must not be
+        learned" is the class's own stone's skill.
+      - **Not done, on purpose:** no class casts the stone's skill in the instance. Java
+        does not ask for it, and the Cleric does not cast its own; the fight is the class's
+        ordinary fight.
+    - **Proof, the one-time check** (run/nr/NR-39/check.log; the check file is not
+      committed): the bot's table was compared with the switch read out of Java's source
+      file for the eleven second classes; a starter class is refused; for the Cleric
+      ForClass returns the contract.
+    - **Proof, the Cleric's leg 11.** Replayed from altgard-l10 on the build without this
+      item's change (run l11-before, by setting the two files aside and back) and on the
+      build with it (run l11-after): both complete with the endpoint verified, and the
+      two traces are identical record for record, 7,323 records, digest
+      0f6d4d5b39a812e6 (run/nr/NR-39/l11-compare.log).
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-39/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
+      16 skipped) and Fast passes (run nr39-fast, 11 passed).
 - [ ] **NR-40 - Haramel by class.** Depends: NR-33, NR-38a
   - Work: Java first (HaramelInstance.java). The chest by class, the upgrade groups by the
     class's armor type, Q28505's list by class, and the object ids and coin counts read at
@@ -3343,3 +3391,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   the question is NR-Q14 (the recorded Cleric needed 33; the worst bag needs 48 to 67).
   Full gate guard-p8: twelve scopes identical. Seven checks, unit suite (4,629 passed, 16
   skipped) and Fast (nr38b-fast) pass. Next: NR-39, the destiny leg by class.
+- 2026-10-09 — Loop: NR-39 done. The destiny campaign's stone is Java's by class (four
+  stones for eleven classes), its skill the one of the stone's group, and the class reward
+  never given the class's own entry. The bot's table equals the switch in Java's source.
+  The Cleric's leg 11, replayed from altgard-l10 before and after the change, gives
+  identical traces. Full gate guard-p8: twelve scopes identical. Seven checks, unit suite
+  (4,629 passed, 16 skipped) and Fast (nr39-fast) pass. Next: NR-40, Haramel by class.

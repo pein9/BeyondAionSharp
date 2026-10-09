@@ -306,7 +306,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			{
 				BotWorldModel world = session.Api.World;
 				byte? classId = world.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass;
-				if (leg.RewardChoiceList.Length == 0 && leg.CoinGear == null && leg.Haramel == null && leg.AbyssEntry == null ||
+				if (leg.RewardChoiceList.Length == 0 && leg.CoinGear == null && leg.Haramel == null && leg.AbyssEntry == null && leg.Destiny == null ||
 					classId is not { } observedId || PlayerClassExtensions.GetPlayerClassById(observedId, true) is not { } observedClass ||
 					observedClass.ToString() == leg.Start.Class) return leg;
 				NaturalGearRules rules = NaturalClassProfiles.For(classId, ClassLine, runtime.Data).Gear;
@@ -337,12 +337,28 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					NaturalCoinGear classGear = coins.ForClass(manifest,
 						[.. world.Inventory.Values.Select(item => new NaturalJourneyItem(item.ObjectId, item.ItemId, item.Count, item.EquipmentSlot))],
 						id => rules.Score(sold.Item(id)), tab);
+					// NR-39: the stigma skill the leg must not find learned is the class's own stone's.
+					classGear = classGear with
+					{
+						ForbiddenStigmaSkillId = NaturalAltgardContract.LoadLeg("l11").Destiny!.ForClass(observedClass, runtime.Data).StigmaSkillId,
+					};
 					own = own with { CoinGear = classGear };
 					session.TraceDiagnostic("leg-coin-manifest", new Dictionary<string, object?>
 					{
 						["leg"] = leg.Leg, ["class"] = observedClass.ToString(), ["vendor"] = classGear.VendorNpcId, ["tab"] = classGear.GoodsListId,
 						["manifest"] = manifest.Pieces, ["purchases"] = classGear.Purchases, ["weapon"] = classGear.StaffItemId,
 						["coins"] = new[] { classGear.IncomingCoins, classGear.RewardCoins, classGear.EndpointCoins },
+					});
+				}
+				// NR-39: the destiny campaign's stone, the skill it grants and the reward never given are the class's own.
+				if (own.Destiny is { } destiny)
+				{
+					NaturalAltgardDestiny classDestiny = destiny.ForClass(observedClass, runtime.Data);
+					own = own with { Destiny = classDestiny };
+					session.TraceDiagnostic("leg-destiny-stone", new Dictionary<string, object?>
+					{
+						["leg"] = leg.Leg, ["class"] = observedClass.ToString(), ["stone"] = classDestiny.StoneItemId,
+						["skill"] = classDestiny.StigmaSkillId, ["legacyReward"] = classDestiny.LegacyRewardId,
 					});
 				}
 				// NR-38b: the Abyss entry's two coin tiers are the class's own: its vendor, its pieces and its weapon.

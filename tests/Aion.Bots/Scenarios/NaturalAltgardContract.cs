@@ -332,7 +332,38 @@ public sealed record NaturalAltgardDestiny(int QuestId, int MapId, int[] Allowed
 	int MovieId, int StoneItemId, int StigmaSkillId, long StigmaSlot, int InstallationBaseFee,
 	string SpawnStep, int EnemyNpcId, int EnemyHp, float[] EnemyPosition, int FightVar, int KillVar,
 	int LifetimeSeconds, int ResetVar, int RewardBundleId, int LegacyRewardId, int FreeSlotReserve,
-	NaturalAscensionTeleport KillTeleport);
+	NaturalAscensionTeleport KillTeleport)
+{
+	/// <summary>
+	/// NR-39: the stone Heimdall hands a class, as Java decides it (_2900NoEscapingDestiny.getStoneId, 240-262): one of four,
+	/// by second class. The third needs a melee weapon. A starter class has none; Java throws for it.
+	/// </summary>
+	public static int StoneFor(Aion.GameServer.Model.PlayerClass playerClass) => playerClass switch
+	{
+		Aion.GameServer.Model.PlayerClass.CHANTER or Aion.GameServer.Model.PlayerClass.CLERIC or Aion.GameServer.Model.PlayerClass.BARD => 140000001,
+		Aion.GameServer.Model.PlayerClass.RIDER or Aion.GameServer.Model.PlayerClass.GUNNER or Aion.GameServer.Model.PlayerClass.RANGER => 140000002,
+		Aion.GameServer.Model.PlayerClass.GLADIATOR or Aion.GameServer.Model.PlayerClass.ASSASSIN or Aion.GameServer.Model.PlayerClass.TEMPLAR => 140000003,
+		Aion.GameServer.Model.PlayerClass.SORCERER or Aion.GameServer.Model.PlayerClass.SPIRIT_MASTER => 140000004,
+		_ => throw new InvalidDataException($"Q2900 hands the {playerClass} no stigma stone."),
+	};
+
+	/// <summary>
+	/// NR-39: the same campaign for a class other than the contract's. Its stone is Java's for the class; the skill the
+	/// stone grants is the one skill of the stone's group in the shipped skill data; and the reward the server never
+	/// gives (the class list quest_data.xml carries without use_class_reward) is the class's own entry.
+	/// </summary>
+	public NaturalAltgardDestiny ForClass(Aion.GameServer.Model.PlayerClass playerClass, Aion.GameServer.Dataholders.StaticData data)
+	{
+		int stone = StoneFor(playerClass);
+		string group = data.ItemDataDh.GetItemTemplate(stone)?.GetStigma()?.gainSkillGroup1
+			?? throw new InvalidDataException($"Stigma stone {stone} names no skill group.");
+		int skill = data.SkillDataDh.GetSkillTemplatesByGroup(group) is [var only] ? only.GetSkillId()
+			: throw new InvalidDataException($"Skill group {group} of stone {stone} does not hold exactly one skill.");
+		int legacy = data.Quests.GetQuestById(QuestId).GetSelectableRewardByClass(playerClass) is [var entry, ..] ? entry.GetItemId()
+			: throw new InvalidDataException($"Q{QuestId} has no class reward entry for the {playerClass}.");
+		return this with { StoneItemId = stone, StigmaSkillId = skill, LegacyRewardId = legacy };
+	}
+}
 
 /// <summary>BC-01: an ordinary solo quest portal, its instance branch and recovery/exit facts from Java and shipped data.</summary>
 public sealed record NaturalAltgardInstanceTrip(int QuestId, int MapId, int FromVar, int EnterVar, int PortalNpcId,
