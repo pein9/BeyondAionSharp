@@ -127,6 +127,12 @@ by a lettered item. Answers already given are quoted.
   `ntc-ready-<class>-s1` among them, are taken from a round.
 - **NR-Q10. Unit tests.** As rule (n) of the class-profile plan: no new unit test for bot
   work. A server fix made Java-first gets the kind of test the server code beside it has.
+- **NR-Q11. How many bots in one world?** Asked by Survey C1, which found that bots in one
+  world take turns on one thread: a world of N bots takes about as long as N runs one
+  after another and saves memory, not time, while separate worlds side by side save time.
+  Default: a round spreads its bots over as many worlds as memory takes, eight on this
+  machine, so eleven classes play one or two to a world. One world for all is used when
+  the point is to see bots beside each other. The operator's later Answer outranks this.
 
 ## Standing rules
 
@@ -168,28 +174,30 @@ What this plan changes or adds:
   nrNN-fast.
 - (v) **The Progress log carries the state.** The last line names the next item. The loop
   reads it first and trusts the document over its own memory.
-- (w) **Several bots at once** (the operator's answers to NR-Q9, 2026-10-09). Until NR-44
-  is ticked nothing changes: one bot and one run at a time, and no build, check or run
-  while another process holds the build outputs. From then on:
-  - **A round.** Several bots, of several classes when that helps, play in one world in
-    one run. Each plays alone: no party, no trade, no help between them. They start some
-    game minutes apart (the operator's figure: ten) so that one has moved on before the
-    next arrives. Each bot has its own trace and its own outcome line. A bot that stops
-    does not stop the others. Code is changed after the round, when every bot has
-    finished or stopped, and then the next round is played.
+- (w) **Several bots at once** (the operator's answers to NR-Q9, 2026-10-09; Survey C1).
+  Each part holds from the tick of its item; until then one bot and one run at a time, and
+  no build, check or run while another process holds the build outputs.
+  - **A round.** Several bots, of several classes when that helps, play at the same time.
+    Each plays alone: no party, no trade, no help between them. A round is one world or
+    several worlds side by side, each with one bot or more (NR-Q11). Bots in one world
+    start some game minutes apart (the operator's figure: ten) so that one has moved on
+    before the next arrives. Each bot has its own trace and its own outcome record. A bot
+    that stops does not stop the others. Code is changed after the round, when every bot
+    has finished or stopped, and then the next round is played.
   - **What a round is for.** Finding what to fix (rotation, recovery, route, gear), and,
     by the operator's answer, the captures: a character that reaches a leg's end or the
-    endpoint in a round is captured from that shared world and verified there. No second
-    run alone is asked of it.
+    endpoint in a round is captured from that world and verified there. No second run
+    alone is asked of it.
   - **What stays one bot in its own world.** The recorded scopes and the gate. Their
     baselines were recorded by a bot alone, and a bot beside others does not meet the same
     monsters or the same dice, so a round is never compared with a recorded scope.
-  - **Separate runs side by side** (NR-45) are for those: several gate scopes at the same
-    time, each in its own world.
-  - **Always.** A running run is never stopped to make room. Nothing is built while a run
-    is going, unless NR-43 finds a safe way for a run to play from its own copy of a
-    build. A result got beside other runs counts as a solo result only where the same run
-    alone gives the same trace.
+  - **Separate runs side by side** (NR-45): gate scopes, and the worlds of a round, each
+    in its own world and process. Eight at once on this machine.
+  - **While any run is going.** It is never stopped to make room. Nothing is built, and no
+    check that builds is run. Nothing under game-server/data, parity-artifacts or the
+    bots' data is edited. Source may be edited. The runs of one batch start from one build.
+  - **What counts.** A result got beside other runs counts as a solo result only where the
+    same run alone gives the same trace; NR-45 proves that for the gate.
 
   This rule amends rule (r)'s "one class at a time" and two lines of the loop prompt, the
   one on the build outputs and the one on the monitor's port, and nothing else.
@@ -200,7 +208,7 @@ What this plan changes or adds:
 |---|---|---|
 | A. Open | NR-00 to NR-09 | Commit this plan, survey what is the Cleric's alone, and close the tool gaps the later phases need. |
 | B. The Cleric on the generic rules | NR-10 to NR-29 | The Priest and the Cleric play by the table policy, the table rest and the table gear rules alone. Their scopes are re-recorded; a generic Cleric is played to the endpoint and preserved as ntc-ready-cleric-s1. |
-| C. The legs opened by class line | NR-30 to NR-49 | The trial, the class choice, the bridge and every leg take the class from the line: identity, contracts, rewards, coin gear, kit, the leg-specific skills. The Cleric's scopes stay identical. First in the phase: several bots at once (NR-43 to NR-45). |
+| C. The legs opened by class line | NR-30 to NR-49 | The trial, the class choice, the bridge and every leg take the class from the line: identity, contracts, rewards, coin gear, kit, the leg-specific skills. The Cleric's scopes stay identical. First in the phase: several bots at once (NR-43 to NR-47). |
 | D. One class after another | NR-50 to NR-149 | Ten items reserved for each class in the order of NR-Q1: profile, probes, bridge, legs, endpoint, scope. |
 | E. Close | NR-150 to NR-152 | The whole check list, the full gate, the closing status and the readiness document. |
 
@@ -334,6 +342,165 @@ placeholder profile, which borrows the Priest's adapter.
 73,044,001 game ms (20 h 17 min) from creation to the Altgard endpoint
 (sim-snapshot.ps1 -Action Capture -ContinuousJourney -LaterCapital, fourteen stages), and
 the Abyss entry was one more capture from it. The generic Cleric is played the same way.
+
+### Survey C1: several bots at once (NR-43, 2026-10-09)
+
+No code. Read: the virtual clock (tests/Aion.GameServer.TestKit/VirtualThreadPool.cs), the
+in-process transport (tests/Aion.Bots/Transport/InProcessBotTransport.cs), the SIM session
+(SimulationL0Session in tests/Aion.Simulation.Tests/SimulationFastScenarioTests.cs), the
+journey's test (SimulationNaturalIshalgenJourneyTests.cs), the world fixture
+(SimulationWorldFixture.cs), the monitor (tests/Aion.Bots/Dashboard/LiveBotDashboard.cs)
+and the two run scripts. Measured with a one-time probe that is not committed; its output
+is under run/nr/NR-43/.
+
+**1. How a run uses time today.**
+
+- One world is one process, and after loading it plays on one thread. The clock is
+  VirtualThreadPool. Advance(by) runs every due server timer in order on the calling
+  thread, and it refuses a second caller.
+- A bot's packet is handled by the server at once, inside the send. Time does not move.
+- Time moves only when a bot waits. Every wait ends in one delegate, made in
+  SimulationL0Session.OpenAsync: `elapsed => fixture.Clock.Advance(elapsed)`. Two more
+  places move the clock directly, both around a relog: AdvanceOfflineAsync and
+  WaitForReentryAsync.
+- All of it completes at once. A journey never yields, so two journeys started as two
+  tasks would play one after the other, not together.
+- Several sessions in one world exist already: the social, trade and gathering scenarios
+  log several characters into one world and step them by hand.
+
+**2. What it costs, measured.**
+
+| What | Wall time | Memory |
+|---|---|---|
+| Loading a world | about 41 s of processor time, on many threads | 2.4 GB |
+| An empty world, one game hour | 5.9 s | |
+| One character standing in Ishalgen, one game hour | 7.9 s | |
+| Six characters standing there, one game hour | 8.2 s | about 20 MB more for each |
+| Scope mage: Ishalgen to Q2004, 30.7 game minutes | 30.7 s, of it 5.1 s in the clock and 2.1 s in sends | peak 2.7 GB |
+| Scope c: Altgard leg 4, 176.5 game minutes | 310.6 s, of it 39.8 s in the clock and 8.7 s in sends | peak 2.9 GB |
+| NR-19's whole journey, 19 h 20 min of game time | about 68 minutes | |
+
+The clock and the sends are the server's work. The rest is on the bot's side: reading and
+decoding packets, the bot's world model, decisions, routes, the trace and the monitor.
+
+- **The server's work is 16 to 24% of a run's wall time. The bot's side is 76 to 84%.**
+- This machine: 20 cores (28 logical), 63.8 GB of memory, 30 GB free when measured.
+
+**3. What that means for time.**
+
+- Bots in one world take turns on one thread. A world with N bots takes about as long as
+  the N runs one after another: it saves one world load each (41 s) and a share of the
+  server's work, and no more. It saves memory: one world of 2.4 GB, not N. Eleven classes
+  from creation to the endpoint in one world would be about ten hours of wall time.
+- Separate worlds side by side each take one thread. Eight fit this machine's free memory
+  with room to spare. Eleven classes in separate worlds are two batches of 70 to 80
+  minutes.
+- So one world is the way to see bots beside each other and to save memory, and separate
+  worlds are the way to save time. A round can be both: several worlds side by side, each
+  with one bot or more (NR-Q11).
+- Four fifths of a run being the bot's side is a finding of its own. NR-46 looks where it
+  goes; whatever is saved there is saved for every run and every round.
+
+**4. Taking turns in one world: the design for NR-44.**
+
+- One turn table for a world owns the clock. A bot's wait becomes "wake me at now + dt"
+  and yields. When every bot is waiting or done, the table moves the clock to the earliest
+  wake and lets that one bot play until its next wait. Bots that are due at the same
+  instant go in the order of the round's list. One bot plays at a time, always on the same
+  thread, so a world's play does not depend on the machine.
+- The seam is small: the delegate in OpenAsync, the two direct calls around a relog, and
+  InProcessBotTransport.AdvanceAsync, which must be able to wait (today it calls the
+  delegate under a lock and returns done).
+- With one bot the table moves the clock inside the call, so the same calls are made in
+  the same order as today. The proof is the full gate identical.
+- The world's bots run on one thread of their own with its own context, so that a bot
+  never continues on another thread.
+- A real wait inside a turn (a file write) only holds the table until that bot waits
+  again.
+
+**5. What each bot needs of its own.**
+
+| Need | Today |
+|---|---|
+| Account and name | Each class line has its own (NaturalClassLine.SimAccountId, CharacterName). One bot of a line in a world. |
+| Trace and receipts | The trace takes a bot id, and every receipt and the failure record are written beside the trace. A folder for each bot keeps them apart. |
+| Monitor | LiveBotDashboardState keeps a row for each bot id already. One host and one port serve a world. |
+| Runtime | NaturalJourneyRuntime is made for one journey. Nothing to change. |
+| Options | Built from the process's environment variables in the journey's test (CP_CLASS, AF_ALTGARD, NA_ASCENSION and more). A round gives them for each bot from a round file. |
+| Bot id | "b01" is fixed in the test. One for each bot. |
+| Help supply | Counted for one journey in the test. One count for each bot. |
+| Static state | The bot library has none that changes, apart from the profile table filled once from static data. |
+
+- **A bot that stops.** A journey that throws ends its own task. The table drops it and
+  the others go on. Its session is closed, so the character is saved where it stood.
+- **Server problems.** The problem policy is one for the process, and the journey checks
+  it nine times. As it is, one bot's server problem would fail every bot's next check. A
+  problem raised inside a bot's send is that bot's. One raised while the clock moves is
+  the world's: it is written into the round's record and ends that world's round.
+- **Wall-clock limits.** A packet wait gives up after three minutes of real time; that
+  holds inside a turn. The journey's test gives one journey 45 minutes, or 90 for the
+  continuous one; a world of several bots needs a limit sized by its bots.
+
+**6. What bots in one world share.**
+
+- The random stream, one for the process. Another bot's fights change this bot's rolls.
+- Monsters and their spawn timers, quest objects, named quest spawns. The trial, Haramel
+  and the arenas are instances of one player.
+- The start. Every Asmodian starter begins at the same place with the same first quests,
+  so the ten game minutes between starts matter most in Ishalgen. Later the classes pass
+  the same hubs at their own pace and will meet. What happens then is an outcome to log.
+- Not read here: who gets a quest's kill when two players hit one monster. NR-44 reads the
+  Java for it first.
+
+**7. The round.**
+
+- A round file lists the bots: class line, start offset in game minutes, where the bot
+  starts (fresh, or a character of a round snapshot), and how far it plays (a stage, as
+  the scopes name them today). It also says which world each bot is in.
+- The runner starts the worlds side by side. Each world plays its bots by turns.
+- Logged for each bot as it goes: one line for each stage it ends, as
+  continuous-progress.json has today; and at its end one outcome record: reached or
+  stopped, with the message and step of a stop, level, quests, deaths, game time and the
+  ledger counts.
+- The round ends when every bot has finished or stopped. Code is changed then, not before.
+
+**8. Captures from a round** (the operator's answer to NR-Q9).
+
+- A world's schema holds its bots' characters. A bot that reaches its stage's end logs
+  out, which saves it there, and stays out.
+- When the world's last bot is done the schema is dumped once: a round snapshot, with a
+  record that lists each character: line, character id, the stage reached with its
+  verified receipt, or "stopped short" with its last observation.
+- A class's named capture, ntc-ready-<class>-s1 among them, is a small record that points
+  at the round snapshot and the character in it. The dump is not copied.
+- Verify of such a capture restores the dump and resumes that one character, as today.
+- A later round resumes the characters of one dump together in one world. Characters of
+  two dumps cannot be put into one world, so a world's bots stay together from round to
+  round, or a character goes on alone.
+- A character that stopped short is in the dump as it was saved. After the fix the next
+  round resumes it there; if it was saved in a state it cannot leave, it is played again
+  from the round snapshot before.
+- sim-snapshot.ps1 takes one character today. The round snapshot gets actions of its own.
+
+**9. Does a round repeat?** Nothing in a world reads the wall clock for play, the random
+stream is seeded and the turn table is fixed, so a world played twice should give the same
+traces. NR-44 proves it. If it holds, a round can later be recorded as a baseline.
+
+**10. Separate runs side by side.**
+
+| | Finding |
+|---|---|
+| Schema, scratch folder, evidence, trace | Each run has its own already (a GUID, the process id, the run's name). |
+| Monitor port | In the way. Every run opens 17880, the scripts clear an inherited port, and a second listener on the port throws at its start. NR-45: the first free port from 17880, printed and written into the run's evidence. |
+| Build outputs | Many runs can read them. A build while a run is going fails on locked files or changes what a later run loads. NR-45: a run in progress is marked, the scripts refuse to build while a mark is live, and the runs of a batch start from one build. |
+| Read from the repository while running | Static data at the world's load; leg contracts and plans at each leg's start (parity-artifacts/e2e); inventory and navigation data as they are used. While a run is going nothing under game-server/data, parity-artifacts or the bots' data is edited. Editing source does not touch a running run. |
+| A run from its own copy of a build | Possible: the repository is found by walking up from the binaries, so a copy under run/ works. It would let builds go on during a long run, but the data would still be read from the checkout. Not built now; it becomes an item only if waiting for builds is what holds the loop up. |
+| Wall-clock limits | Three minutes for a packet wait, 45 or 90 minutes for a journey, 30 seconds to 5 minutes in the Fast scenarios. With one thread to a run and 20 cores, eight runs do not starve each other. NR-45 proves it by the gate identical. |
+| The development MySQL | One pool to a run. Not measured; eight runs are few connections. |
+
+**11. Numbers for this machine.** Eight worlds at once: 30 GB free against a peak of 2.9 GB
+for a world, with room left. A world takes many bots for memory, but each bot adds its own
+bot-side time to that world's wall time.
 
 ## NR checklist
 
@@ -1455,58 +1622,59 @@ becomes lettered items there. Every item depends on the close of phase B.
 
 Worked first in this phase, by the operator's answers to NR-Q9 (2026-10-09). They are
 not about the class line; they are here so that this phase's gates and phase D's classes
-can use them.
+can use them. The order below is the order of work: the item that saves time comes first.
 
-- [ ] **NR-43 - Several bots at once: survey.** Depends: the close of phase B
+- [x] **NR-43 - Several bots at once: survey.** Depends: the close of phase B
   - Work: No code (rule (q)). Read the SIM fixture, the session, the journey and the run
-    scripts, and write into this document:
-    - **One world, several bots.** Known when this item was written: several sessions in
-      one world exist already (the social and trade scenarios log several characters into
-      one fixture), but every session moves the one virtual clock itself
-      (fixture.Clock.Advance), so two journeys cannot take turns today. Write the design
-      for taking turns: a bot's wait becomes "wake me at", and the clock moves to the
-      earliest. A bot alone must play exactly as now; say how that is proven.
-    - what each bot needs of its own: account, name, trace file, outcome record, monitor
-      row; how one bot's stop, death or exception is kept from the others; how a server
-      problem is laid to the bot that met it;
-    - what bots in one world share and contend for (monsters, quest objects, spawn timers,
-      the random stream), and where ten game minutes between starts are enough and where
-      they are not;
-    - the round: how it is started, what is logged for each bot as it goes, when it ends,
-      and how phase D's items are rewritten for rounds in place of one class at a time;
-    - captures from a round (the operator's answer): the shared world's schema holds every
-      bot's character. Say when it is dumped, what a snapshot of it is named, how one
-      character's leg end or endpoint is verified in it, what becomes of the characters
-      that stopped short, and how a later round resumes one character or several from it.
-      The snapshot scripts take one character today;
-    - whether a round played twice gives the same traces, and what it would take if not;
-    - **Separate runs side by side**, for the gate and the captures: what two runs share
-      (the build outputs, the monitor's port, which every run opens at 17880, schema
-      names, scratch and evidence folders, trace paths under run/, the development MySQL),
-      what a run reads from the repository after it has started, every wall-clock limit
-      that load could trip, and whether a run can play from its own copy of a build;
-    - the memory and processor time of one world with one bot and with several, and of
-      several worlds, measured; from that the numbers this machine takes.
-
-    Then write rule (w) out in full, correct NR-44 and NR-45 to what was found, and write
-    any further items of this phase for them, each with Depends and Proof.
+    scripts; write what was found, rule (w) in full and the items that follow.
   - Proof: The survey and the items are in this document; seven checks pass.
-- [ ] **NR-44 - Several bots in one world.** Depends: NR-43
-  - Work: As the survey designs it. The journeys take turns on the one clock; each bot has
-    its own account, trace, outcome record and monitor row; starts are set apart; a round
-    runner starts the bots of a list of class lines and writes one outcome line for each.
-  - Proof: The full gate identical: a bot alone plays as before. One round of the six
-    starter classes through Ishalgen in one world: every bot's trace and outcome is
-    written, and a bot stopped on purpose leaves the others playing.
+  - 2026-10-09: done. Survey C1 is in the Surveys section. No code is changed; the
+    one-time probe is removed.
+    - **The main finding.** Bots in one world take turns on one thread, and four fifths of
+      a run's wall time is on the bot's side. So one world for several bots saves memory
+      and shows bots beside each other, but takes about as long as the runs one after
+      another. Separate worlds side by side save the time. A round can be both.
+    - **Measured** (run/nr/NR-43/world-cost.log, split.txt; replays split-mage and
+      split-c, both passed): a world loads in about 41 s of processor time and holds 2.4
+      GB; an empty world takes 5.9 s for a game hour, 8.2 s with six characters standing
+      in it; scope c takes 310.6 s, of it 48.5 s in the server.
+    - **Written:** rule (w) in full, NR-Q11 with its default, the phase D scheme for
+      rounds, and the items NR-45, NR-46, NR-44 and NR-47 below.
+    - **Proof.** Seven pre-commit checks pass (run/nr/NR-43/checks.log).
 - [ ] **NR-45 - Separate runs side by side.** Depends: NR-43
-  - Work: As the survey confirms it. A run takes its own monitor port and prints and
-    records its address; a run alone is at 17880 as now. A run in progress is marked, and
-    the scripts refuse to build while one is. The gate plays its scopes several at a time
-    in compare mode from one build; recording stays one scope at a time. A capture records
-    the commit it was built from.
-  - Proof: The script tests pass. The full gate played side by side is identical to the
-    baselines, with its wall time beside the serial gate's; the serial gate after it is
-    identical too.
+  - Work: Survey C1, part 10. A run takes the first free monitor port from 17880, prints
+    its address and writes it into its evidence; a run alone is at 17880 as now. A run in
+    progress is marked, and the scripts refuse to build while a mark is live. The gate
+    plays its scopes several at a time in compare mode from one build (-Parallel, default
+    1); recording stays one scope at a time. A capture records the commit it was built
+    from, read at its start. The script tests follow the changed contract.
+  - Proof: The script tests pass. The full gate with eight at a time is identical to the
+    baselines, with its wall time beside the serial gate's 45 minutes. One scope played
+    alone afterwards is identical too.
+- [ ] **NR-46 - Where the bot's side of a run goes.** Depends: NR-45
+  - Work: No committed code. With a one-time probe on scope c, split the bot's side into
+    its parts: reading and decoding packets, the bot's world model, decisions, routes, the
+    trace, the monitor. Write the table here. For each part that is more than a tenth of
+    the run and can be made cheaper without changing a trace, write a lettered item.
+  - Proof: The table is in this document; the probe is removed and the tree is clean.
+- [ ] **NR-44 - Bots take turns in one world.** Depends: NR-45
+  - Work: Survey C1, parts 4 to 6. Java first: who gets a quest's kill when two players
+    hit one monster. The turn table; the wait that can yield; a bot id, options, trace
+    folder and help count for each bot; a problem laid to the bot whose turn raised it; a
+    wall-clock limit sized by the world's bots.
+  - Proof: The full gate identical: a bot alone plays as before. One world with the six
+    starter lines through Ishalgen to Q2004, ten game minutes apart: each bot has its own
+    trace and outcome record; the same world played twice gives the same six traces; a bot
+    stopped on purpose leaves the others playing.
+- [ ] **NR-47 - The round: runner, outcome records and round snapshots.** Depends: NR-44
+  - Work: Survey C1, parts 7 and 8. The round file, the runner that starts its worlds side
+    by side, the progress line and the outcome record for each bot, the round snapshot
+    with its list of characters, a class's capture as a record that points into it, Verify
+    of such a capture, and a round that resumes characters from a round snapshot.
+  - Proof: The script tests pass. A round of two worlds with three starter lines each, to
+    Q2004: six outcome records and two round snapshots. Verify of one character's capture
+    passes. A second round resumes all six from the snapshots and each reports where it
+    stands.
 - [ ] **NR-30 - The class line carries the pair, the pick and the dispatch; the scripts
   accept every line.** Depends: NR-01, the close of phase B
   - Work: A class line with a second class names its ceremony pick, and ForLine passes it
@@ -1585,8 +1753,7 @@ can use them.
     line and plays the legs in the Cleric's order; a capture after a leg is named
     <the Cleric's snapshot name>-<class>.
   - Proof: scripts/sim/test-sim-snapshot.ps1 passes; the full gate identical.
-- [ ] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41, NR-43 to NR-45 and the items
-  NR-43 writes
+- [ ] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41 and NR-43 to NR-47
   - Work: No code. The full gate on every recorded scope, and one table in this document
     of what each class gets at each class-bound point of the route.
   - Proof: Every scope identical to its baseline.
@@ -1595,9 +1762,23 @@ can use them.
 
 For each class, in the order of NR-Q1, ten numbers are reserved: Templar NR-50, Sorcerer
 NR-60, Chanter NR-70, Gladiator NR-80, Assassin NR-90, Ranger NR-100, Spirit Master NR-110,
-Gunner NR-120, Rider NR-130, Bard NR-140. The class's survey item writes the others. From
-the tick of NR-44 the classes are played in rounds in one world (rule (w)), and NR-43
-rewrites this template for rounds; until then it stands as written. The template:
+Gunner NR-120, Rider NR-130, Bard NR-140. The class's survey item writes the others.
+
+**In rounds** (rule (w), Survey C1; this replaces "one class after another" for the play):
+
+1. The surveys NR-x0 are worked first, one class after another. They are reading and
+   data, and each ends with its profile accepted by the validator.
+2. The probe rows NR-x1 of the classes are played side by side, each in its own world.
+3. Then the rounds, numbered NR-R1, NR-R2 and so on, written by the loop as it goes. A
+   round takes every class that is not parked from where its last capture stands to the
+   next stage: first from creation to the Altgard bind, then the legs in the Cleric's
+   order, last the endpoint. The round's item says what was played, has one outcome line
+   for each class, and gets a lettered item for each stop with its fix, generic first
+   (rule (s)). The next round starts when those are done.
+4. A class's NR-x2 to NR-x7 are ticked by the round that gave the capture.
+5. NR-x8, the class scope, is recorded by a bot alone, twice, as before.
+
+The template:
 
 - [ ] **NR-x0 - <Class>: survey and profile data.** Depends: the close of phase C
   - Work: Java first: the class's skill tree from level 10 to 26, its trainer, its class
@@ -1843,3 +2024,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   scopes identical. The generic Cleric from creation to the Abyss-entry endpoint:
   19 h 37 min against 20 h 34 min, 5 deaths against 13. Next: NR-43, the survey for several
   bots at once, the first item of phase C.
+- 2026-10-09 — Loop: NR-43 done, the survey (Survey C1). Bots in one world take turns on
+  one thread and four fifths of a run is the bot's side, so one world saves memory, not
+  time; separate worlds side by side save time; a round can be both (NR-Q11, default:
+  spread over eight worlds). Written: rule (w) in full, the phase D scheme for rounds,
+  NR-45 (runs side by side), NR-46 (where the bot's side goes), NR-44 (turns in one
+  world), NR-47 (the round and its snapshots). Seven checks pass. Next: NR-45.
