@@ -42,16 +42,16 @@ public sealed class NaturalCoinGearSteps(INaturalJourneySession session, StaticD
 		if (world.IsDead || owned.Length != 1 || owned[0].Count != 1)
 			throw new InvalidDataException("Coin preparation needs the already earned, unique approved staff.");
 		BotInventoryItem staff = owned[0];
-		if (staff.EquipmentSlot == 3) return;
+		if (staff.EquipmentSlot == gear.WeaponSlot) return;
 		long kinah = world.Kinah, coins = world.Inventory.Values.Where(i => i.ItemId == gear.CoinItemId).Sum(i => i.Count);
 		await session.SendPacketAsync(session.Api.Equip(0, NaturalGearPolicy.MainHand, staff.ObjectId), token);
 		await session.SynchronizeAsync(token);
 		if (!world.Inventory.TryGetValue(staff.ObjectId, out BotInventoryItem? equipped) ||
-			equipped.ItemId != gear.StaffItemId || equipped.Count != 1 || equipped.EquipmentSlot != 3 ||
+			equipped.ItemId != gear.StaffItemId || equipped.Count != 1 || equipped.EquipmentSlot != gear.WeaponSlot ||
 			world.Kinah != kinah || world.Inventory.Values.Where(i => i.ItemId == gear.CoinItemId).Sum(i => i.Count) != coins)
 			throw new InvalidDataException("The ordinary approved staff equip or unchanged currency was not observed.");
 		session.TraceDiagnostic("coin-preparation-staff-equipped", new Dictionary<string, object?>
-			{ ["itemId"] = gear.StaffItemId, ["objectId"] = staff.ObjectId, ["slot"] = 3, ["kinah"] = kinah, ["coins"] = coins });
+			{ ["itemId"] = gear.StaffItemId, ["objectId"] = staff.ObjectId, ["slot"] = (int)gear.WeaponSlot, ["kinah"] = kinah, ["coins"] = coins });
 	}
 
 	private NaturalAltgardObservation Observe(NaturalCoinGearProgress progress) =>
@@ -111,7 +111,7 @@ public sealed class NaturalCoinGearSteps(INaturalJourneySession session, StaticD
 		BotInventoryItem owned = session.Api.World.Inventory[receipt.ObjectId];
 		if (owned.ItemId != itemId || owned.EquipmentSlot != purchase.Slot ||
 			!session.Api.World.Inventory.TryGetValue(progress.StaffObjectId, out BotInventoryItem? staff) ||
-			staff.ItemId != gear.StaffItemId || staff.EquipmentSlot != 3)
+			staff.ItemId != gear.StaffItemId || staff.EquipmentSlot != gear.WeaponSlot)
 			throw new InvalidDataException("The armour equip or unchanged staff was not observed.");
 		session.TraceDiagnostic("coin-armour-equipped", new Dictionary<string, object?>
 			{ ["item"] = itemId, ["object"] = receipt.ObjectId, ["slot"] = purchase.Slot, ["staff"] = progress.StaffObjectId });

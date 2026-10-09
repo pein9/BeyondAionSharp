@@ -20,7 +20,58 @@ public sealed record NaturalCoinGear(int QuestId, int Completions, int CoinItemI
 	/// </summary>
 	public int ReplacedGlovesItemId { get; init; } = ContractGlovesItemId;
 
+	/// <summary>NR-38a: the slot the retained weapon is worn in: 3, both hands, for the contract's staff; a one-hand
+	/// weapon's is 1.</summary>
+	public ushort WeaponSlot { get; init; } = 3;
+
+	/// <summary>The equipment slot of each body piece a coin manifest names.</summary>
+	public static readonly IReadOnlyDictionary<string, ushort> BodySlotMasks = new Dictionary<string, ushort>
+	{
+		["TORSO"] = 8, ["GLOVE"] = 16, ["SHOES"] = 32, ["SHOULDER"] = 2048, ["PANTS"] = 4096,
+	};
+
 	public int Cost => Purchases.Sum(p => p.Cost);
+
+	/// <summary>
+	/// NR-38a: the same scope for a class other than the contract's, made when the leg is taken up. The vendor and the
+	/// pieces are the class's manifest (NR-38); it buys the pieces its gear rules score above what it wears in the slot,
+	/// in the manifest's order, while the coins it has and the quest's reward pay for them. The weapon it holds is the
+	/// one it must keep, whatever it is. The coin counts are what is observed. The rest of the scope is unchanged.
+	/// </summary>
+	/// <param name="inventory">What the character owns and wears as the leg starts.</param>
+	/// <param name="score">The class's gear score of an item id.</param>
+	/// <param name="goodsListId">The vendor's trade tab that holds the manifest's armor.</param>
+	public NaturalCoinGear ForClass(NaturalCoinManifest manifest, IReadOnlyList<NaturalJourneyItem> inventory, Func<int, long> score,
+		int goodsListId)
+	{
+		NaturalJourneyItem weapon = inventory.SingleOrDefault(item => item.EquipmentSlot is 1 or 3)
+			?? throw new InvalidDataException("The coin-gear leg needs a weapon held in the main hand.");
+		int incoming = checked((int)inventory.Where(item => item.ItemId == CoinItemId).Sum(item => item.Count));
+		int balance = incoming + RewardCoins;
+		var purchases = new List<NaturalCoinGearPurchase>();
+		var body = new List<NaturalCoinGearSlot>();
+		int replacedGloves = 0;
+		foreach (NaturalCoinPiece piece in manifest.Armor)
+		{
+			ushort slot = BodySlotMasks[piece.Slot];
+			NaturalJourneyItem? worn = inventory.FirstOrDefault(item => item.EquipmentSlot == slot);
+			if ((worn == null || score(piece.ItemId) > score(worn.ItemId)) && piece.Cost <= balance)
+			{
+				balance -= piece.Cost;
+				purchases.Add(new(piece.ItemId, piece.Cost, slot));
+				body.Add(new(slot, piece.ItemId));
+				if (slot == GlovesSlot) replacedGloves = worn?.ItemId ?? 0;
+			}
+			else if (worn != null) body.Add(new(slot, worn.ItemId));
+		}
+		return this with
+		{
+			VendorNpcId = manifest.VendorNpcId, GoodsListId = goodsListId, StaffItemId = weapon.ItemId, WeaponSlot = weapon.EquipmentSlot,
+			IncomingCoins = incoming, EndpointCoins = balance, Purchases = [.. purchases], BodySlots = [.. body],
+			ProtectedItemIds = [.. ProtectedItemIds.Concat(purchases.Select(purchase => purchase.ItemId)).Append(weapon.ItemId).Distinct().Order()],
+			ReplacedGlovesItemId = replacedGloves,
+		};
+	}
 
 	public void Validate(NaturalAltgardContract contract)
 	{
@@ -73,10 +124,10 @@ public sealed record NaturalCoinGearProgress(NaturalCoinRewardReceipt? Reward, N
 	{
 		byte oldCount = Count(before, gear.QuestId), newCount = Count(after, gear.QuestId);
 		long oldCoins = Coins(before, gear), newCoins = Coins(after, gear);
-		NaturalJourneyItem? staff = before.Inventory?.SingleOrDefault(i => i.ItemId == gear.StaffItemId && i.EquipmentSlot == 3);
+		NaturalJourneyItem? staff = before.Inventory?.SingleOrDefault(i => i.ItemId == gear.StaffItemId && i.EquipmentSlot == gear.WeaponSlot);
 		if (Reward != null || Purchases.Length != 0 || oldCount != 0 || newCount != gear.Completions ||
 			oldCoins != gear.IncomingCoins || newCoins - oldCoins != gear.RewardCoins || staff == null ||
-			after.Inventory?.Any(i => i.ObjectId == staff.ObjectId && i.ItemId == gear.StaffItemId && i.EquipmentSlot == 3) != true)
+			after.Inventory?.Any(i => i.ObjectId == staff.ObjectId && i.ItemId == gear.StaffItemId && i.EquipmentSlot == gear.WeaponSlot) != true)
 			throw new InvalidDataException("Q2293 did not produce the single approved completion and five-coin receipt.");
 		return this with { Reward = new(oldCount, newCount, oldCoins, newCoins), StaffObjectId = staff.ObjectId };
 	}
@@ -109,16 +160,18 @@ public static class NaturalCoinGearPolicy
 	{
 		NaturalCoinGearDecision Block(string action, string reason) => new(action, "blocked", reason);
 		NaturalJourneyItem[] inventory = state.Inventory ?? [];
-		if (inventory.Count(i => i.ItemId == gear.StaffItemId && i.EquipmentSlot == 3) != 1)
+		if (inventory.Count(i => i.ItemId == gear.StaffItemId && i.EquipmentSlot == gear.WeaponSlot) != 1)
 			return Block("coin-staff-changed", "Keep the original two-handed staff equipped before every coin transaction.");
 		if (NaturalCoinGearProgress.Count(state, gear.QuestId) != gear.Completions)
 			return Block("coin-repeat-count", "Q2293 must have exactly one completed repeat, irrespective of repeatability.");
 		if (state.ItemCounts.GetValueOrDefault(gear.SealedBundleId) != 1 || state.SkillIds?.Contains(gear.ForbiddenStigmaSkillId) == true)
 			return Block("coin-stigma-protection", "Retain the sealed stigma bundle and use only actually learned regular skills.");
 		NaturalCoinGearProgress progress = state.CoinGearProgress ?? NaturalCoinGearProgress.Empty;
-		if (progress.Reward is not { BeforeCompletions: 0, AfterCompletions: 1, BeforeCoins: 18, AfterCoins: 23 })
+		// NR-38a: the scope's own counts: 18 and 23 for the contract's class.
+		if (progress.Reward is not { BeforeCompletions: 0, AfterCompletions: 1 } reward || reward.BeforeCoins != gear.IncomingCoins ||
+			reward.AfterCoins != gear.IncomingCoins + gear.RewardCoins)
 			return Block("coin-receipts-missing", "The five-coin reward receipt is required before shopping or accepting the endpoint.");
-		if (!inventory.Any(i => i.ObjectId == progress.StaffObjectId && i.ItemId == gear.StaffItemId && i.EquipmentSlot == 3))
+		if (!inventory.Any(i => i.ObjectId == progress.StaffObjectId && i.ItemId == gear.StaffItemId && i.EquipmentSlot == gear.WeaponSlot))
 			return Block("coin-staff-changed", "The retained staff must have the same object identity as before the reward.");
 		if (progress.Purchases.Select(p => p.ItemId).Distinct().Count() != progress.Purchases.Length ||
 			progress.Purchases.Any(p => !gear.Purchases.Any(i => i.ItemId == p.ItemId && p.BeforeCoins - p.AfterCoins == i.Cost)))

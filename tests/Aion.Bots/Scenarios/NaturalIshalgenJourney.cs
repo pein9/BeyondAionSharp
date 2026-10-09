@@ -323,6 +323,28 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				int[] worn = NaturalAltgardContinuation.EquippedItemIds(world);
 				NaturalAltgardContract own = picked.WithProtectedItems(ids =>
 					NaturalAltgardContract.ProtectedFor(ids, picks, id => rewards.Item(id).IsEquipment, worn));
+				// NR-38a: the coin-gear scope's vendor and purchases are the class's own, by its manifest and what it wears.
+				if (own.CoinGear is { } coins)
+				{
+					IReadOnlyList<int> vendors = NaturalCoinManifests.VendorsBeside(runtime.Data, leg.Hub.MapId, coins.VendorNpcId, coins.CoinItemId);
+					NaturalIshalgenInventoryPolicy sold = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot,
+						world.Inventory.Values.Select(item => item.ItemId).Concat(vendors.SelectMany(npc => NaturalCoinManifests.Sold(runtime.Data, npc))), ClassLine);
+					int tier = runtime.Data.ItemDataDh.GetItemTemplate(coins.Purchases[0].ItemId).GetLevel();
+					NaturalCoinManifest manifest = NaturalCoinManifests.For(runtime.Data, vendors, coins.CoinItemId, tier, rules, sold.Item);
+					int tab = manifest.Armor.Count == 0 ? coins.GoodsListId
+						: runtime.Data.TradeListDataDh.GetTradeListTemplate(manifest.VendorNpcId).GetTradeTablist().Select(entry => entry.GetId())
+							.First(id => runtime.Data.GoodsListDataDh.GetGoodsListById(id)?.GetItemIdList().Contains(manifest.Armor[0].ItemId) == true);
+					NaturalCoinGear classGear = coins.ForClass(manifest,
+						[.. world.Inventory.Values.Select(item => new NaturalJourneyItem(item.ObjectId, item.ItemId, item.Count, item.EquipmentSlot))],
+						id => rules.Score(sold.Item(id)), tab);
+					own = own with { CoinGear = classGear };
+					session.TraceDiagnostic("leg-coin-manifest", new Dictionary<string, object?>
+					{
+						["leg"] = leg.Leg, ["class"] = observedClass.ToString(), ["vendor"] = classGear.VendorNpcId, ["tab"] = classGear.GoodsListId,
+						["manifest"] = manifest.Pieces, ["purchases"] = classGear.Purchases, ["weapon"] = classGear.StaffItemId,
+						["coins"] = new[] { classGear.IncomingCoins, classGear.RewardCoins, classGear.EndpointCoins },
+					});
+				}
 				if (!ReferenceEquals(own, picked))
 					session.TraceDiagnostic("leg-protected-items", new Dictionary<string, object?>
 					{

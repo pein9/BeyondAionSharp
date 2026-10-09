@@ -2780,7 +2780,7 @@ can use them. The order below is the order of work: the item that saves time com
       guard-p8 (run/nr/NR-38/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical, hm and ax among them. Seven pre-commit checks pass, Aion.GameServer.Tests
       passes (4,629 passed, 16 skipped) and Fast passes (run nr38-fast, 11 passed).
-- [ ] **NR-38a - The coin-gear leg shops by the class's manifest.** Depends: NR-38
+- [x] **NR-38a - The coin-gear leg shops by the class's manifest.** Depends: NR-38
   - Work: For a class other than the contract's, the coin-gear leg (cg) takes its vendor
     and its level-16 manifest from NaturalCoinManifests, and buys and wears the pieces
     that beat what it wears by its own gear score. The incoming coins, the reward and the
@@ -2789,6 +2789,54 @@ can use them. The order below is the order of work: the item that saves time com
     receipts and its three purchases are what they were.
   - Proof: One-time check of the leg's decisions for every class from a prepared bag; gate
     hm identical.
+  - 2026-10-09: done. For a class other than the contract's, the coin-gear scope is made
+    from its manifest when the leg is taken up. The Cleric's leg is the contract itself.
+    - **Java.** As NR-38: a reward shop asks nothing of the buyer's class. No server
+      change.
+    - **The change.**
+      - Sc/NaturalCoinGearPolicy.cs, NaturalCoinGear.ForClass: the vendor and the trade
+        tab are the manifest's; the purchases are the manifest's armor pieces the class's
+        gear rules score above what it wears in the slot, in the manifest's order, while
+        the coins it has and the quest's five pay for them; the body slots are what it
+        then wears; the incoming and the end balance are counted; the weapon it holds in
+        its main hand is the one it must keep, with the slot it is worn in (WeaponSlot: 3
+        for a two-hand weapon, 1 for a one-hand). No weapon is bought on this leg, for any
+        class: the leg keeps the loadout it arrives with but for the armor it buys.
+      - The policy and the steps read the weapon's slot and the two coin counts from the
+        scope where they had 3, 18 and 23 written in.
+      - J: the step that gives another class its picks and protected items gives it this
+        scope too, and traces it as leg-coin-manifest.
+    - **Proof, the one-time check** (run/nr/NR-38a/check.log; the check file is not
+      committed). Each class starts with its level-21 weapon held, the level-16 Legionary
+      torso and shoes of its armor worn, 18 Iron Coins and the sealed bundle, and the
+      leg's own decision rule is played to its end: the reward, each purchase with its
+      receipt, each equip, and "complete". Every class ends at 18 + 5 - 4 = 19 coins.
+
+      | Class | Vendor, tab | Weapon kept, slot | Bought and worn | Left at the vendor |
+      |---|---|---|---|---|
+      | Cleric | 203689, 985 | 101501357, 3 | 111501065 for 1, 112501015 for 1, 113501074 for 2 | 110501096 CH_TORSO, 114501081 CH_SHOES |
+      | Chanter | 203689, 985 | 101501357, 3 | 111501065 for 1, 112501015 for 1, 113501074 for 2 | 110501096 CH_TORSO, 114501081 CH_SHOES |
+      | Gladiator | 203659, 984 | 100901375, 3 | 111601055 for 1, 112601029 for 1, 113601039 for 2 | 110601078 PL_TORSO, 114601035 PL_SHOES |
+      | Templar | 203659, 984 | 100001737, 1 | 111601055 for 1, 112601029 for 1, 113601039 for 2 | 110601078 PL_TORSO, 114601035 PL_SHOES |
+      | Assassin | 203659, 984 | 100201503, 1 | 111301080 for 1, 112301026 for 1, 113301098 for 2 | 110301126 LT_TORSO, 114301132 LT_SHOES |
+      | Ranger | 203659, 984 | 101701368, 3 | 111301080 for 1, 112301026 for 1, 113301098 for 2 | 110301126 LT_TORSO, 114301132 LT_SHOES |
+      | Sorcerer | 203689, 985 | 100601431, 3 | 111101081 for 1, 112101040 for 1, 113101095 for 2 | 110101191 RB_TORSO, 114101122 RB_SHOES |
+      | Spirit Master | 203689, 985 | 100601431, 3 | 111101081 for 1, 112101040 for 1, 113101095 for 2 | 110101191 RB_TORSO, 114101122 RB_SHOES |
+      | Gunner | 203659, 984 | 101801218, 1 | 111301080 for 1, 112301026 for 1, 113301098 for 2 | 110301126 LT_TORSO, 114301132 LT_SHOES |
+      | Rider | 203659, 984 | 102101072, 3 | 111501574 for 1, 112501516 for 1, 113501592 for 2 | 110551016 CH_TORSO, 114501601 CH_SHOES |
+      | Bard | 203689, 985 | 102001246, 3 | 111101081 for 1, 112101040 for 1, 113101095 for 2 | 110101191 RB_TORSO, 114101122 RB_SHOES |
+
+      The torso and the shoes are left because the Legionary pieces worn score as high.
+      Given the accepted Cleric's bag, the rule returns the contract's own scope: vendor,
+      tab, staff, slot, the three purchases in order, the five body slots, the protected
+      list, 18 in and 19 out, and the cloth gloves as the pair replaced.
+    - **Not proven here.** No class but the Cleric has walked to Lateni and traded with
+      him; that is first played when another line reaches this leg. The leg's end check
+      of the retained loadout and Haramel's use of the kept weapon are NR-40.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-38a/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical, hm among them. Seven pre-commit checks pass, Aion.GameServer.Tests passes
+      (4,629 passed, 16 skipped) and Fast passes (run nr38a-fast, 11 passed).
 - [ ] **NR-38b - The Abyss entry's two tiers shop by the class's manifest.** Depends:
   NR-38a
   - Work: For a class other than the contract's, the two coin-armor tiers of the Abyss
@@ -3223,3 +3271,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   at levels 16, 21 and 26, and gives the Cleric its contracts' lists. Full gate guard-p8:
   twelve scopes identical. Seven checks, unit suite (4,629 passed, 16 skipped) and Fast
   (nr38-fast) pass. Next: NR-38a, the coin-gear leg shops by the class's manifest.
+- 2026-10-09 — Loop: NR-38a done. For a class other than the contract's, the coin-gear
+  scope is made from its manifest when the leg is taken up: its vendor and tab, the armor
+  pieces that beat what it wears, the weapon it holds and its slot, and the coins as
+  counted. One-time check: all eleven classes play the leg's decisions from a prepared bag
+  to "complete", three pieces for four coins each, and the rule returns the Cleric's own
+  contract. Full gate guard-p8: twelve scopes identical. Seven checks, unit suite (4,629
+  passed, 16 skipped) and Fast (nr38a-fast) pass. Next: NR-38b, the Abyss entry's two
+  tiers shop by the class's manifest.
