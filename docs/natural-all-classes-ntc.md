@@ -1359,12 +1359,38 @@ to the endpoint. The close of phase B is NR-21.
       their baselines. Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests
       passes (4,629 passed, 16 skipped) and Fast passes (run nr19a-fast, 11 passed).
     - Not proven here: a run through both legs. That is NR-19's next attempt.
-- [ ] **NR-20 - The generic Cleric through the Abyss entry.** Depends: NR-19
+- [x] **NR-20 - The generic Cleric through the Abyss entry.** Depends: NR-19
   - Work: Capture the ax leg from altgard-complete-cleric-s1 as ntc-ready-cleric-s1. The
     leg's start facts that are receipts of the accepted run are met by the new run or
     become lettered items here; phase C opens them for other classes.
   - Proof: Verify of ntc-ready-cleric-s1: a Cleric of level 25 or higher, alive at Morheim
     Ice Fortress, with Q2945, Q2946, Q2947 and Q2042 complete.
+  - 2026-10-09: done on the first attempt. ntc-ready-cleric-s1 is captured and verified.
+    No start fact of the leg stopped the new run, so no lettered item was needed.
+    - **Java.** No server behavior beyond what the accepted leg already relies on (AX list).
+    - **Attempt a1** (run nr20-ax-a1 at 807ddd43b, a docs commit on the code of 709f33816;
+      evidence under run/snapshots/_capture/nr20-ax-a1, log run/nr/NR-20/capture-a1.log):
+      sim-snapshot.ps1 -Action Capture -AltgardLeg1 -Leg ax -From
+      altgard-complete-cleric-s1 -Name ntc-ready-cleric-s1. Character 133266; 70,631,041
+      ms of game time since creation; dump sha256 c7b4fc30b1c91105.
+    - **Acceptance from the receipt, before Verify** (run/nr/NR-20/a1-ledger.txt), beside
+      morheim-abyss-entry-s1:
+      - a Cleric of level 26, alive, at Morheim Ice Fortress, at the accepted run's own
+        position and bind;
+      - Q24020, Q2945, Q2946, Q2947 and Q2042 complete; the same 181 quests complete and
+        the same journal (Q24021 to Q24026 locked);
+      - the level-26 coin gear worn, staff 101500818 and five armor pieces; the same
+        worn items as the accepted Cleric but one earring (120001132 for 120001116);
+      - 19 iron coins, no bronze coins left, the sealed bundle; kinah 734,555 against
+        743,158.
+    - **The leg's ledger.** 16 min 24 s of game time against 16 min 30 s; no death, no
+      retreat, 2 life potions, 3 speed scrolls and 3 running scrolls in both; 15,755
+      trace records against 15,763. The whole journey from creation to this endpoint is
+      19 h 37 min of game time for the generic Cleric against 20 h 34 min.
+    - **Proof.** sim-snapshot.ps1 -Action Verify -Name ntc-ready-cleric-s1, run
+      nr20-verify-a1 (run/nr/NR-20/verify-a1.log; evidence under
+      run/snapshots/_verify/nr20-verify-a1): "Verified snapshot ntc-ready-cleric-s1:
+      character 133266 resumed at its endpoint."
 - [ ] **NR-21 - Phase B closed.** Depends: NR-10 to NR-20
   - Work: No code. The full gate on every recorded scope. Write into this document the
     seven re-recorded baselines with their commits and record counts, and the generic
@@ -1760,3 +1786,8 @@ report what was done, what is parked or blocked, and what the operator must deci
   fourteen stages: altgard-complete-cleric-s1, 19 h 20 min against the accepted
   20 h 17 min, 5 deaths against 13, the same 176 quests, level 25 at the same bind.
   Verify nr19-verify-a1 passes. Next: NR-20, the generic Cleric through the Abyss entry.
+- 2026-10-09 — Loop: NR-20 done on the first attempt. ntc-ready-cleric-s1 (run nr20-ax-a1,
+  from altgard-complete-cleric-s1): a Cleric of level 26 alive at Morheim Ice Fortress
+  with Q2945, Q2946, Q2947 and Q2042 complete, the same 181 quests, position and bind as
+  morheim-abyss-entry-s1; no death. Verify nr20-verify-a1 passes. Next: NR-21, phase B
+  closed.
