@@ -39,10 +39,26 @@ public enum NaturalOffHand
 /// <param name="Supplies">Consumables the class keeps beside the life potions and its help kit; none when not given.</param>
 /// <param name="OffHand">CP-68: the off-hand mode; nothing when not given. Turning one on for a class is the operator's
 /// decision and re-records that class's scope.</param>
+/// <param name="BonusOrder">NR-32: the bonus stats the class looks for on a piece, best first, by the stat names of the
+/// item templates. At a reward they decide between two pieces of one score, and among accessories and hats, which the
+/// score does not rank: the first stat in which two pieces differ decides, the larger value winning. Not given: the
+/// order of the class's weapon stat, <see cref="CasterBonuses"/> or <see cref="PhysicalBonuses"/>.</param>
 public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<string> WeaponGroups, NaturalWeaponStat WeaponStat,
 	IReadOnlyList<string> ArmorTypes, IReadOnlyList<int> ConsumableOrder, IReadOnlyList<int>? Supplies = null,
-	NaturalOffHand OffHand = NaturalOffHand.None)
+	NaturalOffHand OffHand = NaturalOffHand.None, IReadOnlyList<string>? BonusOrder = null)
 {
+	/// <summary>NR-32: a class that casts and heals: magic boost, magical accuracy, healing boost, then mana and concentration.</summary>
+	public static readonly IReadOnlyList<string> HealerBonuses = ["BOOST_MAGICAL_SKILL", "MAGICAL_ACCURACY", "HEAL_BOOST", "MAXMP", "CONCENTRATION"];
+
+	/// <summary>NR-32: a class that casts: magic boost, magical accuracy and critical, then mana and concentration.</summary>
+	public static readonly IReadOnlyList<string> CasterBonuses = ["BOOST_MAGICAL_SKILL", "MAGICAL_ACCURACY", "MAGICAL_CRITICAL", "MAXMP", "CONCENTRATION"];
+
+	/// <summary>NR-32: a class that strikes: physical attack, critical and accuracy, then health.</summary>
+	public static readonly IReadOnlyList<string> PhysicalBonuses = ["PHYSICAL_ATTACK", "PHYSICAL_CRITICAL", "PHYSICAL_ACCURACY", "MAXHP"];
+
+	/// <summary>The bonus order in effect: the table's own, or the one of its weapon stat.</summary>
+	public IReadOnlyList<string> Bonuses => BonusOrder ?? (WeaponStat == NaturalWeaponStat.Magical ? CasterBonuses : PhysicalBonuses);
+
 	private static readonly string[] ArmorParts = ["_TORSO", "_GLOVE", "_SHOULDER", "_PANTS", "_SHOES", "_HEADS"];
 
 	/// <summary>At a reward that offers consumables: a life elixir, then a mana elixir, then a power shard.</summary>
@@ -69,11 +85,14 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 	// staff with the most magic boost after Ascension (the staff rule, AX-Q1), which is the weapon order here. The Priest
 	// keeps its mace by magic boost.
 	public static NaturalClassGearTable Priest { get; } = new(PlayerClass.PRIEST, ["MACE"], NaturalWeaponStat.Magical,
-		["LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, NaturalIshalgenPotionPolicy.ManaPotionIds);
+		["LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, NaturalIshalgenPotionPolicy.ManaPotionIds, BonusOrder: HealerBonuses);
+	// NR-32: the Cleric's table names no bonus order. The recorded Cleric takes the first of two such pieces (at Q2227 the
+	// Corundum Ring, +28 HP, before the Turquoise Ring, +28 MP), and an order would change that pick and its scopes. Whether
+	// it gets the healer's order is the operator's (NR-Q12).
 	public static NaturalClassGearTable Cleric { get; } = new(PlayerClass.CLERIC, ["STAFF", "MACE"], NaturalWeaponStat.Magical,
-		["CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies);
+		["CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies, BonusOrder: []);
 	public static NaturalClassGearTable Chanter { get; } = new(PlayerClass.CHANTER, ["STAFF", "MACE"], NaturalWeaponStat.Magical,
-		["CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies);
+		["CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies, BonusOrder: HealerBonuses);
 
 	// The defaults of CP-Q10 for the five new starters. Each holds one weapon and nothing in the off hand, but the Scout.
 	public static NaturalClassGearTable Warrior { get; } = new(PlayerClass.WARRIOR, ["SWORD", "MACE"], NaturalWeaponStat.Physical,
@@ -165,6 +184,7 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 			MasteryUnlocks = unlocks,
 			OffHand = OffHand,
 			ConsumableOrder = ConsumableOrder,
+			BonusOrder = Bonuses,
 			ExpectedSkillIds = masteries.Select(mastery => mastery.SkillId).Where(id => !replaced.Contains(id)).Distinct().Order().ToArray(),
 		};
 	}

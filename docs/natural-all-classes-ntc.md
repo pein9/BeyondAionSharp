@@ -133,6 +133,25 @@ by a lettered item. Answers already given are quoted.
   Default: a round spreads its bots over as many worlds as memory takes, eight on this
   machine, so eleven classes play one or two to a world. One world for all is used when
   the point is to see bots beside each other. The operator's later Answer outranks this.
+- **NR-Q12. Accessories and hats at a reward.** Asked by NR-32. The gear score ranks
+  weapons and armor. It does not rank a ring, an earring, a necklace, a belt or a hat of
+  the HEAD group, which every class may wear; among those the choice went to the first in
+  the list. Default: among those, and between two pieces of one score, the class's bonus
+  order decides (the gear table's BonusOrder): a class that casts and heals looks for
+  magic boost, magical accuracy, healing boost, mana, concentration; a class that casts
+  for magic boost, magical accuracy, magical critical, mana, concentration; a class that
+  strikes for physical attack, critical, accuracy, health. **The Cleric's table has no
+  order**, because an order changes a pick of its recorded scopes: at Q2227, which is not
+  pinned, the recorded Cleric took the first ring (+28 HP) and the healer's order takes
+  the second (+28 MP). So the Cleric plays as recorded: its fourteen pins, and the first
+  in the list elsewhere. To decide:
+  - whether the Cleric gets the healer's order, which re-records scope c and what follows
+    it. The order would then give twelve of its fourteen pins. It would not give the
+    Topaz Necklace of Q24014 (+70 HP; the order takes the +70 MP one, as the pin of Q2288
+    takes the +28 MP ring) or the Chain Helm of Q24015 (the order takes the Bandana, +87
+    MP);
+  - whether a class wants another order than its default.
+  Until then every other class takes the order's pick.
 
 ## Standing rules
 
@@ -230,6 +249,12 @@ code; it is data only. Of the 121 quests on the route, quest_data.xml gives a cl
 one, the dispatch quest, which the class line already carries (Q2904 for the Priest's
 classes), and per-class reward lists to four: Q2009, Q2900, Q2947 and Q28505. Every other
 reward list is the same for all classes.
+
+Corrected by NR-32 (2026-10-09): the server offers a class list at two of the four, Q2009
+and Q2947, which have use_class_reward. Q2900 and Q28505 carry class lists in the data
+without it, and Java never reads them (QuestService.getRewardItems 172-183): Q2900 offers
+no choice, and Q28505 offers every class its general list of six armor pieces. And a leg
+contract's start.class is read from NR-32 on: it says whose the leg's reward picks are.
 
 **Gates that name the Cleric.**
 
@@ -2305,7 +2330,7 @@ can use them. The order below is the order of work: the item that saves time com
       guard-p8 (run/nr/NR-31/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
       16 skipped) and Fast passes (run nr31-fast, 11 passed).
-- [ ] **NR-32 - Reward picks by the class's gear rule.** Depends: NR-31
+- [x] **NR-32 - Reward picks by the class's gear rule.** Depends: NR-31
   - Work: Java first: the reward lists of the route's quests, and how a per-class list is
     chosen (QuestTemplate, as read for CP-31). A leg's reward pin is the Cleric's; for
     another class the pick at the same quest is what its gear rule scores highest in the
@@ -2314,6 +2339,88 @@ can use them. The order below is the order of work: the item that saves time com
     document.
   - Proof: One-time check that prints the table; for the Cleric the rule gives every pin;
     the full gate identical.
+  - 2026-10-09: done on the second attempt, with one part of the Proof line not met: the
+    rule does not give the Cleric every pin (nine of fourteen by its own table, twelve by
+    the healer's bonus order; NR-Q12). The Cleric keeps its pins, so the accepted line
+    plays as recorded.
+    - **Java.** QuestService.getRewardItems 164-183: the chosen index is read from the
+      class's list when the quest has use_class_reward (1 on every repeat, 2 on the last;
+      QuestTemplate 285-291), from getSelectableRewardByClass 212-238, which has a list
+      for each second class and none for a starter. Otherwise it is read from the general
+      list of the reward group. getRewardIndex 216-218: SELECTED_QUEST_REWARD1 to 15 are
+      indexes 0 to 14, so a list of thirteen weapons can be chosen from. The port has the
+      same lines (Services/QuestService.cs 160-227). No server change.
+    - **What the data says.** Of the 181 quests in the route's contracts and plans, two
+      have use_class_reward: Q2009 and Q2947. Q2900 and Q28505 have class lists and no
+      use_class_reward, so the server never offers them; Survey A1 is corrected. Whether
+      retail offered Q28505's class weapons is a retail question that stops no class; it
+      is not followed here.
+    - **The change.**
+      - Sc/NaturalIshalgenInventoryPolicy.cs, Load: the list a quest offers is the class's
+        own list when the quest has use_class_reward, by the second class of the policy's
+        line, and the general list otherwise. The ceremony was the one quest read that
+        way. RewardList gives a quest's list. RewardChoiceFor gives a class's pick at a
+        pinned quest: what ChooseReward takes there.
+      - ChooseReward has one more key, after the score and the consumables and before the
+        sale price: the class's bonus order (NR-Q12). NaturalItem carries the template's
+        flat bonus lines for it. Sc/Classes/NaturalClassGearTable.cs has BonusOrder and the
+        three orders; a table that names none takes the one of its weapon stat, the
+        Priest and the Chanter name the healer's, and the Cleric names an empty one.
+        Sc/Classes/NaturalGearRules.cs compares two pieces by it.
+      - Sc/NaturalAltgardContract.cs, WithRewardChoices: the same leg with other picks, in
+        the list and in the step that sends each.
+      - J: when a leg is taken up, a character whose class is not the contract's
+        start.class gets its own picks, chosen by its gear rules from what it then owns;
+        the picks are traced as leg-reward-picks. The Cleric's leg is the contract itself.
+        The template hand-in loads the policy for the run's line.
+    - **First attempt.** The Cleric's table had the healer's order. Gate run guard-p8
+      (run/nr/NR-32/guard-p8/verdict.json): eleven scopes identical, scope c different,
+      first at record 18626: the claim of Q2227 sent choice 2 where the baseline sends
+      choice 1. Q2227 is a template hand-in with two rings; the recorded Cleric takes the
+      first. The one change (rule (i)): the Cleric's table names no order. The first
+      check's output is run/nr/NR-32/check-a1.log.
+    - **Not done here.** What a leg protects, keeps or checks by a pinned item's id is
+      NR-33; the coin-gear and Abyss tiers are NR-38. The nine second classes without a
+      gear table were checked with provisional tables by NR-Q5 and NR-Q7 (in the check
+      file, not committed); each class's first item writes its own table, and its picks
+      follow from it.
+    - **Proof, the one-time check** (run/nr/NR-32/check.log; the check file is not
+      committed): every second class's pick at the ceremony and at the fourteen pinned
+      quests of the legs, with nothing better owned. The Cleric's are its pins.
+
+      | Quest | Leg | Pick by class: choice number, item, group |
+      |---|---|---|
+      | Q2009 | bridge | Cleric, Chanter: 2, 101500498 STAFF; Gladiator: 2, 100900488 GREATSWORD; Templar: 1, 100000640 SWORD; Assassin: 1, 100200605 DAGGER; Ranger: 3, 101700515 BOW; Sorcerer, Spirit Master: 1, 100600532 SPELLBOOK; Gunner: 1, 101800506 GUN; Rider: 1, 102100489 KEYBLADE; Bard: 1, 102000523 HARP |
+      | Q24011 | l1 | Cleric, Chanter: 4, 114501726 CH_SHOES; Gladiator, Templar: 6, 114601575 PL_SHOES; Assassin, Ranger: 2, 114301817 LT_SHOES; Sorcerer, Spirit Master, Bard: 1, 114101696 RB_SHOES; Gunner: 3, 114301819 LT_SHOES; Rider: 5, 114501728 CH_SHOES |
+      | Q24012 | l2 | Cleric, Chanter: 4, 110551139 CH_TORSO; Gladiator, Templar: 6, 110601622 PL_TORSO; Assassin, Ranger: 2, 110301811 LT_TORSO; Sorcerer, Spirit Master, Bard: 1, 110101836 RB_TORSO; Gunner: 3, 110301813 LT_TORSO; Rider: 5, 110551141 CH_TORSO |
+      | Q24013 | l4 | Cleric, Chanter: 8, 101501355 STAFF; Gladiator: 6, 100901373 GREATSWORD; Templar: 1, 100001735 SWORD; Assassin: 3, 100201501 DAGGER; Ranger: 9, 101701366 BOW; Sorcerer, Spirit Master: 5, 100601429 SPELLBOOK; Gunner: 10, 101801216 GUN; Rider: 13, 102101070 KEYBLADE; Bard: 12, 102001244 HARP |
+      | Q2288 | l4 | Cleric, Chanter, Sorcerer, Spirit Master, Gunner, Rider, Bard: 2, 122001285 RING; Gladiator, Templar, Assassin, Ranger: 1, 122001284 RING |
+      | Q2223 | l4 | Cleric, Chanter, Sorcerer, Spirit Master, Gunner, Rider, Bard: 2, 120001132 EARRING; Gladiator, Templar, Assassin, Ranger: 1, 120001131 EARRING |
+      | Q2292 | l5 | Cleric, Chanter, Sorcerer, Spirit Master, Gunner, Rider, Bard: 2, 120001521 EARRING; Gladiator, Templar, Assassin, Ranger: 1, 120001520 EARRING |
+      | Q24014 | l10 | Cleric, Gladiator, Templar, Assassin, Ranger: 1, 121001394 NECKLACE; Chanter, Sorcerer, Spirit Master, Gunner, Rider, Bard: 2, 121001395 NECKLACE |
+      | Q24015 | l10 | Cleric: 3, 125004139 HEAD; Chanter, Sorcerer, Spirit Master, Gunner, Rider, Bard: 1, 125004137 HEAD; Gladiator, Templar, Assassin, Ranger: 2, 125004138 HEAD |
+      | Q24016 | l10 | Cleric, Chanter: 8, 101501357 STAFF; Gladiator: 6, 100901375 GREATSWORD; Templar: 1, 100001737 SWORD; Assassin: 3, 100201503 DAGGER; Ranger: 9, 101701368 BOW; Sorcerer, Spirit Master: 5, 100601431 SPELLBOOK; Gunner: 10, 101801218 GUN; Rider: 13, 102101072 KEYBLADE; Bard: 12, 102001246 HARP |
+      | Q28500 | l12 | Cleric, Chanter, Rider: 4, 112501641 CH_SHOULDER; Gladiator, Templar: 6, 112601569 PL_SHOULDER; Assassin, Ranger: 2, 112301692 LT_SHOULDER; Sorcerer, Spirit Master, Bard: 1, 112101602 RB_SHOULDER; Gunner: 3, 112301694 LT_SHOULDER |
+      | Q28505 | l12 | Cleric, Chanter, Rider: 4, 113501720 CH_PANTS; Gladiator, Templar: 6, 113601570 PL_PANTS; Assassin, Ranger: 2, 113301784 LT_PANTS; Sorcerer, Spirit Master, Bard: 1, 113101664 RB_PANTS; Gunner: 3, 113301786 LT_PANTS |
+      | Q28507 | l12 | Cleric, Chanter, Sorcerer, Spirit Master, Gunner, Rider, Bard: 2, 123001440 BELT; Gladiator, Templar, Assassin, Ranger: 1, 123001439 BELT |
+      | Q24020 | ax | Cleric, Chanter: 4, 110551147 CH_TORSO; Gladiator, Templar: 6, 110601626 PL_TORSO; Assassin, Ranger: 2, 110301819 LT_TORSO; Sorcerer, Spirit Master, Bard: 1, 110101840 RB_TORSO; Gunner: 3, 110301821 LT_TORSO; Rider: 5, 110551149 CH_TORSO |
+      | Q2947 | ax | Cleric, Chanter: 2, 101501224 STAFF; Gladiator: 4, 100901214 GREATSWORD; Templar: 1, 100001562 SWORD; Assassin: 1, 100201365 DAGGER; Ranger: 3, 101701246 BOW; Sorcerer, Spirit Master: 1, 100601285 SPELLBOOK; Gunner: 1, 101801035 GUN; Rider: 1, 102100833 KEYBLADE; Bard: 1, 102001058 HARP |
+
+      Q2009's pick is the line's own (NR-30); the score alone ranks the same item first
+      for every class. The Gunner's table holds the pistol only: the class-line contract
+      gives it no cannon mastery. For each class every leg was rewritten: each pick stands
+      in the list and in the one step that sent the pin, and no other step changes.
+    - **The Cleric and the rule.** By its own table, with no bonus order, the rule gives
+      nine of fourteen pins: not the ring of Q2288, the earrings of Q2223 and Q2292, the
+      helm of Q24015 or the belt of Q28507, where it takes the first in the list. By the
+      healer's order it gives twelve: not the necklace of Q24014 or the helm of Q24015.
+      No one order gives both the +28 MP ring of Q2288 and the +70 HP necklace of Q24014,
+      and the four hats of Q24015 are one item group.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8-a2 (run/nr/NR-32/guard-p8-a2/verdict.json): verdict pass, all twelve scopes
+      identical, so the bonus order changes no recorded pick of the Priest or the five
+      starters. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
+      16 skipped) and Fast passes (run nr32-fast-a2, 11 passed).
 - [ ] **NR-33 - Protected and kept items by rule.** Depends: NR-32
   - Work: What a leg protects, keeps or cleans up by item id (the bridge, coin gear,
     Haramel, the Abyss entry) is derived for another class from its gear rules and from
@@ -2723,3 +2830,13 @@ report what was done, what is parked or blocked, and what the operator must deci
   each of the nine other second classes. Full gate guard-p8: twelve scopes identical.
   Seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr31-fast) pass. Next:
   NR-32, reward picks by the class's gear rule.
+- 2026-10-09 — Loop: NR-32 done on the second attempt. A leg's reward picks are its
+  contract's class's; another class takes what its gear rules choose from the list the
+  server offers it, the class list where the quest has use_class_reward (Q2009, Q2947) and
+  the general list elsewhere (Q2900 and Q28505 have class lists the server never reads;
+  Survey A1 corrected). The reward choice has a bonus order for accessories, hats and ties;
+  the Cleric's table has none, because the first gate (guard-p8) showed the order changing
+  its recorded pick at Q2227 (NR-Q12, open). One-time check: the table of picks for the
+  eleven second classes at fifteen quests. Full gate guard-p8-a2: twelve scopes identical.
+  Seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr32-fast-a2) pass. Next:
+  NR-33, protected and kept items by rule.

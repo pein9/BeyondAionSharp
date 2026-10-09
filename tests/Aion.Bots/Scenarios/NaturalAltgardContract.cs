@@ -95,6 +95,26 @@ public sealed record NaturalAltgardContract(
 	/// <summary>Every chosen reward of the leg: the campaign's (<see cref="RewardChoice"/>) and the others'.</summary>
 	public NaturalAltgardRewardChoice[] RewardChoiceList => [.. RewardChoice is { } choice ? [choice] : Array.Empty<NaturalAltgardRewardChoice>(), .. RewardChoices ?? []];
 
+	/// <summary>
+	/// NR-32: the same leg with other reward picks. A leg's picks are those of the class its contract was written for
+	/// (<see cref="NaturalAltgardStart.Class"/>); for another class each is replaced, in the list and in the step that
+	/// sends it. With no pick changed the contract itself is returned.
+	/// </summary>
+	public NaturalAltgardContract WithRewardChoices(Func<NaturalAltgardRewardChoice, NaturalAltgardRewardChoice> pick)
+	{
+		Dictionary<NaturalAltgardRewardChoice, NaturalAltgardRewardChoice> picked = RewardChoiceList.ToDictionary(choice => choice, pick);
+		if (picked.All(pair => pair.Key == pair.Value)) return this;
+		NaturalAltgardRewardChoice[] pinned = RewardChoiceList;
+		return this with
+		{
+			RewardChoice = RewardChoice is { } campaign ? picked[campaign] : null,
+			RewardChoices = RewardChoices?.Select(choice => picked[choice]).ToArray(),
+			Steps = [.. Steps.Select(step => pinned.FirstOrDefault(choice => choice.QuestId == step.QuestId && step.Actions.Contains(choice.Action)) is { } own
+				? step with { Actions = [.. step.Actions.Select(action => action == own.Action ? picked[own].Action : action)] }
+				: step)],
+		};
+	}
+
 	/// <summary>Leg 1 sections, for code that only runs Leg 1.</summary>
 	public NaturalAltgardFlight RequiredFlight => Flight ?? throw new InvalidDataException($"{Leg} has no flight rules.");
 	public NaturalAltgardItemUse RequiredItemUse => ItemUse ?? throw new InvalidDataException($"{Leg} has no item use.");

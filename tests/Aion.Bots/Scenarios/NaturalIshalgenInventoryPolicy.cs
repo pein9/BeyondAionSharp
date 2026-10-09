@@ -10,9 +10,11 @@ namespace Aion.Bots.Scenarios;
 /// <summary>Static, shipped-item knowledge used with packet-observed inventory; no server-state oracle.</summary>
 /// <param name="Restrict">The template's restrict row: the level each class may wear the item at, by class id.</param>
 /// <param name="RestrictMax">The template's restrict_max row, or empty: the last level each class may wear it at.</param>
+/// <param name="Bonuses">NR-32: the template's flat bonus lines without conditions, summed by stat name
+/// (<c>MAXMP</c>, <c>BOOST_MAGICAL_SKILL</c>); none when not read.</param>
 public sealed record NaturalItem(int Id, string Group, int[] Restrict, int[] RestrictMax, string Race,
 	int Price, int Quality, int MinimumDamage, int MaximumDamage, int MagicBoost, int Mask,
-	int ItemLevel = 0, int ExtraInventory = 0, int PhysicalAttack = 0)
+	int ItemLevel = 0, int ExtraInventory = 0, int PhysicalAttack = 0, IReadOnlyDictionary<string, int>? Bonuses = null)
 {
 	/// <summary>The level this class may wear the item at; 0 when the row does not reach its column.</summary>
 	public int RequiredLevelFor(PlayerClass playerClass) =>
@@ -89,6 +91,17 @@ public sealed class NaturalIshalgenInventoryPolicy
 		var questItems = new HashSet<int>();
 		var rewards = new Dictionary<int, int[]>();
 		XElement quests = XDocument.Load(Path.Combine(root, "game-server/data/static_data/quest_data/quest_data.xml")).Root!;
+		// NR-32: the list the server offers. A quest with use_class_reward takes the chosen index from the class's own list
+		// (Java QuestService.getRewardItems 172-178, QuestTemplate.getSelectableRewardByClass; 2 means on the last repeat
+		// only, and no quest of the route has it); every other quest takes it from the general list of its first reward
+		// group, whatever class lists its data also carries. A starter class has no class list.
+		var lineContract = NaturalClassLineContract.Load(Path.Combine(root, "parity-artifacts/e2e/natural-class-lines.json"));
+		string? classList = (line ?? NaturalClassLine.Default).Second is { } listClass
+			? lineContract.Second(listClass).CeremonyReward.SelectableList : null;
+		int[] Offered(XElement quest) => (string?)quest.Attribute("use_class_reward") is "1" or "2"
+			? classList == null ? [] : quest.Elements(classList).Select(element => (int)element.Attribute("item_id")!).ToArray()
+			: quest.Elements("rewards").FirstOrDefault()?.Elements("selectable_reward_item")
+				.Select(element => (int)element.Attribute("item_id")!).ToArray() ?? [];
 		foreach (XElement quest in quests.Elements("quest").Where(q => questIds.Contains((int)q.Attribute("id")!)))
 		{
 			int id = (int)quest.Attribute("id")!;
@@ -96,8 +109,7 @@ public sealed class NaturalIshalgenInventoryPolicy
 			foreach (XAttribute item in quest.DescendantsAndSelf().Where(node => !node.AncestorsAndSelf("rewards").Any())
 				.Attributes("item_id"))
 				questItems.Add((int)item);
-			rewards[id] = quest.Elements("rewards").FirstOrDefault()?.Elements("selectable_reward_item")
-				.Select(element => (int)element.Attribute("item_id")!).ToArray() ?? [];
+			rewards[id] = Offered(quest);
 		}
 		// AB-08: every other Asmodian quest's selectable rewards, so a template hand-in beyond Ishalgen (Altgard's Q2225 and
 		// Q2227) can choose one. Only the choice list is added; the protected quest items stay the contract's.
@@ -105,8 +117,7 @@ public sealed class NaturalIshalgenInventoryPolicy
 		{
 			int id = (int)quest.Attribute("id")!;
 			if (rewards.ContainsKey(id)) continue;
-			int[] choices = quest.Elements("rewards").FirstOrDefault()?.Elements("selectable_reward_item")
-				.Select(element => (int)element.Attribute("item_id")!).ToArray() ?? [];
+			int[] choices = Offered(quest);
 			if (choices.Length > 0) rewards[id] = choices;
 		}
 		// NA-09: the Ascension bridge (docs/natural-ascension-altgard.md): its protected items and the ceremony
@@ -115,8 +126,7 @@ public sealed class NaturalIshalgenInventoryPolicy
 		// dispatch quest; a line that takes none keeps the reviewed bridge's protected items and never reaches its quests.
 		var bridge = NaturalAscensionContract.Load(Path.Combine(root, "parity-artifacts/e2e/natural-ascension-contract.json"));
 		if ((line ?? NaturalClassLine.Default).Second is { } second)
-			bridge = NaturalAscensionContract.ForChoice(bridge,
-				NaturalClassLineContract.Load(Path.Combine(root, "parity-artifacts/e2e/natural-class-lines.json")),
+			bridge = NaturalAscensionContract.ForChoice(bridge, lineContract,
 				(line ?? NaturalClassLine.Default).Starter, second, line?.CeremonyItemId);
 		XElement ceremonyQuest = quests.Elements("quest").Single(q => (int)q.Attribute("id")! == bridge.CeremonyReward.QuestId);
 		rewards[bridge.CeremonyReward.QuestId] = ceremonyQuest.Elements(bridge.CeremonyReward.SelectableList)
@@ -157,7 +167,10 @@ public sealed class NaturalIshalgenInventoryPolicy
 				(int?)element.Element("inventory")?.Attribute("id") ?? 0,
 				// CP-29: the flat physical-attack lines of the template, without conditions.
 				element.Element("modifiers")?.Elements("add").Where(add => (string?)add.Attribute("name") == "PHYSICAL_ATTACK" &&
-					add.Element("conditions") == null).Sum(add => (int?)add.Attribute("value") ?? 0) ?? 0);
+					add.Element("conditions") == null).Sum(add => (int?)add.Attribute("value") ?? 0) ?? 0,
+				// NR-32: every flat bonus line without conditions, by stat.
+				element.Element("modifiers")?.Elements("add").Where(add => add.Attribute("name") != null && add.Element("conditions") == null)
+					.GroupBy(add => (string)add.Attribute("name")!).ToDictionary(group => group.Key, group => group.Sum(add => (int?)add.Attribute("value") ?? 0)));
 			if (catalog.Count == needed.Count) break;
 		}
 		return new(catalog, questItems, rewards, bridgeSupplies, (bridge.CeremonyReward.QuestId, bridge.CeremonyReward.ItemId),
@@ -256,7 +269,8 @@ public sealed class NaturalIshalgenInventoryPolicy
 	/// CP-29: the reward choice, by the class's gear rules. A weapon of the class's groups that beats the held one comes
 	/// first, then armor of its types that beats the worn piece; an item for a later level counts, because the rules keep
 	/// it. With no upgrade offered, the class's own gear is still preferred to another class's, then a consumable by the
-	/// rules' order, then the sale price.
+	/// rules' order, then (NR-32) the piece whose bonus lines suit the class, then the sale price. The bonus lines decide
+	/// between two pieces of one score, and among what the rules do not score: accessories and hats.
 	/// </summary>
 	/// <param name="rewardRules">CP-23: the rules the choices are scored by (the profile's
 	/// <see cref="NaturalClassProfile.Gear"/>); the Priest's when not given.</param>
@@ -291,8 +305,25 @@ public sealed class NaturalIshalgenInventoryPolicy
 			.ThenByDescending(choice => Upgrade(choice.id, out NaturalItem item) ? rules.Score(item) : long.MinValue)
 			.ThenByDescending(choice => Wearable(choice.id, out NaturalItem item) ? rules.Score(item) : long.MinValue)
 			.ThenBy(choice => ConsumablePlace(choice.id))
+			.ThenByDescending(choice => items.TryGetValue(choice.id, out NaturalItem? item) ? rules.BonusFit(item) : [], NaturalGearRules.BonusFitOrder)
 			.ThenByDescending(choice => items.TryGetValue(choice.id, out NaturalItem? item) && item.Sellable ? item.Price : 0)
 			.ThenBy(choice => choice.index).First().index;
+	}
+
+	/// <summary>The list the server offers this policy's class at a quest; empty when it offers no choice.</summary>
+	public IReadOnlyList<int> RewardList(int questId) => rewards.GetValueOrDefault(questId) ?? [];
+
+	/// <summary>
+	/// NR-32: a leg's reward pick for a class other than the one its contract was written for. The pin names a quest;
+	/// the pick is what <see cref="ChooseReward"/> takes from the list the server offers this class there.
+	/// </summary>
+	public NaturalAltgardRewardChoice RewardChoiceFor(NaturalAltgardRewardChoice pinned, int level, IEnumerable<BotInventoryItem> inventory,
+		NaturalGearRules rules)
+	{
+		int index = ChooseReward(pinned.QuestId, level, inventory, rules);
+		if (index < 0) throw new InvalidDataException($"Q{pinned.QuestId} offers the {rules.Class} no reward to choose.");
+		int itemId = rewards[pinned.QuestId][index];
+		return new(pinned.QuestId, $"SELECTED_QUEST_REWARD{index + 1}", itemId, items[itemId].Group);
 	}
 
 	public bool AutoLearnedPriestSkillsObserved(int level, IReadOnlyDictionary<int, BotSkill> learned) =>

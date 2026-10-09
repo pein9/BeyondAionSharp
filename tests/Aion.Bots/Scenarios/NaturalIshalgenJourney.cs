@@ -289,11 +289,31 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			// AF-08: Altgard Leg 1 walks to its own NPCs and hunts on the Ice Lake; they join the waypoint graph.
 			// AM-06/07: the same runner plays any Altgard leg ("l1" the fortress, "l2" Moslan Crossroad).
 			string? altgardLegId = continuousAltgard ? null : options.AltgardLegId ?? (options.AltgardLeg1 ? "l1" : null);
+			// NR-32: a leg's reward picks are those of the class its contract was written for (start.class). A character of
+			// another class takes, at the same quests, what its gear rules choose from the list the server offers it, decided
+			// when the leg is taken up, from what it then owns.
+			NaturalAltgardContract WithObservedClassRewards(NaturalAltgardContract leg)
+			{
+				BotWorldModel world = session.Api.World;
+				byte? classId = world.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass;
+				if (leg.RewardChoiceList.Length == 0 || classId is not { } observedId ||
+					PlayerClassExtensions.GetPlayerClassById(observedId, true) is not { } observedClass ||
+					observedClass.ToString() == leg.Start.Class) return leg;
+				NaturalGearRules rules = NaturalClassProfiles.For(classId, ClassLine, runtime.Data).Gear;
+				NaturalIshalgenInventoryPolicy rewards = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot,
+					world.Inventory.Values.Select(item => item.ItemId), ClassLine);
+				NaturalAltgardContract picked = leg.WithRewardChoices(choice =>
+					rewards.RewardChoiceFor(choice, world.Level, world.Inventory.Values, rules));
+				session.TraceDiagnostic("leg-reward-picks", new Dictionary<string, object?>
+				{ ["leg"] = leg.Leg, ["class"] = observedClass.ToString(), ["contractClass"] = leg.Start.Class, ["picks"] = picked.RewardChoiceList });
+				return picked;
+			}
 			NaturalAltgardContract? altgardLeg = altgardLegId is { } legId ? NaturalAltgardContract.LoadLeg(legId) : null;
 			if (laterCapital != null && altgardLeg != null)
 				altgardLeg = NaturalAltgardContinuation.BindIncoming(altgardLeg, session.Api.World.CompletedQuestIds,
 					session.Api.World.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray(),
 					NaturalAltgardContinuation.EquippedItemIds(session.Api.World));
+			if (altgardLeg != null) altgardLeg = WithObservedClassRewards(altgardLeg);
 			coinGearProgress = altgardLeg?.CoinGear == null ? null : NaturalCoinGearProgress.Empty;
 			if (altgardLeg?.Haramel is { } haramel)
 				haramelProgress = options.HaramelProgressPath is { Length: > 0 } savedHaramel
@@ -1603,9 +1623,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					altgardLegId = id;
 					session.IdentityAltgardLegId = id;
 					NaturalAltgardContract shipped = NaturalAltgardContract.LoadLeg(id);
-					altgardLeg = NaturalAltgardContinuation.BindIncoming(shipped, session.Api.World.CompletedQuestIds,
+					altgardLeg = WithObservedClassRewards(NaturalAltgardContinuation.BindIncoming(shipped, session.Api.World.CompletedQuestIds,
 						session.Api.World.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray(),
-						NaturalAltgardContinuation.EquippedItemIds(session.Api.World));
+						NaturalAltgardContinuation.EquippedItemIds(session.Api.World)));
 					altgardPlans = NaturalAltgardContract.LoadPlans(id);
 					collectionLimits = altgardPlans.Values.SelectMany(plan => plan.Steps
 						.Where(step => step.Kind == "collect" && step.ItemId > 0 && step.Count > 0)
@@ -8218,7 +8238,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							{
 								string root = runtime.RepoRoot;
 								var inventory = NaturalIshalgenInventoryPolicy.Load(root,
-									session.Api.World.Inventory.Values.Select(item => item.ItemId));
+									session.Api.World.Inventory.Values.Select(item => item.ItemId), ClassLine);
 								int rewardIndex = inventory.ChooseReward(plan.Id, session.Api.World.Level,
 									session.Api.World.Inventory.Values, combat.ClassProfile.Gear);
 								Require.True(rewardIndex >= 0);

@@ -53,6 +53,25 @@ public sealed class NaturalGearRules
 	/// <summary>The pick among consumables at a reward, best first.</summary>
 	public IReadOnlyList<int> ConsumableOrder { get; init; } = [];
 
+	/// <summary>NR-32: the bonus stats the class looks for on a piece, best first (the table's
+	/// <see cref="NaturalClassGearTable.Bonuses"/>).</summary>
+	public IReadOnlyList<string> BonusOrder { get; init; } = [];
+
+	/// <summary>NR-32: how a piece's bonus lines suit the class: its value of each stat of <see cref="BonusOrder"/>, in
+	/// that order. Two pieces are compared by <see cref="BonusFitOrder"/>.</summary>
+	public long[] BonusFit(NaturalItem item) => [.. BonusOrder.Select(stat => (long)(item.Bonuses?.GetValueOrDefault(stat) ?? 0))];
+
+	/// <summary>The first stat in which two pieces differ decides, the larger value being the better.</summary>
+	public static IComparer<long[]> BonusFitOrder { get; } = Comparer<long[]>.Create((left, right) =>
+	{
+		for (int index = 0; index < Math.Max(left.Length, right.Length); index++)
+		{
+			long a = index < left.Length ? left[index] : 0, b = index < right.Length ? right[index] : 0;
+			if (a != b) return a.CompareTo(b);
+		}
+		return 0;
+	});
+
 	public bool IsGear(NaturalItem item) => GearGroups.Contains(item.Group);
 
 	/// <summary>The slot name gear of one kind competes for; null for what is not gear.</summary>
