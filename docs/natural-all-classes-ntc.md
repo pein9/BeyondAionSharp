@@ -3750,6 +3750,18 @@ The template:
       and a pack of two or more is not accepted), and it left 13 fights at three or more
       attackers. One death. By rule (i) the mend is NR-53b: it is the class's way of
       opening a fight, not a small change.
+  - 2026-10-09, leg l4 captured; leg l5 stopped, and with NR-53c a replay played it to
+    its end.
+    - **Captured** at 3beac1cb0: altgard-rc-l4-templar from altgard-rc-l3-templar with
+      -LaterCapital (run nr53-l4-c1, log run/nr/NR-53/l4-c1.log): the leg in 2 h 50 min
+      with two deaths; level 20, 95 quests, 30,502,320 ms of game time, dump sha256
+      ce75a2dcc6d163c3.
+    - **Leg l5, attempt 1** (capture run nr53-l5-c1 from altgard-rc-l4-templar; nothing
+      captured; evidence run/nr/NR-53/l5-c1/). An hour into the leg, at Q24231's grave
+      robbers, a fencer at 4% HP ran 10 m off. The Templar decided to close in 971 times
+      and did not move: "1,000 actions without a kill". Its walk went to the nearest
+      monster of the target's kind, which was another fencer beside it, and arrived
+      there at once every time. NR-53c.
 - [x] **NR-53a - A swing in flight hovers inside the swing's reach.** Depends: NR-52
   - Work: The first stop of NR-53. Java first: what the server asks of a swing's
     distance. The air attack of a class with no skill for the air is its weapon's swing
@@ -3865,6 +3877,31 @@ The template:
       guard-p8 (run/nr/NR-53b/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
       16 skipped) and Fast passes (run nr53b-fast, 11 passed).
+- [x] **NR-53c - A class that walks up walks to its own target.** Depends: NR-53b
+  - Work: The stop of leg l5. Java first: nothing of the server is relied on. When the
+    fight has the bot walk up, a walk-in class walks to the monster it fights, and the
+    Priest line walks to the nearest monster of that kind, as recorded. Which of the
+    two a class does is said by its movement rules; the Templar, which pulls from range
+    and fights at melee, walks to its own target.
+  - Proof: The Templar's leg l5 is played to its end in a replay; the full gate
+    identical.
+  - 2026-10-09: done.
+    - **The change.** Sc/Classes/NaturalFightMovement.cs: WalksToItsTarget, with
+      GoesToItsTarget for the fight loop; not given, it is the walk-in style, so every
+      profile that has played answers as before. J.Combat, the approach step: the two
+      places that asked for the walk-in style ask the movement rules. The Templar's
+      movement names it.
+    - **Proof, the replay** (l5-a2 from altgard-rc-l4-templar;
+      run/nr/NR-53c/l5-a2/replay.json: passed). Leg l5 complete and verified: level 21,
+      109 quests, 2 h 30 min of game time, 106,309 records. 205 fights, 184 kills, 18
+      retreats, five approaches refused, one death.
+    - **Found, and logged (rule (f)).** At level 21 the Templar still holds the
+      ceremony's level-10 sword: leg l5 has no stop that wears what is in the bag
+      either (NR-53b). The legs after it are watched for the first that does.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-53c/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
+      16 skipped) and Fast passes (run nr53c-fast, 11 passed).
 - [ ] **NR-54 - Templar: Altgard legs l6 to l11.** Depends: NR-53; ticked by its round
   - Work: As NR-53. Leg 11 is the destiny quest: its stone is 140000003 (NR-39).
   - Proof: Each capture verifies.
@@ -4388,3 +4425,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   deaths. Probe rows a3 pass. Full gate guard-p8 (twelve scopes identical), seven checks,
   unit suite (4,629 passed, 16 skipped) and Fast (nr53b-fast) pass. Next: NR-53, the
   captures of legs l4 and l5 from the committed code.
+- 2026-10-09 — Loop: NR-53 leg l4 captured, NR-53c done. altgard-rc-l4-templar is
+  captured at 3beac1cb0: level 20, 95 quests, two deaths. Leg l5 stopped where a monster
+  at its last HP ran off: the Templar's walk went to the nearest monster of that kind and
+  not to its target, 971 times. The movement rules now say whether a class walks to its
+  own target; the Templar does. Replay l5-a2 played the leg to its end: level 21, 109
+  quests, 184 kills, 18 retreats, one death. Full gate guard-p8 (twelve scopes identical),
+  seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr53c-fast) pass. Next:
+  NR-53, the capture of leg l5 from the committed code, which closes the item.

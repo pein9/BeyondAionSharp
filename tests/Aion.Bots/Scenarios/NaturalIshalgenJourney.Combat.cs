@@ -550,13 +550,13 @@ public sealed partial class NaturalIshalgenJourney
 						}
 						long approachStarted = runtime.NowMillis;
 						// CP-43a: a walk-in class goes to the target itself. The Priest line's approach, by the template's
-						// nearest monster, stays as recorded.
-						NaturalNavigationResult approach = profile.PullStyle == NaturalPullStyle.WalkIn
+						// nearest monster, stays as recorded. NR-53c: the movement rules say which a class does.
+						NaturalNavigationResult approach = profile.Movement.GoesToItsTarget
 							? await NaturalIshalgenNavigator.ApproachNpcObjectAsync(
 								ApproachMapId, npc.TemplateId!.Value, target, destination, navigator, token)
 							: await NaturalIshalgenNavigator.ApproachNpcAsync(
 								ApproachMapId, npc.TemplateId!.Value, destination, navigator, token);
-						if (!approach.Arrived && profile.PullStyle == NaturalPullStyle.WalkIn)
+						if (!approach.Arrived && profile.Movement.GoesToItsTarget)
 						{
 							// CP-56a: the walk was planned against every other monster's circle, so a target that stands
 							// inside its neighbour's circle is never reached. The walk-in planner already counts that

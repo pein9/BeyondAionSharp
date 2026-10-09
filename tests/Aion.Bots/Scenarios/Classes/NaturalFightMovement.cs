@@ -42,9 +42,16 @@ public enum NaturalObstacleAnswer
 /// <param name="RangeRefusalCloseIn">How near to come after a distance refusal of a skill that is not a melee skill.</param>
 /// <param name="RecentHitMillis">A target that hit the bot within this is adjacent whatever its lagging position says.</param>
 /// <param name="ObstacleAnswer">CP-48: the class's own answer to an obstacle; null leaves it to the style.</param>
+/// <param name="WalksToItsTarget">NR-53c: when the class walks up, it walks to the monster it fights; null leaves it to
+/// the style. A walk-in class always does. The Priest line walks to the nearest monster of its target's kind, as
+/// recorded. A class that pulls from range and fights at melee (the Templar) must reach its own target when that one
+/// does not come.</param>
 public sealed record NaturalFightMovement(NaturalPullStyle Style, float MeleeReach, float RangedRouteBeyond, float RangeRefusalCloseIn,
-	float HoldDistance = 0, int RecentHitMillis = 3000, NaturalObstacleAnswer? ObstacleAnswer = null)
+	float HoldDistance = 0, int RecentHitMillis = 3000, NaturalObstacleAnswer? ObstacleAnswer = null, bool? WalksToItsTarget = null)
 {
+	/// <summary>NR-53c: a walk up goes to the fight's own target.</summary>
+	public bool GoesToItsTarget => WalksToItsTarget ?? Style == NaturalPullStyle.WalkIn;
+
 	/// <param name="targetRanged">The target attacks from range, so its hits say nothing about where it stands.</param>
 	/// <param name="millisSinceHitByTarget">Game time since the target last hit the bot; null when it has not.</param>
 	public bool Adjacent(float targetDistance, bool targetRanged, long? millisSinceHitByTarget) =>

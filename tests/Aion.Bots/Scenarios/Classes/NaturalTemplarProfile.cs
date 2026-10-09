@@ -105,9 +105,10 @@ public static class NaturalTemplarProfile
 		StandoffSpellRange: 15, StandoffArrivalTolerance: 3, StandoffSafetyMargin: 1, RangedApproachRadius: 10);
 
 	/// <summary>NR-53b: a stand-off: a ranged route while the target is farther than 15 m, then up to it; after a distance
-	/// refusal come to 10 m, or inside melee reach for a melee skill.</summary>
+	/// refusal come to 10 m, or inside melee reach for a melee skill. NR-53c: when it walks up, it walks to the monster it
+	/// fights and to no other of its kind.</summary>
 	private static readonly NaturalFightMovement Movement = new(NaturalPullStyle.StandOff,
-		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, RangedRouteBeyond: 15, RangeRefusalCloseIn: 10);
+		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, RangedRouteBeyond: 15, RangeRefusalCloseIn: 10, WalksToItsTarget: true);
 
 	// NR-Q5, NR-Q7 and NR-Q13: a one-hand weapon and a shield, plate first, and the kit of a class that does not cast
 	// from mana and rests with the powder.
