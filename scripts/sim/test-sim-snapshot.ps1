@@ -46,6 +46,14 @@ try {
 	Assert-True ($restored.environment.PSObject.Properties.Name -notcontains 'PC_CAPITAL') 'Historical snapshots gained a capital selector.'
 	Assert-True ($restored.environment.PSObject.Properties.Name -notcontains 'NI08_RESUME_ACCOUNT') 'A snapshot of one character gained a round account.'
 
+	# NR-30: the script's one list of class lines is the C# list, line for line, with the same second classes.
+	$lineSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '../../tests/Aion.Bots/Scenarios/Classes/NaturalClassLine.cs')
+	$linesInCode = @([regex]::Matches($lineSource, 'new\("([a-z-]+)", PlayerClass\.[A-Z_]+, (?:PlayerClass\.([A-Z_]+)|null),') |
+		ForEach-Object { "$($_.Groups[1].Value)=$($_.Groups[2].Value)" } | Sort-Object)
+	$linesInScript = @([regex]::Matches((Get-Content -Raw -LiteralPath $script), "(?m)^\t'([a-z-]+)' = (?:'([A-Z_]+)'|\`$null)\s*$") |
+		ForEach-Object { "$($_.Groups[1].Value)=$($_.Groups[2].Value)" } | Sort-Object)
+	Assert-True ($linesInCode.Count -ge 7 -and ($linesInCode -join ',') -eq ($linesInScript -join ',')) "The script's class lines differ from NaturalClassLine.All: code [$($linesInCode -join ',')], script [$($linesInScript -join ',')]."
+
 	# NR-47: a character captured in a round is a record that points at its world's round snapshot.
 	$roundWorld = Join-Path $snapshots 'round-mock-w1'
 	New-Item -ItemType Directory -Path $roundWorld | Out-Null
@@ -611,8 +619,8 @@ exit 0
 		& $script @capture -Name default-leg -AltgardLeg1 -From line-default | Out-Null
 		Assert-True ((Get-SnapshotMetadata 'default-leg').PSObject.Properties.Name -notcontains 'classLine' -and $null -eq (Get-LineJourneys)[0].CP_CLASS) "A leg of the accepted line recorded or set a class line."
 
-		# The capital snapshots. The accepted line's restores on the first pass, as it always did; a Chanter's has no
-		# capital leg and restores on the start stage, where Verify re-checks the endpoint and stops.
+		# The capital snapshots. NR-30: a line with a second class restores on the first pass, the accepted line's as it
+		# always did and a Chanter's with it. A line with no second class has no capital leg.
 		& $script @capture -Name capital-accepted -CapitalStage start | Out-Null
 		& $script @capture -Name chanter-start -CapitalStage start -Class priest-chanter | Out-Null
 		$played = Get-LineJourneys
@@ -624,11 +632,11 @@ exit 0
 		$chanter = Get-SnapshotMetadata 'chanter-start'
 		Assert-True ($chanter.classLine -eq 'priest-chanter' -and $chanter.source -eq 'natural-capital-start') 'A Chanter capital snapshot did not record its line.'
 		$chanterRestored = Restore-Line 'chanter-start'
-		Assert-True ($chanterRestored.environment.PC_CAPITAL -eq 'start' -and $chanterRestored.environment.NA_ASCENSION -eq '1' -and
-			$chanterRestored.environment.CP_CLASS -eq 'priest-chanter') 'A Chanter capital snapshot did not restore on the start stage with its line.'
+		Assert-True ($chanterRestored.environment.PC_CAPITAL -eq 'first' -and $chanterRestored.environment.NA_ASCENSION -eq '1' -and
+			$chanterRestored.environment.CP_CLASS -eq 'priest-chanter') 'A Chanter capital snapshot did not restore on the first pass with its line.'
 		& $script -Action Verify -Name chanter-start -Run verify-chanter -Docker $fake -SnapshotRoot $snapshots | Out-Null
 		$played = Get-LineJourneys
-		Assert-True ($played.Count -eq 1 -and $played[0].PC_CAPITAL -eq 'start' -and $played[0].CP_CLASS -eq 'priest-chanter' -and $played[0].NI08_RESUME_CHARACTER -eq '4242') 'Verify did not take its environment from Restore.'
+		Assert-True ($played.Count -eq 1 -and $played[0].PC_CAPITAL -eq 'first' -and $played[0].CP_CLASS -eq 'priest-chanter' -and $played[0].NI08_RESUME_CHARACTER -eq '4242') 'Verify did not take its environment from Restore.'
 		Assert-True (Test-Path -LiteralPath (Join-Path (Join-Path (Join-Path $snapshots '_verify') 'verify-chanter') 'capital-stage-completion.json')) 'Verify kept no evidence under the snapshot root.'
 		& $script @capture -Name capital-accepted-first -CapitalStage first -From capital-accepted | Out-Null
 		$played = Get-LineJourneys
@@ -656,12 +664,12 @@ exit 0
 		Assert-Throws { & $script @replay -Run wrong-line -From mage-munin -Class warrior } '*holds class line mage; -Class warrior cannot play it*' 'A run changed the line of a snapshot.'
 		Assert-Throws { & $script @replay -Run wrong-line-2 -From munin -Class mage } '*holds class line priest-cleric; -Class mage cannot play it*' 'A run gave a line to a snapshot of the accepted line.'
 		Assert-Throws { & $script @capture -Name wrong-leg -AltgardLeg1 -From mage-munin -Class scout } '*holds class line mage*' 'A leg capture changed the line of its base.'
-		Assert-Throws { & $script @capture -Name chanter-first -CapitalStage first -From chanter-start } '*priest-chanter has no capital leg*' 'A Chanter first capital pass was captured.'
-		Assert-Throws { & $script @replay -Run chanter-first -CapitalStage first -From chanter-start } '*priest-chanter has no capital leg*' 'A Chanter first capital pass was replayed.'
+		Assert-Throws { & $script @capture -Name mage-first -CapitalStage first -From mage-munin } '*mage takes no second class and has no capital leg*' 'A first capital pass of a line with no second class was captured.'
+		Assert-Throws { & $script @replay -Run mage-first -CapitalStage first -From mage-munin } '*mage takes no second class and has no capital leg*' 'A first capital pass of a line with no second class was replayed.'
 		$refusedCalls = @(Get-Content -LiteralPath $log)
 		Assert-True ($refusedCalls[-1] -like '*DROP DATABASE IF EXISTS*' -and @($refusedCalls | Where-Object { $_ -like '*DROP DATABASE*' }).Count -eq 5) 'A refused run kept its restored schema.'
 		Assert-True ((Get-LineJourneys).Count -eq 0 -and $journeysBefore -eq 0) 'A refused run was played.'
-		foreach ($absent in @('wrong-leg', 'chanter-first')) {
+		foreach ($absent in @('wrong-leg', 'mage-first')) {
 			Assert-True (-not (Test-Path -LiteralPath (Join-Path $snapshots $absent))) "A refused capture wrote the snapshot $absent."
 		}
 		# A snapshot that records a line this plan does not hold is not restored.

@@ -88,9 +88,9 @@ public sealed record NaturalAscensionContract(
 	};
 
 	/// <summary>The bridge of a class line that takes a second class. The accepted line's is the reviewed file's, value
-	/// for value.</summary>
+	/// for value. NR-30: the ceremony pick is the line's own unless one is given here.</summary>
 	public static NaturalAscensionContract ForLine(NaturalClassLine line, int? ceremonyItemId = null) => line.Second is { } second
-		? ForChoice(LoadDefault(), NaturalClassLineContract.LoadDefault(), line.Starter, second, ceremonyItemId)
+		? ForChoice(LoadDefault(), NaturalClassLineContract.LoadDefault(), line.Starter, second, ceremonyItemId ?? line.CeremonyItemId)
 		: throw new InvalidOperationException(
 			$"Class line {line.Id} takes no second class, so it has no Ascension bridge: run it with the bridge off, to the Munin stop.");
 

@@ -2190,13 +2190,65 @@ can use them. The order below is the order of work: the item that saves time com
         crowded world it could end before the quest is done.
       - The Scout's hour in the corridor before Q2007's object (NR-47, round 1) did not
         come back in three more rounds.
-- [ ] **NR-30 - The class line carries the pair, the pick and the dispatch; the scripts
+- [x] **NR-30 - The class line carries the pair, the pick and the dispatch; the scripts
   accept every line.** Depends: NR-01, the close of phase B
   - Work: A class line with a second class names its ceremony pick, and ForLine passes it
     (CP-26's finding). The capital contract's dispatch quest is the line's.
     scripts/sim/sim-snapshot.ps1 takes its line ids and its capital lines from one list
     that holds every line with a second class; a snapshot of such a line records it.
   - Proof: scripts/sim/test-sim-snapshot.ps1 passes; gate p, b and l1 identical.
+  - 2026-10-09: done. A line names its ceremony pick, the capital pass has the line's
+    dispatch quest, and the snapshot script has one list of lines. The accepted line
+    plays as recorded.
+    - **Java.** Read for Survey A1 and not changed: quest_data.xml gives a class limit to
+      the dispatch quest alone on the route, and the ceremony's reward list is by class
+      (_2009ACeremonyinPandaemonium.java).
+    - **The change.**
+      - Sc/Classes/NaturalClassLine.cs: CeremonyItemId, the weapon the line takes at
+        Q2009. Null is the reviewed bridge's pick, the staff, which the Cleric's and the
+        Chanter's lists offer; the two lines that exist keep it.
+      - Sc/NaturalAscensionContract.cs, ForLine, and Sc/NaturalIshalgenInventoryPolicy.cs:
+        both pass the line's pick, which CP-26 found they did not.
+      - Sc/NaturalCapitalContract.cs, ForLine: the reviewed walkthrough with the dispatch
+        quest of the line's second class from the class-line contract. The journey loads
+        it for its line. Nothing else of the walkthrough is by class.
+      - scripts/sim/sim-snapshot.ps1: one list, each line with the second class it takes
+        or none. The line ids and the lines that play the capital pass come from it. So
+        the Chanter's line now has a capital leg in the script, as every line with a
+        second class has; the bot still refuses its pass until NR-31. A snapshot of a
+        line other than the accepted one records its line, as it did.
+      - scripts/sim/test-sim-snapshot.ps1 follows: a Chanter's capital snapshot restores
+        on the first pass; the refusal of a first pass is shown on a line with no second
+        class; and a new check holds the script's list to NaturalClassLine.All, line for
+        line with the same second classes.
+      - **Not done here:** the nine lines of the other second classes are not added. Each
+        is its class's first item (NR-x0), which settles its pick by NR-Q5, and adds the
+        line to the C# list and to the script's list; the check above fails until both
+        have it.
+    - **Proof, the one-time check** (run/nr/NR-30/check.log; the check file is not
+      committed): what the rule gives each of the eleven second classes.
+
+      | Second class | Its ceremony list offers | No pick on the line | Dispatch quest |
+      |---|---|---|---|
+      | Cleric, Chanter | mace 100100495, staff 101500498 | loads with the staff | Q2904 |
+      | Gladiator | sword 100000640, greatsword 100900488, polearm 101300479 | refused: no staff offered | Q2901 |
+      | Templar | sword 100000640, greatsword 100900488 | refused | Q2901 |
+      | Assassin, Ranger | dagger 100200605, sword 100000640, bow 101700515 | refused | Q2902 |
+      | Sorcerer, Spirit Master | spellbook 100600532, orb 100500500 | refused | Q2903 |
+      | Gunner | gun 101800506 | refused | Q29070 |
+      | Rider | keyblade 102100489 | refused | Q29070 |
+      | Bard | harp 102000523 | refused | Q29071 |
+
+      With each offered item named on the line, the bridge takes that item with its own
+      reward action, protects it and wears it at its endpoint, and the bridge and the
+      capital pass both have the class's dispatch quest. A line with no second class
+      keeps the reviewed capital contract.
+    - **Proof.** scripts/sim/test-sim-snapshot.ps1 passes, with test_compare_traces.py and
+      test-code-coverage.ps1 (run/nr/NR-30/script-tests.log). Gate, set
+      all+mage+warrior+artist+engineer+scout, -Parallel 8, run guard-p8
+      (run/nr/NR-30/guard-p8/verdict.json): verdict pass, all twelve scopes identical, p, b
+      and l1 among them. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr30-fast, 11 passed).
 - [ ] **NR-31 - The gates read the line's second class.** Depends: NR-30
   - Work: The five refusals of Survey A1's first table (the Ishalgen finish, the Altgard
     and Abyss leg starts, the bridge endpoint, the capital pass), `returnedCleric` in the
@@ -2609,3 +2661,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   seconds. Seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr46d-fast)
   pass. The items for several bots at once are done. Next: NR-30, the class line carries
   the pair, the pick and the dispatch.
+- 2026-10-09 — Loop: NR-30 done. A class line names its ceremony pick and ForLine passes
+  it; the capital pass has the line's dispatch quest; sim-snapshot.ps1 has one list of
+  lines with their second classes, held to the C# list by the script test. One-time check
+  on the eleven second classes: only the Cleric's and the Chanter's lists offer the staff,
+  so every other line must name its pick. Full gate guard-p8: twelve scopes identical.
+  Script tests, seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr30-fast)
+  pass. Next: NR-31, the gates read the line's second class.

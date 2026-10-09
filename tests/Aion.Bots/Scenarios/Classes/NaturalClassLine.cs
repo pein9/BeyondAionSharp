@@ -8,7 +8,11 @@ namespace Aion.Bots.Scenarios.Classes;
 /// Every line is a male Asmodian. What the server decides for a class is in <see cref="NaturalClassLineContract"/>.
 /// </summary>
 /// <param name="Second">The class chosen at Ascension; null for a line that stops before it.</param>
-public sealed record NaturalClassLine(string Id, PlayerClass Starter, PlayerClass? Second, int SimAccountId, string CharacterName)
+/// <param name="CeremonyItemId">NR-30: the weapon the line takes at the ceremony (Q2009), the operator's choice for its
+/// class (NR-Q5). Null is the reviewed bridge's pick, the staff, which the Cleric's and the Chanter's lists offer. A line
+/// whose second class is offered no staff names its pick here.</param>
+public sealed record NaturalClassLine(string Id, PlayerClass Starter, PlayerClass? Second, int SimAccountId, string CharacterName,
+	int? CeremonyItemId = null)
 {
 	/// <summary>The journey test reads the line id from this variable; unset means <see cref="Default"/>.</summary>
 	public const string EnvironmentVariable = "CP_CLASS";

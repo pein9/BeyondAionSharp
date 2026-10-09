@@ -186,7 +186,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		string combatTracePath = session.CombatTracePath ?? throw new InvalidOperationException("Natural journey requires a trace path.");
 		var dashboard = runtime.Dashboard;
 		NaturalIshalgenContract contract = NaturalIshalgenContract.LoadDefault();
-		NaturalCapitalContract capitalContract = NaturalCapitalContract.LoadDefault();
+		NaturalCapitalContract capitalContract = NaturalCapitalContract.ForLine(ClassLine);
 		// CP-20: what the server decides for the line's starter (the Q2132 var and trainer).
 		NaturalStarterClass starterFacts = NaturalClassLineContract.LoadDefault().Starter(ClassLine.Starter);
 		// NR-13: every class's profile is generated from the shipped data.

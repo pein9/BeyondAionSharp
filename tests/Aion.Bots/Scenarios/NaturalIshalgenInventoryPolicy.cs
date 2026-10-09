@@ -117,7 +117,7 @@ public sealed class NaturalIshalgenInventoryPolicy
 		if ((line ?? NaturalClassLine.Default).Second is { } second)
 			bridge = NaturalAscensionContract.ForChoice(bridge,
 				NaturalClassLineContract.Load(Path.Combine(root, "parity-artifacts/e2e/natural-class-lines.json")),
-				(line ?? NaturalClassLine.Default).Starter, second);
+				(line ?? NaturalClassLine.Default).Starter, second, line?.CeremonyItemId);
 		XElement ceremonyQuest = quests.Elements("quest").Single(q => (int)q.Attribute("id")! == bridge.CeremonyReward.QuestId);
 		rewards[bridge.CeremonyReward.QuestId] = ceremonyQuest.Elements(bridge.CeremonyReward.SelectableList)
 			.Select(e => (int)e.Attribute("item_id")!).ToArray();

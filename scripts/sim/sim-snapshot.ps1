@@ -99,9 +99,21 @@ if ($Action -ne 'Replay' -and ($StopAt -or $StopAfterQuest -or $Item -or $Replay
 $fromGiven = $PSBoundParameters.ContainsKey('From')
 # CP-28: the class lines of docs/natural-class-profiles.md. A line the journey does not hold yet fails later, in
 # NaturalClassLine.Parse, with a message that names it. Only the accepted line plays the capital pass.
-$classLines = @('priest-cleric', 'priest-chanter', 'warrior', 'scout', 'mage', 'engineer', 'artist')
+# NR-30: one list. Every class line (NaturalClassLine.All) with the second class it takes at Ascension, or none. A line
+# with a second class plays past the ceremony: the capital pass and the legs. test-sim-snapshot.ps1 holds this list to
+# the C# one; a class's first item adds its line to both.
+$lineSecondClass = [ordered]@{
+	'priest-cleric' = 'CLERIC'
+	'priest-chanter' = 'CHANTER'
+	'warrior' = $null
+	'scout' = $null
+	'mage' = $null
+	'engineer' = $null
+	'artist' = $null
+}
+$classLines = @($lineSecondClass.Keys)
 $defaultClassLine = 'priest-cleric'
-$capitalClassLines = @('priest-cleric')
+$capitalClassLines = @($classLines | Where-Object { $lineSecondClass[$_] })
 if ($Class -and -not $playsScope) { throw 'Class belongs to Capture and Replay; a restored snapshot plays the line it recorded.' }
 if ($Class -and $Class -cnotin $classLines) { throw "Unknown class line '$Class'. Known lines: $($classLines -join ', ')." }
 
@@ -189,7 +201,7 @@ function Set-ClassLine([hashtable]$Extra, [string]$BaseName) {
 		$line = $Class
 	}
 	if ($CapitalStage -eq 'first' -and $line -notin $capitalClassLines) {
-		throw "Class line $line has no capital leg; -CapitalStage first is the accepted line's."
+		throw "Class line $line takes no second class and has no capital leg; -CapitalStage first is for a line that passed the ceremony."
 	}
 	$line
 }
@@ -312,7 +324,7 @@ function Restore-Snapshot([string]$SnapshotName = $Name) {
 	}
 	if ($metadata.PSObject.Properties.Name -contains 'source' -and $metadata.source -like 'natural-capital-*') {
 		$environment.NA_ASCENSION = '1'
-		# CP-28: a line with no capital leg resumes its capital snapshot on the start stage, which re-checks the
+		# CP-28, NR-30: a line with no second class has no capital leg and resumes its capital snapshot on the start stage, which re-checks the
 		# endpoint and stops; the accepted line resumes on the first pass, as it always did.
 		$environment.PC_CAPITAL = $(if ($classLine -and $classLine -notin $capitalClassLines) { 'start' } else { 'first' })
 	}
