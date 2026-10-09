@@ -124,6 +124,16 @@ public sealed partial class NaturalIshalgenJourney
 		public int CompletedRetreats => completedRetreats;
 		/// <summary>NR-15: fights that ended because the target gave up and walked home.</summary>
 		public int TargetReturns { get; private set; }
+
+		/// <summary>
+		/// NR-48: how many targets were taken from under the bot: a monster another player has just killed, or one that
+		/// was gone when the bot reached its place. Only a world shared with other players has them. The kill loop counts
+		/// them apart from its failed pulls.
+		/// </summary>
+		public int TargetsTaken { get; private set; }
+
+		/// <summary>NR-48: a target the caller found taken.</summary>
+		public void NoteTargetTaken() => TargetsTaken++;
 		public bool InCombat { get; private set; }
 		public Func<CancellationToken, Task>? MaintainInventoryAsync { get; set; }
 		/// <summary>Leave the pack; when no checked escape leads away from it (a pocket, a ledge, more
@@ -161,8 +171,14 @@ public sealed partial class NaturalIshalgenJourney
 
 		public async Task KillAsync(int target, CancellationToken token)
 		{
+			int taken = TargetsTaken;
 			if (!await TryKillAsync(target, token))
+			{
+				// NR-48: another player took this one. The caller hunts by its quest's count or its item count, finds the
+				// count unchanged, and goes for the next monster.
+				if (TargetsTaken > taken) return;
 				throw new InvalidDataException($"Engaged NPC {target} disappeared without client-observed kill evidence.");
+			}
 		}
 
 		/// <summary>Runs after every fight that ends in a kill, outside the fight (the general quest-loot sweep).</summary>
@@ -1396,6 +1412,23 @@ public sealed partial class NaturalIshalgenJourney
 				if (session.Api.World.CurrentHp <= 0 || session.Api.World.IsDead)
 				{
 					await ReviveAtBindAsync(token);
+					return false;
+				}
+				if (target != session.CharacterId && started.Get<object>("name") is "STR_SKILL_TARGET_IS_NOT_VALID")
+				{
+					// NR-48: the server refuses a skill on a dead target with this message (Java Skill.java, canUseSkill:
+					// target.isDead()). The monster still stands in the client's view because another player killed it:
+					// its death reaches this client as an emotion, and its corpse is only removed later. Alone, a bot is
+					// the only one that kills. Leave the corpse to its owner and let the caller look for another target.
+					TargetsTaken++;
+					navigator.UnavailableObjects.Add(target);
+					session.TraceDiagnostic("combat-target-taken", new Dictionary<string, object?>
+					{
+						["targetObjectId"] = target,
+						["skillId"] = skill.Id,
+						["npcId"] = session.Api.World.Objects.TryGetValue(target, out BotKnownObject? taken) ? taken.TemplateId : null,
+						["position"] = session.CurrentPosition,
+					});
 					return false;
 				}
 				throw new InvalidDataException($"Cast {skill.Id} rejected: {started.Get<object>("name")}.");

@@ -2044,15 +2044,18 @@ can use them. The order below is the order of work: the item that saves time com
         on from where they stopped and reach Munin. The Engineer goes on and stops again.
     - **Found: a bot meets what another bot has taken.** Four of the six stops of the
       rounds so far are of one kind, and a bot alone never meets it.
-      - A cast is refused with STR_SKILL_TARGET_IS_NOT_VALID right after the target's
-        SM_DELETE: the quest generator of Q2007 had just been used by another bot (the
-        Warrior in round 1, the Engineer in round 2), or the stalker of Q2005 was gone
-        (the Engineer in round 1). The journey throws on a refused cast.
-      - A quest object is not there to use: the Scout made no progress for an hour at
-        Q2007's object 700087 in round 1.
+      - A cast is refused with STR_SKILL_TARGET_IS_NOT_VALID (the Warrior at Q2007's
+        generator in round 1, the Engineer there in round 2 and at a stalker of Q2005 in
+        round 1). The journey throws on a refused cast. Corrected by NR-48: the target had
+        not gone. It was a monster another bot had killed, still standing in this bot's
+        view.
+      - The Scout made no progress for an hour on its way to Q2007's object 700087 in
+        round 1. Corrected by NR-48: the object was not missing. The Scout fought through
+        the corridor of monsters before it again and again and was pushed back each time.
+        That is a stop of another kind.
       - A hunting ground is empty: the Scout at Q2003 in NR-44's round.
       - NR-48 is written for it. It is the first thing rounds of classes need.
-- [ ] **NR-48 - A bot meets what another bot has taken.** Depends: NR-47
+- [x] **NR-48 - A bot meets what another bot has taken.** Depends: NR-47
   - Work: Java first: when a used quest object and a killed monster come back. Three
     cases, each a stop today and each an outcome of a shared world: a cast refused because
     its target has just gone; a quest object that is not there to use; a hunting ground
@@ -2062,6 +2065,57 @@ can use them. The order below is the order of work: the item that saves time com
   - Proof: The full gate with -Parallel 8 identical. The round of round-munin.json played
     again in two worlds: all six reach Munin, or what still stops is of another kind and
     gets its own item.
+  - 2026-10-09: done. The same round now takes all six starters to Munin, and a bot alone
+    plays as before.
+    - **Java first.** Skill.java, canUseSkill, lines 244 to 248: a skill on a dead target
+      is refused with STR_SKILL_TARGET_IS_NOT_VALID. A monster's death is sent to the
+      players around it as an emotion, and its corpse is removed later; when it comes back
+      is its spawn group's respawn time, which the journey's wait for an empty place
+      already reads.
+    - **What the stops were.** The traces of NR-47's refused casts show the target still
+      in the bot's view and no SM_DELETE for it. The bot's world model takes a monster for
+      dead only from the state in its SM_NPC_INFO or when it is removed; it does not read
+      a death out of an emotion. Alone, a bot is the only one that kills, so it never
+      walks up to a corpse it did not make. In a shared world it does, and casts on it.
+    - **The change** (generic: no class, no quest).
+      - Sc/NaturalIshalgenJourney.Combat.cs, the cast: a refusal with that message on
+        another object sets the target aside (the navigator's unavailable objects), counts
+        it (TargetsTaken), records "combat-target-taken" and ends the fight without a
+        kill. Every other refusal throws as before.
+      - The same file, KillAsync, which the Ishalgen quest steps call for a kill they
+        need: when the target was taken it returns. The step hunts by its quest's count
+        or its item count, finds it unchanged, and goes for the next monster. This was
+        the one small change of rule (e), after attempt a1.
+      - Sc/NaturalIshalgenJourney.cs, the kill loop: a monster that is gone from the
+        bot's view when the fight's approach fails is a taken target, not a blocked
+        approach. Taken targets are counted apart from the six failed pulls, twenty-four
+        to a hunt. The place fills again through the wait the loop already has.
+      - Not done: the world model does not learn a death from the emotion. That would
+        change what a bot alone sees wherever a guard kills a monster, and so the recorded
+        scopes.
+    - **Proof.**
+      - **Attempt a1** (run r3-a1, run/nr/NR-48/r3-a1; round file
+        run/nr/NR-47/round-munin.json; two worlds, three starters each, to Munin): five
+        reach Munin. The Warrior and the Engineer met a taken target three times each and
+        went on. The Priest stopped at Q2105: its cast was refused, the target was set
+        aside, and the quest step that needs a kill threw.
+      - **Attempt a2** (run r3-a2, run/nr/NR-48/r3-a2, with the small change): **all six
+        reach Munin**, level 9 with 41 quests each. A taken target was met fourteen times:
+        the Priest six, the Warrior four, the Engineer three, the Mage one. 1,314 seconds
+        of wall time.
+      - **Not shown in play:** the kill loop's own case, a monster gone before the bot
+        reaches it, did not occur in either attempt ("kill-target-taken" 0 times). It is
+        the Scout's stop of NR-44's round, and stays untested until a round meets it.
+      - **A bot alone plays as before.** Gate, set
+        all+mage+warrior+artist+engineer+scout, -Parallel 8, run guard-p8
+        (run/nr/NR-48/guard-p8/verdict.json): verdict pass, all twelve scopes identical.
+      - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+        passed, 16 skipped) and Fast passes (run nr48-fast, 11 passed).
+    - **Logged, not fixed (rule (f)).**
+      - Q2114's hunt counts its attempts to ten. Taken targets use attempts up, so in a
+        crowded world it could end before the quest is done.
+      - The Scout's hour in the corridor before Q2007's object (NR-47, round 1) did not
+        come back in three more rounds.
 - [ ] **NR-30 - The class line carries the pair, the pick and the dispatch; the scripts
   accept every line.** Depends: NR-01, the close of phase B
   - Work: A class line with a second class names its ceremony pick, and ForLine passes it
@@ -2464,3 +2518,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   in its play stopped, the Warrior beside it reached its end. Full gate guard-p8: twelve
   scopes identical. Seven checks and Fast (nr44a-fast) pass. Next: NR-48, a bot meets
   what another bot has taken.
+- 2026-10-09 — Loop: NR-48 done. The refused casts were on monsters another bot had killed
+  and that still stood in the bot's view (Java refuses a skill on a dead target with that
+  message). Such a target is set aside and the hunt goes on; a quest step that needs a
+  kill looks for the next. Round r3-a2, two worlds of three starters: all six reach Munin.
+  Full gate guard-p8: twelve scopes identical. Seven checks, unit suite (4,629 passed, 16
+  skipped) and Fast (nr48-fast) pass. Next: NR-46c, the journey's own code.

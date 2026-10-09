@@ -8283,7 +8283,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					SweptQuestItems.TryGetValue(session.Api.World, out Dictionary<int, List<int>>? swept)
 					? swept.Where(entry => entry.Value.Contains(collection.ItemId)).Select(entry => (int?)entry.Key).LastOrDefault()
 					: null;
-				int unsuccessfulKills = 0, tacticalRetreats = 0, walkedHome = 0;
+				int unsuccessfulKills = 0, tacticalRetreats = 0, walkedHome = 0, takenByOthers = 0;
 				var failedTargets = new Dictionary<int, int>();
 				for (int attempt = 1; ; attempt++)
 				{
@@ -8304,8 +8304,25 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					int revives = combat.ReviveCount;
 					int retreats = combat.CompletedRetreats;
 					int returns = combat.TargetReturns;
+					int taken = combat.TargetsTaken;
 					int evidenceStart = session.PacketHistory.Count;
-					bool killed = await PullAndKillAsync(target, $"kill-{templateId}");
+					bool killed;
+					try
+					{
+						killed = await PullAndKillAsync(target, $"kill-{templateId}");
+					}
+					catch (NaturalCombatApproachBlockedException gone) when (!session.Api.World.Objects.ContainsKey(target))
+					{
+						// NR-48: the monster the bot was walking to is no longer there. Alone that does not happen on the way
+						// to a pull; in a shared world another player killed it and its corpse is gone. It is not a blocked
+						// approach: look for another, and wait for the place to fill again as an empty one is waited for.
+						combat.NoteTargetTaken();
+						session.TraceDiagnostic("kill-target-taken", new Dictionary<string, object?>
+						{
+							["template"] = templateId, ["target"] = target, ["reason"] = gone.Message, ["position"] = session.CurrentPosition,
+						});
+						killed = false;
+					}
 					// Pull planning may defend against this very target as an add, then report
 					// it vanished when its corpse leaves the visible NPC list. At the level cap
 					// the EXP total cannot rise; its 0% HP packet is still kill evidence.
@@ -8350,6 +8367,13 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					// starts its return again (Java AttackEventHandler.onAttack, state RETURNING), so it could not be fought:
 					// that is not one of the six failed pulls. After a retreat a whole pack walks home, and three of its
 					// members used up the six in 28 s. The same monster twice is still left for another, as above.
+					// NR-48: a target another player took is not one of the six failed pulls either. Twenty-four of them in
+					// one hunt is a ground that others keep empty; the stall budget ends such a hunt before this does.
+					else if (!died && combat.TargetsTaken > taken)
+					{
+						if (++takenByOthers >= 24)
+							throw new InvalidDataException($"NPC {templateId}: {takenByOthers} targets were taken by others (last target {target}).");
+					}
 					else if (!died && combat.TargetReturns > returns)
 					{
 						if (++walkedHome >= 12)
