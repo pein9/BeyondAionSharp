@@ -57,6 +57,12 @@ public sealed record NaturalClassLine(string Id, PlayerClass Starter, PlayerClas
 	/// <summary>The starter as messages name it (<c>Priest</c>).</summary>
 	public string StarterName => char.ToUpperInvariant(StarterLabel[0]) + StarterLabel[1..];
 
+	/// <summary>NR-31: the second class as a gate names it when it refuses (<c>Cleric</c>, <c>Spirit Master</c>). A line
+	/// that takes none is refused by every such gate, which then asks for "the second class".</summary>
+	public string SecondName => Second is { } second
+		? string.Join(' ', second.ToString().Split('_').Select(word => char.ToUpperInvariant(word[0]) + word[1..].ToLowerInvariant()))
+		: "second class";
+
 	/// <summary>CP-23 (CP-Q13, on its default): a line of a new starter runs the equipment check after each completed
 	/// Ishalgen quest. A line whose starter is the Priest keeps the accepted Priest's check points, at the end of a rest,
 	/// so its Ishalgen trace stays as recorded: the accepted line, and (CP-32) the Chanter line, whose levels 1-9 are the

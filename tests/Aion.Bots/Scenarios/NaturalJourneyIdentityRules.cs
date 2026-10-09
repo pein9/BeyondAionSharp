@@ -13,10 +13,11 @@ public enum NaturalJourneyStage
 }
 
 /// <summary>
-/// NA-07: the only two states a retained natural character may be in. Everything else is rejected — a Chanter,
-/// a Priest past level 9, a Cleric outside the bridge's maps — because the journey never "fixes" a character.
-/// ND-01 permits the level-20 Cleric's Space of Destiny only when the caller explicitly selects Altgard l11.
-/// AX-03 permits the level-25 Cleric's Morheim and Triniel arena only when the caller selects the ax leg.
+/// NA-07: the only two states a retained natural character may be in. Everything else is rejected — a class the
+/// line does not hold, a starter past level 9, a second class outside the bridge's maps — because the journey never
+/// "fixes" a character. ND-01 permits the level-20 Space of Destiny only when the caller explicitly selects Altgard l11.
+/// AX-03 permits the level-25 Morheim and Triniel arena only when the caller selects the ax leg. NR-31: these maps are
+/// open to the second class of the run's line, as the bridge's maps are; a call that names no line asks for the Cleric.
 /// </summary>
 public static class NaturalJourneyIdentityRules
 {
@@ -42,8 +43,8 @@ public static class NaturalJourneyIdentityRules
 	/// <summary>
 	/// CP-25: the same two states for any class line. <see cref="NaturalJourneyStage.IshalgenPriest"/> is the line's
 	/// starter before Ascension, at level 1-9 on the starter maps; <see cref="NaturalJourneyStage.AscensionCleric"/> is
-	/// the line's second class on the bridge maps, and a line without a second class has no such state. The Convent and
-	/// the leg-scoped maps are the Cleric's legs and stay tied to the Cleric.
+	/// the line's second class on the bridge maps, and a line without a second class has no such state. NR-31: the
+	/// Convent and the leg-scoped maps are open to the line's second class too.
 	/// </summary>
 	public static NaturalJourneyStage Classify(NaturalClassLine line, PlayerClass playerClass, int level, int? worldId, string? altgardLeg = null) =>
 		Classify(line.Starter, line.Second, playerClass, level, worldId, altgardLeg);
@@ -55,11 +56,10 @@ public static class NaturalJourneyIdentityRules
 		if (playerClass == starter && level is >= 1 and <= 9 && (worldId is null || PriestMaps.Contains(worldId.Value)))
 			return NaturalJourneyStage.IshalgenPriest;
 		if (chosen is { } second && playerClass == second && level >= 9 && (worldId is null || ClericMaps.Contains(worldId.Value) ||
-			second == PlayerClass.CLERIC && (
 			level >= 10 && worldId == 120020000 || // PC-06: ordinary Convent visit after the ceremony.
 			altgardLeg == "l11" && level >= 20 && worldId == 320070000 ||
 			altgardLeg == "l12" && level >= 16 && worldId == 300200000 ||
-			altgardLeg == NaturalAbyssEntry.Leg && level >= 25 && worldId is NaturalAbyssEntry.Morheim or NaturalAbyssEntry.ArenaMap)))
+			altgardLeg == NaturalAbyssEntry.Leg && level >= 25 && worldId is NaturalAbyssEntry.Morheim or NaturalAbyssEntry.ArenaMap))
 			return NaturalJourneyStage.AscensionCleric;
 		throw new InvalidDataException(
 			$"Retained natural character is outside the journey: {playerClass} level {level} on map {worldId?.ToString() ?? "unknown"}.");

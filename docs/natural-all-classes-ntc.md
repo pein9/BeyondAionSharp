@@ -2249,7 +2249,7 @@ can use them. The order below is the order of work: the item that saves time com
       (run/nr/NR-30/guard-p8/verdict.json): verdict pass, all twelve scopes identical, p, b
       and l1 among them. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr30-fast, 11 passed).
-- [ ] **NR-31 - The gates read the line's second class.** Depends: NR-30
+- [x] **NR-31 - The gates read the line's second class.** Depends: NR-30
   - Work: The five refusals of Survey A1's first table (the Ishalgen finish, the Altgard
     and Abyss leg starts, the bridge endpoint, the capital pass), `returnedCleric` in the
     decision loop and the leg-scoped maps of the identity rules accept the second class of
@@ -2257,6 +2257,54 @@ can use them. The order below is the order of work: the item that saves time com
     the Cleric's.
   - Proof: One-time check of Classify and the capital decision for every line; the full
     gate identical.
+  - 2026-10-09: done. Every gate of Survey A1's first table but the NA-23 encounter now
+    asks for the second class of the run's line. The accepted line plays as recorded.
+    - **Java.** No server behavior is relied on beyond what Survey A1 read: all eleven
+      classes can be chosen at Q2008, and no map of the route has a class limit.
+    - **The change.**
+      - Sc/Classes/NaturalClassLine.cs, SecondName: the second class as a refusal names it
+        ("Cleric", "Spirit Master"); a line that takes none is asked for "the second class".
+      - Sc/NaturalJourneyIdentityRules.cs, Classify: the Convent and the l11, l12 and ax
+        maps are open to the second class of the line it is given, each with its leg and
+        level as before. A call that names no line still asks for the Cleric.
+      - Sc/NaturalIshalgenDecisionLoop.cs, Decide: takes the line. `returnedCleric` is
+        `returnedSecond`: the line's second class, at level 10 or above with Q2008 and
+        Q2009 complete. Any other class stops with "returned-class", by name.
+        Sc/NaturalJourneyCheckpoint.cs, Capture, passes the line on, because the Ishalgen
+        loop takes its next decision from the checkpoint.
+      - Sc/NaturalCapitalDecisionEngine.cs, Decide: takes the line; the pass is its second
+        class's, and the refusal over the dispatch quest names the contract's quest.
+      - J: the Ishalgen finish, the Altgard leg start and the Abyss leg start ask
+        IsLineSecondClass; the bridge endpoint classifies with the run's line; all 24 calls
+        of the Ishalgen decision and the checkpoint pass the line; the capital pass passes
+        it. The NA-23 encounter stays the Cleric's.
+    - **What is still the Cleric's past these gates** is the rest of phase C: reward pins
+      (NR-32), protected items (NR-33), the help kit (NR-34), the shop (NR-35), the shot in
+      flight (NR-36), the patrol rule (NR-37), coin gear (NR-38), the destiny and Haramel
+      data (NR-39, NR-40) and the receipts (NR-41). A line of another class passes the
+      gates now and stops at the first of those it meets.
+    - **Proof, the one-time check** (run/nr/NR-31/check.log; the check file is not
+      committed): the seven lines a run can name, and a line made for each of the nine
+      second classes that have none yet.
+      - **Classify.** Each line's second class is accepted in Altgard, in the Convent, in
+        the Space of Destiny with leg l11 at level 20, in Haramel with leg l12 at level 16,
+        and in Morheim and the arena with leg ax at level 25. The same maps without the
+        leg, or one level below, are refused. Each of the ten other second classes is
+        refused in all six places (60 refusals a line). A line with no second class has no
+        second-class state at all.
+      - **The return to Ishalgen.** The line's second class goes on with the Ishalgen
+        quests and ends with journey-complete; another class is stopped, for example "The
+        Ishalgen return after the ceremony needs the Spirit Master; the character is
+        GLADIATOR."
+      - **The capital pass.** With the line's class and its dispatch quest at START/0 the
+        first decision is the same for all eleven: talk to npc 204079 for Q2911. The
+        dispatch quest is Q2901, Q2902, Q2903, Q2904, Q29070 or Q29071 by class. Another
+        class is blocked by name, and so is another class's dispatch quest in the journal.
+      - **Without a line** both engines ask for the Cleric, as before.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-31/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
+      16 skipped) and Fast passes (run nr31-fast, 11 passed).
 - [ ] **NR-32 - Reward picks by the class's gear rule.** Depends: NR-31
   - Work: Java first: the reward lists of the route's quests, and how a per-class list is
     chosen (QuestTemplate, as read for CP-31). A leg's reward pin is the Cleric's; for
@@ -2668,3 +2716,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   so every other line must name its pick. Full gate guard-p8: twelve scopes identical.
   Script tests, seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr30-fast)
   pass. Next: NR-31, the gates read the line's second class.
+- 2026-10-09 — Loop: NR-31 done. The Ishalgen finish, the Altgard and Abyss leg starts, the
+  bridge endpoint, the return to Ishalgen, the capital pass and the leg-scoped maps of the
+  identity rules ask for the second class of the run's line and refuse every other class
+  by name; NA-23 stays the Cleric's. One-time check on the seven lines and on a line for
+  each of the nine other second classes. Full gate guard-p8: twelve scopes identical.
+  Seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr31-fast) pass. Next:
+  NR-32, reward picks by the class's gear rule.

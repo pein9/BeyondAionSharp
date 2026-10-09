@@ -832,7 +832,7 @@ public sealed partial class NaturalIshalgenJourney
 		public bool IsLineSecondClass => classLine.Second is { } second &&
 			session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass == second.GetClassId();
 
-		/// <summary>The character as a Cleric-only gate names it when it refuses.</summary>
+		/// <summary>The character as a class gate names it when it refuses.</summary>
 		public string ObservedCharacter => $"level {session.Api.World.Level} " +
 			NaturalJourneyIdentityRules.ClassName(session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass);
 

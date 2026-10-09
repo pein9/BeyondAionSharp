@@ -59,9 +59,13 @@ public sealed record NaturalDecision(
 
 public static class NaturalIshalgenDecisionEngine
 {
+	/// <param name="line">NR-31: the run's class line; its second class is the one that may return to Ishalgen after the
+	/// ceremony. Unset is the accepted line, the Cleric.</param>
 	public static NaturalDecision Decide(NaturalIshalgenContract contract, NaturalIshalgenObservation state, int sequence,
-		bool earlyAscension = false)
+		bool earlyAscension = false, Classes.NaturalClassLine? line = null)
 	{
+		Classes.NaturalClassLine played = line ?? Classes.NaturalClassLine.Default;
+		byte? secondClassId = played.Second is { } second ? Aion.GameServer.Model.PlayerClassExtensions.GetClassId(second) : null;
 		var global = new List<NaturalDecisionCheck>();
 		if (!state.Fresh || !state.JournalObserved || !state.CompletedJournalObserved || state.MapId == null)
 		{
@@ -78,31 +82,31 @@ public static class NaturalIshalgenDecisionEngine
 			return Stop("wrong-map", $"Observed map {state.MapId}, expected {contract.MapId}.", "blocked");
 		if (inRaeInstance)
 			global.Add(new("quest-transport", "pass", "Q2002 START/99 authorizes temporary Ataxiar map 320010000; return to Ishalgen by quest dialogue."));
-		// OD-16: Ascension-enabled leveling interrupts Ishalgen at level 9, then returns as a
-		// ceremony-proven Cleric. The original Priest-only contract remains the diagnostic default.
-		bool returnedCleric = earlyAscension && state.Level >= 10 && state.PlayerClass == 10 &&
+		// OD-16: Ascension-enabled leveling interrupts Ishalgen at level 9, then returns as the
+		// ceremony-proven second class of its line. The original Priest-only contract remains the diagnostic default.
+		bool returnedSecond = earlyAscension && state.Level >= 10 && secondClassId != null && state.PlayerClass == secondClassId &&
 			state.CompletedQuestIds.Contains(contract.AscensionQuestId) && state.CompletedQuestIds.Contains(2009);
 		if (earlyAscension && !state.IsDead && state.Level == contract.AscensionLevel &&
 			!state.CompletedQuestIds.Contains(2009))
 			return new(sequence, "ascend-now", state.CompletedQuestIds.Contains(contract.AscensionQuestId) ? 2009 : contract.AscensionQuestId,
 				"planned", "Level 9: complete Munin's Ascension and the Pandaemonium ceremony before further Ishalgen work.", [.. global], []);
-		// CP-27: the return to Ishalgen after the ceremony stays the Cleric's; another second class is refused by name.
-		if (earlyAscension && state.Level >= 10 && state.PlayerClass is { } returnedClass && returnedClass != 10 &&
+		// CP-27, NR-31: the return to Ishalgen after the ceremony is the line's second class's; any other class is refused by name.
+		if (earlyAscension && state.Level >= 10 && state.PlayerClass is { } returnedClass && returnedClass != secondClassId &&
 			state.CompletedQuestIds.Contains(contract.AscensionQuestId) && state.CompletedQuestIds.Contains(2009))
-			return Stop("returned-class", "The Ishalgen return after the ceremony needs the Cleric; the character is " +
+			return Stop("returned-class", $"The Ishalgen return after the ceremony needs the {played.SecondName}; the character is " +
 				$"{NaturalJourneyIdentityRules.ClassName(returnedClass)}.", "blocked");
-		if (state.Level >= 10 && !returnedCleric)
+		if (state.Level >= 10 && !returnedSecond)
 			return Stop("pre-ascension-level", $"Observed level {state.Level}; the journey must stop below level 10.", "blocked");
-		if (state.CompletedQuestIds.Contains(contract.AscensionQuestId) && !returnedCleric)
+		if (state.CompletedQuestIds.Contains(contract.AscensionQuestId) && !returnedSecond)
 			return Stop("ascension-boundary", "Ascension is already completed in the client journal.", "blocked");
 		if (state.IsDead)
 			return Stop("survival", "Death recovery requires NI-04.", "awaiting-capability");
-		if (!returnedCleric && state.Level >= contract.AscensionLevel &&
+		if (!returnedSecond && state.Level >= contract.AscensionLevel &&
 			state.Quests.TryGetValue(contract.AscensionQuestId, out BotQuestState? ascension) &&
 			(ascension.Status != 3 || ascension.StepAndFlags != 0))
 			return Stop("ascension-boundary", "Ascension advanced beyond START/0.", "blocked");
-		global.Add(new("journey-boundary", "pass", returnedCleric
-			? $"Map {state.MapId}, level {state.Level}, Cleric with Q2008/Q2009 complete; finish the retained Ishalgen quests."
+		global.Add(new("journey-boundary", "pass", returnedSecond
+			? $"Map {state.MapId}, level {state.Level}, {played.SecondName} with Q2008/Q2009 complete; finish the retained Ishalgen quests."
 			: $"Map {state.MapId}, level {state.Level}, Ascension untouched."));
 
 		var candidates = new List<(int Priority, int MinimumLevel, int Id, string Action)>();
@@ -151,7 +155,7 @@ public static class NaturalIshalgenDecisionEngine
 		}
 		if (quests.All(quest => quest.Verdict == "complete"))
 		{
-			if (returnedCleric)
+			if (returnedSecond)
 				return new(sequence, "journey-complete", null, "complete",
 					"All included Ishalgen quests and the early Ascension ceremony are complete.", [.. global], [.. quests]);
 			if (state.Level == contract.AscensionLevel &&

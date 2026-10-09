@@ -31,22 +31,26 @@ public static class NaturalCapitalDecisionEngine
 			throw new InvalidOperationException("Capital checkpoints require a SIM Ascension run with stage start/first and no other diagnostic scope.");
 	}
 
-	public static NaturalCapitalDecision Decide(NaturalCapitalContract contract, NaturalAscensionObservation state)
+	/// <param name="line">NR-31: the run's class line; the pass is its second class's, with the contract's dispatch quest
+	/// (<see cref="NaturalCapitalContract.ForLine"/>). Unset is the accepted line, the Cleric.</param>
+	public static NaturalCapitalDecision Decide(NaturalCapitalContract contract, NaturalAscensionObservation state,
+		Classes.NaturalClassLine? line = null)
 	{
+		Classes.NaturalClassLine played = line ?? Classes.NaturalClassLine.Default;
+		string ceremony = $"The capital pass requires the completed level-10 {played.SecondName} ceremony";
 		NaturalCapitalDecision Block(string reason) => new("blocked", reason);
 		bool Done(int id) => state.CompletedQuestIds.Contains(id);
 		BotQuestState? Quest(int id) => state.Quests.GetValueOrDefault(id);
 		int Var(int id) => (Quest(id)?.StepAndFlags ?? 0) & 0x00FFFFFF;
 		if (!state.Synchronized || state.MapId == null) return new("observe", "Wait for both journals and the player view.");
 		if (state.IsDead) return new("recover", "Record the death and use the retained bind/revival budget.");
-		// CP-27: the capital pass stays the Cleric's; another class is refused by name.
-		if (state.ClassId != PlayerClass.CLERIC.GetClassId())
-			return Block("The capital pass requires the completed level-10 Cleric ceremony; the character is " +
-				$"{NaturalJourneyIdentityRules.ClassName(state.ClassId)}.");
+		// CP-27, NR-31: the capital pass is the line's second class's; any other class is refused by name.
+		if (played.Second is not { } second || state.ClassId != second.GetClassId())
+			return Block($"{ceremony}; the character is {NaturalJourneyIdentityRules.ClassName(state.ClassId)}.");
 		if (state.Level < contract.MinimumLevel ||
-			!contract.RequiredCompletedQuestIds.All(Done)) return Block("The capital pass requires the completed level-10 Cleric ceremony.");
+			!contract.RequiredCompletedQuestIds.All(Done)) return Block($"{ceremony}.");
 		if (Quest(contract.DispatchQuestId) is not { Status: 3 } || Var(contract.DispatchQuestId) != 0 || Done(contract.DispatchQuestId))
-			return Block("Leave Q2904 at START/0 during this pass.");
+			return Block($"Leave Q{contract.DispatchQuestId} at START/0 during this pass.");
 		if (contract.Branch.ExcludedQuestIds.Any(id => Done(id) || Quest(id)?.Status is 3 or 4) ||
 			Quest(2911) is { Status: 4 } && Var(2911) != 2)
 			return Block("The observed Blessing branch is outside the approved Ribbon/Lost Love choice.");
