@@ -1692,12 +1692,81 @@ can use them. The order below is the order of work: the item that saves time com
         passed, 16 skipped) and Fast passes (run nr45-fast, 11 passed).
     - **From here** the loop plays the guard gate with -Parallel 8, and asks
       sim-run-marker.ps1 before it builds.
-- [ ] **NR-46 - Where the bot's side of a run goes.** Depends: NR-45
+- [x] **NR-46 - Where the bot's side of a run goes.** Depends: NR-45
   - Work: No committed code. With a one-time probe on scope c, split the bot's side into
     its parts: reading and decoding packets, the bot's world model, decisions, routes, the
     trace, the monitor. Write the table here. For each part that is more than a tenth of
     the run and can be made cheaper without changing a trace, write a lettered item.
   - Proof: The table is in this document; the probe is removed and the tree is clean.
+  - 2026-10-09: done. Half of a run is one function, the tracing of an edge on the
+    ground. The parts the survey expected to cost (packets, the world model, decisions,
+    the trace, the monitor) cost almost nothing.
+    - **How it was measured.** A one-time probe, not committed, of named sections with
+      exclusive time, on replays of two scopes (run/nr/NR-46/: split-c, split-c2, split-c3
+      and split-mage, all passed). Three passes on scope c, each with more sections.
+    - **Scope c, Altgard leg 4: 298.3 seconds** (the third pass, split-c3.txt).
+
+      | Part | Seconds | Share | Calls |
+      |---|---|---|---|
+      | Tracing an edge on the ground (BotNavigationGeometry.TraceEdge) | 154.9 | 51.9% | 1,362,870 |
+      | The journey's own code, not split further | 57.9 | 19.4% | |
+      | Navmesh routes | 34.8 | 11.7% | 683 |
+      | The server: its clock | 34.3 | 11.5% | 19,114 |
+      | The server: handling the bot's packets | 7.4 | 2.5% | 42,076 |
+      | The grid search, without its edge traces | 4.3 | 1.4% | 150 |
+      | The trace, building and writing its lines | 1.2 | 0.4% | 112,257 |
+      | Building the waypoint graph | 1.1 | 0.4% | 2 |
+      | Line of sight | 0.6 | 0.2% | 11,844 |
+      | Loading the inventory policy | 0.5 | 0.2% | 3 |
+      | Decoding packets, the world model, the problem policy, the monitor, fight and leg decisions, together | 0.9 | 0.3% | |
+
+      - Nearly all the edge traces come from the grid search. With its traces counted in
+        (the second pass) the grid search is 139.9 seconds over 150 searches: almost a
+        second a search. It is the fallback for a route the navmesh does not give within
+        60 m.
+      - So routes are 65% of this scope, the server 14%, the journey's own code 19%.
+    - **Scope mage, Ishalgen to Q2004: 30.1 seconds** (one pass, split-mage.txt).
+
+      | Part | Seconds | Share | Calls |
+      |---|---|---|---|
+      | Waiting in real time for a packet | 10.0 | 33.3% | 12,644 reads |
+      | The grid search with its edge traces | 7.4 | 24.7% | 23 |
+      | The server: its clock | 5.0 | 16.7% | 6,082 |
+      | The server: handling the bot's packets | 1.8 | 6.1% | 13,954 |
+      | Navmesh routes | 0.5 | 1.7% | 57 |
+      | Everything else, the journey's own code in it | 5.4 | 17.5% | |
+
+      - The ten seconds are two waits of five real seconds for a loot list that did not
+        come (NaturalIshalgenJourney.cs, the loot of a corpse). Nothing can arrive during
+        such a wait: a bot's packets come only when it sends or waits in game time. Scope
+        c had none.
+    - **What follows.** Four lettered items, below. The server's own 14% is the port's
+      code and is not this plan's to speed up.
+    - **Proof.** The tables above. The probe is removed, the tree is clean and the build
+      outputs are rebuilt without it.
+- [ ] **NR-46a - The grid search and its edge traces.** Depends: NR-46
+  - Work: First count, with a one-time probe on scope c: how many of the 150 searches end
+    with no route, how many cells each visits, and how often one search traces the same
+    edge twice. Then make the search cheaper with the same answers: an edge traced once in
+    a search is not traced again, and whatever else the count shows. No route may change.
+  - Proof: The full gate with -Parallel 8 identical. Scope c's wall time before and after.
+- [ ] **NR-46b - A wait that no packet can end.** Depends: NR-46a
+  - Work: A wait with a real-time limit (five seconds for a loot list, two for a quest's
+    reply) sits out its limit although nothing can arrive. In the SIM session such a wait
+    ends at once when no packet is queued, with the same outcome as the limit. The live
+    session is not touched.
+  - Proof: The full gate with -Parallel 8 identical. Scope mage's wall time before and
+    after.
+- [ ] **NR-46c - The journey's own code.** Depends: NR-47
+  - Work: A fifth of scope c is the journey's own code and was not split. Split it with a
+    one-time probe (pull planning, movement plans, what it observes each step) and write
+    the table. A part over a tenth of the run that can be made cheaper with the same
+    answers is fixed here; otherwise the table closes the item.
+  - Proof: The table is in this document; the full gate identical if code changed.
+- [ ] **NR-46d - Navmesh routes.** Depends: NR-47
+  - Work: 683 routes at 51 ms each are 11.7% of scope c. Count how many are asked again
+    with the same arguments, and reuse an answer only where it is certain to be the same.
+  - Proof: The full gate with -Parallel 8 identical. Scope c's wall time before and after.
 - [ ] **NR-44 - Bots take turns in one world.** Depends: NR-45
   - Work: Survey C1, parts 4 to 6. Java first: who gets a quest's kill when two players
     hit one monster. The turn table; the wait that can yield; a bot id, options, trace
@@ -1794,7 +1863,8 @@ can use them. The order below is the order of work: the item that saves time com
     line and plays the legs in the Cleric's order; a capture after a leg is named
     <the Cleric's snapshot name>-<class>.
   - Proof: scripts/sim/test-sim-snapshot.ps1 passes; the full gate identical.
-- [ ] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41 and NR-43 to NR-47
+- [ ] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41, NR-43 to NR-47 and NR-46a to
+  NR-46d
   - Work: No code. The full gate on every recorded scope, and one table in this document
     of what each class gets at each class-bound point of the route.
   - Proof: Every scope identical to its baseline.
@@ -2078,3 +2148,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   tests, seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr45-fast) pass.
   The guard gate is played with -Parallel 8 from here. Next: NR-46, where the bot's side
   of a run goes.
+- 2026-10-09 — Loop: NR-46 done, no committed code. Scope c, 298 seconds: tracing an edge
+  on the ground 51.9% (1.36 million calls, nearly all from 150 grid searches), the
+  journey's own code 19.4%, navmesh routes 11.7%, the server 14%; packets, the world
+  model, decisions, the trace and the monitor under 1% together. Scope mage lost a third
+  of its 30 seconds to two real-time waits for a loot list. Written: NR-46a (grid search),
+  NR-46b (waits no packet can end), then after NR-47 NR-46c (the journey's own code) and
+  NR-46d (navmesh routes). Next: NR-46a.
