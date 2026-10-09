@@ -45,7 +45,7 @@ public static class NaturalWarriorProfile
 
 	/// <summary>CP-Q11: the Minor Life Elixir of trade list 721, bought at 5 or fewer up to 12, and no purchase takes
 	/// Kinah below 500.</summary>
-	private static readonly NaturalRestockRules Restock = new(NaturalPriestProfile.PriestLineRestock.Lines, kinahFloor: 500);
+	internal static readonly NaturalRestockRules Restock = new(NaturalPriestProfile.PriestLineRestock.Lines, kinahFloor: 500);
 
 	public static NaturalClassProfile Create(StaticData data)
 	{

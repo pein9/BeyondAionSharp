@@ -40,8 +40,14 @@ public sealed record NaturalClassLine(string Id, PlayerClass Starter, PlayerClas
 	/// <summary>CP-49: the Scout, levels 1-9, to Munin (CP-Q19 for the account and the name).</summary>
 	public static NaturalClassLine Scout { get; } = new("scout", PlayerClass.SCOUT, null, 41, "Asimscout");
 
+	/// <summary>NR-50: the Warrior who becomes a Templar and takes the sword at the ceremony (NR-Q5). It has a name of its
+	/// own, because the lines of a round play in one world (rule (w)).</summary>
+	public static NaturalClassLine WarriorTemplar { get; } = new("warrior-templar", PlayerClass.WARRIOR, PlayerClass.TEMPLAR, 41, "Asimtemplar",
+		CeremonyItemId: 100000640);
+
 	/// <summary>Every line a run can name. Each class's first profile item adds its line here.</summary>
-	public static IReadOnlyList<NaturalClassLine> All { get; } = [PriestCleric, PriestChanter, Warrior, Mage, Artist, Engineer, Scout];
+	public static IReadOnlyList<NaturalClassLine> All { get; } =
+		[PriestCleric, PriestChanter, Warrior, Mage, Artist, Engineer, Scout, WarriorTemplar];
 
 	public static NaturalClassLine Default => All[0];
 

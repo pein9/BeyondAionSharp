@@ -94,6 +94,11 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 	public static NaturalClassGearTable Chanter { get; } = new(PlayerClass.CHANTER, ["STAFF", "MACE"], NaturalWeaponStat.Magical,
 		["CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies, BonusOrder: HealerBonuses);
 
+	// NR-50 (NR-Q5, NR-Q7): the Templar holds a one-hand weapon, the sword before the mace, and the best shield it owns;
+	// plate first. It keeps what a class keeps from Ascension on: a mana potion it finds is drunk in a fight.
+	public static NaturalClassGearTable Templar { get; } = new(PlayerClass.TEMPLAR, ["SWORD", "MACE"], NaturalWeaponStat.Physical,
+		["PLATE", "CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies, OffHand: NaturalOffHand.Shield);
+
 	// The defaults of CP-Q10 for the five new starters. Each holds one weapon and nothing in the off hand, but the Scout.
 	public static NaturalClassGearTable Warrior { get; } = new(PlayerClass.WARRIOR, ["SWORD", "MACE"], NaturalWeaponStat.Physical,
 		["CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder);

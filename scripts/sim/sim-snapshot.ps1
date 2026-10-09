@@ -105,6 +105,7 @@ $fromGiven = $PSBoundParameters.ContainsKey('From')
 $lineSecondClass = [ordered]@{
 	'priest-cleric' = 'CLERIC'
 	'priest-chanter' = 'CHANTER'
+	'warrior-templar' = 'TEMPLAR'
 	'warrior' = $null
 	'scout' = $null
 	'mage' = $null

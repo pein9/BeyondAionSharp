@@ -174,6 +174,16 @@ by a lettered item. Answers already given are quoted.
   the 44 stands and no rule trims the purchases; a run that needs more stops at the
   vendor with the leg's own refusal and is reported. To decide, if that happens: more
   coins, or a rule for what to leave unbought.
+- **NR-Q15. The Templar's shield.** Asked by NR-50. NR-Q5 gives the Templar a one-hand
+  weapon and a shield, and the route hands it none as the code stands: the Warrior it was
+  holds nothing in the off hand (CP-Q10), so it passes over the Raider's Shield of Q2100;
+  no quest after it offers a shield; the coin vendors sell one at every tier and no leg
+  buys it (NR-38a, NR-38b). Default, NR-50c: a line whose second class holds a shield
+  holds one from the start, so its Warrior takes the shield a reward list offers when its
+  sword is no worse; and each coin tier buys the vendor's shield from the coins left
+  after the armor and the weapon. Nothing is bought with Kinah and no coin is added. To
+  decide: whether a Templar may buy a shield with Kinah from an armor merchant at
+  Ascension, or is supplied the coins for one.
 
 ## Standing rules
 
@@ -3140,6 +3150,8 @@ Gunner NR-120, Rider NR-130, Bard NR-140. The class's survey item writes the oth
 1. The surveys NR-x0 are worked first, one class after another. They are reading and
    data, and each ends with its profile accepted by the validator.
 2. The probe rows NR-x1 of the classes are played side by side, each in its own world.
+   The Templar's rows (NR-51) are played first and alone, before the other surveys: they
+   are the first fights of a second class without a heal, on forms the other profiles copy.
 3. Then the rounds, numbered NR-R1, NR-R2 and so on, written by the loop as it goes. A
    round takes every class that is not parked from where its last capture stands to the
    next stage: first from creation to the Altgard bind, then the legs in the Cleric's
@@ -3168,7 +3180,216 @@ The template:
 - **NR-x7 - The endpoint:** captured and verified as ntc-ready-<class>-s1.
 - **NR-x8 - The class scope:** recorded twice.
 
-- [ ] **NR-50 - Templar: survey and profile data.** Depends: the close of phase C
+- [x] **NR-50 - Templar: survey and profile data.** Depends: the close of phase C
+  - 2026-10-09: done. The Templar has a class line, a gear table and a profile the
+    validator accepts. Nothing has been played. Four things its skills need that the
+    shared forms cannot say yet are items NR-50a to NR-50d below.
+    - **Java.**
+      - **What it learns.** SkillLearnService.learnNewSkills 60-97 gives a character, at
+        each level, every auto-learn row of skill_tree.xml for the class it then is (85-86,
+        as read for CP-35). Of the Templar's 93 rows to level 26, 76 are auto-learned and
+        17 are stigma rows from level 20. None is a skill book, so the route needs no
+        trainer. 63 of the auto-learned are active skills (run/nr/NR-50/survey.log).
+      - **Chains.** ChainCondition.validate 32-53 accepts a follow-up whose step before it
+        is the current chain step or the one before that; shouldReset 55-73 resets the
+        chain at another chain's first step. So after Ferocious Strike and Robust Blow,
+        Rage may be cast and Wrath Strike still follows Robust Blow; after Wrath Strike,
+        Rage may not.
+      - **A shield in the left hand.** LeftHandCondition.validate 25-45: with type SHIELD
+        the skill needs a shield worn; with DUAL a second weapon or a two-hand weapon.
+        Shield Bash, Shield Counter, Avenging Blow, Courageous Shield and the toggle
+        Stubborn Spirit carry it.
+      - **Counter skills.** SkillTemplate.java 104-105 holds counter_skill as one
+        AttackStatus, and Skill.java 163-169 refuses the skill unless that status was the
+        player's within the last 5 s. The data gives 30 skills two statuses in one
+        attribute ("BLOCK,RESIST" on 22, "RESIST,PARRY" on 6, "RESIST,DODGE" on 2). No
+        single status has such a name, so JAXB leaves the field empty and Java asks
+        nothing before those skills; the port reads it the same way on purpose
+        (SkillEngine/Model/SkillTemplate.cs 163-176). The Templar's Shield Counter,
+        Avenging Blow and Courageous Shield are three of the 22. A client offers them only
+        after a block or a resist. This is under Blocked as a retail question; it stops
+        nothing, because the profile leaves the three out.
+      - **Class rewards on the route** are the two of NR-32, Q2009 and Q2947, and the
+        stone of Q2900 (NR-39). Nothing new.
+    - **The class line.** `warrior-templar`: a Warrior who becomes a Templar, SIM account
+      41, character Asimtemplar, the sword 100000640 at the ceremony (Q2009, choice 1;
+      NR-Q5). Its dispatch quest is Q2901 (NR-30). It has a name of its own because the
+      lines of a round play in one world. It is in NaturalClassLine.All and in the script's
+      list; the script test holds the two together.
+    - **The gear table** (Sc/Classes/NaturalClassGearTable.cs, Templar).
+
+      | Part | The Templar's | From |
+      |---|---|---|
+      | Weapon groups | sword, then mace; ranked by the physical stat | NR-Q5, CP-Q7 |
+      | Off hand | the best shield it owns | NR-Q5 |
+      | Armor | plate, chain, leather, robe, clothes; item level first, the type breaks ties | NR-Q7, CP-Q24 |
+      | Bonus order at a reward | physical attack, critical, accuracy, then HP | NR-32 |
+      | Kept | life potions, its help kit, a mana potion it finds, every help scroll and food | as the Cleric from Ascension |
+
+      Its masteries allow the greatsword too; NR-Q5 gives it the one-hand weapon. The
+      table is the provisional one of NR-32, so the Templar's rows of NR-32, NR-38,
+      NR-38a, NR-38b and NR-40 stand as written.
+    - **Where its shield comes from** (NR-Q15). On the route: the Raider's Shield
+      115000024 (level 3) in the reward list of Q2100 in Ishalgen; a shield at each coin
+      vendor (115001074 for 2 Iron Coins at level 16; 13 Bronze Coins for the two of
+      Morheim, NR-38). Q28505's class list holds Lateni's Shield 115001093, which the
+      server never offers (NR-32). As the code stands the line takes none of them, so a
+      Templar would reach the endpoint with an empty off hand unless a monster dropped
+      a shield. NR-50c.
+    - **The help kit from level 10, as a manifest** (NR-Q8, NR-Q13; the rows of
+      NaturalHelpItemAllowlist.Kit(caster: false, reagent: true)).
+
+      | Item | Family | Levels | Topped up to | When it owns fewer than |
+      |---|---|---|---|---|
+      | 162000002 | life potion | 10 to 19 | 30 | 10 |
+      | 162000003 | life potion | 20 to 29 | 30 | 10 |
+      | 162000004 | life potion | 30 to 39 | 30 | 10 |
+      | 164000067 | shield scroll | 10 to 19 | 30 | 8 |
+      | 164000068 | shield scroll | 20 to 29 | 30 | 8 |
+      | 164000069 | shield scroll | 30 to 39 | 30 | 8 |
+      | 164000075 | running scroll | 20 to 29 | 20 | 5 |
+      | 164000076 | running scroll | 30 to 39 | 20 | 5 |
+      | 160002273 | DP jelly | 10 to 39 | 8 | 2 |
+      | 169300003 | powder | 10 to 24 | 200 | 50 |
+      | 169300004 | powder | 25 to 39 | 200 | 50 |
+
+      Not supplied: the mana serums 162000017 to 162000019 and the Awakening scrolls
+      164000133 and 164000134, which are for a class that casts from mana. The scroll
+      slot Awakening shares is the Templar's for Courage, and no Courage scroll is
+      supplied (NR-Q13). Levels 1 to 9 are the Warrior's kit (CP-Q12).
+    - **Its skills by role** (Sc/Classes/NaturalTemplarProfile.cs; 35 skills of 63).
+
+      | Role | Skill, and the levels of its ranks | What it is |
+      |---|---|---|
+      | strike | Ferocious Strike: 1, 6, 11, 16, 21, 26 | Opens the first chain. 10 s. |
+      | robust | Robust Blow: 3, 8, 13, 18, 23 | Follows Ferocious Strike inside 3 s. 8 s. |
+      | rage | Rage: 7, 12, 17, 22 | Follows Ferocious Strike: attack and a shield for 10 s. 17 to 26 MP, 24 s. |
+      | wrath | Wrath Strike: 19, 24 | Follows Robust Blow inside 3 s. 8 s. |
+      | smash | Body Smash: 5, 10, 15, 20, 25 | Opens a chain of its own. 12 s. |
+      | dazing | Dazing Severe Blow: 10, 15, 20, 25 | Opens the third chain; slows the target's attacks and lowers its physical defence for 12 s. 12 s. |
+      | divine | Divine Blow: 11, 16, 21, 26 | Follows Dazing Severe Blow inside 3 s. 8 s. |
+      | chastise | Empyrean Chastisement: 10, 15, 20, 25 | 2,000 DP: a hit, and a shield that takes half of every hit for 15 s. 6 s. |
+      | armor | Empyrean Armor: 13 | Heals a quarter of its HP and raises the most it has by half for 3 min. 113 MP, 5 min. |
+
+    - **The rule table, natural-templar-v1.** With the monster on it, an open follow-up
+      first: Divine Blow, Robust Blow, then Rage when it is at or below 80% HP, then Wrath
+      Strike. Of the openers, Dazing Severe Blow, then Ferocious Strike, then Body Smash.
+      Empyrean Chastisement last, and only at or below 70% HP, where its shield is worth
+      the DP. The weapon swings whenever no skill is ready. Nothing reaches a target that
+      is not on it, so it walks in, as the Warrior. The ladder: the shield scroll at 50%
+      HP, the life potion at or below 75%, Empyrean Armor in an emergency only (from 35%
+      until 45%); the armor's 113 MP are kept back from Rage. It leaves at three
+      attackers, or at 25% HP with nothing ready. Between fights it rests as the Warrior:
+      the life potion below 90% HP, then sitting. It holds for a patrol and assesses
+      (NR-37) with no heal to ask about, and a pull may bring two. In flight it swings
+      its weapon from one metre (NR-36): nothing it has by level 12 hurts from range.
+    - **Left out, with the reason** (28 skills).
+
+      | Skill, levels | Why it is not cast |
+      |---|---|
+      | Return, Bandage Heal, Escape: 1 | As for every class (CP-35, CP-Q11). |
+      | Herb Treatment and MP Recovery: 10, 15, 20, 25 | A class with no heal rests by the potion plan, which has no powder step. NR-50a. |
+      | Shield Bash: 10, 15, 20, 25 | It needs a shield in the left hand, which the skill row and the fight's observation do not say. NR-50b. |
+      | Shield Counter: 10, 15, 20, 25; Courageous Shield: 15; Avenging Blow: 22 | A client offers them only after a block or a resist, which the bot does not observe. Java would accept them at any time (above); the bot does not send what a client could not. |
+      | Taunt: 10, 15, 20, 25; Provoking Roar: 25 | They raise enmity and deal no damage; alone, the monster is already on the Templar. |
+      | Aether Leash: 16 | A pull from 15 m with a 30 s cooldown. A listed attack at range that only cools down is waited for where the class stands (CP-47), which would hold a class that walks in away from its target. The probe rows decide its rule. |
+      | Charge: 25 | Run speed for 13 s; the journey's travel casts no skill. |
+
+      Not in the catalog at all: Stubborn Spirit (10, 15, 20, 25), a toggle that needs a
+      shield and gives 500 block, a tenth more physical defence and resistances at no
+      cost; no rule keeps a toggle on (NR-50d). And the stone's skill 11506, as for every
+      class (NR-39).
+    - **Proof.** The one-time check, not committed (run/nr/NR-50/check.log): the line
+      parses and holds both classes; its character is a Warrior until the client observes
+      a Templar; NaturalClassProfiles builds the Templar's profile, which requires the
+      validator: each of the 63 active skills has one role or one reason, every follow-up
+      has its opener, no rotation line breaks a chain, and the gear groups lie inside the
+      masteries. The check prints the 35 rows, the 28 reasons, the best rank of each role
+      at levels 10, 13, 16, 20, 25 and 26, the gear table, the kit and the patrol view.
+      Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run guard-p8
+      (run/nr/NR-50/guard-p8/verdict.json): verdict pass, all twelve scopes identical.
+      Seven pre-commit checks pass, the three script tests pass
+      (run/nr/NR-50/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
+      skipped) and Fast passes (run nr50-fast, 11 passed).
+- [ ] **NR-50a - A rest with the powder for a class without a heal.** Depends: NR-50
+  - Work: Java first: the two powder skills' templates and what they spend, as read for
+    NA-18. The potion plan of NaturalRestRules gets a powder step: a class that has
+    learned a reagent skill and owns the powder casts Herb Treatment below its HP target
+    and MP Recovery below a mana floor the profile names, before the life potion and
+    before sitting. The rest skills are named by the profile, with no heal and no
+    health-for-mana skill among them. The Templar's eight powder skills get their roles
+    and its mana floor is written here. Generic: every second class without a heal
+    rests this way.
+  - Proof: One-time check of the rest's decisions for a Templar at chosen HP, MP and
+    powder counts, and for a Warrior, which has no reagent skill and rests as before; the
+    full gate identical.
+- [ ] **NR-50b - A skill's off-hand condition.** Depends: NR-50a
+  - Work: Java first: LeftHandCondition, and what the server answers a cast without the
+    shield. The skill row carries the template's left-hand condition (SHIELD or DUAL);
+    the fight's observation says what the off hand holds; the table refuses such a skill
+    without it, by name, like any other refusal. Shield Bash gets its role and its place
+    in the Templar's table. Generic: the Assassin's dual-wield skills use the same field.
+  - Proof: One-time check: Shield Bash is refused with an empty off hand and is legal
+    with a shield worn; the validator accepts the profile; the full gate identical.
+- [ ] **NR-50c - The shield of a line whose class holds one.** Depends: NR-50b
+  - Work: NR-Q15's default. Java first: Equipment.java as read for CP-68 and NR-03, and
+    the reward shops as read for NR-38. A line whose second class's table holds a shield
+    holds one from the start: its starter's gear rules get that off-hand mode, so the
+    Warrior of `warrior-templar` takes the Raider's Shield at Q2100 when its sword is no
+    worse (NR-03's reward rule); the line `warrior` is as recorded. Each coin tier buys
+    the manifest's shield from the coins left after the armor and the weapon, and wears
+    it. No Kinah purchase; no coin added.
+  - Proof: One-time check of the pick at Q2100 for both Warrior lines and of each tier's
+    purchases for a Templar from a prepared bag; the full gate identical, the warrior
+    scope among it.
+- [ ] **NR-50d - A toggle kept on.** Depends: NR-50c
+  - Work: Java first: how a toggle skill is turned on and off, what it costs while on,
+    what ends it, and what the client is told of it (the skill engine's toggle handling
+    and the packets it sends). The bot's world state observes which toggles are on. A
+    profile names the toggles it keeps on; the journey turns one on when it is observed
+    off and its conditions hold, and never casts one that is on. Stubborn Spirit for the
+    Templar, with a shield worn. Generic: the Chanter's mantras use the same form.
+  - Proof: One-time check, or one probe row on a probe account, that shows the toggle on
+    after the rule ran once and not cast again; the full gate identical.
+- [ ] **NR-51 - Templar: probe rows.** Depends: NR-50a to NR-50d
+  - Work: Rows templar-10, templar-16, templar-20 and templar-25 beside the Cleric's in
+    SimulationNaturalStarterProbeTests: prepared Templars on the two probe accounts, in
+    the gear the route has given by that level, with and without a shield at level 10,
+    fight the monsters the Cleric's rows fight. Each row's trace shows the table in
+    play: the three chains, Rage and Empyrean Chastisement only when hurt, Shield Bash,
+    the ladder, the rest with the powder. What a row shows decides the open rules: the
+    leash, the toggle's worth, the mana floor. A fix is one small change (rule (i)).
+  - Proof: The four rows end with the monster dead or a recorded retreat, no refused
+    cast repeats, and the numbers are written here; the full gate identical.
+- [ ] **NR-52 - Templar: to Altgard.** Depends: NR-51; ticked by the round that gives it
+  - Work: A fresh Asimtemplar plays Ishalgen as a Warrior, the trial, the Templar choice
+    at Munin, the ceremony with the sword and the dispatch Q2901, and is captured at the
+    Altgard bind as altgard-templar-s1.
+  - Proof: The capture verifies.
+- [ ] **NR-53 - Templar: Altgard legs l1 to l5.** Depends: NR-52; ticked by its round
+  - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
+    with -templar (NR-41). In leg 1 it swings at the fungus in flight.
+  - Proof: Each capture verifies.
+- [ ] **NR-54 - Templar: Altgard legs l6 to l11.** Depends: NR-53; ticked by its round
+  - Work: As NR-53. Leg 11 is the destiny quest: its stone is 140000003 (NR-39).
+  - Proof: Each capture verifies.
+- [ ] **NR-55 - Templar: coin gear and Haramel.** Depends: NR-54; ticked by its round
+  - Work: The coin-gear leg at Lateni (plate, and the shield by NR-50c) and Haramel with
+    chest 700829 (NR-40), captured as altgard-coingear-templar and
+    altgard-rc-complete-s1-templar.
+  - Proof: Each capture verifies.
+- [ ] **NR-56 - Templar: the Abyss entry.** Depends: NR-55; ticked by its round
+  - Work: Q24020, then Q2945, Q2946, Q2947 and Q2042 with the two coin tiers at Nott
+    (NR-38b, NR-Q14), captured as morheim-abyss-entry-s1-templar.
+  - Proof: The capture verifies.
+- [ ] **NR-57 - Templar: the endpoint.** Depends: NR-56; ticked by its round
+  - Work: Captured and verified as ntc-ready-templar-s1: alive at Morheim Ice Fortress,
+    level 25 or higher, Q2945, Q2946, Q2947 and Q2042 complete.
+  - Proof: The capture verifies.
+- [ ] **NR-58 - Templar: the class scope.** Depends: NR-57
+  - Work: One scope of the Templar's play, chosen where its rules differ most from the
+    Warrior's, recorded by a bot alone, twice, and added to the gate's sets.
+  - Proof: The two recordings are identical.
 - [ ] **NR-60 - Sorcerer: survey and profile data.** Depends: the close of phase C
 - [ ] **NR-70 - Chanter: survey and profile data.** Depends: the close of phase C
 - [ ] **NR-80 - Gladiator: survey and profile data.** Depends: the close of phase C
@@ -3192,6 +3413,18 @@ The template:
 ## Blocked / questions for the operator
 
 Nothing is blocked at the start.
+
+- **Recorded by NR-50, blocking nothing: a counter skill of two statuses asks for
+  none.** 30 skills carry two statuses in counter_skill ("BLOCK,RESIST" on 22,
+  "RESIST,PARRY" on 6, "RESIST,DODGE" on 2). Java holds the attribute as one AttackStatus
+  (SkillTemplate.java 104-105), JAXB leaves it empty for such a value, and Skill.java
+  163-169 then asks for no block, parry, dodge or resist before the skill. The port
+  mirrors that on purpose (SkillEngine/Model/SkillTemplate.cs 163-176). In retail these
+  are usable only after one of the two. It is a defect Java shares, so by rule (t) it is
+  written here and not changed. The bots go round it: a profile leaves such a skill out
+  with this reason (the Templar's Shield Counter, Avenging Blow and Courageous Shield).
+  To decide: whether the port should read both statuses, as a logged retail correction
+  offered upstream.
 
 ## Loop prompt
 
@@ -3570,3 +3803,13 @@ report what was done, what is parked or blocked, and what the operator must deci
   eleven classes gets at each class-bound point of the route is under NR-42, with what the
   phase leaves unplayed and the four questions open with their defaults (NR-Q11 to
   NR-Q14). Next: NR-50, the Templar's survey, the first item of phase D.
+- 2026-10-09 — Loop: NR-50 done. The Templar has its line (warrior-templar, Asimtemplar,
+  the sword at the ceremony), its gear table (sword or mace and a shield, plate first) and
+  a profile the validator accepts: 35 of its 63 active skills to level 26 by role in the
+  table natural-templar-v1, 28 left out with reasons. Nothing played. Four forms it needs
+  are items NR-50a to NR-50d (the powder in a rest without a heal, a skill's off-hand
+  condition, where the shield comes from, a toggle kept on), then NR-51 to NR-58. New:
+  NR-Q15 (the shield), and under Blocked a counter skill of two statuses that Java and the
+  port ask nothing for. Full gate guard-p8 (twelve scopes identical), seven checks, script
+  tests, unit suite (4,629 passed, 16 skipped) and Fast (nr50-fast) pass. Next: NR-50a, a
+  rest with the powder for a class without a heal.
