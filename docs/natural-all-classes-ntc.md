@@ -3073,11 +3073,61 @@ can use them. The order below is the order of work: the item that saves time com
       (run/nr/NR-41/guard-p8/verdict.json): verdict pass, all twelve scopes identical.
       Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed, 16
       skipped) and Fast passes (run nr41-fast, 11 passed).
-- [ ] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41, NR-38a, NR-38b, NR-43 to NR-48,
+- [x] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41, NR-38a, NR-38b, NR-43 to NR-48,
   NR-44a and NR-46a to NR-46d
   - Work: No code. The full gate on every recorded scope, and one table in this document
     of what each class gets at each class-bound point of the route.
   - Proof: Every scope identical to its baseline.
+  - 2026-10-09: done. No code. Phase C is closed at 8b87eaa08.
+    - **Proof.** Gate at the committed head, set all+mage+warrior+artist+engineer+scout,
+      -Parallel 8, run close-p8 (run/nr/NR-42/close-p8/verdict.json): verdict pass, all
+      twelve scopes identical to their baselines: p 35,463 records, m 109,039, b 131,197,
+      l1 29,797, c 112,256, hm 37,510, ax 15,715, mage 23,555, warrior 24,199, artist
+      23,104, engineer 24,580, scout 27,592. The replays record commit 8b87eaa08.
+    - **What each class gets at each class-bound point of the route.**
+
+      | Class | Ceremony weapon, Q2009 (NR-30) | Dispatch quest (NR-30) | Coin vendors, iron and bronze; armor (NR-38) | Destiny stone, its skill (NR-39) | Haramel chest (NR-40) | Arena weapon, Q2947 (NR-32) | Help kinds from level 10 (NR-34) |
+      |---|---|---|---|---|---|---|---|
+      | Cleric | staff 101500498 | Q2904 | Lohaban 203689, Vebna 204425; chain | 140000001, 11504 | 700832 | staff 101501224 | every class, caster, reagent |
+      | Chanter | staff 101500498 | Q2904 | Lohaban, Vebna; chain | 140000001, 11504 | 700832 | staff 101501224 | every class, caster, reagent |
+      | Gladiator | greatsword 100900488 | Q2901 | Lateni 203659, Nott 204360; plate | 140000003, 11506 | 700829 | greatsword 100901214 | every class, reagent |
+      | Templar | sword 100000640 | Q2901 | Lateni, Nott; plate, and a shield | 140000003, 11506 | 700829 | sword 100001562 | every class, reagent |
+      | Assassin | dagger 100200605 | Q2902 | Lateni, Nott; leather | 140000003, 11506 | 700830 | dagger 100201365 | every class, reagent |
+      | Ranger | bow 101700515 | Q2902 | Lateni, Nott; leather | 140000002, 11505 | 700830 | bow 101701246 | every class, reagent |
+      | Sorcerer | spellbook 100600532 | Q2903 | Lohaban, Vebna; robe | 140000004, 11507 | 700831 | spellbook 100601285 | every class, caster, reagent |
+      | Spirit Master | spellbook 100600532 | Q2903 | Lohaban, Vebna; robe | 140000004, 11507 | 700831 | spellbook 100601285 | every class, caster, reagent |
+      | Gunner | pistol 101800506 | Q29070 | Lateni, Nott; leather | 140000002, 11505 | 700830 | pistol 101801035 | every class, reagent |
+      | Rider | cipher-blade 102100489 | Q29070 | Lateni, Nott; chain | 140000002, 11505 | 700832 | cipher-blade 102100833 | every class, reagent |
+      | Bard | harp 102000523 | Q29071 | Lohaban, Vebna; robe | 140000001, 11504 | 700831 | harp 102001058 | every class, caster, reagent |
+
+      The fourteen reward picks of the legs are NR-32's table; the coin pieces by tier are
+      NR-38's; the bridge's shop is NR-35's; the shot in flight is NR-36's; the patrol
+      view is NR-37's. The dispatch quest, the stone, the chest and the vendors' goods are
+      the server's, read from Java and the shipped data. The ceremony weapon is NR-Q5's.
+      The armor kinds, the weapon groups and the help kinds of the nine classes without a
+      profile are the defaults of NR-Q5, NR-Q7 and NR-Q13: each class's first item (NR-x0)
+      writes its gear table and profile, and what follows from them follows.
+    - **What phase C leaves.**
+      - **Not played.** Every rule of this phase was proven on the Cleric's scopes staying
+        identical and on one-time checks of what the rule gives each class. No line but
+        the accepted one has played a leg. First played in phase D: a trade with Lateni
+        and with Nott, a chest other than 700832, a weapon swing in flight, another class's
+        stone, a start held to minimums.
+      - **For the operator, each with its default in force:** NR-Q11 (bots to a world),
+        NR-Q12 (the Cleric and the bonus order for accessories and hats), NR-Q13 (who
+        casts from mana; no Courage scroll is approved), NR-Q14 (Bronze Coins beyond the
+        approved 44).
+      - **Recorded, not followed:** quest_data.xml carries class reward lists for Q2900
+        and Q28505 that the server never offers (NR-32), and Java's own TODO on which
+        stigma stone retail gave each class (NR-39). Both are retail questions that stop
+        no class.
+      - **Known gaps a class will meet:** a shield is not part of a coin tier, so a
+        Templar buys none (NR-38b); the Scout's and the Engineer's patrol "heal" is a
+        defence until their second classes name their own (NR-37); no class casts its
+        stone's skill in the Space of Destiny, as the Cleric does not (NR-39).
+    - **Next.** Phase D by rule (w): the surveys NR-50 to NR-140 first, one class after
+      another, in the order of NR-Q1, each ending with its line, its gear table and its
+      profile accepted by the validator; then the probe rows side by side; then the rounds.
 
 ### D. One class after another
 
@@ -3515,3 +3565,8 @@ report what was done, what is parked or blocked, and what the operator must deci
   another line with a second class must carry the class in its name. Script tests, full
   gate guard-p8 (twelve scopes identical), seven checks, unit suite (4,629 passed, 16
   skipped) and Fast (nr41-fast) pass. Next: NR-42, phase C closed.
+- 2026-10-09 — Loop: NR-42 done. Phase C is closed at 8b87eaa08: full gate close-p8 at the
+  committed head, twelve scopes identical to their baselines. One table of what each of the
+  eleven classes gets at each class-bound point of the route is under NR-42, with what the
+  phase leaves unplayed and the four questions open with their defaults (NR-Q11 to
+  NR-Q14). Next: NR-50, the Templar's survey, the first item of phase D.
