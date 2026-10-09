@@ -1122,7 +1122,8 @@ to the endpoint. The close of phase B is NR-21.
       15,715, mage 23,555, warrior 24,199, artist 23,104, engineer 24,580, scout 27,592).
       Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,630 passed, 16 skipped) and
       Fast passes (run nr18-fast, 11 passed).
-- [ ] **NR-19 - The generic Cleric from creation to the Altgard endpoint.** Depends: NR-18
+- [ ] **NR-19 - The generic Cleric from creation to the Altgard endpoint.** Depends: NR-18,
+  NR-19a
   - Work: One continuous capture from committed code (sim-snapshot.ps1 -Action Capture
     -ContinuousJourney -LaterCapital), named altgard-complete-cleric-s1. Two attempts; a
     stop inside a leg becomes a lettered item for that leg. Acceptance from the receipt
@@ -1130,6 +1131,80 @@ to the endpoint. The close of phase B is NR-21.
     complete; the ledger of deaths, retreats, potions and game time beside the accepted
     run's 20 h 17 min.
   - Proof: sim-snapshot.ps1 -Action Verify -Name altgard-complete-cleric-s1 passes.
+  - 2026-10-08: two attempts, both stopped inside a leg; no snapshot was made. By rule
+    (i) the second stop is NR-19a, and this item is tried again after it with a fresh
+    two attempts.
+    - **Attempt a1** (run nr19-continuous-a1 at 031a56083; evidence under
+      run/snapshots/_capture/nr19-continuous-a1, log run/nr/NR-19/capture-a1.log): stopped
+      in leg l4 after 5 h 56 min of game time, at level 18 with 86 quests and no death:
+      "Q24013: using item 182215359 did not move the quest to var 3".
+      - The Cleric stood 3 m inside the poison's use area and the server answered
+        STR_CANNOT_USE_ITEM_INVALID_LOCATION.
+      - Java does the same. ZoneUpdateService refreshes a creature's zones every 500 ms,
+        and PlayerRestrictions.canUseItem tests the use area against that list
+        (MapRegion.isInsideItemUseZone, ZoneInstance.isInsideCreature), not against the
+        position. The Cleric walked into the area and used the item in the same instant.
+        The accepted run and scope c had stood in the area longer by chance.
+      - **The one small change, rule (e)** (commit 16ad6b05c,
+        Sc/NaturalAltgardQuestSteps.cs): a use that is refused for its place is sent
+        again, three times at most; the use time has passed by then. Guard guard-a1, the
+        full gate: twelve scopes identical. Seven checks, the unit suite (4,630 passed, 16
+        skipped) and Fast (nr19-fast) pass.
+    - **Attempt a2** (run nr19-continuous-a2 at 16ad6b05c; evidence under
+      run/snapshots/_capture/nr19-continuous-a2, log run/nr/NR-19/capture-a2.log): twelve
+      of the fourteen stages, through leg l11, then stopped in the coin-gear leg after
+      17 h 36 min, at level 24 with 165 quests: "Altgard leg cg stopped: blocked
+      coin-loadout-incomplete: The five chain body slots, retained cloth gloves and
+      19-coin balance are required."
+      - At Q24013 the item was refused once for its place and used again; the quest moved.
+      - The coin purchases were made and worn: three chain pieces, 19 coins left, the
+        staff in hand. The one thing missing is the accepted run's cloth gloves, Altgard
+        Legionary Gloves 111101650, which the leg's end check asks for in the bag. The
+        generic Cleric never had them: since the table gear rules (CP-29a) it takes the
+        chain Altgard Legionary Handguards 111501698 where the accepted Cleric took the
+        cloth pair, and it kept those in the bag.
+      - So the continuous journey has not been able to finish since CP-29a. No recorded
+        scope plays the coin-gear leg, and no continuous run was made between.
+    - **The ledger to the stop, stage by stage**, beside the accepted run
+      (run/snapshots/altgard-rc-complete-s1). Game time is at the end of the stage.
+
+      | Stage | Accepted: game time | deaths | level | Generic: game time | deaths | level |
+      |---|---|---|---|---|---|---|
+      | ishalgen-ascension | 3 h 47 min | 0 | 14 | 3 h 40 min | 0 | 14 |
+      | l1 | 4 h 31 min | 0 | 15 | 4 h 30 min | 0 | 15 |
+      | l2 | 5 h 09 min | 0 | 17 | 5 h 07 min | 0 | 17 |
+      | l3 | 5 h 25 min | 0 | 17 | 5 h 22 min | 0 | 17 |
+      | l4 | 8 h 20 min | 2 | 20 | 7 h 50 min | 1 | 19 |
+      | l5 | 10 h 16 min | 2 | 21 | 10 h 00 min | 3 | 21 |
+      | l6 | 11 h 04 min | 3 | 21 | 11 h 00 min | 3 | 21 |
+      | l7 | 11 h 47 min | 3 | 22 | 11 h 37 min | 3 | 22 |
+      | l8 | 12 h 20 min | 4 | 22 | 12 h 08 min | 4 | 22 |
+      | l9 | 13 h 21 min | 4 | 23 | 13 h 10 min | 4 | 23 |
+      | l10 | 18 h 11 min | 13 | 24 | 17 h 10 min | 5 | 24 |
+      | l11 | 18 h 22 min | 13 | 24 | 17 h 21 min | 5 | 24 |
+
+      To the same point the generic Cleric is an hour faster and has 5 deaths against 13;
+      leg l10 alone has 1 against 9. In the whole of a2: 80 retreats, 376 life potions,
+      20 shield scrolls, 5 soul heals.
+- [ ] **NR-19a - The gloves the coin purchase replaced are the character's own.** Depends:
+  NR-18
+  - Work: Two places ask for the accepted run's cloth gloves, item 111101650, by id: the
+    coin-gear leg's end check (Sc/NaturalCoinGearPolicy.cs, an unequipped pair in the bag)
+    and Haramel's list of items that must come in (Sc/NaturalHaramel.cs,
+    RequiredIncomingItemIds, which the continuous journey makes mandatory in
+    NaturalAltgardContinuation.BindIncoming). Both read what the character has instead:
+    the continuous journey binds the coin-gear leg to the gloves the character wears when
+    the leg starts, and that pair is the one that must be in the bag at the end; none
+    worn, none asked for. Haramel asks for the cloth pair only when the character owns it
+    as the leg starts, as it already does for the accessories. A run that starts from an
+    accepted snapshot keeps the contract's own pair. No other receipt is touched: the
+    staff, the three purchases, the five body slots, the coin counts and the sealed
+    bundle were all met by the generic Cleric.
+  - Proof: A one-time check, not committed, on the last observation of run
+    nr19-continuous-a2: the coin-gear decision is "complete" when bound to the gloves that
+    character wore, and the Haramel binding accepts its inventory. Guard: the full gate
+    identical (scope hm plays Haramel from the accepted snapshot). The first run through
+    both legs is NR-19's next attempt.
 - [ ] **NR-20 - The generic Cleric through the Abyss entry.** Depends: NR-19
   - Work: Capture the ax leg from altgard-complete-cleric-s1 as ntc-ready-cleric-s1. The
     leg's start facts that are receipts of the accepted run are met by the new run or
@@ -1442,3 +1517,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   (LIVE is outside the loop). Full gate gate-a1, twelve scopes: identical. Seven checks,
   unit suite (4,630 passed, 16 skipped) and Fast (nr18-fast) pass. Next: NR-19, the generic
   Cleric from creation to the Altgard endpoint.
+- 2026-10-08 — Loop: NR-19 not done; two capture attempts, both stopped inside a leg. a1:
+  leg l4, Q24013's item refused for its place (the server refreshes zones every 500 ms,
+  Java too); one small change, 16ad6b05c, full gate identical. a2: twelve of fourteen
+  stages, an hour faster than the accepted run with 5 deaths against 13, then stopped in
+  the coin-gear leg, whose end check asks for the accepted run's cloth gloves by id. The
+  continuous journey has not been able to finish since the table gear rules (CP-29a).
+  Written: NR-19a, the replaced gloves read from the character. Next: NR-19a.
