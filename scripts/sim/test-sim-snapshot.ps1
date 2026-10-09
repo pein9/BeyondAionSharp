@@ -669,7 +669,9 @@ exit 0
 		$refusedCalls = @(Get-Content -LiteralPath $log)
 		Assert-True ($refusedCalls[-1] -like '*DROP DATABASE IF EXISTS*' -and @($refusedCalls | Where-Object { $_ -like '*DROP DATABASE*' }).Count -eq 5) 'A refused run kept its restored schema.'
 		Assert-True ((Get-LineJourneys).Count -eq 0 -and $journeysBefore -eq 0) 'A refused run was played.'
-		foreach ($absent in @('wrong-leg', 'mage-first')) {
+		# NR-41: a leg capture of another line with a second class is named after the accepted line's snapshot, with the class.
+		Assert-Throws { & $script @capture -Name chanter-leg -AltgardLeg1 -From chanter-start } "*must be named <the accepted line's snapshot name>-chanter*" 'A Chanter leg capture took a name without its class.'
+		foreach ($absent in @('wrong-leg', 'mage-first', 'chanter-leg')) {
 			Assert-True (-not (Test-Path -LiteralPath (Join-Path $snapshots $absent))) "A refused capture wrote the snapshot $absent."
 		}
 		# A snapshot that records a line this plan does not hold is not restored.

@@ -310,8 +310,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			{
 				BotWorldModel world = session.Api.World;
 				byte? classId = world.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass;
-				if (leg.RewardChoiceList.Length == 0 && leg.CoinGear == null && leg.Haramel == null && leg.AbyssEntry == null && leg.Destiny == null ||
-					classId is not { } observedId || PlayerClassExtensions.GetPlayerClassById(observedId, true) is not { } observedClass ||
+				if (classId is not { } observedId || PlayerClassExtensions.GetPlayerClassById(observedId, true) is not { } observedClass ||
 					observedClass.ToString() == leg.Start.Class) return leg;
 				NaturalGearRules rules = NaturalClassProfiles.For(classId, ClassLine, runtime.Data).Gear;
 				int[] contractItems = [.. leg.CoinGear?.ProtectedItemIds ?? [], .. leg.Haramel?.ProtectedItemIds ?? [], .. leg.AbyssEntry?.ProtectedItemIds ?? []];
@@ -409,6 +408,18 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						["tabs"] = new[] { classArmor.GoodsListId, classArmor.StaffGoodsListId }, ["tiers"] = classArmor.Tiers,
 					});
 				}
+				// NR-41: the leg's incoming journal names the dispatch quest of the contract's class; another class did its own.
+				if (!observedClass.IsStartingClass())
+				{
+					NaturalClassLineContract classLines = NaturalClassLineContract.LoadDefault();
+					int contractDispatch = classLines.Second(Enum.Parse<PlayerClass>(leg.Start.Class)).Dispatch.QuestId;
+					int ownDispatch = classLines.Second(observedClass).Dispatch.QuestId;
+					if (ownDispatch != contractDispatch && own.Start.CompletedQuestIds.Contains(contractDispatch))
+						own = own with
+						{
+							Start = own.Start with { CompletedQuestIds = [.. own.Start.CompletedQuestIds.Select(id => id == contractDispatch ? ownDispatch : id)] },
+						};
+				}
 				if (!ReferenceEquals(own, picked))
 					session.TraceDiagnostic("leg-protected-items", new Dictionary<string, object?>
 					{
@@ -418,11 +429,16 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				return own;
 			}
 			NaturalAltgardContract? altgardLeg = altgardLegId is { } legId ? NaturalAltgardContract.LoadLeg(legId) : null;
-			if (laterCapital != null && altgardLeg != null)
-				altgardLeg = NaturalAltgardContinuation.BindIncoming(altgardLeg, session.Api.World.CompletedQuestIds,
+			// NR-41: a leg's incoming journal is a receipt of the accepted run. A character of another class is given the leg
+			// as its own first, and then the journal is bound to what it has completed, so every count the leg checks is a
+			// minimum met. The contract's class keeps the order it had: bound only on the revised route.
+			if (altgardLeg != null && (laterCapital != null || !OfContractClass(altgardLeg)))
+			{
+				bool contractClass = OfContractClass(altgardLeg);
+				altgardLeg = NaturalAltgardContinuation.BindIncoming(WithObservedClassRewards(altgardLeg), session.Api.World.CompletedQuestIds,
 					session.Api.World.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray(),
-					NaturalAltgardContinuation.EquippedItemIds(session.Api.World), OfContractClass(altgardLeg));
-			if (altgardLeg != null) altgardLeg = WithObservedClassRewards(altgardLeg);
+					NaturalAltgardContinuation.EquippedItemIds(session.Api.World), contractClass);
+			}
 			coinGearProgress = altgardLeg?.CoinGear == null ? null : NaturalCoinGearProgress.Empty;
 			if (altgardLeg?.Haramel is { } haramel)
 				haramelProgress = options.HaramelProgressPath is { Length: > 0 } savedHaramel
@@ -1732,9 +1748,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					altgardLegId = id;
 					session.IdentityAltgardLegId = id;
 					NaturalAltgardContract shipped = NaturalAltgardContract.LoadLeg(id);
-					altgardLeg = WithObservedClassRewards(NaturalAltgardContinuation.BindIncoming(shipped, session.Api.World.CompletedQuestIds,
+					altgardLeg = NaturalAltgardContinuation.BindIncoming(WithObservedClassRewards(shipped), session.Api.World.CompletedQuestIds,
 						session.Api.World.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray(),
-						NaturalAltgardContinuation.EquippedItemIds(session.Api.World), OfContractClass(shipped)));
+						NaturalAltgardContinuation.EquippedItemIds(session.Api.World), OfContractClass(shipped));
 					altgardPlans = NaturalAltgardContract.LoadPlans(id);
 					collectionLimits = altgardPlans.Values.SelectMany(plan => plan.Steps
 						.Where(step => step.Kind == "collect" && step.ItemId > 0 && step.Count > 0)
@@ -1839,7 +1855,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				}
 
 				session.BeginStep("ax-start", "verify-the-abyss-entry-start-contract");
-				NaturalAbyssEntryStart start = NaturalAbyssEntryLeg.VerifyStart(leg, Observed(), session.CharacterId, runtime.NowMillis);
+				NaturalAbyssEntryStart start = NaturalAbyssEntryLeg.VerifyStart(leg, Observed(), session.CharacterId, runtime.NowMillis, OfContractClass(leg));
 				await File.WriteAllTextAsync(Path.Combine(folder, NaturalAbyssEntryLeg.StartReceipt), System.Text.Json.JsonSerializer.Serialize(start), token);
 				session.TraceDiagnostic(NaturalAbyssEntryLeg.StartDiagnostic, new Dictionary<string, object?>
 				{

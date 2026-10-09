@@ -481,7 +481,11 @@ public static class NaturalAbyssEntryLeg
 
 	/// <summary>Refuse anything but the approved start: the level-25 Cleric at the Altgard endpoint, its whole journal, Q2945
 	/// untouched, the worn staff, the sealed bundle and the seven Bronze Coins. Nothing is repaired here.</summary>
-	public static NaturalAbyssEntryStart VerifyStart(NaturalAltgardContract leg, NaturalAltgardObservation state, int characterId, long gameMillis)
+	/// <param name="contractClass">NR-41: the character is of the class the leg's contract was written for. For that class
+	/// the start is the accepted run's receipt: the exact level, journal, staff and coin count. For another class those are
+	/// minimums: at least the level, the leg's started quests among those in the journal, one weapon held, whatever coins.</param>
+	public static NaturalAbyssEntryStart VerifyStart(NaturalAltgardContract leg, NaturalAltgardObservation state, int characterId, long gameMillis,
+		bool contractClass = true)
 	{
 		NaturalAbyssEntry scope = leg.AbyssEntry ?? throw new InvalidDataException($"{leg.Leg} has no Abyss-entry scope.");
 		NaturalJourneyItem[] inventory = state.Inventory ?? throw new InvalidDataException("The start needs the observed inventory.");
@@ -490,17 +494,20 @@ public static class NaturalAbyssEntryLeg
 			if (!condition) throw new InvalidDataException($"The Abyss-entry leg cannot start: {what}.");
 		}
 		Require(state.Synchronized && !state.IsDead, "the login state is incomplete or the character is dead");
-		Require(state.MapId == leg.Start.MapId && state.Level == leg.Start.Level, $"expected level {leg.Start.Level} on map {leg.Start.MapId}, saw level {state.Level} on {state.MapId}");
+		Require(state.MapId == leg.Start.MapId && (contractClass ? state.Level == leg.Start.Level : state.Level >= leg.Start.Level),
+			$"expected level {leg.Start.Level} on map {leg.Start.MapId}, saw level {state.Level} on {state.MapId}");
 		Require(state.Bind?.MapId == leg.Start.MapId, "the bind is not the Altgard obelisk the snapshot ends at");
 		Require(leg.Start.CompletedQuestIds.All(state.CompletedQuestIds.Contains), "an incoming completed quest is missing");
 		Require(!leg.Order.Any(state.CompletedQuestIds.Contains), "a quest of this leg is already complete");
 		int[] started = state.Quests.Keys.Order().ToArray();
-		Require(started.SequenceEqual((leg.Start.StartedQuestIds ?? []).Order()), $"the journal holds [{string.Join(", ", started)}]");
-		Require(started.All(id => state.Quests[id] is { Status: 3, StepAndFlags: 0 }), "an incoming quest has already moved");
-		NaturalJourneyItem[] staffs = inventory.Where(item => item.EquipmentSlot == 3).ToArray();
-		Require(staffs is [{ ItemId: 101501357 }], "the Altgard Dark Legionary Staff is not the worn weapon");
+		int[] legStarted = [.. (leg.Start.StartedQuestIds ?? []).Order()];
+		Require(contractClass ? started.SequenceEqual(legStarted) : legStarted.All(started.Contains), $"the journal holds [{string.Join(", ", started)}]");
+		Require((contractClass ? started : legStarted).All(id => state.Quests[id] is { Status: 3, StepAndFlags: 0 }), "an incoming quest has already moved");
+		NaturalJourneyItem[] staffs = inventory.Where(item => contractClass ? item.EquipmentSlot == 3 : item.EquipmentSlot is 1 or 3).ToArray();
+		Require(contractClass ? staffs is [{ ItemId: 101501357 }] : staffs.Length == 1,
+			contractClass ? "the Altgard Dark Legionary Staff is not the worn weapon" : "no single weapon is held in the main hand");
 		Require(scope.Inventory.KeepSealed.All(id => inventory.Count(item => item.ItemId == id) == 1), "the sealed stigma bundle is missing");
-		Require(state.ItemCounts.GetValueOrDefault(scope.CoinArmor.CoinItemId) == scope.CoinArmor.IncomingCoins,
+		Require(!contractClass || state.ItemCounts.GetValueOrDefault(scope.CoinArmor.CoinItemId) == scope.CoinArmor.IncomingCoins,
 			$"expected {scope.CoinArmor.IncomingCoins} Bronze Coins, saw {state.ItemCounts.GetValueOrDefault(scope.CoinArmor.CoinItemId)}");
 		// What the leg will earn or be supplied is not owned yet, so every later count is this leg's own.
 		int[] early = leg.RewardChoiceList.Select(choice => choice.ItemId).Concat(scope.Inventory.Open).Concat(scope.Inventory.Discard)

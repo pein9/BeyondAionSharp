@@ -438,6 +438,14 @@ try {
 					$extra = Get-LegEnvironment $base.environment $Leg
 					if ($LaterCapital) { $extra.RC_CAPITAL = '1' }
 					$line = Set-ClassLine $extra $From
+					# NR-41: a leg capture of another line that has a second class takes the accepted line's snapshot name with
+					# the class after it (altgard-l1-chanter), so the two lines' snapshots stand side by side.
+					if ($line -ne $defaultClassLine -and $lineSecondClass[$line]) {
+						$suffix = '-' + $lineSecondClass[$line].ToLowerInvariant().Replace('_', '-')
+						if (-not $Name.EndsWith($suffix, [StringComparison]::Ordinal)) {
+							throw "A leg capture of class line $line must be named <the accepted line's snapshot name>$suffix; '$Name' is not."
+						}
+					}
 					Invoke-NaturalJourney $db $Run $evidence $extra
 					$legFile = Join-Path $evidence "altgard-$Leg-completion.json"
 					if (-not (Test-Path -LiteralPath $legFile)) { throw "Altgard leg $Leg did not complete; nothing was captured." }

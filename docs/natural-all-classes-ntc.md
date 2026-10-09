@@ -3013,13 +3013,66 @@ can use them. The order below is the order of work: the item that saves time com
       guard-p8 (run/nr/NR-40/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical, hm among them. Seven pre-commit checks pass, Aion.GameServer.Tests passes
       (4,629 passed, 16 skipped) and Fast passes (run nr40-fast, 11 passed).
-- [ ] **NR-41 - Leg starts as minimums, and one run through every leg for a line.**
+- [x] **NR-41 - Leg starts as minimums, and one run through every leg for a line.**
   Depends: NR-31 to NR-40, NR-38a and NR-38b
   - Work: A leg's start facts that are receipts of the accepted run (an exact level, coin
     count or journal) are minimums for another line. The continuous journey takes a class
     line and plays the legs in the Cleric's order; a capture after a leg is named
     <the Cleric's snapshot name>-<class>.
   - Proof: scripts/sim/test-sim-snapshot.ps1 passes; the full gate identical.
+  - 2026-10-09: done. A leg's start is the accepted run's receipt for the contract's
+    class and a set of minimums for another. The Cleric plays as recorded.
+    - **Java.** None read: these are the bot's own checks of where a leg may begin.
+    - **Where the receipts were.**
+      - The Abyss entry's start (NaturalAbyssEntryLeg.VerifyStart): level exactly 25, the
+        journal exactly Q2945, the Altgard Dark Legionary Staff in both hands, exactly
+        seven Bronze Coins. For another class: at least level 25, Q2945 untouched among
+        whatever else is open, one weapon held in the main hand, whatever coins it has.
+      - Every leg's incoming journal (start.completedQuestIds), which the coin-gear,
+        Haramel and Abyss legs count against. It names Q2904, the dispatch quest of the
+        Priest's classes. For another class the leg is first given its own dispatch quest
+        there, and the journal is then bound to what the character has completed, so the
+        counts are minimums met. This binding ran only on the revised route; another class
+        gets it on every leg.
+      - The coin counts, the kept weapon and the worn gear of the coin-gear and Haramel
+        legs became the class's own in NR-38a and NR-40.
+    - **The change.**
+      - Sc/NaturalAbyssEntry.cs, VerifyStart: told whether the character is of the
+        contract's class.
+      - J: a leg is made the class's own before its journal is bound, in both places a
+        leg is taken up; the step that makes it the class's own now runs for every leg,
+        not only those with picks or a scope, and swaps the dispatch quest in the incoming
+        journal.
+      - **The continuous journey** has no check of its own on the line: it plays the legs
+        in NaturalAltgardContinuation.Order, the Cleric's, and each leg is given to the
+        observed class as above. Nothing was added there.
+      - scripts/sim/sim-snapshot.ps1: a leg capture of another line that has a second
+        class must be named with the class after the accepted line's snapshot name
+        (altgard-l1-chanter). A name without it is refused before anything is played.
+        scripts/sim/test-sim-snapshot.ps1 holds that.
+    - **Proof, the one-time check** (run/nr/NR-41/check.log; the check file is not
+      committed), on the Abyss entry's start:
+
+      | The character arrives with | The contract's class | Another class |
+      |---|---|---|
+      | Level 25, the staff, 7 Bronze Coins, Q2945 alone | starts | starts |
+      | Level 26 | refused | starts |
+      | Level 24 | refused | refused |
+      | A sword in one hand | refused | starts |
+      | 3 Bronze Coins | refused | starts |
+      | Another quest open beside Q2945 | refused | starts |
+
+      Another class's incoming binding takes the journal as the character has it and
+      leaves the leg's scopes alone.
+    - **Not proven here.** No line but the accepted one has played a leg, and no run
+      through every leg was played for another line in this item: its Proof line asks for
+      none. The first is phase D's, in a round.
+    - **Proof.** scripts/sim/test-sim-snapshot.ps1 passes, with test_compare_traces.py and
+      test-code-coverage.ps1 (run/nr/NR-41/script-tests.log). Gate, set
+      all+mage+warrior+artist+engineer+scout, -Parallel 8, run guard-p8
+      (run/nr/NR-41/guard-p8/verdict.json): verdict pass, all twelve scopes identical.
+      Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed, 16
+      skipped) and Fast passes (run nr41-fast, 11 passed).
 - [ ] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41, NR-38a, NR-38b, NR-43 to NR-48,
   NR-44a and NR-46a to NR-46d
   - Work: No code. The full gate on every recorded scope, and one table in this document
@@ -3455,3 +3508,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   source. Full gate guard-p8: twelve scopes identical. Seven checks, unit suite (4,629
   passed, 16 skipped) and Fast (nr40-fast) pass. Next: NR-41, leg starts as minimums, and
   one run through every leg for a line.
+- 2026-10-09 — Loop: NR-41 done. A leg's start is a receipt for the contract's class and
+  minimums for another: at least the level, the leg's quests untouched among those open,
+  one weapon held, whatever coins; the incoming journal gets the class's own dispatch
+  quest and is bound to what the character has completed, on every leg. A leg capture of
+  another line with a second class must carry the class in its name. Script tests, full
+  gate guard-p8 (twelve scopes identical), seven checks, unit suite (4,629 passed, 16
+  skipped) and Fast (nr41-fast) pass. Next: NR-42, phase C closed.
