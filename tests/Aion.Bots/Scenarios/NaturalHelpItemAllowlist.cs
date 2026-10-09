@@ -1,11 +1,23 @@
 namespace Aion.Bots.Scenarios;
 
+/// <summary>NR-34 (NR-Q8): whom an approved row is for. A class profile says which kinds it takes.</summary>
+public enum NaturalHelpKind
+{
+	/// <summary>Every class: the healing potion, the shield scroll, the running scroll, the DP jelly.</summary>
+	EveryClass,
+	/// <summary>A class that casts from mana: the mana serum, and the Awakening scroll, which shortens a cast.</summary>
+	Caster,
+	/// <summary>A class that rests with a reagent skill: the powder.</summary>
+	Reagent,
+}
+
 /// <summary>One approved supplied help item for a level band (docs/natural-ascension-altgard.md Appendix D.2).</summary>
 /// <param name="TopUpTo">Supply up to this many when the owned count is below <paramref name="Below"/>.</param>
 /// <param name="SkillId">The item's use skill (0 for the powder reagent).</param>
 /// <param name="UseDelayId">The item's use-delay group (0 for the powder reagent).</param>
+/// <param name="Kind">NR-34: whom the row is for; every class when not given.</param>
 public sealed record NaturalHelpSupply(int ItemId, string Family, int FromLevel, int ToLevel, int TopUpTo, int Below,
-	int ItemLevel, int SkillId, int UseDelayId);
+	int ItemLevel, int SkillId, int UseDelayId, NaturalHelpKind Kind = NaturalHelpKind.EveryClass);
 
 /// <summary>
 /// NA-20: the help-item allowlist the operator APPROVED on 2026-09-28 (OD-13), with two changes: the heal is the
@@ -19,8 +31,8 @@ public static class NaturalHelpItemAllowlist
 {
 	public static readonly NaturalHelpSupply[] Approved =
 	[
-		new(164000133, "awakening", 20, 29, 60, 15, 20, 9965, 34),
-		new(164000134, "awakening", 30, 39, 60, 15, 30, 9965, 34),
+		new(164000133, "awakening", 20, 29, 60, 15, 20, 9965, 34, NaturalHelpKind.Caster),
+		new(164000134, "awakening", 30, 39, 60, 15, 30, 9965, 34, NaturalHelpKind.Caster),
 		new(164000075, "running", 20, 29, 20, 5, 20, 9960, 35),
 		new(164000076, "running", 30, 39, 20, 5, 30, 9960, 35),
 		new(164000067, "anti-shock", 10, 19, 30, 8, 20, 9953, 32),
@@ -29,12 +41,12 @@ public static class NaturalHelpItemAllowlist
 		new(162000002, "life-potion", 10, 19, 30, 10, 10, 9889, 11),
 		new(162000003, "life-potion", 20, 29, 30, 10, 20, 9890, 11),
 		new(162000004, "life-potion", 30, 39, 30, 10, 30, 9891, 11),
-		new(162000017, "mana-serum", 10, 19, 40, 10, 10, 9904, 11),
-		new(162000018, "mana-serum", 20, 29, 40, 10, 20, 9905, 11),
-		new(162000019, "mana-serum", 30, 39, 40, 10, 30, 9906, 11),
+		new(162000017, "mana-serum", 10, 19, 40, 10, 10, 9904, 11, NaturalHelpKind.Caster),
+		new(162000018, "mana-serum", 20, 29, 40, 10, 20, 9905, 11, NaturalHelpKind.Caster),
+		new(162000019, "mana-serum", 30, 39, 40, 10, 30, 9906, 11, NaturalHelpKind.Caster),
 		new(160002273, "dp-jelly", 10, 39, 8, 2, 40, 10164, 23),
-		new(169300003, "powder", 10, 24, 200, 50, 10, 0, 0),
-		new(169300004, "powder", 25, 39, 200, 50, 20, 0, 0),
+		new(169300003, "powder", 10, 24, 200, 50, 10, 0, 0, NaturalHelpKind.Reagent),
+		new(169300004, "powder", 25, 39, 200, 50, 20, 0, 0, NaturalHelpKind.Reagent),
 	];
 
 	/// <summary>
@@ -55,6 +67,18 @@ public static class NaturalHelpItemAllowlist
 
 	/// <summary>Every supplied row: the level 1-9 kit, then the bands from level 10 on.</summary>
 	public static IEnumerable<NaturalHelpSupply> AllLevels => Starter.Concat(Approved);
+
+	/// <summary>
+	/// NR-34 (NR-Q8): the kit of a class that plays past level 9, by the kinds its profile takes: the level 1-9 kit, then
+	/// the bands from level 10 on that are for every class or of a kind it takes. With both kinds it is
+	/// <see cref="AllLevels"/>, row for row: the Cleric's.
+	/// </summary>
+	public static NaturalHelpSupply[] Kit(bool caster, bool reagent) => [.. AllLevels.Where(row => row.Kind switch
+	{
+		NaturalHelpKind.Caster => caster,
+		NaturalHelpKind.Reagent => reagent,
+		_ => true,
+	})];
 
 	/// <summary>Owned natural substitutes the proposal relies on (veteran rewards, VeteranRewardService months 26/30).</summary>
 	public static readonly int[] OwnedEventScrolls = [164002118, 164002116];

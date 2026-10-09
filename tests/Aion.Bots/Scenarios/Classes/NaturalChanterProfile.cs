@@ -45,7 +45,8 @@ public static class NaturalChanterProfile
 			Skills = skills,
 			Excluded = Excluded,
 			Combat = new NaturalRotationCombatPolicy(NaturalPriestProfile.PriestRules, skills, NaturalPriestProfile.PriestLineMovement),
-			HelpItems = new(NaturalHelpItemAllowlist.AllLevels.ToArray(), null),
+			// NR-34: as the Cleric, both kinds.
+			HelpItems = NaturalHelpItemRules.ForKinds(caster: true, reagent: true),
 			Upkeep = [NaturalPriestProfile.Blessing],
 			PatrolRule = NaturalPatrolRule.Baseline,
 			RangedHold = NaturalRangedHold.RunOption,

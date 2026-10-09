@@ -152,6 +152,19 @@ by a lettered item. Answers already given are quoted.
     MP);
   - whether a class wants another order than its default.
   Until then every other class takes the order's pick.
+- **NR-Q13. Help for a class that does not cast.** Asked by NR-34. Two defaults, each from
+  what the starters' profiles already say, and each for the class's own first item to
+  confirm:
+  - **Who casts from mana.** The Priest, Mage and Artist lines keep mana potions and the
+    Awakening scroll; the Warrior, Scout and Engineer lines do not. So Gladiator, Templar,
+    Assassin, Ranger, Gunner and Rider are supplied no mana serum and no Awakening scroll.
+    They restore mana with MP Recovery and the powder, which every second class has.
+  - **The Courage scroll.** A class that keeps Courage in the shared scroll slot (the
+    Warrior, Scout and Engineer lines) is supplied no scroll for it from level 20: OD-13
+    approved the Awakening scroll only, and the allowlist is the operator's. It keeps a
+    Courage scroll up only while it owns one. To decide: whether the Courage scrolls
+    164000072 (20 to 29) and 164000073 (30 to 39) are approved in the Awakening scroll's
+    counts.
 
 ## Standing rules
 
@@ -2476,13 +2489,62 @@ can use them. The order below is the order of work: the item that saves time com
       guard-p8 (run/nr/NR-33/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
       16 skipped) and Fast passes (run nr33-fast, 11 passed).
-- [ ] **NR-34 - The help kit by class from level 10.** Depends: NR-31
+- [x] **NR-34 - The help kit by class from level 10.** Depends: NR-31
   - Work: NR-Q8. The allowlist's rows get a kind: for every class, for a class that casts
     from mana, for a class with a reagent skill. The profile says which kinds its class
     takes. The Cleric's supply is what it was. Write each second class's kit into this
     document as a manifest.
   - Proof: One-time check that prints each class's kit at levels 10, 20 and 25; the full
     gate identical, with help-items.json of the Cleric's scopes unchanged.
+  - 2026-10-09: done. The allowlist's rows have a kind and a profile takes its kinds. The
+    Cleric's kit is every row, as it was.
+    - **Java and data.** No server behavior is changed or relied on beyond the data:
+      skill_tree.xml gives every one of the eleven second classes Herb Treatment 246 and
+      MP Recovery 249 at level 10, and skill_templates.xml has both use Lesser Odella
+      Powder 169300003. So every second class has a reagent skill; the Cleric and the
+      Chanter are not alone in it.
+    - **The change.**
+      - Sc/NaturalHelpItemAllowlist.cs: NaturalHelpKind, and a kind on each row. Kit(caster,
+        reagent) is the level 1-9 kit and the rows from level 10 on that are for every
+        class or of a kind the class takes.
+      - Sc/Classes/NaturalClassProfile.cs: NaturalHelpItemRules.ForKinds, by which a
+        profile says its kinds. The Cleric's and the Chanter's profiles take both, which
+        is every row in the allowlist's order.
+      - No id is added to the allowlist, and the supply's refusal of an unapproved id is
+        as it was.
+    - **The manifest (NR-Q8).** Counts are "top up to N when fewer than M are owned".
+
+      | Kind | Rows from level 10 |
+      |---|---|
+      | Every class | Anti-Shock scroll 164000067 at 10-19, 164000068 at 20-29, 164000069 at 30-39: 30 below 8. Life Potion 162000002 at 10-19, 162000003 at 20-29, 162000004 at 30-39: 30 below 10. Running scroll 164000075 at 20-29, 164000076 at 30-39: 20 below 5. Zeller Aether Jelly 160002273 at 10-39: 8 below 2. |
+      | A class that casts from mana | Mana Serum 162000017 at 10-19, 162000018 at 20-29, 162000019 at 30-39: 40 below 10. Awakening scroll 164000133 at 20-29, 164000134 at 30-39: 60 below 15. |
+      | A class with a reagent skill | Odella powder 169300003 at 10-24, 169300004 at 25-39: 200 below 50. |
+
+      Every kit starts with the level 1-9 rows of CP-Q12. By default (NR-Q13) Cleric,
+      Chanter, Sorcerer, Spirit Master and Bard take all three kinds, and Gladiator,
+      Templar, Assassin, Ranger, Gunner and Rider take the first and the third. A class's
+      first item writes the kinds into its profile.
+    - **Proof, the one-time check** (run/nr/NR-34/check.log; the check file is not
+      committed): each class's kit at levels 10, 20 and 25, every supply passed by the
+      allowlist's own refusal.
+
+      | Classes | Level | Supplied to a character that has none of it |
+      |---|---|---|
+      | Cleric, Chanter, Sorcerer, Spirit Master, Bard | 10 | 30 x 164000067 anti-shock, 30 x 162000002 life-potion, 40 x 162000017 mana-serum, 8 x 160002273 dp-jelly, 200 x 169300003 powder |
+      | Cleric, Chanter, Sorcerer, Spirit Master, Bard | 20 | 60 x 164000133 awakening, 20 x 164000075 running, 30 x 164000068 anti-shock, 30 x 162000003 life-potion, 40 x 162000018 mana-serum, 8 x 160002273 dp-jelly, 200 x 169300003 powder |
+      | Cleric, Chanter, Sorcerer, Spirit Master, Bard | 25 | 60 x 164000133 awakening, 20 x 164000075 running, 30 x 164000068 anti-shock, 30 x 162000003 life-potion, 40 x 162000018 mana-serum, 8 x 160002273 dp-jelly, 200 x 169300004 powder |
+      | Gladiator, Templar, Assassin, Ranger, Gunner, Rider | 10 | 30 x 164000067 anti-shock, 30 x 162000002 life-potion, 8 x 160002273 dp-jelly, 200 x 169300003 powder |
+      | Gladiator, Templar, Assassin, Ranger, Gunner, Rider | 20 | 20 x 164000075 running, 30 x 164000068 anti-shock, 30 x 162000003 life-potion, 8 x 160002273 dp-jelly, 200 x 169300003 powder |
+      | Gladiator, Templar, Assassin, Ranger, Gunner, Rider | 25 | 20 x 164000075 running, 30 x 164000068 anti-shock, 30 x 162000003 life-potion, 8 x 160002273 dp-jelly, 200 x 169300004 powder |
+
+      A kit with both kinds is the allowlist's nineteen rows, row for row; one without the
+      caster's kind has fourteen and no mana serum or Awakening scroll at any level.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-34/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical. help-items.json of each scope is byte for byte the one of NR-33's gate
+      (run/nr/NR-34/help-items.log): p, m, b, c, hm, ax and the five starters; l1 writes
+      none in either. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr34-fast, 11 passed).
 - [ ] **NR-35 - The bridge's shop and stops by class.** Depends: NR-33, NR-34
   - Work: The Altgard shop stop buys the powder only for a class with a reagent skill and
     the potions by the class's restock rule; the kept accessories come from the gear rule.
@@ -2897,3 +2959,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   and NR-40. Full gate guard-p8: twelve scopes identical. Seven checks, unit suite (4,629
   passed, 16 skipped) and Fast (nr33-fast) pass. Next: NR-34, the help kit by class from
   level 10.
+- 2026-10-09 — Loop: NR-34 done. The allowlist's rows have a kind (every class, a class
+  that casts from mana, a class with a reagent skill) and a profile takes its kinds; the
+  Cleric and the Chanter take both, which is every row. Every second class learns Herb
+  Treatment and MP Recovery at level 10, so all take the powder. Defaults for who casts
+  and the missing Courage scroll are NR-Q13, open. Full gate guard-p8: twelve scopes
+  identical, help-items.json of every scope unchanged. Seven checks, unit suite (4,629
+  passed, 16 skipped) and Fast (nr34-fast) pass. Next: NR-35, the bridge's shop and stops
+  by class.

@@ -198,8 +198,9 @@ public static class NaturalPriestProfile
 			Skills = skills,
 			Excluded = excluded,
 			Combat = new NaturalRotationCombatPolicy(ClericRules, skills, PriestLineMovement),
-			// OD-13: the approved kit at every level.
-			HelpItems = new(NaturalHelpItemAllowlist.AllLevels.ToArray(), null),
+			// OD-13: the approved kit at every level. NR-34: a Cleric casts from mana and rests with the powder, so it
+			// takes both kinds, which is every row.
+			HelpItems = NaturalHelpItemRules.ForKinds(caster: true, reagent: true),
 			Upkeep = [Blessing],
 			// NA-22 (OD-14).
 			PatrolRule = NaturalPatrolRule.HoldAndAssess,
