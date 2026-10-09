@@ -2957,11 +2957,62 @@ can use them. The order below is the order of work: the item that saves time com
       guard-p8 (run/nr/NR-39/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
       16 skipped) and Fast passes (run nr39-fast, 11 passed).
-- [ ] **NR-40 - Haramel by class.** Depends: NR-33, NR-38a
+- [x] **NR-40 - Haramel by class.** Depends: NR-33, NR-38a
   - Work: Java first (HaramelInstance.java). The chest by class, the upgrade groups by the
     class's armor type, Q28505's list by class, and the object ids and coin counts read at
     the leg's start.
   - Proof: One-time check of the four chests against Java's table; gate hm identical.
+  - 2026-10-09: done. The Haramel scope's chest, kept weapon, coin counts, armor and
+    stigma facts are the class's own. The Cleric's leg is the contract itself.
+    - **Java.** HaramelInstance.onDie 24-53: when the boss 216922 dies, the instance
+      spawns one chest at the same spot, by the class of the player who did it most
+      damage: 700829 for Gladiator and Templar; 700830 for Assassin, Ranger and Gunner;
+      700831 for Bard, Sorcerer and Spirit Master; 700832 for Cleric, Chanter and Rider. A
+      starter class gets none. The port has the same switch. No server change.
+    - **Q28505's list.** Nothing to do: NR-32 found that the server offers every class the
+      general list there, and the leg's pick is the class's own by that item.
+    - **The change.**
+      - Sc/NaturalHaramel.cs: ChestFor is Java's table. The scope carries what was written
+        into the code for the Cleric: the slot the kept weapon is worn in (3), the five
+        armor pieces it brings in by id, the armor it may put on inside the leg (chain),
+        and the stigma stone, reward and skill that must not be found (NR-39). ForClass
+        gives a class its own: its chest, the weapon it holds with its object and slot, no
+        armor asked for by id, its own armor kind, its Iron Coins as counted, its Bronze
+        Coins as counted and the seven the leg's quests pay, and its own stone's facts.
+      - Sc/NaturalHaramelDecisionEngine.cs and the leg's checks read those from the scope.
+      - Sc/NaturalAltgardContinuation.cs, BindIncoming: told that the character is not of
+        the contract's class, it binds the journal only; the staff and gloves it looked
+        for are the Cleric's.
+      - J: the step that gives another class its picks gives it this scope too
+        (leg-haramel-scope); the equipment check inside the leg asks the scope what may be
+        put on.
+    - **Proof, the one-time check** (run/nr/NR-40/check.log; the check file is not
+      committed): the bot's chest table was compared with the switch read out of Java's
+      source for the eleven second classes. Each class's scope from a bag with its weapon
+      held, 19 Iron Coins and no Bronze Coins:
+
+      | Classes | Chest | Weapon slot | Armor it may put on | Stone, skill that must not be held |
+      |---|---|---|---|---|
+      | Gladiator | 700829 | 3 | plate | 140000003, 11506 |
+      | Templar | 700829 | 1 | plate | 140000003, 11506 |
+      | Assassin | 700830 | 1 | leather | 140000003, 11506 |
+      | Ranger | 700830 | 3 | leather | 140000002, 11505 |
+      | Gunner | 700830 | 1 | leather | 140000002, 11505 |
+      | Sorcerer, Spirit Master | 700831 | 3 | robe | 140000004, 11507 |
+      | Bard | 700831 | 3 | robe | 140000001, 11504 |
+      | Cleric, Chanter | 700832 | 3 | chain | 140000001, 11504 |
+      | Rider | 700832 | 3 | chain | 140000002, 11505 |
+
+      Every class ends with 19 iron and 7 bronze from that bag. The contract's own scope
+      reads as it did: the same incoming list, the same groups it may put on, chest
+      700832. For the Cleric, ForClass returns the contract's facts.
+    - **Not proven here.** No class but the Cleric has opened its chest. The chest is
+      spawned by the instance and found by sight; whether the walk to another chest id
+      works is first played when another line reaches Haramel.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-40/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical, hm among them. Seven pre-commit checks pass, Aion.GameServer.Tests passes
+      (4,629 passed, 16 skipped) and Fast passes (run nr40-fast, 11 passed).
 - [ ] **NR-41 - Leg starts as minimums, and one run through every leg for a line.**
   Depends: NR-31 to NR-40, NR-38a and NR-38b
   - Work: A leg's start facts that are receipts of the accepted run (an exact level, coin
@@ -3397,3 +3448,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   The Cleric's leg 11, replayed from altgard-l10 before and after the change, gives
   identical traces. Full gate guard-p8: twelve scopes identical. Seven checks, unit suite
   (4,629 passed, 16 skipped) and Fast (nr39-fast) pass. Next: NR-40, Haramel by class.
+- 2026-10-09 — Loop: NR-40 done. The Haramel scope is the class's own: its chest by
+  Java's table (four chests for eleven classes), the weapon it holds and its slot, its
+  armor kind, its coins as counted and its own stone's facts; the incoming binding leaves
+  another class's scopes to the journey. The bot's chest table equals the switch in Java's
+  source. Full gate guard-p8: twelve scopes identical. Seven checks, unit suite (4,629
+  passed, 16 skipped) and Fast (nr40-fast) pass. Next: NR-41, leg starts as minimums, and
+  one run through every leg for a line.

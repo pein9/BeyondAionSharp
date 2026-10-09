@@ -17,11 +17,15 @@ public static class NaturalAltgardContinuation
 		id is 24014 or 24015 && incoming == (6, 0) && level >= 20 && completed.Contains(24010) &&
 		current is { Status: 3, StepAndFlags: 0, CompleteCount: 0 };
 
+	/// <param name="contractClass">NR-40: the character is of the class the leg's contract was written for. Another class's
+	/// coin-gear and Haramel scopes are made from what it holds by the journey (NR-38a, NR-40), not bound here to the
+	/// contract's staff and gloves.</param>
 	public static NaturalAltgardContract BindIncoming(NaturalAltgardContract leg, IReadOnlySet<int> completed,
-		IReadOnlyList<NaturalJourneyItem> inventory, IEnumerable<int>? equippedItemIds = null)
+		IReadOnlyList<NaturalJourneyItem> inventory, IEnumerable<int>? equippedItemIds = null, bool contractClass = true)
 	{
 		if (leg.Start.CompletedQuestIds.Any(id => !completed.Contains(id)))
 			throw new InvalidDataException($"{leg.Leg} is missing an approved incoming completion.");
+		if (!contractClass) return leg with { Start = leg.Start with { CompletedQuestIds = completed.Order().ToArray() } };
 		NaturalHaramel? haramel = leg.Haramel;
 		if (haramel != null)
 		{

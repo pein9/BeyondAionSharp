@@ -19,8 +19,56 @@ public sealed record NaturalHaramel(int MapId, int CooldownId, int MaxEntries, i
 	/// What every character brings in from the coin-gear leg. NR-19a: the accepted run's cloth gloves are not in this list.
 	/// They are in ProtectedItemIds, so a character that owns them keeps them; one that never had them is not asked for them.
 	/// </summary>
-	public int[] RequiredIncomingItemIds => [StaffItemId, 110551139, 114501726, 111501065, 112501015,
-		113501074, 188053787, IronItemId, BronzeItemId];
+	public int[] RequiredIncomingItemIds => [StaffItemId, .. IncomingArmorItemIds, 188053787, IronItemId, BronzeItemId];
+
+	/// <summary>NR-40: the armor the contract's class brings in: the two Legionary pieces and the three coin pieces. A
+	/// class other than the contract's is asked for none by id; what it wears is protected as it stands.</summary>
+	public int[] IncomingArmorItemIds { get; init; } = [110551139, 114501726, 111501065, 112501015, 113501074];
+
+	/// <summary>NR-40: the slot the retained weapon is worn in: 3, both hands, for the contract's staff.</summary>
+	public long WeaponSlot { get; init; } = 3;
+
+	/// <summary>NR-40: the armor the class may put on inside the leg, by its item-group prefix: chain for the contract's class.</summary>
+	public string UpgradeArmorPrefix { get; init; } = "CH";
+
+	/// <summary>NR-40: the Q2900 stone, the reward never given and the stone's skill, none of which may be found here
+	/// (NR-39 gives each class its own).</summary>
+	public int StigmaStoneItemId { get; init; } = 140000001;
+	public int LegacyRewardId { get; init; } = 140000098;
+	public int StigmaSkillId { get; init; } = 11504;
+
+	/// <summary>
+	/// NR-40: the chest the instance spawns when the boss dies, by the class of the player who did it most damage (Java
+	/// HaramelInstance.onDie, 32-52): one of four. A starter class gets none.
+	/// </summary>
+	public static int ChestFor(Aion.GameServer.Model.PlayerClass playerClass) => playerClass switch
+	{
+		Aion.GameServer.Model.PlayerClass.GLADIATOR or Aion.GameServer.Model.PlayerClass.TEMPLAR => 700829,
+		Aion.GameServer.Model.PlayerClass.ASSASSIN or Aion.GameServer.Model.PlayerClass.RANGER or Aion.GameServer.Model.PlayerClass.GUNNER => 700830,
+		Aion.GameServer.Model.PlayerClass.BARD or Aion.GameServer.Model.PlayerClass.SORCERER or Aion.GameServer.Model.PlayerClass.SPIRIT_MASTER => 700831,
+		Aion.GameServer.Model.PlayerClass.CLERIC or Aion.GameServer.Model.PlayerClass.CHANTER or Aion.GameServer.Model.PlayerClass.RIDER => 700832,
+		_ => throw new InvalidDataException($"Haramel spawns the {playerClass} no chest."),
+	};
+
+	/// <summary>NR-40: gear the class may put on inside the leg: a body piece of its armor, or an accessory.</summary>
+	public bool CanUpgrade(string? group) => group is "RING" or "EARRING" or "NECKLACE" or "BELT" ||
+		group != null && group.StartsWith(UpgradeArmorPrefix + "_", StringComparison.Ordinal) &&
+		group[(UpgradeArmorPrefix.Length + 1)..] is "TORSO" or "GLOVE" or "SHOULDER" or "PANTS" or "SHOES";
+
+	/// <summary>
+	/// NR-40: the same scope for a class other than the contract's, made when the leg is taken up. The chest is Java's for
+	/// the class. The weapon it holds is the one it must keep, with its object and its slot. The Iron Coins are those it
+	/// has; the Bronze Coins are those it has and the contract's count, which the leg's quests pay a class that starts
+	/// with none. The armor it may put on is its own kind, and the stigma facts are its own stone's.
+	/// </summary>
+	public NaturalHaramel ForClass(Aion.GameServer.Model.PlayerClass playerClass, NaturalJourneyItem weapon, long ironCoins, long bronzeCoins,
+		string armorPrefix, NaturalAltgardDestiny destiny) => this with
+	{
+		ChestNpcId = ChestFor(playerClass), StaffItemId = weapon.ItemId, StaffObjectId = weapon.ObjectId, WeaponSlot = weapon.EquipmentSlot,
+		IncomingArmorItemIds = [], UpgradeArmorPrefix = armorPrefix, IronCount = checked((int)ironCoins),
+		BronzeCount = checked((int)bronzeCoins) + BronzeCount, StigmaStoneItemId = destiny.StoneItemId, LegacyRewardId = destiny.LegacyRewardId,
+		StigmaSkillId = destiny.StigmaSkillId, ProtectedItemIds = [.. ProtectedItemIds.Append(weapon.ItemId).Distinct().Order()],
+	};
 	public int[] GraphNpcIds => [AnchorNpcId, PortalNpcId, EntryExitNpcId, BossExitNpcId, LiftNpcId,
 		BossNpcId, ChestNpcId, WorkingBindNpcId, 700950, 700953, 700954, 730359];
 	public static bool CanUpgradeGroup(string? group) => group is "CH_TORSO" or "CH_GLOVE" or "CH_SHOULDER" or
@@ -165,7 +213,7 @@ public sealed record NaturalHaramelProgress(int CharacterId, long StartedAtMilli
 		RequireLoadout(fresh, leg.Haramel!);
 		foreach (NaturalHaramelEquipment original in saved.IncomingEquipment.Where(i => i.Slot is > 0 and not (65535 or 8192 or 16384)))
 			if (!fresh.Inventory.TryGetValue(original.ObjectId, out BotInventoryItem? item) || item.ItemId != original.ItemId || item.Count != 1 ||
-				original.ItemId == leg.Haramel!.StaffItemId && item.Details.EquippedSlot != 3)
+				original.ItemId == leg.Haramel!.StaffItemId && item.Details.EquippedSlot != leg.Haramel.WeaponSlot)
 				throw new InvalidDataException($"Haramel lost incoming equipment object {original.ObjectId}/{original.ItemId}.");
 		return saved with { NeedsInstanceObservation = fresh.MapId == leg.Haramel!.MapId }; // Nothing is replayed.
 	}
@@ -178,9 +226,9 @@ public sealed record NaturalHaramelProgress(int CharacterId, long StartedAtMilli
 	private static void RequireLoadout(BotWorldModel world, NaturalHaramel rules)
 	{
 		if (!world.Inventory.TryGetValue(rules.StaffObjectId, out BotInventoryItem? staff) || staff.ItemId != rules.StaffItemId ||
-			staff.Details.EquippedSlot != 3 || rules.ProtectedItemIds.Where(id => id is not (186000006 or 186000007))
+			staff.Details.EquippedSlot != rules.WeaponSlot || rules.ProtectedItemIds.Where(id => id is not (186000006 or 186000007))
 			.Any(id => !world.Inventory.Values.Any(i => i.ItemId == id)) ||
-			world.Inventory.Values.Where(i => i.ItemId == 188053787).Sum(i => i.Count) != 1 || world.Skills.ContainsKey(11504))
+			world.Inventory.Values.Where(i => i.ItemId == 188053787).Sum(i => i.Count) != 1 || world.Skills.ContainsKey(rules.StigmaSkillId))
 			throw new InvalidDataException("Haramel lost the retained staff/gear or sealed stigma bundle.");
 	}
 }

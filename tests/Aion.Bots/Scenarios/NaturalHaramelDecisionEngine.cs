@@ -31,10 +31,10 @@ public static class NaturalHaramelDecisionEngine
 		if (leg.Start.CompletedQuestIds.Any(id => !Done(id))) return Stop("lost-journal", $"Preserve all {leg.Start.CompletedQuestIds.Length} incoming completed journals.");
 		if (state.CompletedQuestCounts?.GetValueOrDefault(2293) != 1 || leg.Order.Any(id => Done(id) && state.CompletedQuestCounts?.GetValueOrDefault(id) != 1))
 			return Stop("quest-repeat-count", "Reconcile first completions; never take another natural coin or Haramel repeat.");
-		if (state.ItemCounts.GetValueOrDefault(188053787) != 1 || state.ItemCounts.GetValueOrDefault(140000001) != 0 ||
-			state.ItemCounts.GetValueOrDefault(140000098) != 0 || state.SkillIds?.Contains(11504) == true)
+		if (state.ItemCounts.GetValueOrDefault(188053787) != 1 || state.ItemCounts.GetValueOrDefault(rules.StigmaStoneItemId) != 0 ||
+			state.ItemCounts.GetValueOrDefault(rules.LegacyRewardId) != 0 || state.SkillIds?.Contains(rules.StigmaSkillId) == true)
 			return Stop("stigma-ledger", "Retain the sealed Q2900 bundle without its tutorial stone/skill or legacy reward.");
-		if (state.Inventory?.Any(i => i.ObjectId == rules.StaffObjectId && i.ItemId == rules.StaffItemId && i.EquipmentSlot == 3) != true ||
+		if (state.Inventory?.Any(i => i.ObjectId == rules.StaffObjectId && i.ItemId == rules.StaffItemId && i.EquipmentSlot == rules.WeaponSlot) != true ||
 			rules.ProtectedItemIds.Where(id => id is not (186000006 or 186000007)).Any(id => state.ItemCounts.GetValueOrDefault(id) < 1))
 			return Stop("retained-gear", "Retain the equipped original staff, purchased armour and old cloth gloves.");
 		if (progress == null || state.NowMillis == null) return Stop("haramel-checkpoint", "Initialize or reconcile the explicit Haramel receipt before acting.");

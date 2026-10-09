@@ -302,6 +302,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			// when the leg is taken up, from what it then owns.
 			// NR-33: what the leg's coin-gear, Haramel and Abyss-entry scopes protect by item id is that class's too. Another
 			// class protects its own picks and what it wears when the leg is taken up, beside what every class carries.
+			// NR-40: the character is of the class the leg's contract was written for; an unobserved class is taken for it.
+			bool OfContractClass(NaturalAltgardContract leg) =>
+				session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass is not { } observedId ||
+				PlayerClassExtensions.GetPlayerClassById(observedId, true)?.ToString() == leg.Start.Class;
 			NaturalAltgardContract WithObservedClassRewards(NaturalAltgardContract leg)
 			{
 				BotWorldModel world = session.Api.World;
@@ -350,6 +354,27 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						["coins"] = new[] { classGear.IncomingCoins, classGear.RewardCoins, classGear.EndpointCoins },
 					});
 				}
+				// NR-40: the Haramel scope's chest, kept weapon, coin counts, armor and stigma facts are the class's own.
+				if (own.Haramel is { } haramelScope)
+				{
+					BotInventoryItem held = world.Inventory.Values.SingleOrDefault(item => item.EquipmentSlot is 1 or 3)
+						?? throw new InvalidDataException("The Haramel leg needs a weapon held in the main hand.");
+					// The armor it prefers: the kind whose torso its gear rules score highest.
+					string armorPrefix = new[] { "PL", "CH", "LT", "RB", "CL" }.Where(prefix => rules.GearGroups.Contains(prefix + "_TORSO"))
+						.OrderByDescending(prefix => rules.Score(new NaturalItem(0, prefix + "_TORSO", [], [], "PC_ALL", 0, 1, 0, 0, 0, 0, ItemLevel: 1))).First();
+					NaturalHaramel classHaramel = haramelScope.ForClass(observedClass,
+						new NaturalJourneyItem(held.ObjectId, held.ItemId, held.Count, held.EquipmentSlot),
+						world.Inventory.Values.Where(item => item.ItemId == haramelScope.IronItemId).Sum(item => item.Count),
+						world.Inventory.Values.Where(item => item.ItemId == haramelScope.BronzeItemId).Sum(item => item.Count), armorPrefix,
+						NaturalAltgardContract.LoadLeg("l11").Destiny!.ForClass(observedClass, runtime.Data));
+					own = own with { Haramel = classHaramel };
+					session.TraceDiagnostic("leg-haramel-scope", new Dictionary<string, object?>
+					{
+						["leg"] = leg.Leg, ["class"] = observedClass.ToString(), ["chest"] = classHaramel.ChestNpcId, ["weapon"] = classHaramel.StaffItemId,
+						["weaponSlot"] = classHaramel.WeaponSlot, ["iron"] = classHaramel.IronCount, ["bronze"] = classHaramel.BronzeCount,
+						["armor"] = classHaramel.UpgradeArmorPrefix, ["stigmaSkill"] = classHaramel.StigmaSkillId,
+					});
+				}
 				// NR-39: the destiny campaign's stone, the skill it grants and the reward never given are the class's own.
 				if (own.Destiny is { } destiny)
 				{
@@ -396,7 +421,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			if (laterCapital != null && altgardLeg != null)
 				altgardLeg = NaturalAltgardContinuation.BindIncoming(altgardLeg, session.Api.World.CompletedQuestIds,
 					session.Api.World.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray(),
-					NaturalAltgardContinuation.EquippedItemIds(session.Api.World));
+					NaturalAltgardContinuation.EquippedItemIds(session.Api.World), OfContractClass(altgardLeg));
 			if (altgardLeg != null) altgardLeg = WithObservedClassRewards(altgardLeg);
 			coinGearProgress = altgardLeg?.CoinGear == null ? null : NaturalCoinGearProgress.Empty;
 			if (altgardLeg?.Haramel is { } haramel)
@@ -589,7 +614,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				IReadOnlySet<int> questNeeded = QuestNeededItems();
 				return await NaturalInventoryCheck.EquipAsync(session,
 					world.Inventory.Values.Where(item => !questNeeded.Contains(item.ItemId) && (altgardLeg?.Haramel == null ||
-						item.Details.EquippedSlot.GetValueOrDefault() != 0 || NaturalHaramel.CanUpgradeGroup(
+						item.Details.EquippedSlot.GetValueOrDefault() != 0 || altgardLeg.Haramel.CanUpgrade(
 							runtime.Data.ItemDataDh.GetItemTemplate(item.ItemId)?.GetItemGroup().ToString()))),
 					Describe, (long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF, refusedGear, gearToken, gear);
 			}
@@ -1709,7 +1734,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					NaturalAltgardContract shipped = NaturalAltgardContract.LoadLeg(id);
 					altgardLeg = WithObservedClassRewards(NaturalAltgardContinuation.BindIncoming(shipped, session.Api.World.CompletedQuestIds,
 						session.Api.World.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray(),
-						NaturalAltgardContinuation.EquippedItemIds(session.Api.World)));
+						NaturalAltgardContinuation.EquippedItemIds(session.Api.World), OfContractClass(shipped)));
 					altgardPlans = NaturalAltgardContract.LoadPlans(id);
 					collectionLimits = altgardPlans.Values.SelectMany(plan => plan.Steps
 						.Where(step => step.Kind == "collect" && step.ItemId > 0 && step.Count > 0)
@@ -4705,7 +4730,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					Require.Equal((long)rules.IronCount, ItemCount(observed, rules.IronItemId));
 					Require.Equal((long)rules.BronzeCount, ItemCount(observed, rules.BronzeItemId));
 					Require.All(rules.CleanupItemIds, id => Require.Equal(0L, ItemCount(observed, id)));
-					Require.True(observed.Inventory.TryGetValue(rules.StaffObjectId, out BotInventoryItem? staff) && staff.ItemId == rules.StaffItemId && staff.Details.EquippedSlot == 3, "Haramel replaced the retained staff.");
+					Require.True(observed.Inventory.TryGetValue(rules.StaffObjectId, out BotInventoryItem? staff) && staff.ItemId == rules.StaffItemId && staff.Details.EquippedSlot == rules.WeaponSlot, "Haramel replaced the retained staff.");
 					Require.True(haramelProgress!.Visits.Count(visit => visit.BossMovieObserved && visit.ChestResolved) >= 2 &&
 						haramelProgress.Visits.Any(visit => visit.PostBossQuests && visit.FreshSpawnsObserved), "Two actual fresh clears and their class chest outcomes must be retained.");
 					Require.Equal(combat.ReviveCount, haramelProgress.Revives);
