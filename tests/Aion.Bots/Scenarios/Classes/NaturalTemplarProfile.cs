@@ -98,9 +98,12 @@ public static class NaturalTemplarProfile
 	/// <summary>NR-53b: the distances of a pull with a 15 m skill, as the Priest line's are those of 25 m: the planned
 	/// pull opens at 13 m, a far target is approached to 10 m with sight of it, and the stand-off is held at 11 m (15 m
 	/// less the arrival tolerance and the margin). The approach must end inside the stand-off, or no point of its route
-	/// is one to cast from.</summary>
+	/// is one to cast from. NR-54c: the fight-through's firing range is not the pull's: it says which of a route's
+	/// blockers is taken, from the route's last point outside its circle, and the pull is then planned from there. It is
+	/// the one every line that has played uses; at 14 m a patrol's blocker on the road was never taken.</summary>
 	private static readonly NaturalEngageRanges Ranges = new(
-		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, SpellRange: 14, PullDistance: 13, FiringRange: 14,
+		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, SpellRange: 14, PullDistance: 13,
+		FiringRange: Navigation.NaturalFightThrough.FiringRange,
 		SpawnApproachRange: 13, SpawnPullScanRange: 20, FightThroughPullRange: 20,
 		StandoffSpellRange: 15, StandoffArrivalTolerance: 3, StandoffSafetyMargin: 1, RangedApproachRadius: 10);
 

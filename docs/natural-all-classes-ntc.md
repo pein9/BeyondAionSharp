@@ -3934,6 +3934,20 @@ The template:
       retreated, was cornered and died, and was revived at its bind in the hub. The
       wait then ended and Return was cast where it stood: "Return completed but did not
       move the Warrior out of the checked-route pocket." NR-54b.
+  - 2026-10-09, leg l9 captured; leg l10 stopped twice.
+    - **Captured** at 13b96c669: altgard-rc-l9-templar from altgard-rc-l8-templar with
+      -LaterCapital (run nr54-l9-a2, log run/nr/NR-54/l9-a2.log): the leg in 1 h 04 min
+      with one death; level 23, 152 quests, 55,073,001 ms of game time, dump sha256
+      01c564e199cbfdc8.
+    - **Leg l10, attempt 1** (capture run nr54-l10-a2 from altgard-rc-l9-templar; nothing
+      captured; evidence run/nr/NR-54/l10-a2/). On the road to Q2273's monsters a
+      patrolling lycan blocked the route and was not taken as a blocker. The Templar
+      then walked round the camp for 41 minutes, 57 routes and 994 segments, and the run
+      ended with "no quest, quest-item or level progress for 01:00:00". NR-54c.
+    - **Leg l10, attempt 2** (replay l10-a3 with NR-54c's change; evidence
+      run/nr/NR-54c/l10-a3/). Q2273 is done. At Q2277 a rest was interrupted by two
+      monsters, the first of which shot from 7 m away inside its neighbours' circles;
+      the walk to it was refused and the refusal ended the run. NR-54d.
 - [x] **NR-54b - A bind revive while Return cools down replaces the cast.** Depends: NR-53c
   - Work: The stop of leg l9. Java first: nothing new; Return goes to the bind point and
     a bind revive stands there (as read for NA-27). The journey already lets a death at
@@ -3964,6 +3978,42 @@ The template:
       guard-p8 (run/nr/NR-54b/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
       16 skipped) and Fast passes (run nr54b-fast, 11 passed).
+- [x] **NR-54c - The Templar's fight-through takes a blocker as every line does.** Depends: NR-54b
+  - Work: The first stop of leg l10. Java first: nothing of the server is relied on. The
+    fight-through's firing range says which of a route's blockers is taken: the one whose
+    place is within that range of the route's last point outside its circle. NR-53b gave
+    the Templar 14 m there, the reach of its pull. A patrol blocks the stretch of its
+    path it can walk to, so that last point can be farther from the patrol than the pull
+    reaches, and the blocker was never taken. The pull is planned after the blocker is
+    chosen, with the pull's own distances.
+  - Proof: The Templar's leg l10 passes Q2273 in a replay; the full gate identical.
+  - 2026-10-09: done.
+    - **The change.** Sc/Classes/NaturalTemplarProfile.cs: the firing range of its
+      engage ranges is NaturalFightThrough.FiringRange (23 m), the one every line that
+      has played uses. The pull's distances stay: spell range 14 m, pull at 13 m.
+    - **Proof, the replay** (l10-a3 from altgard-rc-l9-templar; evidence
+      run/nr/NR-54c/l10-a3/). Where attempt 1 was refused the patrol (210463 on the road
+      at 1757, 2197), the replay took it and went on: 90 fight-through plans, 46
+      blockers cleared, no replan for a hostile. Q2273 was reported after 55 minutes of
+      the leg. The replay did not end the leg: it stopped at Q2277 after 1 h 28 min
+      (45,031 records, 131 fights, 76 kills, 38 fights ended with the approach
+      refused), which is NR-54d.
+    - **Found, and logged (rule (f)).** After the first refusal the navigator walked an
+      avoidance loop for 41 minutes before it gave up: its rule counts returns to the
+      same route start within 0.5 m, and the loop came back to one only every eight to
+      twelve minutes. It is shared code and every line has it.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-54c/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
+      16 skipped) and Fast passes (run nr54c-fast, 11 passed).
+- [ ] **NR-54d - A rest's defence fights the attacker it can reach first.** Depends: NR-54c
+  - Work: The second stop of leg l10. Java first: nothing of the server is relied on.
+    When a rest is interrupted, the defence takes the attackers in the order of their
+    hits. A walk to one of them that is refused (it shoots from inside its neighbours'
+    circles) ended the run. The attacker is set aside, the nearest one that can be
+    fought is fought first, and the one set aside is asked again after it.
+  - Proof: The Templar's leg l10 is played to its end in a replay; the full gate
+    identical.
 - [ ] **NR-54a - The coin tiers buy the shield.** Depends: NR-50c
   - Work: Split from NR-50c. Java first: the reward shops as read for NR-38
     (TradeService.performBuyFromShop and validateBuyItems), and which trade tab of
@@ -4504,3 +4554,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   level 23, 152 quests, one death. Full gate guard-p8 (twelve scopes identical), seven
   checks, unit suite (4,629 passed, 16 skipped) and Fast (nr54b-fast) pass. Next: NR-54,
   the captures of legs l9 to l11 from the committed code.
+- 2026-10-09 — Loop: NR-54 leg l9 captured, NR-54c done. altgard-rc-l9-templar is
+  captured at 13b96c669: level 23, 152 quests, one death. Leg l10 stopped on the road to
+  Q2273: a patrol that blocked the route was farther than the Templar's 14 m firing range
+  and was never taken, and the navigator walked round the camp for 41 minutes. The
+  Templar's fight-through now takes a blocker within 23 m, as every line does. Replay
+  l10-a3 passed Q2273 and stopped at Q2277, where a rest's defence could not walk to an
+  attacker (NR-54d, written here). Full gate guard-p8 (twelve scopes identical), seven
+  checks, unit suite (4,629 passed, 16 skipped) and Fast (nr54c-fast) pass. Next: NR-54d.
