@@ -208,7 +208,7 @@ What this plan changes or adds:
 |---|---|---|
 | A. Open | NR-00 to NR-09 | Commit this plan, survey what is the Cleric's alone, and close the tool gaps the later phases need. |
 | B. The Cleric on the generic rules | NR-10 to NR-29 | The Priest and the Cleric play by the table policy, the table rest and the table gear rules alone. Their scopes are re-recorded; a generic Cleric is played to the endpoint and preserved as ntc-ready-cleric-s1. |
-| C. The legs opened by class line | NR-30 to NR-49 | The trial, the class choice, the bridge and every leg take the class from the line: identity, contracts, rewards, coin gear, kit, the leg-specific skills. The Cleric's scopes stay identical. First in the phase: several bots at once (NR-43 to NR-47). |
+| C. The legs opened by class line | NR-30 to NR-49 | The trial, the class choice, the bridge and every leg take the class from the line: identity, contracts, rewards, coin gear, kit, the leg-specific skills. The Cleric's scopes stay identical. First in the phase: several bots at once (NR-43 to NR-48). |
 | D. One class after another | NR-50 to NR-149 | Ten items reserved for each class in the order of NR-Q1: profile, probes, bridge, legs, endpoint, scope. |
 | E. Close | NR-150 to NR-152 | The whole check list, the full gate, the closing status and the readiness document. |
 
@@ -1836,13 +1836,13 @@ can use them. The order below is the order of work: the item that saves time com
       - The whole solution builds, the live tool with it. Bundle: the seven pre-commit
         checks pass, Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and Fast
         passes (run nr46b-fast, 11 passed).
-- [ ] **NR-46c - The journey's own code.** Depends: NR-47
+- [ ] **NR-46c - The journey's own code.** Depends: NR-48
   - Work: A fifth of scope c is the journey's own code and was not split. Split it with a
     one-time probe (pull planning, movement plans, what it observes each step) and write
     the table. A part over a tenth of the run that can be made cheaper with the same
     answers is fixed here; otherwise the table closes the item.
   - Proof: The table is in this document; the full gate identical if code changed.
-- [ ] **NR-46d - Navmesh routes.** Depends: NR-47
+- [ ] **NR-46d - Navmesh routes.** Depends: NR-48
   - Work: 683 routes at 51 ms each are 11.7% of scope c. Count how many are asked again
     with the same arguments, and reuse an answer only where it is certain to be the same.
   - Proof: The full gate with -Parallel 8 identical. Scope c's wall time before and after.
@@ -1934,7 +1934,7 @@ can use them. The order below is the order of work: the item that saves time com
   - Proof: A one-time check, not committed, that logs a server problem in one bot's turn
     of a two-bot round: that bot stops and the other reaches its end. The full gate
     identical.
-- [ ] **NR-47 - The round: runner, outcome records and round snapshots.** Depends: NR-44
+- [x] **NR-47 - The round: runner, outcome records and round snapshots.** Depends: NR-44
   - Work: Survey C1, parts 7 and 8. The round file, the runner that starts its worlds side
     by side, the progress line and the outcome record for each bot, the round snapshot
     with its list of characters, a class's capture as a record that points into it, Verify
@@ -1943,6 +1943,98 @@ can use them. The order below is the order of work: the item that saves time com
     Q2004: six outcome records and two round snapshots. Verify of one character's capture
     passes. A second round resumes all six from the snapshots and each reports where it
     stands.
+  - 2026-10-09: done. A round of two worlds was played and captured, one character's
+    capture verifies, and a second round resumed all six characters.
+    - **Java.** No server behavior is involved.
+    - **One change from the proof as written.** The rounds play to Munin, the end of the
+      plain journey, not to Q2004. Q2004 is a diagnostic stop boundary, and a capture has
+      to be of an endpoint the journey itself checks.
+    - **The change** (commit ee97c1376).
+      - scripts/sim/run-round.ps1, new. A round file names worlds, and bots in each world.
+        The runner builds once and starts one process for each world, side by side. A
+        world has a throwaway schema of its own and marks its run. round.json has one
+        outcome record for each bot; each bot's folder has its trace, the journey's
+        receipts and outcome.json. The exit code is 0 when every world played to its end.
+      - **-Capture**: a world's schema is dumped once when its last bot has ended, as the
+        round snapshot <name>-w<n>, with a record of every character in it: seat, line,
+        account, name, character id, outcome, level, quests, and the step and message of a
+        stop. A bot's own capture is a record that points at the round snapshot and its
+        character, written when the bot reached its end. The dump is not copied. A
+        captured round wants committed code, as every capture does.
+      - **-From**: each world is restored from its round snapshot, and a bot resumes its
+        line's character on that character's account and under its name. The world's
+        clock goes on from the snapshot's.
+      - scripts/sim/sim-snapshot.ps1 restores a pointing capture: the round's dump and
+        clock, the one character, and its seat's account and name. The journey's test
+        takes those two from NI08_RESUME_ACCOUNT and NI08_RESUME_NAME; unset, they are the
+        line's as always.
+      - The round test resumes a character, lets a seat give its account and its
+        character's name, and writes the world's clock and each character's id.
+      - scripts/sim/test-sim-snapshot.ps1: a pointing capture restores its world's dump
+        with the character, account, name, line and clock; one that names a character its
+        round does not hold, another seat's account, or a missing round snapshot is
+        refused.
+    - **Guard, before the code was committed.** Gate, set
+      all+mage+warrior+artist+engineer+scout, -Parallel 8, run guard-p8
+      (run/nr/NR-47/guard-p8/verdict.json): twelve scopes identical. The script tests pass
+      (run/nr/NR-47/script-tests.log). Seven pre-commit checks pass; Fast passes (run
+      nr47-fast, 11 passed).
+    - **Proof.**
+      - **Round 1** (run r1-a1 at ee97c1376, -Capture nr47-r1; run/nr/NR-47/r1-a1; round
+        file round-munin.json): two worlds side by side, three starter lines in each, ten
+        game minutes apart, the plain journey to Munin. 943 seconds of wall time.
+
+      | World | Seat | Line | Outcome | Level | Quests | Game minutes | Where it stopped |
+      |---|---|---|---|---|---|---|---|
+      | 1 | b01 | priest-cleric | reached | 9 | 41 | 197.7 |  |
+      | 1 | b02 | warrior | stopped | 9 | 13 | 58.8 | ni07-q2007-green-generator: Cast 2865 rejected: STR_SKILL_TARGET_IS_NOT_VALID. |
+      | 1 | b03 | mage | reached | 9 | 41 | 186.8 |  |
+      | 2 | b01 | artist | reached | 9 | 41 | 194.6 |  |
+      | 2 | b02 | engineer | stopped | 8 | 11 | 51.6 | ni07-q2005-stalker-17: Cast 1958 rejected: STR_SKILL_TARGET_IS_NOT_VALID. |
+      | 2 | b03 | scout | stopped | 9 | 13 | 134.0 | ni07-q2007-rejoin-700087-3: Natural journey made no quest, quest-item or level progress for 01:00:00. |
+
+      - **Two round snapshots**: nr47-r1-w1 and nr47-r1-w2, each with its world's three
+        characters, reached or stopped. Three captures that point into them:
+        munin-priest-r1, munin-mage-r1 and munin-artist-r1.
+      - **Verify of one character's capture**: sim-snapshot.ps1 -Action Verify -Name
+        munin-mage-r1, run nr47-verify-mage (run/nr/NR-47/verify-mage.log): "Verified
+        snapshot munin-mage-r1: character 134202 resumed at its endpoint." The world's
+        dump was restored with its three characters and the Mage was resumed alone, on
+        account 113.
+      - **Round 2** (run r2-a1, -From nr47-r1; round file round-munin-2.json): all six
+        resumed their own characters, the same ids on the same accounts. 509 seconds.
+
+      | World | Seat | Line | Outcome | Level | Quests | Game minutes | Where it stopped |
+      |---|---|---|---|---|---|---|---|
+      | 1 | b01 | priest-cleric | reached | 9 | 41 | 0.0 |  |
+      | 1 | b02 | warrior | reached | 9 | 41 | 120.5 |  |
+      | 1 | b03 | mage | reached | 9 | 41 | 0.0 |  |
+      | 2 | b01 | artist | reached | 9 | 41 | 0.0 |  |
+      | 2 | b02 | engineer | stopped | 9 | 13 | 15.3 | ni07-q2007-green-generator: Cast 2220 rejected: STR_SKILL_TARGET_IS_NOT_VALID. |
+      | 2 | b03 | scout | reached | 9 | 41 | 125.1 |  |
+
+        The three that had reached Munin report it at once. The Warrior and the Scout go
+        on from where they stopped and reach Munin. The Engineer goes on and stops again.
+    - **Found: a bot meets what another bot has taken.** Four of the six stops of the
+      rounds so far are of one kind, and a bot alone never meets it.
+      - A cast is refused with STR_SKILL_TARGET_IS_NOT_VALID right after the target's
+        SM_DELETE: the quest generator of Q2007 had just been used by another bot (the
+        Warrior in round 1, the Engineer in round 2), or the stalker of Q2005 was gone
+        (the Engineer in round 1). The journey throws on a refused cast.
+      - A quest object is not there to use: the Scout made no progress for an hour at
+        Q2007's object 700087 in round 1.
+      - A hunting ground is empty: the Scout at Q2003 in NR-44's round.
+      - NR-48 is written for it. It is the first thing rounds of classes need.
+- [ ] **NR-48 - A bot meets what another bot has taken.** Depends: NR-47
+  - Work: Java first: when a used quest object and a killed monster come back. Three
+    cases, each a stop today and each an outcome of a shared world: a cast refused because
+    its target has just gone; a quest object that is not there to use; a hunting ground
+    with no monster in it. In each the bot looks again and waits for what it needs to
+    come back, inside the stall budget it already has, and goes on. Generic: no branch on
+    a class or a quest. A bot alone must play as before.
+  - Proof: The full gate with -Parallel 8 identical. The round of round-munin.json played
+    again in two worlds: all six reach Munin, or what still stops is of another kind and
+    gets its own item.
 - [ ] **NR-30 - The class line carries the pair, the pick and the dispatch; the scripts
   accept every line.** Depends: NR-01, the close of phase B
   - Work: A class line with a second class names its ceremony pick, and ForLine passes it
@@ -2021,7 +2113,7 @@ can use them. The order below is the order of work: the item that saves time com
     line and plays the legs in the Cleric's order; a capture after a leg is named
     <the Cleric's snapshot name>-<class>.
   - Proof: scripts/sim/test-sim-snapshot.ps1 passes; the full gate identical.
-- [ ] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41, NR-43 to NR-47, NR-44a and
+- [ ] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41, NR-43 to NR-48, NR-44a and
   NR-46a to NR-46d
   - Work: No code. The full gate on every recorded scope, and one table in this document
     of what each class gets at each class-bound point of the route.
@@ -2332,3 +2424,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   players on one monster get the quest's kill. Full gate guard-p8: twelve scopes
   identical. Seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr44-fast)
   pass. Written: NR-44a. Next: NR-47, the round: runner, outcome records and snapshots.
+- 2026-10-09 — Loop: NR-47 done. run-round.ps1 plays a round's worlds side by side,
+  captures each world as a round snapshot and resumes from it; a class's capture points
+  into its world's dump. Round r1-a1, two worlds of three starters to Munin: three reach
+  it, three stop; munin-mage-r1 verifies. Round r2-a1 resumes all six: five at Munin, the
+  Engineer stops again. Four of the six stops so far are a bot meeting what another bot
+  has taken. Written: NR-48 for it; NR-46c and NR-46d wait for it. Next: NR-44a, a server
+  problem laid to the bot whose turn raised it.
