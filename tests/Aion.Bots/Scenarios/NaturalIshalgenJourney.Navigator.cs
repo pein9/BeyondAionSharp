@@ -254,6 +254,8 @@ public sealed partial class NaturalIshalgenJourney
 			// A native obstacle refusal can leave the straight close-in step inside another
 			// monster's circle. Try a bounded set of closer, visible ground points around
 			// the target, walking around those circles instead of recasting from the same spot.
+			// NR-46a: up to six searches from the same start at one instant; they share their edge traces.
+			using BotNavigationGeometry.EdgeMemory memory = geometry.RememberEdges();
 			foreach (BotPosition goal in geometry.GroundAround(map, target, [3f, 6f, 9f, 12f])
 				.Where(point => Distance(point, target) + 2 < distance &&
 					geometry.HasLineOfSight(map, point, target) && !hazards.Any(h => h.Contains(point)))

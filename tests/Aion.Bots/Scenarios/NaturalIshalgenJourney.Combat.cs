@@ -628,6 +628,9 @@ public sealed partial class NaturalIshalgenJourney
 				IReadOnlyList<BotPosition> route = [];
 				BotPosition? destination = null;
 				var rejections = new List<string>();
+				// NR-46a: every escape is searched from where the bot stands now, at this one instant. The searches that
+				// find no way out walk the same ground; they share their edge traces. Nothing in this loop sends or waits.
+				using (geometry.RememberEdges())
 				foreach (BotPosition escape in escapes)
 				{
 					tried.Add(escape);

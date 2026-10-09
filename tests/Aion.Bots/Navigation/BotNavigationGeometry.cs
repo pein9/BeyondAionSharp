@@ -184,9 +184,52 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
 
     /// <summary>Navmesh answer, or null when the caller should use the grid search: no navmesh for this
     /// map, or a failed request short enough for the bounded grid search to settle.</summary>
+    private readonly record struct EdgeKey(int Map, int StartX, int StartY, int StartZ, int EndX, int EndY, int EndZ);
+    private readonly record struct GroundKey(int Map, int X, int Y, int Z);
+    private Dictionary<EdgeKey, IReadOnlyList<BotPosition>?>? rememberedEdges;
+    private Dictionary<GroundKey, float>? rememberedGround;
+    private int rememberDepth;
+
+    /// <summary>
+    /// NR-46a: remembers every edge trace until the returned scope is disposed. Searches made one after another from the
+    /// same place then do not ask the ground and the collision check for the same edge again; half of a run's wall time
+    /// was those repeated questions (docs/natural-all-classes-ntc.md, NR-46).
+    /// <para>
+    /// A trace depends on its two points alone only while the world stands still: a door or another obstacle of the
+    /// instance can change. So a scope goes only around code that neither sends a packet nor lets game time pass. Every
+    /// remembered answer is the answer a fresh trace would give there, and no route changes. Scopes nest; the outermost
+    /// owns the memory.
+    /// </para>
+    /// </summary>
+    public EdgeMemory RememberEdges()
+    {
+        if (rememberDepth++ == 0)
+        {
+            rememberedEdges = new Dictionary<EdgeKey, IReadOnlyList<BotPosition>?>();
+            rememberedGround = new Dictionary<GroundKey, float>();
+        }
+        return new EdgeMemory(this);
+    }
+
+    /// <summary>The scope of <see cref="RememberEdges"/>. Dispose it once, with a using statement.</summary>
+    public readonly struct EdgeMemory : IDisposable
+    {
+        private readonly BotNavigationGeometry owner;
+        internal EdgeMemory(BotNavigationGeometry owner) => this.owner = owner;
+
+        public void Dispose()
+        {
+            if (owner == null || --owner.rememberDepth != 0) return;
+            owner.rememberedEdges = null;
+            owner.rememberedGround = null;
+        }
+    }
+
     private IReadOnlyList<BotPosition>? ViaNavMesh(int mapId, BotPosition start, BotPosition destination,
         Func<BotNavMeshRouter, IReadOnlyList<BotPosition>> query)
     {
+        // NR-46a: one navmesh question is answered at one instant; its leg checks and repairs share their traces.
+        using EdgeMemory memory = RememberEdges();
         BotNavMeshRouter? router = NavMesh;
         if (router == null || !router.Covers(mapId)) return null;
         IReadOnlyList<BotPosition> route = query(router);
@@ -248,6 +291,8 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
     /// <summary>Grid search (no navmesh) for ground within the three-metre interaction radius.</summary>
     public IReadOnlyList<BotPosition> GridInteractionPath(int mapId, BotPosition start, BotPosition target)
     {
+        // NR-46a: up to seventeen searches from one start, at one instant.
+        using EdgeMemory memory = RememberEdges();
 		IReadOnlyList<BotPosition> nearbyGround = FindGroundPath(mapId, start, target,
 			1000, 65536, 60, arrivalRadius: 3);
 		if (nearbyGround.Count != 0) return nearbyGround;
@@ -268,6 +313,9 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
         IReadOnlyList<BotRoadPoint>? preferredRoad = null,
         Func<BotPosition, bool>? arrivalPredicate = null)
     {
+        // NR-46a: a search is made at one instant. It asks for the ground under each cell once, not once for each of
+        // the cell's eight neighbours.
+        using EdgeMemory memory = RememberEdges();
         if (!Finite(start) || !Finite(destination) || Distance(start, destination) > maximumDistance) return [];
         // A path cannot enter an observed aggro circle that does not already
         // contain its origin. Reject this impossible goal before exploring a
@@ -413,16 +461,46 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
         MathF.Sqrt(MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2) + MathF.Pow(a.Z - b.Z, 2));
 
     /// <summary>Returns ground samples excluding the origin, or null for a blocked/ungrounded edge.
-    /// Nothing is cached across routes: doors and other per-instance collision state can change.</summary>
+    /// Nothing is kept from one instant to the next: doors and other per-instance collision state can change. Inside a
+    /// <see cref="RememberEdges"/> scope, which covers one instant, a trace asked again gets the answer it got.</summary>
     public IReadOnlyList<BotPosition>? TraceEdge(int mapId, BotPosition start, BotPosition destination)
     {
         if (!Finite(start) || !Finite(destination)) return null;
+        if (rememberedEdges == null) return TraceEdgeNow(mapId, start, destination);
+        // The key is the exact bits of both points: the same question, never a near one. The destination's heading is
+        // not part of the question. It is only stamped on the samples, so an answer remembered under another heading
+        // is copied with this one.
+        var key = new EdgeKey(mapId, BitConverter.SingleToInt32Bits(start.X), BitConverter.SingleToInt32Bits(start.Y),
+            BitConverter.SingleToInt32Bits(start.Z), BitConverter.SingleToInt32Bits(destination.X),
+            BitConverter.SingleToInt32Bits(destination.Y), BitConverter.SingleToInt32Bits(destination.Z));
+        if (!rememberedEdges.TryGetValue(key, out IReadOnlyList<BotPosition>? samples))
+            rememberedEdges[key] = samples = TraceEdgeNow(mapId, start, destination);
+        if (samples == null || samples.Count == 0 || samples[0].Heading == destination.Heading) return samples;
+        var stamped = new List<BotPosition>(samples.Count);
+        foreach (BotPosition sample in samples) stamped.Add(sample with { Heading = destination.Heading });
+        return stamped;
+    }
+
+    /// <summary>The ground under the start of an edge, asked once for a point while a scope is open.</summary>
+    private float GroundUnder(GeoMap map, int mapId, BotPosition point)
+    {
+        if (rememberedGround == null)
+            return map.GetZ(point.X, point.Y, point.Z + HeightWindow, point.Z - HeightWindow, instanceId, true);
+        var key = new GroundKey(mapId, BitConverter.SingleToInt32Bits(point.X), BitConverter.SingleToInt32Bits(point.Y),
+            BitConverter.SingleToInt32Bits(point.Z));
+        if (!rememberedGround.TryGetValue(key, out float z))
+            rememberedGround[key] = z = map.GetZ(point.X, point.Y, point.Z + HeightWindow, point.Z - HeightWindow, instanceId, true);
+        return z;
+    }
+
+    private IReadOnlyList<BotPosition>? TraceEdgeNow(int mapId, BotPosition start, BotPosition destination)
+    {
         GeoMap map = maps(mapId);
         float dx = destination.X - start.X, dy = destination.Y - start.Y;
         float distance = MathF.Sqrt(dx * dx + dy * dy);
         if (!float.IsFinite(distance) || distance > 200) return null;
         int steps = Math.Max(1, (int)MathF.Ceiling(distance / SampleSpacing));
-        float startZ = map.GetZ(start.X, start.Y, start.Z + HeightWindow, start.Z - HeightWindow, instanceId, true);
+        float startZ = GroundUnder(map, mapId, start);
         if (!float.IsFinite(startZ)) return null;
         var previous = start with { Z = startZ };
         var samples = new List<BotPosition>(steps);

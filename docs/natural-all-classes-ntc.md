@@ -1744,12 +1744,58 @@ can use them. The order below is the order of work: the item that saves time com
       code and is not this plan's to speed up.
     - **Proof.** The tables above. The probe is removed, the tree is clean and the build
       outputs are rebuilt without it.
-- [ ] **NR-46a - The grid search and its edge traces.** Depends: NR-46
+- [x] **NR-46a - The grid search and its edge traces.** Depends: NR-46
   - Work: First count, with a one-time probe on scope c: how many of the 150 searches end
     with no route, how many cells each visits, and how often one search traces the same
     edge twice. Then make the search cheaper with the same answers: an edge traced once in
     a search is not traced again, and whatever else the count shows. No route may change.
   - Proof: The full gate with -Parallel 8 identical. Scope c's wall time before and after.
+  - 2026-10-09: done. Scope c plays in 3 min 28 s where it took 4 min 55 s, and every
+    recorded scope is identical.
+    - **Java.** No server behavior is involved.
+    - **The count** (a one-time probe, removed; run/nr/NR-46a/count-c.txt, 150 searches of
+      scope c, 1,255,915 edge traces, 141.0 seconds):
+      - 141 of the 150 searches end with no route, and they are all of the time. The nine
+        that find a route visit two cells each.
+      - No search reaches its budget. A search that fails has walked all the ground it can
+        reach: a median of 504 cells, 11,380 at the most, eight traces a cell.
+      - 90 are the hazard-avoiding search and all 90 fail (119.3 s). 63 of them are the
+        retreat trying its escapes one after another from where the bot stands (94.0 s);
+        18 are the navigator's search around observed monsters (25.2 s). The other 57 are
+        local repairs of a navmesh route (15.0 s).
+      - 112 of the 150 start where another search started; 16 from one spot at the most.
+      - Inside one search no edge is traced twice. What repeats inside a search is the
+        ground under a cell, asked once for each of its eight neighbours; and from search
+        to search from the same spot, whole edges.
+    - **The change** (Sc/../Navigation/BotNavigationGeometry.cs: RememberEdges, EdgeMemory).
+      - Inside a scope, a trace asked again gets the answer it got, and the ground under a
+        point is asked once. The key is the exact bits of the points, never a near point.
+        The destination's heading is not part of the question; it is stamped on the
+        answer.
+      - A scope covers one instant only, a stretch that neither sends a packet nor lets
+        game time pass, because a door or another obstacle of the instance can change
+        between instants. Nothing is kept from one instant to the next.
+      - Scopes: every grid search; every navmesh question with its leg checks and repairs;
+        the interaction search's seventeen grid searches; the retreat's loop over its
+        escapes (NaturalIshalgenJourney.Combat.cs); the navigator's six close-in searches
+        (NaturalIshalgenJourney.Navigator.cs).
+      - Not given a scope: the rest relocation's loop, which walks inside its body. It was
+        not among scope c's costs.
+      - On scope c 679,721 traces were answered from memory and 625,100 were traced; the
+        ground was answered from memory 515,154 times and asked 109,946 times
+        (run/nr/NR-46a/hits-c.txt, a temporary count, removed).
+    - **What is left of the grid search.** A failing search still walks its ground once.
+      The navigator's 18 single searches (25 s) and the first search of each retreat are
+      what remains; a cheaper way to learn that no route exists would change the search
+      and is not attempted here.
+    - **Proof.**
+      - Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run guard-p8
+        (run/nr/NR-46a/guard-p8/verdict.json): verdict pass, all twelve scopes identical to
+        their baselines, in 459 seconds where NR-45's gate took 544.
+      - Scope c alone, run after-c: identical; the journey takes 3 min 28 s against 4 min
+        55 s before (run/nr/NR-21/gate-a1-c), 29% less.
+      - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+        passed, 16 skipped) and Fast passes (run nr46a-fast, 11 passed).
 - [ ] **NR-46b - A wait that no packet can end.** Depends: NR-46a
   - Work: A wait with a real-time limit (five seconds for a loot list, two for a quest's
     reply) sits out its limit although nothing can arrive. In the SIM session such a wait
@@ -2155,3 +2201,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   of its 30 seconds to two real-time waits for a loot list. Written: NR-46a (grid search),
   NR-46b (waits no packet can end), then after NR-47 NR-46c (the journey's own code) and
   NR-46d (navmesh routes). Next: NR-46a.
+- 2026-10-09 — Loop: NR-46a done. 141 of scope c's 150 grid searches find no route and
+  are all of the time; most are the retreat trying escape after escape from one spot.
+  Inside one instant a trace asked again now gets the answer it got. Scope c: 3 min 28 s
+  against 4 min 55 s. Full gate guard-p8, eight at a time: twelve scopes identical in 459
+  seconds. Seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr46a-fast) pass.
+  Next: NR-46b, a wait that no packet can end.
