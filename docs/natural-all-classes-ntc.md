@@ -1391,11 +1391,59 @@ to the endpoint. The close of phase B is NR-21.
       nr20-verify-a1 (run/nr/NR-20/verify-a1.log; evidence under
       run/snapshots/_verify/nr20-verify-a1): "Verified snapshot ntc-ready-cleric-s1:
       character 133266 resumed at its endpoint."
-- [ ] **NR-21 - Phase B closed.** Depends: NR-10 to NR-20
+- [x] **NR-21 - Phase B closed.** Depends: NR-10 to NR-20
   - Work: No code. The full gate on every recorded scope. Write into this document the
     seven re-recorded baselines with their commits and record counts, and the generic
     Cleric beside the accepted one: game time, deaths, retreats and consumables.
   - Proof: Every scope identical to its baseline.
+  - 2026-10-09: done. Phase B is closed. No code.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, run gate-a1 at
+      b5f8cbcef (run/nr/NR-21/gate-a1/verdict.json): verdict pass, all twelve scopes
+      identical to their baselines.
+    - **The seven re-recorded baselines** (parity-artifacts/e2e/natural-neutral-baseline.json).
+      "Code" is the commit a scope was recorded at; the counts are of the recorded play.
+
+    | Scope | Plays | Code | Recorded in | Records | Deaths | Retreats | Life potions |
+    |---|---|---|---|---|---|---|---|
+    | p | Ishalgen to the Ascension quest, and the capital pass to its start | 3ac9e756f | 0dd26b7c4 | 35,463 | 0 | 1 | 14 |
+    | m | Ishalgen to Munin | 3ac9e756f | 0dd26b7c4 | 109,039 | 0 | 1 | 34 |
+    | b | the Ascension bridge to Altgard | 60115ff14 | 32d51c32c | 131,197 | 0 | 3 | 19 |
+    | l1 | Altgard leg 1 with the later capital | 60115ff14 | 32d51c32c | 29,797 | 0 | 0 | 2 |
+    | c | Altgard leg 4 | 60115ff14 | 32d51c32c | 112,256 | 3 | 37 | 109 |
+    | hm | Haramel, leg 12 | 60115ff14 | 32d51c32c | 37,510 | 0 | 10 | 10 |
+    | ax | the Abyss entry | 60115ff14 | 32d51c32c | 15,715 | 0 | 0 | 2 |
+
+      The five starter scopes were not re-recorded in this phase: mage 23,555, warrior
+      24,199, artist 23,104, engineer 24,580, scout 27,592.
+    - **The generic Cleric beside the accepted one.**
+
+    | From creation to the Abyss-entry endpoint | Accepted Cleric | Generic Cleric |
+    |---|---|---|
+    | Snapshots | altgard-rc-complete-s1, morheim-abyss-entry-s1 | altgard-complete-cleric-s1, ntc-ready-cleric-s1 |
+    | Game time | 20 h 34 min | 19 h 37 min |
+    | Level at the end | 26 | 26 |
+    | Quests complete | 181 | 181 |
+    | Deaths | 13 | 5 |
+    | Retreats | 85 | 88 |
+    | Emergency decisions | 104 | 56 |
+    | Life potions | 342 | 390 |
+    | Mana potions | 8 | 6 |
+    | Shield scrolls | 35 | 20 |
+    | Speed scrolls | 137 | 113 |
+    | Running scrolls | 12 | 18 |
+    | Powder rests | 383 | 309 |
+    | Soul heals | 0 | 5 |
+
+      The stage table of the journey to Altgard is under NR-19, the Abyss leg under NR-20.
+    - **What phase B leaves open**, logged under its items and not fixed (rule (f)):
+      - the journey does not answer an attack while it holds for a patrol or sweeps loot
+        (NR-17; it killed the Cleric twice in scope c, which is the one scope that plays
+        worse than before: 3 deaths against 1);
+      - the bot pulls monsters that are walking home, and goes back to a pack it left at
+        the swarm limit (NR-15, NR-17);
+      - the fight driver of the live scenarios NI-04 and NI-06 decides by the Priest's
+        table and has not been run (NR-18): the operator should run NI-04 once.
+    - From here rule (c) guards the Priest's and the Cleric's scopes again (rule (p)).
 
 ### C. The legs opened by class line
 
@@ -1791,3 +1839,7 @@ report what was done, what is parked or blocked, and what the operator must deci
   with Q2945, Q2946, Q2947 and Q2042 complete, the same 181 quests, position and bind as
   morheim-abyss-entry-s1; no death. Verify nr20-verify-a1 passes. Next: NR-21, phase B
   closed.
+- 2026-10-09 — Loop: NR-21 done. Phase B is closed: full gate gate-a1 at b5f8cbcef, twelve
+  scopes identical. The generic Cleric from creation to the Abyss-entry endpoint:
+  19 h 37 min against 20 h 34 min, 5 deaths against 13. Next: NR-43, the survey for several
+  bots at once, the first item of phase C.
