@@ -20,6 +20,8 @@ public sealed class InProcessBotTransport : IBotTransport
 	private readonly InProcessAionConnection connection;
 	private readonly BotServerPacketDecoder decoder;
 	private readonly Action<TimeSpan>? advanceClock;
+	// NR-44: in a world of several bots the clock is not this bot's to move. Its wait yields to the world's turn table.
+	private readonly Func<TimeSpan, CancellationToken, ValueTask>? waitForTurn;
 	private readonly Channel<DecodedBotServerPacket> received = Channel.CreateUnbounded<DecodedBotServerPacket>(
 		new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
 	private readonly object gate = new();
@@ -32,9 +34,13 @@ public sealed class InProcessBotTransport : IBotTransport
 		Action<TimeSpan>? advanceClock = null,
 		GamePacketCodec? codec = null,
 		BotServerPacketDecoder? decoder = null,
-		string ip = "127.0.0.1")
+		string ip = "127.0.0.1",
+		Func<TimeSpan, CancellationToken, ValueTask>? waitForTurn = null)
 	{
+		if (advanceClock != null && waitForTurn != null)
+			throw new ArgumentException("A transport either moves the clock itself or waits for its turn, not both.");
 		this.advanceClock = advanceClock;
+		this.waitForTurn = waitForTurn;
 		Codec = codec ?? new GamePacketCodec();
 		this.decoder = decoder ?? new BotServerPacketDecoder();
 		connection = new InProcessAionConnection(ip);
@@ -71,6 +77,7 @@ public sealed class InProcessBotTransport : IBotTransport
 	public ValueTask AdvanceAsync(TimeSpan elapsed, CancellationToken cancellationToken = default)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
+		if (waitForTurn != null) return WaitForTurnAsync(elapsed, cancellationToken);
 		lock (gate)
 		{
 			ThrowIfClosed();
@@ -89,6 +96,37 @@ public sealed class InProcessBotTransport : IBotTransport
 			}
 		}
 		return ValueTask.CompletedTask;
+	}
+
+	/// <summary>
+	/// NR-44: the same wait in a world of several bots. The turn table moves the clock while this bot is parked; what the
+	/// world queued for it meanwhile is serialized when its turn comes back, as after a wait of its own.
+	/// </summary>
+	private async ValueTask WaitForTurnAsync(TimeSpan elapsed, CancellationToken cancellationToken)
+	{
+		lock (gate) ThrowIfClosed();
+		try
+		{
+			await waitForTurn!(elapsed, cancellationToken);
+		}
+		catch (Exception ex)
+		{
+			lock (gate) Fail(ex);
+			throw;
+		}
+		lock (gate)
+		{
+			try
+			{
+				DrainServerPackets();
+				CompleteIfDisconnected();
+			}
+			catch (Exception ex)
+			{
+				Fail(ex);
+				throw;
+			}
+		}
 	}
 
 	/// <summary>Serializes server packets queued by work advanced outside this transport.</summary>

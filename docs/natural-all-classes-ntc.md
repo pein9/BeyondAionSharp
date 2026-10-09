@@ -422,7 +422,7 @@ decoding packets, the bot's world model, decisions, routes, the trace and the mo
 
 | Need | Today |
 |---|---|
-| Account and name | Each class line has its own (NaturalClassLine.SimAccountId, CharacterName). One bot of a line in a world. |
+| Account and name | Corrected by NR-44: every class line plays on the one SIM account 41 (CP-Q19); only the character name is the line's, and the Cleric's and the Chanter's lines share one name. A round gives each seat an account of its own. |
 | Trace and receipts | The trace takes a bot id, and every receipt and the failure record are written beside the trace. A folder for each bot keeps them apart. |
 | Monitor | LiveBotDashboardState keeps a row for each bot id already. One host and one port serve a world. |
 | Runtime | NaturalJourneyRuntime is made for one journey. Nothing to change. |
@@ -1846,7 +1846,7 @@ can use them. The order below is the order of work: the item that saves time com
   - Work: 683 routes at 51 ms each are 11.7% of scope c. Count how many are asked again
     with the same arguments, and reuse an answer only where it is certain to be the same.
   - Proof: The full gate with -Parallel 8 identical. Scope c's wall time before and after.
-- [ ] **NR-44 - Bots take turns in one world.** Depends: NR-45
+- [x] **NR-44 - Bots take turns in one world.** Depends: NR-45
   - Work: Survey C1, parts 4 to 6. Java first: who gets a quest's kill when two players
     hit one monster. The turn table; the wait that can yield; a bot id, options, trace
     folder and help count for each bot; a problem laid to the bot whose turn raised it; a
@@ -1855,6 +1855,85 @@ can use them. The order below is the order of work: the item that saves time com
     starter lines through Ishalgen to Q2004, ten game minutes apart: each bot has its own
     trace and outcome record; the same world played twice gives the same six traces; a bot
     stopped on purpose leaves the others playing.
+  - 2026-10-09: done. Six starters played Ishalgen in one world, twice, with the same six
+    traces. A bot alone plays as before.
+    - **Java first: a kill hit by two players** (NpcController.doReward, lines 201 to
+      231; the port's NpcController.cs is the same). Every living player in the monster's
+      damage list gets the quest engine's kill, and experience by its share of the damage.
+      The loot belongs to the one with the most damage. So two bots on one monster both
+      get a kill quest's credit; a quest's item drop goes to one of them.
+    - **The change.**
+      - tests/Aion.Simulation.Tests/SimulationTurnTable.cs, new. A bot's wait is "wake me
+        at now + dt". The table moves the clock to the earliest wake and lets that one bot
+        play until its next wait or its end; bots due at the same instant go in seat
+        order. Either the table runs or one bot does, never both. A bot that throws ends
+        alone. A seat can start later and can be stopped on purpose at a game time.
+      - The table's thread has no synchronization context. The first form had one, and
+        hung at a bot's first wait: the clock runs the server's own work and waits for it,
+        and that work could not finish on a thread that was waiting. A bot may come back
+        from a real wait of its own on another thread; the table does nothing meanwhile.
+      - tests/Aion.Bots/Transport/InProcessBotTransport.cs: a transport either moves the
+        clock itself, as before, or waits for its turn and serializes what the world queued
+        for it when the turn comes back.
+      - The SIM session takes a turn table (Turns). With one, its wait, its offline wait
+        and its wait for re-entry go to the table. Without one nothing is changed.
+      - tests/Aion.Simulation.Tests/SimulationNaturalRoundTests.cs, new:
+        NaturalRoundPlaysItsBotsInOneWorld plays the bots of a round file (NR_ROUND_FILE:
+        line, start offset in game minutes, stop boundary, a stop on purpose). Each bot
+        has its seat's bot id and account (111 and up), its line's character name, its own
+        session, problem policy, help count, options and folder: trace, the journey's
+        receipts, the failure record and outcome.json. round-outcome.json has them all.
+        The wall-clock limit is 45 minutes for each bot.
+    - **Proof.**
+      - **Six starters, one world, ten game minutes apart** (run nr44-six-a1,
+        run/nr/NR-44/six-a1; round file round-6.json; stop boundary Q2004):
+
+      | Seat | Line | Starts at | Outcome | Level | Quests | Its game time |
+      |---|---|---|---|---|---|---|
+      | b01 | priest-cleric | minute 0 | reached | 8 | 11 | 30 min 00 s |
+      | b02 | warrior | minute 10 | reached | 8 | 11 | 33 min 29 s |
+      | b03 | mage | minute 20 | reached | 8 | 11 | 31 min 38 s |
+      | b04 | artist | minute 30 | reached | 8 | 11 | 31 min 21 s |
+      | b05 | engineer | minute 40 | reached | 8 | 11 | 32 min 01 s |
+      | b06 | scout | minute 50 | stopped | 6 | 9 | 22 min 58 s |
+
+      - **Played twice** (run nr44-six-a2): the same outcomes to the millisecond, and all
+        six traces identical by the comparer (run/nr/NR-44/six-compare.txt): 23,605,
+        25,590, 24,934, 24,207, 25,634 and 17,696 records.
+      - **A bot that stops leaves the others playing.** In both plays the Scout stopped by
+        itself and the five before it went on to their end. On purpose (run nr44-stop-a1,
+        round-stop.json): the Warrior was stopped ten game minutes after its start; the
+        Mage before it and the Artist after it reached Q2004.
+      - **A bot alone plays as before.** Gate, set
+        all+mage+warrior+artist+engineer+scout, -Parallel 8, run guard-p8
+        (run/nr/NR-44/guard-p8/verdict.json): verdict pass, all twelve scopes identical to
+        their baselines.
+      - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+        passed, 16 skipped) and Fast passes (run nr44-fast, 11 passed).
+    - **Time.** The six-bot world played in 1 min 36 s. The same six alone are about 2 min
+      50 s of play together, each with a world load of its own on top. So after NR-46a and
+      NR-46b a shared world is cheaper than the runs one after another, not equal to them
+      as Survey C1 measured before those two. Six worlds side by side would still finish
+      first, in about a minute. NR-Q11's default stands; its numbers are these now.
+    - **Found, and logged (rule (f)).**
+      - **The Scout's stop is what a shared world does.** It reached the place of its
+        fourth Q2003 kill and saw no monster: "Reached the static area anchor but no NPC
+        was observed" (step ni07-q2003-kill-4, level 6, 9 quests). Five bots had hunted
+        there before it. Alone, a bot never finds a hunting ground empty, so the journey
+        has no wait for a respawn there. This is the first thing a round of classes will
+        need; NR-47's rounds will show how often.
+      - **A server problem is not yet laid to one bot.** Each bot has a problem policy of
+        its own from its start, so a problem logged while several bots are in the world is
+        seen by each of them. NR-44a.
+      - **The Cleric's and the Chanter's lines share a character name**, so they cannot be
+        in one world as they are. NR-47 gives a round's bots their names.
+- [ ] **NR-44a - A server problem is laid to the bot whose turn raised it.** Depends: NR-47
+  - Work: The turn table knows whose turn it is when a problem is logged. A problem raised
+    in a bot's turn is that bot's alone; one raised while the clock moves is the world's,
+    is written into the round's record, and stops no bot that did not meet it.
+  - Proof: A one-time check, not committed, that logs a server problem in one bot's turn
+    of a two-bot round: that bot stops and the other reaches its end. The full gate
+    identical.
 - [ ] **NR-47 - The round: runner, outcome records and round snapshots.** Depends: NR-44
   - Work: Survey C1, parts 7 and 8. The round file, the runner that starts its worlds side
     by side, the progress line and the outcome record for each bot, the round snapshot
@@ -1942,8 +2021,8 @@ can use them. The order below is the order of work: the item that saves time com
     line and plays the legs in the Cleric's order; a capture after a leg is named
     <the Cleric's snapshot name>-<class>.
   - Proof: scripts/sim/test-sim-snapshot.ps1 passes; the full gate identical.
-- [ ] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41, NR-43 to NR-47 and NR-46a to
-  NR-46d
+- [ ] **NR-42 - Phase C closed.** Depends: NR-30 to NR-41, NR-43 to NR-47, NR-44a and
+  NR-46a to NR-46d
   - Work: No code. The full gate on every recorded scope, and one table in this document
     of what each class gets at each class-bound point of the route.
   - Proof: Every scope identical to its baseline.
@@ -2246,3 +2325,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   Scope mage: 19 seconds against 30. Full gate guard-p8, eight at a time: twelve scopes
   identical in 446 seconds. Seven checks, unit suite (4,629 passed, 16 skipped) and Fast
   (nr46b-fast) pass. Next: NR-44, bots take turns in one world.
+- 2026-10-09 — Loop: NR-44 done. A turn table owns the clock of a world of several bots;
+  a bot's wait yields to it. Six starters played Ishalgen in one world, ten game minutes
+  apart, twice: the same six traces. Five reached Q2004; the Scout stopped at a hunting
+  ground the five before it had emptied, and the others went on. Java: both of two
+  players on one monster get the quest's kill. Full gate guard-p8: twelve scopes
+  identical. Seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr44-fast)
+  pass. Written: NR-44a. Next: NR-47, the round: runner, outcome records and snapshots.

@@ -1280,9 +1280,13 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		public Task AdvanceOfflineAsync(TimeSpan duration, CancellationToken token)
 		{
 			token.ThrowIfCancellationRequested();
+			if (Turns is { } turns) return turns.WaitAsync(bot, duration, token).AsTask();
 			fixture.Clock.Advance(duration);
 			return Task.CompletedTask;
 		}
+
+		/// <summary>NR-44: the turn table of a world of several bots. Null for a bot alone, which moves the clock itself.</summary>
+		public SimulationTurnTable? Turns { get; init; }
 
 		public Task WaitForReentryAsync(CancellationToken cancellationToken)
 		{
@@ -1292,7 +1296,10 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			DateTimeOffset? lastOnline = persisted.GetLastOnline() is DateTime timestamp ? new DateTimeOffset(timestamp) : null;
 			TimeSpan remaining = api.Timing.TimeUntilEnterWorld(lastOnline);
 			if (remaining > TimeSpan.Zero)
+			{
+				if (Turns is { } turns) return turns.WaitAsync(bot, remaining + TimeSpan.FromMilliseconds(1), cancellationToken).AsTask();
 				fixture.Clock.Advance(remaining + TimeSpan.FromMilliseconds(1));
+			}
 			return Task.CompletedTask;
 		}
 
@@ -1332,7 +1339,10 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			await CloseAsync(CancellationToken.None);
 			api.BeginLoginObservation();
 			currentPosition = null;
-			transport = new InProcessBotTransport(elapsed => fixture.Clock.Advance(elapsed), ip: $"127.0.0.{accountId}");
+			// NR-44: a bot alone moves the clock itself. In a world of several bots it waits for its turn.
+			transport = Turns is { } turns
+				? new InProcessBotTransport(ip: $"127.0.0.{accountId}", waitForTurn: (elapsed, token) => turns.WaitAsync(bot, elapsed, token))
+				: new InProcessBotTransport(elapsed => fixture.Clock.Advance(elapsed), ip: $"127.0.0.{accountId}");
 			ConnectionGeneration++;
 			packets = transport.ReceiveAsync(cancellationToken).GetAsyncEnumerator(cancellationToken);
 			state = AionConnection.State.CONNECTED;
