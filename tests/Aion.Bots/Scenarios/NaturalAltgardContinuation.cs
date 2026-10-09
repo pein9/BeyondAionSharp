@@ -29,7 +29,8 @@ public static class NaturalAltgardContinuation
 				?? throw new InvalidDataException("The continuous journey must retain its equipped Altgard Legionary Staff.");
 			HashSet<int> owned = inventory.Select(i => i.ItemId).ToHashSet();
 			// Revised capital rewards can replace historical accessories before CG. Preserve the actual
-			// incoming gear while the staff, approved chain pieces, cloth gloves and sealed bundle remain mandatory.
+			// incoming gear while the staff, approved chain pieces and sealed bundle remain mandatory.
+			// NR-19a: the cloth gloves are kept when owned, like the accessories.
 			haramel = haramel with
 			{
 				StaffObjectId = staff.ObjectId,
@@ -39,7 +40,22 @@ public static class NaturalAltgardContinuation
 						.Select(i => i.ItemId)).Where(owned.Contains)).Distinct().Order().ToArray(),
 			};
 		}
-		return leg with { Start = leg.Start with { CompletedQuestIds = completed.Order().ToArray() }, Haramel = haramel };
+		NaturalCoinGear? coinGear = leg.CoinGear;
+		if (coinGear != null)
+		{
+			// NR-19a: the handguards purchase replaces the gloves this character wears, whichever pair that is. That pair
+			// is held through the leg and is the one the end check looks for in the bag. None worn, none asked for.
+			int worn = inventory.FirstOrDefault(i => i.EquipmentSlot == NaturalCoinGear.GlovesSlot)?.ItemId ?? 0;
+			coinGear = coinGear with
+			{
+				ReplacedGlovesItemId = worn,
+				ProtectedItemIds = worn == 0 ? coinGear.ProtectedItemIds : coinGear.ProtectedItemIds.Append(worn).Distinct().ToArray(),
+			};
+		}
+		return leg with
+		{
+			Start = leg.Start with { CompletedQuestIds = completed.Order().ToArray() }, CoinGear = coinGear, Haramel = haramel,
+		};
 	}
 
 	/// <summary>Use full item-detail slots so a belt's 65536 mask is not truncated by the legacy ushort field.</summary>

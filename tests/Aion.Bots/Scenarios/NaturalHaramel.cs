@@ -15,8 +15,12 @@ public sealed record NaturalHaramel(int MapId, int CooldownId, int MaxEntries, i
 	NaturalHaramelTask[] BetweenVisits, NaturalHaramelTask[] SecondVisit, NaturalHaramelTask[] Finish,
 	NaturalHaramelKey[]? TowerChestKeys = null)
 {
+	/// <summary>
+	/// What every character brings in from the coin-gear leg. NR-19a: the accepted run's cloth gloves are not in this list.
+	/// They are in ProtectedItemIds, so a character that owns them keeps them; one that never had them is not asked for them.
+	/// </summary>
 	public int[] RequiredIncomingItemIds => [StaffItemId, 110551139, 114501726, 111501065, 112501015,
-		113501074, 111101650, 188053787, IronItemId, BronzeItemId];
+		113501074, 188053787, IronItemId, BronzeItemId];
 	public int[] GraphNpcIds => [AnchorNpcId, PortalNpcId, EntryExitNpcId, BossExitNpcId, LiftNpcId,
 		BossNpcId, ChestNpcId, WorkingBindNpcId, 700950, 700953, 700954, 730359];
 	public static bool CanUpgradeGroup(string? group) => group is "CH_TORSO" or "CH_GLOVE" or "CH_SHOULDER" or
@@ -41,7 +45,7 @@ public sealed record NaturalHaramel(int MapId, int CooldownId, int MaxEntries, i
 					"haramel-carts" or "haramel-ginseng" or "haramel-object" or "haramel-soup" or "haramel-movie" or "haramel-boss" or "haramel-loot" or "leave-haramel"))
 				throw new InvalidDataException($"Invalid Haramel task {task}.");
 		}
-		if (!ProtectedItemIds.Contains(188053787) || !ProtectedItemIds.Contains(111101650) ||
+		if (!ProtectedItemIds.Contains(188053787) || !ProtectedItemIds.Contains(NaturalCoinGear.ContractGlovesItemId) ||
 			new[] { 111501065, 112501015, 113501074, StaffItemId, IronItemId, BronzeItemId }.Any(id => !ProtectedItemIds.Contains(id)))
 			throw new InvalidDataException("Haramel must retain the staff, coin pieces, cloth gloves, currencies and sealed bundle.");
 	}

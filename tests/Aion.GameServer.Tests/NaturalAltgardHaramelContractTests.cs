@@ -325,7 +325,6 @@ public sealed class NaturalAltgardHaramelContractTests
 	[InlineData(111501065)]
 	[InlineData(112501015)]
 	[InlineData(113501074)]
-	[InlineData(111101650)]
 	[InlineData(110551139)]
 	[InlineData(114501726)]
 	[InlineData(188053787)]

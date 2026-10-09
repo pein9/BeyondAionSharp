@@ -9,6 +9,17 @@ public sealed record NaturalCoinGear(int QuestId, int Completions, int CoinItemI
 	int[] ProtectedItemIds, NaturalCoinGearPurchase[] Purchases, NaturalCoinGearSlot[] BodySlots,
 	int SealedBundleId, int ForbiddenStigmaSkillId)
 {
+	/// <summary>The accepted run's cloth gloves, Altgard Legionary Gloves: the pair the contract names.</summary>
+	public const int ContractGlovesItemId = 111101650;
+	public const ushort GlovesSlot = 16;
+
+	/// <summary>
+	/// NR-19a: the gloves the handguards purchase replaces, which stay in the bag to the end of the leg. A run that starts
+	/// from an accepted snapshot has the contract's own pair. The continuous journey binds this to the pair the character
+	/// wears as the leg starts (NaturalAltgardContinuation.BindIncoming); 0 when it wears none, and then none is asked for.
+	/// </summary>
+	public int ReplacedGlovesItemId { get; init; } = ContractGlovesItemId;
+
 	public int Cost => Purchases.Sum(p => p.Cost);
 
 	public void Validate(NaturalAltgardContract contract)
@@ -24,7 +35,7 @@ public sealed record NaturalCoinGear(int QuestId, int Completions, int CoinItemI
 			!BodySlots.OrderBy(s => s.Slot).SequenceEqual(new NaturalCoinGearSlot[]
 			{
 				new(8, 110551139), new(16, 111501065), new(32, 114501726), new(2048, 112501015), new(4096, 113501074),
-			}) || !ProtectedItemIds.Contains(111101650) || !ProtectedItemIds.Contains(StaffItemId) ||
+			}) || !ProtectedItemIds.Contains(ContractGlovesItemId) || !ProtectedItemIds.Contains(StaffItemId) ||
 			Purchases.Any(p => !ProtectedItemIds.Contains(p.ItemId)))
 			throw new InvalidDataException("Coin gear differs from the approved three-armour/four-coin scope.");
 	}
@@ -133,8 +144,8 @@ public static class NaturalCoinGearPolicy
 				return new("coin-equip", "planned", $"Equip the observed armour object {receipt.ObjectId} in slot {purchase.Slot}.", purchase.ItemId);
 		}
 		if (expected != gear.EndpointCoins || gear.BodySlots.Any(s => !inventory.Any(i => i.ItemId == s.ItemId && i.EquipmentSlot == s.Slot)) ||
-			!inventory.Any(i => i.ItemId == 111101650 && i.EquipmentSlot is 0 or 65535))
-			return Block("coin-loadout-incomplete", "The five chain body slots, retained cloth gloves and 19-coin balance are required.");
+			gear.ReplacedGlovesItemId != 0 && !inventory.Any(i => i.ItemId == gear.ReplacedGlovesItemId && i.EquipmentSlot is 0 or 65535))
+			return Block("coin-loadout-incomplete", "The five chain body slots, the replaced gloves in the bag and 19-coin balance are required.");
 		return new("coin-gear-complete", "complete", "One Q2293 completion and all three exact purchase/equip receipts reconcile.");
 	}
 }

@@ -1186,7 +1186,7 @@ to the endpoint. The close of phase B is NR-21.
       To the same point the generic Cleric is an hour faster and has 5 deaths against 13;
       leg l10 alone has 1 against 9. In the whole of a2: 80 retreats, 376 life potions,
       20 shield scrolls, 5 soul heals.
-- [ ] **NR-19a - The gloves the coin purchase replaced are the character's own.** Depends:
+- [x] **NR-19a - The gloves the coin purchase replaced are the character's own.** Depends:
   NR-18
   - Work: Two places ask for the accepted run's cloth gloves, item 111101650, by id: the
     coin-gear leg's end check (Sc/NaturalCoinGearPolicy.cs, an unequipped pair in the bag)
@@ -1205,6 +1205,55 @@ to the endpoint. The close of phase B is NR-21.
     character wore, and the Haramel binding accepts its inventory. Guard: the full gate
     identical (scope hm plays Haramel from the accepted snapshot). The first run through
     both legs is NR-19's next attempt.
+  - 2026-10-08: done. Both places read the character's own gloves; every recorded scope
+    plays as recorded.
+    - **Java.** No server behavior is involved. These are the bot's own leg gates.
+    - **The change.**
+      - Sc/NaturalCoinGearPolicy.cs: the coin-gear contract carries the gloves the
+        handguards purchase replaces (ReplacedGlovesItemId). Unbound, it is the
+        contract's own cloth pair, 111101650. The end check asks for that pair unequipped
+        in the bag; 0 asks for none.
+      - Sc/NaturalAltgardContinuation.cs, BindIncoming: for the coin-gear leg the pair is
+        the one the character wears in the gloves slot as the leg starts. It joins the
+        leg's protected items, so the inventory check holds it through the leg.
+      - Sc/NaturalHaramel.cs: RequiredIncomingItemIds no longer lists the cloth pair. The
+        pair stays in the contract's protected list, and the binding keeps from that list
+        what the character owns.
+      - A run from an accepted snapshot keeps the contract's pair: scope hm is not bound,
+        and a bound leg from such a snapshot finds the cloth pair worn.
+    - **Tests.** One case went: the theory row that said the binding keeps the cloth pair
+      mandatory when the character has none (NaturalAltgardHaramelContractTests). No test
+      was added.
+    - **Proof, the one-time check** (run/nr/NR-19a/check.log; the check file is not
+      committed) on run nr19-continuous-a2. The start of leg cg is the "after" of
+      altgard-l11-completion.json; its end is the last observation of the failure record.
+      - The Cleric wore Altgard Legionary Handguards 111501698 as leg cg started. At the
+        stop it wore the purchased 111501065 and had 111501698 in the bag.
+      - A. The unbound contract, pair 111101650: coin-loadout-incomplete, the a2 stop.
+      - B. Bound: the pair is 111501698; the decision is coin-gear-complete and the leg
+        decides leg-complete.
+      - C. Bound, and the pair gone from the bag: coin-loadout-incomplete.
+      - D. No gloves worn as the leg starts: bound 0, coin-gear-complete.
+      - E. The cloth pair worn as the leg starts: bound 111101650, and the protected list
+        equals the contract's.
+      - G. Haramel bound from the same end state does not ask for the cloth pair, and the
+        character owns everything it protects. The Haramel receipt begins (13 worn
+        objects) and the leg's first decision is "talk", planned.
+      - H. With the cloth pair mandatory, as before: the receipt cannot begin ("Haramel
+        lost the retained staff/gear or sealed stigma bundle"). The second place would
+        have stopped the run one leg later.
+      - I. A character that owns the cloth pair: Haramel protects it.
+    - **The coin-gear steps on a server.** Fast plays the three coin probes and they pass
+      (run/nr/NR-19a/fast.log): the staff preparation probe, with the reward, the three
+      purchases, the Haramel binding and the receipt across a relog; the coin shop probe;
+      the coin quest probe. All three give the probe character the accepted Cleric's
+      cloth pair, so they show the contract's own pair still works. They do not show the
+      new binding.
+    - **Guard.** Gate, set all+mage+warrior+artist+engineer+scout, run guard-a1
+      (run/nr/NR-19a/guard-a1/verdict.json): verdict pass, all twelve scopes identical to
+      their baselines. Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests
+      passes (4,629 passed, 16 skipped) and Fast passes (run nr19a-fast, 11 passed).
+    - Not proven here: a run through both legs. That is NR-19's next attempt.
 - [ ] **NR-20 - The generic Cleric through the Abyss entry.** Depends: NR-19
   - Work: Capture the ax leg from altgard-complete-cleric-s1 as ntc-ready-cleric-s1. The
     leg's start facts that are receipts of the accepted run are met by the new run or
@@ -1524,3 +1573,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   the coin-gear leg, whose end check asks for the accepted run's cloth gloves by id. The
   continuous journey has not been able to finish since the table gear rules (CP-29a).
   Written: NR-19a, the replaced gloves read from the character. Next: NR-19a.
+- 2026-10-08 — Loop: NR-19a done. The coin-gear end check and Haramel's incoming list read
+  the gloves the character has: bound to the pair worn as leg cg starts, none worn none
+  asked for; the cloth pair is kept when owned. One-time check on the a2 end state:
+  coin-gear-complete when bound, and the Haramel receipt begins. Full gate guard-a1,
+  twelve scopes: identical. Seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr19a-fast, with
+  its three coin probes) pass. Next: NR-19 again, a fresh two attempts.
