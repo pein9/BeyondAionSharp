@@ -32,11 +32,8 @@ public sealed class NaturalGearRules
 	/// <summary>Consumables the class keeps and never sells.</summary>
 	public required IReadOnlySet<int> Supplies { get; init; }
 
-	/// <summary>Skills every character of the class has from level 1, beside its catalog's auto-learned ones.</summary>
+	/// <summary>Skills every character of the class has from level 1: its masteries.</summary>
 	public IReadOnlyList<int> ExpectedSkillIds { get; init; } = [];
-
-	/// <summary>The catalog whose skills must be observed as learned by their level.</summary>
-	public NaturalPriestSkill[] SkillCatalog { get; init; } = [];
 
 	/// <summary>CP-29: what the class's mastery skills let it wear (weapon groups, armor types, <c>SHIELD</c>). The rules
 	/// never ask the server for an item of a group the class has no mastery for.</summary>
@@ -101,13 +98,14 @@ public sealed class NaturalGearRules
 			(maximum == 0 || level <= maximum) && item.Race is ("PC_ALL" or "ASMODIANS");
 	}
 
-	/// <summary>The class's level 1 skills and every catalog skill up to this level are in the observed skill list.</summary>
+	/// <summary>The class's level 1 skills are in the observed skill list. NR-18: the catalog's skills by level were
+	/// checked here too while the Priest's table was typed by hand; a generated catalog needs the run's data.</summary>
 	public bool AutoLearnedSkillsObserved(int level, IReadOnlyDictionary<int, BotSkill> learned) =>
-		ExpectedSkillIds.Concat(SkillCatalog.Where(skill => skill.MinimumLevel <= level).Select(skill => (int)skill.Id)).All(learned.ContainsKey);
+		ExpectedSkillIds.All(learned.ContainsKey);
 
-	/// <summary>The Ishalgen Priest: its table, the level 1-9 kit and every Priest skill by its level.</summary>
+	/// <summary>The Ishalgen Priest: its table and the level 1-9 kit.</summary>
 	public static NaturalGearRules Priest { get; } = NaturalClassGearTable.Priest.Rules(NaturalClassLineContract.LoadDefault(),
-		NaturalHelpItemAllowlist.Starter, NaturalPriestSkills.All);
+		NaturalHelpItemAllowlist.Starter);
 
 	/// <summary>The Cleric: its table and the approved help items of every level (OD-13).</summary>
 	public static NaturalGearRules Cleric { get; } = NaturalClassGearTable.Cleric.Rules(NaturalClassLineContract.LoadDefault(),

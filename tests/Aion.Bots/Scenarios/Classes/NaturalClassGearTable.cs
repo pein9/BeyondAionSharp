@@ -130,8 +130,7 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 	/// mastery for is refused by name.
 	/// </summary>
 	/// <param name="kit">The help kit whose items the class keeps; the level 1-9 kit when not given.</param>
-	/// <param name="skillCatalog">The catalog whose skills must be observed as learned by their level; none when not given.</param>
-	public NaturalGearRules Rules(NaturalClassLineContract contract, IEnumerable<NaturalHelpSupply>? kit = null, NaturalPriestSkill[]? skillCatalog = null)
+	public NaturalGearRules Rules(NaturalClassLineContract contract, IEnumerable<NaturalHelpSupply>? kit = null)
 	{
 		ArgumentNullException.ThrowIfNull(contract);
 		bool starter = Class.IsStartingClass();
@@ -167,7 +166,6 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 			OffHand = OffHand,
 			ConsumableOrder = ConsumableOrder,
 			ExpectedSkillIds = masteries.Select(mastery => mastery.SkillId).Where(id => !replaced.Contains(id)).Distinct().Order().ToArray(),
-			SkillCatalog = skillCatalog ?? [],
 		};
 	}
 }

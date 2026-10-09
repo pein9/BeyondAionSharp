@@ -46,7 +46,10 @@ public sealed partial class SimulationFastScenarioTests
 		session.AcceptTeleportPosition();
 		await session.SynchronizeAsync(token);
 		int packetStart = session.PacketHistory.Count;
-		var smite = NaturalPriestSkills.Best("smite", session.Api.World.Level, session.Api.World.Skills)!;
+		// The Priest's ranks of Smite, as before NR-18 took the hand-typed table away: the catalog is the Priest's.
+		var smite = NaturalPriestSkills.Best("smite", session.Api.World.Level, session.Api.World.Skills,
+			Aion.Bots.Scenarios.Classes.NaturalClassProfiles.For(PlayerClass.PRIEST.GetClassId(),
+				Aion.Bots.Scenarios.Classes.NaturalClassLine.Default, fixture.DataManager.StaticData).Skills)!;
 		await session.SendPacketAsync(session.Api.Target(caster.GetObjectId()), token);
 		await session.SendPacketAsync(session.Api.Cast(probe.Runtime.CreateSpellCast(session.Api.World,
 			session.CurrentPosition, smite.Id, checked((byte)session.Api.World.Skills[smite.Id].Level), caster.GetObjectId())), token);

@@ -1058,13 +1058,70 @@ to the endpoint. The close of phase B is NR-21.
       Priest and Cleric scopes are now recorded with the rule table, and rule (c) guards
       them again.
     - **No bundle.** The item changes no code: this is an evidence commit.
-- [ ] **NR-18 - The old rule removed.** Depends: NR-17
+- [x] **NR-18 - The old rule removed.** Depends: NR-17
   - Work: Delete NaturalPriestCombatPolicy.Decide and CandidateActions, the StaticPolicy
     adapter, the two hand-typed skill tables and the one-sided branches of the fight loop
     listed in Survey A2. tools/Aion.LiveBots reads the profile's catalog. The tests of the
     deleted rule go with it; the Mau course runs on the table with the run's parameters.
     Nothing plays differently.
   - Proof: The whole solution builds and its tests pass; the full gate identical.
+  - 2026-10-08: done. The static rule, its adapter and the two hand-typed tables are gone;
+    every recorded scope plays as recorded.
+    - **Java.** No server behavior is involved.
+    - **Removed from the bot library.**
+      - The static rule: NaturalPriestCombatPolicy with Decide, CandidateActions and its
+        constants, and the StaticPolicy adapter of NaturalPriestProfile.
+      - The hand-typed tables: NaturalPriestSkills.All and Ids, NaturalClericSkills.Cleric,
+        All and ForClass. NaturalPriestSkills.Best and NaturalPowderRestPolicy.Decide now
+        take the catalog they search; neither has a table to fall back on.
+      - The fight loop's second side (Survey A2): the chain kept with an expiry, the
+        swing at a fixed 2.5 s, the cast wait without the animation's last hit, and every
+        test of whether the profile is table driven. NaturalClassProfile.TableDriven is
+        gone with them.
+      - The gear rules' skill catalog, which only the Priest's hand-typed rows filled.
+    - **Kept, and why.**
+      - The observation's HasBlessing and HasRejuvenation. No rule reads them, but every
+        recorded fight decision writes them, and the gate compares those records.
+      - The rest's trace field that counts Lesser Odella Powder by its item id, for the
+        same reason.
+      - The file names NaturalPriestCombatPolicy.cs and NaturalClericSkills.cs (section 7
+        of the class-profile plan). The first now holds the skill row, the observation,
+        the choice and Best; the second the Cleric's exclusions, the rest kinds and the
+        powder's two numbers.
+    - **Said another way.**
+      - A fight "has had its heal" when the class's own heal was cast in it: the role the
+        profile's rest names, "heal" for every class today, where the loop had the word.
+      - The patrol policy holds its own number of monsters it will take, 2, and the
+        Priest's and the Cleric's tables take their swarm limit from it (one more).
+      - The check that the level 1 skills are observed is of the class's masteries. It
+        also asked for the hand-typed Priest rows by level; a generated catalog needs the
+        run's data, and the one caller, the live inventory scenario, has none.
+    - **tools/Aion.LiveBots.** Survey A2 said it read the hand-typed table. It also
+      called the static rule, in the fight driver of the live scenarios NI-04 and NI-06.
+      That driver now builds the Priest's profile from the static data it already loads
+      and decides by the Priest's table. What the static rule answered between fights is
+      said in the driver: a sit below 90% HP or 50% MP. The starter's life potion is the
+      table's life potion. **This is compiled and not run: a LIVE run is outside this
+      loop.** The operator should run NI-04 once before relying on it.
+    - **Tests.** The tests of the removed rule go with it (rule (n) lets tests go):
+      NaturalPriestCombatPolicyTests (12), seven of NaturalPriestRotationTests, seventeen
+      of NaturalClericCombatPolicyTests, two of NaturalHelpItemPolicyTests and one of
+      NaturalIshalgenPotionPolicyTests: 39 test methods, 45 cases. What stays moved to files
+      named for it:
+      the one hostility test to NaturalHostilityTests, and the two powder-rest tests to
+      NaturalPowderRestPolicyTests, now over the Cleric's generated catalog. One help-item
+      test keeps its help-item half, and one inventory assertion follows the mastery
+      check. The SIM obstacle probe passes the Priest's catalog to Best.
+    - **The Mau course** runs on the table with the run's parameters: one encounter as a
+      smoke (run nr18-mau, RaeToHatata, IsolatedStalker; run/nr/NR-18/mau.log) passes, and
+      its ten fight decisions carry natural-priest-v1 with the run's parameter id.
+    - **Proof.** The solution builds with no error. Gate, set
+      all+mage+warrior+artist+engineer+scout, run gate-a1
+      (run/nr/NR-18/gate-a1/verdict.json): verdict pass, all twelve scopes identical to
+      their baselines (p 35,463, m 109,039, b 131,197, l1 29,797, c 112,256, hm 37,510, ax
+      15,715, mage 23,555, warrior 24,199, artist 23,104, engineer 24,580, scout 27,592).
+      Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,630 passed, 16 skipped) and
+      Fast passes (run nr18-fast, 11 passed).
 - [ ] **NR-19 - The generic Cleric from creation to the Altgard endpoint.** Depends: NR-18
   - Work: One continuous capture from committed code (sim-snapshot.ps1 -Action Capture
     -ContinuousJourney -LaterCapital), named altgard-complete-cleric-s1. Two attempts; a
@@ -1379,3 +1436,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   29,797, c 112,256, hm 37,510, ax 15,715 records. All seven
   Priest and Cleric scopes are recorded with the rule table. Next: NR-18, the old rule
   removed.
+- 2026-10-08 — Loop: NR-18 done. The static rule, its adapter, the two hand-typed tables
+  and the fight loop's second side are removed; 39 test methods of the removed rule went
+  with it. The live driver of NI-04 and NI-06 decides by the Priest's table: compiled, not run
+  (LIVE is outside the loop). Full gate gate-a1, twelve scopes: identical. Seven checks,
+  unit suite (4,630 passed, 16 skipped) and Fast (nr18-fast) pass. Next: NR-19, the generic
+  Cleric from creation to the Altgard endpoint.

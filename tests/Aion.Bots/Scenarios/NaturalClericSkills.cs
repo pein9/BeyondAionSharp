@@ -4,13 +4,11 @@ using Aion.GameServer.Model;
 namespace Aion.Bots.Scenarios;
 
 /// <summary>
-/// NA-18: frozen 4.8 Cleric active skills on top of the Priest's, which carry over at Ascension
-/// (docs/natural-ascension-altgard.md Appendix C). Java skill_tree.xml and skill_templates.xml at ce54b7931.
-/// The learned SM_SKILL_LIST is still the authority: this catalog never grants a skill.
-/// AC-00, BC-05, ND-05: every auto-learned Asmodian Cleric rank up to level 24. The server adds each new rank on level-up and keeps
-/// the old one (Java SkillLearnService.learnNewSkills), and <see cref="NaturalPriestSkills.Best"/> takes the highest
-/// learned rank of a role, so the bot moves to a new rank the moment it is observed. Every active auto-learned skill
-/// that is not here is in <see cref="Excluded"/> with its reason; the passives need no casting.
+/// NA-18: what the Cleric's catalog and rest need beside the shipped skill data. NR-18: the hand-typed Cleric table that
+/// stood here is gone; the catalog is generated (<see cref="Classes.NaturalPriestProfile"/>). The server adds each new
+/// rank on level-up and keeps the old one (Java SkillLearnService), and <see cref="NaturalPriestSkills.Best"/> takes the
+/// highest learned rank of a role, so the bot moves to a new rank the moment it is observed. Every active auto-learned
+/// skill without a role is in <see cref="Excluded"/> with its reason; the passives need no casting.
 /// </summary>
 public static class NaturalClericSkills
 {
@@ -29,61 +27,8 @@ public static class NaturalClericSkills
 		HealBelowPercent: NaturalPowderRestPolicy.HealBelowPercent,
 		HealthForManaMinimumHpPercent: NaturalPowderRestPolicy.PenanceMinimumHpPercent);
 
-	public static readonly NaturalPriestSkill[] Cleric =
-	[
-		new(246, 10, "herb", 0, 1, PowderCooldownId, 160, ReagentItemId: LesserOdellaPowder, ReagentCount: 1),
-		new(249, 10, "mp-recovery", 0, 1, PowderCooldownId, 160, ReagentItemId: LesserOdellaPowder, ReagentCount: 2),
-		new(3922, 10, "salvation", 0, 1, 1211, 600, DpCost: 2000),
-		new(3939, 10, "rejuvenation", 24, 23, 1217, 50),
-		new(4025, 10, "followup", 34, 25, 1230, 100, "P_CHAINA_2TH_1", "P_CHAINA_1TH_1", 3000),
-		new(4061, 10, "wind", 39, 25, 1234, 160, "C_CHAINC_1TH_1"),
-		new(4083, 10, "wrath", 85, 25, 1236, 120, "P_CHAIND_1TH_1"),
-		new(4127, 10, "root", 47, 25, 1241, 100),
-		// AC-00: the Priest's roles, new ranks (the Priest catalog stays frozen for Ishalgen).
-		new(1840, 11, "heal", 42, 23, 1553, 0),
-		new(4014, 11, "smite", 38, 25, 1229, 20, "P_CHAINA_1TH_1"),
-		new(1815, 12, "infernal", 31, 25, 1549, 240, "C_CHAINB_1TH_1"),
-		new(1616, 13, "hallowed", 19, 1, 1512, 80, "C_CHAINJ_1TH_1"),
-		new(1841, 16, "heal", 50, 23, 1553, 0),
-		new(4015, 16, "smite", 44, 25, 1229, 20, "P_CHAINA_1TH_1"),
-		new(1816, 17, "infernal", 40, 25, 1549, 240, "C_CHAINB_1TH_1"),
-		new(1617, 18, "hallowed", 23, 1, 1512, 80, "C_CHAINJ_1TH_1"),
-		// AC-00: the Cleric's roles, new ranks. The rank 2 and 3 powder skills still use Lesser Odella Powder.
-		new(247, 15, "herb", 0, 1, PowderCooldownId, 160, ReagentItemId: LesserOdellaPowder, ReagentCount: 1),
-		new(250, 15, "mp-recovery", 0, 1, PowderCooldownId, 160, ReagentItemId: LesserOdellaPowder, ReagentCount: 2),
-		new(3940, 15, "rejuvenation", 28, 23, 1217, 50),
-		new(4026, 15, "followup", 40, 25, 1230, 100, "P_CHAINA_2TH_1", "P_CHAINA_1TH_1", 3000),
-		new(4062, 15, "wind", 46, 25, 1234, 160, "C_CHAINC_1TH_1"),
-		new(4084, 15, "wrath", 100, 25, 1236, 120, "P_CHAIND_1TH_1"),
-		new(251, 20, "herb", 0, 1, PowderCooldownId, 160, ReagentItemId: LesserOdellaPowder, ReagentCount: 1),
-		new(252, 20, "mp-recovery", 0, 1, PowderCooldownId, 160, ReagentItemId: LesserOdellaPowder, ReagentCount: 2),
-		new(3941, 20, "rejuvenation", 33, 23, 1217, 50),
-		new(4027, 20, "followup", 46, 25, 1230, 100, "P_CHAINA_2TH_1", "P_CHAINA_1TH_1", 3000),
-		new(4063, 20, "wind", 53, 25, 1234, 160, "C_CHAINC_1TH_1"),
-		new(4085, 20, "wrath", 116, 25, 1236, 120, "P_CHAIND_1TH_1"),
-		// AC-00: new skills. Penance (instant): 115 MP every 3 s for 30 s for 57 HP a tick, a rest skill. Summon Holy
-		// Servant (Asmodian): a servant attacks the target for 17 s. Divine Touch follows Slashing Wind's chain.
-		// Healing Grace: 1,298 HP for 114 MP in a 3 s cast, against Healing Light IV's 374 for 50.
-		new(3867, 15, "penance", 0, 1, 1200, 1800),
-		new(4106, 15, "servant", 86, 25, 1066, 300),
-		new(4073, 17, "touch", 44, 25, 1235, 140, "P_CHAINC_2TH_1", "C_CHAINC_1TH_1", 3000),
-		new(4203, 19, "grace", 114, 23, 1257, 60),
-		new(3868, 20, "penance", 0, 1, 1200, 1800),
-		new(4108, 20, "servant", 100, 25, 1066, 300),
-		// BC-05: the level-21/22 ranks and the third step of Smite -> Flashbolt -> Divine Spark.
-		new(1842, 21, "heal", 65, 23, 1553, 0),
-		new(4016, 21, "smite", 52, 25, 1229, 20, "P_CHAINA_1TH_1"),
-		new(1817, 22, "infernal", 53, 25, 1549, 240, "C_CHAINB_1TH_1"),
-		new(4074, 22, "touch", 53, 25, 1235, 140, "P_CHAINC_2TH_1", "C_CHAINC_1TH_1", 3000),
-		new(4037, 22, "spark", 68, 25, 1231, 160, "P_CHAINA_3TH_1", "P_CHAINA_2TH_1", 3000),
-		// ND-05: shipped level-23/24 ranks, and the instant emergency heal.
-		new(1618, 23, "hallowed", 25, 1, 1512, 80, "C_CHAINJ_1TH_1"),
-		new(4204, 24, "grace", 134, 23, 1257, 60),
-		new(3951, 24, "flash-recovery", 127, 23, 1218, 300),
-	];
-
-	/// <summary>AC-00, BC-05, ND-05: auto-learned active Cleric skills up to level 24 outside the combat/rest rotation, and why. The ratchet
-	/// test fails when skill_tree.xml has one that is neither here nor in the catalog.</summary>
+	/// <summary>AC-00, BC-05, ND-05: auto-learned active Cleric skills up to level 24 outside the combat/rest rotation, and why. The
+	/// profile validator refuses a profile when skill_tree.xml has one that has neither a role nor a reason.</summary>
 	public static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
 		[1699] = "Light of Resurrection revives another player; the bot plays solo.",
@@ -94,12 +39,6 @@ public static class NaturalClericSkills
 		[3879] = "Stability II: as Stability I.",
 		[4005] = "Hand of Reincarnation is prepared for the Bregirun quest attempt (BC-04/BC-06); it is a recovery buff, outside the combat/rest rotation.",
 	};
-
-	public static readonly NaturalPriestSkill[] All = [.. NaturalPriestSkills.All, .. Cleric];
-
-	/// <summary>The observed class chooses the catalog; the Priest keeps its frozen Ishalgen catalog.</summary>
-	public static NaturalPriestSkill[] ForClass(byte? classId) =>
-		classId == PlayerClass.CLERIC.GetClassId() ? All : NaturalPriestSkills.All;
 }
 
 /// <param name="RecoveringMana">The caller's mana-rest hysteresis: set below 50% MP, cleared at 80%.</param>
@@ -126,11 +65,12 @@ public static class NaturalPowderRestPolicy
 	/// <summary>AC-00: Penance costs about 570 HP over its 30 s; it starts only at or above this HP.</summary>
 	public const int PenanceMinimumHpPercent = 70;
 
+	/// <param name="catalog">The class's catalog.</param>
 	/// <param name="restSkills">NR-12: the rest-only skills by kind; the Cleric's when not given.</param>
 	public static NaturalPowderRestChoice Decide(NaturalPowderRestObservation state, DateTimeOffset now,
-		IEnumerable<NaturalPriestSkill>? catalog = null, Classes.NaturalRestSkills? restSkills = null)
+		IEnumerable<NaturalPriestSkill> catalog, Classes.NaturalRestSkills? restSkills = null)
 	{
-		NaturalPriestSkill[] skills = (catalog ?? NaturalClericSkills.All).ToArray();
+		NaturalPriestSkill[] skills = catalog.ToArray();
 		Classes.NaturalRestSkills kinds = restSkills ?? NaturalClericSkills.RestSkills;
 		if (state.Engaged)
 			return new("defend", null, "A monster is engaged; any hit cancels a 4 s powder cast, so fight first.");

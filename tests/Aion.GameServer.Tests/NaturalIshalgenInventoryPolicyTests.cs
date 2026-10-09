@@ -194,6 +194,7 @@ public sealed class NaturalIshalgenInventoryPolicyTests
 		var levelOne = new[] { 39, 40, 41, 103, 1838, 4012 }
 			.ToDictionary(id => id, id => new BotSkill((ushort)id, 1, 0, 0, 0, 0));
 		Assert.True(Catalog.Value.AutoLearnedPriestSkillsObserved(1, levelOne));
-		Assert.False(Catalog.Value.AutoLearnedPriestSkillsObserved(3, levelOne));
+		// NR-18: the check is of the class's level 1 skills, its masteries; the catalog's skills by level need the run's data.
+		Assert.False(Catalog.Value.AutoLearnedPriestSkillsObserved(1, levelOne.Where(pair => pair.Key is 1838 or 4012).ToDictionary()));
 	}
 }

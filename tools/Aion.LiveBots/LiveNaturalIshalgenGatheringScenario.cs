@@ -41,7 +41,7 @@ public static partial class LiveBotRunner
 			session.TravelPlanner = assets.TravelPlanner(GatheringTarget.YoungAzpha.MapId, session.Navigation.Value.Geometry);
 			if (world.Level < 2)
 			{
-				var combat = new NaturalPriestLiveDriver(options, actor, root);
+				var combat = new NaturalPriestLiveDriver(options, actor, root, assets.Data);
 				await actor.StepAsync("earn-level-2-by-ordinary-combat", ct => combat.ReachLevelAsync(2, ct), token);
 			}
 			if (world.Level < 2) throw new InvalidDataException("Q2133 level gate was not earned naturally.");

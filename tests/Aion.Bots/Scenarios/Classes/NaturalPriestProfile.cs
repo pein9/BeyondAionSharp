@@ -5,9 +5,9 @@ namespace Aion.Bots.Scenarios.Classes;
 
 /// <summary>
 /// The accepted line's two profiles. NR-13: their catalogs are generated from the shipped skill data, as every other
-/// class's is, with the roles below; a generated row equals its hand-typed row of <see cref="NaturalPriestSkills.All"/> and
-/// <see cref="NaturalClericSkills.All"/> in every field that row holds. NR-14: the Priest fights by the rule table
-/// <see cref="PriestRules"/>. NR-16: the Cleric fights by <see cref="ClericRules"/>, and its catalog reaches level 26.
+/// class's is, with the roles below. NR-14: the Priest fights by the rule table <see cref="PriestRules"/>. NR-16: the
+/// Cleric fights by <see cref="ClericRules"/>, and its catalog reaches level 26. NR-18: the static rule and the two
+/// hand-typed tables these profiles began with are gone.
 /// </summary>
 public static class NaturalPriestProfile
 {
@@ -68,7 +68,7 @@ public static class NaturalPriestProfile
 			new(NaturalRecoveryKind.LifePotion, 90, FromRun: NaturalRunPercent.LifePotion),
 			new(NaturalRecoveryKind.Skill, 55, "heal", HpPercentMultiple: 70, FinishInstead: true, FromRun: NaturalRunPercent.Heal),
 		],
-		SwarmAttackers: 3, FleeHpPercent: 30, AutoAttack: NaturalAutoAttack.Filler,
+		SwarmAttackers: NaturalPatrolPolicy.MaximumMembers + 1, FleeHpPercent: 30, AutoAttack: NaturalAutoAttack.Filler,
 		EmergencyPercent: 35, EmergencyClearPercent: 45, EmergencySeasonedPairPercent: 55,
 		Finisher: new("smite", 15, FromRun: true), ReserveRole: "heal", ManaPotionReserveMargin: 10, RangedHoldWithin: 12);
 
@@ -106,7 +106,7 @@ public static class NaturalPriestProfile
 				FromRun: NaturalRunPercent.Heal),
 			new(NaturalRecoveryKind.Skill, 55, "heal", HpPercentMultiple: 70, FinishInstead: true, FromRun: NaturalRunPercent.Heal),
 		],
-		SwarmAttackers: 3, FleeHpPercent: 30, AutoAttack: NaturalAutoAttack.Filler, ControlRole: "root",
+		SwarmAttackers: NaturalPatrolPolicy.MaximumMembers + 1, FleeHpPercent: 30, AutoAttack: NaturalAutoAttack.Filler, ControlRole: "root",
 		EmergencyPercent: 35, EmergencyClearPercent: 45, EmergencySeasonedPairPercent: 55,
 		Finisher: new("smite", 15, FromRun: true), ReserveRole: "heal", ManaPotionReserveMargin: 10,
 		Openers: ["smite"], OnlyWhileTargetAbove: new Dictionary<string, int> { ["servant"] = 50 }, RangedHoldWithin: 12);
@@ -212,23 +212,5 @@ public static class NaturalPriestProfile
 			Gear = NaturalGearRules.Cleric,
 			Restock = PriestLineRestock,
 		};
-	}
-
-	/// <summary>Calls the static policy with the class's catalog and the run's parameters, and reports the run's policy id.</summary>
-	internal sealed class StaticPolicy(NaturalPriestSkill[] catalog) : INaturalCombatPolicy
-	{
-		public string PolicyVersion(NaturalMauPolicyParameters parameters) => parameters.Id;
-
-		public int EmergencyEnterPercent(int attackers, bool targetSeasoned) =>
-			NaturalPriestCombatPolicy.EmergencyEnterPercent(attackers, targetSeasoned);
-
-		public int EmergencyExitPercent(int attackers, bool targetSeasoned) =>
-			NaturalPriestCombatPolicy.EmergencyExitPercent(attackers, targetSeasoned);
-
-		public NaturalCombatChoice Decide(NaturalCombatObservation state, DateTimeOffset now, NaturalMauPolicyParameters parameters) =>
-			NaturalPriestCombatPolicy.Decide(state, now, catalog, parameters);
-
-		public NaturalCombatCandidate[] CandidateActions(NaturalCombatObservation state, DateTimeOffset now, NaturalCombatChoice chosen,
-			NaturalMauPolicyParameters parameters) => NaturalPriestCombatPolicy.CandidateActions(state, now, chosen, catalog, parameters);
 	}
 }

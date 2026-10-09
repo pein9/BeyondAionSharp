@@ -32,7 +32,7 @@ public static class NaturalChanterProfile
 	// chain first. The supplies are the kit of every level: at the ceremony the level-10 bands are supplied to a Chanter
 	// as to a Cleric, because the allowlist is keyed by level and not by class.
 	private static readonly NaturalGearRules ChanterGear = NaturalClassGearTable.Chanter.Rules(NaturalClassLineContract.LoadDefault(),
-		NaturalHelpItemAllowlist.AllLevels, NaturalPriestSkills.All);
+		NaturalHelpItemAllowlist.AllLevels);
 
 	public static NaturalClassProfile Create(StaticData data)
 	{

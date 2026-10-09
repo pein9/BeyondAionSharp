@@ -100,10 +100,6 @@ public sealed class NaturalClassProfile
 
 	public NaturalPullStyle PullStyle => Movement.Style;
 
-	/// <summary>CP-39: the class fights by a rule table (<see cref="NaturalRotationCombatPolicy"/>), so the fight loop
-	/// keeps its chain by the catalog's chain time and swings by the weapon's speed. False for the Priest line.</summary>
-	public bool TableDriven => Combat is NaturalRotationCombatPolicy;
-
 	/// <summary>The opening distance of a planned pull: the profile's own, or the run's when it names none.</summary>
 	public float PullDistance(NaturalMauPolicyParameters run) => Ranges.PullDistance ?? run.PullDistanceMeters;
 

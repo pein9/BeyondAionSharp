@@ -30,11 +30,10 @@ public sealed partial class NaturalIshalgenJourney
 		private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<BotWorldModel,
 			Dictionary<int, DateTimeOffset>> CooldownsByWorld = new();
 		private readonly Dictionary<int, DateTimeOffset> cooldowns = CooldownsByWorld.GetValue(session.Api.World, _ => new());
-		// NA-18: the chain the last chain skill opened, from its SM_CASTSPELL_RESULT chain flag (Java ChainSkills).
-		private (string Category, int Target, DateTimeOffset ExpiresAt)? openChain;
-		// CP-39: the same casts kept the server's way, for a table-driven profile only (the Priest line reads openChain).
+		// CP-39: the chain the last chain skill opened, kept the server's way (Java ChainSkills), from the chain flag of
+		// its SM_CASTSPELL_RESULT.
 		private NaturalChainState tableChain = NaturalChainState.None;
-		// CP-39: the swings of a table-driven profile; the attack number wraps at 256 as a byte does.
+		// CP-39: the weapon's swings; the attack number wraps at 256 as a byte does.
 		private int swings;
 		private ushort? lastCancelledSkillId;
 		private bool lastCastCompleted;
@@ -113,7 +112,6 @@ public sealed partial class NaturalIshalgenJourney
 			navigator.InCombat = InCombat;
 			geometry = currentGeometry;
 			ApproachMapId = mapId;
-			openChain = null;
 			tableChain = NaturalChainState.None;
 		}
 
@@ -238,7 +236,7 @@ public sealed partial class NaturalIshalgenJourney
 				? runtime.Data.NpcDataDh.GetNpcTemplate(observedTarget.TemplateId) : null;
 			bool targetSeasoned = targetTemplate != null && targetTemplate.GetRank() >= Aion.GameServer.Model.Templates.Npc.NpcRank.SEASONED;
 			// A monster that attacks from range (the thorned ampha, 37 m) hits without being anywhere near.
-			bool targetRanged = targetTemplate != null && targetTemplate.GetAttackRange() > NaturalPriestCombatPolicy.MeleeReach + 1;
+			bool targetRanged = targetTemplate != null && targetTemplate.GetAttackRange() > Navigation.NaturalCombatGeometry.MeleeReach + 1;
 			long? lastHitByTargetMillis = null;
 			var incomingAttackers = new HashSet<int>();
 			// Fights may run long: a cornered Priest alternates heals and damage, and respawns or chain
@@ -315,9 +313,9 @@ public sealed partial class NaturalIshalgenJourney
 					? NaturalIshalgenPotionPolicy.SelectOwnedManaPotion(world.Inventory.Values) : null;
 				var manaTemplate = manaPotion == null ? null : runtime.Data.ItemDataDh.GetItemTemplate(manaPotion.ItemId);
 				bool manaReady = manaTemplate != null && session.Api.Timing.TimeUntilItemUse(manaTemplate) == TimeSpan.Zero;
-				// CP-39: the main-hand weapon's range and speed, from its tooltip. A table-driven profile also gets its
-				// chain the server's way and the effects seen on the bot; the Priest line's fields stay as they were.
-				bool tableDriven = profile.TableDriven;
+				// CP-39: the main-hand weapon's range and speed, from its tooltip, the chain the server's way and the
+				// effects seen on the bot. NR-18: no rule reads HasBlessing and HasRejuvenation any more; they stay in the
+				// observation because every recorded decision writes them.
 				BotInventoryItem? mainHand = world.Inventory.Values.SingleOrDefault(item => item.Details.EquippedSlot is 1 or 3);
 				var weaponStats = mainHand == null ? null : runtime.Data.ItemDataDh.GetItemTemplate(mainHand.ItemId)?.GetWeaponStats();
 				// NR-04: a second weapon in the off hand adds a quarter of its own speed to the swing (Java
@@ -336,18 +334,17 @@ public sealed partial class NaturalIshalgenJourney
 					Cornered: cornered || ScriptedTrial, TargetAdjacent: targetAdjacent, InEmergency: inEmergency, HasBlessing: hasBlessing,
 					TargetSeasoned: targetSeasoned, TargetRanged: targetRanged,
 					ConservativeRangedHold: profile.HoldsAtRange(conservativeRangedHold),
-					OpenChainCategory: tableDriven ? tableChain.Current : openChain?.Category,
-					OpenChainTargetId: tableDriven ? tableChain.Target : openChain?.Target,
-					ChainExpiresAt: tableDriven ? null : openChain?.ExpiresAt,
+					OpenChainCategory: tableChain.Current,
+					OpenChainTargetId: tableChain.Target,
 					Dp: world.CurrentDp,
 					HasRejuvenation: world.VisibleEffects?.Any(effect => rejuvenationIds.Contains(effect.SkillId)),
 					ShieldScrollReady: shieldChoice?.Item != null,
 					HasManaPotion: manaPotion != null, ManaPotionReady: manaReady,
 					LastCancelledSkillId: lastCancelledSkillId,
 					WeaponAttackRangeMillis: weaponStats?.GetAttackRange(), WeaponAttackSpeedMillis: weaponStats?.GetAttackSpeed() + offHandSwingMillis,
-					PreviousChainCategory: tableDriven ? tableChain.Previous : null, ChainStepAt: tableDriven ? tableChain.StepAt : null,
-					OpenChainUseCount: tableDriven && tableChain.Current != null ? tableChain.UseCount : null,
-					ActiveEffectSkillIds: tableDriven ? world.VisibleEffects?.Select(effect => effect.SkillId).ToHashSet() : null);
+					PreviousChainCategory: tableChain.Previous, ChainStepAt: tableChain.StepAt,
+					OpenChainUseCount: tableChain.Current != null ? tableChain.UseCount : null,
+					ActiveEffectSkillIds: world.VisibleEffects?.Select(effect => effect.SkillId).ToHashSet());
 				NaturalCombatChoice choice = policy.Decide(observation, now, mauPolicy);
 				NaturalCombatCandidate[] candidates = policy.CandidateActions(observation, now, choice, mauPolicy);
 				if (!candidates.Any(candidate => candidate.Action == choice.Action &&
@@ -468,23 +465,18 @@ public sealed partial class NaturalIshalgenJourney
 						}
 						if (!await CastAsync(choice.Skill!, choice.Action == "cast-self" ? session.CharacterId : target, token))
 							return false;
-						if (lastCastCompleted && choice.Action == "cast-self" && choice.Skill!.Role == "heal")
+						// The fight has had its heal: the class's own heal, the one its rest names (NR-18).
+						if (lastCastCompleted && choice.Action == "cast-self" && choice.Skill!.Role == profile.Rest.HealRole)
 							healedThisFight = true;
 						break;
 					case "attack":
 						await session.SendPacketAsync(session.Api.Target(target), token);
-						if (profile.TableDriven)
-						{
-							// CP-39: swing at the weapon's own speed. Java PlayerController.attackTarget refuses a swing
-							// sooner than the attack speed less 300 ms after the last, and allows 1 m more than the weapon's
-							// range; the attack number is a byte and wraps.
-							int interval = observation.WeaponAttackSpeedMillis is > 0 and int speed ? speed : 2500;
-							await session.SendPacketAsync(session.Api.Attack(target, interval, (byte)(swings++ & 0xFF)), token);
-							await session.AdvanceAsync(TimeSpan.FromMilliseconds(interval + 100), token);
-							break;
-						}
-						await session.SendPacketAsync(session.Api.Attack(target, 2500, checked((byte)turn)), token);
-						await session.AdvanceAsync(TimeSpan.FromMilliseconds(2600), token);
+						// CP-39: swing at the weapon's own speed. Java PlayerController.attackTarget refuses a swing sooner
+						// than the attack speed less 300 ms after the last, and allows 1 m more than the weapon's range; the
+						// attack number is a byte and wraps.
+						int interval = observation.WeaponAttackSpeedMillis is > 0 and int speed ? speed : 2500;
+						await session.SendPacketAsync(session.Api.Attack(target, interval, (byte)(swings++ & 0xFF)), token);
+						await session.AdvanceAsync(TimeSpan.FromMilliseconds(interval + 100), token);
 						break;
 					case "approach":
 						BotPosition destination = npc.Position;
@@ -1286,7 +1278,6 @@ public sealed partial class NaturalIshalgenJourney
 			BotSkill learned = session.Api.World.Skills[skill.Id];
 			// AM-06: Java Skill.useSkill resets the player's chain when a skill without a chain category is cast, so a
 			// Light of Rejuvenation between Smite and Flashbolt breaks the chain and the server silently refuses Flashbolt.
-			if (skill.ChainCategory == null) openChain = null;
 			tableChain = tableChain.CastSent(skill);
 			await session.SendPacketAsync(session.Api.Target(target), token);
 			await session.SendPacketAsync(session.Api.Cast(runtime.CreateSpellCast(session.Api.World,
@@ -1410,7 +1401,6 @@ public sealed partial class NaturalIshalgenJourney
 			// AG-07: Java ChainCondition.shouldReset clears the chain when an opener starts while its own chain is used up (Smite's
 			// selfcount is 1), and only a completed cast opens it again (Skill.endCast). A Smite cut short (STR_SKILL_CANCELED)
 			// leaves no chain, and the server refuses the Flashbolt after it without a word (the Leg 6 smoke run).
-			if (skill.ChainCategory != null && skill.RequiresChainCategory == null) openChain = null;
 			tableChain = tableChain.CastStarted(skill);
 			await session.AdvanceAsync(TimeSpan.FromMilliseconds(started.Get<ushort>("castDuration") + 1), token);
 			DecodedBotServerPacket result = await BotCastProtocol.WaitForCompletionAsync(
@@ -1423,20 +1413,13 @@ public sealed partial class NaturalIshalgenJourney
 				if (deciseconds > 0)
 					cooldowns[skill.CooldownId] = runtime.Epoch.AddMilliseconds(runtime.NowMillis + deciseconds * 100L);
 				// NA-18: flag 32 is a successful chain step (Java SM_CASTSPELL_RESULT); anything else resets it.
-				// Smite's chain has no time limit; a stepped chain lasts its template window.
 				tableChain = tableChain.CastCompleted(skill, target, target == session.CharacterId, (result.Get<byte>("flags") & 32) != 0,
 					runtime.Epoch.AddMilliseconds(runtime.NowMillis));
-				if (skill.ChainCategory != null)
-					openChain = (result.Get<byte>("flags") & 32) != 0
-						? (skill.ChainCategory, target, skill.RequiresChainCategory == null || skill.ChainWindowMillis == 0
-							? DateTimeOffset.MaxValue : runtime.Epoch.AddMilliseconds(runtime.NowMillis + skill.ChainWindowMillis))
-						: null;
 			}
 			TimeSpan recovery = BotCastProtocol.RecoveryDelay(result);
-			// CP-48: a table-driven class also waits out the animation's last hit, as its client would: after Gunshot from
-			// 18 m the bullet lands 785 ms after the cast and the server takes no next skill for 819 ms. The Priest line
-			// keeps the recorded wait.
-			if (ClassProfile.TableDriven && result.PacketType == typeof(SM_CASTSPELL_RESULT) &&
+			// CP-48: the animation's last hit is waited out as well, as a client would: after Gunshot from 18 m the bullet
+			// lands 785 ms after the cast and the server takes no next skill for 819 ms.
+			if (result.PacketType == typeof(SM_CASTSPELL_RESULT) &&
 				TimeSpan.FromMilliseconds(runtime.AnimationLastHitMillis(session.Api.World, skill.Id) + 1) is var lastHit && lastHit > recovery)
 				recovery = lastHit;
 			await session.AdvanceAsync(recovery, token);

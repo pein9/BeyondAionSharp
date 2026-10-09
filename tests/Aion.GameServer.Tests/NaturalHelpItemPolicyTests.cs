@@ -4,7 +4,7 @@ using Aion.Bots.World;
 
 namespace Aion.GameServer.Tests;
 
-/// <summary>NA-19: the buff-ourself check's help scrolls and the Anti-Shock shield's place in combat.</summary>
+/// <summary>NA-19: the buff-ourself check's help scrolls and when the Anti-Shock shield is offered.</summary>
 public sealed class NaturalHelpItemPolicyTests
 {
 	private static readonly DateTimeOffset Now = new(2026, 9, 28, 12, 0, 0, TimeSpan.Zero);
@@ -122,44 +122,12 @@ public sealed class NaturalHelpItemPolicyTests
 	}
 
 	[Fact]
-	public void TheShieldComesAfterTheRetreatRulesAndBeforeSalvationAndPotions()
-	{
-		var learned = new[] { 1838, 1839, 4012, 4013, 1614, 1615, 1684, 1814, 3922, 3939, 4127 }
-			.ToDictionary(id => id, id => new BotSkill(checked((ushort)id), 1, 0, 0, 0, 0));
-		var fight = new NaturalCombatObservation(10, 650, 1300, 800, 1300, false, true, 2, 71, learned,
-			new Dictionary<int, DateTimeOffset>(), NearbyAggressors: 1, TargetAdjacent: true, Dp: 2000,
-			HasHotPotion: true, HotPotionReady: true, HasLifePotion: true, LifePotionReady: true, InEmergency: true,
-			ShieldScrollReady: true);
-		NaturalCombatChoice shield = NaturalPriestCombatPolicy.Decide(fight, Now, NaturalClericSkills.All);
-		Assert.Equal("shield-scroll", shield.Action);
-		Assert.Contains(NaturalPriestCombatPolicy.CandidateActions(fight, Now, shield, NaturalClericSkills.All),
-			candidate => candidate.Action == "shield-scroll" && candidate.Legal);
-		// Without the scroll, Salvation is the emergency choice as before.
-		Assert.Equal((ushort)3922, NaturalPriestCombatPolicy.Decide(fight with { ShieldScrollReady = false }, Now, NaturalClericSkills.All).Skill?.Id);
-		// The swarm retreat (here Root, then the retreat) still comes first.
-		Assert.Equal((ushort)4127, NaturalPriestCombatPolicy.Decide(fight with { NearbyAggressors = 3 }, Now, NaturalClericSkills.All).Skill?.Id);
-		// At 30% with nothing left to heal with, the retreat still wins.
-		var drained = fight with
-		{
-			Hp = 300, Mp = 0, Dp = 0, HasHotPotion = false, HasLifePotion = false, Cooldowns = new Dictionary<int, DateTimeOffset>(),
-		};
-		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(drained, Now, NaturalClericSkills.All).Action);
-	}
-
-	[Fact]
-	public void NothingOwnedMeansNothingUsedAndCombatUnchanged()
+	public void NothingOwnedMeansNothingUsed()
 	{
 		NaturalHelpItemObservation empty = State(10, owned: [], hp: 20);
 		foreach (NaturalHelpTrigger trigger in Enum.GetValues<NaturalHelpTrigger>())
 			Assert.Null(Buffs(empty with { CrossMapTravel = true }, trigger, 1000).Item);
 		Assert.Null(NaturalHelpItemPolicy.DecideShield(empty, Now).Item);
-		var learned = new[] { 1838, 1839, 4012, 4013 }.ToDictionary(id => id, id => new BotSkill(checked((ushort)id), 1, 0, 0, 0, 0));
-		var state = new NaturalCombatObservation(9, 300, 669, 500, 1211, false, true, 2, 71, learned,
-			new Dictionary<int, DateTimeOffset>(), NearbyAggressors: 1, TargetAdjacent: true);
-		Assert.Equal(NaturalPriestCombatPolicy.Decide(state, Now).Reason,
-			NaturalPriestCombatPolicy.Decide(state with { ShieldScrollReady = false }, Now).Reason);
-		Assert.Contains(NaturalPriestCombatPolicy.CandidateActions(state, Now, NaturalPriestCombatPolicy.Decide(state, Now)),
-			candidate => candidate.Action == "shield-scroll" && !candidate.Legal);
 	}
 
 	[Fact]
@@ -233,19 +201,6 @@ public sealed class NaturalHelpItemPolicyTests
 		Assert.Equal(162000007, NaturalIshalgenPotionPolicy.SelectOwnedManaPotion([Owned(3, 162000058), Owned(9, 162000007)])?.ItemId);
 		Assert.Equal(162000058, NaturalIshalgenPotionPolicy.SelectOwnedManaPotion([Owned(3, 162000058)])?.ItemId);
 		Assert.Null(NaturalIshalgenPotionPolicy.SelectOwnedManaPotion([Owned(3, 162000002)]));
-	}
-
-	[Fact]
-	public void TheClericDrinksAnOwnedManaPotionWhenHealingManaRunsOut()
-	{
-		var learned = new[] { 1838, 1839, 4012, 4013 }.ToDictionary(id => id, id => new BotSkill(checked((ushort)id), 1, 0, 0, 0, 0));
-		var fight = new NaturalCombatObservation(10, 1000, 1300, 20, 1300, false, true, 2, 71, learned,
-			new Dictionary<int, DateTimeOffset>(), NearbyAggressors: 1, TargetAdjacent: true, HasManaPotion: true, ManaPotionReady: true);
-		NaturalCombatChoice choice = NaturalPriestCombatPolicy.Decide(fight, Now, NaturalClericSkills.All);
-		Assert.Equal("mana-potion", choice.Action);
-		Assert.Contains(NaturalPriestCombatPolicy.CandidateActions(fight, Now, choice, NaturalClericSkills.All),
-			candidate => candidate.Action == "mana-potion" && candidate.Legal);
-		Assert.NotEqual("mana-potion", NaturalPriestCombatPolicy.Decide(fight with { ManaPotionReady = false }, Now, NaturalClericSkills.All).Action);
 	}
 
 	private static NaturalHelpItemChoice Buffs(NaturalHelpItemObservation state,

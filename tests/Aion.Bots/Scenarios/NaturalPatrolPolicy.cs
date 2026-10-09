@@ -27,8 +27,9 @@ public static class NaturalPatrolPolicy
 {
 	public const int WaitMillis = 15_000;
 	public const int MaximumWaits = 4;
-	/// <summary>The combat policy leaves from this many attackers, so a pull that brings them is never taken.</summary>
-	public const int MaximumMembers = NaturalPriestCombatPolicy.SwarmedAttackers - 1;
+	/// <summary>The Priest line's rule tables leave from one attacker more than this (their SwarmAttackers), so a pull
+	/// that brings that many is never taken.</summary>
+	public const int MaximumMembers = 2;
 	public const int LevelAllowance = 2;
 
 	public static NaturalPatrolDecision Decide(NaturalPatrolObservation state)

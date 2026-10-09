@@ -6,8 +6,10 @@ using Aion.Bots.Navigation;
 using Aion.Bots.Protocol;
 using Aion.Bots.Reflexes;
 using Aion.Bots.Scenarios;
+using Aion.Bots.Scenarios.Classes;
 using Aion.Bots.Timing;
 using Aion.Bots.World;
+using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.SkillEngine.Model;
@@ -33,7 +35,7 @@ public static partial class LiveBotRunner
 				Path.Combine(options.OutputDirectory, "navigation-cache"), token);
 			int channel = actor.Session.Api.World.ChannelInfo?.Index ?? 0;
 			actor.Session.Navigation = assets.StarterRoute(Race.ASMODIANS, channel + 1);
-			var driver = new NaturalPriestLiveDriver(options, actor, root);
+			var driver = new NaturalPriestLiveDriver(options, actor, root, assets.Data);
 			await actor.StepAsync("natural-priest-two-kills-and-recovery", driver.ProveAsync, token);
 			if (options.DecisionViewSeconds > 0)
 				await Task.Delay(TimeSpan.FromSeconds(options.DecisionViewSeconds), token);
@@ -53,8 +55,15 @@ public static partial class LiveBotRunner
 		}
 	}
 
-	private sealed class NaturalPriestLiveDriver(LiveBotOptions options, L0Actor actor, string root)
+	/// <summary>
+	/// NR-18: this early live driver decides its fights by the Priest's rule table, as the journey does, over the Priest's
+	/// generated catalog. The static rule it called is gone. What that rule answered between fights is said here: a sit
+	/// below 90% HP or 50% MP. Changed without a LIVE run (the NR loop is SIM only); NI-04 and NI-06 are its users.
+	/// </summary>
+	private sealed class NaturalPriestLiveDriver(LiveBotOptions options, L0Actor actor, string root, StaticData data)
 	{
+		/// <summary>The Priest's profile: this driver is for a pre-Ascension Priest of the accepted line.</summary>
+		private readonly NaturalClassProfile profile = NaturalClassProfiles.For(PlayerClass.PRIEST.GetClassId(), NaturalClassLine.Default, data);
 		private const int SpriggWorker = 210363;
 		private const int LifePotion = 162000002;
 		private const int ManaPotion = 162000007;
@@ -64,7 +73,8 @@ public static partial class LiveBotRunner
 		private readonly Dictionary<int, DateTimeOffset> itemCooldowns = [];
 		private readonly BotMotionTiming motion = BotMotionTiming.Load(Path.Combine(root,
 			"game-server/data/static_data/skills/motion_times.xml"));
-		private readonly Dictionary<int, SkillTemplate> templates = LoadTemplates(root);
+		private readonly Dictionary<int, SkillTemplate> templates = LoadTemplates(root,
+			NaturalClassProfiles.For(PlayerClass.PRIEST.GetClassId(), NaturalClassLine.Default, data).Skills);
 		private int decisionSequence;
 		private int deaths;
 		private int retreats;
@@ -99,7 +109,7 @@ public static partial class LiveBotRunner
 			itemCooldowns[SharedPotionCooldown] = enteredAt.AddSeconds(30);
 			foreach (BotSkillCooldown saved in world.Cooldowns.Values)
 			{
-				NaturalPriestSkill? known = NaturalPriestSkills.All.FirstOrDefault(skill => skill.Id == saved.SkillId);
+				NaturalPriestSkill? known = profile.Skills.FirstOrDefault(skill => skill.Id == saved.SkillId);
 				if (known != null && saved.RemainingSeconds > 0)
 					cooldowns[known.CooldownId] = enteredAt.AddSeconds(saved.RemainingSeconds);
 			}
@@ -133,8 +143,9 @@ public static partial class LiveBotRunner
 					switch (choice.Action)
 					{
 						case "cast-self": case "cast-target": await CastAsync(choice.Skill!, target, choice.Action == "cast-self", token); break;
-						case "life-potion": await UsePotionAsync(LifePotion, token); break;
+						case "hot-potion": await UsePotionAsync(LifePotion, token); break;
 						case "mana-potion": await UsePotionAsync(ManaPotion, token); break;
+						case "wait": await Task.Delay(TimeSpan.FromMilliseconds(500), token); break;
 						case "attack":
 							await session.SendPacketAsync(session.Api.Target(target), token);
 							// A deliberately slow fallback remains legal even after NI-05 equips a slower weapon.
@@ -161,12 +172,15 @@ public static partial class LiveBotRunner
 			DateTimeOffset now = TimeProvider.System.GetUtcNow();
 			float? distance = targetPosition is BotPosition position ? Distance(actor.Session.CurrentPosition, position) : null;
 			bool? blessing = world.VisibleEffects?.Any(effect => effect.SkillId == 1684);
-			return NaturalPriestCombatPolicy.Decide(new NaturalCombatObservation(world.Level, world.CurrentHp,
+			bool potionDelayOver = !itemCooldowns.TryGetValue(SharedPotionCooldown, out var due) || due <= now;
+			// The starter's life potion heals over time: it is the table's life potion, drunk at its percentage in a fight.
+			return profile.Combat.Decide(new NaturalCombatObservation(world.Level, world.CurrentHp,
 				world.MaxHp, world.CurrentMp, world.MaxMp, world.IsDead, aggro, distance, target,
-				world.Skills, cooldowns, chain, chainTarget, chainExpires, blessing,
-				Potion(LifePotion) != null, Potion(ManaPotion) != null,
-				!itemCooldowns.TryGetValue(SharedPotionCooldown, out var lifeDue) || lifeDue <= now,
-				!itemCooldowns.TryGetValue(SharedPotionCooldown, out var manaDue) || manaDue <= now), now);
+				world.Skills, cooldowns, OpenChainCategory: chain, OpenChainTargetId: chainTarget, ChainExpiresAt: chainExpires,
+				HasBlessing: blessing, HasManaPotion: Potion(ManaPotion) != null, ManaPotionReady: potionDelayOver,
+				HasHotPotion: Potion(LifePotion) != null, HotPotionReady: potionDelayOver,
+				HotPotionActive: NaturalIshalgenPotionPolicy.HasActiveHealing(world.VisibleEffects),
+				ActiveEffectSkillIds: world.VisibleEffects?.Select(effect => (int)effect.SkillId).ToHashSet()), now, NaturalMauPolicyParameters.Baseline);
 		}
 
 		private void Record(NaturalCombatChoice choice)
@@ -260,15 +274,17 @@ public static partial class LiveBotRunner
 			await session.SynchronizeAsync(token);
 			if (world.IsDead) await ReviveAsync(token);
 			NaturalCombatChoice initial = Decide(null, null);
-			for (int preparation = 0; preparation < 3 && initial.Action is "cast-self" or "life-potion" or "mana-potion"; preparation++)
+			for (int preparation = 0; preparation < 3 && initial.Action is "cast-self" or "mana-potion"; preparation++)
 			{
 				Record(initial);
 				if (initial.Action == "cast-self") await CastAsync(initial.Skill!, 0, true, token);
-				else await UsePotionAsync(initial.Action == "life-potion" ? LifePotion : ManaPotion, token);
+				else await UsePotionAsync(ManaPotion, token);
 				await session.SynchronizeAsync(token);
 				initial = Decide(null, null);
 			}
-			if (initial.Action == "ready" && !forceRest) return;
+			// The table has no answer between fights. What the static rule said there: rest below 90% HP or 50% MP.
+			bool worn = world.CurrentHp * 100 < world.MaxHp * 90 || world.CurrentMp * 100 < world.MaxMp * 50;
+			if (initial.Action == "ready" && !forceRest && !worn) return;
 			Record(initial.Action == "ready"
 				? new NaturalCombatChoice("rest", null, null, "Conservative post-kill pause before another pull.", [])
 				: initial);
@@ -341,9 +357,9 @@ public static partial class LiveBotRunner
 		private static float Distance(BotPosition a, BotPosition b) => MathF.Sqrt(
 			(a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y) + (a.Z - b.Z) * (a.Z - b.Z));
 
-		private static Dictionary<int, SkillTemplate> LoadTemplates(string root)
+		private static Dictionary<int, SkillTemplate> LoadTemplates(string root, IEnumerable<NaturalPriestSkill> catalog)
 		{
-			var wanted = NaturalPriestSkills.All.Select(skill => (int)skill.Id).ToHashSet();
+			var wanted = catalog.Select(skill => (int)skill.Id).ToHashSet();
 			var found = new Dictionary<int, SkillTemplate>();
 			using var reader = XmlReader.Create(Path.Combine(root, "game-server/data/static_data/skills/skill_templates.xml"));
 			var serializer = new XmlSerializer(typeof(SkillTemplate), new XmlRootAttribute("skill_template"));
