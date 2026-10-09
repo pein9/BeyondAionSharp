@@ -89,6 +89,39 @@ public sealed record NaturalAscensionContract(
 
 	/// <summary>The bridge of a class line that takes a second class. The accepted line's is the reviewed file's, value
 	/// for value. NR-30: the ceremony pick is the line's own unless one is given here.</summary>
+	/// <summary>NR-35: the contract is the reviewed pair's own, the Priest who becomes a Cleric. Its shop purchases and its
+	/// kept accessories are that pair's; another pair has them by rule (<see cref="PurchasesFor"/>, the gear rule).</summary>
+	[JsonIgnore]
+	public bool ReviewedPair => SecondClass == LoadDefault().SecondClass && StarterClass == LoadDefault().StarterClass;
+
+	/// <summary>
+	/// NR-35: what a pair other than the reviewed one buys at the Altgard shop stop, from the reviewed purchases. A help
+	/// item of the allowlist (the powder) is bought only by a class whose kit has it. A potion one of the class's restock
+	/// lines counts is bought by that line: when its stock is at or below the line's threshold, up to the line's target,
+	/// as far as the class's spendable Kinah goes. Anything else is bought as reviewed.
+	/// </summary>
+	/// <param name="unitPrice">The price of one, as the bot knows it before it stands at the vendor.</param>
+	public static NaturalAscensionPurchase[] PurchasesFor(IReadOnlyList<NaturalAscensionPurchase> reviewed, NaturalHelpItemRules help,
+		NaturalRestockRules restock, IReadOnlyCollection<Aion.Bots.World.BotInventoryItem> inventory, long kinah, Func<int, long> unitPrice)
+	{
+		var own = new List<NaturalAscensionPurchase>();
+		foreach (NaturalAscensionPurchase purchase in reviewed)
+		{
+			if (NaturalHelpItemAllowlist.AllLevels.Any(row => row.ItemId == purchase.ItemId))
+			{
+				if (help.Kit.Any(row => row.ItemId == purchase.ItemId)) own.Add(purchase);
+			}
+			else if (restock.Lines.FirstOrDefault(counted => counted.CountedWith.Contains(purchase.ItemId)) is { } line)
+			{
+				long count = restock.PurchaseCount(line, restock.Stock(line, inventory), kinah, unitPrice(purchase.ItemId));
+				long owned = inventory.Where(item => item.ItemId == purchase.ItemId).Sum(item => item.Count);
+				if (count > 0) own.Add(purchase with { Target = checked((int)(owned + count)), TargetCombinedLifePotions = null });
+			}
+			else own.Add(purchase);
+		}
+		return [.. own];
+	}
+
 	public static NaturalAscensionContract ForLine(NaturalClassLine line, int? ceremonyItemId = null) => line.Second is { } second
 		? ForChoice(LoadDefault(), NaturalClassLineContract.LoadDefault(), line.Starter, second, ceremonyItemId ?? line.CeremonyItemId)
 		: throw new InvalidOperationException(

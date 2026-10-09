@@ -2471,6 +2471,7 @@ can use them. The order below is the order of work: the item that saves time com
       - J, the bridge: the three kept accessories are the reviewed pair's by item id.
         Another pair keeps the accessories it wears when the bridge is taken up
         (bridge-kept-accessories), and its endpoint asks that they are still worn.
+        (Replaced by NR-35: the endpoint asks the gear rule.)
       - Sc/NaturalIshalgenInventoryPolicy.cs: NaturalItem.IsEquipment. Nothing else: the
         policy's decision has taken the observed class's rules since CP-23 (GearRules), and
         its `cleric` flag and IsCleric are called by unit tests alone.
@@ -2545,10 +2546,54 @@ can use them. The order below is the order of work: the item that saves time com
       (run/nr/NR-34/help-items.log): p, m, b, c, hm, ax and the five starters; l1 writes
       none in either. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr34-fast, 11 passed).
-- [ ] **NR-35 - The bridge's shop and stops by class.** Depends: NR-33, NR-34
+- [x] **NR-35 - The bridge's shop and stops by class.** Depends: NR-33, NR-34
   - Work: The Altgard shop stop buys the powder only for a class with a reagent skill and
     the potions by the class's restock rule; the kept accessories come from the gear rule.
   - Proof: One-time check; gate b identical.
+  - 2026-10-09: done. The shop stop's two purchases and the three kept accessories are the
+    reviewed pair's, the Priest who becomes a Cleric; another pair has them by rule. The
+    accepted line plays as recorded.
+    - **Java.** None read: what the bot buys and wears is no server behavior. The vendor
+      still decides every trade.
+    - **The change.**
+      - Sc/NaturalAscensionContract.cs: ReviewedPair, and PurchasesFor, the purchases of
+        another pair. Of the reviewed two, the powder 169300003 is a help item of the
+        allowlist and is bought, up to the reviewed 30, only by a class whose kit has it
+        (NR-34). The Lesser Life Elixir 162000053 is a potion the class's restock line
+        counts, so it is bought by that line: when all its life potions together are at or
+        below the line's threshold, up to the line's target, as far as its spendable Kinah
+        goes.
+      - J, the shop stop: another pair's purchases are those, traced as
+        altgard-shop-purchases. A purchase the vendor's price puts out of reach is traced
+        as altgard-shop-shortfall and does not stop the run; for the reviewed pair it still
+        does.
+      - J, the endpoint: another pair names no kept accessory by id. Its endpoint asks the
+        gear rule: nothing in the bag that the equipment check would still put in an
+        accessory slot. This replaces NR-33's list of what was worn when the bridge was
+        taken up, which goes stale as soon as the shop stop's equipment check wears a
+        better ring.
+    - **Proof, the one-time check** (run/nr/NR-35/check.log; the check file is not
+      committed), for the eleven second classes with the kinds of NR-34 and their starter
+      line's restock rule (buy at five or fewer life potions, up to twelve; a Kinah floor
+      of 500 for every line but the Priest's):
+
+      | The bag at the shop | What is bought |
+      |---|---|
+      | The level-10 kit as supplied: 30 life potions, 200 powder | Nothing by any class: the potions are above the threshold and the powder above its 30. |
+      | Three life potions, no powder, 20,000 Kinah | Nine elixirs (to twelve potions in all) and 30 powder, by every class. |
+      | Three life potions, no powder, 600 Kinah | The Priest line's classes, with no floor, one elixir. The others no elixir: 100 Kinah above their floor does not pay for one at 450. The powder is asked for as reviewed. |
+      | A class that does not take the reagent kind | No powder. |
+
+      With the help kit on, as every run has it, another class buys nothing at this stop.
+      The gear rule, as the endpoint asks it: with a level-14 ring in the bag beside two
+      worn level-7 rings, one accessory is left to put on; once it is worn, none.
+    - **Not covered by a rule.** The powder purchase is not held back by the restock
+      rule's Kinah floor; the vendor refuses what the Kinah does not cover and the
+      shortfall is traced. The Tea of Repose is drunk by every class that owns one.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-35/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical, b among them. Seven pre-commit checks pass, Aion.GameServer.Tests passes
+      (4,629 passed, 16 skipped) and Fast passes (run nr35-fast, 11 passed).
 - [ ] **NR-36 - A shot in flight by role.** Depends: NR-31
   - Work: NaturalAirCombat takes its skill from a role the profile names for a ranged
     attack that may be cast in flight, with that skill's range; a class with no such skill
@@ -2967,3 +3012,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   identical, help-items.json of every scope unchanged. Seven checks, unit suite (4,629
   passed, 16 skipped) and Fast (nr34-fast) pass. Next: NR-35, the bridge's shop and stops
   by class.
+- 2026-10-09 — Loop: NR-35 done. At the bridge's shop stop a pair other than the reviewed
+  one buys the powder only when its kit has it and the life elixir by its own restock
+  rule; with the kit on it buys nothing. Its endpoint asks the gear rule about accessories
+  in place of a list by id, which also replaces NR-33's list. Full gate guard-p8: twelve
+  scopes identical. Seven checks, unit suite (4,629 passed, 16 skipped) and Fast
+  (nr35-fast) pass. Next: NR-36, a shot in flight by role.

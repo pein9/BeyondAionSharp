@@ -198,20 +198,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		{
 			if (lineBridge != null) return lineBridge;
 			NaturalAscensionContract bridge = NaturalAscensionContract.ForLine(ClassLine);
-			// NR-33: the kept accessories are the reviewed pair's own, by item id. Another pair keeps the accessories it wears
-			// when the bridge is taken up; its endpoint then asks that they are still worn.
-			if (bridge.SecondClass != NaturalAscensionContract.LoadDefault().SecondClass)
-			{
-				BotWorldModel world = session.Api.World;
-				NaturalIshalgenInventoryPolicy items = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot,
-					world.Inventory.Values.Select(item => item.ItemId), ClassLine);
-				bridge = bridge with
-				{
-					KeptAccessories = [.. NaturalAltgardContinuation.EquippedItemIds(world).Where(id => items.Item(id).IsAccessory).Distinct().Order()],
-				};
-				session.TraceDiagnostic("bridge-kept-accessories", new Dictionary<string, object?>
-				{ ["class"] = bridge.SecondClass.ToString(), ["worn"] = bridge.KeptAccessories });
-			}
+			// NR-33, NR-35: the kept accessories are the reviewed pair's own, by item id. Another pair names none: its endpoint
+			// asks the gear rule instead, which wears the best accessories it owns at the shop stop.
+			if (!bridge.ReviewedPair) bridge = bridge with { KeptAccessories = [] };
 			return lineBridge = bridge;
 		}
 		NaturalJourneyCheckpoint? checkpoint = null;
@@ -4740,6 +4729,20 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				// fit the inventory packet's 16-bit slot field that the checkpoint records).
 				Require.All(bridge.KeptAccessories, item => Require.True(world.Inventory.Values.Any(owned => owned.ItemId == item &&
 					(owned.Details.EquippedSlot ?? 0) > 0), $"Kept accessory {item} is not worn at the endpoint."));
+				// NR-35: another pair's accessories come from the gear rule: at the endpoint it has none left to put on.
+				if (!bridge.ReviewedPair)
+				{
+					NaturalGearRules gear = combat.ClassProfile.Gear;
+					Race race = world.Objects.GetValueOrDefault(session.CharacterId)?.Race is byte raceId ? (Race)raceId : Race.ASMODIANS;
+					NaturalGearInfo? Describe(int itemId) =>
+						NaturalInventoryCheck.Describe(runtime.Data.ItemDataDh.GetItemTemplate(itemId), gear.Class, race);
+					NaturalGearUpgrade[] pending = [.. NaturalGearPolicy.SelectUpgrades(world.Inventory.Values, world.Level, Describe,
+						(long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF, refusedGear, gear,
+						world.Skills.Keys.Any(NaturalGearPolicy.DualWieldSkillIds.Contains))
+						.Where(upgrade => Describe(upgrade.ItemId)?.Group is "RING" or "EARRING" or "NECKLACE" or "BELT")];
+					Require.True(pending.Length == 0,
+						$"The gear rule would still put on accessory {pending.FirstOrDefault()?.ItemId} at the endpoint.");
+				}
 				Require.True(!world.IsDead, "The endpoint character is dead.");
 				NaturalJourneyCheckpoint before = NaturalJourneyCheckpoint.Capture(world, session.CharacterId,
 					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge, line: ClassLine);
@@ -4783,6 +4786,17 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				Require.True(!bridge.Shop.BuysGear, "The bridge never buys gear (OD-7).");
 				Require.True(bridge.Shop.Purchases.All(p => runtime.Data.ItemDataDh.GetItemTemplate(p.ItemId).GetItemSlot() == 0),
 					"A bridge purchase would be equipment.");
+				// NR-35: the contract's purchases are the reviewed pair's. Another pair buys the powder only when its kit has
+				// it, and the potion by its own restock rule.
+				NaturalAscensionPurchase[] purchases = bridge.ReviewedPair ? bridge.Shop.Purchases
+					: NaturalAscensionContract.PurchasesFor(bridge.Shop.Purchases, combat.ClassProfile.HelpItems, combat.ClassProfile.Restock,
+						[.. world.Inventory.Values], world.Kinah, Base);
+				if (!bridge.ReviewedPair)
+					session.TraceDiagnostic("altgard-shop-purchases", new Dictionary<string, object?>
+					{
+						["class"] = bridge.SecondClass.ToString(), ["reviewed"] = bridge.Shop.Purchases.Select(p => $"{p.ItemId}:{p.Target}").ToArray(),
+						["own"] = purchases.Select(p => $"{p.ItemId}:{p.Target}").ToArray(), ["kinah"] = world.Kinah,
+					});
 				var plan = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(i => i.ItemId), ClassLine).Decide(world);
 				var sales = plan.Sales.Select(sale => new NaturalSale(sale.ObjectId, sale.ItemId, sale.Count)).ToList();
 				BotPosition VendorAt(int npc) => runtime.Data.SpawnsDh.GetSpawnsByWorldId(bridge.Bind.MapId)
@@ -4793,7 +4807,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					.OrderBy(npc => Distance(session.CurrentPosition, VendorAt(npc))).ToArray();
 				foreach (int vendorNpc in vendors)
 				{
-					var wanted = bridge.Shop.Purchases
+					var wanted = purchases
 						.Select(p => new NaturalPurchase(p.ItemId, Math.Max(0, (p.Target ?? p.TargetCombinedLifePotions ?? 0) - Owned(p.ItemId))))
 						.Where(p => p.Count > 0).ToList();
 					var sell = vendorNpc == bridge.Shop.SellNpcId ? sales : [];
@@ -4811,8 +4825,13 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						["refused"] = trade.Refused.Select(r => $"{r.Purchase.ItemId}:{r.Reason}").ToArray(), ["kinah"] = world.Kinah,
 					});
 				}
-				foreach (NaturalAscensionPurchase purchase in bridge.Shop.Purchases)
-					Require.True(Owned(purchase.ItemId) >= (purchase.Target ?? 0), $"Altgard shop left {purchase.ItemId} below its target.");
+				// A rule's purchase that the vendor's price put out of reach is an outcome, not a broken contract.
+				foreach (NaturalAscensionPurchase purchase in purchases)
+					if (bridge.ReviewedPair)
+						Require.True(Owned(purchase.ItemId) >= (purchase.Target ?? 0), $"Altgard shop left {purchase.ItemId} below its target.");
+					else if (Owned(purchase.ItemId) < (purchase.Target ?? 0))
+						session.TraceDiagnostic("altgard-shop-shortfall", new Dictionary<string, object?>
+						{ ["itemId"] = purchase.ItemId, ["owned"] = Owned(purchase.ItemId), ["target"] = purchase.Target, ["kinah"] = world.Kinah });
 				// Tea of Repose (OD-8): once, out of combat, now that the Cleric is level 10.
 				int teaId = bridge.CeremonyReward.TeaItemId;
 				if (world.Inventory.Values.FirstOrDefault(item => item.ItemId == teaId) is { } tea)
