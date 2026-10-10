@@ -345,7 +345,12 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		}
 		if (!state.Aggro && Upkeep(duringFight: false) is { } before) return Cast(before, $"The {before.Role} buff goes up before the first hit.");
 		if (Upkeep(duringFight: true) is { } during) return Cast(during, $"The {during.Role} buff is absent from the observed effects.");
-		IEnumerable<NaturalPriestSkill> attacks = line.Where(skill => skill.RequiresChainCategory == null);
+		// NR-101: a skill of the list that is cast on the bot (the Ranger's Devotion, 5 s of more attack) belongs to the
+		// fight at the target. It is cast only while an attack of the list reaches the target, and nothing waits for it:
+		// with Devotion cooling down a Ranger 47 m from its target held its place for good.
+		bool attackReaches = adjacent || line.Any(skill => skill.RequiresChainCategory == null && !Self(skill) &&
+			distance <= NaturalSkillCatalog.Reach(skill, state));
+		IEnumerable<NaturalPriestSkill> attacks = line.Where(skill => skill.RequiresChainCategory == null && (attackReaches || !Self(skill)));
 		// NR-11: an opener whose follow-up can be cast after it goes first; the sort keeps every other place.
 		if (rules.Openers is { Count: > 0 }) attacks = attacks.OrderBy(skill => OpensNow(skill) ? 0 : 1);
 		foreach (NaturalPriestSkill attack in attacks)
@@ -360,7 +365,8 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		// NR-14: a class that fills with its weapon is not kept out of the weapon's reach by a cooldown when the target
 		// attacks from range. That target does not come, and the swing is what the class does between its skills.
 		bool weaponWanted = rules.AutoAttack == NaturalAutoAttack.Filler && state.TargetRanged && !swingLegal;
-		if (!weaponWanted && line.Any(skill => skill.RequiresChainCategory == null && Refusals(skill, state, now, parameters) is [CoolingDown]))
+		if (!weaponWanted && line.Any(skill => skill.RequiresChainCategory == null && !Self(skill) &&
+			Refusals(skill, state, now, parameters) is [CoolingDown]))
 			return Choice("wait", null, "A listed attack is in reach and only cools down; hold position.");
 		// Nothing can be cast or swung from here. An unpulled target never closes by itself, so the class goes to it.
 		// NR-11: the ranged hold. A target that attacks from range does not come closer, and walking up to it under fire

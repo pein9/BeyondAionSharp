@@ -61,6 +61,10 @@ public sealed partial class SimulationFastScenarioTests
 		new("assassin-16", NaturalClassLine.ScoutAssassin, ProbeAccountB, "Asimsixassa"),
 		new("assassin-20", NaturalClassLine.ScoutAssassin, ProbeAccountA, "Asimtweassa"),
 		new("assassin-25", NaturalClassLine.ScoutAssassin, ProbeAccountB, "Asimtfassa"),
+		new("ranger-10", NaturalClassLine.ScoutRanger, ProbeAccountA, "Asimtenrang"),
+		new("ranger-16", NaturalClassLine.ScoutRanger, ProbeAccountB, "Asimsixrang"),
+		new("ranger-20", NaturalClassLine.ScoutRanger, ProbeAccountA, "Asimtwerang"),
+		new("ranger-25", NaturalClassLine.ScoutRanger, ProbeAccountB, "Asimtfrang"),
 		new("chanter-mantras", NaturalClassLine.PriestChanter, ProbeAccountA, "Asimmantra"),
 		new("gladiator-aerial", NaturalClassLine.WarriorGladiator, ProbeAccountB, "Asimaerial"),
 		new("assassin-runes", NaturalClassLine.ScoutAssassin, ProbeAccountA, "Asimrunes"),
@@ -284,6 +288,10 @@ public sealed partial class SimulationFastScenarioTests
 			case "assassin-16": await AssassinLevelSixteenRowAsync(probe, id, token); break;
 			case "assassin-20": await AssassinLevelTwentyRowAsync(probe, id, token); break;
 			case "assassin-25": await AssassinLevelTwentyFiveRowAsync(probe, id, token); break;
+			case "ranger-10": await RangerLevelTenRowAsync(probe, id, token); break;
+			case "ranger-16": await RangerLevelSixteenRowAsync(probe, id, token); break;
+			case "ranger-20": await RangerLevelTwentyRowAsync(probe, id, token); break;
+			case "ranger-25": await RangerLevelTwentyFiveRowAsync(probe, id, token); break;
 			case "chanter-mantras": await ChanterMantrasRowAsync(probe, id, token); break;
 			case "gladiator-aerial": await GladiatorAerialRowAsync(probe, id, token); break;
 			case "assassin-runes": await AssassinRunesRowAsync(probe, id, token); break;
@@ -3557,6 +3565,257 @@ public sealed partial class SimulationFastScenarioTests
 			string.Join("; ", lines) + $". Runes carved {carved} time(s) and burst {bursts}; Killer's Eye cast {eyes} time(s), Flurry {flurries}; the daggers swung {swings} time(s). " +
 			$"Then against {pack.Length} the director spawned 4 m away and set on it: {Outcome(swarm)}; it left with {attackers} attackers: " +
 			$"{swarm.Decided[left].Fields.GetProperty("reason").GetString()} Rest: casts {string.Join(" ", restCasts)}, Odella Powder {probe.Owned(OdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, dead {probe.Server.IsDead()}.");
+	}
+
+	private const string RangerTable = "natural-ranger-v1:";
+
+	/// <summary>
+	/// NR-101, row ranger-10. Prepared by the director: the Scout is made a level-10 Ranger with the skills of every
+	/// level up to it, is given the ceremony's bow (101700515) and is placed in Altgard by the ice crasaurs (210415,
+	/// level 11), where the Cleric's row fights. The journey's equipment check takes the bow. Then it fights two crasaurs
+	/// by its table: from its stand-off the first shot at a target is Entangling Shot, Swift Shot and Stunning Shot
+	/// follow, Deadshot fills the gaps and the bow shoots between skills. Last the director gives powder and halves the
+	/// HP, and the journey's rest casts Herb Treatment.
+	/// </summary>
+	private async Task RangerLevelTenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int crasaur = 210415, bow = 101700515, entangle = 950, stun = 784, swift = 994, deadshot = 1010, devotion = 3235, herb = 246;
+		probe.Session.BeginStep("s01", "director-makes-a-level-ten-ranger-in-altgard");
+		await probe.BecomeAsync(PlayerClass.RANGER, 10);
+		int[] table = probe.CatalogOf(PlayerClass.RANGER);
+		Assert.All(new[] { entangle, stun, swift, deadshot, devotion, herb, 249, 872, 3195 }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 10."));
+		await GiveAsync(probe, token, (bow, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1473.2f, 1765.2f, 247.5f);
+		probe.Session.BeginStep("s02", "equipment-check-takes-the-bow");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(bow, MainHand(probe));
+
+		var lines = new List<string>();
+		double shotFrom = 0;
+		int kills = 0, deaths = 0, shots = 0, deadshots = 0;
+		for (int fights = 1; fights <= 2; fights++)
+		{
+			Npc next = NearestLiving(probe, crasaur);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, RangerTable, $"s03-{fights:D2}", $"fight-ice-crasaur-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"Fight {fights} ended no way: {fight.Result}.");
+			kills += fight.Result.Killed ? 1 : 0;
+			deaths += fight.Result.Deaths;
+			shots += Swings(fight);
+			deadshots += fight.Casts.Count(cast => cast.SkillId == deadshot);
+			if (fights == 1)
+			{
+				// From its stand-off: with every cooldown clear the first shot at the target is Entangling Shot.
+				StarterTraceRecord first = fight.Decided.First(record => record.Fields.GetProperty("action").GetString() == "cast-target");
+				shotFrom = first.Fields.GetProperty("targetDistance").GetDouble();
+				Assert.True(Decided(first, "cast-target", entangle) && shotFrom > 6, $"The first shot was decided at {shotFrom:F1} m: {fight.Order}.");
+				Assert.Contains(fight.Casts, cast => cast.SkillId == swift);
+			}
+			lines.Add($"fight {fights}: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+
+		// Prepared by the director: powder, and half HP. The rest is the journey's.
+		await GiveAsync(probe, token, (LesserOdellaPowder, 20));
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		int hpBefore = probe.World.CurrentHp;
+		(_, int[] restCasts) = await RestStepAsync(probe, "s04", "director-gives-powder-and-halves-hp-then-rest", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Ranger, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, bow {bow}. {kills} kill(s), {deaths} death(s): " +
+			$"{string.Join("; ", lines)}. Entangling Shot from {shotFrom:F1} m; Deadshot cast {deadshots} time(s); the bow shot {shots} time(s). " +
+			$"Rest from {hpBefore} HP: casts {string.Join(" ", restCasts)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-101, row ranger-16. Prepared by the director: a level-16 Ranger with the bow of Q24013 and the leather shoes
+	/// and jerkin of Q24011 and Q24012 in the bag, by the tusked mosbears (210437, level 14) of the Cleric's row. The
+	/// journey's equipment check wears them. Before the fight begins the director cuts HP to 65%: Focused Evasion is
+	/// cast, by the ladder. A kill, a retreat and a death are recorded outcomes: the spot brings more monsters, and with
+	/// two on it the Ranger leaves.
+	/// </summary>
+	private async Task RangerLevelSixteenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210437, bow = 101701366, shoes = 114301817, jerkin = 110301811, evasion = 3195, swift = 995, arrow = 939, entangle = 951,
+			stun = 785, deadshot = 1011;
+		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-ranger-in-altgard");
+		await probe.BecomeAsync(PlayerClass.RANGER, 16);
+		int[] table = probe.CatalogOf(PlayerClass.RANGER);
+		Assert.All(new[] { evasion, swift, arrow, entangle, stun, deadshot }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 16."));
+		await GiveAsync(probe, token, (bow, 1), (shoes, 1), (jerkin, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1427.2f, 789.9f, 249.9f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		IReadOnlyList<NaturalGearUpgrade> worn = await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(bow, MainHand(probe));
+		Assert.All(new[] { shoes, jerkin }, piece => Assert.Contains(probe.World.Inventory.Values, item => item.ItemId == piece && item.Details.EquippedSlot.GetValueOrDefault() != 0));
+
+		Npc first = NearestLiving(probe, mosbear);
+		int mp = 0;
+		ClericFight fight = await TableFightAsync(probe, RangerTable, "s03", "fight-a-tusked-mosbear-from-under-seven-tenths-hp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 65% HP as the fight begins.
+			await probe.CutHpAsync(65);
+			mp = probe.World.CurrentMp;
+			return first.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(fight);
+		AssertOnlyCasts(fight, table);
+		Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"The fight ended no way: {fight.Result}.");
+		StarterTraceRecord[] evaded = fight.Decided.Where(record => Decided(record, "cast-self", evasion)).ToArray();
+		Assert.True(evaded.Length > 0, $"Focused Evasion was not cast: {fight.Order}; decisions {fight.Counts}.");
+		Assert.All(evaded, record => Assert.True(HpPercentAt(record) <= 70, $"Focused Evasion was decided at {HpPercentAt(record)}% HP."));
+		StarterTraceRecord? left = fight.Decided.FirstOrDefault(record => record.Fields.GetProperty("action").GetString() == "retreat");
+		Console.WriteLine($"{id}: level {probe.World.Level} Ranger, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}; the check asked for " +
+			$"{string.Join(", ", worn.Select(upgrade => $"{upgrade.ItemId} to slot {upgrade.Slot}"))}. From 65% HP: {Outcome(fight)}; MP {mp} to {probe.World.CurrentMp}; " +
+			$"Focused Evasion decided at {string.Join(", ", evaded.Select(HpPercentAt))}% HP; Arrow Strike cast {fight.Casts.Count(cast => cast.SkillId == arrow)} time(s), " +
+			$"Deadshot {fight.Casts.Count(cast => cast.SkillId == deadshot)}; the bow shot {Swings(fight)} time(s). " +
+			$"It left: {left?.Fields.GetProperty("reason").GetString() ?? "no."} HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>
+	/// NR-101, row ranger-20. Prepared by the director: a level-20 Ranger with the bow of Q24016, by the starved mosbears
+	/// (210564, level 13) of the Cleric's row, with powder, two shield scrolls and three life potions in the bag. It
+	/// fights by its table until Arrow Strike has followed Swift Shot. Before one more fight the director gives 2,000 DP
+	/// and cuts HP to 45%: Transformation: Mau is cast and the ladder answers. Last the director cuts MP to a tenth and
+	/// the journey's rest casts MP Recovery. The row says what a fight costs in mana.
+	/// </summary>
+	private async Task RangerLevelTwentyRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, bow = 101701368, swift = 996, arrow = 940, entangle = 952, stun = 786, deadshot = 1012, mau = 872, evasion = 3195,
+			sleep = 896, recovery = 252, scroll = 164000068, potion = 162000003, mostFights = 4;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-ranger-in-altgard");
+		await probe.BecomeAsync(PlayerClass.RANGER, 20);
+		int[] table = probe.CatalogOf(PlayerClass.RANGER);
+		Assert.All(new[] { swift, arrow, entangle, stun, deadshot, mau, evasion, sleep, recovery, 251 }, skill =>
+			Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 20."));
+		await GiveAsync(probe, token, (bow, 1), (LesserOdellaPowder, 20), (scroll, 2), (potion, 3));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(bow, MainHand(probe));
+
+		var lines = new List<string>();
+		TimeSpan? gap = null;
+		int fights = 0, shots = 0, deadshots = 0;
+		while (gap == null && fights < mostFights)
+		{
+			fights++;
+			Npc next = NearestLiving(probe, mosbear);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, RangerTable, $"s03-{fights:D2}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.True(fight.Result is { Killed: true, Deaths: 0 }, $"Fight {fights} was no kill: {Outcome(fight)}.");
+			Assert.DoesNotContain(fight.Casts, cast => cast.SkillId == mau);
+			shots += Swings(fight);
+			deadshots += fight.Casts.Count(cast => cast.SkillId == deadshot);
+			if (fight.Run([swift], [arrow]) is >= 0 and int at) gap ??= fight.Casts[at + 1].At - fight.Casts[at].At;
+			lines.Add($"fight {fights}: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+		Assert.True(gap is { } afterSwift && afterSwift <= TimeSpan.FromSeconds(3), $"Arrow Strike did not follow Swift Shot inside 3 s in {fights} fights: {string.Join("; ", lines)}.");
+
+		Npc hurtTarget = NearestLiving(probe, mosbear);
+		ClericFight hurt = await TableFightAsync(probe, RangerTable, "s04", "fight-a-starved-mosbear-from-under-half-hp-with-dp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 2,000 DP and 45% HP as the fight begins.
+			await probe.SetDpAsync(2000);
+			await probe.CutHpAsync(45);
+			return hurtTarget.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(hurt);
+		AssertOnlyCasts(hurt, table);
+		Assert.Contains(hurt.Casts, cast => cast.SkillId == mau);
+		Assert.True(probe.World.CurrentDp < 2000, $"The DP was not spent: {probe.World.CurrentDp}.");
+		StarterTraceRecord[] ladder = hurt.Decided.Where(record => record.Fields.GetProperty("action").GetString() is "shield-scroll" or "hot-potion" ||
+			Decided(record, "cast-self", evasion)).ToArray();
+		Assert.True(ladder.Length > 0, $"The ladder did not answer 45% HP: decisions {hurt.Counts}.");
+		Assert.All(ladder.Where(record => Decided(record, "cast-self", evasion)), record => Assert.True(HpPercentAt(record) <= 70, $"Focused Evasion was decided at {HpPercentAt(record)}% HP."));
+		Assert.Equal(0, hurt.Result.Deaths);
+
+		// Prepared by the director: a tenth of its mana. The rest is the journey's.
+		probe.Session.BeginStep("s05", "director-cuts-mp");
+		await probe.CutMpAsync(10);
+		int mpBefore = probe.World.CurrentMp;
+		(_, int[] restCasts) = await RestStepAsync(probe, "s06", "rest-from-a-tenth-of-its-mana", token);
+		Assert.Contains(recovery, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Ranger, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, bow {bow}. {fights} fight(s): {string.Join("; ", lines)}. " +
+			$"Arrow Strike {gap.Value.TotalMilliseconds:F0} ms after Swift Shot; Deadshot cast {deadshots} time(s); the bow shot {shots} time(s). " +
+			$"From 45% HP with 2,000 DP: {Outcome(hurt)}; the ladder: {string.Join(", ", ladder.Select(record => $"{record.Fields.GetProperty("action").GetString()}" +
+				$"{(record.Fields.GetProperty("skillId") is { ValueKind: JsonValueKind.Number } skill ? " " + skill.GetInt32() : "")} at {HpPercentAt(record)}% HP"))}; DP left {probe.World.CurrentDp}. " +
+			$"Rest from {mpBefore} MP: casts {string.Join(" ", restCasts)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-101, row ranger-25. Prepared by the director: a level-25 Ranger with the bow of Q24016, by the starved mosbears
+	/// (210564, level 13), with Odella Powder in the bag. Three fights are the journey's alone, for the numbers: the two
+	/// chains, the mana a fight costs and how far the mosbear came. Then the director spawns two starved mosbears 4 m
+	/// from the Ranger and sets them on it: with two attackers the journey puts its target to sleep with Sleep Arrow and
+	/// leaves. Last the director halves the HP and the rest casts the fourth rank of Herb Treatment.
+	/// </summary>
+	private async Task RangerLevelTwentyFiveRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, bow = 101701368, swift = 997, arrow = 941, stun = 787, rupture = 1102, entangle = 953, deadshot = 1013, sleep = 897, herb = 253;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-five-ranger-in-altgard");
+		await probe.BecomeAsync(PlayerClass.RANGER, 25);
+		int[] table = probe.CatalogOf(PlayerClass.RANGER);
+		Assert.All(new[] { swift, arrow, stun, rupture, entangle, deadshot, sleep, herb, 254 }, skill =>
+			Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 25."));
+		await GiveAsync(probe, token, (bow, 1), (OdellaPowder, 20));
+		BotNavigationGeometry geometry = await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(bow, MainHand(probe));
+
+		var lines = new List<string>();
+		int shots = 0, deadshots = 0, ruptures = 0, arrows = 0, reached = 0;
+		for (int fights = 1; fights <= 3; fights++)
+		{
+			Npc next = NearestLiving(probe, mosbear);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, RangerTable, $"s03-{fights}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.Equal(0, fight.Result.Deaths);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0, $"Fight {fights} ended neither way: {fight.Result}.");
+			shots += Swings(fight);
+			deadshots += fight.Casts.Count(cast => cast.SkillId == deadshot);
+			ruptures += fight.Casts.Count(cast => cast.SkillId == rupture);
+			arrows += fight.Casts.Count(cast => cast.SkillId == arrow);
+			reached += fight.Decided.Any(record => record.Fields.GetProperty("observedState").GetProperty("TargetAdjacent").GetBoolean()) ? 1 : 0;
+			lines.Add($"fight {fights}: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+
+		Npc[] pack = [];
+		ClericFight swarm = await TableFightAsync(probe, RangerTable, "s04", "fight-a-pack-of-two-starved-mosbears", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: two starved mosbears 4 m away, set on the Ranger.
+			pack = await SpawnSetOnAsync(probe, geometry, mosbear, 2, token);
+			return pack[0].GetObjectId();
+		}, token);
+		RemoveSetOn(pack);
+		AssertOnlyCasts(swarm, table);
+		int slept = Array.FindIndex(swarm.Decided, record => Decided(record, "cast-target", sleep));
+		Assert.True(slept >= 0, $"Sleep Arrow was not cast: {swarm.Order}; decisions {swarm.Counts}.");
+		string? reason = swarm.Decided[slept].Fields.GetProperty("reason").GetString();
+		Assert.StartsWith("Hold the target before retreating", reason);
+		Assert.Contains(swarm.Decided.Skip(slept + 1), record => record.Fields.GetProperty("action").GetString() == "retreat");
+
+		// Prepared by the director: half HP. The rest is the journey's.
+		probe.Session.BeginStep("s05", "director-halves-hp");
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		(_, int[] restCasts) = await RestStepAsync(probe, "s06", "rest-from-half-hp-with-odella-powder", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(OdellaPowder) < 20, "No Odella Powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Ranger, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, bow {bow}. " + string.Join("; ", lines) +
+			$". Arrow Strike cast {arrows} time(s), Rupture Arrow {ruptures}, Deadshot {deadshots}; the bow shot {shots} time(s); the mosbear reached the Ranger in {reached} of 3 fights. " +
+			$"Then against {pack.Length} the director spawned 4 m away and set on it: {Outcome(swarm)}; Sleep Arrow decided with " +
+			$"{swarm.Decided[slept].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32()} attackers: {reason} " +
+			$"Rest: casts {string.Join(" ", restCasts)}, Odella Powder {probe.Owned(OdellaPowder)} of 20 left. " +
 			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, dead {probe.Server.IsDead()}.");
 	}
 

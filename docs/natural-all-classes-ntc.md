@@ -5864,7 +5864,7 @@ The template:
       identical. Seven pre-commit checks pass, the three script tests pass
       (run/nr/NR-100/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
       skipped) and Fast passes (run nr100-fast, 11 passed).
-- [ ] **NR-101 - Ranger: probe rows.** Depends: NR-100
+- [x] **NR-101 - Ranger: probe rows.** Depends: NR-100
   - Work: Rows ranger-10, ranger-16, ranger-20 and ranger-25 in
     SimulationNaturalStarterProbeTests: prepared Rangers on the two probe accounts, in
     the gear the route has given by that level and with its bow, fight the monsters the
@@ -5878,6 +5878,63 @@ The template:
     (rule (i)).
   - Proof: The four rows end with the monster dead or a recorded retreat, no refused
     cast repeated and no skill outside the table cast.
+  - 2026-10-10: done on the second attempt. The four rows pass; the Ranger's table
+    stands, and the rule table changed in one place for every class: a skill of an
+    attack list that is cast on the bot.
+    - **Java.** Nothing new is relied on.
+    - **The rows** (SimT/SimulationNaturalStarterProbeTests.cs: ranger-10, ranger-16,
+      ranger-20, ranger-25, on the probe accounts 98 and 100, at the places and monsters
+      of the Cleric's rows). The director makes the Scout a Ranger of the level with the
+      skills of every level up to it, puts the bow and the leather pieces of the route
+      into its bag, and places it. From there the journey's equipment check, fight and
+      rest act. `bash run/nr/NR-101/probe.sh <attempt>`.
+    - **First attempt** (runs nr101-probe-a1 and a1b, kept under rows-a1): rows 10, 20
+      and 25 stopped at 1,000 actions of one fight with no kill; row 16 passed. In the
+      level-10 row the first crasaur was killed in 6.6 s. The second stood 46.9 m away,
+      out of every shot's reach, and the Ranger never went to it: 984 times the table
+      held its place for "a listed attack that is in reach and only cools down", and 17
+      times it cast Devotion, every 30 s. The attack was Devotion. It is in the list
+      from range, it is cast on the Ranger, so no distance refuses it, and while it
+      cools down that is its only refusal, which is what the table waits for.
+    - **The one change** (Sc/Classes/NaturalRotationCombatPolicy.cs, generic): a skill
+      of an attack list that is cast on the bot belongs to the fight at the target. It
+      is cast only while an attack of the list reaches the target, and nothing waits
+      for it. No recorded scope has such a skill in a list for a target out of reach:
+      the Scout's Devotion and the Chanter's Winter Circle are in the list for a monster
+      on them, where an attack always reaches.
+    - **Second attempt** (nr101-probe-a2 and a2b; the four traces are under
+      run/nr/NR-101/): the four rows pass.
+
+      | Row | Prepared by the director | What the journey did | Outcome |
+      |---|---|---|---|
+      | ranger-10 | Level 10, the ceremony's bow; then 20 powder and half HP | The check took the bow. Two ice crasaurs: Devotion, Entangling Shot from 20.9 m, Swift Shot, Stunning Shot, Deadshot; for the second it walked into range first, and the bow shot once. The rest cast Herb Treatment. | Two kills in 6.6 and 13.1 s; HP untouched in the first, 521 to 433 in the second; MP 800 to 621. |
+      | ranger-16 | Level 16; the bow of Q24013 and the leather shoes and jerkin of Q24011 and Q24012; 65% HP as the fight begins | The check wore all three. One tusked mosbear: Focused Evasion at 64% HP, Devotion, Entangling Shot, Stunning Shot, Swift Shot, Arrow Strike, Deadshot, the life potion; then two were on it. | A retreat at two attackers. |
+      | ranger-20 | Level 20; the bow of Q24016, 20 powder, two shield scrolls, three life potions; then 2,000 DP and 45% HP; then a tenth of its mana | Unhurt: Devotion, Entangling Shot, Swift Shot, Arrow Strike 1,458 ms after it, Stunning Shot. Hurt with DP: Focused Evasion, the scroll and the potion at 44% HP, Transformation: Mau, then the shots. The rest cast MP Recovery. | Two kills in 5.7 and 12.5 s; HP untouched in the first; MP 1,502 to 1,409; DP 2,000 to 7. |
+      | ranger-25 | Level 25; the same bow, 20 Odella Powder; then two starved mosbears set on it; then half HP | Three fights: Entangling Shot, Stunning Shot with Rupture Arrow, Swift Shot with Arrow Strike, Deadshot once. With two on it: Entangling Shot, Deadshot, Sleep Arrow, a retreat that a corner refused, Focused Evasion, and the shots. The rest cast Herb Treatment IV. | Four kills in 14.0, 13.7, 12.6 and 8.8 s; HP untouched in the first three, where no mosbear reached it; MP 1,853 to 1,475 over them. |
+
+      In no fight was a skill decided more than twice running, and no skill outside the
+      catalog was cast. Every decision carries the table natural-ranger-v1.
+    - **What the rows decide.**
+      - **Deadshot does not empty its mana.** A fight cost 153 MP at most, of 800 to
+        1,853, and Deadshot was cast twice in a fight at most: the other shots killed
+        first.
+      - **The three one-minute buffs stay out.** The rows give them nothing to earn:
+        the kills took 6 to 14 s and at levels 20 and 25 no monster reached the Ranger
+        unhurt.
+      - **The stand-off stays the Engineer's.** With Entangling Shot first the mosbear
+        reached the Ranger in none of the three level-25 fights. Standing farther off
+        would add a walk and nothing else.
+    - **Found, and logged (rule (f)).**
+      - **The bow shoots almost never.** Deadshot is ready every 2 s, so the weapon,
+        which shoots only when no skill is ready, shot twice in nine fights. It is the
+        Chanter's staff again (NR-71).
+      - **Each fight of the level-25 row began with a walk.** The Ranger kills from
+        where it stands, and the next mosbear stood 54 to 66 m off; those fights took
+        13 to 14 s each, half of it the way.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-101/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr101-fast, 11 passed).
 - [ ] **NR-102 - Ranger: to Altgard.** Depends: NR-101; ticked by the round that gives it
   - Work: A fresh Asimranger plays Ishalgen as a Scout, the trial, the Ranger choice at
     Munin, the ceremony with the bow and the dispatch Q2902, and is captured at the
@@ -8237,3 +8294,14 @@ report what was done, what is parked or blocked, and what the operator must deci
   Assassin lost a third of its HP in one fight, and a monster broke its rest where it had
   fought. Full gate guard-p8 (thirteen scopes identical), seven checks, unit suite (4,629
   passed, 16 skipped) and Fast (nr91-fast) pass. Next: NR-101, the Ranger's probe rows.
+- 2026-10-10 — Loop: NR-101 done on the second attempt. In the first, three of the
+  Ranger's rows stopped at 1,000 actions: with Devotion cooling down the table held its
+  place 47 m from a monster, waiting for "an attack in reach". The one change, for every
+  class: a skill of an attack list that is cast on the bot is cast only while an attack of
+  the list reaches the target, and nothing waits for it. The four rows then pass
+  (nr101-probe-a2 and a2b): Entangling Shot first from the stand-off, the two chains,
+  Deadshot, Transformation: Mau for its DP, Focused Evasion at 64% and 44% HP, Sleep Arrow
+  before a retreat at two attackers, the rest with the powder. Deadshot does not empty its
+  mana, and the stand-off and the three left-out buffs stay as they are. Full gate guard-p8
+  (thirteen scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and
+  Fast (nr101-fast) pass. Next: NR-111, the Spirit Master's probe rows.
