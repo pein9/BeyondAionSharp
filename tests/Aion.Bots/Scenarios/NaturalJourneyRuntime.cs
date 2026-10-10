@@ -43,14 +43,22 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 	public int? IncomingAttacker(DecodedBotServerPacket packet, int characterId, int? spirit = null) =>
 		NaturalCombatRetreatPolicy.IncomingAttacker(packet, characterId, IsHostileSkill, spirit);
 
-	public SpellCastData CreateSpellCast(BotWorldModel world, BotPosition origin, ushort skillId, byte level, int target)
+	/// <param name="walkedOn">NR-121b: the server has refused this fight a cast at its target for distance, where the
+	/// client's place of the target was in reach: a walker that moved on with no further SM_MOVE. The target is then
+	/// taken to be as far as the farther of where its last move began and where that move was heading. Java
+	/// Skill.updateHitTime 418-446 times a skill that flies by the distance the server measures; it takes a longer
+	/// client time as it is, and replaces and logs a shorter one.</param>
+	public SpellCastData CreateSpellCast(BotWorldModel world, BotPosition origin, ushort skillId, byte level, int target, bool walkedOn = false)
 	{
 		var template = Data.SkillDataDh.GetSkillTemplate(skillId)
 			?? throw new InvalidDataException($"Missing client skill template {skillId}.");
 		BotWeaponMotionType weapon = WeaponMotion(world);
 		BotPosition destination = target == world.SelfObjectId ? origin : world.Objects[target].Position;
-		float distance = MathF.Sqrt(MathF.Pow(origin.X - destination.X, 2) + MathF.Pow(origin.Y - destination.Y, 2) +
-			MathF.Pow(origin.Z - destination.Z, 2));
+		static float Between(BotPosition a, BotPosition b) =>
+			MathF.Sqrt(MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2) + MathF.Pow(a.Z - b.Z, 2));
+		float distance = Between(origin, destination);
+		if (walkedOn && target != world.SelfObjectId && world.Objects[target].MoveTarget is { } heading)
+			distance = MathF.Max(distance, Between(origin, heading));
 		int travel = template.GetAmmoSpeed() > 0 ? checked((int)Math.Ceiling(distance / template.GetAmmoSpeed() * 1000)) : 0;
 		// The unboosted animation is conservative during speed buffs; the server still
 		// validates it against Java Skill.updateHitTime and supplies the resulting delay.

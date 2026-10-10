@@ -6998,7 +6998,7 @@ The template:
       run guard-p8 (run/nr/NR-120b/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr120b-fast, 11 passed).
-- [ ] **NR-121 - Gunner: probe rows.** Depends: NR-120b, NR-121a
+- [ ] **NR-121 - Gunner: probe rows.** Depends: NR-120b, NR-121a, NR-121b
   - Work: Rows gunner-10, gunner-16, gunner-22 and gunner-25 in
     SimulationNaturalStarterProbeTests: prepared Gunners on the two probe accounts, in
     the gear the route has given by that level and with two pistols, fight the monsters
@@ -7021,6 +7021,15 @@ The template:
     passed; row 22 stopped in that fight at what NR-121a mends. The rows are written and
     not committed (scratchpad nr121_rows.py and nr121_rows2.py), and the item is tried
     again after NR-121a.
+  - 2026-10-10: tried twice more, after NR-121a (rule (i)). Third run (nr121-probe-a3 and
+    a3b, rows-a3), with the Crosstrigger chain leading from level 22: the four rows
+    passed. Six fights at level 22 took 75.7 s and no mana; with the Gunshot chain leading
+    (first run) six had taken 71.5 s and 841 MP. Fourth run (nr121-probe-a4 and a4b,
+    rows-a4), with Gunshot leading again and Crosstrigger at or below half of the mana:
+    rows 10, 16 and 22 passed, and row 25 failed the log policy on one line of the
+    server's audit, which NR-121b mends. The rows and the table's change are written and
+    not committed (scratchpad nr121_final.py and nr121_c.py), and the item is tried again
+    after NR-121b.
 - [x] **NR-121a - A word of a monster's mana is not a word of its HP.** Depends: NR-120b
   - Work: Java first: which percentage an attack status carries. The fight, and every
     other reader of a status, takes a creature's HP only from a status that carries HP.
@@ -7082,6 +7091,59 @@ The template:
       scopes identical, so no recorded fight read a word of mana as HP. Seven
       pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed, 16 skipped)
       and Fast passes (run nr121a-fast, 11 passed).
+- [x] **NR-121b - A shot at a walker that moved on is timed from where it was heading.** Depends: NR-121a
+  - Work: Java first: how the server times a skill that flies, and what it logs. After the
+    server has refused a fight's cast for distance, the fight times its casts at that
+    target from no nearer than where the target's last move was heading. Generic: the
+    cast and the fight, no branch on a class.
+  - Proof: The row that met it, played again with the same fights in the same order,
+    passes the log policy, and the shot is sent with a hit time not below the server's;
+    the full gate identical.
+  - 2026-10-10: done.
+    - **Found in NR-121's fourth run.** Row gunner-25, second fight (trace a4b, step
+      s03-2).
+      - At 2:20.9 the server told of a starved mosbear's walk: from 1771.08, 416.18 to
+        1763.92, 428.18, 14.0 m. The bot keeps a walker at the place its move began
+        until the next SM_MOVE.
+      - The Gunner walked up by that place and cast Gunshot at 2:28.7, from 14.7 m by
+        its own count. The server refused the cast for distance.
+      - The fight walked on toward where the walk was heading
+        (CloseInAfterRangeRejectionAsync) and cast Gunshot again at 2:31.0: from 5.9 m
+        by the place the walk began at, with a hit time of 415 ms.
+      - The mosbear stood at 1764.63, 427.65, 13.6 m from the Gunner. The server
+        counted 555 ms and wrote the difference to its audit log, and the run failed
+        the log policy on that line.
+    - **Java.**
+      - The server times a skill that has an ammo speed by the animation and by the
+        distance it measures itself. When its time is longer than the client's it
+        takes its own, and when the client's is short by more than a tolerance it
+        writes "modified hit time" to the audit log. A longer client time stands
+        (Skill.updateHitTime 418-446, isSuspiciousClientHitTime 459-467).
+      - The tolerance is what the player may have covered in its last 200 ms, and what
+        the target has covered since its last move update while it is on a move
+        (getDistanceTolerance 448-457): here 34 ms. A client draws a walker along its
+        walk and knows where it is. The bot does not.
+      - The port has the same lines (Skill.cs 435-466, 469 and 481).
+    - **The change, generic.**
+      - Sc/NaturalJourneyRuntime.cs: a cast can be told that its target is a walker
+        that moved on. The target is then taken to be as far as the farther of where
+        its last move began and where that move was heading.
+      - Sc/NaturalIshalgenJourney.Combat.cs: the fight says so with every cast after
+        the server has refused it one for distance in that fight. A monster that runs
+        at the bot is heading nearer than it stands, so those casts are timed as
+        before.
+    - **Not changed.** The bot still keeps a walker at the place its move began, and
+      the refusal for distance and the walk after it are as before. To draw a walker
+      along its walk would move the monsters of every recorded scope.
+    - **Proof, the rows played again** (runs nr121-probe-a5 and a5b, kept under
+      run/nr/NR-121/rows-a5; they are NR-121's rows and are not committed with this
+      item). The same fights in the same order: the refusal at 2:28.7, the walk, and
+      Gunshot at 2:31.0 with a hit time of 628 ms, which the server took as it was. Row
+      gunner-25 passes, and so do the other three.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-121b/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr121b-fast, 11 passed).
 - [ ] **NR-122 - Gunner: to Altgard.** Depends: NR-121; ticked by the round that gives it
   - Work: A fresh Asimgunner plays Ishalgen as an Engineer, the trial, the ceremony with
     the pistol and the dispatch Q29070, and is captured at the Altgard bind as
@@ -8445,3 +8507,15 @@ report what was done, what is parked or blocked, and what the operator must deci
   the two penalty skills, the kill at 7.8 s. Full gate guard-p8 (thirteen scopes
   identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr121a-fast)
   pass. Next: NR-121 again, with a fresh two attempts.
+- 2026-10-10 — Loop: NR-121 tried twice more, and NR-121b done. With the Crosstrigger
+  chain leading from level 22 the four rows passed (a3), but six fights took 75.7 s
+  against 71.5 s with Gunshot leading; with Gunshot leading and Crosstrigger at or below
+  half of the mana (a4) row 25 failed the log policy: after a refusal for distance the
+  fight shot at a mosbear on a walk from 5.9 m by the place the walk began at, 415 ms,
+  where the server counted 555 ms from 13.6 m. NR-121b: Java takes a longer client hit
+  time as it is and logs a shorter one (Skill.updateHitTime 418-446); after a refusal for
+  distance the fight times its casts from no nearer than where the target was heading.
+  The same rows played again pass (nr121-probe-a5 and a5b): that Gunshot goes out with
+  628 ms. Full gate guard-p8 (thirteen scopes identical), seven checks, unit suite (4,629
+  passed, 16 skipped) and Fast (nr121b-fast) pass. Next: NR-121 again, with a fresh two
+  attempts.

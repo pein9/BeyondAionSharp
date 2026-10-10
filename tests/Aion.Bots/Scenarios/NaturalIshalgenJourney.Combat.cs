@@ -1492,8 +1492,9 @@ public sealed partial class NaturalIshalgenJourney
 			// Light of Rejuvenation between Smite and Flashbolt breaks the chain and the server silently refuses Flashbolt.
 			tableChain = tableChain.CastSent(skill);
 			await session.SendPacketAsync(session.Api.Target(target), token);
+			// NR-121b: after a refusal for distance in this fight the target is a walker that moved on.
 			await session.SendPacketAsync(session.Api.Cast(runtime.CreateSpellCast(session.Api.World,
-				session.CurrentPosition, skill.Id, checked((byte)learned.Level), target)), token);
+				session.CurrentPosition, skill.Id, checked((byte)learned.Level), target, walkedOn: rangeRejections > 0)), token);
 			DecodedBotServerPacket started;
 			try
 			{
