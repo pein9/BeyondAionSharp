@@ -299,7 +299,7 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		bool swingLegal = InWeaponReach(state, distance, adjacent);
 		// A last-resort swing waits while a listed attack only cools down and could be paid for.
 		bool swing = swingLegal && (rules.AutoAttack == NaturalAutoAttack.Filler ||
-			!line.Any(skill => skill.RequiresChainCategory == null && state.Mp >= skill.ManaCost + Reserve(state, parameters)));
+			!line.Any(skill => skill.RequiresChainCategory == null && state.Mp >= skill.ManaCost + ReserveFor(skill, state, parameters)));
 		if (swing) return Choice("attack", null, "No skill is ready; swing the weapon.");
 		// CP-47: a listed attack that reaches the target and only cools down is waited for where the class stands (the
 		// Artist's Pulse, 2 s). Going to the target is for an attack that cannot be cast from here at all.
@@ -340,7 +340,8 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		bool OpensNow(NaturalPriestSkill opener) => rules.Openers!.Contains(opener.Role) && opener.ChainCategory != null &&
 			line.Any(followUp => followUp.RequiresChainCategory == opener.ChainCategory &&
 				!(state.Cooldowns.TryGetValue(followUp.CooldownId, out DateTimeOffset until) && until > now) &&
-				state.Mp >= opener.ManaCost + followUp.ManaCost + Reserve(state, parameters));
+				state.Mp >= opener.ManaCost + followUp.ManaCost +
+					Math.Max(ReserveFor(opener, state, parameters), ReserveFor(followUp, state, parameters)));
 
 		NaturalPriestSkill? Upkeep(bool duringFight)
 		{
@@ -428,8 +429,7 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		}
 		if (state.Cooldowns.TryGetValue(skill.CooldownId, out DateTimeOffset until) && until > now) reasons.Add(CoolingDown);
 		if (state.Dp < skill.DpCost) reasons.Add("Observed DP is below the skill's cost.");
-		// The reserve is kept for a recovery skill; a recovery skill itself spends it.
-		int reserve = rules.Recovery.Any(step => step.Role == skill.Role) ? 0 : Reserve(state, parameters);
+		int reserve = ReserveFor(skill, state, parameters);
 		if (state.Mp < skill.ManaCost + reserve) reasons.Add(reserve > 0 ? "Insufficient observed mana after the recovery reserve." : "Insufficient observed mana.");
 		if (skill.RequiresChainCategory != null && !ChainOpen(skill, self, state, now)) reasons.Add("Required client-observed chain is not open.");
 		return reasons.ToArray();
@@ -466,6 +466,17 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 	/// learned recovery skill keeps nothing back.</summary>
 	private int Reserve(NaturalCombatObservation state, NaturalMauPolicyParameters parameters) =>
 		ReserveSkill(state) is { } recovery ? recovery.ManaCost + parameters.ManaReserveExtra : 0;
+
+	/// <summary>
+	/// The mana kept back from one skill. The reserve is kept for a recovery skill; a recovery skill itself spends it.
+	/// NR-80b: nor is it kept back from an attack of the table's lists that costs no mana, which takes nothing of it (the
+	/// Warrior line's Ferocious Strike, Robust Blow and Body Smash): below the reserve such a class would only swing. A
+	/// skill outside the lists keeps its refusal, as every recorded decision wrote it.
+	/// </summary>
+	private int ReserveFor(NaturalPriestSkill skill, NaturalCombatObservation state, NaturalMauPolicyParameters parameters) =>
+		rules.Recovery.Any(step => step.Role == skill.Role) ||
+		skill.ManaCost == 0 && (rules.Adjacent.Contains(skill.Role) || rules.AtRange.Contains(skill.Role))
+			? 0 : Reserve(state, parameters);
 
 	/// <summary>The recovery skill the reserve is kept for: the table's reserve role (NR-10), or the first learned skill of
 	/// the ladder.</summary>

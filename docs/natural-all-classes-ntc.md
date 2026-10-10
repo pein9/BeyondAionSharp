@@ -5145,7 +5145,7 @@ The template:
       run guard-p8 (run/nr/NR-80a/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr80a-fast, 11 passed).
-- [ ] **NR-80b - An attack that costs no mana is not held back by the reserve.** Depends: NR-80a
+- [x] **NR-80b - An attack that costs no mana is not held back by the reserve.** Depends: NR-80a
   - Work: The rule table keeps the mana of its first recovery skill back from every
     attack (NR-10). Below that amount it refuses every attack, the ones that cost no
     mana too: a Gladiator under 298 MP and a Templar under 113 MP only swing, though
@@ -5158,6 +5158,41 @@ The template:
     and those are Herb Treatment, MP Recovery and Penance, which no list holds.
   - Proof: A one-time check of the decisions below the reserve for a Gladiator, a
     Templar and a Cleric; the full gate identical.
+  - 2026-10-10: done. Below its reserve a class goes on with the attacks that cost it
+    nothing.
+    - **Java.** Nothing is relied on: the reserve is the bot's own rule, and a skill's
+      cost is its template's.
+    - **The rule as it stood.** Sc/Classes/NaturalRotationCombatPolicy.cs kept the
+      reserve, the mana of the table's reserve role or of its first learned recovery
+      skill (NR-10), back from every skill but a recovery skill: a skill was refused
+      when mana was below its own cost and the reserve together, whatever its cost.
+    - **The change.** Nothing is kept back from a recovery skill, as before, nor from a
+      skill that costs no mana and stands in one of the table's two attack lists. The
+      three places that asked for the reserve ask this: a skill's refusal, the wait of
+      a last-resort swing, and the opener rule of NR-11. A skill outside the lists keeps
+      its refusal.
+    - **The recorded traces** (run/nr/NR-80b/baseline-scan.log, of the thirteen traces
+      under run/cp/baseline). The reserve's reason stands in 73 decisions, all of the
+      Cleric's scope c. Eleven of them name a skill that costs no mana as refused for it
+      alone: Herb Treatment 246 and 247, MP Recovery 249 and 250 and Penance 3867, which
+      no list holds, so they read as they did. The Templar's recorded scope was never
+      below its reserve.
+    - **Proof, the one-time check** (run/nr/NR-80b/check.log; the check file is not
+      committed), each on a monster that is on the bot:
+      - A Gladiator of level 20, whose reserve is Second Wind's 298 MP. At 297 MP and
+        at none it casts Ferocious Strike, with the chain open Robust Blow, and after
+        Robust Blow Rupture; Rage, Wrathful Strike and Cleave are held back. Above the
+        reserve Wrathful Strike follows Robust Blow.
+      - A Templar of level 20, whose reserve is Empyrean Armor's 113 MP. At 100 MP it
+        casts Dazing Severe Blow, and with the chain open Robust Blow; Rage and Shield
+        Bash are held back.
+      - A Cleric of level 20 at 20 MP swings its staff, as before: every attack of its
+        lists costs mana, and Herb Treatment, MP Recovery and Penance are still named
+        as held back.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-80b/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr80b-fast, 11 passed).
 - [ ] **NR-81 - Gladiator: probe rows.** Depends: NR-80b
   - Work: Rows gladiator-10, gladiator-16, gladiator-20 and gladiator-25 in
     SimulationNaturalStarterProbeTests: prepared Gladiators on the two probe accounts, in
@@ -5869,3 +5904,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   mana reserve holds back the free skills too, item NR-80b. Full gate guard-p8 (thirteen
   scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
   (nr80a-fast) pass. Next: NR-80b, an attack that costs no mana and the reserve.
+- 2026-10-10 — Loop: NR-80b done. An attack of the table's lists that costs no mana is no
+  longer held back by the mana kept for a recovery skill: below 298 MP a Gladiator goes on
+  with Ferocious Strike, Robust Blow, Rupture and Body Smash, and a Templar below 113 MP
+  likewise. A skill outside the lists keeps its refusal, so the eleven recorded decisions of
+  the Cleric's scope c that name one read as they did. One-time check for a Gladiator, a
+  Templar and a Cleric. Full gate guard-p8 (thirteen scopes identical), seven checks, unit
+  suite (4,629 passed, 16 skipped) and Fast (nr80b-fast) pass. Next: NR-90, the Assassin's
+  survey; the probe rows NR-61, NR-71 and NR-81 wait for the surveys (rule (w)).
