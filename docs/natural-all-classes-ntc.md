@@ -4221,7 +4221,7 @@ The template:
       identical, hm and ax among them. Seven pre-commit checks pass,
       Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and Fast passes (run
       nr54a-fast, 11 passed).
-- [ ] **NR-55 - Templar: coin gear and Haramel.** Depends: NR-54, NR-54a; ticked by its round
+- [x] **NR-55 - Templar: coin gear and Haramel.** Depends: NR-54, NR-54a; ticked by its round
   - Work: The coin-gear leg at Lateni (plate, and the shield by NR-54a) and Haramel with
     chest 700829 (NR-40), captured as altgard-coingear-templar and
     altgard-rc-complete-s1-templar.
@@ -4242,6 +4242,15 @@ The template:
       pack of seven stood on the route. The Templar taunted one of them and asked to
       walk to it 1,007 times: "Warrior could not clear engaged attackers before resting
       or pulling." NR-55b.
+  - 2026-10-09: done. Haramel is captured, and with it the Altgard endpoint.
+    - **Captured** at eea719940: altgard-rc-complete-s1-templar from
+      altgard-coingear-templar with -LaterCapital (run nr55-l12-a2, log
+      run/nr/NR-55/l12-a2.log): Haramel in 1 h 42 min with no death; level 25, 176
+      quests, 18 Iron Coins and 7 Bronze Coins, 76,828,001 ms of game time (21 h 20 min
+      since creation), dump sha256 ccc07d86def1cb66.
+    - **The two legs.** Two stops, each a lettered item: NR-55a (Haramel's start check)
+      and NR-55b (the walk into a decided pack). Seven pre-commit checks pass
+      (run/nr/NR-55/checks-run.log).
 - [x] **NR-55a - Haramel's start asks the class's own scope.** Depends: NR-54a
   - Work: The first stop of Haramel. Java first: nothing of the server is relied on. The
     leg's start check held the contract's endpoint of the coin-gear leg: 19 Iron Coins,
@@ -4887,3 +4896,7 @@ report what was done, what is parked or blocked, and what the operator must deci
   l12-a4 played Haramel to its end: level 25, 176 quests, no death. Proof by the bundle of
   NR-55a (twelve scopes identical, Fast nr55b-fast). Next: NR-55, the capture of Haramel
   from the committed code, which closes the item.
+- 2026-10-09 — Loop: NR-55 done. altgard-rc-complete-s1-templar is captured at eea719940:
+  level 25, 176 quests, 21 h 20 min of game time since creation. The Templar has played
+  every Altgard leg of the accepted line. Next: NR-56, the Templar's Abyss entry; its two
+  coin tiers cost 78 Bronze Coins where 44 are approved (NR-Q14).
