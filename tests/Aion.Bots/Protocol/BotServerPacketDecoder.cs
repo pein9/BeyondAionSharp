@@ -86,6 +86,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_SKILL_LIST)] = DecodeSkillList,
 			[typeof(SM_SKILL_REMOVE)] = DecodeSkillRemove,
 			[typeof(SM_SKILL_ACTIVATION)] = DecodeSkillActivation,
+			[typeof(SM_RIDE_ROBOT)] = DecodeRideRobot,
 			[typeof(SM_SUMMON_PANEL)] = DecodeSummonPanel,
 			[typeof(SM_SUMMON_PANEL_REMOVE)] = DecodeSummonPanelRemove,
 			[typeof(SM_SUMMON_OWNER_REMOVE)] = DecodeSummonOwnerRemove,
@@ -809,6 +810,15 @@ public sealed partial class BotServerPacketDecoder
 		var r = new PacketBodyReader(body);
 		var result = Fields(("skillId", r.ReadUInt16()), ("kind", r.ReadInt32()), ("active", r.ReadByte() != 0));
 		if (body.Length != 7) throw new InvalidDataException("SM_SKILL_ACTIVATION must contain exactly seven bytes.");
+		return result;
+	}
+
+	// Java SM_RIDE_ROBOT.writeImpl: a player, and the mech it rides, 0 for none.
+	private static IReadOnlyDictionary<string, object?> DecodeRideRobot(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		var result = Fields(("objectId", r.ReadInt32()), ("robotId", r.ReadInt32()));
+		if (body.Length != 8) throw new InvalidDataException("SM_RIDE_ROBOT must contain exactly eight bytes.");
 		return result;
 	}
 

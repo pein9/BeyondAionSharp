@@ -37,6 +37,11 @@ namespace Aion.Bots.Scenarios;
 /// ChainCondition.validate 41-43); 1 for nearly every follow-up, 0 without a chain.</param>
 /// <param name="EndsCooldownIds">NR-120b: the cooldowns the skill ends at once (effects/skillcooltimereset with delta 100;
 /// Java SkillCooltimeResetEffect.applyEffect 30-47); null when it ends none.</param>
+/// <param name="NeedsMech">NR-130a: the template refuses a caster who is in no mech (useconditions/ride_robot; Java
+/// RideRobotCondition.validate 17-24).</param>
+/// <param name="IsMech">NR-130a: the skill puts its caster in a mech (effects/riderobot; Java RideRobotEffect).</param>
+/// <param name="ManaCostPercent">NR-130a: a mana cost that is so many hundredths of the caster's whole mana (mp with
+/// ratio; Java MpCondition.getCost 48-51); 0 for a plain cost, which is <paramref name="ManaCost"/>.</param>
 public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role, int ManaCost,
 	float Range, int CooldownId, int CooldownDeciseconds, string? ChainCategory = null,
 	string? RequiresChainCategory = null, int ChainWindowMillis = 0, int DpCost = 0,
@@ -45,7 +50,8 @@ public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role
 	bool AddWeaponRange = false, int SelfCount = 0, string? Activation = null, string? CounterStatus = null,
 	bool OutOfCombatOnly = false, bool GroundOnly = false, string? TargetFlight = null, string? RequiredOffHand = null,
 	IReadOnlyList<string>? TargetStates = null, string? CarvesRune = null, string? BurstsRune = null, int SummonsNpcId = 0,
-	bool OrdersSpirit = false, int HpCost = 0, int PreCount = 0, IReadOnlyList<int>? EndsCooldownIds = null);
+	bool OrdersSpirit = false, int HpCost = 0, int PreCount = 0, IReadOnlyList<int>? EndsCooldownIds = null,
+	bool NeedsMech = false, bool IsMech = false, int ManaCostPercent = 0);
 
 /// <summary>
 /// NR-18: every class's catalog is generated from the shipped skill data (<see cref="Classes.NaturalSkillCatalog"/>); the
@@ -89,6 +95,7 @@ public static class NaturalPriestSkills
 /// <param name="SpiritAtTarget">NR-110d: the spirit was sent at this target and stands in its own reach of it.</param>
 /// <param name="SpiritHpPercent">NR-110d: the spirit's HP as the server last told it; null without a spirit.</param>
 /// <param name="SpiritDistance">NR-110d: how far the spirit is from the bot; null when it is not seen.</param>
+/// <param name="Rides">NR-130a: the server said the bot is in a mech (<see cref="BotWorldModel.RobotId"/>).</param>
 public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int Mp, int MaxMp,
 	bool Dead, bool Aggro, float? TargetDistance, int? TargetObjectId,
 	IReadOnlyDictionary<int, BotSkill> Learned, IReadOnlyDictionary<int, DateTimeOffset> Cooldowns,
@@ -104,7 +111,8 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	string? PreviousChainCategory = null, DateTimeOffset? ChainStepAt = null, int? OpenChainUseCount = null,
 	IReadOnlySet<int>? ActiveEffectSkillIds = null, string? OffHand = null, IReadOnlySet<ushort>? CastThisFight = null,
 	int TargetAbnormals = 0, IReadOnlyDictionary<string, int>? TargetRunes = null,
-	bool SpiritOut = false, bool SpiritAtTarget = false, int? SpiritHpPercent = null, float? SpiritDistance = null);
+	bool SpiritOut = false, bool SpiritAtTarget = false, int? SpiritHpPercent = null, float? SpiritDistance = null,
+	bool Rides = false);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);

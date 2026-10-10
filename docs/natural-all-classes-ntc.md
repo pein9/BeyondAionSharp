@@ -6765,7 +6765,7 @@ The template:
       identical. Seven pre-commit checks pass, the three script tests pass
       (run/nr/NR-130/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
       skipped) and Fast passes (run nr130-fast, 11 passed).
-- [ ] **NR-130a - The mech, and the Rider's table.** Depends: NR-130
+- [x] **NR-130a - The mech, and the Rider's table.** Depends: NR-130
   - Work: Java first: RideRobotCondition and RideRobotEffect as read for NR-130, and
     what a client is told when the mech comes and goes (SM_SKILL_ACTIVATION,
     SM_RIDE_ROBOT). A skill row says whether the skill needs a mech and whether it is
@@ -6781,6 +6781,89 @@ The template:
     the buff check and fights by its table, and, with the mech ended by the director,
     decides no skill that needs it until the buff check has boarded again; the full
     gate identical.
+  - 2026-10-10: done. The bot knows from the server whether it rides, the table casts
+    a skill that needs the mech only then, a cast from the mech is timed by the mech's
+    animations, and the Rider has its table.
+    - **Java.**
+      - **The mech comes and goes** with SM_RIDE_ROBOT, sent to everyone who sees the
+        player and to the player (RideRobotEffect.startEffect 22-36, endEffect 38-46):
+        the player and the mech's id, 0 for none. Embark is a toggle, so
+        SM_SKILL_ACTIVATION is sent beside it (Effect.startEffect 670-678, endEffect
+        735-737). The mech ends when any weapon leaves the hand and when its effect
+        ends, a death included, and its end starts no cooldown.
+      - **A skill that needs it** is refused while the player's mech id is 0
+        (RideRobotCondition.validate 17-24, Player.isInRobotMode 1611).
+      - **Timing.** From a mech the server takes a skill's animation from the mech's
+        rows, whatever weapon is held, and counts the first hit from the animation's
+        whole length (MotionTime.getTimesFor 50-56,
+        MotionData.calculateAnimationTimeUntilFirstHit 59). A client that sends a
+        shorter time is logged (Skill.updateHitTime).
+      - **A cost in hundredths.** With ratio, a mana cost is that many hundredths of
+        the caster's whole mana, in whole numbers (MpCondition.getCost 48-51).
+        Nullification Trigger costs 2. Seventeen skills in the shipped data have such a
+        cost; none had a role before this item.
+      - **Kinetic Battery** takes three tenths of every hit and pays half of what it
+        takes with mana (MPShieldEffect, AttackShieldObserver 90-112), costs mana every
+        6 s besides, 64 MP in its third rank, and ends by itself after 90 s: a toggle
+        lasts its toggle_timer (Effect.startEffect 670-675).
+      - The port has the same lines in each place.
+    - **The change, generic.**
+      - Sc/Protocol/BotServerPacketDecoder.cs reads SM_RIDE_ROBOT (125 packet types
+        now), and the world model keeps the bot's own mech id (Sc/World).
+      - Sc/NaturalPriestCombatPolicy.cs and Sc/Classes/NaturalSkillCatalog.cs: a skill
+        row says whether the skill needs a mech, whether it is one, and a mana cost in
+        hundredths. A cost with ratio is no longer read as that much mana.
+      - Sc/Classes/NaturalRotationCombatPolicy.cs: a skill that needs a mech is refused
+        while the server has not said the bot rides one, and a skill with a cost in
+        hundredths while the bot has less than that share.
+      - Sc/NaturalJourneyRuntime.cs: while the bot rides, a cast's hit time and the wait
+        after it come from the mech's animations.
+      - Sc/Classes/NaturalProfileValidator.cs: a profile that gives a role to a skill
+        that needs a mech keeps a toggle that is one.
+    - **The Rider's table, natural-rider-v1.** 40 of its 87 skills have a role now and
+      47 a reason.
+
+      | Where | In cast order |
+      |---|---|
+      | From range | Cinder Cannon from 20 m, the pull; then it holds where it stands while the monster comes. Electric Shock from 8 m; from 6 m Sundering Blade, Rocket Punch, Bludgeon and Battery, Provoking Whispers. Lightning Tether is not cast from range: it would root the monster outside the mech's reach. |
+      | On the target | An open follow-up first: Battery after Bludgeon, Lightning Tether after Electric Shock, each inside 3.5 s. Then Sundering Blade, Rocket Punch, Bludgeon, Electric Shock, Cinder Cannon, Provoking Whispers. The cipher-blade swings whenever no skill is ready. |
+      | In a fight | Overdrive Trigger whenever its 2,000 DP are there and its minute is over. |
+      | Ladder | The shield scroll at 50% HP, Nullification Trigger at or below 60%, the life potion at or below 75%. It leaves at three attackers, or at 25% HP with nothing ready. |
+      | In flight | It swings the cipher-blade, as the Templar swings its sword: Cinder Cannon is ready every 16 s, too seldom for the flight time an air kill is counted with. |
+
+      Kinetic Battery is left out, with the reason above. The distances and the
+      movement are the Templar's, a pull from 15 m; Cinder Cannon reaches 5 m farther.
+    - **Proof, the probe row** rider-mech (SimT/SimulationNaturalStarterProbeTests.cs,
+      probe account 100; `bash run/nr/NR-130a/probe.sh <attempt>`). Prepared by the
+      director: a level-16 Rider with the ceremony's cipher-blade, by the starved
+      mosbears where the Cleric's level-25 row fights.
+      - **First attempt** (nr130a-probe-a1, kept under rows-a1): the row's own check
+        failed. It compared the time of the boarding with the time of the first fight
+        decision, and the two were the same. The row now reads the trace's order; the
+        item's code was not changed.
+      - **Second attempt** (nr130a-probe-a2): passed.
+        - The equipment check takes the blade; the buff check casts Embark, and the
+          server says mech 2500003.
+        - The fight from the mech: Cinder Cannon from 10.9 m, Rocket Punch, Bludgeon,
+          Battery 1,635 ms after it, Provoking Whispers; a kill in 11.7 s. The casts are
+          timed at 1,552, 1,800, 1,633, 1,533 and 1,000 ms, the mech's animations, and
+          the server logged no changed hit time.
+        - The director gives the level-16 coin blade 102100606. The equipment check
+          takes it, and the server says mech 0 and Embark off.
+        - The next fight: its rest boards again, the server says mech 2500003, and the
+          fight is cast from the mech; a kill in 16.6 s.
+        - The last fight, with the mech ended by the director as it begins: 21
+          decisions, 16 of them swings, none a skill that needs the mech; of Cinder
+          Cannon the table says "The skill needs a mech, and the server has not said the
+          bot rides one." A kill in 46.9 s with one life potion, from 1,378 HP to 369.
+          The buff check after it boards once more.
+      - **What the row shows for NR-131.** On foot the same mosbear takes four times as
+        long and three quarters of its HP. A Rider that a fight catches on foot does not
+        board in it: a toggle is cast by the buff check only.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-130a/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr130a-fast, 11 passed).
 - [ ] **NR-131 - Rider: probe rows.** Depends: NR-130a
   - Work: Rows rider-10, rider-16, rider-20 and rider-25 in
     SimulationNaturalStarterProbeTests: prepared Riders on the two probe accounts, in
@@ -6791,8 +6874,10 @@ The template:
     Overdrive Trigger at 2,000 DP, Nullification Trigger on the ladder, the rest with
     the powder. What a row shows decides the open rules: whether a Rider sits, eats the
     powder and drinks in its mech; at how many attackers it leaves; whether Kinetic
-    Battery's shield earns the mana it takes; and whether the mech's own reach calls
-    for another distance than the Templar's. A fix is one small change (rule (i)).
+    Battery's shield earns the mana it takes; whether the mech's own reach calls for
+    another distance than the Templar's; and whether a Rider that a fight catches on
+    foot boards in it (NR-130a: on foot a kill took four times as long). A fix is one
+    small change (rule (i)).
   - Proof: The four rows end with the monster dead or a recorded retreat, no refused
     cast repeated and no skill outside the table cast.
 - [ ] **NR-132 - Rider: to Altgard.** Depends: NR-131; ticked by the round that gives it
@@ -7676,3 +7761,15 @@ report what was done, what is parked or blocked, and what the operator must deci
   NR-130a. The Rider's items NR-130a and NR-131 to NR-138 are written. Full gate guard-p8
   (thirteen scopes identical), seven checks, three script tests, unit suite (4,629 passed,
   16 skipped) and Fast (nr130-fast) pass. Next: NR-130a, the mech and the Rider's table.
+- 2026-10-10 — Loop: NR-130a done. The bot reads SM_RIDE_ROBOT and knows its own mech; a
+  skill row says whether a skill needs a mech, whether it is one, and a mana cost in
+  hundredths; the table refuses a mech skill on foot; a cast from the mech is timed by the
+  mech's animations. The Rider's table casts Cinder Cannon for the pull, then the mech's
+  arms, with Nullification Trigger on the ladder and Overdrive Trigger for its DP; 40 of
+  its 87 skills have a role. Probe row rider-mech: the first attempt failed on the row's
+  own order check; the second (nr130a-probe-a2) passed: boards at the buff check, a kill
+  from the mech in 11.7 s, the mech ended by a new blade and boarded again by the rest,
+  and on foot no mech skill decided and a kill in 46.9 s. Full gate guard-p8 (thirteen
+  scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
+  (nr130a-fast) pass. Next: NR-140, the Bard's survey; the Rider's rows NR-131 wait for
+  the surveys (rule (w)).

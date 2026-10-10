@@ -106,8 +106,9 @@ public static class NaturalSkillCatalog
 		ChainCondition? chain = template.GetChainCondition();
 		ItemUseAction? reagent = actions.OfType<ItemUseAction>().FirstOrDefault();
 		List<ItemGroup>? weapons = conditions.OfType<WeaponCondition>().FirstOrDefault()?.itemGroups;
+		MpCondition? mana = conditions.OfType<MpCondition>().FirstOrDefault();
 		return new NaturalPriestSkill(checked((ushort)skillId), minimumLevel, role,
-			ManaCost: conditions.OfType<MpCondition>().FirstOrDefault()?.value ?? actions.OfType<MpUseAction>().FirstOrDefault()?.value ?? 0,
+			ManaCost: mana is { ratio: true } ? 0 : mana?.value ?? actions.OfType<MpUseAction>().FirstOrDefault()?.value ?? 0,
 			Range: properties?.GetFirstTargetRange() ?? 0,
 			CooldownId: template.GetCooldownId(),
 			CooldownDeciseconds: template.GetCooldown(),
@@ -144,7 +145,11 @@ public static class NaturalSkillCatalog
 			PreCount: chain?.preCount ?? 0,
 			// Java takes delta whole hundreds of what is left (delay * (delta / 100)), so only 100 and more end a cooldown.
 			EndsCooldownIds: template.GetEffects()?.GetEffects().OfType<SkillCooltimeResetEffect>().FirstOrDefault(reset => reset.Delta >= 100)
-				is { } ends ? Enumerable.Range(ends.firstCd, Math.Max(0, ends.lastCd - ends.firstCd + 1)).ToArray() : null);
+				is { } ends ? Enumerable.Range(ends.firstCd, Math.Max(0, ends.lastCd - ends.firstCd + 1)).ToArray() : null,
+			NeedsMech: conditions.OfType<RideRobotCondition>().Any(),
+			IsMech: template.GetEffects()?.GetEffects().OfType<RideRobotEffect>().Any() == true,
+			// Java MpCondition.getCost 48-51: with ratio the value is hundredths of the caster's whole mana, not mana.
+			ManaCostPercent: mana is { ratio: true } ? mana.value : 0);
 	}
 
 	/// <summary>

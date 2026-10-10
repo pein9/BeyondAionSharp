@@ -491,6 +491,8 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			reasons.Add($"None of the cooldowns the skill ends has more than {CooldownWorthEndingSeconds} s left.");
 		// NR-110d: the server refuses a player whose HP is not above the skill's cost (Java HpCondition.canValidate 40-47).
 		if (skill.HpCost > 0 && state.Hp <= skill.HpCost) reasons.Add("Observed HP is not above the skill's cost.");
+		// NR-130a: the server refuses a player who is in no mech (Java RideRobotCondition.validate 17-24).
+		if (skill.NeedsMech && !state.Rides) reasons.Add("The skill needs a mech, and the server has not said the bot rides one.");
 		if (!self)
 		{
 			if (target == null || state.TargetDistance is not float distance) reasons.Add("No client-observed target position.");
@@ -504,6 +506,9 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		if (state.Dp < skill.DpCost) reasons.Add("Observed DP is below the skill's cost.");
 		int reserve = ReserveFor(skill, state, parameters);
 		if (state.Mp < skill.ManaCost + reserve) reasons.Add(reserve > 0 ? "Insufficient observed mana after the recovery reserve." : "Insufficient observed mana.");
+		// NR-130a: a cost that is a share of the whole mana (Java MpCondition.getCost 48-51, in whole numbers).
+		else if (skill.ManaCostPercent > 0 && state.Mp < state.MaxMp * skill.ManaCostPercent / 100)
+			reasons.Add("Insufficient observed mana for the skill's share of it.");
 		if (skill.RequiresChainCategory != null && !ChainOpen(skill, self, state, now)) reasons.Add("Required client-observed chain is not open.");
 		return reasons.ToArray();
 	}

@@ -26,6 +26,7 @@ public static class NaturalProfileValidator
 	/// <item>NR-110a: a skill that summons a spirit is in no rotation, and a kept spirit is such a skill.</item>
 	/// <item>NR-110d: a skill cast on the spirit is in no rotation, which is a list of attacks; and a profile that gives
 	/// a role to such a skill, or to an order, keeps a spirit.</item>
+	/// <item>NR-130a: a profile that gives a role to a skill that needs a mech keeps a toggle that is one.</item>
 	/// </list>
 	/// </summary>
 	/// <param name="skills">The profile's catalog.</param>
@@ -111,6 +112,9 @@ public static class NaturalProfileValidator
 		if (spirits is not { Count: > 0 })
 			foreach (NaturalPriestSkill skill in skills.Where(skill => skill.TargetKind == "MYPET" || skill.OrdersSpirit))
 				problems.Add($"Skill {skill.Id} is for a spirit, and the profile keeps none.");
+		if (!(toggles ?? []).Any(kept => skills.Any(skill => skill.Role == kept.Role && skill.IsMech)))
+			foreach (NaturalPriestSkill skill in skills.Where(skill => skill.NeedsMech))
+				problems.Add($"Skill {skill.Id} needs a mech, and the profile keeps none on.");
 		foreach (NaturalKeptSpirit kept in spirits ?? [])
 		{
 			NaturalPriestSkill[] ranks = skills.Where(skill => skill.Role == kept.Role).ToArray();

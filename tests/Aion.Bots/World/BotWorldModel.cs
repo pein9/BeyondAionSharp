@@ -290,6 +290,8 @@ public sealed partial class BotWorldModel
 			ApplyVisibleEffects(packet);
 		else if (type == typeof(SM_SKILL_ACTIVATION))
 			ApplySkillActivation(packet);
+		else if (type == typeof(SM_RIDE_ROBOT))
+			ApplyRideRobot(packet);
 		else if (type == typeof(SM_ABNORMAL_EFFECT))
 			ApplyCreatureEffects(packet);
 		else if (type == typeof(SM_SUMMON_PANEL))

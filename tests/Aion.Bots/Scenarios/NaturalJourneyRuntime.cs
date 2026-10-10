@@ -54,8 +54,10 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 		int travel = template.GetAmmoSpeed() > 0 ? checked((int)Math.Ceiling(distance / template.GetAmmoSpeed() * 1000)) : 0;
 		// The unboosted animation is conservative during speed buffs; the server still
 		// validates it against Java Skill.updateHitTime and supplies the resulting delay.
+		// NR-130a: from a mech the cast is timed by the mech's animations (Java MotionTime.getTimesFor 50-56,
+		// MotionData.calculateAnimationTimeUntilFirstHit 59).
 		int hitTime = motions.Value.CalculateClientHitTime(template,
-			new BotMotionProfile(Race.ASMODIANS, Gender.MALE, weapon), travel);
+			new BotMotionProfile(Race.ASMODIANS, Gender.MALE, weapon, Robot: world.RobotId != 0), travel);
 		return new(skillId, level, 0) { TargetObjectId = target, HitTime = checked((ushort)hitTime) };
 	}
 
@@ -67,7 +69,7 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 	public int AnimationLastHitMillis(BotWorldModel world, ushort skillId) =>
 		Data.SkillDataDh.GetSkillTemplate(skillId) is { } template
 			? motions.Value.CalculateAnimationTimesAfterLastHit(template,
-				new BotMotionProfile(Race.ASMODIANS, Gender.MALE, WeaponMotion(world)))?.LastHitMillis ?? 0
+				new BotMotionProfile(Race.ASMODIANS, Gender.MALE, WeaponMotion(world), Robot: world.RobotId != 0))?.LastHitMillis ?? 0
 			: 0;
 
 	private BotWeaponMotionType WeaponMotion(BotWorldModel world)

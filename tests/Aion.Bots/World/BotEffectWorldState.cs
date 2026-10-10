@@ -31,6 +31,20 @@ public sealed partial class BotWorldModel
 	}
 
 	/// <summary>
+	/// NR-130a: the mech the bot rides, by the mech's id; 0 for none. The server tells everyone who sees a player when
+	/// its mech comes and when it goes, the player included (SM_RIDE_ROBOT; Java RideRobotEffect.startEffect 22-36 and
+	/// endEffect 38-46: at a death, and when the weapon leaves the hand). It refuses a skill that needs a mech while this
+	/// is 0 (RideRobotCondition.validate 17-24, Player.isInRobotMode 1611). A move to another map changes nothing and
+	/// tells nothing again.
+	/// </summary>
+	public int RobotId { get; private set; }
+
+	private void ApplyRideRobot(DecodedBotServerPacket packet)
+	{
+		if (packet.Get<int>("objectId") == SelfObjectId) RobotId = packet.Get<int>("robotId");
+	}
+
+	/// <summary>
 	/// NR-80a: a creature's abnormal states as the server last told them, as the bits of AbnormalState; 0 for one it told
 	/// nothing of. Java EffectController.broadCastEffects 304-308 sends SM_ABNORMAL_EFFECT to everyone who sees the
 	/// creature whenever one of its effects starts or ends, and PlayerController.see sends it for a creature that comes

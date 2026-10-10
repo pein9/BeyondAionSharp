@@ -56,6 +56,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("spirit-master-place", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimplace"),
 		new("gunner-chain", NaturalClassLine.EngineerGunner, ProbeAccountB, "Asimchain"),
 		new("gunner-reload", NaturalClassLine.EngineerGunner, ProbeAccountA, "Asimreload"),
+		new("rider-mech", NaturalClassLine.EngineerRider, ProbeAccountB, "Asimmech"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -256,6 +257,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "spirit-master-place": await SpiritMasterPlaceRowAsync(probe, id, token); break;
 			case "gunner-chain": await GunnerChainRowAsync(probe, id, token); break;
 			case "gunner-reload": await GunnerReloadRowAsync(probe, id, token); break;
+			case "rider-mech": await RiderMechRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -1794,6 +1796,134 @@ public sealed partial class SimulationFastScenarioTests
 			$"{fights} fight(s), {kills} kill(s), {deaths} death(s), {reloads} Reload(s), each with Gunshot cooling down and each answered by the server. " +
 			$"The fight that showed it: {Outcome(shown)}; the second Gunshot {between.TotalSeconds:F1} s after the first, where its cooldown is 16 s. " +
 			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
+	}
+
+	private const string RiderTable = "natural-rider-v1:";
+
+	/// <summary>
+	/// NR-130a, row rider-mech. Prepared by the director: the Engineer is made a level-16 Rider with the skills of every
+	/// level up to it, is given the ceremony's cipher-blade (102100489), and is placed in Altgard by the starved mosbears
+	/// (210564, level 13), where the Cleric's level-25 row fights. The journey's equipment check takes the blade and its
+	/// buff check boards the mech, which the server says to everyone who sees it. Then it fights one mosbear after another
+	/// by its table, from the mech, until Battery has followed Bludgeon. The director gives it the level-16 coin blade:
+	/// the equipment check takes that, and the server ends the mech, for the weapon left the hand. The rest before the
+	/// next fight boards again. In the last fight the director ends the mech as the fight begins: the table decides no
+	/// skill that needs it and the cipher-blade does the work, until a buff check has boarded once more.
+	/// </summary>
+	private async Task RiderMechRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, karmic = 102100489, rankNine = 102100606, embark = 2768, mostFights = 8;
+		// The ranks of level 16: the mech's skills in the table.
+		int[] bludgeon = [2691], battery = [2554], cinder = [2808], whispers = [4648], rocket = [2543], overdrive = [2795];
+		int[] mech = [.. bludgeon, .. battery, .. cinder, .. whispers, .. rocket, .. overdrive];
+		int self = probe.Session.CharacterId;
+		string Said(IReadOnlyList<StarterTraceRecord> records) => string.Join(" ", records
+			.Where(record => record is { Direction: "<", Packet: "SM_RIDE_ROBOT" } && record.Fields.GetProperty("objectId").GetInt32() == self)
+			.Select(record => record.Fields.GetProperty("robotId").GetInt32().ToString()));
+		int Blade() => probe.World.Inventory.Values.SingleOrDefault(item => item.Details.EquippedSlot is 1 or 3)?.ItemId ?? 0;
+
+		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-rider-with-a-cipher-blade");
+		await probe.BecomeAsync(PlayerClass.RIDER, 16);
+		Assert.All(mech.Append(embark), skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 16."));
+		await GiveAsync(probe, token, (karmic, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		Assert.Equal(0, probe.World.RobotId);
+
+		probe.Session.BeginStep("s02", "equipment-check-takes-the-cipher-blade");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(karmic, Blade());
+
+		(IReadOnlyList<StarterTraceRecord> boarded, int[] boardCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-boards-the-mech", token);
+		int robot = probe.World.RobotId;
+		Assert.Contains(embark, boardCasts);
+		Assert.True(robot != 0 && probe.Server.GetRobotId() == robot && probe.Server.IsInRobotMode(),
+			$"After the buff check the client knows mech {robot} and the server {probe.Server.GetRobotId()}.");
+		Assert.Contains(embark, probe.World.ActiveToggles);
+
+		ClericFight? shown = null;
+		int fights = 0, kills = 0, fromMech = 0;
+		double firedFrom = 0;
+		while (shown == null && fights < mostFights)
+		{
+			fights++;
+			Npc next = NearestLiving(probe, mosbear);
+			ClericFight fight = await TableFightAsync(probe, RiderTable, $"s04-{fights:D2}", $"fight-from-the-mech-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			Assert.Equal(0, fight.Result.Deaths);
+			AssertNoRefusedCastRepeats(fight);
+			Assert.All(fight.Casts, cast => Assert.Contains(cast.SkillId, mech));
+			Assert.Equal(robot, probe.World.RobotId);
+			kills += fight.Result.Killed ? 1 : 0;
+			fromMech += fight.Casts.Count;
+			if (fights == 1)
+			{
+				// From range: with every cooldown clear, the first cast is Cinder Cannon, decided outside the reach of the mech's arms.
+				StarterTraceRecord first = fight.Decided.First(record => record.Fields.GetProperty("action").GetString() == "cast-target");
+				firedFrom = first.Fields.GetProperty("targetDistance").GetDouble();
+				Assert.True(Decided(first, "cast-target", cinder) && firedFrom > 6, $"The first cast was decided at {firedFrom:F1} m: {fight.Order}.");
+			}
+			if (fight.Run(bludgeon, battery) >= 0) shown = fight;
+		}
+		Assert.True(shown != null, $"Battery never followed Bludgeon in {fights} fights with {fromMech} casts from the mech.");
+		int at = shown.Run(bludgeon, battery);
+		TimeSpan gap = shown.Casts[at + 1].At - shown.Casts[at].At;
+		Assert.True(gap <= TimeSpan.FromMilliseconds(3500), $"Battery came {gap.TotalMilliseconds:F0} ms after Bludgeon: {shown.Order}.");
+
+		// Prepared by the director: a better blade in the bag. The check that takes it is the journey's, and the end of the
+		// mech is the server's (Java RideRobotEffect.startEffect 28-36: the weapon left the hand).
+		probe.Session.BeginStep("s05", "director-gives-a-better-blade-and-the-equipment-check-takes-it");
+		await GiveAsync(probe, token, (rankNine, 1));
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		await probe.Session.SynchronizeAsync(token);
+		IReadOnlyList<StarterTraceRecord> swapped = probe.TraceOf("s05");
+		Assert.Equal(rankNine, Blade());
+		Assert.True(probe.World.RobotId == 0 && !probe.Server.IsInRobotMode(), $"After the new blade the client knows mech {probe.World.RobotId} and the server {probe.Server.GetRobotId()}.");
+		Assert.DoesNotContain(embark, probe.World.ActiveToggles);
+		Assert.Equal("0", Said(swapped));
+
+		Npc second = NearestLiving(probe, mosbear);
+		ClericFight again = await TableFightAsync(probe, RiderTable, "s06", "rest-boards-again-and-fight-from-the-mech", () => Task.FromResult(second.GetObjectId()), token);
+		AssertNoRefusedCastRepeats(again);
+		// The trace's own order: the rest's buff check boards, and the fight decides after it.
+		List<StarterTraceRecord> inOrder = again.Records.ToList();
+		int reboard = inOrder.FindIndex(record => record is { Direction: "action", Packet: "toggle-embark" });
+		Assert.True(reboard >= 0 && inOrder[reboard].Fields.GetProperty("on").GetBoolean(), "The rest's buff check did not board the mech.");
+		Assert.True(reboard < inOrder.FindIndex(record => record is { Direction: "action", Packet: "combat-decision" }), "A fight decision came before the mech was boarded.");
+		Assert.Contains(again.Casts, cast => mech.Contains(cast.SkillId));
+		int robotAgain = probe.World.RobotId;
+		Assert.True(robotAgain != 0 && probe.Server.GetRobotId() == robotAgain, $"After the rest the client knows mech {robotAgain} and the server {probe.Server.GetRobotId()}.");
+
+		Npc third = NearestLiving(probe, mosbear);
+		ClericFight afoot = await TableFightAsync(probe, RiderTable, "s07", "director-ends-the-mech-as-the-fight-begins", async () =>
+		{
+			// Prepared by the director: after the rest and its buff check the mech is ended, as a death ends it.
+			probe.Server.GetEffectController().RemoveEffect(embark);
+			await probe.Session.SynchronizeAsync(token);
+			Assert.Equal(0, probe.World.RobotId);
+			return third.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(afoot);
+		// No skill that needs the mech is decided until a buff check has boarded again, which this fight has none of
+		// unless it retreated and rested.
+		TimeSpan boardedAt = afoot.Records.FirstOrDefault(record => record is { Direction: "action", Packet: "toggle-embark" })?.VirtualTime ?? TimeSpan.MaxValue;
+		StarterTraceRecord[] onFoot = afoot.Decided.Where(record => record.VirtualTime < boardedAt).ToArray();
+		Assert.NotEmpty(onFoot);
+		Assert.DoesNotContain(onFoot, record => Decided(record, "cast-target", mech) || Decided(record, "cast-self", mech));
+		Assert.Contains(onFoot, record => record.Fields.GetProperty("action").GetString() == "attack");
+		string refusal = CandidateAtStart(afoot, cinder[0]);
+		Assert.Contains("needs a mech", refusal);
+		int swings = onFoot.Count(record => record.Fields.GetProperty("action").GetString() == "attack");
+
+		(_, int[] lastCasts) = await BuffCheckStepAsync(probe, "s08", "buff-check-boards-once-more", token);
+		Assert.True(probe.World.RobotId != 0 && probe.Server.IsInRobotMode(), $"At the end the client knows mech {probe.World.RobotId} and the server {probe.Server.GetRobotId()}.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Rider, max HP {probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}. " +
+			$"Buff check: casts {string.Join(" ", boardCasts)}; the server said mech {Said(boarded)}. " +
+			$"{fights} fight(s) from the mech, {kills} kill(s), {fromMech} casts, every one a skill that needs the mech; the first from {firedFrom:F1} m. " +
+			$"The fight that showed the chain: {Outcome(shown)}; Battery {gap.TotalMilliseconds:F0} ms after Bludgeon. " +
+			$"With blade {rankNine} taken by the equipment check the server said mech {Said(swapped)}. " +
+			$"The next fight, after the rest boarded again (the server said mech {Said(again.Records)}): {Outcome(again)}. " +
+			$"With the mech ended by the director (the server said mech {Said(afoot.Records)}): {Outcome(afoot)}; {swings} swing(s) decided and no skill that needs the mech; " +
+			$"Cinder Cannon at its first decision: {refusal} " +
+			$"Last buff check: casts {string.Join(" ", lastCasts)}; mech {probe.World.RobotId}. HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
 	}
 
 	private const string AssassinTable = "natural-assassin-v1:";
