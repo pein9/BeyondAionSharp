@@ -281,11 +281,15 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			BotNavigationGeometry geometry = runtime.CreateGeometry();
 			// A stumble into a rock face (Java stops the knockback at the first collision, at the old height) lands
 			// off walkable ground: stand on the ground at its foot, as the client does, instead of where no step is legal.
+			// NR-54e: a landing on the mesh can still be on a face steeper than 45 degrees. Java StaggerEffect.calculate takes
+			// the ground there without the slope rule, and no checked edge starts from such a face: stand on the mesh's
+			// ground beside it.
 			session.ResolveForcedLanding = landed =>
 			{
-				if (geometry.NavMesh?.NavMeshes.Get(contract.MapId) is not { } mesh ||
-					mesh.Snap(landed, BotNavQuery.Default with { SnapHorizontal = 0.5f, SnapVertical = 2 }) != null ||
-					mesh.Snap(landed, BotNavQuery.Default with { SnapHorizontal = 3, SnapVertical = 4 }) is not BotPosition ground)
+				if (geometry.NavMesh?.NavMeshes.Get(contract.MapId) is not { } mesh) return landed;
+				BotPosition? beside = mesh.Snap(landed, BotNavQuery.Default with { SnapHorizontal = 0.5f, SnapVertical = 2 });
+				if (beside != null && geometry.StaticGroundAt(contract.MapId, landed) != null) return landed;
+				if ((beside ?? mesh.Snap(landed, BotNavQuery.Default with { SnapHorizontal = 3, SnapVertical = 4 })) is not BotPosition ground)
 					return landed;
 				session.TraceDiagnostic("forced-landing-on-ground", new Dictionary<string, object?>
 				{

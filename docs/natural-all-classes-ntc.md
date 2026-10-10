@@ -4044,6 +4044,52 @@ The template:
       (run/nr/NR-54f/guard-p8/verdict.json): verdict pass, all twelve scopes identical.
       Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed, 16
       skipped) and Fast passes (run nr54f-fast2, 11 passed).
+- [x] **NR-54e - A forced landing on a face too steep to leave stands beside it.** Depends: NR-54d
+  - Work: The third stop of leg l10. Java first: StaggerEffect.calculate (63-68) lands
+    a staggered character 2 m back, at GeoService.getClosestCollision; the ground there
+    is GeoMap.getZ without the slope rule (GeoMap.getClosestCollision, 137-153). The
+    port has the same (StaggerEffect.cs 56-60). The bot's edge check asks for the
+    ground under its start with the slope rule. From a landing on a face steeper than
+    45 degrees it found none and refused every edge, so no route started where the
+    server had put the character.
+  - Proof: The Templar's leg l10 is played to its end in a replay; the full gate
+    identical.
+  - 2026-10-09: done.
+    - **The stop** (replay l10-a4, run/nr/NR-54d/l10-a4/). In Q2282's camp a monster's
+      stagger (skill 16606) moved the Templar to (2414.108, 2171.982, 269.156) on map
+      220030000. Every route from there ended GeometryRejected: the walk to the monster
+      3 m away, the walk to the next pull. Six tries later the hunt gave up: "NPC
+      210538 was not killed in 6 non-retreat attempts".
+    - **First form, taken back.** The edge check itself was let start from the surface
+      that is there. Replay l10-a5 (run/nr/NR-54e/l10-a5/) passed the stop and the gate
+      stayed identical, but Fast failed
+      (run/nr/NR-54e/bundle-broad/): Q2006MauReturnObstacleCannotBePulledFromTheFarSide
+      holds that no route starts from a pocket of the Ishalgen journey, and with the
+      change one did. The check is as it was.
+    - **The change.** J, the journey's answer to a forced landing
+      (ResolveForcedLanding), which already stands a landing off the mesh on the mesh's
+      ground within 3 m, as the client does. A landing on the mesh, within 0.5 m of it,
+      was left where it was. When the geometry has no ground under it by the slope
+      rule, the bot now stands on that mesh point beside it
+      (forced-landing-on-ground).
+    - **Proof, the tool** (tools/Aion.NavBake points, run/nr/NR-54e/points-beside.log).
+      From the landing: the ground with the slope rule is NaN, without it 269.15564,
+      and four destinations have no route. From the mesh point 0.10 m beside it
+      (2414.093, 2172.085, 269.370): 25, 31 and 26 checked points to three of them.
+    - **Proof, the replay** (l10-a8 from altgard-rc-l9-templar, the committed code of
+      the three items; evidence run/nr/NR-54e/l10-a8/, replay.json: passed). The same
+      stagger at 02:38:07 is stood beside, and the fight goes on. Leg l10 complete and
+      verified: level 24, 162 quests, 3 h 50 min of game time, no death, 102,765
+      records, 231 fights, 171 kills, 40 fights ended with the approach refused, six
+      retreats.
+    - **Found, and logged (rule (f)).**
+      - **Fifty staggers in the leg.** A class that fights at arm's length takes every
+        such skill; three of the landings were stood on other ground.
+      - **The leg is long for the Templar**: Q2273 alone takes 50 minutes, most of it
+        fighting through camps one blocker at a time.
+    - **Proof.** The bundle of NR-54d, on the tree that holds the three items
+      (run/nr/NR-54f/guard-p8/verdict.json): all twelve scopes identical; seven checks,
+      the unit suite and Fast (nr54f-fast2) pass.
 - [ ] **NR-54a - The coin tiers buy the shield.** Depends: NR-50c
   - Work: Split from NR-50c. Java first: the reward shops as read for NR-38
     (TradeService.performBuyFromShop and validateBuyItems), and which trade tab of
@@ -4600,3 +4646,12 @@ report what was done, what is parked or blocked, and what the operator must deci
   ran for NR-54d, NR-54e and NR-54f together: full gate guard-p8 (twelve scopes
   identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr54f-fast2)
   pass. Next: NR-54e.
+- 2026-10-09 — Loop: NR-54e done. A stagger landed the Templar on a face steeper than 45
+  degrees, where the server lets a character stand (Java StaggerEffect, GeoMap.getZ
+  without the slope rule) and the bot's edge check found no ground to start from: no
+  route left that point and Q2282's hunt gave up. A first form, which let the edge check
+  start there, kept the gate identical but failed a Fast test that holds a pocket of the
+  Ishalgen journey closed; it was taken back. The journey's answer to a forced landing
+  now stands on the mesh's ground beside such a face. Replay l10-a8 played the leg to its
+  end: level 24, 162 quests, no death. Proof by the bundle of NR-54d (twelve scopes
+  identical, Fast nr54f-fast2). Next: NR-54f.
