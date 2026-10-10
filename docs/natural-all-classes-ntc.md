@@ -6213,7 +6213,7 @@ The template:
       run guard-p8 (run/nr/NR-110h/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr110h-fast, 11 passed).
-- [ ] **NR-110i - A kill by the spirit is the bot's own.** Depends: NR-110h
+- [x] **NR-110i - A kill by the spirit is the bot's own.** Depends: NR-110h
   - Work: Found by NR-110h. The spirit's swing goes out in the beat before the bot's own
     act. When that swing kills, the bot's cast of the same turn is refused on a dead
     target, and the fight loop takes the kill for another player's (NR-48): no kill is
@@ -6225,6 +6225,30 @@ The template:
   - Proof: One probe row on a probe account in which the spirit's swing kills in the
     turn of a cast, the fight ends as a kill and the step after a kill runs, the one the
     journey's loot sweep hangs on; the full gate identical.
+  - 2026-10-10: done. A cast refused on a dead target is the bot's own kill when the
+    kill's reward reached the bot before the refusal.
+    - **Java.** NpcController.onDie 150-151 gives the reward while the monster dies:
+      the experience and the loot go out then (doReward 201). Skill.canUseSkill 247-250
+      refuses a later cast on the dead target with STR_SKILL_TARGET_IS_NOT_VALID. So a
+      client that killed has its experience before the refusal of a cast that came
+      after. The port has the same lines.
+    - **The change, generic.** Sc/NaturalIshalgenJourney.Combat.cs, the cast: the bot
+      notes its experience before a cast is sent. On that refusal, with more experience
+      than before or the target's loot offered to it, the cast returns to the fight,
+      which looks again and finds the kill. Without either, the refusal is another
+      player's kill as NR-48 wrote it. No class is named: a kill by a spirit's swing and
+      a kill by the bot's own lasting damage in that instant are read alike.
+    - **Proof, the row** spirit-master-orders (run nr110i-probe-a1, its first attempt).
+      The row now asks every fight for a kill and hands the fight the step after a
+      kill, which the journey's loot sweep hangs on. In its second fight the mosbear is
+      at 1% when the turn begins. The spirit's swing kills it, the bot's Erosion of the
+      same turn is refused, and the bot has 545 experience in hand: the fight ends as a
+      kill. Three fights, three kills, and the step after a kill ran three times. No
+      record says a target was taken.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-110i/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr110i-fast, 11 passed).
 - [ ] **NR-110e - A monster on the spirit is an attacker.** Depends: NR-110i
   - Work: Found by NR-110c: the bot counts as an attacker only a creature that strikes
     the bot itself. Java first: what the master is told of a strike at its spirit
@@ -7074,3 +7098,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   guard-p8 (thirteen scopes identical), seven checks, unit suite (4,629 passed, 16
   skipped) and Fast (nr110h-fast) pass. Next: NR-110i, a kill by the spirit is the bot's
   own.
+- 2026-10-10 — Loop: NR-110i done. A cast refused on a dead target is read as the bot's
+  own kill when the kill's experience or loot reached the bot before the refusal; without
+  either it is another player's kill, as before. Probe row spirit-master-orders
+  (nr110i-probe-a1): in its second fight the spirit's swing kills the mosbear in the turn
+  of the bot's cast, the bot has 545 experience in hand, and the fight ends as a kill; three
+  fights, three kills, the step after a kill run three times. Full gate guard-p8 (thirteen
+  scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
+  (nr110i-fast) pass. Next: NR-110e, a monster on the spirit is an attacker.

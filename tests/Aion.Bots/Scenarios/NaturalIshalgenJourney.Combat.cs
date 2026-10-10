@@ -1437,6 +1437,8 @@ public sealed partial class NaturalIshalgenJourney
 		private async Task<bool> CastAsync(NaturalPriestSkill skill, int target, CancellationToken token)
 		{
 			lastCastCompleted = false;
+			// NR-110i: what the bot has of experience before this cast is sent.
+			long experienceAtCast = session.Api.World.CurrentExperience;
 			BotSkill learned = session.Api.World.Skills[skill.Id];
 			// AM-06: Java Skill.useSkill resets the player's chain when a skill without a chain category is cast, so a
 			// Light of Rejuvenation between Smite and Flashbolt breaks the chain and the server silently refuses Flashbolt.
@@ -1559,6 +1561,22 @@ public sealed partial class NaturalIshalgenJourney
 				}
 				if (target != session.CharacterId && started.Get<object>("name") is "STR_SKILL_TARGET_IS_NOT_VALID")
 				{
+					// NR-110i: the target died between the fight's look and this cast, and its reward came to the bot: the kill
+					// is the bot's own, by its spirit's swing of the same turn or by damage of its own that was still running.
+					// Java NpcController.onDie 150-151 gives the reward as the monster dies, so the experience and the loot reach
+					// the client before the refusal of a cast that came after (Skill.canUseSkill 247-250). The fight looks
+					// again and finds the kill.
+					if (session.Api.World.CurrentExperience > experienceAtCast || session.Api.World.LootStatuses.ContainsKey(target))
+					{
+						session.TraceDiagnostic("combat-target-fell-before-cast", new Dictionary<string, object?>
+						{
+							["targetObjectId"] = target,
+							["skillId"] = skill.Id,
+							["experience"] = session.Api.World.CurrentExperience - experienceAtCast,
+							["loot"] = session.Api.World.LootStatuses.ContainsKey(target),
+						});
+						return true;
+					}
 					// NR-48: the server refuses a skill on a dead target with this message (Java Skill.java, canUseSkill:
 					// target.isDead()). The monster still stands in the client's view because another player killed it:
 					// its death reaches this client as an emotion, and its corpse is only removed later. Alone, a bot is

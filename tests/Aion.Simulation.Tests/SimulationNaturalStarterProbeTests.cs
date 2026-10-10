@@ -884,11 +884,12 @@ public sealed partial class SimulationFastScenarioTests
 		TableFightAsync(probe, ClericTable, step, name, target, token);
 
 	/// <summary>NR-51: one fight through the journey's fight, in its own step. Every decision must be the named table's.</summary>
+	/// <param name="afterKill">NR-110i: run after a fight that ends in a kill, as the journey's loot sweep is.</param>
 	private static async Task<ClericFight> TableFightAsync(StarterProbe probe, string table, string step, string name, Func<Task<int>> target,
-		CancellationToken token)
+		CancellationToken token, Func<CancellationToken, Task>? afterKill = null)
 	{
 		probe.Session.BeginStep(step, name);
-		NaturalCombatDiagnosticResult result = await probe.Journey.RunObservedCombatAsync(_ => target(), token);
+		NaturalCombatDiagnosticResult result = await probe.Journey.RunObservedCombatAsync(_ => target(), token, afterKill);
 		IReadOnlyList<StarterTraceRecord> records = probe.TraceOf(step);
 		StarterTraceRecord[] decided = DecidedIn(records);
 		Assert.NotEmpty(decided);
@@ -1397,6 +1398,8 @@ public sealed partial class SimulationFastScenarioTests
 	/// and before each the director prepares one thing: the spirit's HP cut to 30%; the same again, while Spirit Wrath
 	/// Position cools down; 2,000 DP. Every other act is the journey's. The spirit casts a skill of its own only when
 	/// the bot has answered the server's SM_SUMMON_USESKILL, so each cast of the spirit shows an order carried out.
+	/// NR-110i: in the second fight the spirit's swing kills the mosbear in the turn in which the bot casts, and the
+	/// server refuses that cast on a dead target. Every fight ends as a kill, and the step after a kill runs each time.
 	/// </summary>
 	private async Task SpiritMasterOrdersRowAsync(StarterProbe probe, string id, CancellationToken token)
 	{
@@ -1428,8 +1431,10 @@ public sealed partial class SimulationFastScenarioTests
 			await probe.Session.SynchronizeAsync(token);
 			Assert.True(probe.World.Summon?.HpPercent <= percent, $"The client sees the spirit at {probe.World.Summon?.HpPercent}% HP after a cut to {percent}%.");
 		}
+		int afterKills = 0;
 		Task<ClericFight> FightAsync(string step, string name) =>
-			TableFightAsync(probe, SpiritMasterTable, step, name, () => Task.FromResult(NearestLiving(probe, mosbear).GetObjectId()), token);
+			TableFightAsync(probe, SpiritMasterTable, step, name, () => Task.FromResult(NearestLiving(probe, mosbear).GetObjectId()), token,
+				_ => { afterKills++; return Task.CompletedTask; });
 		int[] SpiritCasts(ClericFight fight) => fight.Records.Where(record => record is { Direction: "<", Packet: "SM_CASTSPELL_RESULT" } &&
 			record.Fields.GetProperty("effectorId").GetInt32() == spiritId).Select(record => record.Fields.GetProperty("skillId").GetInt32()).ToArray();
 		int Count(ClericFight fight, string direction, string packet) => fight.Records.Count(record => record.Direction == direction && record.Packet == packet);
@@ -1439,6 +1444,9 @@ public sealed partial class SimulationFastScenarioTests
 		{
 			AssertNoRefusedCastRepeats(fight);
 			Assert.Equal(0, fight.Result.Deaths);
+			// NR-110i: a kill is the bot's own whoever of the two struck last.
+			Assert.True(fight.Result.Killed, $"The fight did not end as a kill: {Outcome(fight)}.");
+			Assert.Equal(0, Count(fight, "action", "combat-target-taken"));
 			Assert.Equal(Count(fight, "<", "SM_SUMMON_USESKILL"), Count(fight, ">", "CM_SUMMON_CASTSPELL"));
 			Assert.Equal(Count(fight, "<", "SM_SUMMON_USESKILL"), fight.Casts.Count(cast => cast.SkillId is disturbance or spiritErosion or wrath));
 		}
@@ -1469,7 +1477,12 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.Equal(spiritId, healed.Fields.GetProperty("targetId").GetInt32());
 		StarterTraceRecord paid = second.Records.First(record => record is { Direction: "<", Packet: "SmAttackStatus" } &&
 			record.Fields.GetProperty("objectId").GetInt32() == self && record.Fields.GetProperty("typeId").GetInt32() == 4);
+		// NR-110i: the spirit's swing killed the mosbear in the turn of the bot's last cast, which the server refused.
+		StarterTraceRecord fell = Assert.Single(second.Records, record => record is { Direction: "action", Packet: "combat-target-fell-before-cast" });
+		Assert.True(fell.Fields.GetProperty("experience").GetInt64() > 0, "The kill's experience had not reached the bot.");
 		string secondLine = $"{Outcome(second)}; {Told(second)}; the heal cost the bot {Math.Abs(paid.Fields.GetProperty("writtenValue").GetInt32())} HP; " +
+			$"the last cast, {fell.Fields.GetProperty("skillId").GetInt32()}, was refused on the mosbear the spirit had just killed, with " +
+			$"{fell.Fields.GetProperty("experience").GetInt64()} experience in hand; " +
 			$"the spirit's HP {hpBefore} to {spirit.GetLifeStats().GetCurrentHp()} of {spirit.GetLifeStats().GetMaxHp()}";
 
 		// The third fight: with 2,000 DP the spirit is armed.
@@ -1491,8 +1504,9 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.Contains(earthDisturbance, carried);
 		Assert.Contains(earthErosion, carried);
 		Assert.Equal(spiritId, probe.Server.GetSummon()?.GetObjectId());
+		Assert.Equal(3, afterKills);
 		Console.WriteLine($"{id}: level {probe.World.Level} Spirit Master, max HP {probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}. " +
-			$"Buff check: casts {string.Join(" ", buffCasts)}; spirit {spirit.GetNpcId()} out. " +
+			$"Buff check: casts {string.Join(" ", buffCasts)}; spirit {spirit.GetNpcId()} out. Three kills, and the step after a kill ran {afterKills} times. " +
 			$"Spirit at 30%: {firstLine}. Spirit at 30% again: {secondLine}. With 2,000 DP: {Outcome(third)}; {Told(third)}; DP {probe.World.CurrentDp} after. " +
 			$"Orders given {string.Join(" ", ordered)}; the spirit cast {string.Join(" ", carried)}. The same spirit at the end, at {probe.World.Summon?.HpPercent}% HP by the client.");
 	}
