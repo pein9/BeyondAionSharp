@@ -5836,7 +5836,7 @@ The template:
       fixture's name, summonObjId, and the panel, which has no Java fixture because it
       reads a live spirit, got its layout pinned in that test. The row was played again
       and the bundle run again from the start.
-- [ ] **NR-110b - The spirit follows its master.** Depends: NR-110a
+- [x] **NR-110b - The spirit follows its master.** Depends: NR-110a
   - Work: The server moves no spirit (NR-110a): the owner's client does, by
     CM_SUMMON_MOVE. Java first: the packet's fields and what CM_SUMMON_MOVE.runImpl takes
     and refuses, the spirit's speed, and how far a spirit may be from its master before
@@ -5848,14 +5848,77 @@ The template:
   - Proof: One probe row on a probe account in which a Spirit Master with its spirit out
     walks a route of 200 m or more and the spirit is beside it at the end, by the
     server's own position of it; the full gate identical.
+  - 2026-10-10: done. A ground walk of a bot with a spirit out carries the spirit's own
+    steps, and the server moves the spirit by them. Over 555 m the spirit was never more
+    than 3.0 m from its master.
+    - **Java, beyond NR-110a.**
+      - **The packet.** CM_SUMMON_MOVE.readImpl 35-62: the spirit's object, x, y, z, the
+        heading, the movement mask; with POSITION, MANUAL and ABSOLUTE in the mask, the
+        point it walks to; with GLIDE or VEHICLE their fields.
+      - **What the server takes.** runImpl 65-102. It refuses a spirit that is not the
+        sender's or is not spawned, and one that cannot move, is afraid or is confused
+        (66-72). A mask of IMMEDIATE stops it (80-81). A start, POSITION with MANUAL,
+        sets its direction to the point named (85-86); a start without ABSOLUTE is
+        dropped whole (83-84). Every other mask is a step (88). Then the spirit is put
+        at the x, y, z sent (97). The server checks no speed, no distance and no
+        geometry of it. A mask with POSITION, and a stop, go to every player who sees
+        the spirit as SM_MOVE (100-101), its master among them.
+      - **How far.** A creature is seen within 95 m (VisibleObject.getVisibleDistance
+        247-249, KnownList 214). A spirit whose master is no longer in its sight is
+        released (SummonController.notKnow 33-37, NR-110a).
+      - **The port** has the same packet (Network/Aion/ClientPackets/CM_SUMMON_MOVE.cs)
+        and the same 95 m. No server change.
+    - **The change, generic.** No profile and no class is named: every bot whose world
+      state holds a spirit.
+      - Bots/Movement/BotMover.cs, `WeaveSpirit`, called for every ground plan. The
+        spirit's path is from where it stands to where the bot starts, and then the
+        bot's own route. It walks that path 3 m behind the bot (`SpiritLagMeters`), no
+        faster than its own speed, and only while the bot walks. Its start is sent with
+        the bot's first step and names where it will stand; a step follows each step of
+        the bot in which the spirit moved 5 cm or more; a stop ends it. The bot's own
+        steps, the plan's length and its time are unchanged.
+      - The spirit's speed is the one the server has said of it (SM_EMOTION), and the
+        bot's own when it has said none.
+      - Not driven: a jump, a glide and a flight, and a spirit more than 60 m from the
+        bot (`SpiritLostMeters`). That spirit is left to the server, which releases it
+        at 95 m; the buff check summons the next (NR-110a).
+      - SimT/SimulationFastScenarioTests.cs: a SIM trace now holds the four client
+        packets that drive a spirit. No recorded scope sends one.
+    - **Proof, the probe row** spirit-master-walk (SimT/SimulationNaturalStarterProbe
+      Tests.cs, probe account 98; `bash run/nr/NR-110b/probe.sh <attempt>`). Prepared by
+      the director: a level-26 Spirit Master, which the monsters of Altgard leave alone,
+      where the Cleric's level-16 row fights. The buff check summons Earth Spirit III.
+      Then the journey walks by its own routes to where the Cleric's level-25 row fights.
+      - **First attempt** (nr110b-probe-a1, kept): the walk ended after 19 m. The
+        probe's approach returns at the first segment a monster has made unsafe, here a
+        fierce mosbear 9.6 m from the bot, where the journey itself plans again. The
+        spirit had followed: its last SM_MOVE put it 2.6 m from its master. The row's
+        walk was changed, not the item's code: it asks for the approach again, up to
+        twelve times, and counts the length walked.
+      - **Second attempt** (nr110b-probe-a2): passed. 555 m in a straight line in eight
+        approaches, the goal reached. The bot sent 1,432 steps of its own and 782 of
+        the spirit's, and the server sent 782 SM_MOVE of the spirit back. By the
+        server's own positions the spirit moved 556 m, stood 2.1 m from its master
+        before the walk, at most 3.0 m between approaches and 3.0 m at the end. It is
+        the same spirit, 833292, and Summon: Earth Spirit was not cast again.
+    - **Left for NR-110c.** The spirit moves only while the bot walks, and with no speed
+      said by the server it walks at the bot's own. So a gap left by a jump or a glide is
+      kept and not closed. The spirit's own walk while the bot stands, which NR-110c
+      needs for the walk to a target, closes it. The spirit's first stretch, to where
+      the bot stood, is a straight line and not a checked route.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-110b/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr110b-fast, 11 passed).
 - [ ] **NR-110c - The spirit fights.** Depends: NR-110b
   - Work: Java first: CM_SUMMON_COMMAND and SummonsService.doMode, CM_SUMMON_ATTACK and
     SummonController.attackTarget, and whose enmity a monster keeps when a spirit and
     its master both hit it. In a fight the bot sends its spirit at the target it pulls:
     attack mode, the walk to the target, and an attack each time the spirit's attack
-    speed allows; guard mode and the walk back when the fight ends. The journey's fight
-    rules are read for a monster that is on the spirit and not on the bot: what counts
-    as an attacker, when the bot is hit, the stand-off, the retreat.
+    speed allows; guard mode and the walk back when the fight ends. The spirit's own
+    walk while the bot stands also closes a gap that a jump or a glide left (NR-110b).
+    The journey's fight rules are read for a monster that is on the spirit and not on
+    the bot: what counts as an attacker, when the bot is hit, the stand-off, the retreat.
   - Proof: One probe row on a probe account in which the spirit is sent at a monster,
     the monster is on the spirit, and the fight ends with the monster dead or a recorded
     retreat; the full gate identical.
@@ -6630,3 +6693,13 @@ report what was done, what is parked or blocked, and what the operator must deci
   seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr110a-fast2) pass, on the
   second bundle: the first failed the decoder's contract test. Next: NR-110b, the spirit
   follows its master.
+- 2026-10-10 — Loop: NR-110b done. A ground walk of a bot with a spirit out carries the
+  spirit's steps (CM_SUMMON_MOVE): the bot's own route, 3 m behind, a start that names
+  where it will stand, a step with each of the bot's, a stop. The server puts the spirit
+  where each step says and checks no speed. Probe row spirit-master-walk: the first
+  attempt's walk ended after 19 m at a segment a mosbear made unsafe, with the spirit
+  2.6 m behind; the row now asks for the approach again. Second attempt
+  (nr110b-probe-a2): 555 m, 1,432 steps of the bot and 782 of the spirit, the spirit never
+  more than 3.0 m from its master, the same spirit at the end. Full gate guard-p8
+  (thirteen scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and
+  Fast (nr110b-fast) pass. Next: NR-110c, the spirit fights.

@@ -49,6 +49,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("gladiator-aerial", NaturalClassLine.WarriorGladiator, ProbeAccountB, "Asimaerial"),
 		new("assassin-runes", NaturalClassLine.ScoutAssassin, ProbeAccountA, "Asimrunes"),
 		new("spirit-master-spirit", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimsummon"),
+		new("spirit-master-walk", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimwalk"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -242,6 +243,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "gladiator-aerial": await GladiatorAerialRowAsync(probe, id, token); break;
 			case "assassin-runes": await AssassinRunesRowAsync(probe, id, token); break;
 			case "spirit-master-spirit": await SpiritMasterSpiritRowAsync(probe, id, token); break;
+			case "spirit-master-walk": await SpiritMasterWalkRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -1241,6 +1243,63 @@ public sealed partial class SimulationFastScenarioTests
 			$"Second check: casts {string.Join(" ", secondCasts)}; the server said nothing of a spirit. " +
 			$"At level 16 with the Fire Spirit out: casts {string.Join(" ", thirdCasts)}. Released by the director: the server said {Said(released)}. " +
 			$"After 6 s: casts {string.Join(" ", fourthCasts)}; the server said {Said(fourth)}; spirit out: {Out()}.");
+	}
+
+	/// <summary>
+	/// NR-110b, row spirit-master-walk. Prepared by the director: the Mage is made a level-26 Spirit Master, which the
+	/// monsters of Altgard leave alone, and is placed where the Cleric's level-16 row fights. The journey's buff check
+	/// summons the Earth Spirit. Then the journey walks, by its own route, towards where the Cleric's level-25 row fights,
+	/// more than 500 m away. The probe's approach ends at the first segment a monster has made unsafe, so the row asks for
+	/// it again, up to twelve times; each plans a new route from where the bot stands. The same spirit is at its side at
+	/// the end, by the server's own positions: the bot reported its steps as a client does, and the server moved it by
+	/// nothing else.
+	/// </summary>
+	private async Task SpiritMasterWalkRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int earth = 3649, earthNpc = 833292;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-six-spirit-master-in-altgard");
+		await probe.BecomeAsync(PlayerClass.SPIRIT_MASTER, 26);
+		Assert.True(probe.World.Skills.ContainsKey(earth), "Summon: Earth Spirit III was not learned by level 26.");
+		await probe.MoveToMapAsync(ClericProbeMap, 1427.2f, 789.9f, 249.9f);
+
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s02", "buff-check-summons-the-earth-spirit", token);
+		await probe.Session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+		await probe.Session.SynchronizeAsync(token);
+		Assert.Contains(earth, buffCasts);
+		Summon spirit = probe.Server.GetSummon() ?? throw new InvalidDataException("No spirit was summoned.");
+		Assert.Equal(earthNpc, spirit.GetNpcId());
+		int spiritId = spirit.GetObjectId();
+		float Gap() => MathF.Sqrt(MathF.Pow(spirit.GetX() - probe.Server.GetX(), 2) + MathF.Pow(spirit.GetY() - probe.Server.GetY(), 2) +
+			MathF.Pow(spirit.GetZ() - probe.Server.GetZ(), 2));
+		float gapBefore = Gap();
+		BotPosition from = probe.Session.CurrentPosition;
+		(float X, float Y, float Z) spiritFrom = (spirit.GetX(), spirit.GetY(), spirit.GetZ());
+
+		probe.Session.BeginStep("s03", "walk-to-the-starved-mosbears");
+		bool reached = false;
+		int approaches = 0;
+		float farthest = 0;
+		for (; approaches < 12 && !reached; approaches++)
+		{
+			reached = await probe.Journey.RunObservedZoneApproachAsync(new BotPosition(1867.3f, 456.0f, 270.2f, 0), [], token);
+			await probe.Session.SynchronizeAsync(token);
+			farthest = MathF.Max(farthest, Gap());
+		}
+		IReadOnlyList<StarterTraceRecord> walk = probe.TraceOf("s03");
+		int ownSteps = walk.Count(record => record is { Direction: ">", Packet: "CM_MOVE" });
+		int spiritSteps = walk.Count(record => record is { Direction: ">", Packet: "CM_SUMMON_MOVE" });
+		BotPosition to = probe.Session.CurrentPosition;
+		float straight = MathF.Sqrt(MathF.Pow(to.X - from.X, 2) + MathF.Pow(to.Y - from.Y, 2));
+		float spiritStraight = MathF.Sqrt(MathF.Pow(spirit.GetX() - spiritFrom.X, 2) + MathF.Pow(spirit.GetY() - spiritFrom.Y, 2));
+		Assert.True(straight >= 200, $"The walk was {straight:F0} m long after {approaches} approaches: at {to}, goal {(reached ? "reached" : "not reached")}.");
+		Assert.Equal(spiritId, probe.Server.GetSummon()?.GetObjectId());
+		Assert.Equal(spiritId, probe.World.Summon?.ObjectId);
+		Assert.True(Gap() <= 6, $"The spirit stands {Gap():F1} m from its master at the end.");
+		Assert.DoesNotContain(probe.CastsOf("s03"), cast => cast.SkillId == earth);
+		Console.WriteLine($"{id}: level {probe.World.Level} Spirit Master. Buff check: casts {string.Join(" ", buffCasts)}; spirit {spirit.GetNpcId()} out, " +
+			$"{gapBefore:F1} m from its master. Walked {straight:F0} m in a straight line in {approaches} approaches, goal {(reached ? "reached" : "not reached")}, " +
+			$"with {ownSteps} steps of its own and {spiritSteps} of the spirit's; the spirit moved {spiritStraight:F0} m, stood at most {farthest:F1} m from its " +
+			$"master between approaches and stands {Gap():F1} m from it at the end, by the server's positions. The same spirit, not summoned again.");
 	}
 
 	private const string AssassinTable = "natural-assassin-v1:";
