@@ -23,15 +23,18 @@ public static class NaturalProfileValidator
 	/// <item>NR-70a: a toggle is in no rotation. A kept toggle is a toggle and no stance, which any skill cast ends (Java
 	/// StanceObserver), and the kept ones are no more than the server lets the class keep at once: a further one ends the
 	/// first (Java EffectController.addEffect 76-86), and the two would be cast in turn without end.</item>
+	/// <item>NR-110a: a skill that summons a spirit is in no rotation, and a kept spirit is such a skill.</item>
 	/// </list>
 	/// </summary>
 	/// <param name="skills">The profile's catalog.</param>
 	/// <param name="excluded">Skill id to the reason the profile does not cast it.</param>
 	/// <param name="rotations">The profile's rotation lines, each a list of skill ids in cast order.</param>
 	/// <param name="toggles">The toggles the profile keeps on; null for none.</param>
+	/// <param name="spirits">The spirits the profile keeps; null for none.</param>
 	public static IReadOnlyList<string> Problems(StaticData data, PlayerClass playerClass, int maximumLevel,
 		IReadOnlyList<NaturalPriestSkill> skills, IReadOnlyDictionary<int, string> excluded,
-		IEnumerable<IReadOnlyList<int>> rotations, NaturalGearRules gear, IReadOnlyList<NaturalKeptToggle>? toggles = null)
+		IEnumerable<IReadOnlyList<int>> rotations, NaturalGearRules gear, IReadOnlyList<NaturalKeptToggle>? toggles = null,
+		IReadOnlyList<NaturalKeptSpirit>? spirits = null)
 	{
 		ArgumentNullException.ThrowIfNull(skills);
 		ArgumentNullException.ThrowIfNull(excluded);
@@ -62,6 +65,7 @@ public static class NaturalProfileValidator
 				else if (skill.CounterStatus != null) problems.Add($"Rotation {line} casts counter skill {id} ({skill.CounterStatus}).");
 				else if (skill.Activation == "CHARGE") problems.Add($"Rotation {line} casts charge skill {id}.");
 				else if (skill.Activation == "TOGGLE") problems.Add($"Rotation {line} casts toggle {id}.");
+				else if (skill.SummonsNpcId != 0) problems.Add($"Rotation {line} casts skill {id}, which summons a spirit.");
 				else if (skill.OutOfCombatOnly) problems.Add($"Rotation {line} casts skill {id}, which cannot be cast in combat.");
 			}
 			for (int first = 0; first < rotation.Count; first++)
@@ -101,6 +105,13 @@ public static class NaturalProfileValidator
 			if (first.GetSubType() == SkillSubType.CHANT) chants++;
 			else others++;
 		}
+		foreach (NaturalKeptSpirit kept in spirits ?? [])
+		{
+			NaturalPriestSkill[] ranks = skills.Where(skill => skill.Role == kept.Role).ToArray();
+			if (ranks.Length == 0) problems.Add($"Kept spirit '{kept.Role}' has no skill in the catalog.");
+			foreach (NaturalPriestSkill rank in ranks.Where(rank => rank.SummonsNpcId == 0))
+				problems.Add($"Kept spirit '{kept.Role}' holds skill {rank.Id}, which summons no spirit.");
+		}
 		// Java EffectController.addEffect 76-86: three of the sub type CHANT; of the others one, and two for a Ranger or a Rider.
 		int otherLimit = playerClass is PlayerClass.RANGER or PlayerClass.RIDER ? 2 : 1;
 		if (chants > 3) problems.Add($"{chants} mantras are kept on; the server keeps three.");
@@ -111,9 +122,9 @@ public static class NaturalProfileValidator
 	/// <summary>Throws with every problem of the profile.</summary>
 	public static void Require(StaticData data, PlayerClass playerClass, int maximumLevel, IReadOnlyList<NaturalPriestSkill> skills,
 		IReadOnlyDictionary<int, string> excluded, IEnumerable<IReadOnlyList<int>> rotations, NaturalGearRules gear,
-		IReadOnlyList<NaturalKeptToggle>? toggles = null)
+		IReadOnlyList<NaturalKeptToggle>? toggles = null, IReadOnlyList<NaturalKeptSpirit>? spirits = null)
 	{
-		IReadOnlyList<string> problems = Problems(data, playerClass, maximumLevel, skills, excluded, rotations, gear, toggles);
+		IReadOnlyList<string> problems = Problems(data, playerClass, maximumLevel, skills, excluded, rotations, gear, toggles, spirits);
 		if (problems.Count > 0)
 			throw new InvalidDataException($"The {playerClass} profile is not valid: " + string.Join(" ", problems));
 	}

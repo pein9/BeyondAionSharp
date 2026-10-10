@@ -27,6 +27,8 @@ namespace Aion.Bots.Scenarios;
 /// Java CarveSignetEffect); null when it carves none.</param>
 /// <param name="BurstsRune">NR-90a: the rune the skill bursts (effects/signetburst; Java SignetBurstEffect multiplies the
 /// damage by the number of the rune's level and ends the rune); null when it bursts none.</param>
+/// <param name="SummonsNpcId">NR-110a: the spirit the skill puts beside its caster (effects/summon; Java SummonEffect and
+/// SummonsService.createSummon); 0 when it summons none. A servant, a trap and a totem are not spirits.</param>
 public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role, int ManaCost,
 	float Range, int CooldownId, int CooldownDeciseconds, string? ChainCategory = null,
 	string? RequiresChainCategory = null, int ChainWindowMillis = 0, int DpCost = 0,
@@ -34,7 +36,7 @@ public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role
 	string? TargetKind = null, int CastMillis = 0, IReadOnlyList<string>? RequiredWeaponGroups = null,
 	bool AddWeaponRange = false, int SelfCount = 0, string? Activation = null, string? CounterStatus = null,
 	bool OutOfCombatOnly = false, bool GroundOnly = false, string? TargetFlight = null, string? RequiredOffHand = null,
-	IReadOnlyList<string>? TargetStates = null, string? CarvesRune = null, string? BurstsRune = null);
+	IReadOnlyList<string>? TargetStates = null, string? CarvesRune = null, string? BurstsRune = null, int SummonsNpcId = 0);
 
 /// <summary>
 /// NR-18: every class's catalog is generated from the shipped skill data (<see cref="Classes.NaturalSkillCatalog"/>); the

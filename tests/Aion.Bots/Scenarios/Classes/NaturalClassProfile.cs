@@ -47,6 +47,11 @@ public sealed record NaturalUpkeepBuff(string Role, string TraceKind);
 /// traced as <paramref name="TraceKind"/>.</summary>
 public sealed record NaturalKeptToggle(string Role, string TraceKind);
 
+/// <summary>NR-110a: one spirit a class keeps beside it: the best learned skill of <paramref name="Role"/>, cast between
+/// fights when the bot has no spirit (<see cref="Aion.Bots.World.BotWorldModel.Summon"/>), and traced as
+/// <paramref name="TraceKind"/>.</summary>
+public sealed record NaturalKeptSpirit(string Role, string TraceKind);
+
 /// <summary>What a class does when a patrol or its helpers block a planned pull.</summary>
 public enum NaturalPatrolRule
 {
@@ -89,6 +94,10 @@ public sealed record NaturalClassProfile
 	/// <summary>NR-70a: the toggles kept on, in the order they are checked after the buffs. No more than the server lets
 	/// the class keep at once (<see cref="NaturalProfileValidator"/>); a class that names none keeps none.</summary>
 	public IReadOnlyList<NaturalKeptToggle> Toggles { get; init; } = [];
+
+	/// <summary>NR-110a: the spirits kept, best first. The buff check summons the first whose skill is learned when the
+	/// bot has no spirit, and none while it has one: the server keeps one at a time. A class that names none keeps none.</summary>
+	public IReadOnlyList<NaturalKeptSpirit> Spirits { get; init; } = [];
 
 	public required NaturalPatrolRule PatrolRule { get; init; }
 

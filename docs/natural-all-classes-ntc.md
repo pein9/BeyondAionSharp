@@ -5733,7 +5733,7 @@ The template:
       identical. Seven pre-commit checks pass, the three script tests pass
       (run/nr/NR-110/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
       skipped) and Fast passes (run nr110-fast, 11 passed).
-- [ ] **NR-110a - A spirit summoned and kept.** Depends: NR-110
+- [x] **NR-110a - A spirit summoned and kept.** Depends: NR-110
   - Work: Java first, beyond what NR-110 read: what ends a spirit (its death, its
     master's death, a release, a move to another map, a logout, a timer) and what the
     client is told of its own spirit (SM_SUMMON_PANEL, SM_SUMMON_UPDATE and the packets
@@ -5746,20 +5746,127 @@ The template:
   - Proof: A one-time check, or one probe row on a probe account, that shows the spirit
     out after the rule ran once, not summoned again while it is out, and summoned again
     after it was released; the full gate identical.
-- [ ] **NR-110b - The spirit fights.** Depends: NR-110a
-  - Work: Java first: CM_SUMMON_COMMAND and SummonsService.doMode, what a spirit does in
-    each mode, whose enmity a monster keeps when a spirit and its master both hit it,
-    and the three orders, the heal and the armor that name the spirit as their target.
-    The fight loop sends the spirit at the target it pulls and calls it back when the
-    fight ends. The journey's fight rules are read for a monster that is on the spirit
-    and not on the bot: what counts as an attacker, when the bot is hit, the stand-off,
-    the retreat. The table gets Spirit Disturbance, Spirit Erosion and Spirit Wrath
-    Position as orders, Replenish Element below a spirit's HP percentage, and Divine
-    Spirit Armor for its DP. An item that turns out to be several is split (rule (q)).
+  - 2026-10-10: done. A profile names the spirits it keeps, the world state knows the
+    bot's own spirit from the server's word, and the buff check summons the best learned
+    one when none is out. The Spirit Master keeps the Earth Spirit, and the Fire Spirit
+    before it has one.
+    - **Java, beyond NR-110.**
+      - **What ends a spirit.** Every end goes through SummonsService.release 45-53: the
+        spirit's death (SummonController 123), its master's death (PlayerController
+        297), a master that left its sight, as a teleport does (SummonController.notKnow
+        33-37), a master too far away (FollowSummonTaskAI.run 37-41), a logout
+        (PlayerLeaveWorldService 117), a timer when the spell names one (SummonEffect
+        34-36; the four spirits name none), and the master's own release, which waits
+        3 s and may be taken back.
+      - **What the client is told.** A new spirit: SM_SUMMON_PANEL to its master, with
+        the spirit's object, level and HP (createSummon 36). A spirit that is gone:
+        SM_SUMMON_PANEL_REMOVE with the summoning skill and SM_SUMMON_OWNER_REMOVE with
+        the object, both to the master (ReleaseSummonTask.run 91-92). SM_SUMMON_UPDATE
+        names no spirit and goes to everyone around, so the bot does not read it.
+      - **The summon's cooldown** starts when the spirit is gone (run 85), 5 s, and the
+        client is not told of it.
+      - **The port** has the same service (Services/Summons/SummonsService.cs). No server
+        change.
+    - **Found for the next item: the server moves no spirit.** VisibleObjectSpawner
+      .spawnSummon 234-257 puts the spirit 2 m in front of its master, and nothing on
+      the server moves it after that or swings for it: the follow task of the server is
+      the siege weapon's alone (SiegeWeaponController 54, 68), and SummonsService
+      .attackMode 168-174 only sets the mode and tells the master. The owner's client
+      drives the spirit: CM_SUMMON_MOVE reports its steps (runImpl 65), CM_SUMMON_ATTACK
+      each of its attacks, which SummonController.attackTarget 77-91 holds to the
+      spirit's attack speed, and CM_SUMMON_CASTSPELL its skills. So a spirit that is
+      summoned and not driven stays where it stood and is released when its master
+      walks out of its sight. The row above summons and keeps it in one place. NR-110b
+      is split into three items by rule (q).
+    - **The change, generic.**
+      - Bots/Protocol/BotServerPacketDecoder.cs decodes SM_SUMMON_PANEL,
+        SM_SUMMON_PANEL_REMOVE and SM_SUMMON_OWNER_REMOVE: 123 packet types, and the
+        decoder's own test counts them so.
+      - Bots/World/BotSummonWorldState.cs: the world state holds the bot's own spirit,
+        with its object, level and HP, until the server says it is gone. A world reload
+        keeps it; a new login starts with none.
+      - Sc/NaturalPriestCombatPolicy.cs and Sc/Classes/NaturalSkillCatalog.cs: a skill
+        row holds the spirit it summons, from the summon effect of that very class; a
+        servant, a trap and a totem derive from it and are no spirits.
+      - Sc/Classes/NaturalClassProfile.cs: a profile names the spirits it keeps, best
+        first. Sc/NaturalIshalgenJourney.Combat.cs, the buff check: after the buffs and
+        the toggles, with no spirit out, the first kept spirit whose skill is learned is
+        summoned, outside a fight, and traced with what the server then said. With a
+        spirit out nothing is summoned.
+      - Sc/Classes/NaturalProfileValidator.cs: a skill that summons a spirit is in no
+        rotation line, and a kept spirit holds such skills only.
+      - SimT/SimulationFastScenarioTests.cs: a SIM trace now holds the three summon
+        packets. No recorded scope receives one.
+    - **The Spirit Master.** Summon: Earth Spirit has the role earth-spirit and Summon:
+      Fire Spirit the role fire-spirit, kept in that order. Wind Spirit and Water Spirit
+      are left out with their reason: one spirit is out at a time. 41 of its 66 skills
+      have a role now and 25 a reason. The orders, the heal and the armor wait for
+      NR-110b.
+    - **Proof, the one-time check** (run/nr/NR-110a/check.log; the check file is not
+      committed). Every profile of the thirteen class lines is built; only the Spirit
+      Master's has rows that summon a spirit, seven, and keeps any. It keeps none at
+      level 9, the Fire Spirit from 10 in its newest rank, the Earth Spirit from 16.
+      Summon Wind Servant summons no spirit. The validator refuses, each by name: a
+      summon in a rotation line; a kept spirit that holds the servant; a kept spirit
+      that holds nothing. The world state takes a panel, keeps the spirit through
+      another creature's removal and a world reload, and lets it go at its own removal
+      and at the panel's.
+    - **Proof, the probe row** spirit-master-spirit (SimT/SimulationNaturalStarterProbe
+      Tests.cs, probe account 100; `bash run/nr/NR-110a/probe.sh <attempt>`). Prepared
+      by the director: a level-10 Spirit Master in Altgard. Every other act is the
+      journey's buff check. Runs nr110a-probe-a1 and, on the committed tree,
+      nr110a-probe-a2 passed alike:
+      - **First check, level 10.** It casts Stone Skin and Summon: Fire Spirit. The
+        server sent the panel; the Fire Spirit 833344 is out with 644 HP.
+      - **Second check.** No cast, and the server said nothing of a spirit.
+      - **Level 16.** The director sets the level, where Summon: Earth Spirit is
+        learned. The check casts nothing: a spirit is out.
+      - **Released.** The director releases the spirit at once, as the server does when
+        one dies: the server sent both removals, and the bot has none.
+      - **After 6 s.** The check casts Summon: Earth Spirit, the best it has: the Earth
+        Spirit 833288 is out with 1,575 HP.
+      - A level-16 Spirit Master has 799 HP and 2,028 MP.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-110a/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr110a-fast2, 11 passed). The first bundle
+      (run/nr/NR-110a/bundle-a1/) failed the unit suite in the decoder's own contract
+      test: every decoded packet must give a field of its Java fixture under the
+      fixture's name, or have its layout pinned there. The removal's field took the
+      fixture's name, summonObjId, and the panel, which has no Java fixture because it
+      reads a live spirit, got its layout pinned in that test. The row was played again
+      and the bundle run again from the start.
+- [ ] **NR-110b - The spirit follows its master.** Depends: NR-110a
+  - Work: The server moves no spirit (NR-110a): the owner's client does, by
+    CM_SUMMON_MOVE. Java first: the packet's fields and what CM_SUMMON_MOVE.runImpl takes
+    and refuses, the spirit's speed, and how far a spirit may be from its master before
+    the server releases it. The bot's protocol writes the packet. While the bot walks
+    with a spirit out, the spirit walks the bot's own route a few metres behind it, at
+    the spirit's speed, and stands when the bot stands. A spirit that fell behind is
+    left to the server, which releases it; the buff check summons the next. Generic:
+    every class that keeps a spirit.
+  - Proof: One probe row on a probe account in which a Spirit Master with its spirit out
+    walks a route of 200 m or more and the spirit is beside it at the end, by the
+    server's own position of it; the full gate identical.
+- [ ] **NR-110c - The spirit fights.** Depends: NR-110b
+  - Work: Java first: CM_SUMMON_COMMAND and SummonsService.doMode, CM_SUMMON_ATTACK and
+    SummonController.attackTarget, and whose enmity a monster keeps when a spirit and
+    its master both hit it. In a fight the bot sends its spirit at the target it pulls:
+    attack mode, the walk to the target, and an attack each time the spirit's attack
+    speed allows; guard mode and the walk back when the fight ends. The journey's fight
+    rules are read for a monster that is on the spirit and not on the bot: what counts
+    as an attacker, when the bot is hit, the stand-off, the retreat.
   - Proof: One probe row on a probe account in which the spirit is sent at a monster,
-    the monster is on the spirit, an order is carried out, and the fight ends with the
-    monster dead or a recorded retreat; the full gate identical.
-- [ ] **NR-111 - Spirit Master: probe rows.** Depends: NR-110b
+    the monster is on the spirit, and the fight ends with the monster dead or a recorded
+    retreat; the full gate identical.
+- [ ] **NR-110d - The spirit's orders, its heal and its armor.** Depends: NR-110c
+  - Work: Java first: PetOrderUseUltraSkillEffect and CM_SUMMON_CASTSPELL, and the skills
+    whose first target is the spirit. The table gets Spirit Disturbance, Spirit Erosion
+    and Spirit Wrath Position as orders, Replenish Element below a percentage of the
+    spirit's HP, and Divine Spirit Armor for its DP.
+  - Proof: One probe row on a probe account in which an order is carried out and the
+    spirit is healed; the full gate identical.
+- [ ] **NR-111 - Spirit Master: probe rows.** Depends: NR-110d
   - Work: Rows spirit-master-10, spirit-master-16, spirit-master-20 and spirit-master-25
     in SimulationNaturalStarterProbeTests: prepared Spirit Masters on the two probe
     accounts, in the gear the route has given by that level, fight the monsters the
@@ -6511,3 +6618,15 @@ report what was done, what is parked or blocked, and what the operator must deci
   NR-110b. The Spirit Master's items NR-111 to NR-118 are written. Full gate guard-p8
   (thirteen scopes identical), seven checks, three script tests, unit suite (4,629 passed,
   16 skipped) and Fast (nr110-fast) pass. Next: NR-110a, a spirit summoned and kept.
+- 2026-10-10 — Loop: NR-110a done. A profile names the spirits it keeps, best first; the
+  world state holds the bot's own spirit from SM_SUMMON_PANEL until the server says it is
+  gone; the buff check summons the best learned spirit when none is out. The Spirit Master
+  keeps the Earth Spirit, and the Fire Spirit before level 16. One-time check, and the
+  probe row spirit-master-spirit (runs nr110a-probe-a1 and a2): the Fire Spirit out after one
+  check at level 10, nothing summoned while it is out, and the Earth Spirit summoned after
+  a release at level 16. Found: the server moves no spirit and swings for none; the owner's
+  client drives it. NR-110b is split into three: the spirit follows (NR-110b), fights
+  (NR-110c), and takes orders (NR-110d). Full gate guard-p8 (thirteen scopes identical),
+  seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr110a-fast2) pass, on the
+  second bundle: the first failed the decoder's contract test. Next: NR-110b, the spirit
+  follows its master.

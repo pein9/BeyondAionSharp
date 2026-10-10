@@ -133,7 +133,10 @@ public static class NaturalSkillCatalog
 			TargetStates: properties?.GetTargetStatus() is { Count: > 0 } states && template.GetStack() != "RI_PROTECTIONCURTAIN"
 				? states.Select(state => state.ToString()).ToArray() : null,
 			CarvesRune: template.GetEffects()?.GetEffects().OfType<CarveSignetEffect>().FirstOrDefault()?.signet,
-			BurstsRune: template.GetEffects()?.GetEffects().OfType<SignetBurstEffect>().FirstOrDefault()?.signet);
+			BurstsRune: template.GetEffects()?.GetEffects().OfType<SignetBurstEffect>().FirstOrDefault()?.signet,
+			// The effect of that very class: the servant's, the trap's and the totem's derive from it.
+			SummonsNpcId: template.GetEffects()?.GetEffects().FirstOrDefault(effect => effect.GetType() == typeof(SummonEffect)) is SummonEffect spirit
+				? spirit.npcId : 0);
 	}
 
 	/// <summary>

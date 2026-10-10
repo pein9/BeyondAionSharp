@@ -877,6 +877,33 @@ public sealed partial class NaturalIshalgenJourney
 					["position"] = session.CurrentPosition,
 				});
 			}
+			// NR-110a: the spirit the profile keeps. The server keeps one at a time and refuses a second (Java
+			// SummonsService.createSummon 30-33), so none is summoned while the bot has one.
+			if (profile.Spirits.Count > 0 && world.Summon == null && !world.IsDead && world.CurrentHp > 0 && !InCombat)
+			{
+				foreach (NaturalKeptSpirit spirit in profile.Spirits)
+				{
+					NaturalPriestSkill? skill = NaturalPriestSkills.Best(spirit.Role, world.Level, world.Skills, profile.Skills);
+					if (skill == null) continue;
+					DateTimeOffset now = runtime.Epoch.AddMilliseconds(runtime.NowMillis);
+					if (cooldowns.TryGetValue(skill.CooldownId, out DateTimeOffset readyAt) && readyAt > now) break;
+					if (world.CurrentMp < skill.ManaCost) break;
+					TimeSpan gate = session.Api.Timing.TimeUntilCast(skill.Id);
+					if (gate > TimeSpan.Zero) await session.AdvanceAsync(gate + TimeSpan.FromMilliseconds(1), token);
+					await CastAsync(skill, session.CharacterId, token);
+					await session.SynchronizeAsync(token);
+					session.TraceDiagnostic(spirit.TraceKind, new Dictionary<string, object?>
+					{
+						["skillId"] = skill.Id,
+						["summonObjectId"] = world.Summon?.ObjectId,
+						["summonNpcId"] = world.Summon is { } summoned ? world.Objects.GetValueOrDefault(summoned.ObjectId)?.TemplateId : null,
+						["summonHp"] = world.Summon?.CurrentHp,
+						["mp"] = world.CurrentMp,
+						["position"] = session.CurrentPosition,
+					});
+					break; // the best learned spirit, and no lesser one in its place
+				}
+			}
 		}
 
 		/// <summary>NR-90a: the runes among a creature's effects, each by its name with its level. A rune is an effect skill

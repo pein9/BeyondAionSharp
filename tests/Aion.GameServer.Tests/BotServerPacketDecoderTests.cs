@@ -41,7 +41,7 @@ public sealed class BotServerPacketDecoderTests
 	[Fact]
 	public void DecoderInventoryContainsExpectedBotPerceptionPackets()
 	{
-		Assert.Equal(120, decoder.PacketTypes.Count);
+		Assert.Equal(123, decoder.PacketTypes.Count);
 		Assert.Contains(typeof(SM_INSTANCE_INFO), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_GAME_TIME), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_ATTACK), decoder.PacketTypes);
@@ -54,6 +54,9 @@ public sealed class BotServerPacketDecoderTests
 		Assert.Contains(typeof(SM_TUNE_RESULT), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_SKILL_REMOVE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_SKILL_ACTIVATION), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_SUMMON_PANEL), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_SUMMON_PANEL_REMOVE), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_SUMMON_OWNER_REMOVE), decoder.PacketTypes);
 		Assert.Contains(typeof(SmAttackStatus), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_MESSAGE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_EMOTION), decoder.PacketTypes);
@@ -374,6 +377,13 @@ public sealed class BotServerPacketDecoderTests
 				AssertGameTimeWireContract();
 				continue;
 			}
+			if (packetType == typeof(SM_SUMMON_PANEL))
+			{
+				// NR-110a: no Java-generated fixture, since Java's SM_SUMMON_PANEL reads a live spirit. Pin its audited layout
+				// here; the NR-110a probe row checks the object against the running server's spirit.
+				AssertSummonPanelWireContract();
+				continue;
+			}
 			if (packetType == typeof(SM_PRICES))
 			{
 				// No existing Java-generated fixture for this connection-dependent packet. Pin its complete,
@@ -459,6 +469,29 @@ public sealed class BotServerPacketDecoderTests
 		Assert.Equal(529_803, packet.Get<int>("minutes"));
 		Assert.Equal(22, 529_803 / 60 % 24);
 		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_GAME_TIME), [1, 2, 3]));
+	}
+
+	// Java SM_SUMMON_PANEL.writeImpl: D object, H level, D 0, D 0, D HP, D most HP, D attack, D physical defence,
+	// D magical defence, H 0, D the time it lives.
+	private void AssertSummonPanelWireContract()
+	{
+		byte[] body =
+		[
+			.. BitConverter.GetBytes(700_123), .. BitConverter.GetBytes((ushort)16), .. BitConverter.GetBytes(0), .. BitConverter.GetBytes(0),
+			.. BitConverter.GetBytes(1_500), .. BitConverter.GetBytes(1_800), .. BitConverter.GetBytes(90), .. BitConverter.GetBytes(300),
+			.. BitConverter.GetBytes(200), .. BitConverter.GetBytes((ushort)0), .. BitConverter.GetBytes(0),
+		];
+		Assert.Equal(40, body.Length);
+		var packet = decoder.Decode(typeof(SM_SUMMON_PANEL), body);
+		Assert.Equal(700_123, packet.Get<int>("objectId"));
+		Assert.Equal((ushort)16, packet.Get<ushort>("level"));
+		Assert.Equal(1_500, packet.Get<int>("currentHp"));
+		Assert.Equal(1_800, packet.Get<int>("maxHp"));
+		Assert.Equal(90, packet.Get<int>("attack"));
+		Assert.Equal(300, packet.Get<int>("physicalDefence"));
+		Assert.Equal(200, packet.Get<int>("magicalDefence"));
+		Assert.Equal(0, packet.Get<int>("liveTime"));
+		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_SUMMON_PANEL), [.. body, 0]));
 	}
 
 	private void AssertPricesWireContract()

@@ -292,6 +292,12 @@ public sealed partial class BotWorldModel
 			ApplySkillActivation(packet);
 		else if (type == typeof(SM_ABNORMAL_EFFECT))
 			ApplyCreatureEffects(packet);
+		else if (type == typeof(SM_SUMMON_PANEL))
+			ApplySummonPanel(packet);
+		else if (type == typeof(SM_SUMMON_PANEL_REMOVE))
+			Summon = null;
+		else if (type == typeof(SM_SUMMON_OWNER_REMOVE))
+			ApplySummonOwnerRemove(packet);
 		else if (type == typeof(SM_EXCHANGE_REQUEST))
 			ExchangeRequestFrom = packet.Get<string>("receiver");
 		else

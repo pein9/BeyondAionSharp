@@ -48,6 +48,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("chanter-mantras", NaturalClassLine.PriestChanter, ProbeAccountA, "Asimmantra"),
 		new("gladiator-aerial", NaturalClassLine.WarriorGladiator, ProbeAccountB, "Asimaerial"),
 		new("assassin-runes", NaturalClassLine.ScoutAssassin, ProbeAccountA, "Asimrunes"),
+		new("spirit-master-spirit", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimsummon"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -240,6 +241,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "chanter-mantras": await ChanterMantrasRowAsync(probe, id, token); break;
 			case "gladiator-aerial": await GladiatorAerialRowAsync(probe, id, token); break;
 			case "assassin-runes": await AssassinRunesRowAsync(probe, id, token); break;
+			case "spirit-master-spirit": await SpiritMasterSpiritRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -1171,6 +1173,74 @@ public sealed partial class SimulationFastScenarioTests
 			$"Second check: casts {string.Join(" ", secondCasts)}; the server said nothing of a toggle. " +
 			$"Every effect ended by the director: the server said {Said(ended)}. Third check: casts {string.Join(" ", thirdCasts)}; the server said {Said(third)}. " +
 			$"At level 23: casts {string.Join(" ", fourthCasts)}; the server said {Said(fourth)}. On at the end: {On()}.");
+	}
+
+	/// <summary>
+	/// NR-110a, row spirit-master-spirit. Prepared by the director: the Mage is made a level-10 Spirit Master with the
+	/// skills of every level up to it and is placed in Altgard. The journey's buff check summons the Fire Spirit, the one
+	/// it has at level 10, and the server says so. A second check summons nothing. The director makes it level 16, where
+	/// the Earth Spirit is learned: the check still summons nothing, for a spirit is out. Then the director releases the
+	/// spirit, as the server does when one dies; once the summon's 5 s are over, the next check summons the Earth Spirit,
+	/// the best it has.
+	/// </summary>
+	private async Task SpiritMasterSpiritRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int fire = 3707, earth = 3645, fireNpc = 833344, earthNpc = 833288;
+		int[] summons = [3707, 3709, 3711, 3713, 3645, 3647, 3649, 3685, 3687, 3689, 3665, 3667];
+		static string Said(IReadOnlyList<StarterTraceRecord> records) => string.Join(" ", records
+			.Where(record => record is { Direction: "<", Packet: "SM_SUMMON_PANEL" or "SM_SUMMON_PANEL_REMOVE" or "SM_SUMMON_OWNER_REMOVE" })
+			.Select(record => record.Packet));
+		int? Seen() => probe.World.Summon is { } spirit ? probe.World.Objects.GetValueOrDefault(spirit.ObjectId)?.TemplateId : null;
+		string Out() => probe.World.Summon is { } spirit ? $"{Seen()} with {spirit.CurrentHp}/{spirit.MaxHp} HP" : "none";
+
+		probe.Session.BeginStep("s01", "director-makes-a-level-ten-spirit-master-in-altgard");
+		await probe.BecomeAsync(PlayerClass.SPIRIT_MASTER, 10);
+		Assert.True(probe.World.Skills.ContainsKey(fire), "Summon: Fire Spirit was not learned by level 10.");
+		await probe.MoveToMapAsync(ClericProbeMap, 1473.2f, 1765.2f, 247.5f);
+		Assert.Null(probe.World.Summon);
+		Assert.Null(probe.Server.GetSummon());
+
+		(IReadOnlyList<StarterTraceRecord> first, int[] firstCasts) = await BuffCheckStepAsync(probe, "s02", "buff-check-summons-the-fire-spirit", token);
+		await probe.Session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+		await probe.Session.SynchronizeAsync(token);
+		Assert.Equal([fire], firstCasts.Where(summons.Contains));
+		Assert.Equal(fireNpc, probe.Server.GetSummon()?.GetNpcId());
+		Assert.Equal(probe.Server.GetSummon()!.GetObjectId(), probe.World.Summon?.ObjectId);
+		Assert.Equal(fireNpc, Seen());
+		string fireOut = Out();
+
+		(IReadOnlyList<StarterTraceRecord> second, int[] secondCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-again-summons-nothing", token);
+		Assert.DoesNotContain(secondCasts, summons.Contains);
+		Assert.Equal("", Said(second));
+
+		// Prepared by the director: level 16, where the Earth Spirit is learned.
+		probe.Session.BeginStep("s04", "director-makes-it-level-sixteen");
+		await probe.SetLevelAsync(16);
+		Assert.True(probe.World.Skills.ContainsKey(earth), "Summon: Earth Spirit was not learned at level 16.");
+		(_, int[] thirdCasts) = await BuffCheckStepAsync(probe, "s05", "buff-check-with-a-spirit-out-summons-nothing", token);
+		Assert.DoesNotContain(thirdCasts, summons.Contains);
+		Assert.Equal(fireNpc, probe.Server.GetSummon()?.GetNpcId());
+
+		// Prepared by the director: the spirit is released at once, which is what the server does when one dies.
+		probe.Session.BeginStep("s06", "director-releases-the-spirit");
+		Aion.GameServer.Services.Summons.SummonsService.Release(probe.Server.GetSummon(), Aion.GameServer.Model.Summons.UnsummonType.UNSPECIFIED);
+		await probe.Session.SynchronizeAsync(token);
+		IReadOnlyList<StarterTraceRecord> released = probe.TraceOf("s06");
+		Assert.Null(probe.World.Summon);
+		Assert.Null(probe.Server.GetSummon());
+		await probe.Session.AdvanceAsync(TimeSpan.FromSeconds(6), token);
+
+		(IReadOnlyList<StarterTraceRecord> fourth, int[] fourthCasts) = await BuffCheckStepAsync(probe, "s07", "buff-check-summons-the-earth-spirit", token);
+		await probe.Session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+		await probe.Session.SynchronizeAsync(token);
+		Assert.Equal([earth], fourthCasts.Where(summons.Contains));
+		Assert.Equal(earthNpc, probe.Server.GetSummon()?.GetNpcId());
+		Assert.Equal(earthNpc, Seen());
+		Console.WriteLine($"{id}: level {probe.World.Level} Spirit Master, max HP {probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}. " +
+			$"First buff check at level 10: casts {string.Join(" ", firstCasts)}; the server said {Said(first)}; spirit out: {fireOut}. " +
+			$"Second check: casts {string.Join(" ", secondCasts)}; the server said nothing of a spirit. " +
+			$"At level 16 with the Fire Spirit out: casts {string.Join(" ", thirdCasts)}. Released by the director: the server said {Said(released)}. " +
+			$"After 6 s: casts {string.Join(" ", fourthCasts)}; the server said {Said(fourth)}; spirit out: {Out()}.");
 	}
 
 	private const string AssassinTable = "natural-assassin-v1:";

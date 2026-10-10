@@ -6,9 +6,9 @@ namespace Aion.Bots.Scenarios.Classes;
 /// <summary>
 /// NR-110: the Spirit Master, the Mage's other choice at Ascension (docs/natural-all-classes-ntc.md). The catalog is
 /// generated from the shipped data to level 26, where the accepted line's Abyss-entry leg ends. It fights as the Mage it
-/// was, with what it casts itself from level 10 put into the same table form. Its spirit, and every skill that orders,
-/// heals or arms the spirit, is left out with its reason and named in the plan's items after NR-110: no rule summons a
-/// spirit yet.
+/// was, with what it casts itself from level 10 put into the same table form. NR-110a: it keeps a spirit beside it.
+/// Every skill that orders, heals or arms the spirit is left out with its reason and named in the plan's items after
+/// NR-110: no rule sends the spirit at a target yet.
 /// </summary>
 public static class NaturalSpiritMasterProfile
 {
@@ -33,32 +33,32 @@ public static class NaturalSpiritMasterProfile
 		[1282] = "bolt", [1403] = "blaze", [1363] = "ice", [1226] = "shock",
 		[1328] = "root",
 		[1155] = "skin", [1156] = "skin", [1157] = "skin", [1158] = "skin",
+		// NR-110a: the spirits it keeps.
+		[3645] = "earth-spirit", [3647] = "earth-spirit", [3649] = "earth-spirit",
+		[3707] = "fire-spirit", [3709] = "fire-spirit", [3711] = "fire-spirit", [3713] = "fire-spirit",
 		// NR-50a: the two powder skills, cast only in a rest.
 		[246] = "herb", [247] = "herb", [251] = "herb", [253] = "herb",
 		[249] = "mp-recovery", [250] = "mp-recovery", [252] = "mp-recovery", [254] = "mp-recovery",
 	};
 
-	private const string Spirit = "summons a spirit that fights beside the Spirit Master. No rule summons a spirit, keeps it or sends it at a " +
-		"target yet (NR-110a).";
-	private const string Order = "is an order to the spirit, and the table summons none yet (NR-110a).";
+	private const string Spirit = "is not one of the two spirits the profile keeps, the Earth Spirit and before it the Fire Spirit: the server " +
+		"keeps one spirit at a time (Java SummonsService.createSummon 30-33).";
+	private const string Order = "is an order to the spirit, and no rule sends the spirit at a target yet (NR-110b).";
 	private const string Dispel = "takes a buff off its target and hits for each one taken; the monsters of the route carry none.";
 
 	/// <summary>Every other active skill a Spirit Master learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
-		[3707] = "Summon: Fire Spirit I " + Spirit, [3709] = "Summon: Fire Spirit II " + Spirit, [3711] = "Summon: Fire Spirit III " + Spirit,
-		[3713] = "Summon: Fire Spirit IV " + Spirit,
 		[3685] = "Summon: Wind Spirit I " + Spirit, [3687] = "Summon: Wind Spirit II " + Spirit, [3689] = "Summon: Wind Spirit III " + Spirit,
-		[3645] = "Summon: Earth Spirit I " + Spirit, [3647] = "Summon: Earth Spirit II " + Spirit, [3649] = "Summon: Earth Spirit III " + Spirit,
 		[3665] = "Summon: Water Spirit I " + Spirit, [3667] = "Summon: Water Spirit II " + Spirit,
 		[3837] = "Spirit Disturbance " + Order, [3852] = "Spirit Wrath Position " + Order, [3643] = "Spirit Erosion " + Order,
-		[3630] = "Replenish Element I heals the spirit for the Spirit Master's own HP, and the table summons none yet (NR-110a).",
-		[3631] = "Replenish Element II heals the spirit for the Spirit Master's own HP, and the table summons none yet (NR-110a).",
-		[3632] = "Replenish Element III heals the spirit for the Spirit Master's own HP, and the table summons none yet (NR-110a).",
-		[3855] = "Divine Spirit Armor I arms the spirit for 2,000 DP, and the table summons none yet (NR-110a).",
-		[3856] = "Divine Spirit Armor II arms the spirit for 2,000 DP, and the table summons none yet (NR-110a).",
-		[3857] = "Divine Spirit Armor III arms the spirit for 2,000 DP, and the table summons none yet (NR-110a).",
-		[3858] = "Divine Spirit Armor IV arms the spirit for 2,000 DP, and the table summons none yet (NR-110a).",
+		[3630] = "Replenish Element I heals the spirit for the Spirit Master's own HP; no rule watches the spirit's HP in a fight yet (NR-110b).",
+		[3631] = "Replenish Element II heals the spirit for the Spirit Master's own HP; no rule watches the spirit's HP in a fight yet (NR-110b).",
+		[3632] = "Replenish Element III heals the spirit for the Spirit Master's own HP; no rule watches the spirit's HP in a fight yet (NR-110b).",
+		[3855] = "Divine Spirit Armor I arms the spirit for 2,000 DP; no rule casts a skill on the spirit yet (NR-110b).",
+		[3856] = "Divine Spirit Armor II arms the spirit for 2,000 DP; no rule casts a skill on the spirit yet (NR-110b).",
+		[3857] = "Divine Spirit Armor III arms the spirit for 2,000 DP; no rule casts a skill on the spirit yet (NR-110b).",
+		[3858] = "Divine Spirit Armor IV arms the spirit for 2,000 DP; no rule casts a skill on the spirit yet (NR-110b).",
 		[3780] = "Root of Enervation slows its target's attacks by a fifth for 35 to 45 s for 244 MP, which is the mana of four Erosions.",
 		[3571] = "Body Root binds its target for 8 to 10 s: it casts no physical skill and still swings. 108 MP for that buys two Erosions.",
 		[3572] = "Sigil of Silence silences its target; the table has no rule for a target that casts.",
@@ -87,6 +87,11 @@ public static class NaturalSpiritMasterProfile
 		Recovery: [new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
 		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.LastResort, ControlRole: "root");
 
+	/// <summary>NR-110a: the spirits kept, best first: the Earth Spirit, which takes the hits, from level 16, and the Fire
+	/// Spirit, its first, before. A cast takes 4.5 s and 145 MP or more.</summary>
+	private static readonly NaturalKeptSpirit[] KeptSpirits =
+		[new("earth-spirit", "summon-earth-spirit"), new("fire-spirit", "summon-fire-spirit")];
+
 	// NR-Q5, NR-Q7 and NR-Q8: the spellbook, cloth, and the kit of a class that casts from mana and rests with the powder.
 	private static readonly NaturalGearRules Gear = NaturalClassGearTable.SpiritMaster.Rules(NaturalClassLineContract.LoadDefault(),
 		NaturalHelpItemAllowlist.Kit(caster: true, reagent: true));
@@ -97,7 +102,7 @@ public static class NaturalSpiritMasterProfile
 		var excluded = NaturalSkillCatalog.CommonExcluded.Concat(Excluded).ToDictionary(entry => entry.Key, entry => entry.Value);
 		NaturalPriestSkill[] skills = NaturalSkillCatalog.Build(data, PlayerClass.SPIRIT_MASTER, Roles, excluded);
 		NaturalFightMovement movement = NaturalPriestProfile.PriestLineMovement;
-		NaturalProfileValidator.Require(data, PlayerClass.SPIRIT_MASTER, TopLevel, skills, excluded, Rules.Lines(skills), Gear);
+		NaturalProfileValidator.Require(data, PlayerClass.SPIRIT_MASTER, TopLevel, skills, excluded, Rules.Lines(skills), Gear, spirits: KeptSpirits);
 		return new NaturalClassProfile
 		{
 			Class = PlayerClass.SPIRIT_MASTER,
@@ -108,6 +113,7 @@ public static class NaturalSpiritMasterProfile
 			HelpItems = NaturalHelpItemRules.ForKinds(caster: true, reagent: true),
 			// Stone Skin as the Mage keeps it.
 			Upkeep = [new("skin", "buff-stone-skin")],
+			Spirits = KeptSpirits,
 			// NR-36: in flight it casts Erosion, which is ready every 3 s from 25 m.
 			AirAttackRoles = ["erosion"],
 			// NR-37: every second class holds for a patrol and assesses the fight, by its own table.
