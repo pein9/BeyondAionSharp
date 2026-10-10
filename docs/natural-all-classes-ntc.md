@@ -6688,7 +6688,7 @@ The template:
       run guard-p8 (run/nr/NR-110f/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr110f-fast, 11 passed).
-- [ ] **NR-111 - Spirit Master: probe rows.** Depends: NR-110f
+- [x] **NR-111 - Spirit Master: probe rows.** Depends: NR-110f
   - Work: Rows spirit-master-10, spirit-master-16, spirit-master-20 and spirit-master-25
     in SimulationNaturalStarterProbeTests: prepared Spirit Masters on the two probe
     accounts, in the gear the route has given by that level, fight the monsters the
@@ -6702,6 +6702,54 @@ The template:
     casts. A fix is one small change (rule (i)).
   - Proof: The four rows end with the monster dead or a recorded retreat, no refused
     cast repeated and no skill outside the table cast.
+  - 2026-10-10: done on the first attempt. The four rows pass, and the table stands as
+    NR-110h left it.
+    - **Java.** Nothing new is relied on.
+    - **The rows** (SimT/SimulationNaturalStarterProbeTests.cs: spirit-master-10,
+      spirit-master-16, spirit-master-20, spirit-master-25, on the probe accounts 98 and
+      100, at the places and monsters of the Cleric's rows). The director makes the Mage
+      a Spirit Master of the level with the skills of every level up to it, puts the
+      spellbook and the robe pieces of the route into its bag, and places it. From there
+      the journey's equipment check, buff check, fight and rest act. A row takes its
+      skills from the profile's catalog by role. `bash run/nr/NR-111/probe.sh <attempt>`.
+    - **The run** (nr111-probe-a1 and a1b; the four traces are under run/nr/NR-111/).
+
+      | Row | Prepared by the director | What the journey did | Outcome |
+      |---|---|---|---|
+      | spirit-master-10 | Level 10, the ceremony's spellbook; then 20 powder and half HP | The check took the book; the buff check cast Stone Skin and summoned the Fire Spirit. Two ice crasaurs: the spirit sent first, Spirit Disturbance asked and answered, Erosion, Summon Wind Servant, Ice Chain. The rest cast Herb Treatment. | Two kills in 9.7 and 14.9 s. The crasaurs struck the spirit six times and its master never. MP 1,142 to 621. |
+      | spirit-master-16 | Level 16; the spellbook of Q24013 and the robe shoes and tunic of Q24011 and Q24012 | The check wore all three; the buff check summoned the Earth Spirit. One tusked mosbear, which has neighbours: the spirit held back, Chain of Earth, Erosion, Summon Wind Servant, Flame Bolt; the spirit sent as the mosbear came; then two were on them: Root, and it left. | A retreat at two attackers; no one was struck. |
+      | spirit-master-20 | Level 20; the spellbook of Q24016, 20 powder, two shield scrolls, three life potions; then the spirit at 30% HP; then 2,000 DP and 45% HP; then a tenth of its mana | Unhurt: the spirit sent, Spirit Disturbance, Chain of Earth, Erosion, the servants, Flame Bolt, Blaze. With the spirit at 483 HP: Spirit Wrath Position, and the spirit had 1,607 HP after the fight. With DP: Divine Spirit Armor on the spirit, the scroll and the potion at 44% HP. The rest cast MP Recovery twice. | Three kills in 11.5, 17.5 and 23.1 s; the mosbears struck the spirit and never its master; DP 2,000 to 7. |
+      | spirit-master-25 | Level 25; the same spellbook, 20 Odella Powder; then two starved mosbears set on it; then half HP | Three fights: the spirit sent, Spirit Disturbance, in the first Spirit Erosion, Chain of Earth, Erosion, Vacuum Choke. With two set on its master: Erosion, Vacuum Choke, Root, and it left. The rest cast Herb Treatment IV. | Three kills in 21.8, 15.8 and 14.7 s and a retreat; eight strikes on the spirit and none on its master; MP 2,526 to 1,853. |
+
+      In no fight was a skill decided more than twice running, no skill outside the
+      catalog was cast, and every order the server asked the spirit for was answered.
+      Every decision carries the table natural-spirit-master-v1.
+    - **What the rows decide.**
+      - **The Fire Spirit serves before level 16.** At level 10 it held both crasaurs:
+        six strikes on it and none on its master.
+      - **Root of Enervation and Body Root stay out.** Where the spirit is sent first,
+        no monster of the rows struck the Spirit Master at all, so a spell that weakens
+        a monster's blows has nothing to earn.
+      - **It still leaves at two attackers.** The rows show one monster held by the
+        spirit and nothing of two. At the tusked mosbears it left untouched, as the
+        Sorcerer does; whether a spirit holds two, the rounds will say.
+      - **Replenish Element keeps its place.** It was not reached: the spirit fell to
+        40% only by the director's cut, and Spirit Wrath Position, which stands before
+        it, brought 483 HP to 1,607.
+      - **The spirit needs no beat inside the bot's casts.** With its beat at each act
+        of the bot it kept every monster on itself through the 2 s casts of Vacuum
+        Choke and Ice Chain.
+    - **Found, and logged (rule (f)).**
+      - **Mana.** A fight cost the level-10 Spirit Master 235 and 286 of its 1,397 MP,
+        and the level-25 one 212 to 249 of 2,976. That is four to five fights to a full
+        mana at level 10; the rest's powder carries it.
+      - **A spirit is held back and then sent in one fight.** At the tusked mosbear the
+        trace says both: held back while the mosbear stood among its family, sent when
+        it had come to its master (NR-110f).
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-111/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr111-fast, 11 passed).
 - [ ] **NR-112 - Spirit Master: to Altgard.** Depends: NR-111; ticked by the round that gives it
   - Work: A fresh Asimspirit plays Ishalgen as a Mage, the trial, the Spirit Master
     choice at Munin, the ceremony with the spellbook and the dispatch Q2903, and is
@@ -8305,3 +8353,14 @@ report what was done, what is parked or blocked, and what the operator must deci
   mana, and the stand-off and the three left-out buffs stay as they are. Full gate guard-p8
   (thirteen scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and
   Fast (nr101-fast) pass. Next: NR-111, the Spirit Master's probe rows.
+- 2026-10-10 — Loop: NR-111 done on the first attempt. The Spirit Master's four probe rows
+  pass (nr111-probe-a1 and a1b) on the table of NR-110h, unchanged: Stone Skin and the
+  spirit by the buff check, the spirit sent first or held back from a family, Spirit
+  Disturbance and Spirit Erosion asked and answered, Chain of Earth, Erosion, the servants,
+  Vacuum Choke, Spirit Wrath Position for a hurt spirit, Divine Spirit Armor for its DP,
+  the scroll and the potion, Root and a retreat at two attackers, the rest with the powder.
+  In every fight with one monster the spirit took the blows and its master none. The Fire
+  Spirit serves before 16, the two left-out roots stay out, and it still leaves at two
+  attackers. Full gate guard-p8 (thirteen scopes identical), seven checks, unit suite
+  (4,629 passed, 16 skipped) and Fast (nr111-fast) pass. Next: NR-121, the Gunner's probe
+  rows.

@@ -65,6 +65,10 @@ public sealed partial class SimulationFastScenarioTests
 		new("ranger-16", NaturalClassLine.ScoutRanger, ProbeAccountB, "Asimsixrang"),
 		new("ranger-20", NaturalClassLine.ScoutRanger, ProbeAccountA, "Asimtwerang"),
 		new("ranger-25", NaturalClassLine.ScoutRanger, ProbeAccountB, "Asimtfrang"),
+		new("spirit-master-10", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimtenspir"),
+		new("spirit-master-16", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimsixspir"),
+		new("spirit-master-20", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimtwespir"),
+		new("spirit-master-25", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimtfspir"),
 		new("chanter-mantras", NaturalClassLine.PriestChanter, ProbeAccountA, "Asimmantra"),
 		new("gladiator-aerial", NaturalClassLine.WarriorGladiator, ProbeAccountB, "Asimaerial"),
 		new("assassin-runes", NaturalClassLine.ScoutAssassin, ProbeAccountA, "Asimrunes"),
@@ -138,6 +142,12 @@ public sealed partial class SimulationFastScenarioTests
 		/// its rest may cast.</summary>
 		public int[] CatalogOf(PlayerClass playerClass) =>
 			NaturalClassProfiles.For(playerClass.GetClassId(), line, runtime.Data).Skills.Select(skill => (int)skill.Id).ToArray();
+
+		/// <summary>NR-111: the best skill of a role the character has learned, by the class's catalog.</summary>
+		public int BestOf(PlayerClass playerClass, string role) =>
+			NaturalPriestSkills.Best(role, session.Api.World.Level, session.Api.World.Skills,
+				NaturalClassProfiles.For(playerClass.GetClassId(), line, runtime.Data).Skills)?.Id
+			?? throw new InvalidDataException($"The level-{session.Api.World.Level} {playerClass} has learned no skill of the role {role}.");
 
 		/// <summary>NR-16: the director makes the character its second class at a level, with the skills of every level up
 		/// to it. The client sees the class with its next SM_PLAYER_INFO, which the move to the row's map sends.</summary>
@@ -292,6 +302,10 @@ public sealed partial class SimulationFastScenarioTests
 			case "ranger-16": await RangerLevelSixteenRowAsync(probe, id, token); break;
 			case "ranger-20": await RangerLevelTwentyRowAsync(probe, id, token); break;
 			case "ranger-25": await RangerLevelTwentyFiveRowAsync(probe, id, token); break;
+			case "spirit-master-10": await SpiritMasterLevelTenRowAsync(probe, id, token); break;
+			case "spirit-master-16": await SpiritMasterLevelSixteenRowAsync(probe, id, token); break;
+			case "spirit-master-20": await SpiritMasterLevelTwentyRowAsync(probe, id, token); break;
+			case "spirit-master-25": await SpiritMasterLevelTwentyFiveRowAsync(probe, id, token); break;
 			case "chanter-mantras": await ChanterMantrasRowAsync(probe, id, token); break;
 			case "gladiator-aerial": await GladiatorAerialRowAsync(probe, id, token); break;
 			case "assassin-runes": await AssassinRunesRowAsync(probe, id, token); break;
@@ -3817,6 +3831,291 @@ public sealed partial class SimulationFastScenarioTests
 			$"{swarm.Decided[slept].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32()} attackers: {reason} " +
 			$"Rest: casts {string.Join(" ", restCasts)}, Odella Powder {probe.Owned(OdellaPowder)} of 20 left. " +
 			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>NR-111: how often one creature's weapon struck another in a fight.</summary>
+	private static int StrikesBy(ClericFight fight, int by, int whom) => fight.Records.Count(record => record is { Direction: "<", Packet: "SM_ATTACK" } &&
+		record.Fields.GetProperty("attackerObjId").GetInt32() == by && record.Fields.GetProperty("targetObjId").GetInt32() == whom);
+
+	/// <summary>NR-111: how often a fight's trace says a thing of the spirit.</summary>
+	private static int SaidOfSpirit(ClericFight fight, string kind) => fight.Records.Count(record => record.Direction == "action" && record.Packet == kind);
+
+	/// <summary>NR-111: what a fight says of the spirit: sent or held back, the orders asked and answered, and whom the
+	/// monster struck.</summary>
+	private static string SpiritLine(ClericFight fight, int target, int spirit, int self) =>
+		$"spirit sent {SaidOfSpirit(fight, "combat-spirit-sent")}, held back {SaidOfSpirit(fight, "combat-spirit-held-back")}; orders " +
+		$"{fight.Records.Count(record => record is { Direction: "<", Packet: "SM_SUMMON_USESKILL" })} asked and " +
+		$"{fight.Records.Count(record => record is { Direction: ">", Packet: "CM_SUMMON_CASTSPELL" })} answered; the monster struck the spirit " +
+		$"{StrikesBy(fight, target, spirit)} time(s) and its master {StrikesBy(fight, target, self)}";
+
+	/// <summary>NR-111: the journey's buff check for a Spirit Master: Stone Skin up and the spirit out.</summary>
+	private static async Task<(Summon Spirit, int[] Casts)> SummonStepAsync(StarterProbe probe, string step, int skin, int summon, CancellationToken token)
+	{
+		(_, int[] casts) = await BuffCheckStepAsync(probe, step, "buff-check-puts-stone-skin-up-and-summons-the-spirit", token);
+		await probe.Session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+		await probe.Session.SynchronizeAsync(token);
+		Assert.Contains(skin, casts);
+		Assert.Contains(summon, casts);
+		Summon spirit = probe.Server.GetSummon() ?? throw new InvalidDataException("No spirit was summoned.");
+		Assert.Equal(spirit.GetObjectId(), probe.World.Summon?.ObjectId);
+		return (spirit, casts);
+	}
+
+	/// <summary>
+	/// NR-111, row spirit-master-10. Prepared by the director: the Mage is made a level-10 Spirit Master with the skills
+	/// of every level up to it, is given the ceremony's spellbook (100600532) and is placed in Altgard by the ice
+	/// crasaurs (210415, level 11), where the Cleric's row fights. The journey's equipment check takes the book, and its
+	/// buff check puts Stone Skin up and summons the Fire Spirit, the one it has before level 16. Then it fights two
+	/// crasaurs by its table, and the row says what the spirit did and whom the crasaur struck. Last the director gives
+	/// powder and halves the HP, and the journey's rest casts Herb Treatment.
+	/// </summary>
+	private async Task SpiritMasterLevelTenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int crasaur = 210415, book = 100600532;
+		probe.Session.BeginStep("s01", "director-makes-a-level-ten-spirit-master-in-altgard");
+		await probe.BecomeAsync(PlayerClass.SPIRIT_MASTER, 10);
+		int[] table = probe.CatalogOf(PlayerClass.SPIRIT_MASTER);
+		int skin = probe.BestOf(PlayerClass.SPIRIT_MASTER, "skin"), fire = probe.BestOf(PlayerClass.SPIRIT_MASTER, "fire-spirit"),
+			erosion = probe.BestOf(PlayerClass.SPIRIT_MASTER, "erosion"), disturbance = probe.BestOf(PlayerClass.SPIRIT_MASTER, "disturbance"),
+			servant = probe.BestOf(PlayerClass.SPIRIT_MASTER, "servant"), herb = probe.BestOf(PlayerClass.SPIRIT_MASTER, "herb");
+		await GiveAsync(probe, token, (book, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1473.2f, 1765.2f, 247.5f);
+		probe.Session.BeginStep("s02", "equipment-check-takes-the-spellbook");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(book, MainHand(probe));
+		(Summon spirit, int[] buffCasts) = await SummonStepAsync(probe, "s03", skin, fire, token);
+		int spiritId = spirit.GetObjectId(), spiritNpc = spirit.GetNpcId(), self = probe.Session.CharacterId;
+
+		var lines = new List<string>();
+		int kills = 0, deaths = 0, erosions = 0, orders = 0, servants = 0;
+		for (int fights = 1; fights <= 2; fights++)
+		{
+			Npc next = NearestLiving(probe, crasaur);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, SpiritMasterTable, $"s04-{fights:D2}", $"fight-ice-crasaur-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"Fight {fights} ended no way: {fight.Result}.");
+			kills += fight.Result.Killed ? 1 : 0;
+			deaths += fight.Result.Deaths;
+			erosions += fight.Casts.Count(cast => cast.SkillId == erosion);
+			orders += fight.Casts.Count(cast => cast.SkillId == disturbance);
+			servants += fight.Casts.Count(cast => cast.SkillId == servant);
+			lines.Add($"fight {fights}: {Outcome(fight)}; {SpiritLine(fight, next.GetObjectId(), spiritId, self)}; HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, " +
+				$"MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+		Assert.True(erosions > 0, $"Erosion was not cast: {string.Join("; ", lines)}.");
+
+		// Prepared by the director: powder, and half HP. The rest is the journey's.
+		await GiveAsync(probe, token, (LesserOdellaPowder, 20));
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		int hpBefore = probe.World.CurrentHp;
+		(_, int[] restCasts) = await RestStepAsync(probe, "s05", "director-gives-powder-and-halves-hp-then-rest", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Spirit Master, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, book {book}. Buff check: casts {string.Join(" ", buffCasts)}; " +
+			$"spirit {spiritNpc}. {kills} kill(s), {deaths} death(s): {string.Join("; ", lines)}. Erosion cast {erosions} time(s), Spirit Disturbance {orders}, " +
+			$"Summon Wind Servant {servants}. Rest from {hpBefore} HP: casts {string.Join(" ", restCasts)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, the spirit {(probe.Server.GetSummon() == null ? "gone" : "out")}.");
+	}
+
+	/// <summary>
+	/// NR-111, row spirit-master-16. Prepared by the director: a level-16 Spirit Master with the spellbook of Q24013 and
+	/// the robe shoes and tunic of Q24011 and Q24012 in the bag, by the tusked mosbears (210437, level 14) of the Cleric's
+	/// row. The journey's equipment check wears them, and its buff check summons the Earth Spirit, which it has from this
+	/// level. Then it fights one mosbear by its table. A kill, a retreat and a death are recorded outcomes: the mosbears
+	/// stand in families, the spirit is held back from a target with neighbours, and with two attackers the Spirit Master
+	/// leaves.
+	/// </summary>
+	private async Task SpiritMasterLevelSixteenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210437, book = 100601429, shoes = 114101696, tunic = 110101836;
+		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-spirit-master-in-altgard");
+		await probe.BecomeAsync(PlayerClass.SPIRIT_MASTER, 16);
+		int[] table = probe.CatalogOf(PlayerClass.SPIRIT_MASTER);
+		int skin = probe.BestOf(PlayerClass.SPIRIT_MASTER, "skin"), earthSpirit = probe.BestOf(PlayerClass.SPIRIT_MASTER, "earth-spirit"),
+			chain = probe.BestOf(PlayerClass.SPIRIT_MASTER, "earth"), erosion = probe.BestOf(PlayerClass.SPIRIT_MASTER, "erosion");
+		await GiveAsync(probe, token, (book, 1), (shoes, 1), (tunic, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1427.2f, 789.9f, 249.9f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		IReadOnlyList<NaturalGearUpgrade> worn = await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(book, MainHand(probe));
+		Assert.All(new[] { shoes, tunic }, piece => Assert.Contains(probe.World.Inventory.Values, item => item.ItemId == piece && item.Details.EquippedSlot.GetValueOrDefault() != 0));
+		(Summon spirit, int[] buffCasts) = await SummonStepAsync(probe, "s03", skin, earthSpirit, token);
+		int spiritId = spirit.GetObjectId(), spiritNpc = spirit.GetNpcId(), self = probe.Session.CharacterId;
+
+		Npc first = NearestLiving(probe, mosbear);
+		(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+		ClericFight fight = await TableFightAsync(probe, SpiritMasterTable, "s04", "fight-a-tusked-mosbear", () => Task.FromResult(first.GetObjectId()), token);
+		AssertNoRefusedCastRepeats(fight);
+		AssertOnlyCasts(fight, table);
+		Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"The fight ended no way: {fight.Result}.");
+		StarterTraceRecord? left = fight.Decided.FirstOrDefault(record => record.Fields.GetProperty("action").GetString() == "retreat");
+		Console.WriteLine($"{id}: level {probe.World.Level} Spirit Master, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}; the check asked for " +
+			$"{string.Join(", ", worn.Select(upgrade => $"{upgrade.ItemId} to slot {upgrade.Slot}"))}. Buff check: casts {string.Join(" ", buffCasts)}; spirit {spiritNpc}. " +
+			$"One tusked mosbear: {Outcome(fight)}; {SpiritLine(fight, first.GetObjectId(), spiritId, self)}; Chain of Earth cast {fight.Casts.Count(cast => cast.SkillId == chain)} time(s), " +
+			$"Erosion {fight.Casts.Count(cast => cast.SkillId == erosion)}; HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}. " +
+			$"It left: {left?.Fields.GetProperty("reason").GetString() ?? "no."} The spirit is {(probe.Server.GetSummon() == null ? "gone" : "out")}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>
+	/// NR-111, row spirit-master-20. Prepared by the director: a level-20 Spirit Master with the spellbook of Q24016, by
+	/// the starved mosbears (210564, level 13) of the Cleric's row, with powder, two shield scrolls and three life
+	/// potions in the bag. The first fight is the journey's alone. Before the second the director cuts the spirit's HP
+	/// to 30%: Spirit Wrath Position is cast. Before the third the director gives 2,000 DP and cuts the Spirit Master's
+	/// own HP to 45%: Divine Spirit Armor is cast on the spirit and the ladder answers. Last the director cuts MP to a
+	/// tenth and the journey's rest casts MP Recovery.
+	/// </summary>
+	private async Task SpiritMasterLevelTwentyRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, book = 100601431, scroll = 164000068, potion = 162000003;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-spirit-master-in-altgard");
+		await probe.BecomeAsync(PlayerClass.SPIRIT_MASTER, 20);
+		int[] table = probe.CatalogOf(PlayerClass.SPIRIT_MASTER);
+		int skin = probe.BestOf(PlayerClass.SPIRIT_MASTER, "skin"), earthSpirit = probe.BestOf(PlayerClass.SPIRIT_MASTER, "earth-spirit"),
+			wrath = probe.BestOf(PlayerClass.SPIRIT_MASTER, "wrath"), armor = probe.BestOf(PlayerClass.SPIRIT_MASTER, "armor"),
+			disturbance = probe.BestOf(PlayerClass.SPIRIT_MASTER, "disturbance"), recovery = probe.BestOf(PlayerClass.SPIRIT_MASTER, "mp-recovery");
+		await GiveAsync(probe, token, (book, 1), (LesserOdellaPowder, 20), (scroll, 2), (potion, 3));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(book, MainHand(probe));
+		(Summon spirit, int[] buffCasts) = await SummonStepAsync(probe, "s03", skin, earthSpirit, token);
+		int spiritId = spirit.GetObjectId(), spiritNpc = spirit.GetNpcId(), self = probe.Session.CharacterId;
+
+		Npc first = NearestLiving(probe, mosbear);
+		ClericFight plain = await TableFightAsync(probe, SpiritMasterTable, "s04", "fight-a-starved-mosbear", () => Task.FromResult(first.GetObjectId()), token);
+		AssertNoRefusedCastRepeats(plain);
+		AssertOnlyCasts(plain, table);
+		Assert.True(plain.Result is { Killed: true, Deaths: 0 }, $"The first fight was no kill: {Outcome(plain)}.");
+		Assert.DoesNotContain(plain.Casts, cast => cast.SkillId == armor);
+		string plainLine = $"{Outcome(plain)}; {SpiritLine(plain, first.GetObjectId(), spiritId, self)}";
+
+		Npc second = NearestLiving(probe, mosbear);
+		int spiritHp = 0;
+		ClericFight hurtSpirit = await TableFightAsync(probe, SpiritMasterTable, "s05", "fight-with-the-spirit-at-thirty-percent", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: the spirit at 30% HP, told as the server tells every loss.
+			var stats = spirit.GetLifeStats();
+			int cut = stats.GetCurrentHp() - (int)((long)stats.GetMaxHp() * 30 / 100);
+			if (cut > 0) stats.ReduceHp(SmAttackStatus.TYPE.REGULAR, cut, 0, SmAttackStatus.LOG.REGULAR, spirit);
+			await probe.Session.SynchronizeAsync(token);
+			spiritHp = stats.GetCurrentHp();
+			return second.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(hurtSpirit);
+		AssertOnlyCasts(hurtSpirit, table);
+		Assert.Contains(hurtSpirit.Casts, cast => cast.SkillId == wrath);
+		Assert.Equal(0, hurtSpirit.Result.Deaths);
+		int spiritHpAfter = spirit.GetLifeStats().GetCurrentHp();
+
+		Npc third = NearestLiving(probe, mosbear);
+		ClericFight hurt = await TableFightAsync(probe, SpiritMasterTable, "s06", "fight-a-starved-mosbear-from-under-half-hp-with-dp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 2,000 DP and 45% HP as the fight begins.
+			await probe.SetDpAsync(2000);
+			await probe.CutHpAsync(45);
+			return third.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(hurt);
+		AssertOnlyCasts(hurt, table);
+		Assert.Contains(hurt.Casts, cast => cast.SkillId == armor);
+		Assert.True(probe.World.CurrentDp < 2000, $"The DP was not spent: {probe.World.CurrentDp}.");
+		StarterTraceRecord[] ladder = hurt.Decided.Where(record => record.Fields.GetProperty("action").GetString() is "shield-scroll" or "hot-potion").ToArray();
+		Assert.True(ladder.Length > 0, $"The ladder did not answer 45% HP: decisions {hurt.Counts}.");
+		Assert.Equal("shield-scroll", ladder[0].Fields.GetProperty("action").GetString());
+		Assert.Equal(0, hurt.Result.Deaths);
+
+		// Prepared by the director: a tenth of its mana. The rest is the journey's.
+		probe.Session.BeginStep("s07", "director-cuts-mp");
+		await probe.CutMpAsync(10);
+		int mpBefore = probe.World.CurrentMp;
+		(_, int[] restCasts) = await RestStepAsync(probe, "s08", "rest-from-a-tenth-of-its-mana", token);
+		Assert.Contains(recovery, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Spirit Master, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}. Buff check: casts {string.Join(" ", buffCasts)}; spirit {spiritNpc}. " +
+			$"Unhurt: {plainLine}; Spirit Disturbance cast {plain.Casts.Count(cast => cast.SkillId == disturbance)} time(s). " +
+			$"With the spirit at {spiritHp} HP: {Outcome(hurtSpirit)}; {SpiritLine(hurtSpirit, second.GetObjectId(), spiritId, self)}; the spirit's HP {spiritHpAfter} after it. " +
+			$"From 45% HP with 2,000 DP: {Outcome(hurt)}; the ladder: {string.Join(", ", ladder.Select(record => $"{record.Fields.GetProperty("action").GetString()} at {HpPercentAt(record)}% HP"))}; " +
+			$"DP left {probe.World.CurrentDp}. Rest from {mpBefore} MP: casts {string.Join(" ", restCasts)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, the spirit {(probe.Server.GetSummon() == null ? "gone" : "out")}.");
+	}
+
+	/// <summary>
+	/// NR-111, row spirit-master-25. Prepared by the director: a level-25 Spirit Master with the spellbook of Q24016, by
+	/// the starved mosbears (210564, level 13), with Odella Powder in the bag. Three fights are the journey's alone, for
+	/// the numbers: what it cast, what the spirit was told, and whom the mosbear struck. Then the director spawns two
+	/// starved mosbears 4 m from the Spirit Master and sets them on it: with two attackers the journey casts Root on its
+	/// target and leaves. Last the director halves the HP and the rest casts the fourth rank of Herb Treatment.
+	/// </summary>
+	private async Task SpiritMasterLevelTwentyFiveRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, book = 100601431;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-five-spirit-master-in-altgard");
+		await probe.BecomeAsync(PlayerClass.SPIRIT_MASTER, 25);
+		int[] table = probe.CatalogOf(PlayerClass.SPIRIT_MASTER);
+		int skin = probe.BestOf(PlayerClass.SPIRIT_MASTER, "skin"), earthSpirit = probe.BestOf(PlayerClass.SPIRIT_MASTER, "earth-spirit"),
+			choke = probe.BestOf(PlayerClass.SPIRIT_MASTER, "choke"), spiritErosion = probe.BestOf(PlayerClass.SPIRIT_MASTER, "spirit-erosion"),
+			disturbance = probe.BestOf(PlayerClass.SPIRIT_MASTER, "disturbance"), chain = probe.BestOf(PlayerClass.SPIRIT_MASTER, "earth"),
+			erosion = probe.BestOf(PlayerClass.SPIRIT_MASTER, "erosion"), root = probe.BestOf(PlayerClass.SPIRIT_MASTER, "root"),
+			herb = probe.BestOf(PlayerClass.SPIRIT_MASTER, "herb");
+		await GiveAsync(probe, token, (book, 1), (OdellaPowder, 20));
+		BotNavigationGeometry geometry = await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(book, MainHand(probe));
+		(Summon spirit, int[] buffCasts) = await SummonStepAsync(probe, "s03", skin, earthSpirit, token);
+		int spiritId = spirit.GetObjectId(), spiritNpc = spirit.GetNpcId(), self = probe.Session.CharacterId;
+
+		var lines = new List<string>();
+		int chokes = 0, chains = 0, erosions = 0, disturbances = 0, spiritErosions = 0, onSpirit = 0, onMaster = 0;
+		for (int fights = 1; fights <= 3; fights++)
+		{
+			Npc next = NearestLiving(probe, mosbear);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, SpiritMasterTable, $"s04-{fights}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.Equal(0, fight.Result.Deaths);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0, $"Fight {fights} ended neither way: {fight.Result}.");
+			chokes += fight.Casts.Count(cast => cast.SkillId == choke);
+			chains += fight.Casts.Count(cast => cast.SkillId == chain);
+			erosions += fight.Casts.Count(cast => cast.SkillId == erosion);
+			disturbances += fight.Casts.Count(cast => cast.SkillId == disturbance);
+			spiritErosions += fight.Casts.Count(cast => cast.SkillId == spiritErosion);
+			onSpirit += StrikesBy(fight, next.GetObjectId(), spiritId);
+			onMaster += StrikesBy(fight, next.GetObjectId(), self);
+			lines.Add($"fight {fights}: {Outcome(fight)}; {SpiritLine(fight, next.GetObjectId(), spiritId, self)}; HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, " +
+				$"MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+
+		Npc[] pack = [];
+		ClericFight swarm = await TableFightAsync(probe, SpiritMasterTable, "s05", "fight-a-pack-of-two-starved-mosbears", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: two starved mosbears 4 m away, set on the Spirit Master.
+			pack = await SpawnSetOnAsync(probe, geometry, mosbear, 2, token);
+			return pack[0].GetObjectId();
+		}, token);
+		RemoveSetOn(pack);
+		AssertOnlyCasts(swarm, table);
+		int rooted = Array.FindIndex(swarm.Decided, record => Decided(record, "cast-target", root));
+		Assert.True(rooted >= 0, $"Root was not cast: {swarm.Order}; decisions {swarm.Counts}.");
+		string? reason = swarm.Decided[rooted].Fields.GetProperty("reason").GetString();
+		Assert.StartsWith("Hold the target before retreating", reason);
+		Assert.Contains(swarm.Decided.Skip(rooted + 1), record => record.Fields.GetProperty("action").GetString() == "retreat");
+
+		// Prepared by the director: half HP. The rest is the journey's.
+		probe.Session.BeginStep("s06", "director-halves-hp");
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		(_, int[] restCasts) = await RestStepAsync(probe, "s07", "rest-from-half-hp-with-odella-powder", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(OdellaPowder) < 20, "No Odella Powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Spirit Master, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}. Buff check: casts {string.Join(" ", buffCasts)}; spirit {spiritNpc}. " +
+			string.Join("; ", lines) + $". Vacuum Choke cast {chokes} time(s), Chain of Earth {chains}, Erosion {erosions}, Spirit Disturbance {disturbances}, Spirit Erosion {spiritErosions}; " +
+			$"the mosbears struck the spirit {onSpirit} time(s) and its master {onMaster}. Then against {pack.Length} the director spawned 4 m away and set on it: {Outcome(swarm)}; " +
+			$"Root decided with {swarm.Decided[rooted].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32()} attackers: {reason} " +
+			$"Rest: casts {string.Join(" ", restCasts)}, Odella Powder {probe.Owned(OdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, the spirit {(probe.Server.GetSummon() == null ? "gone" : "out")}, dead {probe.Server.IsDead()}.");
 	}
 
 	/// <summary>The living monster of a template nearest to another monster.</summary>
