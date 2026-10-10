@@ -298,6 +298,20 @@ public sealed partial class NaturalIshalgenJourney
 				{
 					if (attacker == target) lastHitByTargetMillis = runtime.NowMillis;
 				}
+				// NR-120b: the fight keeps a cooldown from the result of its own cast. When the server says a cooldown is
+				// over that the fight still holds (Java SkillCooltimeResetEffect sends SM_SKILL_COOLDOWN with nothing left
+				// for every skill of the cooldown), it is over.
+				int[] ended = recentPackets.Where(packet => packet.PacketType == typeof(SM_SKILL_COOLDOWN))
+					.SelectMany(packet => packet.Get<List<IReadOnlyDictionary<string, object?>>>("cooldowns"))
+					.Where(entry => (int)entry["remainingSeconds"]! == 0)
+					.Select(entry => runtime.Data.SkillDataDh.GetSkillTemplate((ushort)entry["skillId"]!)?.GetCooldownId() ?? 0)
+					.Where(id => cooldowns.TryGetValue(id, out DateTimeOffset held) && held > runtime.Epoch.AddMilliseconds(runtime.NowMillis))
+					.Distinct().Order().ToArray();
+				if (ended.Length > 0)
+				{
+					foreach (int id in ended) cooldowns.Remove(id);
+					session.TraceDiagnostic("combat-cooldown-ended", new Dictionary<string, object?> { ["cooldownIds"] = ended });
+				}
 				observedPacketCount = session.PacketHistory.Count;
 				foreach (DecodedBotServerPacket status in session.PacketHistory.Skip(statusPacketCount)
 					.Where(packet => packet.PacketType == typeof(SmAttackStatus) &&

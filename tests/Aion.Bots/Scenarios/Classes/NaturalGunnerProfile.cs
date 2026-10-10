@@ -30,6 +30,8 @@ public static class NaturalGunnerProfile
 		[1957] = "gunshot", [1958] = "gunshot", [1959] = "gunshot", [1960] = "gunshot", [1961] = "gunshot",
 		[2142] = "rapid", [2143] = "rapid", [2144] = "rapid", [2145] = "rapid", [2146] = "rapid",
 		[2132] = "auto", [2133] = "auto", [2134] = "auto",
+		// NR-120b: Reload (level 10) ends the cooldown Gunshot and Crosstrigger share: 75 MP, ready every 30 s.
+		[2053] = "reload",
 		[2171] = "cross",
 		[2186] = "canted",
 		[1942] = "hot", [1943] = "hot", [1944] = "hot", [1945] = "hot",
@@ -55,8 +57,6 @@ public static class NaturalGunnerProfile
 	/// <summary>Every other active skill a Gunner learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
-		[2053] = "Reload makes the cooldown that Gunshot, Trunk Shot and Crosstrigger share end at once. The fight loop keeps a cooldown " +
-			"from its own cast and does not read that it was ended (NR-120b).",
 		[2055] = "Trunk Shot I " + Stagger, [2056] = "Trunk Shot II " + Stagger, [2057] = "Trunk Shot III " + Stagger,
 		[1912] = "Volley I " + AfterTrunk, [1913] = "Volley II " + AfterTrunk, [1914] = "Volley III " + AfterTrunk,
 		[2350] = "Parting Shot I " + BackDash, [2351] = "Parting Shot II " + BackDash,
@@ -67,7 +67,7 @@ public static class NaturalGunnerProfile
 	/// <summary>
 	/// NR-120: the Engineer's table with the Gunner's own shots. Spend Success when 2,000 DP are there. From range Green
 	/// Grenade first: a rooted monster stands 4 s in the pistol's reach. Then Hot Shot, Gunshot, Rapidfire twice and
-	/// Automatic Fire twice;
+	/// Automatic Fire twice; Reload while that chain's cooldown has more than 4 s left, so that Gunshot opens it again;
 	/// Crosstrigger and Canted Shot, which the shared cooldown leaves for the time Gunshot cannot be paid for; Wing Clip;
 	/// and Direct Shot for everything between. With the monster on it the grenade comes last before Direct Shot. The
 	/// table holds an open chain, as the Engineer's does, and the pistols fire whenever no skill is ready.
@@ -79,8 +79,8 @@ public static class NaturalGunnerProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-gunner-v1",
-		Adjacent: ["success", "hot", "gunshot", "rapid", "auto", "cross", "canted", "clip", "grenade", "direct"],
-		AtRange: ["success", "grenade", "hot", "gunshot", "rapid", "auto", "cross", "canted", "clip", "direct"],
+		Adjacent: ["success", "hot", "gunshot", "rapid", "auto", "reload", "cross", "canted", "clip", "grenade", "direct"],
+		AtRange: ["success", "grenade", "hot", "gunshot", "rapid", "auto", "reload", "cross", "canted", "clip", "direct"],
 		Upkeep: [],
 		Recovery:
 		[

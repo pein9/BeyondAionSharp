@@ -55,6 +55,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("spirit-master-pack", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimpack"),
 		new("spirit-master-place", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimplace"),
 		new("gunner-chain", NaturalClassLine.EngineerGunner, ProbeAccountB, "Asimchain"),
+		new("gunner-reload", NaturalClassLine.EngineerGunner, ProbeAccountA, "Asimreload"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -254,6 +255,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "spirit-master-pack": await SpiritMasterPackRowAsync(probe, id, token); break;
 			case "spirit-master-place": await SpiritMasterPlaceRowAsync(probe, id, token); break;
 			case "gunner-chain": await GunnerChainRowAsync(probe, id, token); break;
+			case "gunner-reload": await GunnerReloadRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -1728,6 +1730,69 @@ public sealed partial class SimulationFastScenarioTests
 		Console.WriteLine($"{id}: level {probe.World.Level} Gunner, max HP {probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, pistols {main} and {off}. " +
 			$"{fights} fight(s), {kills} kill(s), {autos} Automatic Fire(s), each decided after two Rapidfires and none refused. " +
 			$"The fight that showed the whole chain: {Outcome(shown)}; Gunshot, Rapidfire twice and Automatic Fire twice in {span.TotalMilliseconds:F0} ms. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
+	}
+
+	/// <summary>
+	/// NR-120b, row gunner-reload. Prepared by the director: the Engineer is made a level-10 Gunner with the skills of
+	/// every level up to it, is given the ceremony's pistol (101800506) beside the one it was created with, and is placed
+	/// in Altgard by the ice crasaurs (210415, level 11), where the Cleric's level-10 row fights. The journey's equipment
+	/// check takes a pistol into each hand. Then it fights one crasaur after another by its table until Reload is cast
+	/// and Gunshot follows it. Gunshot is ready 16 s after it was cast; Reload ends that cooldown at once, the server says
+	/// so, and the table opens the chain again.
+	/// </summary>
+	private async Task GunnerReloadRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int crasaur = 210415, karmic = 101800506, gunshot = 1958, reload = 2053, openers = 1802, mostFights = 12;
+		probe.Session.BeginStep("s01", "director-makes-a-level-ten-gunner-with-a-second-pistol");
+		await probe.BecomeAsync(PlayerClass.GUNNER, 10);
+		Assert.All(new[] { gunshot, reload }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 10."));
+		await GiveAsync(probe, token, (karmic, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1473.2f, 1765.2f, 247.5f);
+
+		probe.Session.BeginStep("s02", "equipment-check-takes-a-pistol-into-each-hand");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		(int main, int off) = (Held(probe, 1), Held(probe, 2));
+		Assert.True(main == karmic && off != 0, $"The hands hold {main} and {off}.");
+
+		ClericFight? shown = null;
+		TimeSpan between = default;
+		int fights = 0, kills = 0, deaths = 0, reloads = 0;
+		// A cooldown runs on between fights, so the casts of every fight so far are read together.
+		var casts = new List<(int SkillId, TimeSpan At)>();
+		while (shown == null && fights < mostFights)
+		{
+			fights++;
+			Npc next = NearestLiving(probe, crasaur);
+			ClericFight fight = await TableFightAsync(probe, GunnerTable, $"s03-{fights:D2}", $"fight-ice-crasaur-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			kills += fight.Result.Killed ? 1 : 0;
+			deaths += fight.Result.Deaths;
+			int first = casts.Count;
+			casts.AddRange(fight.Casts);
+			reloads += fight.Casts.Count(cast => cast.SkillId == reload);
+			for (int index = first; index < casts.Count; index++)
+			{
+				if (casts[index].SkillId != reload) continue;
+				// Reload is cast only while Gunshot's cooldown runs: a Gunshot in the 12 s before it.
+				int before = casts.FindLastIndex(index, cast => cast.SkillId == gunshot);
+				Assert.True(before >= 0 && casts[index].At - casts[before].At < TimeSpan.FromSeconds(12),
+					$"Reload was cast at {casts[index].At.TotalSeconds:F1} s with no Gunshot in the 12 s before it: " +
+					string.Join(" ", casts.Select(cast => $"{cast.SkillId}@{cast.At.TotalSeconds:F1}")));
+				// The server said the cooldown was over, and the fight read it.
+				Assert.Contains(fight.Records, record => record is { Direction: "action", Packet: "combat-cooldown-ended" } &&
+					record.VirtualTime >= casts[index].At && record.Fields.GetProperty("cooldownIds").EnumerateArray().Any(value => value.GetInt32() == openers));
+				int after = casts.FindIndex(index, cast => cast.SkillId == gunshot);
+				if (after < 0 || shown != null) continue;
+				between = casts[after].At - casts[before].At;
+				Assert.True(between < TimeSpan.FromSeconds(16), $"The second Gunshot came {between.TotalSeconds:F1} s after the first: {fight.Order}.");
+				shown = fight;
+			}
+		}
+		Assert.True(shown != null, $"Reload was never followed by Gunshot in {fights} fights with {reloads} Reload(s).");
+		Console.WriteLine($"{id}: level {probe.World.Level} Gunner, max HP {probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, pistols {main} and {off}. " +
+			$"{fights} fight(s), {kills} kill(s), {deaths} death(s), {reloads} Reload(s), each with Gunshot cooling down and each answered by the server. " +
+			$"The fight that showed it: {Outcome(shown)}; the second Gunshot {between.TotalSeconds:F1} s after the first, where its cooldown is 16 s. " +
 			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
 	}
 

@@ -156,6 +156,9 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 	/// <summary>NR-110d: how long a step of the spirit's ladder is given to show its effect before the next is tried.</summary>
 	private const int SpiritStepSettleSeconds = 3;
 
+	/// <summary>NR-120b: a skill that ends a cooldown is cast only while one of its cooldowns has more than this left.</summary>
+	private const int CooldownWorthEndingSeconds = 4;
+
 	private readonly NaturalRotationRules rules;
 	private readonly NaturalPriestSkill[] catalog;
 	private readonly NaturalFightMovement movement;
@@ -481,6 +484,11 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			else if (skill.TargetKind != "MYPET" && !state.SpiritAtTarget)
 				reasons.Add("The spirit does not stand at the target, where its own skill reaches.");
 		}
+		// NR-120b: a skill that ends cooldowns does nothing while none of them runs, and little when the one that runs is
+		// nearly over (the Gunner's Reload, 75 MP for the cooldown its chain openers share).
+		if (skill.EndsCooldownIds != null && !skill.EndsCooldownIds.Any(id =>
+			state.Cooldowns.TryGetValue(id, out DateTimeOffset running) && running > now.AddSeconds(CooldownWorthEndingSeconds)))
+			reasons.Add($"None of the cooldowns the skill ends has more than {CooldownWorthEndingSeconds} s left.");
 		// NR-110d: the server refuses a player whose HP is not above the skill's cost (Java HpCondition.canValidate 40-47).
 		if (skill.HpCost > 0 && state.Hp <= skill.HpCost) reasons.Add("Observed HP is not above the skill's cost.");
 		if (!self)

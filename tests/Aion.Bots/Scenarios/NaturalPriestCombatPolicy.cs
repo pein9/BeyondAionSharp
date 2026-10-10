@@ -35,6 +35,8 @@ namespace Aion.Bots.Scenarios;
 /// whose HP is not above it); 0 when it costs none.</param>
 /// <param name="PreCount">NR-120a: how often the chain step before this one must have been cast (chain/precount; Java
 /// ChainCondition.validate 41-43); 1 for nearly every follow-up, 0 without a chain.</param>
+/// <param name="EndsCooldownIds">NR-120b: the cooldowns the skill ends at once (effects/skillcooltimereset with delta 100;
+/// Java SkillCooltimeResetEffect.applyEffect 30-47); null when it ends none.</param>
 public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role, int ManaCost,
 	float Range, int CooldownId, int CooldownDeciseconds, string? ChainCategory = null,
 	string? RequiresChainCategory = null, int ChainWindowMillis = 0, int DpCost = 0,
@@ -43,7 +45,7 @@ public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role
 	bool AddWeaponRange = false, int SelfCount = 0, string? Activation = null, string? CounterStatus = null,
 	bool OutOfCombatOnly = false, bool GroundOnly = false, string? TargetFlight = null, string? RequiredOffHand = null,
 	IReadOnlyList<string>? TargetStates = null, string? CarvesRune = null, string? BurstsRune = null, int SummonsNpcId = 0,
-	bool OrdersSpirit = false, int HpCost = 0, int PreCount = 0);
+	bool OrdersSpirit = false, int HpCost = 0, int PreCount = 0, IReadOnlyList<int>? EndsCooldownIds = null);
 
 /// <summary>
 /// NR-18: every class's catalog is generated from the shipped skill data (<see cref="Classes.NaturalSkillCatalog"/>); the

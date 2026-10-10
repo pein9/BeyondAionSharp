@@ -141,7 +141,10 @@ public static class NaturalSkillCatalog
 			// Java HpCondition.getCost adds a delta by skill level and takes a ratio of the caster's HP; no skill of a
 			// catalog has either, and one that had would get no plain cost here.
 			HpCost: conditions.OfType<HpCondition>().FirstOrDefault() is { ratio: false, delta: 0 } cost ? cost.value : 0,
-			PreCount: chain?.preCount ?? 0);
+			PreCount: chain?.preCount ?? 0,
+			// Java takes delta whole hundreds of what is left (delay * (delta / 100)), so only 100 and more end a cooldown.
+			EndsCooldownIds: template.GetEffects()?.GetEffects().OfType<SkillCooltimeResetEffect>().FirstOrDefault(reset => reset.Delta >= 100)
+				is { } ends ? Enumerable.Range(ends.firstCd, Math.Max(0, ends.lastCd - ends.firstCd + 1)).ToArray() : null);
 	}
 
 	/// <summary>

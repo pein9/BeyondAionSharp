@@ -6578,7 +6578,7 @@ The template:
       run guard-p8 (run/nr/NR-120a/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr120a-fast, 11 passed).
-- [ ] **NR-120b - A skill that ends a cooldown.** Depends: NR-120a
+- [x] **NR-120b - A skill that ends a cooldown.** Depends: NR-120a
   - Work: Java first: SkillCooltimeResetEffect and the SM_SKILL_COOLDOWN it sends. The
     fight loop keeps a cooldown from the result of its own cast; it reads the server's
     word for a cooldown it holds and ends it as the server says. A skill row says which
@@ -6587,6 +6587,48 @@ The template:
     Gunshot cools down. Generic: every class with such a skill.
   - Proof: One probe row on a probe account in which Reload is cast while Gunshot cools
     down and Gunshot is cast again before its 16 s are over; the full gate identical.
+  - 2026-10-10: done. The fight reads the server's word that a cooldown is over, a
+    skill row says which cooldowns the skill ends, and Reload is in the Gunner's table.
+    - **Java.** SkillCooltimeResetEffect.applyEffect 30-47: for every cooldown from
+      first_cd to last_cd that still runs, what is left loses delta hundredths, in whole
+      hundreds, so a delta of 100 ends it and a smaller one changes nothing; without a
+      delta it loses value. The player is told with SM_SKILL_COOLDOWN, which lists every
+      learned skill of those cooldowns with the seconds left (SM_SKILL_COOLDOWN 25-35 and
+      45-53). Reload names the one cooldown 1802 with delta 100. The port has the same
+      lines.
+    - **The change, generic.**
+      - Sc/NaturalPriestCombatPolicy.cs and Sc/Classes/NaturalSkillCatalog.cs: a skill
+        row holds the cooldowns the skill ends.
+      - Sc/Classes/NaturalRotationCombatPolicy.cs: such a skill is refused unless one of
+        its cooldowns has more than 4 s left. It does nothing while none runs, and
+        little for one that is nearly over.
+      - Sc/NaturalIshalgenJourney.Combat.cs: the fight keeps a cooldown from the result
+        of its own cast. With each turn it now reads SM_SKILL_COOLDOWN: a skill the
+        server lists with nothing left ends the cooldown the fight still holds for it,
+        and the trace says so.
+    - **The Gunner.** Reload has the role reload, after Automatic Fire in both lists.
+      44 of its 57 skills have a role now and 13 a reason.
+    - **Proof, the probe row** gunner-reload (SimT/SimulationNaturalStarterProbeTests.cs,
+      probe account 98; `bash run/nr/NR-120b/probe.sh <attempt>`). Prepared by the
+      director: a level-10 Gunner with the ceremony's pistol beside its own, by the ice
+      crasaurs where the Cleric's level-10 row fights; a pistol in each hand by the
+      equipment check.
+      - **First attempt** (nr120b-probe-a1, kept): the row's own check failed. It looked
+        for the Gunshot before a Reload in the same fight, and the cooldown ran on from
+        the fight before. The row now reads the casts of every fight together; the item's
+        code was not changed.
+      - **Second attempt** (nr120b-probe-a2): passed. The first fight casts Gunshot at
+        3.9 s and ends in a kill at 7.1 s. The second begins with Reload, with 12.8 s of
+        Gunshot's cooldown left. The server lists Gunshot I and II with nothing left;
+        the fight ends the cooldown 0.7 s later, walks into range and casts Gunshot at
+        11.8 s, 7.9 s after the first, and Rapidfire twice. Two fights, two kills, no
+        death.
+      - Row gunner-chain, played again (nr120b-probe-chain-a1), passes: its second fight
+        opens with Reload and casts the whole chain in 4,155 ms.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-120b/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr120b-fast, 11 passed).
 - [ ] **NR-121 - Gunner: probe rows.** Depends: NR-120b
   - Work: Rows gunner-10, gunner-16, gunner-22 and gunner-25 in
     SimulationNaturalStarterProbeTests: prepared Gunners on the two probe accounts, in
@@ -7466,3 +7508,13 @@ report what was done, what is parked or blocked, and what the operator must deci
   fight casts Gunshot, Rapidfire twice and Automatic Fire twice in 3,970 ms. Full gate
   guard-p8 (thirteen scopes identical), seven checks, unit suite (4,629 passed, 16
   skipped) and Fast (nr120a-fast) pass. Next: NR-120b, a skill that ends a cooldown.
+- 2026-10-10 — Loop: NR-120b done. A skill row holds the cooldowns a skill ends; the table
+  casts such a skill only while one of them has more than 4 s left; the fight reads
+  SM_SKILL_COOLDOWN and ends a cooldown the server lists with nothing left. Reload is in
+  the Gunner's table after Automatic Fire. Probe row gunner-reload: the first attempt
+  failed on the row's own check, which did not look across fights; the second
+  (nr120b-probe-a2) passed: Reload with 12.8 s of Gunshot's cooldown left, the server's
+  word read 0.7 s later, and the second Gunshot 7.9 s after the first. Row gunner-chain
+  passes with Reload in play. Full gate guard-p8 (thirteen scopes identical), seven
+  checks, unit suite (4,629 passed, 16 skipped) and Fast (nr120b-fast) pass. Next: NR-130,
+  the Rider's survey; the Gunner's rows NR-121 wait for the surveys (rule (w)).
