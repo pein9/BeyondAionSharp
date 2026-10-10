@@ -4266,6 +4266,37 @@ The template:
       (run/nr/NR-55b/guard-p8/verdict.json): verdict pass, all twelve scopes identical,
       hm among them. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr55b-fast, 11 passed).
+- [x] **NR-55b - A class that walks up takes a decided pull into its pack.** Depends: NR-55a
+  - Work: The second stop of Haramel. Java first: nothing of the server is relied on. A
+    pack of seven weak monsters stands on the way to Q28504's monsters. The Cleric's
+    patrol rule waits four times and then pulls anyway (OD-12), and its fight is at
+    range. The Templar has the same patrol rule and walks up to the monster it fights.
+    Two things kept it out. (1) A defence whose approach is refused waits for its spell
+    when the class "is not walk-in"; the Templar pulls from range and is not, but it
+    has no spell to wait for. (2) The walk into a pack is refused when the pack would
+    bring the fight to the swarm limit, also after the patrol rule has decided to take
+    the pull with its helpers.
+  - Proof: The Templar's Haramel is played to its end in a replay; the full gate
+    identical.
+  - 2026-10-09: done.
+    - **The change.** J, DefendAgainstEngagedAsync: the wait for a spell is for a class
+      that does not walk to its target (the movement rules' GoesToItsTarget); every
+      profile that has played answers as before. J, MoveToPullSpotAsync: a pull the
+      patrol rule decides to take, fight or pull anyway, is named to the fight
+      (DecidedPullTarget); J.Combat, the approach step: the walk to that monster accepts
+      its pack whatever its size (walk-in-accepts-pack, decided). The fight's own table
+      still answers the swarm. Only the Templar has both the patrol rule and the walk.
+    - **Proof, the replays** (from altgard-coingear-templar).
+      - l12-a3 (run/nr/NR-55b/l12-a3/, with the first change alone): the defence no
+        longer loops, but the pack is never entered: 180 walks refused, 138 defences
+        given up, and the run ended with no progress for an hour.
+      - l12-a4 (run/nr/NR-55b/l12-a4/, replay.json: passed, both changes). Four decided
+        walks into packs of one, six, one and two; none refused. Haramel complete and
+        verified: level 25, 176 quests, 1 h 42 min of game time, no death, 36,505
+        records, 132 fights, 127 kills, six retreats.
+    - **Proof.** The bundle of NR-55a, on the tree that holds both items
+      (run/nr/NR-55b/guard-p8/verdict.json): all twelve scopes identical; seven checks,
+      the unit suite and Fast (nr55b-fast) pass.
 - [ ] **NR-56 - Templar: the Abyss entry.** Depends: NR-55; ticked by its round
   - Work: Q24020, then Q2945, Q2946, Q2947 and Q2042 with the two coin tiers at Nott
     (NR-38b, NR-Q14), captured as morheim-abyss-entry-s1-templar.
@@ -4849,3 +4880,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   scope. One bundle ran for NR-55a and NR-55b together: full gate guard-p8 (twelve scopes
   identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr55b-fast)
   pass. Next: NR-55b.
+- 2026-10-09 — Loop: NR-55b done. In Haramel a pack of seven stood on the Templar's way.
+  Its defence waited for a spell it does not have, and its walk into the pack was refused
+  even after the patrol rule had decided to pull anyway. A class that walks to its target
+  now takes the walk-in answer in a defence, and a decided pull is walked into. Replay
+  l12-a4 played Haramel to its end: level 25, 176 quests, no death. Proof by the bundle of
+  NR-55a (twelve scopes identical, Fast nr55b-fast). Next: NR-55, the capture of Haramel
+  from the committed code, which closes the item.

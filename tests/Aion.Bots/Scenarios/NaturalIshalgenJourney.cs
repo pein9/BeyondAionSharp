@@ -5885,8 +5885,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					int? engagementStart = altgardLegId == "l10" ? Math.Max(0, session.PacketHistory.Count - 400) : null;
 					try { killed = await combat.TryKillAsync(attacker, token, session.CurrentPosition, engagementStart); }
 					catch (NaturalCombatApproachBlockedException) when (
-						// CP-40: a walk-in class has no spell to wait for; it takes the answer below.
-						combat.ClassProfile.PullStyle != NaturalPullStyle.WalkIn &&
+						// CP-40: a walk-in class has no spell to wait for; it takes the answer below. NR-55b: so does every class
+						// that walks up to the monster it fights, whatever it pulls with.
+						!combat.ClassProfile.Movement.GoesToItsTarget &&
 						navigator.Observe().Npcs.Any(npc => npc.ObjectId == attacker &&
 							Distance(session.CurrentPosition, npc.Position) <= combat.ClassProfile.Ranges.SpellRange))
 					{
@@ -6012,6 +6013,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				if (combat.ClassProfile.Readiness.BeforePull.RestFirst(session.Api.World)) await RestSafelyAsync(token);
 				await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
 				NaturalPullPlan? plan = null;
+				combat.DecidedPullTarget = null;
 				// NA-22: the Cleric waits 15 s at a time, up to four times, then decides (NaturalPatrolPolicy); the Priest
 				// keeps its baseline of short waits.
 				bool holdsForPatrols = combat.ClassProfile.PatrolRule == NaturalPatrolRule.HoldAndAssess;
@@ -6141,7 +6143,13 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							["helpers"] = plan.Helpers.Select(h => $"{h.Npc.TemplateId}/{h.Npc.ObjectId}").ToArray(),
 						});
 						if (patrol.Action == "reroute") return null;
-						if (patrol.Action != "wait") break; // fight, or pull anyway
+						if (patrol.Action != "wait")
+						{
+							// NR-55b: fight, or pull anyway. The decision goes with the pull into its fight, where a class
+							// that walks up would otherwise refuse the walk into the pack it has just decided to take.
+							combat.DecidedPullTarget = plan.Target.Npc.ObjectId;
+							break;
+						}
 						if (altgardLegId == "l10")
 						{
 							if (!await WaitBeforePullDefendingAsync(patrol.WaitMillis, purpose)) return null;

@@ -167,6 +167,10 @@ public sealed partial class NaturalIshalgenJourney
 
 		/// <summary>NA-13: Q2008's Ataxiar trial — no exit and 1-damage NPCs, so never retreat from the swarm.</summary>
 		public bool ScriptedTrial { get; set; }
+
+		/// <summary>NR-55b: the monster of a pull the patrol rule has decided to take with its helpers: fight, or pull anyway
+		/// (OD-12). The walk to it accepts its pack whatever its size; the fight's own table still answers the swarm.</summary>
+		public int? DecidedPullTarget { get; set; }
 		public const int MaximumCombatActions = 1000;
 		private const int MaximumRevives = 20;
 
@@ -563,13 +567,16 @@ public sealed partial class NaturalIshalgenJourney
 							// neighbour as a helper of the fight; plan the walk once more with the pack's circles left
 							// out, unless the pack would bring the fight to the swarm limit. Every other circle stays.
 							int[] pack = WalkInPack(target);
+							bool decided = DecidedPullTarget == target;
 							bool accepted = pack.Length > 0 && profile.Combat is NaturalRotationCombatPolicy walkInTable &&
-								pack.Length + 1 < walkInTable.SwarmAttackers;
-							session.TraceDiagnostic("walk-in-accepts-pack", new Dictionary<string, object?>
+								(decided || pack.Length + 1 < walkInTable.SwarmAttackers);
+							var walkIn = new Dictionary<string, object?>
 							{
 								["targetObjectId"] = target, ["pack"] = pack, ["accepted"] = accepted,
 								["refused"] = approach.Reason, ["position"] = session.CurrentPosition,
-							});
+							};
+							if (decided) walkIn["decided"] = true;
+							session.TraceDiagnostic("walk-in-accepts-pack", walkIn);
 							if (accepted)
 							{
 								navigator.AcceptedPack = pack.ToHashSet();
