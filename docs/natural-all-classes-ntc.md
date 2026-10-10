@@ -3912,7 +3912,7 @@ The template:
       guard-p8 (run/nr/NR-53c/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
       16 skipped) and Fast passes (run nr53c-fast, 11 passed).
-- [ ] **NR-54 - Templar: Altgard legs l6 to l11.** Depends: NR-53; ticked by its round
+- [x] **NR-54 - Templar: Altgard legs l6 to l11.** Depends: NR-53; ticked by its round
   - Work: As NR-53. Leg 11 is the destiny quest: its stone is 140000003 (NR-39).
   - Proof: Each capture verifies.
   - 2026-10-09, legs l6 to l8 captured; leg l9 stopped, and with NR-54b a replay played it
@@ -3966,6 +3966,18 @@ The template:
       nothing captured; evidence run/nr/NR-54/l11-a3/). Ten minutes into the leg, at
       Heimdall: "q2900-stone did not hand over item 140000001". Heimdall hands the
       Templar 140000003. NR-54g.
+  - 2026-10-09: done. Leg l11 is captured, and with it the six legs.
+    - **Captured** at 1c3cb0a62: altgard-rc-l11-templar from altgard-rc-l10-templar with
+      -LaterCapital (run nr54-l11-a4, log run/nr/NR-54/l11-a4.log): the leg in 12 min
+      35 s with no death; level 24, 164 quests, 69,649,485 ms of game time (19 h 20 min
+      since creation), dump sha256 cb443b3025abdea2.
+    - **The six legs.** altgard-rc-l6-templar to altgard-rc-l11-templar, each from the
+      one before. Six stops, each a lettered item: NR-54b (Return after a bind revive),
+      NR-54c (the road blocker), NR-54d (a defence that cannot walk to its attacker),
+      NR-54e (a forced landing on a steep face), NR-54f (the rebirth before Bregirun)
+      and NR-54g (the destiny quest's stone). Each capture dumps only a verified leg
+      endpoint, and each next leg checked its start. Seven pre-commit checks pass
+      (run/nr/NR-54/checks-run.log).
 - [x] **NR-54b - A bind revive while Return cools down replaces the cast.** Depends: NR-53c
   - Work: The stop of leg l9. Java first: nothing new; Return goes to the bind point and
     a bind revive stands there (as read for NA-27). The journey already lets a death at
@@ -4740,3 +4752,7 @@ report what was done, what is parked or blocked, and what the operator must deci
   Cleric's leg l11 is unchanged. Full gate guard-p8 (twelve scopes identical), seven
   checks, unit suite (4,629 passed, 16 skipped) and Fast (nr54g-fast) pass. Next: NR-54,
   the capture of leg l11 from the committed code, which closes the item.
+- 2026-10-09 — Loop: NR-54 done. altgard-rc-l11-templar is captured at 1c3cb0a62: level
+  24, 164 quests, 19 h 20 min of game time since creation. The Templar's legs l6 to l11
+  are captured, after six lettered items (NR-54b to NR-54g). Next: NR-54a, the coin tiers
+  buy the shield.
