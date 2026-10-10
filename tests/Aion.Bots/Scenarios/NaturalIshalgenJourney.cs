@@ -4236,7 +4236,15 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 
 				async Task PrepareRebirthAsync()
 				{
-					const ushort skillId = 4005;
+					// NR-54f: the class's own self-rebirth. A class that has none goes in without one.
+					if (combat.ClassProfile.SelfRebirthSkillId is not ushort skillId)
+					{
+						session.TraceDiagnostic("quest-instance-without-rebirth", new Dictionary<string, object?>
+						{
+							["class"] = combat.ClassProfile.Class.ToString(),
+						});
+						return;
+					}
 					if (NaturalAltgardQuestSteps.HasEffect(session.Api.World, skillId)) return;
 					Require.True(session.Api.World.Skills.TryGetValue(skillId, out BotSkill? learned), "Bregirun needs the observed learned Hand of Reincarnation.");
 					await RestSafelyAsync(token);

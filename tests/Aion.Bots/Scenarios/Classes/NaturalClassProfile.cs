@@ -110,6 +110,10 @@ public sealed record NaturalClassProfile
 	/// </summary>
 	public IReadOnlyList<string> AirAttackRoles { get; init; } = [];
 
+	/// <summary>NR-54f: the class's own self-rebirth, put up before it enters a quest instance (the Cleric's Hand of
+	/// Reincarnation). A class that names none goes in without one, and a death there is revived at its bind.</summary>
+	public ushort? SelfRebirthSkillId { get; init; }
+
 	/// <summary>The numbers of the Ishalgen quest executors and of the wait for Return.</summary>
 	public required NaturalCampaignRules Campaign { get; init; }
 

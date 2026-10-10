@@ -214,6 +214,8 @@ public static class NaturalPriestProfile
 			{
 				HealName = NaturalPatrolView.Cleric.HealName, PairNeeds = NaturalPatrolView.Cleric.PairNeeds,
 			},
+			// BC-04, NR-54f: Hand of Reincarnation, put up before Bregirun.
+			SelfRebirthSkillId = 4005,
 			RangedHold = NaturalRangedHold.RunOption,
 			Rest = RestWith(skills),
 			Ranges = PriestLineRanges,

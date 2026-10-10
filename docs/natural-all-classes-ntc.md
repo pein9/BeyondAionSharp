@@ -3948,6 +3948,14 @@ The template:
       run/nr/NR-54c/l10-a3/). Q2273 is done. At Q2277 a rest was interrupted by two
       monsters, the first of which shot from 7 m away inside its neighbours' circles;
       the walk to it was refused and the refusal ended the run. NR-54d.
+  - 2026-10-09, leg l10 played to its end in a replay, after three more stops.
+    - **The stops**, each a lettered item: at Q2282 a stagger landed the Templar on a
+      face no route starts from (NR-54e); at Q24014's collect step the travel defence
+      could not walk to its attacker (NR-54d, with the stop at Q2277); at Bregirun's
+      door the journey asked for the Cleric's rebirth (NR-54f).
+    - **Replay l10-a8** (the code of the three items, from altgard-rc-l9-templar;
+      run/nr/NR-54e/l10-a8/, replay.json: passed). Leg l10 complete and verified:
+      level 24, 162 quests, 3 h 50 min of game time, no death.
 - [x] **NR-54b - A bind revive while Return cools down replaces the cast.** Depends: NR-53c
   - Work: The stop of leg l9. Java first: nothing new; Return goes to the bind point and
     a bind revive stands there (as read for NA-27). The journey already lets a death at
@@ -4087,6 +4095,34 @@ The template:
         such skill; three of the landings were stood on other ground.
       - **The leg is long for the Templar**: Q2273 alone takes 50 minutes, most of it
         fighting through camps one blocker at a time.
+    - **Proof.** The bundle of NR-54d, on the tree that holds the three items
+      (run/nr/NR-54f/guard-p8/verdict.json): all twelve scopes identical; seven checks,
+      the unit suite and Fast (nr54f-fast2) pass.
+- [x] **NR-54f - The rebirth before a quest instance is the class's own.** Depends: NR-54e
+  - Work: The fifth stop of leg l10. Java first: nothing new. A death in the instance
+    is answered by the option the client observes, as before. Before Bregirun the
+    journey put up Hand of Reincarnation (4005) and stopped without it: "Bregirun needs
+    the observed learned Hand of Reincarnation." That is the Cleric's skill. The profile
+    names the class's self-rebirth. A class that names none goes in without one, and a
+    death there is revived at its bind, as the leg's decisions already have it.
+  - Proof: The Templar's leg l10 is played to its end in a replay; the Cleric's leg
+    l10 still puts its rebirth up (rule (k)); the full gate identical.
+  - 2026-10-09: done.
+    - **The change.** Sc/Classes/NaturalClassProfile.cs: SelfRebirthSkillId, null
+      when not given. The Cleric's profile names 4005. J, PrepareRebirthAsync: the
+      skill is the profile's; with none it traces quest-instance-without-rebirth and
+      returns.
+    - **Proof, the Templar** (replays from altgard-rc-l9-templar). l10-a7
+      (run/nr/NR-54f/l10-a7/, passed, with the first form of NR-54e) went into Bregirun
+      without a rebirth and played the leg to its end: level 24, 162 quests, two
+      deaths before the instance, none in it. l10-a8 (run/nr/NR-54e/l10-a8/, passed,
+      the committed code) did the same with no death.
+    - **Proof, the Cleric** (replay cleric-l10-a1 from altgard-rc-l9, the accepted
+      line; run/nr/NR-54f/cleric-l10-a1/, replay.json: passed). No recorded scope goes
+      into Bregirun, so the leg was played once. Before the portal it put up Hand of
+      Reincarnation (quest-instance-rebirth-prepared, skill 4005), and the leg is
+      complete and verified: level 24, 152 quests, 4 h 18 min of game time, four
+      deaths, 118,605 records. Neither defence of NR-54d met a refused walk in it.
     - **Proof.** The bundle of NR-54d, on the tree that holds the three items
       (run/nr/NR-54f/guard-p8/verdict.json): all twelve scopes identical; seven checks,
       the unit suite and Fast (nr54f-fast2) pass.
@@ -4655,3 +4691,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   now stands on the mesh's ground beside such a face. Replay l10-a8 played the leg to its
   end: level 24, 162 quests, no death. Proof by the bundle of NR-54d (twelve scopes
   identical, Fast nr54f-fast2). Next: NR-54f.
+- 2026-10-09 — Loop: NR-54f done. Before Bregirun the journey asked every class for the
+  Cleric's Hand of Reincarnation. The profile now names the class's self-rebirth; the
+  Templar names none and goes in without one. Replays l10-a7 and l10-a8 played the
+  Templar's leg l10 to its end (level 24, 162 quests), and a replay of the Cleric's leg
+  l10 from altgard-rc-l9 still put its rebirth up and ended verified. Proof by the bundle
+  of NR-54d (twelve scopes identical, Fast nr54f-fast2). Next: NR-54, the captures of
+  legs l10 and l11 from the committed code.
