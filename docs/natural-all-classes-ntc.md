@@ -6998,7 +6998,7 @@ The template:
       run guard-p8 (run/nr/NR-120b/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr120b-fast, 11 passed).
-- [ ] **NR-121 - Gunner: probe rows.** Depends: NR-120b, NR-121a, NR-121b
+- [x] **NR-121 - Gunner: probe rows.** Depends: NR-120b, NR-121a, NR-121b
   - Work: Rows gunner-10, gunner-16, gunner-22 and gunner-25 in
     SimulationNaturalStarterProbeTests: prepared Gunners on the two probe accounts, in
     the gear the route has given by that level and with two pistols, fight the monsters
@@ -7030,6 +7030,75 @@ The template:
     server's audit, which NR-121b mends. The rows and the table's change are written and
     not committed (scratchpad nr121_final.py and nr121_c.py), and the item is tried again
     after NR-121b.
+  - 2026-10-10: done on the first attempt after NR-121b. The four rows pass. The table
+    has one change: at or below half of its mana the Gunner opens with Crosstrigger.
+    - **Java.** What the rows met is read under NR-121a (which percentage a status
+      carries, the penalty skills) and NR-121b (how the server times a shot).
+    - **The rows** (SimT/SimulationNaturalStarterProbeTests.cs: gunner-10, gunner-16,
+      gunner-22, gunner-25, on the probe accounts 98 and 100, at the places and monsters
+      of the Cleric's rows). The director makes the Engineer a Gunner of the level with
+      the skills of every level up to it, puts the pistols and the leather pieces of the
+      route into its bag, and places it. From there the journey's equipment check, fight
+      and rest act. A row takes its skills from the profile's catalog by role, and
+      allows the two penalty skills the server casts with Crosstrigger and Canted Shot.
+      `bash run/nr/NR-121/probe.sh <attempt>`.
+    - **The run** (nr121-probe-a6 and a6b; the four traces are under run/nr/NR-121/, and
+      the five runs before it under rows-a1 to rows-a5).
+
+      | Row | Prepared by the director | What the journey did | Outcome |
+      |---|---|---|---|
+      | gunner-10 | Level 10, the ceremony's pistol beside the created one; then 20 powder and half HP | The check took a pistol into each hand. Three ice crasaurs. The first: Green Grenade from 14.9 m, Hot Shot, Gunshot, Rapidfire twice. The second: Reload, the chain again, Direct Shot. The third: Direct Shot, the grenade, Hot Shot, Gunshot, Rapidfire. The rest cast Herb Treatment. | Three kills in 7.1, 11.0 and 11.7 s. No crasaur struck it. MP 840 to 540. |
+      | gunner-16 | Level 16; the pistol of Q24013 beside the ceremony's, the leather shoes and jerkin of Q24011 and Q24012; 55% HP as the fight begins | The check took the pistols and wore both pieces. One tusked mosbear, which has neighbours: the life potion and Bullet Resistance at 57% HP, then from 17.6 m Green Grenade, Hot Shot, Gunshot, Rapidfire twice and Automatic Fire. | A kill in 7.9 s. The mosbear never struck it; a neighbour did, four times. MP 1,261 to 1,058. |
+      | gunner-22 | Level 22; the pistols of Q24016 and Q24013, 20 powder, two shield scrolls, three life potions; 40% of its mana as the first fight begins; later 2,000 DP and 40% HP; then a tenth of its mana | From 672 MP: Crosstrigger for the mana, Canted Shot twice, then Green Grenade and Hot Shot. Six fights alone: the Gunshot chain whole in the first and the fifth, each after Reload; Direct Shot, the grenade and Hot Shot between. With DP and at 40% HP: the shield scroll, the life potion, Bullet Resistance, Bulletproof and Spend Success; its mana was at 38% by then, so Reload and the Crosstrigger chain. The rest cast MP Recovery. | Eight kills. The first in 6.2 s, and 980 MP came back in it. The six in 10.0, 12.7, 17.3, 14.6, 11.7 and 17.1 s for 781 MP. DP 2,000 to 2. |
+      | gunner-25 | Level 25; the same pistols, 20 Odella Powder; then two starved mosbears set on it; then half HP | Three fights alone: the grenade and Hot Shot, the Gunshot chain (whole in the second, after Reload), Wing Clip and Direct Shot in the third. In the second the server refused Gunshot for distance at a mosbear on a walk; the Gunner walked on and shot again (NR-121b). With two set on it from 4 m: Direct Shot three times and the pistols, a decision to leave that found no way out, the life potion, and it fought on. The rest cast Herb Treatment IV. | Four kills in 17.8, 15.6, 12.1 and 9.6 s. MP 1,893 to 1,334 over the three. |
+
+      No refused cast was repeated, and no skill outside the catalog was cast but the
+      two penalty skills. Every decision carries the table natural-gunner-v1. The
+      Gunner shot first from 14.0 to 18.4 m in every fight it walked up to.
+    - **What the rows decide.**
+      - **Gunshot leads, and the Crosstrigger chain is cast for the mana.** The two
+        openers share one cooldown, so one chain is opened at a time.
+        - The Crosstrigger chain is three shots in 3 s. At level 22 they took 1,287
+          and 1,529 from a mosbear, they cost no mana, and the server gives 260 MP
+          with Crosstrigger and 650 MP with each Canted Shot (NR-121a). The Gunshot
+          chain is five shots: 526, 420 twice, and 301 to 325 twice where no kill
+          cuts the last one short.
+        - With the Crosstrigger chain leading from level 22 (third run) six fights
+          took 75.7 s and no mana. With Gunshot leading (first run) six took 71.5 s
+          and 841 MP: its cooldown is 16 s against 24 s, so it is there in more
+          fights.
+        - So Gunshot leads while mana is in plenty, and at or below half of its mana
+          the Gunner opens with Crosstrigger: 672 MP to 1,574 in one fight of 6.2 s.
+          Half is where the Sorcerer and the Bard cast theirs, and well above the 25%
+          at which a rest would spend powder.
+      - **Green Grenade stays first from range.** The rows do not take it from its
+        place and do not prove it either. Of six fights that opened with it the
+        monster struck the Gunner in one; of seven that opened without it, in two. The
+        monsters of the rows die inside the first chain whichever comes first.
+      - **Direct Shot's mana does not empty the Gunner.** At level 22 a fight cost 130
+        MP of 1,682, five Direct Shots among them at 31 MP; at level 25, 186 MP of
+        1,893. That is six fights to half of the mana, where Crosstrigger fills it.
+    - **The one change** (rule (i)). Sc/Classes/NaturalGunnerProfile.cs: the table's
+      mana step is Crosstrigger at 50% (ManaSkill). The step casts a skill at the
+      target when it is one: its refusals ask for a target in reach already
+      (Sc/Classes/NaturalRotationCombatPolicy.cs, only the comment changes). The
+      profile's comment says what the two penalty skills give, which the survey's table
+      under NR-120 does not.
+    - **Found, and logged (rule (f)).**
+      - **The grenade before a retreat was not seen.** It opens a fight from range, so
+        it was cooling down at both decisions to leave: in the first run's row 16, 6 s
+        after it was cast, and in row 25, 12 s after.
+      - **The pistols fire seldom.** One to five times a row: a skill is nearly always
+        ready, as with the Chanter's staff and the Ranger's bow.
+      - **A walker's place.** The bot keeps a walking monster at the place its move
+        began. The refusal for distance and the walk after it cost the level-25 Gunner
+        2.3 s (NR-121b mends the hit time, not the place).
+      - **Row 25's place has no way out** for a Gunner with two mosbears on it: the
+        decision to leave was cornered in every run.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-121/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr121-fast, 11 passed).
 - [x] **NR-121a - A word of a monster's mana is not a word of its HP.** Depends: NR-120b
   - Work: Java first: which percentage an attack status carries. The fight, and every
     other reader of a status, takes a creature's HP only from a status that carries HP.
@@ -8519,3 +8588,13 @@ report what was done, what is parked or blocked, and what the operator must deci
   628 ms. Full gate guard-p8 (thirteen scopes identical), seven checks, unit suite (4,629
   passed, 16 skipped) and Fast (nr121b-fast) pass. Next: NR-121 again, with a fresh two
   attempts.
+- 2026-10-10 — Loop: NR-121 done on the first attempt after NR-121b. The Gunner's four
+  probe rows pass (nr121-probe-a6 and a6b): the stand-off at 14 to 18 m, Green Grenade
+  first, Hot Shot, the Gunshot chain with Automatic Fire and Reload, Wing Clip, Spend
+  Success for its DP, the scroll, the potion, Bullet Resistance and Bulletproof, the rest
+  with the powder. One change to the table: at or below half of its mana the Gunner
+  opens with Crosstrigger, whose chain costs none and gives 260 + 650 + 650 MP; Gunshot
+  leads otherwise, because six fights took 71.5 s with it and 75.7 s with Crosstrigger
+  leading. Direct Shot's mana does not empty it, and the grenade keeps its first place.
+  Full gate guard-p8 (thirteen scopes identical), seven checks, unit suite (4,629 passed,
+  16 skipped) and Fast (nr121-fast) pass. Next: NR-131, the Rider's probe rows.

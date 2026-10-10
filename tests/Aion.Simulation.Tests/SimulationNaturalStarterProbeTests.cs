@@ -69,6 +69,10 @@ public sealed partial class SimulationFastScenarioTests
 		new("spirit-master-16", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimsixspir"),
 		new("spirit-master-20", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimtwespir"),
 		new("spirit-master-25", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimtfspir"),
+		new("gunner-10", NaturalClassLine.EngineerGunner, ProbeAccountA, "Asimtengunn"),
+		new("gunner-16", NaturalClassLine.EngineerGunner, ProbeAccountB, "Asimsixgunn"),
+		new("gunner-22", NaturalClassLine.EngineerGunner, ProbeAccountA, "Asimttgunn"),
+		new("gunner-25", NaturalClassLine.EngineerGunner, ProbeAccountB, "Asimtfgunn"),
 		new("chanter-mantras", NaturalClassLine.PriestChanter, ProbeAccountA, "Asimmantra"),
 		new("gladiator-aerial", NaturalClassLine.WarriorGladiator, ProbeAccountB, "Asimaerial"),
 		new("assassin-runes", NaturalClassLine.ScoutAssassin, ProbeAccountA, "Asimrunes"),
@@ -311,6 +315,10 @@ public sealed partial class SimulationFastScenarioTests
 			case "spirit-master-16": await SpiritMasterLevelSixteenRowAsync(probe, id, token); break;
 			case "spirit-master-20": await SpiritMasterLevelTwentyRowAsync(probe, id, token); break;
 			case "spirit-master-25": await SpiritMasterLevelTwentyFiveRowAsync(probe, id, token); break;
+			case "gunner-10": await GunnerLevelTenRowAsync(probe, id, token); break;
+			case "gunner-16": await GunnerLevelSixteenRowAsync(probe, id, token); break;
+			case "gunner-22": await GunnerLevelTwentyTwoRowAsync(probe, id, token); break;
+			case "gunner-25": await GunnerLevelTwentyFiveRowAsync(probe, id, token); break;
 			case "chanter-mantras": await ChanterMantrasRowAsync(probe, id, token); break;
 			case "gladiator-aerial": await GladiatorAerialRowAsync(probe, id, token); break;
 			case "assassin-runes": await AssassinRunesRowAsync(probe, id, token); break;
@@ -4191,6 +4199,348 @@ public sealed partial class SimulationFastScenarioTests
 			$"and ended at the mosbear's death at {death.VirtualTime.TotalSeconds:F1} s. The penalty skills {string.Join(" and ", penalties)} gave {string.Join(" + ", given)} MP. " +
 			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
 	}
+
+	/// <summary>
+	/// NR-121, row gunner-10. Prepared by the director: the Engineer is made a level-10 Gunner with the skills of every
+	/// level up to it, is given the ceremony's pistol (101800506) beside the one it was created with, and is placed in
+	/// Altgard by the ice crasaurs (210415, level 11), where the Cleric's row fights. The journey's equipment check takes
+	/// a pistol into each hand. Then it fights three crasaurs by its table: from its stand-off the first shot at the
+	/// first is Green Grenade, and Rapidfire follows Gunshot twice. Last the director gives powder and halves the HP, and
+	/// the journey's rest casts Herb Treatment.
+	/// </summary>
+	private async Task GunnerLevelTenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int crasaur = 210415, karmic = 101800506, fights = 3;
+		probe.Session.BeginStep("s01", "director-makes-a-level-ten-gunner-with-a-second-pistol");
+		await probe.BecomeAsync(PlayerClass.GUNNER, 10);
+		int[] table = probe.CatalogOf(PlayerClass.GUNNER);
+		int grenade = probe.BestOf(PlayerClass.GUNNER, "grenade"), gunshot = probe.BestOf(PlayerClass.GUNNER, "gunshot"),
+			rapid = probe.BestOf(PlayerClass.GUNNER, "rapid"), direct = probe.BestOf(PlayerClass.GUNNER, "direct"),
+			hot = probe.BestOf(PlayerClass.GUNNER, "hot"), reload = probe.BestOf(PlayerClass.GUNNER, "reload"), herb = probe.BestOf(PlayerClass.GUNNER, "herb");
+		await GiveAsync(probe, token, (karmic, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1473.2f, 1765.2f, 247.5f);
+		probe.Session.BeginStep("s02", "equipment-check-takes-a-pistol-into-each-hand");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		(int main, int off) = (Held(probe, 1), Held(probe, 2));
+		Assert.True(main == karmic && off != 0, $"The hands hold {main} and {off}.");
+
+		var lines = new List<string>();
+		ClericFight? chain = null;
+		double shotFrom = 0;
+		int kills = 0, deaths = 0, shots = 0, directs = 0, reloads = 0;
+		for (int number = 1; number <= fights; number++)
+		{
+			Npc next = NearestLiving(probe, crasaur);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, GunnerTable, $"s03-{number}", $"fight-ice-crasaur-{number}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"Fight {number} ended no way: {fight.Result}.");
+			kills += fight.Result.Killed ? 1 : 0;
+			deaths += fight.Result.Deaths;
+			shots += Swings(fight);
+			directs += fight.Casts.Count(cast => cast.SkillId == direct);
+			reloads += fight.Casts.Count(cast => cast.SkillId == reload);
+			if (number == 1)
+			{
+				// From its stand-off: with every cooldown clear the first shot at the target is Green Grenade.
+				StarterTraceRecord first = fight.Decided.First(record => record.Fields.GetProperty("action").GetString() == "cast-target");
+				shotFrom = first.Fields.GetProperty("targetDistance").GetDouble();
+				Assert.True(Decided(first, "cast-target", grenade) && shotFrom > 6, $"The first shot was decided at {shotFrom:F1} m: {fight.Order}.");
+				Assert.Contains(fight.Casts, cast => cast.SkillId == hot);
+			}
+			if (fight.Run([gunshot], [rapid], [rapid]) >= 0) chain ??= fight;
+			lines.Add($"fight {number}: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+		Assert.True(chain != null, $"Rapidfire never followed Gunshot twice in {fights} fights: {string.Join("; ", lines)}.");
+
+		// Prepared by the director: powder, and half HP. The rest is the journey's.
+		await GiveAsync(probe, token, (LesserOdellaPowder, 20));
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		int hpBefore = probe.World.CurrentHp;
+		(_, int[] restCasts) = await RestStepAsync(probe, "s04", "director-gives-powder-and-halves-hp-then-rest", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Gunner, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, pistols {main} and {off}. {fights} fight(s), {kills} kill(s), " +
+			$"{deaths} death(s): {string.Join("; ", lines)}. Green Grenade from {shotFrom:F1} m; Direct Shot cast {directs} time(s), Reload {reloads}; the pistols fired {shots} time(s). " +
+			$"Rest from {hpBefore} HP: casts {string.Join(" ", restCasts)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-121, row gunner-16. Prepared by the director: a level-16 Gunner with the pistol of Q24013 beside the
+	/// ceremony's and the leather shoes and jerkin of Q24011 and Q24012 in the bag, by the tusked mosbears (210437,
+	/// level 14) of the Cleric's row. The journey's equipment check wears them. Before the fight begins the director cuts
+	/// HP to 55%: Bullet Resistance is cast, by the ladder. A kill, a retreat and a death are recorded outcomes: the spot
+	/// brings more monsters, and with two on it the Gunner roots its target with Green Grenade, if that is ready, and
+	/// leaves.
+	/// </summary>
+	private async Task GunnerLevelSixteenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210437, pistol = 101801216, karmic = 101800506, shoes = 114301819, jerkin = 110301813;
+		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-gunner-in-altgard");
+		await probe.BecomeAsync(PlayerClass.GUNNER, 16);
+		int[] table = probe.CatalogOf(PlayerClass.GUNNER);
+		int resist = probe.BestOf(PlayerClass.GUNNER, "resist"), proof = probe.BestOf(PlayerClass.GUNNER, "proof"),
+			auto = probe.BestOf(PlayerClass.GUNNER, "auto"), grenade = probe.BestOf(PlayerClass.GUNNER, "grenade");
+		await GiveAsync(probe, token, (pistol, 1), (karmic, 1), (shoes, 1), (jerkin, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1427.2f, 789.9f, 249.9f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		IReadOnlyList<NaturalGearUpgrade> worn = await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		(int main, int off) = (Held(probe, 1), Held(probe, 2));
+		Assert.True(main == pistol && off != 0, $"The hands hold {main} and {off}.");
+		Assert.All(new[] { shoes, jerkin }, piece => Assert.Contains(probe.World.Inventory.Values, item => item.ItemId == piece && item.Details.EquippedSlot.GetValueOrDefault() != 0));
+
+		Npc first = NearestLiving(probe, mosbear);
+		int mp = 0;
+		ClericFight fight = await TableFightAsync(probe, GunnerTable, "s03", "fight-a-tusked-mosbear-from-just-over-half-hp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 55% HP as the fight begins.
+			await probe.CutHpAsync(55);
+			mp = probe.World.CurrentMp;
+			return first.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(fight);
+		AssertOnlyCasts(fight, table);
+		Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"The fight ended no way: {fight.Result}.");
+		StarterTraceRecord[] resisted = fight.Decided.Where(record => Decided(record, "cast-self", resist)).ToArray();
+		Assert.True(resisted.Length > 0, $"Bullet Resistance was not cast: {fight.Order}; decisions {fight.Counts}.");
+		Assert.All(resisted, record => Assert.True(HpPercentAt(record) <= 60, $"Bullet Resistance was decided at {HpPercentAt(record)}% HP."));
+		Assert.All(fight.Decided.Where(record => Decided(record, "cast-self", proof)), record => Assert.True(HpPercentAt(record) <= 45, $"Bulletproof was decided at {HpPercentAt(record)}% HP."));
+		StarterTraceRecord? left = fight.Decided.FirstOrDefault(record => record.Fields.GetProperty("action").GetString() == "retreat");
+		int rooted = Array.FindIndex(fight.Decided, record => Decided(record, "cast-target", grenade) &&
+			record.Fields.GetProperty("reason").GetString()?.StartsWith("Hold the target before retreating") == true);
+		StarterTraceRecord opener = fight.Decided.First(record => record.Fields.GetProperty("action").GetString() == "cast-target");
+		Console.WriteLine($"{id}: level {probe.World.Level} Gunner, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, pistols {main} and {off}; the check asked for " +
+			$"{string.Join(", ", worn.Select(upgrade => $"{upgrade.ItemId} to slot {upgrade.Slot}"))}. From 55% HP: {Outcome(fight)}; MP {mp} to {probe.World.CurrentMp}; " +
+			$"the first shot from {opener.Fields.GetProperty("targetDistance").GetDouble():F1} m; " +
+			$"Bullet Resistance decided at {string.Join(", ", resisted.Select(HpPercentAt))}% HP; Bulletproof cast {fight.Casts.Count(cast => cast.SkillId == proof)} time(s), " +
+			$"Automatic Fire {fight.Casts.Count(cast => cast.SkillId == auto)}; the pistols fired {Swings(fight)} time(s). " +
+			$"The grenade before the retreat: {(rooted >= 0 ? "cast" : "not cast")}. It left: {left?.Fields.GetProperty("reason").GetString() ?? "no."} " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>
+	/// NR-121, row gunner-22. Prepared by the director: a level-22 Gunner with the pistol of Q24016 beside that of
+	/// Q24013, by the starved mosbears (210564, level 13) of the Cleric's row, with powder, two shield scrolls and three
+	/// life potions in the bag. Before its first fight the director cuts MP to 40%: at or below half of its mana the
+	/// table opens with the Crosstrigger chain, which costs none and gives mana back, and the chain is cast whole. Six
+	/// fights are then the journey's alone, for the numbers: what each shot takes from the monster and what a fight costs
+	/// in mana now that Direct Shot costs some; the Gunshot chain is cast whole, to the second Automatic Fire, in one of
+	/// them. Before one more fight the director gives 2,000 DP and cuts HP to 40%: Spend Success is cast and the ladder
+	/// answers. Last the director cuts MP to a tenth and the journey's rest casts MP Recovery.
+	/// </summary>
+	private async Task GunnerLevelTwentyTwoRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, pistol = 101801218, second = 101801216, scroll = 164000068, potion = 162000003, fights = 6;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-two-gunner-in-altgard");
+		await probe.BecomeAsync(PlayerClass.GUNNER, 22);
+		int gunshot = probe.BestOf(PlayerClass.GUNNER, "gunshot"), rapid = probe.BestOf(PlayerClass.GUNNER, "rapid"), auto = probe.BestOf(PlayerClass.GUNNER, "auto"),
+			cross = probe.BestOf(PlayerClass.GUNNER, "cross"), canted = probe.BestOf(PlayerClass.GUNNER, "canted"), direct = probe.BestOf(PlayerClass.GUNNER, "direct"),
+			reload = probe.BestOf(PlayerClass.GUNNER, "reload"), success = probe.BestOf(PlayerClass.GUNNER, "success"), resist = probe.BestOf(PlayerClass.GUNNER, "resist"),
+			proof = probe.BestOf(PlayerClass.GUNNER, "proof"), recovery = probe.BestOf(PlayerClass.GUNNER, "mp-recovery"),
+			hot = probe.BestOf(PlayerClass.GUNNER, "hot"), grenade = probe.BestOf(PlayerClass.GUNNER, "grenade");
+		// NR-121a: with Crosstrigger and Canted Shot the server casts their penalty skills on the Gunner.
+		int[] penalties = [probe.PenaltyOf(cross), probe.PenaltyOf(canted)];
+		int[] table = [.. probe.CatalogOf(PlayerClass.GUNNER), .. penalties];
+		await GiveAsync(probe, token, (pistol, 1), (second, 1), (LesserOdellaPowder, 20), (scroll, 2), (potion, 3));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		(int main, int off) = (Held(probe, 1), Held(probe, 2));
+		Assert.True(main == pistol && off == second, $"The hands hold {main} and {off}.");
+
+		Npc shortTarget = NearestLiving(probe, mosbear);
+		int shortMp = 0;
+		ClericFight shortOf = await TableFightAsync(probe, GunnerTable, "s03", "fight-a-starved-mosbear-from-two-fifths-mp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 40% of its mana as the fight begins.
+			await probe.CutMpAsync(40);
+			shortMp = probe.World.CurrentMp;
+			return shortTarget.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(shortOf);
+		AssertOnlyCasts(shortOf, table);
+		shortOf = Own(shortOf, penalties);
+		Assert.True(shortOf.Result is { Killed: true, Deaths: 0 }, $"The fight from 40% MP was no kill: {Outcome(shortOf)}.");
+		StarterTraceRecord forMana = shortOf.Decided.First(record => record.Fields.GetProperty("action").GetString() == "cast-target");
+		Assert.True(Decided(forMana, "cast-target", cross) && forMana.Fields.GetProperty("reason").GetString()!.StartsWith("Mana is at or below 50%"),
+			$"The first shot was {forMana.Fields.GetProperty("skillId")}: {forMana.Fields.GetProperty("reason").GetString()}");
+		Assert.True(shortOf.Run([cross], [canted], [canted]) >= 0, $"The Crosstrigger chain was not cast whole: {shortOf.Order}; decisions {shortOf.Counts}.");
+		int shortGiven = ManaGiven(shortOf, probe.Server.GetObjectId()), shortAfter = probe.World.CurrentMp;
+		Assert.True(shortAfter > shortMp, $"MP {shortMp} before the fight and {shortAfter} after.");
+
+		var lines = new List<string>();
+		var dealt = new Dictionary<string, List<int>>();
+		ClericFight? whole = null;
+		int shots = 0, directs = 0, reloads = 0, crosses = 0, wholeIn = 0;
+		for (int number = 1; number <= fights; number++)
+		{
+			Npc next = NearestLiving(probe, mosbear);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, GunnerTable, $"s04-{number}", $"fight-starved-mosbear-{number}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			fight = Own(fight, penalties);
+			Assert.True(fight.Result is { Killed: true, Deaths: 0 }, $"Fight {number} was no kill: {Outcome(fight)}.");
+			Assert.DoesNotContain(fight.Casts, cast => cast.SkillId == success);
+			shots += Swings(fight);
+			directs += fight.Casts.Count(cast => cast.SkillId == direct);
+			reloads += fight.Casts.Count(cast => cast.SkillId == reload);
+			crosses += fight.Casts.Count(cast => cast.SkillId == cross);
+			foreach ((string name, int skill) in new[] { ("Gunshot", gunshot), ("Rapidfire", rapid), ("Automatic Fire", auto), ("Direct Shot", direct), ("Hot Shot", hot), ("Green Grenade", grenade) })
+			{
+				if (!dealt.TryGetValue(name, out List<int>? hits)) dealt[name] = hits = [];
+				hits.AddRange(Dealt(fight, skill));
+			}
+			if (whole == null && fight.Run([gunshot], [rapid], [rapid], [auto], [auto]) >= 0) (whole, wholeIn) = (fight, number);
+			lines.Add($"fight {number}: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+		Assert.True(whole != null, $"The Gunshot chain was never cast whole in {fights} fights: {string.Join("; ", lines)}.");
+
+		Npc hurtTarget = NearestLiving(probe, mosbear);
+		ClericFight hurt = await TableFightAsync(probe, GunnerTable, "s05", "fight-a-starved-mosbear-from-two-fifths-hp-with-dp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 2,000 DP and 40% HP as the fight begins.
+			await probe.SetDpAsync(2000);
+			await probe.CutHpAsync(40);
+			return hurtTarget.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(hurt);
+		AssertOnlyCasts(hurt, table);
+		hurt = Own(hurt, penalties);
+		Assert.Contains(hurt.Casts, cast => cast.SkillId == success);
+		Assert.True(probe.World.CurrentDp < 2000, $"The DP was not spent: {probe.World.CurrentDp}.");
+		StarterTraceRecord[] ladder = hurt.Decided.Where(record => record.Fields.GetProperty("action").GetString() is "shield-scroll" or "hot-potion" ||
+			Decided(record, "cast-self", resist, proof)).ToArray();
+		Assert.True(ladder.Length > 0, $"The ladder did not answer 40% HP: decisions {hurt.Counts}.");
+		Assert.Equal("shield-scroll", ladder[0].Fields.GetProperty("action").GetString());
+		Assert.All(ladder.Where(record => Decided(record, "cast-self", resist)), record => Assert.True(HpPercentAt(record) <= 60, $"Bullet Resistance was decided at {HpPercentAt(record)}% HP."));
+		Assert.All(ladder.Where(record => Decided(record, "cast-self", proof)), record => Assert.True(HpPercentAt(record) <= 45, $"Bulletproof was decided at {HpPercentAt(record)}% HP."));
+		Assert.Equal(0, hurt.Result.Deaths);
+
+		// Prepared by the director: a tenth of its mana. The rest is the journey's.
+		probe.Session.BeginStep("s06", "director-cuts-mp");
+		await probe.CutMpAsync(10);
+		int mpBefore = probe.World.CurrentMp;
+		(_, int[] restCasts) = await RestStepAsync(probe, "s07", "rest-from-a-tenth-of-its-mana", token);
+		Assert.Contains(recovery, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+
+		static string Hits(IEnumerable<int> hits) => hits.Any() ? $"{string.Join("+", hits)} = {hits.Sum()}" : "none";
+		Console.WriteLine($"{id}: level {probe.World.Level} Gunner, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, pistols {main} and {off}. " +
+			$"From {shortMp} MP: {Outcome(shortOf)}; the first shot: {forMana.Fields.GetProperty("reason").GetString()} Crosstrigger took {Hits(Dealt(shortOf, cross))}, " +
+			$"Canted Shot {Hits(Dealt(shortOf, canted))}; the penalty skills gave {shortGiven} MP; MP {shortAfter} after the fight. " +
+			$"{fights} fight(s): {string.Join("; ", lines)}. " +
+			$"The whole Gunshot chain first in fight {wholeIn}: Gunshot took {Hits(Dealt(whole, gunshot))}, Rapidfire {Hits(Dealt(whole, rapid))}, Automatic Fire {Hits(Dealt(whole, auto))}. " +
+			$"Each shot of the six fights: {string.Join("; ", dealt.Select(entry => $"{entry.Key} {string.Join(" ", entry.Value)}"))}. " +
+			$"Direct Shot cast {directs} time(s), Reload {reloads}, Crosstrigger {crosses}; the pistols fired {shots} time(s). " +
+			$"From 40% HP with 2,000 DP: {Outcome(hurt)}; the ladder: {string.Join(", ", ladder.Select(record => $"{record.Fields.GetProperty("action").GetString()}" +
+				$"{(record.Fields.GetProperty("skillId") is { ValueKind: JsonValueKind.Number } skill ? " " + skill.GetInt32() : "")} at {HpPercentAt(record)}% HP"))}; DP left {probe.World.CurrentDp}. " +
+			$"Rest from {mpBefore} MP: casts {string.Join(" ", restCasts)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-121, row gunner-25. Prepared by the director: a level-25 Gunner with the pistol of Q24016 beside that of
+	/// Q24013, by the starved mosbears (210564, level 13), with Odella Powder in the bag. Three fights are the journey's
+	/// alone, for the numbers: what it shot, what a fight costs in mana and how far the mosbear came. Then the director
+	/// spawns two starved mosbears 4 m from the Gunner and sets them on it: with two attackers the journey decides to
+	/// leave, and roots its target with Green Grenade first if that is ready. Last the director halves the HP and the
+	/// rest casts the fourth rank of Herb Treatment.
+	/// </summary>
+	private async Task GunnerLevelTwentyFiveRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, pistol = 101801218, second = 101801216;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-five-gunner-in-altgard");
+		await probe.BecomeAsync(PlayerClass.GUNNER, 25);
+		int clip = probe.BestOf(PlayerClass.GUNNER, "clip"), grenade = probe.BestOf(PlayerClass.GUNNER, "grenade"), direct = probe.BestOf(PlayerClass.GUNNER, "direct"),
+			cross = probe.BestOf(PlayerClass.GUNNER, "cross"), canted = probe.BestOf(PlayerClass.GUNNER, "canted"), herb = probe.BestOf(PlayerClass.GUNNER, "herb");
+		// NR-121a: with Crosstrigger and Canted Shot the server casts their penalty skills on the Gunner.
+		int[] penalties = [probe.PenaltyOf(cross), probe.PenaltyOf(canted)];
+		int[] table = [.. probe.CatalogOf(PlayerClass.GUNNER), .. penalties];
+		await GiveAsync(probe, token, (pistol, 1), (second, 1), (OdellaPowder, 20));
+		BotNavigationGeometry geometry = await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		(int main, int off) = (Held(probe, 1), Held(probe, 2));
+		Assert.True(main == pistol && off == second, $"The hands hold {main} and {off}.");
+
+		var lines = new List<string>();
+		var crossed = new List<int>();
+		var cantedHits = new List<int>();
+		int shots = 0, clips = 0, directs = 0, crosses = 0, reached = 0;
+		for (int fights = 1; fights <= 3; fights++)
+		{
+			Npc next = NearestLiving(probe, mosbear);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, GunnerTable, $"s03-{fights}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			fight = Own(fight, penalties);
+			Assert.Equal(0, fight.Result.Deaths);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0, $"Fight {fights} ended neither way: {fight.Result}.");
+			shots += Swings(fight);
+			clips += fight.Casts.Count(cast => cast.SkillId == clip);
+			directs += fight.Casts.Count(cast => cast.SkillId == direct);
+			crosses += fight.Casts.Count(cast => cast.SkillId == cross);
+			crossed.AddRange(Dealt(fight, cross));
+			cantedHits.AddRange(Dealt(fight, canted));
+			reached += fight.Decided.Any(record => record.Fields.GetProperty("observedState").GetProperty("TargetAdjacent").GetBoolean()) ? 1 : 0;
+			lines.Add($"fight {fights}: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+
+		Npc[] pack = [];
+		ClericFight swarm = await TableFightAsync(probe, GunnerTable, "s04", "fight-a-pack-of-two-starved-mosbears", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: two starved mosbears 4 m away, set on the Gunner.
+			pack = await SpawnSetOnAsync(probe, geometry, mosbear, 2, token);
+			return pack[0].GetObjectId();
+		}, token);
+		RemoveSetOn(pack);
+		AssertOnlyCasts(swarm, table);
+		swarm = Own(swarm, penalties);
+		int left = Array.FindIndex(swarm.Decided, record => record.Fields.GetProperty("action").GetString() == "retreat");
+		Assert.True(left >= 0, $"The Gunner did not decide to leave two attackers: {swarm.Order}; decisions {swarm.Counts}.");
+		int rooted = Array.FindIndex(swarm.Decided, record => Decided(record, "cast-target", grenade) &&
+			record.Fields.GetProperty("reason").GetString()?.StartsWith("Hold the target before retreating") == true);
+		// A retreat that finds no way out is said so, and the Gunner fights on where it stands.
+		int cornered = swarm.Records.Count(record => record is { Direction: "action", Packet: "combat-retreat-cornered" });
+
+		// Prepared by the director: half HP. The rest is the journey's.
+		probe.Session.BeginStep("s05", "director-halves-hp");
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		(_, int[] restCasts) = await RestStepAsync(probe, "s06", "rest-from-half-hp-with-odella-powder", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(OdellaPowder) < 20, "No Odella Powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Gunner, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, pistols {main} and {off}. " + string.Join("; ", lines) +
+			$". Wing Clip cast {clips} time(s), Crosstrigger {crosses} (it took {string.Join(" ", crossed)}; Canted Shot {string.Join(" ", cantedHits)}), Direct Shot {directs}; " +
+			$"the pistols fired {shots} time(s); the mosbear reached the Gunner in {reached} of 3 fights. " +
+			$"Then against {pack.Length} the director spawned 4 m away and set on it: {Outcome(swarm)}; " +
+			$"the grenade before the retreat: {(rooted >= 0 && rooted < left ? "cast" : "not ready")}; it decided to leave with " +
+			$"{swarm.Decided[left].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32()} attackers " +
+			$"({swarm.Decided[left].Fields.GetProperty("reason").GetString()}) and found itself cornered {cornered} time(s). " +
+			$"Rest: casts {string.Join(" ", restCasts)}, Odella Powder {probe.Owned(OdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>NR-121: what each hit of a skill took from its target in a fight, as the client was told (SmAttackStatus of
+	/// TYPE.REGULAR, 5, that names the skill).</summary>
+	private static int[] Dealt(ClericFight fight, params int[] skills) => fight.Records
+		.Where(record => record is { Direction: "<", Packet: "SmAttackStatus" } && record.Fields.GetProperty("typeId").GetInt32() == 5 &&
+			skills.Contains(record.Fields.GetProperty("skillId").GetInt32()))
+		.Select(record => record.Fields.GetProperty("writtenValue").GetInt32()).ToArray();
+
+	/// <summary>NR-121: a fight with the casts of its bot's own deciding: without the penalty skills the server cast on it
+	/// with them (Java Skill.startPenaltySkill 480-491).</summary>
+	private static ClericFight Own(ClericFight fight, int[] penalties) =>
+		fight with { Casts = fight.Casts.Where(cast => !penalties.Contains(cast.SkillId)).ToList() };
+
+	/// <summary>NR-121: the mana a fight's statuses say a creature was given (SmAttackStatus of TYPE.HEAL_MP, 19).</summary>
+	private static int ManaGiven(ClericFight fight, int creature) => fight.Records
+		.Where(record => record is { Direction: "<", Packet: "SmAttackStatus" } && record.Fields.GetProperty("typeId").GetInt32() == 19 &&
+			record.Fields.GetProperty("objectId").GetInt32() == creature)
+		.Sum(record => record.Fields.GetProperty("writtenValue").GetInt32());
 
 	/// <summary>The living monster of a template nearest to another monster.</summary>
 	private Npc NearestLiving(StarterProbe probe, int templateId, Npc near) => probe.World.Objects.Values

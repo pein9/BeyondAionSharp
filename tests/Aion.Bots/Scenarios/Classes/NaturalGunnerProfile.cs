@@ -18,6 +18,8 @@ public static class NaturalGunnerProfile
 	/// needs two (startconditions/lefthandweapon DUAL). Gunshot opens the chain Rapidfire follows, twice, and Automatic
 	/// Fire (level 16) follows the second Rapidfire, twice (NR-120a). Crosstrigger
 	/// (level 22) opens the chain Canted Shot follows, twice; neither costs mana, and each takes mana from its target.
+	/// With each the server casts a penalty skill on the Gunner (NR-121a): 260 MP with Crosstrigger, 650 MP with Canted
+	/// Shot.
 	/// Gunshot and Crosstrigger share one cooldown, 16 s after the first and 24 s after the second, so one of the two
 	/// chains is opened at a time. Direct Shot is ready every 2 s and costs no mana before level 21. Hot Shot lowers its
 	/// target's fire resistance and slows its attacks for 10 s. Green Grenade (level 10) roots its target for 4 s. Wing
@@ -68,9 +70,14 @@ public static class NaturalGunnerProfile
 	/// NR-120: the Engineer's table with the Gunner's own shots. Spend Success when 2,000 DP are there. From range Green
 	/// Grenade first: a rooted monster stands 4 s in the pistol's reach. Then Hot Shot, Gunshot, Rapidfire twice and
 	/// Automatic Fire twice; Reload while that chain's cooldown has more than 4 s left, so that Gunshot opens it again;
-	/// Crosstrigger and Canted Shot, which the shared cooldown leaves for the time Gunshot cannot be paid for; Wing Clip;
-	/// and Direct Shot for everything between. With the monster on it the grenade comes last before Direct Shot. The
-	/// table holds an open chain, as the Engineer's does, and the pistols fire whenever no skill is ready.
+	/// Wing Clip; and Direct Shot for everything between. With the monster on it the grenade comes last before Direct
+	/// Shot. The table holds an open chain, as the Engineer's does, and the pistols fire whenever no skill is ready.
+	/// <para>
+	/// NR-121: Crosstrigger and Canted Shot are the Gunner's mana. The two openers share one cooldown, so one chain is
+	/// opened at a time. With mana in plenty that is Gunshot's: its cooldown is 16 s against 24 s, and six fights took
+	/// 71.5 s with it leading and 75.7 s with Crosstrigger leading. At or below half of its mana the table opens with
+	/// Crosstrigger, and the three shots fill it.
+	/// </para>
 	/// <para>
 	/// The ladder is the Engineer's (CP-Q11) with Bulletproof under it: the shield scroll at 50% HP, the life potion at
 	/// or below 75%, Bullet Resistance at or below 60%, Bulletproof at or below 45%. It leaves at two attackers, or at
@@ -87,7 +94,8 @@ public static class NaturalGunnerProfile
 			new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75), new(NaturalRecoveryKind.Skill, 60, "resist"),
 			new(NaturalRecoveryKind.Skill, 45, "proof"),
 		],
-		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler, ControlRole: "grenade", HoldOpenChain: true);
+		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler, ControlRole: "grenade", HoldOpenChain: true,
+		ManaSkill: new("cross", 50));
 
 	// NR-Q5, NR-Q7 and NR-Q13: two pistols, leather first, and the kit of a class that does not cast from mana and rests
 	// with the powder.

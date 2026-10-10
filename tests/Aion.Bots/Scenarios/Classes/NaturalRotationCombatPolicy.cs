@@ -38,8 +38,9 @@ public sealed record NaturalRecoveryStep(NaturalRecoveryKind Kind, int HpPercent
 	bool EmergencyOnly = false, bool PassOverWhenCancelled = false, bool FinishInstead = false,
 	NaturalRunPercent FromRun = NaturalRunPercent.None);
 
-/// <summary>NR-60a: a skill that restores mana, cast on the bot when mana is at or below <paramref name="MpPercent"/>,
-/// before a mana potion is drunk.</summary>
+/// <summary>NR-60a: a skill that restores mana, cast when mana is at or below <paramref name="MpPercent"/>, before a
+/// mana potion is drunk. NR-121: on the bot, or at the target when the skill is a shot the server gives mana for (the
+/// Gunner's Crosstrigger).</summary>
 /// <param name="Role">The skill's role in the catalog.</param>
 public sealed record NaturalManaStep(string Role, int MpPercent);
 
