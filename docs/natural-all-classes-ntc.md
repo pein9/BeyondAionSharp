@@ -7593,11 +7593,16 @@ The template:
       run guard-p8 (run/nr/NR-131a/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr131a-fast, 11 passed).
-- [ ] **NR-132 - Rider: to Altgard.** Depends: NR-131a; ticked by the round that gives it
+- [x] **NR-132 - Rider: to Altgard.** Depends: NR-131a; ticked by the round that gives it
   - Work: A fresh Asimrider plays Ishalgen as an Engineer, the trial, the ceremony with
     the cipher-blade and the dispatch Q29070, and is captured at the Altgard bind as
     altgard-rider-s1. The blade is in its hands from the ceremony on.
   - Proof: The capture verifies.
+  - 2026-10-10: done in round 2 (NR-R2, run r2-a1 at c53a8c14f, world 8), after the stop
+    of round 1 at Q2002 (NR-R1b). The character of the line engineer-rider reached the
+    Altgard bind: a Rider of level 13, 55 quests complete, no death. Its
+    bridge-completion.json says verified. Captured as altgard-rider-s1, a record that
+    points at character 133702 in the round snapshot nr-r2-w8.
 - [ ] **NR-133 - Rider: Altgard legs l1 to l5.** Depends: NR-132; ticked by its round
   - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
     with -rider (NR-41). In leg 1 it kills the fungus in flight.
@@ -7958,13 +7963,47 @@ through these: each is ticked by the round that gave its capture.
       scopes identical: no recorded hunt of any starter met that place. Seven pre-commit
       checks pass, Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and Fast
       passes (run nrr1b-fast, 11 passed).
-- [ ] **NR-R2 - Round 2: the Rider to the Altgard bind.** Depends: NR-R1b
+- [x] **NR-R2 - Round 2: the Rider to the Altgard bind.** Depends: NR-R1b
   - Work: The eight worlds of round 1 again, resumed from nr-r1 (-From nr-r1, -Capture
     nr-r2), stage bridge. The eight that stand at the bind report it at once. The Rider
     goes on from Q2002 to the Altgard bind and is captured as altgard-rider-s1. A stop
     gets a lettered item.
   - Proof: round.json with nine outcome records, the Rider's bridge-completion.json and
     its capture; NR-132 is ticked.
+  - 2026-10-10: played. All nine classes stand at the Altgard bind.
+    - **The round** (run r2-a1 at c53a8c14f, -From nr-r1, -Capture nr-r2;
+      run/nr/NR-R2/r2-a1; round file run/nr/NR-R2/round-2.json). Eight worlds side by
+      side, 321 seconds of wall time.
+      - The eight that stood at the bind were resumed there and reported it at once,
+        each in 0.2 game minutes, as the characters they were.
+      - The Rider's character was resumed at Q2002 in Ishalgen. It ended the hunt in
+        three kills over four tries and played on: the trial, the Rider choice, the
+        ceremony with the cipher-blade, the capital pass and the dispatch, to the
+        Altgard bind in 197.9 game minutes. A Rider of level 13, 55 quests complete, 138
+        fights with 131 kills, no death. Its bridge-completion.json says verified.
+    - **The capture.** altgard-rider-s1, a record that points at character 133702 in
+      the round snapshot nr-r2-w8. The round snapshots nr-r2-w1 to nr-r2-w8 hold all nine
+      at the bind; the next round resumes from them.
+    - **Not shown in play.** The place that stopped the Rider in round 1 did not come
+      back: other Spriggs stood nearer, and the rule of NR-R1b was not called on
+      (sprigg-taken-from-standoff 0 times). It stays untested in play until a round
+      meets that place again.
+- [ ] **NR-R3a - A round's bot plays an Altgard leg.** Depends: NR-R2
+  - Work: The stages a run of one bot names with -Leg and -LaterCapital, opened for a
+    round: l1 to l11, cg, l12 and ax. Read first what such a run takes from the snapshot
+    it starts on besides the character (the later-capital checkpoint, the Haramel
+    receipt) and what of it a round snapshot must carry. A bot's stage gives the journey
+    the options that run takes from its environment. A bot has reached its stage only
+    when the journey's own completion receipt for the stage says verified, for its
+    character. Generic: by stage, no branch on a class.
+  - Proof: The script tests pass. A smoke round resumed from nr-r2 in which two classes
+    play leg 1 to an early stop. The full gate identical.
+- [ ] **NR-R3 - Round 3: Altgard leg 1 for the nine classes.** Depends: NR-R3a
+  - Work: The eight worlds resumed from nr-r2, stage l1, with -Capture nr-r3. A class
+    that ends leg 1 is captured as altgard-rc-l1-<class> (NR-41). One outcome line for
+    each class; a stop gets a lettered item.
+  - Proof: round.json with nine outcome records; for each class that reached the leg's
+    end its completion receipt says verified and its capture is written.
 
 ### E. Close
 
@@ -8995,3 +9034,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   1.9 m from where it stood. Full gate guard-p8 (thirteen scopes identical), seven checks,
   unit suite (4,629 passed, 16 skipped) and Fast (nrr1b-fast) pass. Next: NR-R2, round 2,
   which resumes the Rider at Q2002.
+- 2026-10-10 — Loop: NR-R2 played. Round 2 (r2-a1, -From nr-r1, 321 s): the Rider,
+  resumed at Q2002, ended the hunt and reached the Altgard bind at level 13 with 55
+  quests and no death; it is captured as altgard-rider-s1 and NR-132 is ticked. The other
+  eight reported the bind at once. The round snapshots nr-r2-w1 to w8 hold all nine. The
+  place of round 1's stop did not come back, so NR-R1b's rule was not used in play.
+  Written: NR-R3a, a round's bot plays an Altgard leg, and NR-R3, round 3, leg 1 for the
+  nine. Seven checks pass. Next: NR-R3a.
