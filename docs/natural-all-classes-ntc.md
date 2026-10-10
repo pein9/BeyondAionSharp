@@ -186,6 +186,17 @@ by a lettered item. Answers already given are quoted.
   coins left after the armor and the weapon. Nothing is bought with Kinah (CP-Q10) and
   no coin is added. To decide: whether a Templar may buy a shield with Kinah from an
   armor merchant at Ascension, or is supplied the coins for one.
+- **NR-Q16. A class that ends the Abyss missions at level 25.** Asked by NR-56. The
+  accepted Cleric is level 26 when its missions are done, and its leg then buys the
+  level-26 coin tier. The Templar is level 25 there, and the leg stopped: the fortress
+  quests that would give the level are not listed (AX-11), and no level is hunted for. The
+  plan's finish asks for level 25 or higher (NR-Q3). Default, NR-56b: for a class other
+  than the contract's, the leg's level is the level it starts from, 25. A coin tier above
+  the character's level cannot be worn and is not asked, and the leg ends at Morheim Ice
+  Fortress with the missions complete. A class that is level 26 by then is asked the last
+  tier as the Cleric is, and meets NR-Q14 there. To decide: whether such a class should
+  play fortress quests to level 26 for the last tier (AX-11), and with it the coins of
+  NR-Q14.
 
 ## Standing rules
 
@@ -4342,6 +4353,32 @@ The template:
       (run/nr/NR-56b/guard-p8/verdict.json): verdict pass, all twelve scopes identical,
       ax among them. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr56b-fast, 11 passed).
+- [x] **NR-56b - The Abyss entry ends at the plan's finish for a class below level 26.** Depends: NR-56a
+  - Work: The second stop of the Abyss entry. Java first: nothing of the server is relied
+    on; these are the leg's own rules. The contract holds level 26 after the missions,
+    by quests alone, and then the level-26 coin tier. Those are receipts of the accepted
+    run, as its start facts were (NR-41). The Templar ends the missions at level 25 with
+    the same quests done. NR-Q16 gives the default.
+  - Proof: The Templar's Abyss entry is played to its end in a replay; gate ax identical
+    with the full gate.
+  - 2026-10-09: done.
+    - **The change.** J, the class's Abyss scope: its level and the endpoint's level are
+      the level the leg starts from when that is lower. Sc/
+      NaturalAbyssEntryDecisionEngine.cs: a coin tier above the character's level is
+      not asked. Sc/NaturalAbyssEntry.cs: the endpoint and the ledger hold the tiers the
+      character can wear. The contract's class reaches level 26 before its last tier,
+      so nothing changes for it.
+    - **Proof, the replay** (ax-a3 from altgard-rc-complete-s1-templar; evidence
+      run/nr/NR-56b/ax-a3/, replay.json: passed). The leg is complete and verified at
+      its endpoint: a Templar of level 25, alive at Morheim Ice Fortress and bound there;
+      Q24020, Q2945, Q2946, Q2947 and Q2042 complete, 181 quests in all; 16 min 02 s of
+      game time, no death, 14,918 records. It wears Q2947's sword 100001562, the
+      level-21 coin shield 115001075, Aegir's plate 110601626 and the coin shoes, and
+      holds 12 Bronze Coins and 18 Iron Coins. One help item was supplied, the
+      flight-speed scroll; no coin.
+    - **Proof.** The bundle of NR-56a, on the tree that holds both items
+      (run/nr/NR-56b/guard-p8/verdict.json): all twelve scopes identical; seven checks,
+      the unit suite and Fast (nr56b-fast) pass.
 - [ ] **NR-57 - Templar: the endpoint.** Depends: NR-56; ticked by its round
   - Work: Captured and verified as ntc-ready-templar-s1: alive at Morheim Ice Fortress,
     level 25 or higher, Q2945, Q2946, Q2947 and Q2042 complete.
@@ -4939,3 +4976,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   and the ring course each at the first try. One bundle ran for NR-56a and NR-56b
   together: full gate guard-p8 (twelve scopes identical), seven checks, unit suite (4,629
   passed, 16 skipped) and Fast (nr56b-fast) pass. Next: NR-56b.
+- 2026-10-09 — Loop: NR-56b done. The Templar ends the Abyss missions at level 25, where
+  the Cleric's contract holds level 26 and then the level-26 coin tier. For another class
+  the leg's level is now the level it starts from, and a tier above the character's level
+  is not asked (NR-Q16, a default for the operator to confirm). Replay ax-a3 played the
+  leg to its endpoint: level 25 at Morheim Ice Fortress, the five quests complete, no
+  death, no coin supplied. Proof by the bundle of NR-56a (twelve scopes identical, Fast
+  nr56b-fast). Next: NR-56, the capture of the leg from the committed code.

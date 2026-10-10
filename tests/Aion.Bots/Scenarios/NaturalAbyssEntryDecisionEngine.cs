@@ -114,6 +114,9 @@ public static class NaturalAbyssEntryDecisionEngine
 		NaturalAbyssEntryDecision? CoinArmorStep(string phase)
 		{
 			NaturalAbyssCoinTier tier = CoinTier(scope.CoinArmor, phase);
+			// NR-56b: a tier above the character's level cannot be worn and is not asked. The contract's class is at the
+			// leg's level before its last tier; another class may end the missions a level short (the plan's finish).
+			if (state.Level < tier.Level) return null;
 			NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(scope.CoinArmor, tier,
 				state.Inventory ?? throw new InvalidDataException("The coin armor needs the observed inventory."), physicalDefence, staffMagicBoost);
 			if (manifest.Wears.Length > 0)

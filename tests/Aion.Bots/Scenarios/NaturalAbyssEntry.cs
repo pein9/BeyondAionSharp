@@ -297,7 +297,8 @@ public static class NaturalAbyssEntryLeg
 		NaturalAltgardRewardChoice hauberk = leg.RewardChoiceList.Single(choice => choice.QuestId == scope.CommanderQuestId);
 		NaturalJourneyItem[] torso = inventory.Where(item => item.EquipmentSlot != NotWorn && (item.EquipmentSlot & Torso) != 0).ToArray();
 		Require(torso is [{ } worn] && worn.ItemId == hauberk.ItemId, $"the worn torso is [{string.Join(", ", torso.Select(item => item.ItemId))}], not {hauberk.ItemId}");
-		foreach (NaturalAbyssCoinTier tier in scope.CoinArmor.Tiers)
+		// NR-56b: of the tiers the character can wear.
+		foreach (NaturalAbyssCoinTier tier in scope.CoinArmor.Tiers.Where(tier => tier.Level <= state.Level))
 			Require(NaturalAbyssCoinArmorPolicy.Plan(scope.CoinArmor, tier, inventory, physicalDefence, staffMagicBoost).Done, $"a {tier.Name} piece still beats what is worn");
 		Require(scope.Inventory.KeepSealed.All(id => inventory.Count(item => item.ItemId == id) == 1), "the sealed stigma bundle changed");
 		Require(scope.Inventory.Open.All(id => state.ItemCounts.GetValueOrDefault(id) == 0), "a reward container is still closed");
@@ -457,7 +458,9 @@ public static class NaturalAbyssEntryLeg
 		Require(scope.Inventory.Discard.All(id => state.ItemCounts.GetValueOrDefault(id) == 0), "an item the leg discards is still owned");
 		// The coin armor tiers due by now: level 21 after the commander, level 26 at the endpoint. Each has one decided manifest,
 		// bought exactly; nothing of it still beats what is worn; and in each slot the piece bought last is the one worn.
-		NaturalAbyssCoinTier[] due = [.. scope.CoinArmor.Tiers.Where(tier => tier.When == "after-commander" ? coinArmor : settled)];
+		// NR-56b: a tier above the character's level is not due.
+		NaturalAbyssCoinTier[] due = [.. scope.CoinArmor.Tiers.Where(tier => tier.Level <= state.Level &&
+			(tier.When == "after-commander" ? coinArmor : settled))];
 		Require(ledger.CoinManifests.Count == due.Length && ledger.CoinPurchases.All(purchase => due.Any(tier => tier.Level == purchase.Level)),
 			$"{ledger.CoinManifests.Count} coin armor manifests are decided where {due.Length} are due");
 		long shortfall = 0;

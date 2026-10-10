@@ -422,7 +422,15 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						Aion.GameServer.Model.Templates.Items.Enums.ItemSubType.TWO_HAND ? (ushort)3 : (ushort)1;
 					NaturalAbyssCoinArmor classArmor = armor.ForClass(manifests, Tab(manifests[0].Armor[0].ItemId), Tab(weapon.ItemId), weaponSlot,
 						manifests[0].Shield is { } tierShield ? Tab(tierShield.ItemId) : 0);
-					own = own with { AbyssEntry = abyss with { CoinArmor = classArmor } };
+					// NR-56b: the leg's level is a receipt of the accepted run, as its start facts are (NR-41). For another class
+					// it is the level the leg starts from, which is the plan's finish; a tier above it is asked only of a
+					// character that has reached it.
+					int floor = Math.Min(abyss.Level.Minimum, own.Start.Level);
+					own = own with
+					{
+						AbyssEntry = abyss with { CoinArmor = classArmor, Level = abyss.Level with { Minimum = floor } },
+						Endpoint = own.Endpoint with { MinimumLevel = Math.Min(own.Endpoint.MinimumLevel, floor) },
+					};
 					session.TraceDiagnostic("leg-coin-manifest", new Dictionary<string, object?>
 					{
 						["leg"] = leg.Leg, ["class"] = observedClass.ToString(), ["vendor"] = classArmor.VendorNpcId,
