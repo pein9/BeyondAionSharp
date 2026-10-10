@@ -179,6 +179,7 @@ public static class NaturalClassProfiles
 		[PlayerClass.ASSASSIN] = NaturalAssassinProfile.Create,
 		[PlayerClass.RANGER] = NaturalRangerProfile.Create,
 		[PlayerClass.GUNNER] = NaturalGunnerProfile.Create,
+		[PlayerClass.RIDER] = NaturalRiderProfile.Create,
 	};
 
 	private static readonly ConcurrentDictionary<PlayerClass, NaturalClassProfile> Built = new();

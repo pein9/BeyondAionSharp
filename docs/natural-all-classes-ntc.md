@@ -6673,7 +6673,157 @@ The template:
   - Work: One scope of the Gunner's play, chosen where its rules differ most from the
     Engineer's, recorded by a bot alone, twice, and added to the gate's sets.
   - Proof: The two recordings are identical.
-- [ ] **NR-130 - Rider: survey and profile data.** Depends: the close of phase C
+- [x] **NR-130 - Rider: survey and profile data.** Depends: the close of phase C
+  - 2026-10-10: done. The Rider has a class line, a gear table and a profile the
+    validator accepts. Nothing has been played. Every skill of its own needs its mech,
+    and the table does not know whether the bot rides: item NR-130a, which writes the
+    Rider's table.
+    - **Java.**
+      - **What it learns.** SkillLearnService as read for NR-50. To level 26 the Rider,
+        with the Engineer it was, learns 77 active skills and 10 toggles by itself, the
+        three common skills among them. 22 rows from level 20 are stigma rows and one
+        is a skill book, Homeward Bound at 21 (run/nr/NR-130/check.log).
+      - **The mech.** Embark is a toggle whose start condition names the cipher-blade.
+        RideRobotEffect.startEffect 22-36 takes the mech's kind from the skin of the
+        weapon in the main hand and tells everyone with SM_RIDE_ROBOT; the mech ends
+        when the weapon is taken off, and with it every effect of a skill that needs it
+        (endEffect 38-46). While it is on, the blade reaches 4 m farther and the Rider
+        has more defence, parry and resistance. It costs 104 to 136 MP once and nothing
+        while it lasts, and is cast standing still. A death ends it as it ends every
+        toggle.
+      - **Every skill of the Rider's own needs the mech.** RideRobotCondition.validate
+        17-24: a player who is not in a mech is refused. 38 active skills and six ranks
+        of toggles carry it; only Embark itself, the Engineer's shots and the common
+        skills do not.
+      - **The Engineer's shots need a pistol** (WeaponCondition, as read for NR-100),
+        in the Rider's ranks too, and Embark needs the cipher-blade. So a Rider holds
+        the blade and has none of Direct Shot, Gunshot, Rapidfire, Hot Shot, Green
+        Grenade and Bullet Resistance.
+      - **Toggles.** A Rider may keep two toggles of the hidden kind
+        (EffectController.addEffect 76-86, as read for NR-70a): Embark and Mounting
+        Frustration are of it. Kinetic Battery is a buff of the open kind.
+      - **Class rewards on the route** are those of the table under NR-42: the
+        cipher-blade 102100489 at the ceremony (Q2009, choice 1) and the dispatch Q29070
+        (NR-30), the chain rewards and the cipher-blades of NR-32, the stone 140000002
+        (NR-39), Haramel's chest 700832 (NR-40) and the chain coin armor with a
+        cipher-blade at Lateni and Nott (NR-38). The ceremony's blade calls a mech
+        (item_templates.xml, robot 2500003). Nothing new.
+    - **The class line.** `engineer-rider`: an Engineer who becomes a Rider, SIM account
+      41, character Asimrider, the cipher-blade 102100489 at the ceremony (NR-Q5). Its
+      Engineer holds a pistol, as the line `engineer` does; from the ceremony on the
+      character holds the blade. It is in NaturalClassLine.All and in the script's list;
+      the script test holds the two together.
+    - **The gear table** (Sc/Classes/NaturalClassGearTable.cs, Rider).
+
+      | Part | The Rider's | From |
+      |---|---|---|
+      | Weapon group | cipher-blade; ranked by the magical stat | NR-Q5, CP-Q7 |
+      | Off hand | nothing | CP-Q10 |
+      | Armor | chain, leather, robe, clothes; item level first, the type breaks ties | NR-Q7, CP-Q24 |
+      | Kept | life potions, its help kit, a mana potion it finds, every help scroll and food | as the Cleric from Ascension |
+
+    - **The help kit from level 10** is the manifest written under NR-50
+      (NaturalHelpItemAllowlist.Kit(caster: false, reagent: true)), the Templar's: no
+      mana serum and no Awakening scroll (NR-Q13). Levels 1 to 9 are the Engineer's kit
+      (CP-Q12).
+    - **Its skills by role** (Sc/Classes/NaturalRiderProfile.cs; 12 skills of 87).
+
+      | Role | Skill, and the levels of its ranks | What it is |
+      |---|---|---|
+      | embark | Embark: 10, 15, 20, 25 | The mech, kept on as a toggle by the buff check (NR-70a). |
+      | herb, mp-recovery | Herb Treatment and MP Recovery: 10, 15, 20, 25 | The two powder skills of a rest (NR-50a). |
+
+    - **The rule table, natural-rider-v1,** names no skill yet. The cipher-blade swings
+      whenever its target is in reach; the ladder is the shield scroll at 50% HP and the
+      life potion at or below 75%; it leaves at three attackers, as the two plate
+      classes do, or at 25% HP with nothing ready. It walks in with the Templar's
+      distances, rests as the Templar (NR-50a) and holds for a patrol (NR-37).
+    - **Left out, with the reason** (75 skills).
+
+      | Skill, levels | Why it is not cast |
+      |---|---|
+      | Return, Bandage Heal, Escape: 1 | As for every class (CP-35, CP-Q11). |
+      | Bludgeon: 10, 15, 20, 25; Battery: 10, 15, 20, 25; Cinder Cannon: 10, 15, 20, 25; Provoking Whispers: 10, 15, 20, 25; Rocket Punch: 16, 21, 26; Electric Shock: 19, 24; Lightning Tether: 22; Sundering Blade: 25; Overdrive Trigger: 10, 15, 20, 25; Nullification Trigger: 20; Kinetic Battery, a toggle: 16, 21, 26 | They need the mech, and the table does not know whether the bot rides. Item NR-130a gives each its role or its own reason. |
+      | Kinetic Slam: 10, 15, 20, 25 | A charge skill; the fight loop holds no charge. |
+      | Chilling Wave: 13, 18, 23 | It hits up to eight monsters around the mech; the bot pulls one at a time. |
+      | Mounting Frustration, a toggle: 13, 18, 23 | It doubles the Rider's enmity; alone, the monster has no one else to turn to. |
+      | Boost: 13; Steam Rush: 22 | They throw the mech 15 m forward or to its target, to a place only the cast's result names. |
+      | Fuel Reserves: 25 | It gives back flight time for 250 MP; the journey's flights are short. |
+      | Direct Shot: 1, 6, 11, 16, 21, 26; Gunshot: 3, 8, 13, 18, 23; Rapidfire: 5, 10, 15, 20, 25; Hot Shot: 9, 14, 19, 24; Green Grenade: 10, 15, 20, 25; Bullet Resistance: 7, 12, 17, 22 | They need a pistol in hand, and the Rider holds a cipher-blade. |
+
+      Not in the catalog at all: the stigma rows, the book, and the stone's skill 11505,
+      as for every class (NR-39).
+    - **Proof.** The one-time check, not committed (run/nr/NR-130/check.log): the line
+      parses and holds both classes; its character is an Engineer until the client
+      observes a Rider; NaturalClassProfiles builds the Rider's profile, which requires
+      the validator: each of the 87 skills has one role or one reason, the kept toggle
+      is a toggle and no stance, and the gear groups lie inside the masteries. The check
+      prints the skill tree, the 12 rows, the 75 reasons, the gear groups, and for each
+      of the 87 skills whether it needs the mech: 44 do, 43 do not. Gate, set
+      all+mage+warrior+artist+engineer+scout+templar, -Parallel 8, run guard-p8
+      (run/nr/NR-130/guard-p8/verdict.json): verdict pass, all thirteen scopes
+      identical. Seven pre-commit checks pass, the three script tests pass
+      (run/nr/NR-130/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
+      skipped) and Fast passes (run nr130-fast, 11 passed).
+- [ ] **NR-130a - The mech, and the Rider's table.** Depends: NR-130
+  - Work: Java first: RideRobotCondition and RideRobotEffect as read for NR-130, and
+    what a client is told when the mech comes and goes (SM_SKILL_ACTIVATION,
+    SM_RIDE_ROBOT). A skill row says whether the skill needs a mech and whether it is
+    one. The table sees whether the bot rides, as the server says it, and refuses a
+    skill that needs the mech without it; a cast from the mech is timed by the mech's
+    animations, as the server times it (MotionTime.getTimesFor 50-56). Generic: every
+    class with such skills. Then the Rider's table: Cinder Cannon from range for the
+    pull, Bludgeon and Battery, Rocket Punch, Sundering Blade, Electric Shock and
+    Lightning Tether, Provoking Whispers, Overdrive Trigger for its DP, Nullification
+    Trigger on the ladder, for Kinetic Battery a role or its reason (it takes 64 MP
+    every 6 s while it is on), and what it attacks with in flight.
+  - Proof: One probe row on a probe account in which a prepared Rider boards its mech in
+    the buff check and fights by its table, and, with the mech ended by the director,
+    decides no skill that needs it until the buff check has boarded again; the full
+    gate identical.
+- [ ] **NR-131 - Rider: probe rows.** Depends: NR-130a
+  - Work: Rows rider-10, rider-16, rider-20 and rider-25 in
+    SimulationNaturalStarterProbeTests: prepared Riders on the two probe accounts, in
+    the gear the route has given by that level and with its cipher-blade, fight the
+    monsters the Cleric's rows fight. Each row's trace shows the table in play: the
+    mech on, Cinder Cannon from range, the walk in, the Bludgeon chain, Rocket Punch
+    from 16, Electric Shock and Lightning Tether from 19 and 22, Sundering Blade at 25,
+    Overdrive Trigger at 2,000 DP, Nullification Trigger on the ladder, the rest with
+    the powder. What a row shows decides the open rules: whether a Rider sits, eats the
+    powder and drinks in its mech; at how many attackers it leaves; whether Kinetic
+    Battery's shield earns the mana it takes; and whether the mech's own reach calls
+    for another distance than the Templar's. A fix is one small change (rule (i)).
+  - Proof: The four rows end with the monster dead or a recorded retreat, no refused
+    cast repeated and no skill outside the table cast.
+- [ ] **NR-132 - Rider: to Altgard.** Depends: NR-131; ticked by the round that gives it
+  - Work: A fresh Asimrider plays Ishalgen as an Engineer, the trial, the ceremony with
+    the cipher-blade and the dispatch Q29070, and is captured at the Altgard bind as
+    altgard-rider-s1. The blade is in its hands from the ceremony on.
+  - Proof: The capture verifies.
+- [ ] **NR-133 - Rider: Altgard legs l1 to l5.** Depends: NR-132; ticked by its round
+  - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
+    with -rider (NR-41). In leg 1 it kills the fungus in flight.
+  - Proof: Each capture verifies.
+- [ ] **NR-134 - Rider: Altgard legs l6 to l11.** Depends: NR-133; ticked by its round
+  - Work: As NR-133. Leg 11 is the destiny quest: its stone is 140000002 (NR-39).
+  - Proof: Each capture verifies.
+- [ ] **NR-135 - Rider: coin gear and Haramel.** Depends: NR-134; ticked by its round
+  - Work: The coin-gear leg (chain, by its manifest, NR-38a) and Haramel with chest
+    700832 (NR-40), captured as altgard-coingear-rider and
+    altgard-rc-complete-s1-rider.
+  - Proof: Each capture verifies.
+- [ ] **NR-136 - Rider: the Abyss entry.** Depends: NR-135; ticked by its round
+  - Work: Q24020, then Q2945, Q2946, Q2947 and Q2042 with the coin tiers it can wear
+    (NR-38b, NR-Q14, NR-Q16), captured as morheim-abyss-entry-s1-rider.
+  - Proof: The capture verifies.
+- [ ] **NR-137 - Rider: the endpoint.** Depends: NR-136; ticked by its round
+  - Work: Captured and verified as ntc-ready-rider-s1: alive at Morheim Ice Fortress,
+    level 25 or higher, Q2945, Q2946, Q2947 and Q2042 complete.
+  - Proof: The capture verifies.
+- [ ] **NR-138 - Rider: the class scope.** Depends: NR-137
+  - Work: One scope of the Rider's play, chosen where its rules differ most from the
+    Engineer's, recorded by a bot alone, twice, and added to the gate's sets.
+  - Proof: The two recordings are identical.
 - [ ] **NR-140 - Bard: survey and profile data.** Depends: the close of phase C
 
 ### E. Close
@@ -7518,3 +7668,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   passes with Reload in play. Full gate guard-p8 (thirteen scopes identical), seven
   checks, unit suite (4,629 passed, 16 skipped) and Fast (nr120b-fast) pass. Next: NR-130,
   the Rider's survey; the Gunner's rows NR-121 wait for the surveys (rule (w)).
+- 2026-10-10 — Loop: NR-130 done. The Rider has the line engineer-rider, which takes the
+  cipher-blade at the ceremony, a gear table (the blade, chain first) and the profile
+  natural-rider-v1 with Embark, its mech, kept on as a toggle. Of its 87 skills 12 have a
+  role and 75 a reason: 44 need the mech, which the table cannot see yet, and the
+  Engineer's shots need a pistol the Rider no longer holds. Its table names no skill until
+  NR-130a. The Rider's items NR-130a and NR-131 to NR-138 are written. Full gate guard-p8
+  (thirteen scopes identical), seven checks, three script tests, unit suite (4,629 passed,
+  16 skipped) and Fast (nr130-fast) pass. Next: NR-130a, the mech and the Rider's table.

@@ -112,6 +112,7 @@ $lineSecondClass = [ordered]@{
 	'scout-ranger' = 'RANGER'
 	'mage-spirit-master' = 'SPIRIT_MASTER'
 	'engineer-gunner' = 'GUNNER'
+	'engineer-rider' = 'RIDER'
 	'warrior' = $null
 	'scout' = $null
 	'mage' = $null

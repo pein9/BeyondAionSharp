@@ -127,6 +127,11 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 	public static NaturalClassGearTable Gunner { get; } = new(PlayerClass.GUNNER, ["GUN"], NaturalWeaponStat.Magical,
 		["LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies, OffHand: NaturalOffHand.SecondWeapon);
 
+	// NR-130 (NR-Q5, NR-Q7): the Rider holds a cipher-blade, the weapon its mech is called with, and wears chain. Its
+	// skills are counted with the magic boost, as the Engineer's are.
+	public static NaturalClassGearTable Rider { get; } = new(PlayerClass.RIDER, ["KEYBLADE"], NaturalWeaponStat.Magical,
+		["CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies);
+
 	// The defaults of CP-Q10 for the five new starters. Each holds one weapon and nothing in the off hand, but the Scout.
 	public static NaturalClassGearTable Warrior { get; } = new(PlayerClass.WARRIOR, ["SWORD", "MACE"], NaturalWeaponStat.Physical,
 		["CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder);
@@ -148,7 +153,8 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 
 	/// <summary>NR-50c: every class's table; a class's first item adds its own.</summary>
 	public static IReadOnlyList<NaturalClassGearTable> All { get; } =
-		[Priest, Cleric, Chanter, Templar, Gladiator, Assassin, Ranger, Sorcerer, SpiritMaster, Gunner, Warrior, Scout, Mage, Engineer, Artist];
+		[Priest, Cleric, Chanter, Templar, Gladiator, Assassin, Ranger, Sorcerer, SpiritMaster, Gunner, Rider, Warrior, Scout, Mage, Engineer,
+			Artist];
 
 	/// <summary>The class's table; null for a class that has none yet.</summary>
 	public static NaturalClassGearTable? Of(PlayerClass playerClass) => All.FirstOrDefault(table => table.Class == playerClass);
