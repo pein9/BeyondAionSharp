@@ -4226,6 +4226,46 @@ The template:
     chest 700829 (NR-40), captured as altgard-coingear-templar and
     altgard-rc-complete-s1-templar.
   - Proof: Each capture verifies.
+  - 2026-10-09, the coin-gear leg captured; Haramel stopped twice, and with NR-55a and
+    NR-55b a replay played it to its end.
+    - **Captured** at df7e4de09: altgard-coingear-templar from altgard-rc-l11-templar with
+      -LaterCapital (run nr55-cg-a1, log run/nr/NR-55/cg-a1.log): the leg in 17 min with
+      no death; level 24, 165 quests, 70,688,001 ms of game time, dump sha256 517b192010113bd1.
+      At Lateni it bought the shoulders for 1 Iron Coin, the greaves for 2 and the
+      shield 115001074 for 2 (NR-54a), wears the shield in the off hand and keeps 18.
+    - **Haramel, attempt 1** (capture run nr55-l12-a1 from altgard-coingear-templar;
+      nothing captured; evidence run/nr/NR-55/l12-a1/). Refused as it began: "Haramel
+      starts from the level-24 CG endpoint with all three purchases equipped and 19
+      Iron." NR-55a.
+    - **Haramel, attempt 2** (replay l12-a2 with NR-55a's change; evidence
+      run/nr/NR-55a/l12-a2/). Twenty-seven minutes in, on the way to Q28504's monsters, a
+      pack of seven stood on the route. The Templar taunted one of them and asked to
+      walk to it 1,007 times: "Warrior could not clear engaged attackers before resting
+      or pulling." NR-55b.
+- [x] **NR-55a - Haramel's start asks the class's own scope.** Depends: NR-54a
+  - Work: The first stop of Haramel. Java first: nothing of the server is relied on. The
+    leg's start check held the contract's endpoint of the coin-gear leg: 19 Iron Coins,
+    no Bronze Coin, and the Cleric's three coin pieces worn. NR-40 gave the leg's scope
+    the class's own coins and asks another class for no armor by id; the start check
+    did not ask the scope.
+  - Proof: The start is passed in a replay of the Templar's Haramel; gate hm identical
+    with the full gate.
+  - 2026-10-09: done.
+    - **The change.** Sc/NaturalHaramel.cs: the scope carries the Bronze Coins brought
+      in, none for the contract's class. NaturalHaramelProgress.Begin asks for the
+      scope's Iron Coins and those Bronze Coins, and for each of the three coin pieces
+      only when the scope names it as incoming armor. For the Cleric that is 19, 0 and
+      all three, as before.
+    - **Proof, the replay** (l12-a2 from altgard-coingear-templar; evidence
+      run/nr/NR-55a/l12-a2/). The Templar starts with its 18 Iron Coins and plays 27
+      minutes of the leg, through the first visit's quests, before the stop that is
+      NR-55b (30,453 records).
+    - **Proof.** One bundle ran on the tree that holds NR-55a and NR-55b together; the
+      two are committed one after the other from that tree. Gate, set
+      all+mage+warrior+artist+engineer+scout, -Parallel 8, run guard-p8
+      (run/nr/NR-55b/guard-p8/verdict.json): verdict pass, all twelve scopes identical,
+      hm among them. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr55b-fast, 11 passed).
 - [ ] **NR-56 - Templar: the Abyss entry.** Depends: NR-55; ticked by its round
   - Work: Q24020, then Q2945, Q2946, Q2947 and Q2042 with the two coin tiers at Nott
     (NR-38b, NR-Q14), captured as morheim-abyss-entry-s1-templar.
@@ -4802,3 +4842,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   tiers cost 78 Bronze Coins where 44 are approved (NR-Q14). Full gate guard-p8 (twelve
   scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
   (nr54a-fast) pass. Next: NR-55, the Templar's coin gear and Haramel.
+- 2026-10-09 — Loop: NR-55 coin-gear leg captured, NR-55a done. altgard-coingear-templar
+  is captured at df7e4de09: level 24, 165 quests; the Templar bought shoulders, greaves
+  and the shield for 5 Iron Coins and wears the shield. Haramel refused its start: the
+  check held the Cleric's 19 Iron Coins and three coin pieces. It now asks the class's own
+  scope. One bundle ran for NR-55a and NR-55b together: full gate guard-p8 (twelve scopes
+  identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr55b-fast)
+  pass. Next: NR-55b.

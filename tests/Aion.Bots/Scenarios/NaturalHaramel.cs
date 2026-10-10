@@ -28,6 +28,9 @@ public sealed record NaturalHaramel(int MapId, int CooldownId, int MaxEntries, i
 	/// <summary>NR-40: the slot the retained weapon is worn in: 3, both hands, for the contract's staff.</summary>
 	public long WeaponSlot { get; init; } = 3;
 
+	/// <summary>NR-55a: the Bronze Coins the character brings in: none for the contract's class.</summary>
+	public int IncomingBronzeCount { get; init; }
+
 	/// <summary>NR-40: the armor the class may put on inside the leg, by its item-group prefix: chain for the contract's class.</summary>
 	public string UpgradeArmorPrefix { get; init; } = "CH";
 
@@ -66,6 +69,7 @@ public sealed record NaturalHaramel(int MapId, int CooldownId, int MaxEntries, i
 	{
 		ChestNpcId = ChestFor(playerClass), StaffItemId = weapon.ItemId, StaffObjectId = weapon.ObjectId, WeaponSlot = weapon.EquipmentSlot,
 		IncomingArmorItemIds = [], UpgradeArmorPrefix = armorPrefix, IronCount = checked((int)ironCoins),
+		IncomingBronzeCount = checked((int)bronzeCoins),
 		BronzeCount = checked((int)bronzeCoins) + BronzeCount, StigmaStoneItemId = destiny.StoneItemId, LegacyRewardId = destiny.LegacyRewardId,
 		StigmaSkillId = destiny.StigmaSkillId, ProtectedItemIds = [.. ProtectedItemIds.Append(weapon.ItemId).Distinct().Order()],
 	};
@@ -130,10 +134,12 @@ public sealed record NaturalHaramelProgress(int CharacterId, long StartedAtMilli
 	public static NaturalHaramelProgress Begin(int characterId, long now, BotWorldModel world, NaturalHaramel rules)
 	{
 		RequireLoadout(world, rules);
+		// NR-55a: the coins are the scope's own, 19 Iron and no Bronze for the contract's class, and the three coin pieces
+		// are asked of the class whose scope names them as its incoming armor.
 		if (world.SelfObjectId != characterId || !world.LoginStateObserved || world.Level < 24 ||
-			world.Inventory.Values.Where(i => i.ItemId == rules.IronItemId).Sum(i => i.Count) != 19 ||
-			world.Inventory.Values.Where(i => i.ItemId == rules.BronzeItemId).Sum(i => i.Count) != 0 ||
-			new[] { (111501065,16L), (112501015,2048L), (113501074,4096L) }.Any(p =>
+			world.Inventory.Values.Where(i => i.ItemId == rules.IronItemId).Sum(i => i.Count) != rules.IronCount ||
+			world.Inventory.Values.Where(i => i.ItemId == rules.BronzeItemId).Sum(i => i.Count) != rules.IncomingBronzeCount ||
+			new[] { (111501065,16L), (112501015,2048L), (113501074,4096L) }.Where(p => rules.IncomingArmorItemIds.Contains(p.Item1)).Any(p =>
 				!world.Inventory.Values.Any(i => i.ItemId == p.Item1 && i.Details.EquippedSlot == p.Item2)))
 			throw new InvalidDataException("Haramel starts from the level-24 CG endpoint with all three purchases equipped and 19 Iron.");
 		return new(characterId, now, now, 0, [], null, world.Inventory.Values
