@@ -72,6 +72,9 @@ $scopeTable = [ordered]@{
 	artist   = @{ line = 'artist'; replay = [ordered]@{ Class = 'artist'; StopAt = '2004:5:0' } }
 	engineer = @{ line = 'engineer'; replay = [ordered]@{ Class = 'engineer'; StopAt = '2004:5:0' } }
 	scout    = @{ line = 'scout'; replay = [ordered]@{ Class = 'scout'; StopAt = '2004:5:0' } }
+	# NR-58: the Templar's scope is Haramel, where its rules differ most from the Warrior's: it pulls with Taunt, walks
+	# into the packs its patrol rule decides to take, and holds its shield.
+	templar  = @{ line = 'warrior-templar'; replay = [ordered]@{ AltgardLeg1 = $true; Leg = 'l12'; From = 'altgard-coingear-templar'; LaterCapital = $true } }
 }
 # The environment every gate run is pinned to. Null is unset: help items on, the bot monitor at its default port.
 $pinned = [ordered]@{ AION_SIM_SEED = '1'; NA_HELP_ITEMS = $null; AION_BOT_DASHBOARD_PORT = $null; AION_SIM_PROCESS_KEY = $null }
