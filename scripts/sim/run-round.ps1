@@ -6,10 +6,13 @@
 #   run-round.ps1 -Round <file> -Item NR-47 -Run <id> [-Capture <name>] [-From <name>] [-Parallel 8] [-NoBuild]
 #
 # The round file:
-#   { "worlds": [ { "bots": [ { "line": "mage", "startAfterMinutes": 0, "stopAt": null, "name": null, "capture": "munin-mage-r1" } ] } ] }
+#   { "worlds": [ { "bots": [ { "line": "mage", "startAfterMinutes": 0, "stage": null, "stopAt": null, "name": null, "capture": "munin-mage-r1" } ] } ] }
 #   line               the class line (NaturalClassLine).
+#   stage              NR-R1a: how far the bot plays. Leave it out for the plain journey, to Munin. "bridge" goes on through
+#                      the trial, the class choice, the ceremony, the capital pass and the dispatch to the Altgard bind, as
+#                      sim-snapshot.ps1 -Bridge does for one bot. The bot's folder then holds bridge-completion.json.
 #   startAfterMinutes  game minutes after the world begins; ten apart is the operator's figure.
-#   stopAt             a diagnostic stop boundary (questId:status:packedVars). Leave it out to play to the line's end.
+#   stopAt             a diagnostic stop boundary (questId:status:packedVars). Leave it out to play to the stage's end.
 #   name               the character's name when it is not the line's (the Cleric's and the Chanter's lines share one).
 #   capture            with -Capture: the name of this character's own capture, written when the bot reached its end.
 #
@@ -168,7 +171,7 @@ if ($World -gt 0) {
 			Copy-Item -LiteralPath $outcomeFile -Destination $directory
 			$captured = (Get-Date).ToUniversalTime().ToString('o')
 			$characters = @($outcome.bots | ForEach-Object {
-				[ordered]@{ seat = $_.Bot; line = $_.Line; account = $_.Account; name = $_.Name; characterId = $_.CharacterId
+				[ordered]@{ seat = $_.Bot; line = $_.Line; stage = (Get-Field $_ 'Stage'); account = $_.Account; name = $_.Name; characterId = $_.CharacterId
 					outcome = $_.Outcome; level = $_.Level; completedQuests = $_.CompletedQuests; step = $_.Step; message = $_.Message }
 			})
 			[ordered]@{
@@ -190,7 +193,7 @@ if ($World -gt 0) {
 				[ordered]@{
 					schemaVersion = 1; name = $own; source = 'natural-round-character'; roundSnapshot = $name
 					classLine = $result.Line; characterId = $result.CharacterId; account = $result.Account; characterName = $result.Name
-					level = $result.Level; completedQuests = $result.CompletedQuests
+					stage = (Get-Field $result 'Stage'); level = $result.Level; completedQuests = $result.CompletedQuests
 					run = "$Run-w$World"; seed = $Seed; gitSha = $BuiltSha; capturedUtc = $captured
 				} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $ownDirectory 'snapshot.json') -Encoding utf8
 			}
@@ -258,7 +261,7 @@ foreach ($done in $finished) {
 	}
 	$outcome = Get-Content -Raw -LiteralPath $outcomeFile | ConvertFrom-Json
 	foreach ($bot in $outcome.bots) {
-		$records += [ordered]@{ world = $done.world; seat = $bot.Bot; line = $bot.Line; outcome = $bot.Outcome; level = $bot.Level
+		$records += [ordered]@{ world = $done.world; seat = $bot.Bot; line = $bot.Line; stage = (Get-Field $bot 'Stage'); outcome = $bot.Outcome; level = $bot.Level
 			completedQuests = $bot.CompletedQuests; gameMinutes = [math]::Round(($bot.EndedAtMillis - $bot.StartedAtMillis) / 60000.0, 1)
 			step = $bot.Step; message = $bot.Message; account = $bot.Account; name = $bot.Name; characterId = $bot.CharacterId }
 		Write-Host ("  w{0} {1} {2}: {3}, level {4}, {5} quests{6}" -f $done.world, $bot.Bot, $bot.Line, $bot.Outcome, $bot.Level,

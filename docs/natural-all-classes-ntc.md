@@ -7792,6 +7792,67 @@ The template:
     Artist's, recorded by a bot alone, twice, and added to the gate's sets.
   - Proof: The two recordings are identical.
 
+### D2. The rounds
+
+Written by the loop as it goes (In rounds, step 3). A round's item says what was played
+and has one outcome line for each class. A stop gets a lettered item with its fix, and
+the next round starts when those are done. The classes' items NR-x2 to NR-x7 are worked
+through these: each is ticked by the round that gave its capture.
+
+- [x] **NR-R1a - A round's bot plays a stage.** Depends: NR-141
+  - Work: Survey C1, part 7: a round file says how far each bot plays. Until now a round
+    played the plain journey, to Munin, and its world's process cleared every switch a
+    run of one bot takes its stage from. A bot's stage gives the journey those options.
+    The bridge first, which round 1 needs; a later stage is opened by the round that
+    needs it.
+  - Proof: The script tests pass. A round of two worlds, a line of the Mage and a line of
+    the Engineer, stage bridge, stopped after the ceremony: both outcome records say
+    reached, and the server says the second class. The full gate identical.
+  - 2026-10-10: done.
+    - **Java.** No server behavior is involved.
+    - **The change.**
+      - SimT/SimulationNaturalRoundTests.cs: a bot of a round file has a stage. Unset,
+        the journey is the plain one, as before. "bridge" gives the journey the option a
+        run of one bot takes from NA_ASCENSION=1: on from Munin through the trial, the
+        class choice, the ceremony, the capital pass and the dispatch, to the Altgard
+        bind. Any other stage is refused before a bot begins. The outcome record says
+        the stage.
+      - scripts/sim/run-round.ps1: the stage is in the round file's description, and it
+        is written into round.json, the round snapshot's list of characters and a bot's
+        own capture.
+    - **Proof, the smoke round** (run smoke-a2, run/nr/NR-R1a/smoke-a2; round file
+      run/nr/NR-R1a/round-smoke.json; no capture). Two worlds side by side, one bot each,
+      stage bridge, stopped at Q2009 complete. 74 seconds of wall time.
+
+      | World | Line | Outcome | Level | Quests | Game minutes | Class, by the server |
+      |---|---|---|---|---|---|---|
+      | 1 | mage-sorcerer | reached | 10 | 13 | 62.6 | Sorcerer |
+      | 2 | engineer-gunner | reached | 10 | 13 | 70.1 | Gunner |
+
+      Each left Ishalgen at level 9, killed the trial's five opponents, made its choice
+      and took the ceremony's reward. A first run (smoke-a1) was called with a relative
+      evidence root, and its worlds did not find their round file: the call, not the
+      code.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-R1a/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. The script tests pass (run/nr/NR-R1a/script-tests.log). Seven
+      pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and
+      Fast passes (run nrr1a-fast, 11 passed).
+- [ ] **NR-R1 - Round 1: the nine classes from creation to the Altgard bind.** Depends: NR-R1a
+  - Work: One round by rule (w) and NR-Q11. The Sorcerer, Chanter, Gladiator, Assassin,
+    Ranger, Spirit Master, Gunner, Rider and Bard, each a fresh character of its line, in
+    eight worlds side by side; the Bard and the Rider share one, ten game minutes apart
+    (round file run/nr/NR-R1/round-1.json). Stage bridge: Ishalgen as the starter, the
+    trial, the class choice at Munin, the ceremony with the line's weapon, the capital
+    pass and the dispatch, to the Altgard bind. With -Capture nr-r1: a class that reaches
+    the bind is captured as altgard-<class>-s1, a record that points into its world's
+    round snapshot. One outcome line for each class. A stop gets a lettered item with its
+    fix, generic first (rule (s)); a class that stopped is resumed by the next round from
+    its world's round snapshot.
+  - Proof: round.json with nine outcome records. For each class that reached the bind:
+    its bridge-completion.json says verified, and its capture is written; its NR-x2 is
+    ticked.
+
 ### E. Close
 
 - [ ] **NR-150 - Final gate and close-out.** Depends: every item above, or its class parked
@@ -8798,3 +8859,12 @@ report what was done, what is parked or blocked, and what the operator must deci
   identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr141-fast)
   pass. With this every class has its probe rows. Next: the first round, NR-R1, which
   the loop writes (rule (w)).
+- 2026-10-10 — Loop: NR-R1a done, and the rounds' section written (D2). A round played
+  the plain journey only, to Munin: its bots had no stage. A bot of a round file now has
+  one, and "bridge" plays on to the Altgard bind as a run of one bot does with
+  NA_ASCENSION=1. Smoke round smoke-a2: two worlds, mage-sorcerer and engineer-gunner,
+  stopped after the ceremony, both reached as Sorcerer and Gunner at level 10, in 74 s.
+  Full gate guard-p8 (thirteen scopes identical), script tests, seven checks, unit suite
+  (4,629 passed, 16 skipped) and Fast (nrr1a-fast) pass. Round 1 is written: the nine
+  classes that have no capture, in eight worlds, from creation to the Altgard bind. Next:
+  NR-R1.

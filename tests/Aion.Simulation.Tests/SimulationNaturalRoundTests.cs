@@ -16,9 +16,23 @@ public sealed partial class SimulationFastScenarioTests
 	/// NR-47: <c>Account</c> and <c>Name</c> are the seat's own when given; a seat's account is otherwise 111 and up, and its
 	/// name its line's. <c>ResumeCharacter</c> is a character of the round snapshot the world was restored from: the bot
 	/// logs it in on its account instead of creating one.
+	/// NR-R1a: <c>Stage</c> is how far the bot plays. Unset, it is the plain journey, to Munin. "bridge" goes on through the
+	/// trial, the class choice, the ceremony, the capital pass and the dispatch to the Altgard bind.
 	/// </summary>
 	private sealed record NaturalRoundBot(string Line, double StartAfterMinutes = 0, string? StopAt = null, double? StopAfterMinutes = null,
-		int? Account = null, string? Name = null, int? ResumeCharacter = null);
+		int? Account = null, string? Name = null, int? ResumeCharacter = null, string? Stage = null);
+
+	/// <summary>
+	/// NR-R1a: the journey's options for a bot's stage. A run of one bot takes them from its environment
+	/// (NaturalIshalgenPriestCompletesFrozenJourneyWithoutSetup: NA_ASCENSION and the rest); a round gives them for each bot
+	/// from its round file (Survey C1, part 7). The bridge is what NA_ASCENSION=1 is there.
+	/// </summary>
+	private static NaturalJourneyOptions RoundOptions(NaturalRoundBot entry, NaturalClassLine line) => entry.Stage switch
+	{
+		null or "" => new NaturalJourneyOptions(StopAt: entry.StopAt, ClassLine: line),
+		"bridge" => new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, ClassLine: line),
+		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not opened for a round. A round plays the plain journey (no stage) or the bridge."),
+	};
 
 	private sealed record NaturalRoundFile(NaturalRoundBot[] Bots);
 
@@ -43,6 +57,8 @@ public sealed partial class SimulationFastScenarioTests
 			?? throw new InvalidDataException("The round file is empty.");
 		if (round.Bots is not { Length: > 0 }) throw new InvalidDataException("The round file names no bot.");
 		NaturalClassLine[] lines = round.Bots.Select(bot => NaturalClassLine.Parse(bot.Line)).ToArray();
+		// NR-R1a: a stage the round cannot play is refused before any bot begins.
+		for (int index = 0; index < round.Bots.Length; index++) _ = RoundOptions(round.Bots[index], lines[index]);
 		// Every class line plays on the one SIM account of a run alone (CP-Q19), and an account is in a world once. So a
 		// round gives each seat an account of its own. The character has its line's name unless the seat names it: the
 		// Cleric's and the Chanter's lines share a name, and a world holds a name once.
@@ -99,7 +115,8 @@ public sealed partial class SimulationFastScenarioTests
 			// A bot the table ended before it began (stopped on purpose, or a fault of the world) wrote no record.
 			outcomes[index] ??= new NaturalRoundOutcome($"b{index + 1:00}", lines[index].Id, "stopped", played[index].Played.Status.ToString(),
 				played[index].Played.Exception?.GetBaseException().Message ?? "The round ended this bot before it began.", null, 0, 0,
-				fixture.Clock.NowMillis, fixture.Clock.NowMillis, accounts[index], names[index], round.Bots[index].ResumeCharacter ?? 0);
+				fixture.Clock.NowMillis, fixture.Clock.NowMillis, accounts[index], names[index], round.Bots[index].ResumeCharacter ?? 0,
+				round.Bots[index].Stage);
 			NaturalRoundOutcome outcome = outcomes[index]!;
 			Console.WriteLine($"Natural round {run}: {outcome.Bot} {outcome.Line} {outcome.Outcome}, level {outcome.Level}, " +
 				$"{outcome.CompletedQuests} quests, game time {TimeSpan.FromMilliseconds(outcome.EndedAtMillis - outcome.StartedAtMillis):c}" +
@@ -119,7 +136,7 @@ public sealed partial class SimulationFastScenarioTests
 	private const int RoundAccountBase = 111;
 
 	private sealed record NaturalRoundOutcome(string Bot, string Line, string Outcome, string? Exception, string? Message, string? Step,
-		int Level, int CompletedQuests, long StartedAtMillis, long EndedAtMillis, int Account, string Name, int CharacterId);
+		int Level, int CompletedQuests, long StartedAtMillis, long EndedAtMillis, int Account, string Name, int CharacterId, string? Stage = null);
 
 	/// <summary>One bot of a round: the journey's own test, for a class line's fresh character, with a turn at the clock.</summary>
 	private async Task<NaturalRoundOutcome> PlayRoundBotAsync(SimulationTurnTable turns, string bot, int account, string name, NaturalClassLine line,
@@ -153,7 +170,7 @@ public sealed partial class SimulationFastScenarioTests
 				SupplyHelpItemAsync = NaturalHelpItemSupply.Enabled(Environment.GetEnvironmentVariable(NaturalHelpItemSupply.Switch))
 					? SupplyHelpItemAsync : null,
 			};
-			await new NaturalIshalgenJourney(playing, runtime, new NaturalJourneyOptions(StopAt: entry.StopAt, ClassLine: line)).RunAsync(token);
+			await new NaturalIshalgenJourney(playing, runtime, RoundOptions(entry, line)).RunAsync(token);
 			outcome = "reached";
 
 			async Task SupplyHelpItemAsync(int itemId, long count, CancellationToken supplyToken)
@@ -207,7 +224,7 @@ public sealed partial class SimulationFastScenarioTests
 		}
 		var record = new NaturalRoundOutcome(bot, line.Id, outcome, stop?.GetType().Name, stop?.Message, session?.CurrentStep,
 			session?.Api.World.Level ?? 0, session?.Api.World.CompletedQuestIds.Count ?? 0, began, fixture.Clock.NowMillis,
-			account, name, session?.CharacterId ?? entry.ResumeCharacter ?? 0);
+			account, name, session?.CharacterId ?? entry.ResumeCharacter ?? 0, entry.Stage);
 		File.WriteAllText(Path.Combine(folder, "outcome.json"), JsonSerializer.Serialize(record, RoundJson));
 		return record;
 	}
