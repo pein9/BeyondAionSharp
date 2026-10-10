@@ -5910,7 +5910,7 @@ The template:
       run guard-p8 (run/nr/NR-110b/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr110b-fast, 11 passed).
-- [ ] **NR-110c - The spirit fights.** Depends: NR-110b
+- [x] **NR-110c - The spirit fights.** Depends: NR-110b
   - Work: Java first: CM_SUMMON_COMMAND and SummonsService.doMode, CM_SUMMON_ATTACK and
     SummonController.attackTarget, and whose enmity a monster keeps when a spirit and
     its master both hit it. In a fight the bot sends its spirit at the target it pulls:
@@ -5922,6 +5922,90 @@ The template:
   - Proof: One probe row on a probe account in which the spirit is sent at a monster,
     the monster is on the spirit, and the fight ends with the monster dead or a recorded
     retreat; the full gate identical.
+  - 2026-10-10: done. In a fight the bot sends its spirit first, walks it to the target,
+    reports its swings, and calls it back when the fight ends; the bot's next walk takes
+    it along. Two rules of the fight do not fit a spirit yet and are the items NR-110e
+    and NR-110f below.
+    - **Java, beyond NR-110b.**
+      - **The order.** CM_SUMMON_COMMAND carries the mode, two zeros and the target;
+        SummonsService.doMode 184-216 takes ATTACK only for a creature the spirit knows
+        and may attack (SummonController.canAttack 72-74). attackMode 168-174 keeps the
+        mode, tells the master and stops the spirit's HP from coming back; guardMode
+        156-163 starts that again. Neither moves the spirit nor makes it swing.
+      - **The swing.** CM_SUMMON_ATTACK names the spirit and the target (runImpl 39-51).
+        SummonController.attackTarget 77-91 refuses a dead target and one that is no
+        enemy, and a swing that comes sooner than the spirit's attack speed less 50 ms.
+        CreatureController.attackTarget 307-360 then deals the damage. Neither checks a
+        range or a line of sight. SM_ATTACK goes to everyone who sees the spirit, its
+        master among them, and calls the target's friends (347-349).
+      - **Whose enemy.** A monster keeps the spirit and its master as two enemies: the
+        hate is ten times the damage, of the one who dealt it (AggroList.addDamage 37-52,
+        StatFunctions.calculateHate 267-270), and it turns on the one it hates more
+        (AttackManager 75-80). A spirit's damage counts for its master in the kill
+        (AggroList.getFinalDamageList), so the experience and the loot are the master's.
+      - **The port** has the same packets, service and checks, and holds the swing to
+        its game clock (Controllers/SummonController.cs 60-78). No server change.
+    - **The change, generic.** No profile and no class is named. A bot without a spirit
+      sends nothing and waits for nothing.
+      - Sc/Classes/NaturalSpiritDriver.cs, new. A beat: the order when the target is
+        new; the stretch the spirit ran since the beat before, at its own speed, to half
+        a metre inside its own reach of the target; a swing when it stands in reach and
+        its attack speed allows one. The opening: before the bot's first attack the
+        spirit is sent, and the bot holds until it sees the spirit's first hit, for 8 s
+        at most; it holds nothing when something is on it already. Standing down: the
+        spirit stops and gets the order to guard.
+      - Sc/NaturalIshalgenJourney.Combat.cs: the fight has its opening before its first
+        attack and a beat with each of its turns. The spirit stands down when the fight
+        ends, before a retreat, and when a target cannot be reached. The buff check
+        looks up the spirit's run speed in the client's data of its kind.
+      - Bots/World/BotSummonWorldState.cs: the world state holds the bot's own order
+        (the spirit fights or not) and the spirit's speed; a new spirit and a spirit
+        that is gone have neither.
+      - Bots/Movement/BotMover.cs: a walk of the bot leaves a spirit that fights where
+        it is, and drives a spirit at its own speed, 8.4 m/s for an Earth Spirit, so
+        that it closes a gap (NR-110b's open point).
+    - **Proof, the probe row** spirit-master-fight (SimT/SimulationNaturalStarterProbe
+      Tests.cs, probe account 100; `bash run/nr/NR-110c/probe.sh <attempt>`). Prepared by
+      the director: a level-16 Spirit Master by the tusked mosbears where the Cleric's
+      level-16 row fights. The buff check summons the Earth Spirit, 1,575 HP. The first
+      attempt (nr110c-probe-a1) passed. The row then got its walk after the fight, and
+      the second attempt (nr110c-probe-a2) passed with the same fight to the millisecond.
+      - **The opening.** The spirit is sent from 15.8 m at 8.4 m/s: the order, a start,
+        three steps half a second apart, a stop and a swing after 2.0 s. The server shows
+        its hit and the mosbear strikes the spirit; the opening ends after 2,500 ms.
+      - **The fight.** The bot then casts eight skills of its table from 17.6 to 19.6 m.
+        The spirit swings four times, and the server shows all four. The mosbear dies
+        13.9 s after the fight began. It struck the spirit once and its master once, at
+        the end, when the master had dealt more damage.
+      - **The end.** The spirit gets the order to guard at the kill (two orders in all)
+        and is in guard mode on the server, with 1,244 HP; the bot has 564 of 799 HP.
+      - **The walk on.** The spirit stands 16.5 m from its master, where it fought. The
+        journey walks 82 m in two approaches with 108 steps of the spirit, and the
+        spirit stands 3.0 m from its master at the end, by the server's positions.
+      - Row spirit-master-walk was played again on the changed walk (run
+        nr110c-probe-walk-a1): 555 m, the spirit never more than 3.0 m away, as before.
+    - **The fight rules, read for a spirit.**
+      - **An attacker is one that strikes the bot.** Two tusked mosbear cubs (210439)
+        of the target's family struck the spirit nine times in the fight and three
+        times more in the walk after it. The bot's rules count neither: they are in no
+        count of attackers, the rest would not defend against them, a retreat would
+        not flee them. Item NR-110e.
+      - **Where the spirit stands.** The spirit goes to the target and stands inside
+        the circles of the target's neighbours, 6 m for the cubs, and draws them. The
+        bot's own pull from 17 m draws none. Item NR-110f.
+      - **When the bot is hit.** A ruthless mosbear (210581) struck the bot six times
+        through the fight. It was one attacker, below the table's count for a swarm,
+        and the fight went on as for any class.
+      - **The stand-off.** The monster stayed with the spirit, so the bot cast its
+        range line through the whole fight and never its adjacent line.
+      - **The retreat** calls the spirit back first, and the walk then takes it along.
+        The row has no retreat.
+      - **The spirit's pace.** A beat comes with each act of the bot. The spirit swung
+        four times in 11.9 s, where its attack speed of 2,040 ms allows six.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-110c/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr110c-fast, 11 passed).
 - [ ] **NR-110d - The spirit's orders, its heal and its armor.** Depends: NR-110c
   - Work: Java first: PetOrderUseUltraSkillEffect and CM_SUMMON_CASTSPELL, and the skills
     whose first target is the spirit. The table gets Spirit Disturbance, Spirit Erosion
@@ -5929,7 +6013,29 @@ The template:
     spirit's HP, and Divine Spirit Armor for its DP.
   - Proof: One probe row on a probe account in which an order is carried out and the
     spirit is healed; the full gate identical.
-- [ ] **NR-111 - Spirit Master: probe rows.** Depends: NR-110d
+- [ ] **NR-110e - A monster on the spirit is an attacker.** Depends: NR-110d
+  - Work: Found by NR-110c: the bot counts as an attacker only a creature that strikes
+    the bot itself. Java first: what the master is told of a strike at its spirit
+    (SM_ATTACK, the hostile spells, SM_SUMMON_UPDATE). The attacker rule takes the bot's
+    own spirit: a creature that strikes the spirit, or casts a hostile skill at it, is
+    an attacker in the fight's count, in the rest's defence and in a retreat, for as
+    long as the spirit is out. Generic: every place that asks who attacks, and every
+    class that keeps a spirit. What the table then does with a swarm that is on the
+    spirit is read from the row and is a rule for the class's own rows.
+  - Proof: One probe row on a probe account in which a monster that is on the spirit
+    alone when a fight ends is fought next or fled from; the full gate identical.
+- [ ] **NR-110f - Where the spirit fights.** Depends: NR-110e
+  - Work: Found by NR-110c: the spirit that goes first stands at its target, inside the
+    circles of the target's neighbours, and draws them. Java first: the aggro range and
+    the call for help that an attack makes. The rule: the spirit goes first only at a
+    target that stands clear of every other monster's circle, by the pack the walk-in
+    plan already counts (CP-56a). At any other target the bot pulls by its table and the
+    spirit meets the target near its master. Generic: every profile that keeps a spirit.
+  - Proof: One probe row on a probe account with two fights: a target that stands clear,
+    where the spirit goes first and no other monster strikes it, and a target in a
+    family, where the bot pulls and the spirit fights beside its master; the full gate
+    identical.
+- [ ] **NR-111 - Spirit Master: probe rows.** Depends: NR-110f
   - Work: Rows spirit-master-10, spirit-master-16, spirit-master-20 and spirit-master-25
     in SimulationNaturalStarterProbeTests: prepared Spirit Masters on the two probe
     accounts, in the gear the route has given by that level, fight the monsters the
@@ -6703,3 +6809,15 @@ report what was done, what is parked or blocked, and what the operator must deci
   more than 3.0 m from its master, the same spirit at the end. Full gate guard-p8
   (thirteen scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and
   Fast (nr110b-fast) pass. Next: NR-110c, the spirit fights.
+- 2026-10-10 — Loop: NR-110c done. In a fight the bot's spirit goes first: the order
+  (CM_SUMMON_COMMAND), the run to the target at the spirit's own speed, a swing each time
+  its attack speed allows (CM_SUMMON_ATTACK), and the order to guard when the fight ends;
+  the bot holds its own first attack until it sees the spirit's first hit. Probe row
+  spirit-master-fight (nr110c-probe-a1 and a2): a level-16 Spirit Master and its Earth
+  Spirit kill a tusked mosbear in 13.9 s, the spirit's four swings all shown by the
+  server, the mosbear on the spirit first; after the fight the spirit closes 16.5 m to
+  3.0 m in a walk of 82 m. Found: two cubs of the target's family struck the spirit and
+  were counted by no rule, and the spirit draws them by standing at the target: items
+  NR-110e and NR-110f, before the Spirit Master's rows. Full gate guard-p8 (thirteen
+  scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
+  (nr110c-fast) pass. Next: NR-110d, the spirit's orders, its heal and its armor.

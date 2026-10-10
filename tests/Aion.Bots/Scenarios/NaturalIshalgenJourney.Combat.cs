@@ -36,6 +36,8 @@ public sealed partial class NaturalIshalgenJourney
 		private NaturalChainState tableChain = NaturalChainState.None;
 		// CP-39: the weapon's swings; the attack number wraps at 256 as a byte does.
 		private int swings;
+		// NR-110c: the bot's own spirit in a fight. Without a spirit it sends nothing and waits for nothing.
+		private readonly NaturalSpiritDriver spiritDriver = new(session, runtime, geometry);
 		private ushort? lastCancelledSkillId;
 		private bool lastCastCompleted;
 		private ushort? lastPowderSkill;
@@ -218,6 +220,7 @@ public sealed partial class NaturalIshalgenJourney
 			try
 			{
 				bool killed = await TryKillCoreAsync(target, token, retreatAnchor, attackHistoryStart);
+				await spiritDriver.StandDownAsync(token);
 				session.TraceDiagnostic("combat-encounter-end", new Dictionary<string, object?>
 				{
 					["encounterId"] = attemptId, ["targetObjectId"] = target,
@@ -234,6 +237,8 @@ public sealed partial class NaturalIshalgenJourney
 					["clientObservedKill"] = false, ["revives"] = revives - revivesBefore,
 					["error"] = error.GetType().Name,
 				});
+				// A target that could not be reached ends the fight and not the run: the spirit is called back.
+				if (error is NaturalCombatApproachBlockedException) await spiritDriver.StandDownAsync(token);
 				throw;
 			}
 			finally
@@ -260,6 +265,8 @@ public sealed partial class NaturalIshalgenJourney
 			// NR-53b: what this fight has cast, so that a pull is cast once.
 			var castThisFight = new HashSet<ushort>();
 			bool inEmergency = false;
+			// NR-110c: whether this fight has had its opening, in which a spirit goes first.
+			bool opened = false;
 			var targetTemplate = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == target) is { } observedTarget
 				? runtime.Data.NpcDataDh.GetNpcTemplate(observedTarget.TemplateId) : null;
 			bool targetSeasoned = targetTemplate != null && targetTemplate.GetRank() >= Aion.GameServer.Model.Templates.Npc.NpcRank.SEASONED;
@@ -319,6 +326,8 @@ public sealed partial class NaturalIshalgenJourney
 				}
 				if (!world.Objects.TryGetValue(target, out BotKnownObject? npc))
 					return false; // Reacquire a new client-observed mob; do not count this as a kill.
+				// NR-110c: the spirit's beat: its walk to the target and its swings, between two acts of the bot.
+				if (opened) await spiritDriver.BeatAsync(target, token);
 				DateTimeOffset now = runtime.Epoch.AddMilliseconds(runtime.NowMillis);
 				NaturalClassProfile profile = ClassProfile;
 				// A monster that hit us in the last 3 s is in melee reach whatever its lagging client position says.
@@ -381,6 +390,13 @@ public sealed partial class NaturalIshalgenJourney
 					// NR-90a: the runes seen on the target, for the skills that burst them.
 					TargetRunes: ObservedRunes(world.EffectsOf(target)));
 				NaturalCombatChoice choice = policy.Decide(observation, now, mauPolicy);
+				// NR-110c: before the bot's first attack its spirit goes first. Time passes while the bot holds for the
+				// spirit's first hit, so the fight looks again.
+				if (!opened && choice.Action is "cast-target" or "attack")
+				{
+					opened = true;
+					if (await spiritDriver.OpenAsync(target, observation.Aggro, token)) continue;
+				}
 				NaturalCombatCandidate[] candidates = policy.CandidateActions(observation, now, choice, mauPolicy);
 				if (!candidates.Any(candidate => candidate.Action == choice.Action &&
 					candidate.SkillId == choice.Skill?.Id && candidate.Legal))
@@ -607,6 +623,8 @@ public sealed partial class NaturalIshalgenJourney
 						// Some quest pulls begin directly at an interacted object and have
 						// no named refuge. Previously walked client positions remain valid
 						// candidates, but each escape leg is checked against current mobs.
+					// NR-110c: the spirit runs with the bot. A retreat that finds no way out sends it at the target again.
+					await spiritDriver.StandDownAsync(token);
 					if (await RetreatFromPackAsync(retreatAnchor ?? session.CurrentPosition,
 						incomingAttackers.Append(target).ToHashSet(), token))
 					{
@@ -904,6 +922,8 @@ public sealed partial class NaturalIshalgenJourney
 					break; // the best learned spirit, and no lesser one in its place
 				}
 			}
+			// NR-110c: how fast the spirit runs, for the bot's own walks.
+			spiritDriver.Know();
 		}
 
 		/// <summary>NR-90a: the runes among a creature's effects, each by its name with its level. A rune is an effect skill

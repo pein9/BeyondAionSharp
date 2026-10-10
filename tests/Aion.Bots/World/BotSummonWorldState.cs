@@ -16,11 +16,28 @@ public sealed partial class BotWorldModel
 	/// </summary>
 	public BotOwnSummon? Summon { get; private set; }
 
-	private void ApplySummonPanel(DecodedBotServerPacket packet) => Summon = new(packet.Get<int>("objectId"),
-		packet.Get<ushort>("level"), packet.Get<int>("currentHp"), packet.Get<int>("maxHp"));
+	/// <summary>
+	/// NR-110c: true from the bot's order to attack until its order to guard. It is the bot's own word, sent by
+	/// CM_SUMMON_COMMAND; the server keeps the mode and moves nothing by it. While it is true a walk of the bot leaves
+	/// the spirit to its fight (BotMover.WeaveSpirit). A new spirit and a spirit that is gone have no order.
+	/// </summary>
+	public bool SummonFights { get; set; }
+
+	/// <summary>NR-110c: how fast the spirit runs, by the client's own data of its kind; the bot's own walks drive it
+	/// by this. No packet says it of a spirit that stands. Null until the journey has looked it up.</summary>
+	public float? SummonSpeed { get; set; }
+
+	private void ApplySummonPanel(DecodedBotServerPacket packet)
+	{
+		int objectId = packet.Get<int>("objectId");
+		if (Summon?.ObjectId != objectId) (SummonFights, SummonSpeed) = (false, null);
+		Summon = new(objectId, packet.Get<ushort>("level"), packet.Get<int>("currentHp"), packet.Get<int>("maxHp"));
+	}
 
 	private void ApplySummonOwnerRemove(DecodedBotServerPacket packet)
 	{
-		if (Summon?.ObjectId == packet.Get<int>("summonObjId")) Summon = null;
+		if (Summon?.ObjectId != packet.Get<int>("summonObjId")) return;
+		Summon = null;
+		(SummonFights, SummonSpeed) = (false, null);
 	}
 }

@@ -50,6 +50,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("assassin-runes", NaturalClassLine.ScoutAssassin, ProbeAccountA, "Asimrunes"),
 		new("spirit-master-spirit", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimsummon"),
 		new("spirit-master-walk", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimwalk"),
+		new("spirit-master-fight", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimfight"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -244,6 +245,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "assassin-runes": await AssassinRunesRowAsync(probe, id, token); break;
 			case "spirit-master-spirit": await SpiritMasterSpiritRowAsync(probe, id, token); break;
 			case "spirit-master-walk": await SpiritMasterWalkRowAsync(probe, id, token); break;
+			case "spirit-master-fight": await SpiritMasterFightRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -1300,6 +1302,90 @@ public sealed partial class SimulationFastScenarioTests
 			$"{gapBefore:F1} m from its master. Walked {straight:F0} m in a straight line in {approaches} approaches, goal {(reached ? "reached" : "not reached")}, " +
 			$"with {ownSteps} steps of its own and {spiritSteps} of the spirit's; the spirit moved {spiritStraight:F0} m, stood at most {farthest:F1} m from its " +
 			$"master between approaches and stands {Gap():F1} m from it at the end, by the server's positions. The same spirit, not summoned again.");
+	}
+
+	private const string SpiritMasterTable = "natural-spirit-master-v1:";
+
+	/// <summary>
+	/// NR-110c, row spirit-master-fight. Prepared by the director: the Mage is made a level-16 Spirit Master with the
+	/// skills of every level up to it and is placed in Altgard by the tusked mosbears (210437, level 14), where the
+	/// Cleric's row fights. The journey's buff check summons the Earth Spirit. Then the journey fights one mosbear by its
+	/// table. The spirit is sent first, runs to the mosbear and strikes it; the bot holds its own first attack until it
+	/// sees that hit. The mosbear strikes the spirit. At the end the spirit is called back. Then the journey walks on,
+	/// 60 m or more by its own routes, and the spirit, which stood where it fought, is at its side again.
+	/// </summary>
+	private async Task SpiritMasterFightRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int earth = 3645, earthNpc = 833288, mosbear = 210437;
+		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-spirit-master-in-altgard");
+		await probe.BecomeAsync(PlayerClass.SPIRIT_MASTER, 16);
+		Assert.True(probe.World.Skills.ContainsKey(earth), "Summon: Earth Spirit was not learned by level 16.");
+		await probe.MoveToMapAsync(ClericProbeMap, 1427.2f, 789.9f, 249.9f);
+
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s02", "buff-check-summons-the-earth-spirit", token);
+		await probe.Session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+		await probe.Session.SynchronizeAsync(token);
+		Assert.Contains(earth, buffCasts);
+		Summon spirit = probe.Server.GetSummon() ?? throw new InvalidDataException("No spirit was summoned.");
+		Assert.Equal(earthNpc, spirit.GetNpcId());
+		int spiritId = spirit.GetObjectId(), self = probe.Session.CharacterId, spiritHp = spirit.GetLifeStats().GetCurrentHp();
+
+		Npc prey = NearestLiving(probe, mosbear);
+		int preyId = prey.GetObjectId();
+		ClericFight fight = await TableFightAsync(probe, SpiritMasterTable, "s03", "fight-a-tusked-mosbear-with-the-spirit", () => Task.FromResult(preyId), token);
+		AssertNoRefusedCastRepeats(fight);
+		int Sent(string packet) => fight.Records.Count(record => record.Direction == ">" && record.Packet == packet);
+		StarterTraceRecord[] attacks = fight.Records.Where(record => record is { Direction: "<", Packet: "SM_ATTACK" }).ToArray();
+		int Struck(int by, int whom) => attacks.Count(record => record.Fields.GetProperty("attackerObjId").GetInt32() == by &&
+			record.Fields.GetProperty("targetObjId").GetInt32() == whom);
+		StarterTraceRecord[] Said(string action) => fight.Records.Where(record => record.Direction == "action" && record.Packet == action).ToArray();
+		int orders = Sent("CM_SUMMON_COMMAND"), steps = Sent("CM_SUMMON_MOVE"), swings = Sent("CM_SUMMON_ATTACK");
+		int spiritHits = Struck(spiritId, preyId), onSpirit = Struck(preyId, spiritId), onMaster = Struck(preyId, self);
+		StarterTraceRecord sent = Assert.Single(Said("combat-spirit-sent"));
+		StarterTraceRecord opening = Assert.Single(Said("combat-spirit-opening"));
+		Assert.Equal(preyId, sent.Fields.GetProperty("targetObjectId").GetInt32());
+		// The spirit was sent before the bot's first cast at the mosbear was decided to be made.
+		TimeSpan firstCast = fight.Casts.Count > 0 ? fight.Casts[0].At : TimeSpan.MaxValue;
+		Assert.True(sent.VirtualTime < firstCast, $"The spirit was sent at {sent.VirtualTime.TotalSeconds:F1} s and the first cast ended at {firstCast.TotalSeconds:F1} s.");
+		Assert.True(steps > 0, "The spirit was not walked to its target.");
+		Assert.True(swings > 0 && spiritHits > 0, $"The spirit swung {swings} times and the server showed {spiritHits} of its attacks.");
+		Assert.True(onSpirit > 0, $"The mosbear never struck the spirit: {onMaster} attacks on its master. Opening: {opening.Fields}.");
+		Assert.True(fight.Result.Killed || fight.Result.Retreats > 0, $"The fight ended with no kill and no retreat: {Outcome(fight)}.");
+		if (fight.Result.Deaths == 0 && probe.Server.GetSummon() != null)
+		{
+			Assert.Equal(2, orders);
+			Assert.Single(Said("combat-spirit-called-back"));
+			Assert.Equal(Aion.GameServer.Model.Summons.SummonMode.GUARD, spirit.GetMode());
+		}
+		string afterFight = probe.Server.GetSummon() == null ? "gone" : $"{spirit.GetLifeStats().GetCurrentHp()} HP, mode {spirit.GetMode()}";
+		string botAfterFight = $"{probe.World.CurrentHp}/{probe.World.MaxHp}";
+
+		// The walk back: the spirit stands where it fought. The bot walks on and the spirit closes the gap at its own speed.
+		float Gap() => MathF.Sqrt(MathF.Pow(spirit.GetX() - probe.Server.GetX(), 2) + MathF.Pow(spirit.GetY() - probe.Server.GetY(), 2) +
+			MathF.Pow(spirit.GetZ() - probe.Server.GetZ(), 2));
+		float gapAfterFight = Gap(), walked = 0;
+		BotPosition from = probe.Session.CurrentPosition;
+		probe.Session.BeginStep("s04", "walk-on-with-the-spirit");
+		int approaches = 0;
+		for (; approaches < 8 && walked < 60 && !probe.World.IsDead; approaches++)
+		{
+			await probe.Journey.RunObservedZoneApproachAsync(new BotPosition(1867.3f, 456.0f, 270.2f, 0), [], token);
+			await probe.Session.SynchronizeAsync(token);
+			walked = MathF.Sqrt(MathF.Pow(probe.Session.CurrentPosition.X - from.X, 2) + MathF.Pow(probe.Session.CurrentPosition.Y - from.Y, 2));
+		}
+		Assert.True(walked >= 60, $"The walk after the fight was {walked:F0} m long after {approaches} approaches.");
+		Assert.Equal(spiritId, probe.Server.GetSummon()?.GetObjectId());
+		Assert.Equal(spiritId, probe.World.Summon?.ObjectId);
+		Assert.True(Gap() <= 6, $"The spirit stands {Gap():F1} m from its master after a walk of {walked:F0} m; it stood {gapAfterFight:F1} m away after the fight.");
+		int walkSteps = probe.TraceOf("s04").Count(record => record is { Direction: ">", Packet: "CM_SUMMON_MOVE" });
+		Console.WriteLine($"{id}: level {probe.World.Level} Spirit Master, max HP {probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}. " +
+			$"Buff check: casts {string.Join(" ", buffCasts)}; spirit {spirit.GetNpcId()} out with {spiritHp} HP. One tusked mosbear: {Outcome(fight)}. " +
+			$"The spirit: sent from {sent.Fields.GetProperty("distance").GetDouble():F1} m at {sent.Fields.GetProperty("speed")} m/s; the opening ended by " +
+			$"{opening.Fields.GetProperty("ended").GetString()} after {opening.Fields.GetProperty("millis").GetInt64()} ms; {orders} orders, {steps} steps, {swings} swings sent; " +
+			$"the server showed {spiritHits} attacks of the spirit on the mosbear, {onSpirit} of the mosbear on the spirit and {onMaster} on its master. " +
+			$"After the fight the spirit has {afterFight} and stands {gapAfterFight:F1} m from its master; the bot has {botAfterFight} HP. " +
+			$"The walk on: {walked:F0} m in {approaches} approaches with {walkSteps} steps of the spirit; it stands {Gap():F1} m from its master at the end, " +
+			$"by the server's positions.");
 	}
 
 	private const string AssassinTable = "natural-assassin-v1:";

@@ -153,16 +153,20 @@ public sealed class BotMover
 	/// bot stood and then the bot's route, <see cref="SpiritLagMeters"/> behind it, no faster than its own speed, and
 	/// stands when the bot stands. Its start names where it will stand (the mask with ABSOLUTE; the server ignores a
 	/// spirit's start without it), its samples follow the bot's, and a last frame stops it.
+	/// NR-110c: a spirit the bot has sent at a target is left to its fight, and a spirit whose speed the journey has
+	/// looked up runs at that speed, so that it closes a gap.
 	/// </summary>
 	private void WeaveSpirit(List<BotMovementFrame> frames, float botSpeed)
 	{
-		if (world.Summon is not { } spirit || !world.Objects.TryGetValue(spirit.ObjectId, out BotKnownObject? known) || frames.Count == 0)
+		if (world.Summon is not { } spirit || world.SummonFights || !world.Objects.TryGetValue(spirit.ObjectId, out BotKnownObject? known) ||
+			frames.Count == 0)
 			return;
 		BotPosition from = known.SettledPosition;
 		BotPosition start = frames[0].Position;
 		float gap = Distance(from, start);
 		if (gap > SpiritLostMeters) return;
-		float spiritSpeed = known.MovementSpeed is float own && float.IsFinite(own) && own > 0 ? own : botSpeed;
+		float spiritSpeed = world.SummonSpeed is float kind && float.IsFinite(kind) && kind > 0 ? kind
+			: known.MovementSpeed is float own && float.IsFinite(own) && own > 0 ? own : botSpeed;
 		// The spirit's path: from where it stands to where the bot starts, then every position of the bot's plan.
 		var path = new List<BotPosition> { from, start };
 		foreach (BotMovementFrame frame in frames)
