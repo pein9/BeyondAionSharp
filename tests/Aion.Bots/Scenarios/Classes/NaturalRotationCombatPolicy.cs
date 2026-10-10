@@ -317,6 +317,14 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			.Where(role => rules.OnlyWhileTargetAbove == null || !rules.OnlyWhileTargetAbove.TryGetValue(role, out int least) ||
 				state.TargetHpPercent is not int targetHp || targetHp > least)
 			.Select(role => Best(role, state)).OfType<NaturalPriestSkill>().ToArray();
+		// NR-131a: a fight found the class out of its mech: a death ends the mech, and the buff check that boards it runs
+		// before a pull and never inside a fight. Every skill of the line that needs the mech is refused until the bot
+		// rides, so the toggle that boards goes first. It is decided only while the server has not said the bot rides: a
+		// cast of a toggle that is on would end it.
+		if (!state.Rides && line.Any(skill => skill.NeedsMech) &&
+			catalog.Where(skill => skill.IsMech).Select(skill => Best(skill.Role, state)).OfType<NaturalPriestSkill>().FirstOrDefault() is { } board &&
+			Ready(board))
+			return Cast(board, $"The line's skills need the mech and the bot is on foot: {board.Role}.");
 		// NR-80a: a skill that needs its target in a state goes first while that state is seen, before an open follow-up:
 		// the state lasts a moment (the Gladiator's Crashing Blow, on a target Aerial Lockdown lifted for 2 s). One whose
 		// state is not seen, or that only cools down, is out of the line: nothing waits for it.

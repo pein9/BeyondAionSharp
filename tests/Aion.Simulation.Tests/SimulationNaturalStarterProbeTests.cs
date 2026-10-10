@@ -1890,8 +1890,8 @@ public sealed partial class SimulationFastScenarioTests
 	/// buff check boards the mech, which the server says to everyone who sees it. Then it fights one mosbear after another
 	/// by its table, from the mech, until Battery has followed Bludgeon. The director gives it the level-16 coin blade:
 	/// the equipment check takes that, and the server ends the mech, for the weapon left the hand. The rest before the
-	/// next fight boards again. In the last fight the director ends the mech as the fight begins: the table decides no
-	/// skill that needs it and the cipher-blade does the work, until a buff check has boarded once more.
+	/// next fight boards again. In the last fight the director ends the mech as the fight begins: no skill of the line can
+	/// be cast on foot, and the table's first decision boards the mech again (NR-131a). The fight goes on from it.
 	/// </summary>
 	private async Task RiderMechRowAsync(StarterProbe probe, string id, CancellationToken token)
 	{
@@ -1985,18 +1985,21 @@ public sealed partial class SimulationFastScenarioTests
 			return third.GetObjectId();
 		}, token);
 		AssertNoRefusedCastRepeats(afoot);
-		// No skill that needs the mech is decided until a buff check has boarded again, which this fight has none of
-		// unless it retreated and rested.
-		TimeSpan boardedAt = afoot.Records.FirstOrDefault(record => record is { Direction: "action", Packet: "toggle-embark" })?.VirtualTime ?? TimeSpan.MaxValue;
-		StarterTraceRecord[] onFoot = afoot.Decided.Where(record => record.VirtualTime < boardedAt).ToArray();
-		Assert.NotEmpty(onFoot);
-		Assert.DoesNotContain(onFoot, record => Decided(record, "cast-target", mech) || Decided(record, "cast-self", mech));
-		Assert.Contains(onFoot, record => record.Fields.GetProperty("action").GetString() == "attack");
+		// NR-131a: on foot no skill of the line can be cast, and the table's first decision boards the mech. Every cast
+		// after it is a skill that needs the mech.
 		string refusal = CandidateAtStart(afoot, cinder[0]);
 		Assert.Contains("needs a mech", refusal);
-		int swings = onFoot.Count(record => record.Fields.GetProperty("action").GetString() == "attack");
+		StarterTraceRecord boarding = afoot.Decided[0];
+		Assert.True(Decided(boarding, "cast-self", embark), $"The first decision on foot was {boarding.Fields.GetProperty("action").GetString()}: {boarding.Fields.GetProperty("reason").GetString()}");
+		Assert.Equal(1, afoot.Casts.Count(cast => cast.SkillId == embark));
+		Assert.All(afoot.Casts.SkipWhile(cast => cast.SkillId != embark).Skip(1), cast => Assert.Contains(cast.SkillId, mech));
+		Assert.Contains(afoot.Casts, cast => mech.Contains(cast.SkillId));
+		Assert.True(probe.World.RobotId != 0 && probe.Server.IsInRobotMode(), $"After the fight the client knows mech {probe.World.RobotId} and the server {probe.Server.GetRobotId()}.");
+		int swings = afoot.Decided.Count(record => record.Fields.GetProperty("action").GetString() == "attack");
 
-		(_, int[] lastCasts) = await BuffCheckStepAsync(probe, "s08", "buff-check-boards-once-more", token);
+		// A buff check after it finds the mech boarded and casts no Embark.
+		(_, int[] lastCasts) = await BuffCheckStepAsync(probe, "s08", "buff-check-finds-the-mech-boarded", token);
+		Assert.DoesNotContain(embark, lastCasts);
 		Assert.True(probe.World.RobotId != 0 && probe.Server.IsInRobotMode(), $"At the end the client knows mech {probe.World.RobotId} and the server {probe.Server.GetRobotId()}.");
 		Console.WriteLine($"{id}: level {probe.World.Level} Rider, max HP {probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}. " +
 			$"Buff check: casts {string.Join(" ", boardCasts)}; the server said mech {Said(boarded)}. " +
@@ -2004,8 +2007,8 @@ public sealed partial class SimulationFastScenarioTests
 			$"The fight that showed the chain: {Outcome(shown)}; Battery {gap.TotalMilliseconds:F0} ms after Bludgeon. " +
 			$"With blade {rankNine} taken by the equipment check the server said mech {Said(swapped)}. " +
 			$"The next fight, after the rest boarded again (the server said mech {Said(again.Records)}): {Outcome(again)}. " +
-			$"With the mech ended by the director (the server said mech {Said(afoot.Records)}): {Outcome(afoot)}; {swings} swing(s) decided and no skill that needs the mech; " +
-			$"Cinder Cannon at its first decision: {refusal} " +
+			$"With the mech ended by the director (the server said mech {Said(afoot.Records)}): {Outcome(afoot)}; the first decision: " +
+			$"{boarding.Fields.GetProperty("reason").GetString()} {swings} swing(s) decided; Cinder Cannon at that first decision: {refusal} " +
 			$"Last buff check: casts {string.Join(" ", lastCasts)}; mech {probe.World.RobotId}. HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
 	}
 
@@ -4771,8 +4774,8 @@ public sealed partial class SimulationFastScenarioTests
 	/// Q24013, by the starved mosbears (210564, level 13), with Odella Powder in the bag. Three fights are the journey's
 	/// alone, for the numbers. Then the director spawns two starved mosbears 4 m from the Rider and sets them on it, and
 	/// after that three: the journey leaves at three attackers, not at two. Then the director ends the mech as a fight
-	/// begins: the row says what the Rider does on foot. Last the director halves the HP and the rest casts the fourth
-	/// rank of Herb Treatment.
+	/// begins: the table's first decision boards it again (NR-131a). Last the director halves the HP and the rest casts
+	/// the fourth rank of Herb Treatment.
 	/// </summary>
 	private async Task RiderLevelTwentyFiveRowAsync(StarterProbe probe, string id, CancellationToken token)
 	{
@@ -4868,6 +4871,11 @@ public sealed partial class SimulationFastScenarioTests
 		AssertOnlyCasts(afoot, table);
 		Assert.True(afoot.Result.Killed || afoot.Result.Retreats > 0 || afoot.Result.Deaths > 0, $"The fight on foot ended no way: {afoot.Result}.");
 		int boardedIn = afoot.Casts.Count(cast => cast.SkillId == embark);
+		// NR-131a: on foot the first decision boards the mech, once, and the fight is fought from it.
+		Assert.True(Decided(afoot.Decided[0], "cast-self", embark), $"The first decision on foot was {afoot.Decided[0].Fields.GetProperty("action").GetString()}: " +
+			$"{afoot.Decided[0].Fields.GetProperty("reason").GetString()}");
+		Assert.Equal(1, boardedIn);
+		Assert.True(probe.World.RobotId != 0 && probe.Server.IsInRobotMode(), $"After the fight on foot the client knows mech {probe.World.RobotId} and the server {probe.Server.GetRobotId()}.");
 
 		// Prepared by the director: half HP. The rest is the journey's.
 		probe.Session.BeginStep("s08", "director-halves-hp");

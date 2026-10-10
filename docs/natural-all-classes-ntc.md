@@ -7514,7 +7514,7 @@ The template:
       run guard-p8 (run/nr/NR-131/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr131-fast, 11 passed).
-- [ ] **NR-131a - A Rider that a fight finds on foot boards its mech.** Depends: NR-131
+- [x] **NR-131a - A Rider that a fight finds on foot boards its mech.** Depends: NR-131
   - Work: Java first: when Embark is taken (its conditions, its cost and its cooldown,
     and whether a player who is being struck may cast it). In a fight, when a skill of
     the table's lists needs the mech and the server has not said the bot rides, the
@@ -7522,6 +7522,42 @@ The template:
     that boards, no branch on a class.
   - Proof: Row rider-25's fight on foot: Embark is the first decision, the server says
     the mech, and the kill comes from the mech; the full gate identical.
+  - 2026-10-10: done on the first attempt.
+    - **Java.** A toggle is cast with CM_CASTSPELL as any skill is, and ended with a
+      packet of its own (CM_TOGGLE_SKILL_DEACTIVATE 15-35). Embark asks for the
+      cipher-blade in hand and a caster that stands (skill_templates.xml,
+      startconditions/weapon and useconditions/move_casting), costs 104 to 136 MP by its
+      rank and is ready 10 s after its cast. Nothing asks whether the caster is in a
+      fight. Its effect puts the player in the mech and tells everyone who sees it
+      (RideRobotEffect.startEffect 22-36, read under NR-130a).
+    - **Why the Rider stayed on foot.** The mech is a toggle the buff check keeps on, and
+      the buff check does nothing while the bot is in a fight
+      (Sc/NaturalIshalgenJourney.Combat.cs, MaintainBuffsAsync). A death ends the mech;
+      a fight that begins before the next buff check found the Rider with a table of
+      which every skill is refused.
+    - **The change, generic** (Sc/Classes/NaturalRotationCombatPolicy.cs). In a fight,
+      while the server has not said the bot rides and a skill of the line needs the mech,
+      the table decides the catalog's toggle that boards, when it is ready. It comes
+      after the ladder and the decision to leave and before every attack. It is never
+      decided while the bot rides: a cast of a toggle that is on would end it.
+    - **Proof, the rows** (runs nr131a-probe-a1 and a1b; `bash run/nr/NR-131a/probe.sh
+      <attempt>`; each row in a world of its own). In both the director ends the mech as
+      a fight begins.
+      - rider-25: the first decision is Embark IV, and the server says mech 2500003 a
+        millisecond later. Then Cinder Cannon, Electric Shock, Sundering Blade, Rocket
+        Punch and Bludgeon: a kill in 10.3 s and no potion. Under NR-131 the same fight
+        took 35.8 s, thirteen swings and a life potion.
+      - rider-mech, the row of NR-130a: its last fight said that no skill of the mech
+        is decided on foot. It says now that the first decision is Embark II, that
+        every cast after it is a skill of the mech (a kill in 17.6 s), and that the
+        buff check after the fight casts no Embark.
+      - The Rider's other rows, played again (nr131a-others-a1 and a1b): rider-10,
+        rider-16 and rider-20 pass; they ride from the buff check on, and the rule
+        decides nothing in them.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-131a/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr131a-fast, 11 passed).
 - [ ] **NR-132 - Rider: to Altgard.** Depends: NR-131a; ticked by the round that gives it
   - Work: A fresh Asimrider plays Ishalgen as an Engineer, the trial, the ceremony with
     the cipher-blade and the dispatch Q29070, and is captured at the Altgard bind as
@@ -8683,3 +8719,12 @@ report what was done, what is parked or blocked, and what the operator must deci
   against 8 to 18 s, and it does not board in a fight: item NR-131a. Full gate guard-p8
   (thirteen scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and
   Fast (nr131-fast) pass. Next: NR-131a, a Rider on foot boards its mech.
+- 2026-10-10 — Loop: NR-131a done on the first attempt. The buff check keeps the mech on
+  and does nothing inside a fight, so a Rider that a fight found on foot had a table of
+  refused skills. In a fight, while the server has not said the bot rides and a skill of
+  the line needs the mech, the table now decides the toggle that boards. Rows rider-25
+  and rider-mech (nr131a-probe-a1 and a1b): Embark is the first decision and the kill
+  comes from the mech, at level 25 in 10.3 s where it took 35.8 s on foot. The Rider's
+  other rows pass again. Full gate guard-p8 (thirteen scopes identical), seven checks,
+  unit suite (4,629 passed, 16 skipped) and Fast (nr131a-fast) pass. Next: NR-141, the
+  Bard's probe rows.
