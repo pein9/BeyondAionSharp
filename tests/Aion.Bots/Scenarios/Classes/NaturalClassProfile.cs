@@ -42,6 +42,11 @@ public sealed record NaturalHelpItemRules(IReadOnlyList<NaturalHelpSupply> Kit, 
 /// is not observed, and traced as <paramref name="TraceKind"/>.</summary>
 public sealed record NaturalUpkeepBuff(string Role, string TraceKind);
 
+/// <summary>NR-70a: one toggle kept on: the best learned skill of <paramref name="Role"/>, cast between fights when the
+/// server has not said it is on (<see cref="Aion.Bots.World.BotWorldModel.ActiveToggles"/>), never while it is, and
+/// traced as <paramref name="TraceKind"/>.</summary>
+public sealed record NaturalKeptToggle(string Role, string TraceKind);
+
 /// <summary>What a class does when a patrol or its helpers block a planned pull.</summary>
 public enum NaturalPatrolRule
 {
@@ -80,6 +85,10 @@ public sealed record NaturalClassProfile
 
 	/// <summary>The buffs kept up between fights, in the order they are checked.</summary>
 	public required IReadOnlyList<NaturalUpkeepBuff> Upkeep { get; init; }
+
+	/// <summary>NR-70a: the toggles kept on, in the order they are checked after the buffs. No more than the server lets
+	/// the class keep at once (<see cref="NaturalProfileValidator"/>); a class that names none keeps none.</summary>
+	public IReadOnlyList<NaturalKeptToggle> Toggles { get; init; } = [];
 
 	public required NaturalPatrolRule PatrolRule { get; init; }
 

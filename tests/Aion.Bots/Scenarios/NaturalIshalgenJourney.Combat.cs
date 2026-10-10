@@ -850,6 +850,28 @@ public sealed partial class NaturalIshalgenJourney
 				});
 				await CastAsync(skill, session.CharacterId, token);
 			}
+			// NR-70a: the toggles the profile keeps on. The server says when one starts and when one ends; one that is on
+			// is never cast (Java AuraEffect.applyEffect 35-42 logs that as an abuse of the cast packet).
+			foreach (NaturalKeptToggle toggle in profile.Toggles)
+			{
+				if (world.IsDead || world.CurrentHp <= 0 || InCombat) return;
+				NaturalPriestSkill? skill = NaturalPriestSkills.Best(toggle.Role, world.Level, world.Skills, profile.Skills);
+				if (skill == null || world.ActiveToggles.Contains(skill.Id)) continue;
+				DateTimeOffset now = runtime.Epoch.AddMilliseconds(runtime.NowMillis);
+				if (cooldowns.TryGetValue(skill.CooldownId, out DateTimeOffset readyAt) && readyAt > now) continue;
+				if (world.CurrentMp < skill.ManaCost) continue;
+				TimeSpan gate = session.Api.Timing.TimeUntilCast(skill.Id);
+				if (gate > TimeSpan.Zero) await session.AdvanceAsync(gate + TimeSpan.FromMilliseconds(1), token);
+				await CastAsync(skill, session.CharacterId, token);
+				await session.SynchronizeAsync(token);
+				session.TraceDiagnostic(toggle.TraceKind, new Dictionary<string, object?>
+				{
+					["skillId"] = skill.Id,
+					["on"] = world.ActiveToggles.Contains(skill.Id),
+					["togglesOn"] = world.ActiveToggles.Order().ToArray(),
+					["position"] = session.CurrentPosition,
+				});
+			}
 		}
 
 		public bool IsCleric => session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass ==

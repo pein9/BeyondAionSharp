@@ -62,6 +62,13 @@ public static class NaturalSkillCatalog
 		.Where(entry => data.SkillDataDh.GetSkillTemplate(entry.Key) is { } template && (template.IsActive() || template.IsCharge()))
 		.ToDictionary(entry => entry.Key, entry => entry.Value);
 
+	/// <summary>NR-70a: the auto-learned toggles, which are kept on or left off and never cast in a fight. A profile gives
+	/// each one a role or an exclusion with its reason too.</summary>
+	public static IReadOnlyDictionary<int, int> AutoLearnedToggles(StaticData data, PlayerClass playerClass, int maximumLevel,
+		Race race = Race.ASMODIANS) => AutoLearned(data, playerClass, maximumLevel, race)
+		.Where(entry => data.SkillDataDh.GetSkillTemplate(entry.Key)?.IsToggle() == true)
+		.ToDictionary(entry => entry.Key, entry => entry.Value);
+
 	/// <summary>
 	/// The class's catalog: one row for every skill the profile gives a role, in level and id order. A role for a skill the
 	/// class does not auto-learn, or for one the profile also excludes, is refused by name.

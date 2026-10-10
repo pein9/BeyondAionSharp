@@ -286,6 +286,8 @@ public sealed partial class BotWorldModel
 			ApplySystemMessage(packet);
 		else if (type == typeof(SM_ABNORMAL_STATE))
 			ApplyVisibleEffects(packet);
+		else if (type == typeof(SM_SKILL_ACTIVATION))
+			ApplySkillActivation(packet);
 		else if (type == typeof(SM_EXCHANGE_REQUEST))
 			ExchangeRequestFrom = packet.Get<string>("receiver");
 		else

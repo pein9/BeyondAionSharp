@@ -45,6 +45,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("templar-16", NaturalClassLine.WarriorTemplar, ProbeAccountB, "Asimsixtemp"),
 		new("templar-20", NaturalClassLine.WarriorTemplar, ProbeAccountA, "Asimtwetemp"),
 		new("templar-25", NaturalClassLine.WarriorTemplar, ProbeAccountB, "Asimtftemp"),
+		new("chanter-mantras", NaturalClassLine.PriestChanter, ProbeAccountA, "Asimmantra"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -234,6 +235,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "templar-16": await TemplarLevelSixteenRowAsync(probe, id, token); break;
 			case "templar-20": await TemplarLevelTwentyRowAsync(probe, id, token); break;
 			case "templar-25": await TemplarLevelTwentyFiveRowAsync(probe, id, token); break;
+			case "chanter-mantras": await ChanterMantrasRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -1090,6 +1092,81 @@ public sealed partial class SimulationFastScenarioTests
 			$"Then one more, against {pack.Length} starved mosbears the director spawned 4 m away and set on the Cleric: " +
 			$"{swarm.Result}; Root decided with {swarm.Decided[rooted].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32()} attackers: {reason} " +
 			$"Casts {swarm.Order}; decisions {swarm.Counts}. HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>NR-70a: the journey's buff check before a pull in its own step, with the skills it cast.</summary>
+	private static async Task<(IReadOnlyList<StarterTraceRecord> Records, int[] Casts)> BuffCheckStepAsync(StarterProbe probe, string step, string name,
+		CancellationToken token)
+	{
+		probe.Session.BeginStep(step, name);
+		await probe.Journey.RunObservedBuffCheckAsync(token);
+		await probe.Session.SynchronizeAsync(token);
+		return (probe.TraceOf(step), probe.CastsOf(step).Select(cast => cast.SkillId).ToArray());
+	}
+
+	/// <summary>
+	/// NR-70a, row chanter-mantras. Prepared by the director: the Priest is made a level-22 Chanter with the skills of
+	/// every level up to it and is placed in Altgard. The journey's buff check before a pull turns on the three mantras its
+	/// profile keeps, and the server says so of each. A second check casts none. Then the director ends every effect, as a
+	/// death does, and the next check turns the three on again. Last the director makes it level 23, where Shield Mantra's
+	/// next rank is learned: the check casts that rank, and the server ends the older one.
+	/// </summary>
+	private async Task ChanterMantrasRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int celerity = 1809, shieldOne = 1657, shieldTwo = 1658, shieldThree = 1659, revival = 1746, wind = 1648;
+		int[] mantras = [celerity, shieldOne, shieldTwo, shieldThree, revival, wind];
+		static string Said(IReadOnlyList<StarterTraceRecord> records) => string.Join(" ", records
+			.Where(record => record is { Direction: "<", Packet: "SM_SKILL_ACTIVATION" })
+			.Select(record => $"{record.Fields.GetProperty("skillId").GetInt32()}:{(record.Fields.GetProperty("active").GetBoolean() ? "on" : "off")}"));
+		string On() => string.Join(" ", probe.World.ActiveToggles.Order());
+		void AssertOnAtTheServer(params int[] skills) => Assert.All(mantras, skill =>
+			Assert.Equal(skills.Contains(skill), probe.Server.GetEffectController().FindBySkillId(skill) != null));
+
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-two-chanter-in-altgard");
+		await probe.BecomeAsync(PlayerClass.CHANTER, 22);
+		Assert.All(new[] { celerity, shieldOne, shieldTwo, revival }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 22."));
+		await probe.MoveToMapAsync(ClericProbeMap, 1473.2f, 1765.2f, 247.5f);
+		Assert.Empty(probe.World.ActiveToggles);
+		float? speedBefore = probe.World.MovementSpeed;
+
+		(IReadOnlyList<StarterTraceRecord> first, int[] firstCasts) = await BuffCheckStepAsync(probe, "s02", "buff-check-turns-the-mantras-on", token);
+		Assert.Equal([shieldTwo, revival, celerity], probe.World.ActiveToggles.Order());
+		AssertOnAtTheServer(celerity, shieldTwo, revival);
+		Assert.Equal([celerity, shieldTwo, revival], firstCasts.Where(mantras.Contains));
+
+		(IReadOnlyList<StarterTraceRecord> second, int[] secondCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-again-casts-no-mantra", token);
+		Assert.DoesNotContain(secondCasts, mantras.Contains);
+		Assert.Equal("", Said(second));
+		Assert.Equal([shieldTwo, revival, celerity], probe.World.ActiveToggles.Order());
+		float? speedOn = probe.World.MovementSpeed;
+		Assert.True(speedOn > speedBefore, $"Celerity Mantra did not raise the speed the client moves at: {speedBefore} before, {speedOn} with it.");
+
+		// Prepared by the director: every effect is ended, which is what the server does at a death.
+		probe.Session.BeginStep("s04", "director-ends-every-effect-as-a-death-does");
+		probe.Server.GetEffectController().RemoveAllEffects();
+		await probe.Session.SynchronizeAsync(token);
+		IReadOnlyList<StarterTraceRecord> ended = probe.TraceOf("s04");
+		Assert.Empty(probe.World.ActiveToggles);
+		AssertOnAtTheServer();
+
+		(IReadOnlyList<StarterTraceRecord> third, int[] thirdCasts) = await BuffCheckStepAsync(probe, "s05", "buff-check-turns-the-mantras-on-again", token);
+		Assert.Equal([shieldTwo, revival, celerity], probe.World.ActiveToggles.Order());
+		AssertOnAtTheServer(celerity, shieldTwo, revival);
+		Assert.Equal([celerity, shieldTwo, revival], thirdCasts.Where(mantras.Contains));
+
+		// Prepared by the director: one level more, where the next rank of Shield Mantra is learned.
+		probe.Session.BeginStep("s06", "director-makes-it-level-twenty-three");
+		await probe.SetLevelAsync(23);
+		Assert.True(probe.World.Skills.ContainsKey(shieldThree), "Shield Mantra's third rank was not learned at level 23.");
+		(IReadOnlyList<StarterTraceRecord> fourth, int[] fourthCasts) = await BuffCheckStepAsync(probe, "s07", "buff-check-casts-the-new-rank", token);
+		Assert.Equal([shieldThree, revival, celerity], probe.World.ActiveToggles.Order());
+		AssertOnAtTheServer(celerity, shieldThree, revival);
+		Assert.Equal([shieldThree], fourthCasts.Where(mantras.Contains));
+		Console.WriteLine($"{id}: level {probe.World.Level} Chanter, max HP {probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}. " +
+			$"First buff check: casts {string.Join(" ", firstCasts)}; the server said {Said(first)}; speed {speedBefore} before, {speedOn} with Celerity Mantra. " +
+			$"Second check: casts {string.Join(" ", secondCasts)}; the server said nothing of a toggle. " +
+			$"Every effect ended by the director: the server said {Said(ended)}. Third check: casts {string.Join(" ", thirdCasts)}; the server said {Said(third)}. " +
+			$"At level 23: casts {string.Join(" ", fourthCasts)}; the server said {Said(fourth)}. On at the end: {On()}.");
 	}
 
 	private const string TemplarTable = "natural-templar-v1:";

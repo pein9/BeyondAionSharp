@@ -145,6 +145,22 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			(long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF, [], token, gear);
 	}
 
+	/// <summary>NR-70a: a controlled probe runs the journey's ordinary buff check before a pull and nothing else, for the
+	/// class line of the options: the profile's buffs, its kept toggles, and the help scrolls it owns.</summary>
+	public async Task RunObservedBuffCheckAsync(CancellationToken token)
+	{
+		int map = session.Api.World.MapId ?? throw new InvalidDataException("Buff-check map unobserved.");
+		BotNavigationGeometry geometry = runtime.CreateGeometry();
+		var navigator = new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, [], geometry), geometry, runtime,
+			stopOnDeath: false);
+		var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry, stopOnDeath: false,
+			conservativeRangedHold: false, NaturalMauPolicyParameters.Baseline, ClassLine)
+		{
+			ApproachMapId = map,
+		};
+		await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
+	}
+
 	/// <summary>CP-42: a controlled probe runs the journey's ordinary rest and nothing else, for the class line of the
 	/// options. A rest that ends in death revives at the bind point, as in a journey.</summary>
 	public async Task RunObservedRestAsync(CancellationToken token)

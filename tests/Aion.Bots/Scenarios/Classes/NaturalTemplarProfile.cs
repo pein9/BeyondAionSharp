@@ -42,9 +42,15 @@ public static class NaturalTemplarProfile
 	private const string Counter = "the client offers it only after a block or a resist (counter_skill BLOCK,RESIST), which the bot does not observe. " +
 		"Java reads a counter of two statuses as none and would accept it at any time; the bot does not send what a client could not.";
 
-	/// <summary>Every other active skill a Templar learns by itself to level 26, and why it is not cast.</summary>
+	// NR-50d, NR-70a: the Templar's one toggle.
+	private const string Stance = "a toggle that is a stance too: the first skill cast ends it (Java StanceObserver), and the table casts one " +
+		"every second or two of a fight.";
+
+	/// <summary>Every other active skill and every toggle a Templar learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
+		[3000] = "Stubborn Spirit I: " + Stance, [3001] = "Stubborn Spirit II: " + Stance, [3002] = "Stubborn Spirit III: " + Stance,
+		[3003] = "Stubborn Spirit IV: " + Stance,
 		[3010] = "Provoking Roar raises the enmity of what is already around the Templar and deals no damage; alone they are on it anyway.",
 		[3094] = "Shield Counter I: " + Counter, [3095] = "Shield Counter II: " + Counter, [3096] = "Shield Counter III: " + Counter,
 		[3097] = "Shield Counter IV: " + Counter,

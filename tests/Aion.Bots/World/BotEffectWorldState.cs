@@ -12,6 +12,24 @@ public sealed partial class BotWorldModel
 	/// <summary>One immutable effect snapshot at the last AP/counter-changing rank packet, not leaderboard refreshes.</summary>
 	public BotAbyssRewardObservation? LastAbyssReward { get; private set; }
 
+	/// <summary>
+	/// NR-70a: the toggle skills the server said are on and has not said are off (SM_SKILL_ACTIVATION; Java
+	/// Effect.startEffect 670-678 and endEffect 735-737 tell the caster of every start and every end, a death included).
+	/// A move to another map ends no toggle and tells nothing again, so a world reload keeps the set. A new login starts
+	/// with none: Java PlayerLeaveWorldService 103-112 removes every effect and PlayerEffectsDAO stores no toggle.
+	/// </summary>
+	public IReadOnlySet<int> ActiveToggles => activeToggles;
+
+	private readonly HashSet<int> activeToggles = [];
+
+	private void ApplySkillActivation(DecodedBotServerPacket packet)
+	{
+		if (packet.Get<int>("kind") != 0) return; // a removed stigma, not a toggle
+		int skillId = packet.Get<ushort>("skillId");
+		if (packet.Get<bool>("active")) activeToggles.Add(skillId);
+		else activeToggles.Remove(skillId);
+	}
+
 	private void ForgetEffectObservations()
 	{
 		VisibleEffects = null;

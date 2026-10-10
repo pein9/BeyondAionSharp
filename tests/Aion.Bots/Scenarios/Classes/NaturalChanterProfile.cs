@@ -22,6 +22,7 @@ public static class NaturalChanterProfile
 	/// heals at once and for 38 s after. Promise of Earth (level 16) and Rage Spell (level 20) last 30 min. Protective
 	/// Ward (level 22) takes three tenths of every hit for 10 s. Winter Circle is paid with 2,000 DP and doubles the
 	/// physical attack for 30 s. Binding Word (level 20) halves its target's speed for 5 s and stops its physical skills.
+	/// NR-70a: the mantras are toggles: Celerity Mantra (level 10), Shield Mantra (13) and Revival Mantra (22) are kept on.
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>(NaturalPriestProfile.PriestRoles)
 	{
@@ -40,12 +41,15 @@ public static class NaturalChanterProfile
 		[1561] = "rage",
 		[1690] = "ward",
 		[1574] = "binding", [1575] = "binding",
+		[1809] = "celerity",
+		[1657] = "shield-mantra", [1658] = "shield-mantra", [1659] = "shield-mantra",
+		[1746] = "revival-mantra",
 		// The two powder skills, cast only in a rest.
 		[246] = "herb", [247] = "herb", [251] = "herb", [253] = "herb",
 		[249] = "mp-recovery", [250] = "mp-recovery", [252] = "mp-recovery", [254] = "mp-recovery",
 	};
 
-	/// <summary>Every other active skill a Chanter learns by itself to level 26, and why it is not cast.</summary>
+	/// <summary>Every other active skill and toggle a Chanter learns by itself to level 26, and why it is not cast.</summary>
 	public static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
 		[1699] = "Light of Resurrection revives another player; the bot plays solo.",
@@ -53,7 +57,16 @@ public static class NaturalChanterProfile
 			"Strike does not follow. The table keeps the chain of three.",
 		[1769] = "Parrying Strike is a counter skill: the server accepts it only within 5 s of a parry of the Chanter's own (counter_skill " +
 			"PARRY, Java Skill.java 163-169), which the bot does not observe.",
+		[1648] = "Wind Mantra gives flight speed and flight time. The server keeps three mantras on (Java EffectController.addEffect 76-86), " +
+			"and the three kept serve the ground, where the route is walked and fought.",
 	};
+
+	/// <summary>NR-70a: the mantras kept on, three, which is what the server lets a Chanter keep. They cost nothing and
+	/// have no timer; a death ends them.</summary>
+	private static readonly NaturalKeptToggle[] KeptMantras =
+	[
+		new("celerity", "toggle-celerity-mantra"), new("shield-mantra", "toggle-shield-mantra"), new("revival-mantra", "toggle-revival-mantra"),
+	];
 
 	/// <summary>
 	/// NR-70: the Priest's table with what the Chanter adds. From range: Infernal Blaze and Thunderbolt Strike at once
@@ -95,7 +108,7 @@ public static class NaturalChanterProfile
 		ArgumentNullException.ThrowIfNull(data);
 		var excluded = NaturalSkillCatalog.CommonExcluded.Concat(Excluded).ToDictionary(entry => entry.Key, entry => entry.Value);
 		NaturalPriestSkill[] skills = NaturalSkillCatalog.Build(data, PlayerClass.CHANTER, Roles, excluded);
-		NaturalProfileValidator.Require(data, PlayerClass.CHANTER, TopLevel, skills, excluded, Rules.Lines(skills), ChanterGear);
+		NaturalProfileValidator.Require(data, PlayerClass.CHANTER, TopLevel, skills, excluded, Rules.Lines(skills), ChanterGear, KeptMantras);
 		return new NaturalClassProfile
 		{
 			Class = PlayerClass.CHANTER,
@@ -106,6 +119,7 @@ public static class NaturalChanterProfile
 			HelpItems = NaturalHelpItemRules.ForKinds(caster: true, reagent: true),
 			// The Priest's blessing in its Chanter rank, and the two buffs of 30 min.
 			Upkeep = [NaturalPriestProfile.Blessing, new("promise", "buff-promise-of-earth"), new("rage", "buff-rage-spell")],
+			Toggles = KeptMantras,
 			// NR-36: what it shoots with in flight.
 			AirAttackRoles = Rules.AtRange,
 			// NR-37: every second class holds for a patrol and assesses the fight, by its own table.

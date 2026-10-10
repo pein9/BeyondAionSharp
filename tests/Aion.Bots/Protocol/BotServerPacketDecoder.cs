@@ -84,6 +84,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_CUBE_UPDATE)] = DecodeCubeUpdate,
 			[typeof(SM_SKILL_LIST)] = DecodeSkillList,
 			[typeof(SM_SKILL_REMOVE)] = DecodeSkillRemove,
+			[typeof(SM_SKILL_ACTIVATION)] = DecodeSkillActivation,
 			[typeof(SM_RECIPE_LIST)] = DecodeRecipeList,
 			[typeof(SM_LEARN_RECIPE)] = DecodeLearnRecipe,
 			[typeof(SM_RECIPE_DELETE)] = DecodeRecipeDelete,
@@ -769,6 +770,15 @@ public sealed partial class BotServerPacketDecoder
 		var r = new PacketBodyReader(body);
 		var result = Fields(("skillId", r.ReadUInt16()), ("levelOrProfessionFlag", r.ReadByte()), ("skillType", r.ReadByte()));
 		if (body.Length != 4) throw new InvalidDataException("SM_SKILL_REMOVE must contain exactly four bytes.");
+		return result;
+	}
+
+	// Java SM_SKILL_ACTIVATION.writeImpl: the skill, 0 for a toggle or 1 for a removed stigma, and whether it is on.
+	private static IReadOnlyDictionary<string, object?> DecodeSkillActivation(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		var result = Fields(("skillId", r.ReadUInt16()), ("kind", r.ReadInt32()), ("active", r.ReadByte() != 0));
+		if (body.Length != 7) throw new InvalidDataException("SM_SKILL_ACTIVATION must contain exactly seven bytes.");
 		return result;
 	}
 

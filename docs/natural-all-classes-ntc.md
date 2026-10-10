@@ -4785,7 +4785,7 @@ The template:
       (run/nr/NR-70/guard-p8/verdict.json): verdict pass, all thirteen scopes identical.
       Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed, 16
       skipped) and Fast passes (run nr70-fast, 11 passed).
-- [ ] **NR-70a - A toggle kept on.** Depends: NR-70
+- [x] **NR-70a - A toggle kept on.** Depends: NR-70
   - Work: The form NR-50d left to the first class that keeps a toggle. Java first, beyond
     what NR-50d and NR-70 read: what else ends a mantra (a logout, a move to another map,
     a fourth mantra), the cooldown the four share, and what the client is told of a
@@ -4800,6 +4800,104 @@ The template:
   - Proof: A one-time check, or one probe row on a probe account, that shows each named
     mantra on after the rule ran once, none cast while it is on, and each cast again
     after it was ended; the full gate identical.
+  - 2026-10-10: done. A profile names the toggles it keeps on, the world state knows
+    which are on from the server's own word, and the buff check casts one only when it
+    is off. The Chanter keeps Celerity Mantra, Shield Mantra and Revival Mantra.
+    - **Java, beyond NR-50d and NR-70.**
+      - **What ends a mantra.** A death (CreatureController.onDie 157;
+        EffectController.removeAllEffects 656-671 ends every effect that may be removed
+        on death, and the mantras carry no noremoveatdie). A logout
+        (PlayerLeaveWorldService 103-112 ends every effect; PlayerEffectsDAO
+        .storePlayerEffects 63-67 stores abnormal effects only, and
+        EffectController.getAbnormalEffects 688-690 holds no toggle of the slot NOSHOW),
+        so after a login none is on and none is told. Entering a map that takes buffs
+        away (PlayerController.onEnterWorld 253-257). A fourth mantra
+        (EffectController.addEffect 76-86). The client's own CM_TOGGLE_SKILL_DEACTIVATE
+        (runImpl 31-42). A teleport or a move to another map ends none: TeleportService
+        216 only sends the effect icons again.
+      - **A mantra that is on is not cast.** AuraEffect.applyEffect 35-42 adds nothing
+        and logs the cast as an abuse of the cast packet.
+      - **A new rank.** The ranks of one mantra share one effect id; the server ends
+        the older for the newer unless the older is the stronger
+        (EffectController.searchConflict 124-156). Wind Mantra's effect has Celerity
+        Mantra's effect id, 112141, so the server would end the one for the other.
+      - **What the client is told.** SM_SKILL_ACTIVATION, to the caster alone, at every
+        start and every end: the skill, 0, and whether it is on, seven bytes; the middle
+        number is 1 for a removed stigma. SM_MANTRA_EFFECT every 6.5 s to those around
+        (AuraEffect.onPeriodicAction 67). The mantra's effect skill is among the
+        caster's visible effects for 6.5 s at a time, so the list of effects is no steady
+        sign of a mantra; the activation packet is.
+      - **The cooldown** the four share, id 1519, is 0 s for three of them and 10 s for
+        Wind Mantra.
+      - **The port** has the same lines (Controllers/Effect/EffectController.cs 89-101,
+        SkillEngine/Model/Effect.cs 762, 787-793, 831, SkillEngine/Effect/AuraEffect.cs).
+        No server change.
+    - **The change, generic.**
+      - Bots/Protocol/BotServerPacketDecoder.cs decodes SM_SKILL_ACTIVATION: 119 packet
+        types, and the decoder's own test counts them so.
+      - Bots/World/BotEffectWorldState.cs: the world state holds the toggles the server
+        said are on and has not said are off. A world reload keeps them; a new login
+        starts with none, as the server does.
+      - Sc/Classes/NaturalClassProfile.cs: a profile names the toggles it keeps on, each
+        a role and a trace name, in the order they are checked. A profile that names
+        none keeps none.
+      - Sc/NaturalIshalgenJourney.Combat.cs, the buff check before a pull and after a
+        rest: after the buffs, the best learned rank of each kept role is cast when the
+        world state does not hold it, outside a fight, and traced with what the server
+        then said. One that is on is not cast.
+      - Sc/Classes/NaturalProfileValidator.cs and NaturalSkillCatalog.cs: every toggle a
+        class learns by itself gets a role or a reason, as its active skills do. A
+        toggle is in no rotation line. A kept toggle is a toggle and no stance. The kept
+        ones are no more than the server keeps at once: three mantras; of the other
+        toggles of the slot NOSHOW one, and two for a Ranger or a Rider.
+      - SimT/SimulationFastScenarioTests.cs: a SIM trace now holds the server's
+        SM_SKILL_ACTIVATION. No recorded scope receives one.
+      - Sc/NaturalIshalgenJourney.cs: RunObservedBuffCheckAsync, the journey's buff check
+        alone, for a probe.
+    - **The Chanter.** Celerity Mantra has the role celerity, Shield Mantra's three
+      ranks shield-mantra, Revival Mantra revival-mantra, and the profile keeps the
+      three. Wind Mantra is left out with its reason: it serves flight, and the three
+      kept are all the server keeps; it could not be on beside Celerity Mantra either
+      (above). Of its 70 skills, 64 active and 6 toggles, 63 have a role now and 7 a
+      reason.
+    - **The Templar.** Stubborn Spirit's four ranks are left out with NR-50d's reason:
+      a toggle that is a stance too, which the first skill cast ends.
+    - **Proof, the one-time check** (run/nr/NR-70a/check.log; the check file is not
+      committed). Every profile of the nine class lines is built, which requires the
+      validator: the Chanter has six toggles to level 26, five with a role and one with
+      a reason; the Templar has four, each with a reason; no other profile has one. The
+      Chanter keeps none at level 9, Celerity from 10, Shield Mantra from 13 with its
+      newest rank, Revival from 22. The validator refuses, each by name: four mantras
+      kept; a mantra with neither a role nor a reason; a mantra in a rotation line; a
+      kept role that holds no toggle, and one that holds nothing; the Templar's stance
+      kept. The world state takes Java's golden payloads: on, a removed stigma changes
+      nothing, a world reload keeps the toggle, off; a payload of six bytes is refused.
+    - **Proof, the probe row** chanter-mantras (SimT/SimulationNaturalStarterProbeTests
+      .cs, probe account 98; `bash run/nr/NR-70a/probe.sh <attempt>`). Prepared by the
+      director: a level-22 Chanter with the skills of every level up to it, in Altgard.
+      Every other act is the journey's buff check. Run nr70a-probe-a1 passed with the
+      server's word not yet in the trace; run nr70a-probe-a2, with it, passed, and so
+      did nr70a-probe-a3 on the committed tree:
+      - **First check.** It casts Protectorate's Prayer, Promise of Earth and Rage
+        Spell, then Celerity Mantra 1809, Shield Mantra II 1658 and Revival Mantra 1746.
+        The server said each of the three is on, and has all three. The speed the
+        client moves at went from 6 to 7 m/s.
+      - **Second check.** No cast, and the server said nothing of a toggle.
+      - **Ended.** The director ends every effect, as a death does: the server said
+        each of the three is off.
+      - **Third check.** Protectorate's Prayer and the three mantras again, each said
+        on. Promise of Earth and Rage Spell were still cooling down, 10 s and 15 s.
+      - **A new rank.** The director makes it level 23, where Shield Mantra III 1659
+        is learned. The check casts 1659 alone; the server said 1658 off and 1659 on.
+      - A level-23 Chanter has 1,847 HP and 2,688 MP: Rage Spell's 379 MP is a seventh
+        of it. NR-71's row at level 20 shows it where the spell is learned.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-70a/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr70a-fast2, 11 passed). The first bundle
+      (run/nr/NR-70a/bundle-a1/) failed one check: the probe row had an assertion the
+      xunit analyzer warns of (XUNIT2029), one warning over the baseline. The assertion
+      was reworded, the row played again, and the bundle run again from the start.
 - [ ] **NR-71 - Chanter: probe rows.** Depends: NR-70a
   - Work: Rows chanter-10, chanter-16, chanter-20 and chanter-25 in
     SimulationNaturalStarterProbeTests: prepared Chanters on the two probe accounts, in
@@ -5480,3 +5578,15 @@ report what was done, what is parked or blocked, and what the operator must deci
   item NR-70a. The Chanter's items NR-71 to NR-78 are written. Full gate guard-p8 (thirteen
   scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
   (nr70-fast) pass. Next: NR-70a, a toggle kept on.
+- 2026-10-10 — Loop: NR-70a done. The form NR-50d left open: a profile names the toggles
+  it keeps on, the world state follows the server's SM_SKILL_ACTIVATION, and the buff check
+  casts a kept toggle only when it is off. The validator asks every toggle for a role or a
+  reason and holds the kept ones to what the server keeps. The Chanter keeps Celerity
+  Mantra, Shield Mantra and Revival Mantra; Wind Mantra and the Templar's Stubborn Spirit
+  have their reasons. One-time check, and the probe row chanter-mantras (run
+  nr70a-probe-a2): three on, none cast twice, three on again after every effect was ended,
+  the new rank at level 23 in the old one's place, speed 6 to 7 m/s. Full gate guard-p8
+  (thirteen scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
+  (nr70a-fast2) pass, on the second bundle: the first met one analyzer warning in the probe
+  row. Next: NR-80, the Gladiator's survey; the probe rows NR-61 and NR-71 wait for the
+  surveys (rule (w)).
