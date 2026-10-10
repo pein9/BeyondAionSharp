@@ -8078,7 +8078,7 @@ through these: each is ticked by the round that gave its capture.
     - **Found, and logged (rule (f)).** The Sorcerer shoots in flight with Ice Chain,
       which is ready every 10 s: three of its five kills took 10 to 11 s, and it needed
       two flights. NR-R3b's rule covers it.
-- [ ] **NR-R3b - The shot in flight is the listed skill that is ready again soonest.** Depends: NR-R3
+- [x] **NR-R3b - The shot in flight is the listed skill that is ready again soonest.** Depends: NR-R3
   - Work: The air fight takes the first role of the profile's air list whose skill may
     be cast in flight. For a class whose air list is its whole list from range that is
     its opener, whatever its cooldown. Of the roles that may be cast in flight it takes
@@ -8086,6 +8086,28 @@ through these: each is ticked by the round that gave its capture.
     profile's order decides between equals. Generic: the air fight's choice, no branch
     on a class. A class that names one role, or none, shoots as before.
   - Proof: The full gate identical. In round 4 the Chanter ends leg 1.
+  - 2026-10-10: done. The Chanter's ending of leg 1 is shown already, in a round without
+    a capture; round 4 plays it again for the capture.
+    - **Java.** No server behavior is new here: NR-36 read what the server asks of a
+      skill in flight.
+    - **The change, generic** (Sc/NaturalAirCombat.cs, AttackFor). Of the roles of the
+      profile's air list whose best learned skill may be cast in flight and needs no
+      earlier chain step, the air fight takes the one with the least cooldown and cast
+      time together. The profile's order decides between equals. For the Chanter that
+      is Smite, 2 s and 1.5 s, before Infernal Blaze, 24 s. A profile that names one
+      role (the Cleric's Smite) or none shoots as before.
+    - **Proof, the Chanter resumed** (run resume-a1, run/nr/NR-R3b/resume-a1; round file
+      run/nr/NR-R3b/round-chanter.json; -From nr-r3, no capture; 77 seconds). The
+      Chanter's character was resumed where round 3 had saved it, in leg 1, and went on
+      from there. At the fungi it cast Smite five times, one for each fungus, 2.1 s a
+      kill: five kills in one flight for 38 FP, and it landed with 22. It ended leg 1 in
+      9.4 game minutes, level 15 with 66 quests; altgard-l1-completion.json says
+      verified. So a character saved in the middle of a leg can be taken on by the next
+      round, and no round file needs to name a world's snapshot yet.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-R3b/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nrr3b-fast, 11 passed).
 - [ ] **NR-R4 - Round 4: Altgard leg 2, and the Chanter's leg 1.** Depends: NR-R3b
   - Work: The eight worlds resumed from nr-r3 with -Capture nr-r4. The eight that ended
     leg 1 play leg 2 and are captured as altgard-rc-l2-<class>. The Chanter, resumed
@@ -9147,3 +9169,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   which is ready every 24 s, spent 56 FP on two kills and had no way back to the landing.
   Written: NR-R3b, the shot in flight is the listed skill that is ready again soonest, and
   NR-R4, round 4. Seven checks pass. Next: NR-R3b.
+- 2026-10-10 — Loop: NR-R3b done. The air fight shoots with the listed skill that is
+  ready again soonest, not the first of the list. The Chanter, resumed in leg 1 where
+  round 3 had saved it (run resume-a1, no capture), cast Smite at the fungi: five kills in
+  one flight, 2.1 s each, and landed with 22 FP; it ended leg 1 at level 15 with 66
+  quests. Full gate guard-p8 (thirteen scopes identical), seven checks, unit suite (4,629
+  passed, 16 skipped) and Fast (nrr3b-fast) pass. Next: NR-R4, round 4: leg 2 for the
+  eight and leg 1 for the Chanter.

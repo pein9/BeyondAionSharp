@@ -69,20 +69,28 @@ public static class NaturalAirCombat
 
 	/// <summary>
 	/// NR-36: the class's air attack. Of the roles its profile names (<see cref="Classes.NaturalClassProfile.AirAttackRoles"/>),
-	/// in order, the first whose best learned skill may be cast in flight at any target and needs no earlier chain step.
-	/// Failing that, the swing of the held weapon.
+	/// one whose best learned skill may be cast in flight at any target and needs no earlier chain step. Failing that,
+	/// the swing of the held weapon.
+	/// <para>
+	/// NR-R3b: of those skills, the one that is ready again soonest, by its cooldown and its cast time; the profile's
+	/// order decides between equals. A fungus takes two or three casts, and a skill that is long in coming again spends
+	/// the flight time waiting: with Infernal Blaze, the first of its list from range and ready every 24 s, the Chanter
+	/// spent 56 FP on two fungi and had no way back to its landing. A profile that names one role shoots as before.
+	/// </para>
 	/// </summary>
 	/// <param name="learned">Whether the client's skill list holds a skill id.</param>
 	public static NaturalAirAttack AttackFor(Classes.NaturalClassProfile profile, Func<int, bool> learned, int? weaponAttackRangeMillis,
 		int? weaponAttackSpeedMillis)
 	{
-		foreach (string role in profile.AirAttackRoles)
-		{
-			NaturalPriestSkill? best = profile.Skills.Where(skill => skill.Role == role && learned(skill.Id))
-				.OrderByDescending(skill => skill.MinimumLevel).ThenByDescending(skill => skill.Id).FirstOrDefault();
-			if (best is { GroundOnly: false, TargetFlight: null, RequiresChainCategory: null })
-				return new(best.Id, Classes.NaturalSkillCatalog.Reach(best, weaponAttackRangeMillis));
-		}
+		// OrderBy keeps the order of equals, which is the profile's.
+		NaturalPriestSkill? shot = profile.AirAttackRoles
+			.Select(role => profile.Skills.Where(skill => skill.Role == role && learned(skill.Id))
+				.OrderByDescending(skill => skill.MinimumLevel).ThenByDescending(skill => skill.Id).FirstOrDefault())
+			.OfType<NaturalPriestSkill>()
+			.Where(best => best is { GroundOnly: false, TargetFlight: null, RequiresChainCategory: null })
+			.OrderBy(best => best.CooldownDeciseconds * 100 + best.CastMillis)
+			.FirstOrDefault();
+		if (shot != null) return new(shot.Id, Classes.NaturalSkillCatalog.Reach(shot, weaponAttackRangeMillis));
 		return new(null, (weaponAttackRangeMillis ?? 1500) / 1000f + 1f, weaponAttackSpeedMillis is > 0 and int speed ? speed : 2500);
 	}
 
