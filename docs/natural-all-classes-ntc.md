@@ -5237,7 +5237,181 @@ The template:
   - Work: One scope of the Gladiator's play, chosen where its rules differ most from the
     Templar's, recorded by a bot alone, twice, and added to the gate's sets.
   - Proof: The two recordings are identical.
-- [ ] **NR-90 - Assassin: survey and profile data.** Depends: the close of phase C, NR-04
+- [x] **NR-90 - Assassin: survey and profile data.** Depends: the close of phase C, NR-04
+  - 2026-10-10: done. The Assassin has a class line, a gear table and a profile the
+    validator accepts. Nothing has been played. One thing its skills need that the shared
+    forms cannot say yet is item NR-90a below.
+    - **Java.**
+      - **What it learns.** SkillLearnService as read for NR-50. Of the Assassin's 92
+        rows to level 26, 73 are auto-learned, 18 are stigma rows from level 20 and one
+        is a skill book, Homeward Bound at 21. 55 of the auto-learned are active skills,
+        and with the nine ranks it keeps from the Scout the catalog has 64 to give a
+        role or a reason; one more is a toggle (run/nr/NR-90/check.log).
+      - **Chains.** ChainCondition as read for NR-50. Swift Edge opens the chain Soul
+        Slash follows and Rune Slash (level 21) follows that. Fang Strike (16) opens the
+        chain Beast Kick (26) follows. Rune Carve (13), Surprise Attack, Dash Attack (10)
+        and Ambush (25) each open a chain nothing follows before level 26.
+      - **Runes.** CarveSignetEffect.applyEffect 31-45: a carving skill ends the rune
+        effect its target carries and puts on the one of the next level, up to the
+        skill's cap. Rune Carve and Rune Slash carve to three, Fang Strike and Beast
+        Kick to five. A rune effect lasts 24 s and is a skill of its own, 8303 for one
+        rune to 8307 for five. SignetBurstEffect.calculateDamage 31-47: a burst
+        multiplies its damage by the rune level's number and ends the runes. For Pain
+        Rune and Binding Rune the numbers are 0.1 with no rune, 0.2, 0.5, 1.0, 1.2 and
+        1.5 with five (signet_data_templates.xml, SIGNET1), and Pain Rune's 3 s stun
+        comes four times in ten at two runes and always from three.
+      - **Skills that move the caster.** DashEffect.calculate 23-37 and
+        MoveBehindEffect.calculate 23-37 put the caster at a point by its target that
+        the server takes from its geometry, and RandomMoveLocEffect 35 at one 15 m off.
+        None sends a forced move: the place is in the cast's result, which the bot does
+        not read. Dash Attack, Ambush and Flash of Speed are these.
+      - **Counter skills.** Counterattack and Whirlwind Slash carry counter_skill DODGE
+        (Skill.java 163-169, as read for NR-50).
+      - **A toggle.** Sprinting (13) is a toggle of the slot NOSHOW that spends 3% of
+        the Assassin's mana every 6 s while it is on.
+      - **Class rewards on the route** are those of the table under NR-42: the dagger
+        100200605 at the ceremony and the dispatch Q2902 (NR-30), the leather rewards
+        and the daggers of NR-32, the stone 140000003 (NR-39), Haramel's chest 700830
+        (NR-40) and the leather coin armor with a dagger at Lateni and Nott (NR-38).
+        Nothing new.
+    - **The class line.** `scout-assassin`: a Scout who becomes an Assassin, SIM account
+      41, character Asimassassin, the dagger 100200605 at the ceremony (Q2009; NR-Q5).
+      Its dispatch quest is Q2902 (NR-30). Its Scout holds two daggers from level 5, as
+      the line `scout` does (NR-04). It is in NaturalClassLine.All and in the script's
+      list; the script test holds the two together.
+    - **The gear table** (Sc/Classes/NaturalClassGearTable.cs, Assassin).
+
+      | Part | The Assassin's | From |
+      |---|---|---|
+      | Weapon group | dagger; ranked by the physical stat | NR-Q5, CP-Q7 |
+      | Off hand | a second dagger; a new one takes the hand of the worse | NR-Q6, NR-04 |
+      | Armor | leather, robe, clothes; item level first, the type breaks ties | NR-Q7, CP-Q24 |
+      | Bonus order at a reward | physical attack, critical, accuracy, then HP | NR-32 |
+      | Kept | life potions, its help kit, a mana potion it finds, every help scroll and food | as the Cleric from Ascension |
+
+      Each reward and each coin tier of the route names one dagger for the Assassin
+      (NR-32, NR-38). The other hand keeps the dagger it held; what a second purchase at
+      a coin vendor would take is the coin-gear leg's to show.
+    - **The help kit from level 10** is the manifest written under NR-50
+      (NaturalHelpItemAllowlist.Kit(caster: false, reagent: true)), the Templar's: no
+      mana serum and no Awakening scroll. Levels 1 to 9 are the Scout's kit (CP-Q12).
+    - **Its skills by role** (Sc/Classes/NaturalAssassinProfile.cs; 36 skills of 65).
+
+      | Role | Skill, and the levels of its ranks | What it is |
+      |---|---|---|
+      | edge | Swift Edge: 1, 6, 11, 16, 21, 26 | Opens the first chain. 7 s. |
+      | slash | Soul Slash: 7, 12, 17, 22 | Follows Swift Edge inside 3 s. 6 s. |
+      | runeslash | Rune Slash: 21, 26 | Follows Soul Slash: the hardest hit of the three, and one rune, to three. 5 s. |
+      | fang | Fang Strike: 16, 21, 26 | Opens the second chain: a hit and one rune, to five. 31 to 39 MP, 6 s. |
+      | kick | Beast Kick: 26 | Follows Fang Strike: a hit and one rune, to five. 42 MP, 6 s. |
+      | carve | Rune Carve: 13, 18, 23 | A light hit and one rune, to three. Free, 7 s. |
+      | divine | Divine Strike: 10, 15, 20, 25 | 2,000 DP: the hardest hit it has. 30 s. |
+      | devotion | Devotion: 9 | 40% more physical attack for 5 s. 19 MP, 30 s. |
+      | eye | Killer's Eye: 10 | Half as much again on the next physical skill inside 15 s, and accuracy. 40 MP, 30 s. |
+      | flurry | Flurry: 20 | For 30 s the daggers swing a fifth faster and strike critically more often. 115 MP, 2 min. |
+      | poison | Apply Deadly Poison: 15 | For 5 min one swing in five poisons the target, and one in fifty stuns it. 52 MP. |
+      | evasion | Focused Evasion: 1 | 5 s in which every hit misses. Free, 30 s. |
+      | herb, mp-recovery | Herb Treatment and MP Recovery: 10, 15, 20, 25 | The two powder skills of a rest (NR-50a). |
+
+    - **The rule table, natural-assassin-v1.** The Scout's, with what the Assassin adds.
+      With the monster in reach: Devotion when it is ready, then Divine Strike when the
+      DP are there, then Swift Edge, Soul Slash and Rune Slash; then Fang Strike and
+      Beast Kick; then Rune Carve. Killer's Eye and Flurry are cast when no attack is
+      ready, in the time a dagger would swing. An open follow-up is always cast first,
+      and the table holds an open chain, as the Scout's does. The daggers swing whenever
+      no skill is ready. Nothing is cast from range: it walks in, as the Scout. The
+      ladder is the Scout's: Focused Evasion at or below 70% HP, the shield scroll at
+      50%, the life potion at or below 75%. It leaves at three attackers, or at 25% HP
+      with nothing ready. Between fights it rests as the Templar (NR-50a) and keeps
+      Apply Deadly Poison up. It holds for a patrol and assesses (NR-37), and a pull may
+      bring two. In flight it swings its daggers (NR-36).
+    - **Left out, with the reason** (29 skills).
+
+      | Skill, levels | Why it is not cast |
+      |---|---|
+      | Return, Bandage Heal, Escape: 1 | As for every class (CP-35, CP-Q11). |
+      | Surprise Attack: 3, 8, 13, 18, 23 | As the Scout (CP-Q16): it does little from the front, opens its own chain and so resets Swift Edge's. |
+      | Counterattack: 5, 10, 15, 20, 25; Whirlwind Slash: 25 | Counter skills: the server takes them only within 5 s of a dodge of the Assassin's own, which the bot does not observe. |
+      | Stealth: 5 | As the Scout: not in combat, and the journey does not sneak. |
+      | Dash Attack: 10, 15, 20, 25; Ambush: 25 | They move the Assassin to its target or behind it, to a place only the cast's result names (above). The bot walks checked routes only. |
+      | Flash of Speed: 17 | It throws the Assassin 15 m to a place the server picks. |
+      | Pain Rune: 13, 18, 23; Binding Rune: 25 | They burst the runes on their target: a tenth of the damage with none, all of it with three. No rule counts the runes on a target yet. NR-90a. |
+      | Calming Whisper: 19, 24 | It lowers the enmity of its target; alone, the monster has no one else to turn to. |
+      | Aethertwisting: 22 | It resists the next two spells inside 8 s; no rule times a defence against a hit that has not come. |
+      | Sprinting: 13 | A toggle that spends 3% of its mana every 6 s for a fifth more speed; the kit's running scroll is its speed. |
+
+      Not in the catalog at all: Homeward Bound, which is a book, and the stone's skill
+      11506, as for every class (NR-39).
+    - **Proof.** The one-time check, not committed (run/nr/NR-90/check.log): the line
+      parses and holds both classes; its character is a Scout, with a second weapon in
+      the off hand, until the client observes an Assassin; NaturalClassProfiles builds
+      the Assassin's profile, which requires the validator: each of the 64 active skills
+      and the one toggle has one role or one reason, every follow-up has its opener, no
+      rotation line breaks a chain or casts a counter skill, and the gear groups lie
+      inside the masteries. The check prints the skill tree, the 36 rows, the 29
+      reasons, the best rank of each role at eight levels, the gear groups and the
+      patrol view. Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel
+      8, run guard-p8 (run/nr/NR-90/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, the three script tests pass
+      (run/nr/NR-90/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
+      skipped) and Fast passes (run nr90-fast, 11 passed).
+- [ ] **NR-90a - A skill that bursts the runes on its target.** Depends: NR-90
+  - Work: Pain Rune is the Assassin's hardest hit beside Divine Strike when its target
+    carries three runes, and a waste of 68 MP when it carries none. Java first, beyond
+    what NR-90 read: what the client is told of the rune effect on a monster (its skill
+    and level among the creature's effects, NR-80a) and when it ends. The world state
+    holds each creature's visible effects. A skill row holds the rune it carves, with
+    its first effect skill and its cap, and the rune it bursts. The table names for a
+    burst role the least number of runes it is cast at; the role is out of the line
+    while the target is seen with fewer. The Assassin gives Pain Rune and Binding Rune
+    roles, each at three runes. Generic: the numbers in the table, no branch on a class;
+    the Ranger's and the Gunner's bursts use the same form if they have one.
+  - Proof: A one-time check of the decisions at each rune count, and one probe row on a
+    probe account that carves three runes and bursts them; the full gate identical.
+- [ ] **NR-91 - Assassin: probe rows.** Depends: NR-90a
+  - Work: Rows assassin-10, assassin-16, assassin-20 and assassin-25 in
+    SimulationNaturalStarterProbeTests: prepared Assassins on the two probe accounts, in
+    the gear the route has given by that level and with two daggers held, fight the
+    monsters the Cleric's rows fight. Each row's trace shows the table in play: the
+    chain of three, Fang Strike, Rune Carve and the runes burst, Divine Strike at 2,000
+    DP, Devotion, Killer's Eye and Flurry in the gaps, Apply Deadly Poison up, Focused
+    Evasion on the ladder, the rest with the powder. What a row shows decides the open
+    rules: whether a class that walks in needs a pull in Altgard's packs, as the Templar
+    did (NR-53b), which would ask for Dash Attack and a reading of the cast's result;
+    and whether Killer's Eye should stand before the hardest hit. A fix is one small
+    change (rule (i)).
+  - Proof: The four rows end with the monster dead or a recorded retreat, no refused
+    cast repeated and no skill outside the table cast.
+- [ ] **NR-92 - Assassin: to Altgard.** Depends: NR-91; ticked by the round that gives it
+  - Work: A fresh Asimassassin plays Ishalgen as a Scout, the trial, the Assassin choice
+    at Munin, the ceremony with the dagger and the dispatch Q2902, and is captured at
+    the Altgard bind as altgard-assassin-s1.
+  - Proof: The capture verifies.
+- [ ] **NR-93 - Assassin: Altgard legs l1 to l5.** Depends: NR-92; ticked by its round
+  - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
+    with -assassin (NR-41). In leg 1 it swings its daggers at the fungus in flight.
+  - Proof: Each capture verifies.
+- [ ] **NR-94 - Assassin: Altgard legs l6 to l11.** Depends: NR-93; ticked by its round
+  - Work: As NR-93. Leg 11 is the destiny quest: its stone is the Templar's, 140000003
+    (NR-39).
+  - Proof: Each capture verifies.
+- [ ] **NR-95 - Assassin: coin gear and Haramel.** Depends: NR-94; ticked by its round
+  - Work: The coin-gear leg (leather, by its manifest, NR-38a; one dagger a tier, the
+    other hand as it is) and Haramel with chest 700830 (NR-40), captured as
+    altgard-coingear-assassin and altgard-rc-complete-s1-assassin.
+  - Proof: Each capture verifies.
+- [ ] **NR-96 - Assassin: the Abyss entry.** Depends: NR-95; ticked by its round
+  - Work: Q24020, then Q2945, Q2946, Q2947 and Q2042 with the coin tiers it can wear
+    (NR-38b, NR-Q14, NR-Q16), captured as morheim-abyss-entry-s1-assassin.
+  - Proof: The capture verifies.
+- [ ] **NR-97 - Assassin: the endpoint.** Depends: NR-96; ticked by its round
+  - Work: Captured and verified as ntc-ready-assassin-s1: alive at Morheim Ice Fortress,
+    level 25 or higher, Q2945, Q2946, Q2947 and Q2042 complete.
+  - Proof: The capture verifies.
+- [ ] **NR-98 - Assassin: the class scope.** Depends: NR-97
+  - Work: One scope of the Assassin's play, chosen where its rules differ most from the
+    Scout's, recorded by a bot alone, twice, and added to the gate's sets.
+  - Proof: The two recordings are identical.
 - [ ] **NR-100 - Ranger: survey and profile data.** Depends: the close of phase C
 - [ ] **NR-110 - Spirit Master: survey and profile data.** Depends: the close of phase C
 - [ ] **NR-120 - Gunner: survey and profile data.** Depends: the close of phase C, NR-03
@@ -5912,3 +6086,13 @@ report what was done, what is parked or blocked, and what the operator must deci
   Templar and a Cleric. Full gate guard-p8 (thirteen scopes identical), seven checks, unit
   suite (4,629 passed, 16 skipped) and Fast (nr80b-fast) pass. Next: NR-90, the Assassin's
   survey; the probe rows NR-61, NR-71 and NR-81 wait for the surveys (rule (w)).
+- 2026-10-10 — Loop: NR-90 done. The Assassin has the line scout-assassin, which takes the
+  dagger at the ceremony, a gear table (two daggers, leather first) and the table
+  natural-assassin-v1: the Scout's with Rune Slash after Soul Slash, Fang Strike and Beast
+  Kick, Rune Carve, Divine Strike, Killer's Eye and Flurry in the gaps, and Apply Deadly
+  Poison kept up. Of its 64 active skills and one toggle 36 have a role and 29 a reason:
+  the counter skills, the skills that move the caster, and the two rune bursts, which need
+  a count of the runes on the target, item NR-90a. The Assassin's items NR-91 to NR-98 are
+  written. Full gate guard-p8 (thirteen scopes identical), seven checks, three script
+  tests, unit suite (4,629 passed, 16 skipped) and Fast (nr90-fast) pass. Next: NR-90a, a
+  skill that bursts the runes on its target.

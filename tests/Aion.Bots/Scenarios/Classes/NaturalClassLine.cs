@@ -53,9 +53,13 @@ public sealed record NaturalClassLine(string Id, PlayerClass Starter, PlayerClas
 	public static NaturalClassLine WarriorGladiator { get; } = new("warrior-gladiator", PlayerClass.WARRIOR, PlayerClass.GLADIATOR, 41, "Asimgladiator",
 		CeremonyItemId: 100900488);
 
+	/// <summary>NR-90: the Scout who becomes an Assassin and takes the dagger at the ceremony (NR-Q5).</summary>
+	public static NaturalClassLine ScoutAssassin { get; } = new("scout-assassin", PlayerClass.SCOUT, PlayerClass.ASSASSIN, 41, "Asimassassin",
+		CeremonyItemId: 100200605);
+
 	/// <summary>Every line a run can name. Each class's first profile item adds its line here.</summary>
 	public static IReadOnlyList<NaturalClassLine> All { get; } =
-		[PriestCleric, PriestChanter, Warrior, Mage, Artist, Engineer, Scout, WarriorTemplar, MageSorcerer, WarriorGladiator];
+		[PriestCleric, PriestChanter, Warrior, Mage, Artist, Engineer, Scout, WarriorTemplar, MageSorcerer, WarriorGladiator, ScoutAssassin];
 
 	public static NaturalClassLine Default => All[0];
 

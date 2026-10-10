@@ -166,6 +166,7 @@ public static class NaturalClassProfiles
 		[PlayerClass.ARTIST] = NaturalArtistProfile.Create,
 		[PlayerClass.ENGINEER] = NaturalEngineerProfile.Create,
 		[PlayerClass.SCOUT] = NaturalScoutProfile.Create,
+		[PlayerClass.ASSASSIN] = NaturalAssassinProfile.Create,
 	};
 
 	private static readonly ConcurrentDictionary<PlayerClass, NaturalClassProfile> Built = new();

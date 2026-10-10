@@ -105,6 +105,10 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 	public static NaturalClassGearTable Gladiator { get; } = new(PlayerClass.GLADIATOR, ["GREATSWORD", "POLEARM"], NaturalWeaponStat.Physical,
 		["PLATE", "CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies);
 
+	// NR-90 (NR-Q5, NR-Q6, NR-Q7): the Assassin holds two daggers, as the Scout does from level 5, and wears leather.
+	public static NaturalClassGearTable Assassin { get; } = new(PlayerClass.ASSASSIN, ["DAGGER"], NaturalWeaponStat.Physical,
+		["LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies, OffHand: NaturalOffHand.SecondWeapon);
+
 	// NR-60 (NR-Q5, NR-Q7): the Sorcerer holds a spellbook and wears cloth. It keeps what a class keeps from Ascension on.
 	public static NaturalClassGearTable Sorcerer { get; } = new(PlayerClass.SORCERER, ["SPELLBOOK"], NaturalWeaponStat.Magical,
 		["ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies);
@@ -130,7 +134,7 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 
 	/// <summary>NR-50c: every class's table; a class's first item adds its own.</summary>
 	public static IReadOnlyList<NaturalClassGearTable> All { get; } =
-		[Priest, Cleric, Chanter, Templar, Gladiator, Sorcerer, Warrior, Scout, Mage, Engineer, Artist];
+		[Priest, Cleric, Chanter, Templar, Gladiator, Assassin, Sorcerer, Warrior, Scout, Mage, Engineer, Artist];
 
 	/// <summary>The class's table; null for a class that has none yet.</summary>
 	public static NaturalClassGearTable? Of(PlayerClass playerClass) => All.FirstOrDefault(table => table.Class == playerClass);
