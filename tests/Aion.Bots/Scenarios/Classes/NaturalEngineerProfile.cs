@@ -39,7 +39,7 @@ public static class NaturalEngineerProfile
 	/// <summary>The pull opens at 18 m, inside the pistol's 20 m and the planner's bound. Every other distance is the
 	/// Priest line's number brought inside 20 m: what the Priest measures from a 25 m spell, the Engineer measures from
 	/// its weapon.</summary>
-	private static readonly NaturalEngageRanges Ranges = new(
+	internal static readonly NaturalEngageRanges Ranges = new(
 		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, SpellRange: 17, PullDistance: 18, FiringRange: 19,
 		SpawnApproachRange: 19, SpawnPullScanRange: 20, FightThroughPullRange: 20,
 		StandoffSpellRange: 20, StandoffArrivalTolerance: 3, StandoffSafetyMargin: 1, RangedApproachRadius: 16);
@@ -48,16 +48,16 @@ public static class NaturalEngineerProfile
 	/// it stays. After a distance refusal it comes to 12 m, still a pistol shot away; no gun skill is a melee skill. An
 	/// obstacle the bot's geometry does not see is answered as the Priest answers it, by closing in: a search for another
 	/// sight line is not built.</summary>
-	private static readonly NaturalFightMovement Movement = new(NaturalPullStyle.WeaponRangeStandOff,
+	internal static readonly NaturalFightMovement Movement = new(NaturalPullStyle.WeaponRangeStandOff,
 		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, RangedRouteBeyond: 18, RangeRefusalCloseIn: 12, HoldDistance: 18,
 		ObstacleAnswer: NaturalObstacleAnswer.CloseToMelee);
 
 	/// <summary>Direct Shot and the pistol cost no mana, so mana only pays for the chain: low thresholds.</summary>
-	private static readonly NaturalReadinessThresholds Readiness = new(
+	internal static readonly NaturalReadinessThresholds Readiness = new(
 		BeforePull: new(80), BeforeUseBar: new(60, 20), BetweenAdds: new(60, 20), BeforeNamedTarget: new(80, 30));
 
 	/// <summary>The Priest line's Ishalgen numbers brought inside the pistol's 20 m.</summary>
-	private static readonly NaturalCampaignRules Campaign = new(
+	internal static readonly NaturalCampaignRules Campaign = new(
 		SpriggRouteBeyond: 20, SpriggStandoff: 18, SpriggSelectWithin: 20, FiringEdgeWithin: 20, StalkerSearchRange: 19,
 		BlockerReplanBeyond: 20, ReturnCooldownHpFraction: 0.75f, StalkerPull: new(90), BeforeSack: new(80), BeforeCamp: new(80));
 

@@ -5479,7 +5479,158 @@ The template:
   - Work: One scope of the Assassin's play, chosen where its rules differ most from the
     Scout's, recorded by a bot alone, twice, and added to the gate's sets.
   - Proof: The two recordings are identical.
-- [ ] **NR-100 - Ranger: survey and profile data.** Depends: the close of phase C
+- [x] **NR-100 - Ranger: survey and profile data.** Depends: the close of phase C
+  - 2026-10-10: done. The Ranger has a class line, a gear table and a profile the
+    validator accepts. Nothing has been played. Its skills ask for no new form.
+    - **Java.**
+      - **What it learns.** SkillLearnService as read for NR-50. Of the Ranger's 104 rows
+        to level 26, 81 are auto-learned, 18 are stigma rows from level 20 and five are
+        skill books: Transformation: White Tiger and Transformation: Krall at 10 and 22,
+        and Homeward Bound at 21. The route buys no book. 64 of the auto-learned are
+        active skills, and with the nine ranks it keeps from the Scout the catalog has
+        73 to give a role or a reason; none is a toggle (run/nr/NR-100/check.log).
+      - **Chains.** ChainCondition as read for NR-50. Swift Shot opens the chain Arrow
+        Strike (level 13) follows; Stunning Shot opens the chain Rupture Arrow (25)
+        follows. Each of the four keeps its chain open every time (chain_skill_prob
+        100).
+      - **A bow.** Every shot's start condition names the bow, and the Scout's blade
+        skills name sword, dagger and the other melee weapons. WeaponCondition.validate
+        29-34 and isValidWeapon 45-49 refuse a skill whose list does not hold the type
+        of the weapon in the main hand. So a Ranger with a bow has none of Swift Edge,
+        Soul Slash, Surprise Attack and Counterattack, in the Ranger's ranks too. No
+        template of the shipped data asks for arrows.
+      - **A counter skill.** Seizure Arrow (15) carries counter_skill DODGE.
+      - **Skills that move the caster or lay a thing down.** BackDashEffect.calculate
+        27-36 puts the caster 25 m behind where it stood, by the cast's result alone,
+        as DashEffect does (NR-90): Retreating Slash. SummonTrapEffect.applyEffect 30-54
+        spawns a trap where the caster stands, for 60 s: Spike Trap and Poisoning Trap.
+      - **Class rewards on the route** are those of the table under NR-42: the bow
+        101700515 at the ceremony and the dispatch Q2902 (NR-30), the leather rewards
+        and the bows of NR-32, the stone 140000002 (NR-39), Haramel's chest 700830
+        (NR-40) and the leather coin armor with a bow at Lateni and Nott (NR-38).
+        Nothing new.
+    - **The class line.** `scout-ranger`: a Scout who becomes a Ranger, SIM account 41,
+      character Asimranger, the bow 101700515 at the ceremony (Q2009, choice 3; NR-Q5).
+      Its dispatch quest is Q2902 (NR-30). Its Scout holds two daggers and walks in, as
+      the line `scout` does; from the ceremony on the character shoots. It is in
+      NaturalClassLine.All and in the script's list; the script test holds the two
+      together.
+    - **The gear table** (Sc/Classes/NaturalClassGearTable.cs, Ranger).
+
+      | Part | The Ranger's | From |
+      |---|---|---|
+      | Weapon group | bow; ranked by the physical stat | NR-Q5, CP-Q7 |
+      | Off hand | nothing: a bow takes both hands | CP-Q10 |
+      | Armor | leather, robe, clothes; item level first, the type breaks ties | NR-Q7, CP-Q24 |
+      | Bonus order at a reward | physical attack, critical, accuracy, then HP | NR-32 |
+      | Kept | life potions, its help kit, a mana potion it finds, every help scroll and food | as the Cleric from Ascension |
+
+      Every bow of the route reaches 25 m and shoots once in 2.4 s.
+    - **The help kit from level 10** is the manifest written under NR-50
+      (NaturalHelpItemAllowlist.Kit(caster: false, reagent: true)), the Templar's: no
+      mana serum and no Awakening scroll. Levels 1 to 9 are the Scout's kit (CP-Q12).
+    - **Its skills by role** (Sc/Classes/NaturalRangerProfile.cs; 33 skills of 73).
+
+      | Role | Skill, and the levels of its ranks | What it is |
+      |---|---|---|
+      | swift | Swift Shot: 10, 15, 20, 25 | Opens the first chain, from the bow's reach. Free, 8 s. |
+      | arrow | Arrow Strike: 13, 18, 23 | Follows Swift Shot inside 3 s. Free, 6 s. |
+      | stun | Stunning Shot: 10, 15, 20, 25 | Opens the second chain from 20 m: a hard shot and a stun of half a second. 37 MP and more, 12 s. |
+      | rupture | Rupture Arrow: 25 | Follows Stunning Shot and staggers the target. 76 MP, 24 s. |
+      | entangle | Entangling Shot: 10, 15, 20, 25 | A light hit that slows the target by three fifths for 16 to 20 s. 28 MP and more, 16 s. |
+      | deadshot | Deadshot: 10, 15, 20, 25 | A shot that is ready every 2 s. 39 MP and more. |
+      | mau | Transformation: Mau: 10 | 2,000 DP: for 2 min a quarter more attack, a quarter faster shots and two fifths more speed. |
+      | sleep | Sleep Arrow: 19, 24 | From 15 m its target sleeps for 12 s, until it is hit. 56 MP and more, 3 min. |
+      | devotion | Devotion: 9 | The Scout's: 40% more physical attack for 5 s. 19 MP, 30 s. |
+      | evasion | Focused Evasion: 1 | The Scout's: 5 s in which every hit misses. Free, 30 s. |
+      | herb, mp-recovery | Herb Treatment and MP Recovery: 10, 15, 20, 25 | The two powder skills of a rest (NR-50a). |
+
+    - **The rule table, natural-ranger-v1.** In the form of the Engineer's, whose
+      pistol reaches 20 m as Stunning Shot does. From range: Transformation: Mau when
+      the DP are there and Devotion when it is ready; Entangling Shot, which keeps the
+      monster on its way longer; Stunning Shot and Rupture Arrow; Swift Shot and Arrow
+      Strike; Deadshot whenever nothing else is ready. With the monster on it the two
+      chains come before Entangling Shot. An open follow-up is always cast first, and
+      the bow shoots whenever no skill is ready. It stands off at 18 m and never walks
+      in, with the Engineer's distances and thresholds. The ladder is the Scout's:
+      Focused Evasion at or below 70% HP, the shield scroll at 50%, the life potion at
+      or below 75%. It leaves at two attackers, as the Engineer does, or at 25% HP with
+      nothing ready, and puts its target to sleep first. Between fights it rests as
+      the Templar (NR-50a). It holds for a patrol and assesses (NR-37), and a pull
+      brings one. In flight it shoots Deadshot (NR-36).
+    - **Left out, with the reason** (40 skills).
+
+      | Skill, levels | Why it is not cast |
+      |---|---|
+      | Return, Bandage Heal, Escape: 1 | As for every class (CP-35, CP-Q11). |
+      | Swift Edge: 1, 6, 11, 16, 21, 26; Soul Slash: 7, 12, 17, 22; Surprise Attack: 3, 8, 13, 18, 23; Counterattack: 5, 10, 15, 20, 25 | They need a dagger or a sword in hand, and the Ranger holds a bow. |
+      | Seizure Arrow: 15, 20, 25 | A counter skill: the server takes it only within 5 s of a dodge of the Ranger's own, which the bot does not observe. |
+      | Stealth: 5 | As the Scout: not in combat, and the journey does not sneak. |
+      | Spike Trap: 13, 18, 23; Poisoning Trap: 16, 21, 26 | A trap is laid at the Ranger's feet for a monster to walk into; the table has no rule that lays one on a pulled monster's way. |
+      | Retreating Slash: 22 | It throws the Ranger 25 m back, to a place only the cast's result names. |
+      | Dodging: 10; Aiming: 19; Strong Shots: 25 | 200 evasion, 200 accuracy or 5% more attack for a minute, for 68, 84 and 97 MP; the table spends its mana on shots. |
+      | Silence Arrow: 25 | It silences its target for 8 to 10 s and hits for little; the table has no rule for a target that casts. |
+      | Calming Whisper: 19, 24 | It lowers the enmity of its target; alone, the monster has no one else to turn to. |
+
+      Not in the catalog at all: the five books, and the stone's skill 11505, as for
+      every class (NR-39).
+    - **Proof.** The one-time check, not committed (run/nr/NR-100/check.log): the line
+      parses and holds both classes; its character is a Scout, with a second weapon in
+      the off hand, until the client observes a Ranger; NaturalClassProfiles builds the
+      Ranger's profile, which requires the validator: each of the 73 active skills has
+      one role or one reason, every follow-up has its opener, no rotation line breaks a
+      chain or casts a counter skill, and the gear groups lie inside the masteries. The
+      check prints the skill tree with each chain step's chance to keep its chain, the
+      33 rows, the 40 reasons, the best rank of each role at eight levels, the gear
+      groups and the patrol view. Gate, set
+      all+mage+warrior+artist+engineer+scout+templar, -Parallel 8, run guard-p8
+      (run/nr/NR-100/guard-p8/verdict.json): verdict pass, all thirteen scopes
+      identical. Seven pre-commit checks pass, the three script tests pass
+      (run/nr/NR-100/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
+      skipped) and Fast passes (run nr100-fast, 11 passed).
+- [ ] **NR-101 - Ranger: probe rows.** Depends: NR-100
+  - Work: Rows ranger-10, ranger-16, ranger-20 and ranger-25 in
+    SimulationNaturalStarterProbeTests: prepared Rangers on the two probe accounts, in
+    the gear the route has given by that level and with its bow, fight the monsters the
+    Cleric's rows fight. Each row's trace shows the table in play: the stand-off at 18 m
+    with the bow shooting between skills, Entangling Shot first, the two chains,
+    Deadshot in the gaps, Transformation: Mau at 2,000 DP, Focused Evasion on the
+    ladder, Sleep Arrow before a retreat, the rest with the powder. What a row shows
+    decides the open rules: whether Deadshot empties its mana before a fight ends,
+    whether the three one-minute buffs earn their mana, and whether a bow that reaches
+    25 m should stand off farther than the Engineer's 18 m. A fix is one small change
+    (rule (i)).
+  - Proof: The four rows end with the monster dead or a recorded retreat, no refused
+    cast repeated and no skill outside the table cast.
+- [ ] **NR-102 - Ranger: to Altgard.** Depends: NR-101; ticked by the round that gives it
+  - Work: A fresh Asimranger plays Ishalgen as a Scout, the trial, the Ranger choice at
+    Munin, the ceremony with the bow and the dispatch Q2902, and is captured at the
+    Altgard bind as altgard-ranger-s1. The bow is in its hands from the ceremony on.
+  - Proof: The capture verifies.
+- [ ] **NR-103 - Ranger: Altgard legs l1 to l5.** Depends: NR-102; ticked by its round
+  - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
+    with -ranger (NR-41). In leg 1 it shoots the fungus in flight.
+  - Proof: Each capture verifies.
+- [ ] **NR-104 - Ranger: Altgard legs l6 to l11.** Depends: NR-103; ticked by its round
+  - Work: As NR-103. Leg 11 is the destiny quest: its stone is 140000002 (NR-39).
+  - Proof: Each capture verifies.
+- [ ] **NR-105 - Ranger: coin gear and Haramel.** Depends: NR-104; ticked by its round
+  - Work: The coin-gear leg (leather, by its manifest, NR-38a) and Haramel with chest
+    700830 (NR-40), captured as altgard-coingear-ranger and
+    altgard-rc-complete-s1-ranger.
+  - Proof: Each capture verifies.
+- [ ] **NR-106 - Ranger: the Abyss entry.** Depends: NR-105; ticked by its round
+  - Work: Q24020, then Q2945, Q2946, Q2947 and Q2042 with the coin tiers it can wear
+    (NR-38b, NR-Q14, NR-Q16), captured as morheim-abyss-entry-s1-ranger.
+  - Proof: The capture verifies.
+- [ ] **NR-107 - Ranger: the endpoint.** Depends: NR-106; ticked by its round
+  - Work: Captured and verified as ntc-ready-ranger-s1: alive at Morheim Ice Fortress,
+    level 25 or higher, Q2945, Q2946, Q2947 and Q2042 complete.
+  - Proof: The capture verifies.
+- [ ] **NR-108 - Ranger: the class scope.** Depends: NR-107
+  - Work: One scope of the Ranger's play, chosen where its rules differ most from the
+    Scout's, recorded by a bot alone, twice, and added to the gate's sets.
+  - Proof: The two recordings are identical.
 - [ ] **NR-110 - Spirit Master: survey and profile data.** Depends: the close of phase C
 - [ ] **NR-120 - Gunner: survey and profile data.** Depends: the close of phase C, NR-03
 - [ ] **NR-130 - Rider: survey and profile data.** Depends: the close of phase C
@@ -6173,3 +6324,13 @@ report what was done, what is parked or blocked, and what the operator must deci
   seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr90a-fast) pass. Next:
   NR-100, the Ranger's survey; the probe rows NR-61, NR-71, NR-81 and NR-91 wait for the
   surveys (rule (w)).
+- 2026-10-10 — Loop: NR-100 done. The Ranger has the line scout-ranger, which takes the bow
+  at the ceremony, a gear table (a bow, leather first) and the table natural-ranger-v1 in
+  the form of the Engineer's: a stand-off at 18 m, Entangling Shot first, Stunning Shot
+  with Rupture Arrow, Swift Shot with Arrow Strike, Deadshot in the gaps, Transformation:
+  Mau for its DP, and Sleep Arrow before a retreat. Of its 73 active skills 33 have a role
+  and 40 a reason: the Scout's blade skills need a blade, and the traps, the counter shot,
+  the back dash and three one-minute buffs are left out. No new form is asked for. The
+  Ranger's items NR-101 to NR-108 are written. Full gate guard-p8 (thirteen scopes
+  identical), seven checks, three script tests, unit suite (4,629 passed, 16 skipped) and
+  Fast (nr100-fast) pass. Next: NR-110, the Spirit Master's survey.
