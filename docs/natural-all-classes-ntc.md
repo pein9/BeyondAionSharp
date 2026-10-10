@@ -4431,10 +4431,30 @@ The template:
     - **The Templar's line, for scale.** 21 h 36 min of game time from creation to the
       endpoint, against the generic Cleric's 19 h 37 min. Twenty lettered items, NR-50a
       to NR-57a, none of them a branch on the class.
-- [ ] **NR-58 - Templar: the class scope.** Depends: NR-57
+- [x] **NR-58 - Templar: the class scope.** Depends: NR-57
   - Work: One scope of the Templar's play, chosen where its rules differ most from the
     Warrior's, recorded by a bot alone, twice, and added to the gate's sets.
   - Proof: The two recordings are identical.
+  - 2026-10-09: done. Scope templar is recorded and stands in the baseline file.
+    - **The scope.** Haramel, leg l12 from altgard-coingear-templar with the later
+      capital. It is where the Templar plays least like the Warrior it was: every pull is
+      a Taunt from range, four packs are walked into after the patrol rule decided to
+      take them (NR-55b), the patrol rule holds 153 times, and the shield bought at
+      Lateni is in the off hand throughout. It is of the size of the Cleric's own
+      Haramel scope, hm.
+    - **The row** (scripts/sim/run-neutral-gate.ps1, committed first as 86ee86187 with
+      the script tests, the full gate on twelve scopes, the seven checks, the unit suite
+      and Fast nr58-fast).
+    - **The recording** at 86ee86187 on a clean tree (run record-a1,
+      run/nr/NR-58/record-a1/verdict.json): two passes, identical after normalization:
+      36,504 records, sha256 fae0a9da6017c6b1. No death, four retreats, 274 pull plans, one help
+      item supplied. The traces are kept under run/cp/baseline/86ee86187... and in the
+      second copy beside the repository.
+    - **Proof.** A comparison of the scope with its new row passes (run guard-templar,
+      run/nr/NR-58/guard-templar/verdict.json). Seven pre-commit checks and the three
+      script tests pass on the tree with the new row (run/nr/NR-58/evidence-run.log).
+    - **The full gate from here** is set
+      all+mage+warrior+artist+engineer+scout+templar: thirteen scopes.
 - [ ] **NR-60 - Sorcerer: survey and profile data.** Depends: the close of phase C
 - [ ] **NR-70 - Chanter: survey and profile data.** Depends: the close of phase C
 - [ ] **NR-80 - Gladiator: survey and profile data.** Depends: the close of phase C
@@ -5044,3 +5064,8 @@ report what was done, what is parked or blocked, and what the operator must deci
   verified: a Templar of level 25, alive at Morheim Ice Fortress, with Q2945, Q2946,
   Q2947 and Q2042 complete. The pilot class has reached the plan's finish. Next: NR-58,
   the Templar's class scope.
+- 2026-10-09 — Loop: NR-58 done. The Templar's class scope is Haramel from
+  altgard-coingear-templar. Recorded twice at 86ee86187, identical: 36,504 records, no
+  death. The row stands in the baseline file, and the full gate is thirteen scopes from
+  here: all+mage+warrior+artist+engineer+scout+templar. The pilot class is complete: every
+  item from NR-50 to NR-58 is ticked. Next: NR-60, the Sorcerer's survey.

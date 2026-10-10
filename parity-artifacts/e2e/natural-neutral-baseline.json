@@ -530,6 +530,53 @@
         "binds": 2,
         "soulHeals": 0
       }
+    },
+    {
+      "scope": "templar",
+      "line": "warrior-templar",
+      "replay": {
+        "AltgardLeg1": true,
+        "Leg": "l12",
+        "From": "altgard-coingear-templar",
+        "LaterCapital": true
+      },
+      "snapshot": "altgard-coingear-templar",
+      "commit": "86ee8618712d805d22b16d6c3e15fb910d1e8ddb",
+      "environment": {
+        "AION_SIM_SEED": "1",
+        "NA_HELP_ITEMS": null,
+        "AION_BOT_DASHBOARD_PORT": null,
+        "AION_SIM_PROCESS_KEY": null
+      },
+      "ignore": [],
+      "records": 36504,
+      "sha256": "fae0a9da6017c6b15ff1c42f891b690a012b563e1f18bca25cc349e46f462161",
+      "counts": {
+        "records": 36505,
+        "deaths": 0,
+        "reviveSteps": 0,
+        "retreats": 4,
+        "retreatRoutes": 7,
+        "restSitsTraced": 0,
+        "restInterrupts": 0,
+        "betweenFightHeals": 0,
+        "powderRestCasts": 12,
+        "vendorBuys": 0,
+        "pullPlans": 274,
+        "patrolWaits": 153,
+        "emergencyDecisions": 0,
+        "atTargetPulls": 4,
+        "lifePotions": 1,
+        "restLifePotions": 1,
+        "restSitsForHealth": 1,
+        "manaPotions": 0,
+        "shieldScrolls": 0,
+        "speedScrolls": 3,
+        "runningScrolls": 0,
+        "helpItemsSupplied": 1,
+        "binds": 1,
+        "soulHeals": 0
+      }
     }
   ]
 }
