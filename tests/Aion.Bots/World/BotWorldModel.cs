@@ -185,6 +185,7 @@ public sealed partial class BotWorldModel
 		else if (type == typeof(SM_DELETE))
 		{
 			objects.Remove(packet.Get<int>("objectId"));
+			objectAbnormals.Remove(packet.Get<int>("objectId"));
 			ForgetPrivateStore(packet.Get<int>("objectId"));
 			lootStatuses.Remove(packet.Get<int>("objectId"));
 			if (OwnedKiskRemoval is { } removal && removal.ObjectId == packet.Get<int>("objectId"))
@@ -288,6 +289,8 @@ public sealed partial class BotWorldModel
 			ApplyVisibleEffects(packet);
 		else if (type == typeof(SM_SKILL_ACTIVATION))
 			ApplySkillActivation(packet);
+		else if (type == typeof(SM_ABNORMAL_EFFECT))
+			ApplyCreatureEffects(packet);
 		else if (type == typeof(SM_EXCHANGE_REQUEST))
 			ExchangeRequestFrom = packet.Get<string>("receiver");
 		else

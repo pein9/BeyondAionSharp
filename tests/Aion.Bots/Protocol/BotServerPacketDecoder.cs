@@ -65,6 +65,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_STATUPDATE_EXP)] = DecodeExp,
 			[typeof(SM_FLY_TIME)] = DecodeFlyTime,
 			[typeof(SM_ABNORMAL_STATE)] = DecodeAbnormalState,
+			[typeof(SM_ABNORMAL_EFFECT)] = DecodeAbnormalEffect,
 			[typeof(SM_WINDSTREAM)] = DecodeWindstream,
 			[typeof(SM_WINDSTREAM_ANNOUNCE)] = DecodeWindstreamAnnounce,
 			[typeof(SM_DIE)] = DecodeDie,
@@ -571,6 +572,31 @@ public sealed partial class BotServerPacketDecoder
 		}
 		if (r.Remaining != 0) throw new InvalidDataException("Abnormal-state snapshot has unexpected trailing bytes.");
 		return Fields(("abnormals", abnormals), ("slot", slot), ("effectCount", effectCount), ("effects", effects));
+	}
+
+	// Java SM_ABNORMAL_EFFECT.writeImpl: the creature, 1 for a monster or 2 for a player, its abnormal states as the bits
+	// of AbnormalState, and its visible effects; a player's rows begin with the effector.
+	private static IReadOnlyDictionary<string, object?> DecodeAbnormalEffect(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		int objectId = r.ReadInt32();
+		byte effectType = r.ReadByte();
+		if (effectType is not (1 or 2)) throw new InvalidDataException($"Creature effects of an unknown kind {effectType}.");
+		r.Skip(sizeof(int));
+		int abnormals = r.ReadInt32();
+		r.Skip(sizeof(int));
+		byte slots = r.ReadByte();
+		ushort effectCount = r.ReadUInt16();
+		var effects = new List<IReadOnlyDictionary<string, object?>>(effectCount);
+		for (int index = 0; index < effectCount; index++)
+		{
+			effects.Add(Fields(
+				("effectorId", effectType == 2 ? r.ReadInt32() : 0), ("skillId", r.ReadUInt16()), ("skillLevel", r.ReadByte()),
+				("targetSlot", r.ReadByte()), ("remainingMillis", r.ReadInt32())));
+		}
+		if (r.Remaining != 0) throw new InvalidDataException("Creature effects have unexpected trailing bytes.");
+		return Fields(("objectId", objectId), ("effectType", effectType), ("abnormals", abnormals), ("slots", slots),
+			("effectCount", effectCount), ("effects", effects));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeWindstreamAnnounce(ReadOnlySpan<byte> body)

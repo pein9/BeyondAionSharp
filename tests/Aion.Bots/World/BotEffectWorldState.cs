@@ -30,8 +30,22 @@ public sealed partial class BotWorldModel
 		else activeToggles.Remove(skillId);
 	}
 
+	/// <summary>
+	/// NR-80a: a creature's abnormal states as the server last told them, as the bits of AbnormalState; 0 for one it told
+	/// nothing of. Java EffectController.broadCastEffects 304-308 sends SM_ABNORMAL_EFFECT to everyone who sees the
+	/// creature whenever one of its effects starts or ends, and PlayerController.see sends it for a creature that comes
+	/// into sight with effects on it.
+	/// </summary>
+	public int AbnormalsOf(int objectId) => objectAbnormals.GetValueOrDefault(objectId);
+
+	private readonly Dictionary<int, int> objectAbnormals = [];
+
+	private void ApplyCreatureEffects(DecodedBotServerPacket packet) =>
+		objectAbnormals[packet.Get<int>("objectId")] = packet.Get<int>("abnormals");
+
 	private void ForgetEffectObservations()
 	{
+		objectAbnormals.Clear();
 		VisibleEffects = null;
 		LastAbyssReward = null;
 	}

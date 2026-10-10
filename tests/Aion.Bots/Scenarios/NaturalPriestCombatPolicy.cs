@@ -21,13 +21,16 @@ namespace Aion.Bots.Scenarios;
 /// <param name="RequiredOffHand">NR-50b: what the template asks of the left hand (startconditions/lefthandweapon; Java
 /// LeftHandCondition): <c>SHIELD</c>, a shield worn, or <c>DUAL</c>, a second weapon or a two-hand weapon held; null when
 /// it asks nothing.</param>
+/// <param name="TargetStates">NR-80a: the abnormal states one of which the target must be in (properties/target_status;
+/// Java TargetStatusProperty), by the names of AbnormalState; null when it asks nothing.</param>
 public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role, int ManaCost,
 	float Range, int CooldownId, int CooldownDeciseconds, string? ChainCategory = null,
 	string? RequiresChainCategory = null, int ChainWindowMillis = 0, int DpCost = 0,
 	int ReagentItemId = 0, int ReagentCount = 0,
 	string? TargetKind = null, int CastMillis = 0, IReadOnlyList<string>? RequiredWeaponGroups = null,
 	bool AddWeaponRange = false, int SelfCount = 0, string? Activation = null, string? CounterStatus = null,
-	bool OutOfCombatOnly = false, bool GroundOnly = false, string? TargetFlight = null, string? RequiredOffHand = null);
+	bool OutOfCombatOnly = false, bool GroundOnly = false, string? TargetFlight = null, string? RequiredOffHand = null,
+	IReadOnlyList<string>? TargetStates = null);
 
 /// <summary>
 /// NR-18: every class's catalog is generated from the shipped skill data (<see cref="Classes.NaturalSkillCatalog"/>); the
@@ -63,6 +66,8 @@ public static class NaturalPriestSkills
 /// <param name="OffHand">NR-50b: what the bot holds for a skill's left-hand condition
 /// (<see cref="Classes.NaturalSkillCatalog.OffHandHeld"/>): <c>SHIELD</c>, <c>DUAL</c> or null.</param>
 /// <param name="CastThisFight">NR-53b: the skills the bot has cast in this fight; null when the caller does not say.</param>
+/// <param name="TargetAbnormals">NR-80a: the target's abnormal states as the server last told them
+/// (<see cref="BotWorldModel.AbnormalsOf"/>), as the bits of AbnormalState; 0 when it told none.</param>
 public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int Mp, int MaxMp,
 	bool Dead, bool Aggro, float? TargetDistance, int? TargetObjectId,
 	IReadOnlyDictionary<int, BotSkill> Learned, IReadOnlyDictionary<int, DateTimeOffset> Cooldowns,
@@ -76,7 +81,8 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	bool ShieldScrollReady = false, ushort? LastCancelledSkillId = null,
 	int? WeaponAttackRangeMillis = null, int? WeaponAttackSpeedMillis = null,
 	string? PreviousChainCategory = null, DateTimeOffset? ChainStepAt = null, int? OpenChainUseCount = null,
-	IReadOnlySet<int>? ActiveEffectSkillIds = null, string? OffHand = null, IReadOnlySet<ushort>? CastThisFight = null);
+	IReadOnlySet<int>? ActiveEffectSkillIds = null, string? OffHand = null, IReadOnlySet<ushort>? CastThisFight = null,
+	int TargetAbnormals = 0);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);

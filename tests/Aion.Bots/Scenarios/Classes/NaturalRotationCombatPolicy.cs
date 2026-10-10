@@ -1,3 +1,5 @@
+using Aion.GameServer.SkillEngine.Effects;
+
 namespace Aion.Bots.Scenarios.Classes;
 
 /// <summary>What a step of the recovery ladder uses.</summary>
@@ -276,6 +278,13 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			.Where(role => rules.OnlyWhileTargetAbove == null || !rules.OnlyWhileTargetAbove.TryGetValue(role, out int least) ||
 				state.TargetHpPercent is not int targetHp || targetHp > least)
 			.Select(role => Best(role, state)).OfType<NaturalPriestSkill>().ToArray();
+		// NR-80a: a skill that needs its target in a state goes first while that state is seen, before an open follow-up:
+		// the state lasts a moment (the Gladiator's Crashing Blow, on a target Aerial Lockdown lifted for 2 s). One whose
+		// state is not seen, or that only cools down, is out of the line: nothing waits for it.
+		NaturalPriestSkill[] stateBound = line.Where(skill => skill.TargetStates != null).ToArray();
+		foreach (NaturalPriestSkill onState in stateBound)
+			if (Ready(onState)) return Cast(onState, $"The target is in a state the {onState.Role} skill needs; cast it while the state lasts.");
+		if (stateBound.Length > 0) line = line.Except(stateBound).ToArray();
 		foreach (NaturalPriestSkill followUp in line.Where(skill => skill.RequiresChainCategory != null))
 			if (Ready(followUp)) return Cast(followUp, $"The {followUp.Role} follow-up is open; cast it before the chain resets.");
 		if (rules.HoldOpenChain && line.Any(Pending))
@@ -404,6 +413,10 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		if (skill.RequiredOffHand != null && state.OffHand != skill.RequiredOffHand)
 			reasons.Add(skill.RequiredOffHand == "SHIELD" ? "The skill needs a shield, and none is worn."
 				: "The skill needs a second weapon or a two-hand weapon, and neither is held.");
+		// NR-80a: the server refuses the cast on a target in none of the states (Java TargetStatusProperty).
+		if (skill.TargetStates != null && !skill.TargetStates.Any(name =>
+			Enum.TryParse(name, out AbnormalState wanted) && (state.TargetAbnormals & (int)wanted) == (int)wanted))
+			reasons.Add($"The target is in none of the states the skill needs ({string.Join(", ", skill.TargetStates)}).");
 		if (!self)
 		{
 			if (target == null || state.TargetDistance is not float distance) reasons.Add("No client-observed target position.");

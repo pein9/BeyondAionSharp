@@ -4954,10 +4954,11 @@ The template:
         role or a reason; two more are toggles (run/nr/NR-80/check.log).
       - **Chains.** ChainCondition as read for NR-50. Ferocious Strike opens the first
         chain; Robust Blow and Rage are its second steps; Wrathful Strike (level 13) and
-        Rupture (16) are both third steps after Robust Blow. Wrathful Strike carries no
-        chain_skill_prob and Rupture carries 10 (Skill.java 630-639), so the chain is
-        over after the one and, nine times in ten, after the other; the cast's result
-        says which. Body Smash opens a chain of its own. Absorbing Fury (10) opens the
+        Rupture (16) are both third steps after Robust Blow. Corrected by NR-80a:
+        Wrathful Strike carries no chain_skill_prob, which is 100, and keeps the chain
+        open, so Rupture is cast after it; Rupture carries 10 (Skill.java 630-639), and
+        after it the chain is over nine times in ten; the cast's result says which.
+        Body Smash opens a chain of its own. Absorbing Fury (10) opens the
         chain Roiling Hack follows. Cleave (19) opens a chain nothing follows before
         level 26.
       - **A target in a state.** Crashing Blow (level 25) names target_status
@@ -5022,8 +5023,9 @@ The template:
     - **The rule table, natural-gladiator-v1.** The Warrior's, with what the Gladiator
       adds. With the monster on it: Explosion of Rage when the DP are there; Ferocious
       Strike and Robust Blow; Rage when it is at or below 80% HP; after Robust Blow,
-      Wrathful Strike when it is ready and Rupture otherwise; then Body Smash, Aerial
-      Lockdown and Cleave. An open follow-up is always cast first, and the weapon swings
+      Wrathful Strike when it is ready and then Rupture (corrected by NR-80a); then
+      Body Smash, Aerial Lockdown and Cleave. An open follow-up is always cast first,
+      and the weapon swings
       whenever no skill is ready. It pulls as the Templar does (NR-53b), with the
       Templar's distances: from range Cleave from level 19, otherwise Taunt, and then it
       holds where it stands until the monster is on it. The ladder: the shield scroll at
@@ -5059,7 +5061,7 @@ The template:
       identical. Seven pre-commit checks pass, the three script tests pass
       (run/nr/NR-80/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
       skipped) and Fast passes (run nr80-fast, 11 passed).
-- [ ] **NR-80a - A skill that needs its target in a state.** Depends: NR-80
+- [x] **NR-80a - A skill that needs its target in a state.** Depends: NR-80
   - Work: Crashing Blow hits a target that is in the air for more than twice what
     Rupture does, and the Gladiator's own Aerial Lockdown puts it there for 2 s. Other
     classes have skills of the kind: 139 templates name a target status. Java first:
@@ -5071,7 +5073,92 @@ The template:
   - Proof: A one-time check of the decisions with the state seen and not seen, and one
     probe row on a probe account that casts Crashing Blow after Aerial Lockdown; the
     full gate identical.
-- [ ] **NR-81 - Gladiator: probe rows.** Depends: NR-80a
+  - 2026-10-10: done. The bot knows a creature's abnormal states from the server's own
+    packet, a skill row holds the states its target must be in, and the rule table casts
+    such a skill first while one of them is seen and at no other time. The Gladiator
+    casts Crashing Blow.
+    - **Java, beyond NR-80.**
+      - **What puts a target into the air.** OpenAerialEffect.calculate 31-51: not a
+        target that is pulled, thrown down, in the air, staggered or spinning, and the
+        target may resist it (OPENAERIAL_RESISTANCE). startEffect 54-68 sets the state
+        on the target and endEffect 71-73 takes it off. Aether's Hold, the sub-effect of
+        Aerial Lockdown, lasts 2 s.
+      - **What the client is told.** EffectController.addEffect starts an effect and
+        then calls broadCastEffects 304-308; clearEffect 310-325 calls it when one ends.
+        It sends SM_ABNORMAL_EFFECT to everyone who sees the creature: its object id, 1
+        for a monster or 2 for a player, its abnormal states as bits, and its visible
+        effects. The bits are the ids of AbnormalState; OPENAERIAL is 1 << 16.
+        PlayerController.see 110-111 sends the packet for a creature that comes into
+        sight with effects on it.
+      - **A chain skill without chain_skill_prob has 100** (SkillTemplate.java 90-91), not
+        none. NR-80 read it wrong: Wrathful Strike keeps its chain open, and Rupture,
+        which follows Robust Blow by the step before the current one, is cast after it.
+        The probe row below shows the four in a row. NR-80's record and the profile's
+        comment are corrected.
+    - **What the reading changed.** The Work line asked the validator to refuse a
+      state-bound skill whose catalog has no skill that causes the state. It asks
+      nothing: such a skill is sent only while the state is seen, so the server can
+      refuse none, and one whose state never comes is never sent.
+    - **The change, generic.**
+      - Bots/Protocol/BotServerPacketDecoder.cs decodes SM_ABNORMAL_EFFECT: 120 packet
+        types, and the decoder's own test counts them so.
+      - Bots/World/BotEffectWorldState.cs: the world state holds each creature's states
+        as the server last told them, forgets them at a world reload and when the
+        creature leaves sight.
+      - Sc/NaturalPriestCombatPolicy.cs and Sc/Classes/NaturalSkillCatalog.cs: a skill
+        row holds the states of its template's target_status, and the fight's
+        observation the target's states. The decision record's observed state is as it
+        was, so no recorded trace changes; the decision's checks say what was found.
+      - Sc/Classes/NaturalRotationCombatPolicy.cs: a skill whose target is in none of
+        its states is refused, as the server would. One that is ready is cast first,
+        before an open follow-up: the state lasts a moment. One whose state is not seen,
+        or that cools down, is out of the line, and nothing waits for it.
+      - No profile but the Gladiator's has such a row to level 26.
+    - **The Gladiator.** Crashing Blow has the role crashing: 48 of its 58 skills have a
+      role now and 10 a reason.
+    - **Found, not changed here.** The table keeps the mana of its first recovery skill
+      back from every attack, and below that amount it refuses the attacks that cost no
+      mana too: a Gladiator under 298 MP only swings its weapon. NR-80b.
+    - **Proof, the one-time check** (run/nr/NR-80a/check.log; the check file is not
+      committed). Of the fifteen profiles of the ten class lines only the Gladiator's has
+      a state-bound row. A Gladiator of level 25 on a monster that is on it: with no
+      state seen, or thrown down only, it casts Ferocious Strike and the check says
+      Crashing Blow's target is in none of its states; in the air, Crashing Blow, with a
+      follow-up open too; in the air with Crashing Blow cooling down, the follow-up. At
+      level 24, which has not learned it, the table never asks. The world state takes
+      Java's golden payloads: a creature in the air, the same told again with none, and
+      none after a world reload; a monster's and a player's effect rows are read, and a
+      payload a byte too long is refused.
+    - **Proof, the probe row** gladiator-aerial (SimT/SimulationNaturalStarterProbeTests
+      .cs, probe account 100; `bash run/nr/NR-80a/probe.sh <attempt>`). Prepared by the
+      director: a level-25 Gladiator with the skills of every level up to it, with the
+      sword it was created with so that a fight lasts, by the starved mosbears of the
+      Cleric's row. Every other act is the journey's. Runs nr80a-probe-a1 and, after the
+      comment was corrected, nr80a-probe-a2 passed alike:
+      - The buff check casts Slaughter, and the server says it is on (NR-70a).
+      - One fight, a kill in 10.6 s: Cleave from range, then Ferocious Strike, Robust
+        Blow, Wrathful Strike, Rupture, Body Smash, Aerial Lockdown and, 1,002 ms after
+        it, Crashing Blow, decided because the target was seen in the air. The server
+        completed the cast, which it does only on a target that is in the air.
+      - A level-25 Gladiator has 2,326 HP and 1,853 MP.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-80a/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr80a-fast, 11 passed).
+- [ ] **NR-80b - An attack that costs no mana is not held back by the reserve.** Depends: NR-80a
+  - Work: The rule table keeps the mana of its first recovery skill back from every
+    attack (NR-10). Below that amount it refuses every attack, the ones that cost no
+    mana too: a Gladiator under 298 MP and a Templar under 113 MP only swing, though
+    Ferocious Strike, Robust Blow, Rupture and Body Smash cost nothing. No server
+    behavior is relied on. A skill of the table's attack lists whose mana cost is 0 is
+    not refused for the reserve. Generic: the rule of every table. A skill outside the
+    lists keeps its refusal, because a recorded decision writes each skill's refusals
+    and rule (c) guards the recorded scopes: of the thirteen baseline traces only the
+    Cleric's scope c names a free skill as refused for the reserve, in eleven decisions,
+    and those are Herb Treatment, MP Recovery and Penance, which no list holds.
+  - Proof: A one-time check of the decisions below the reserve for a Gladiator, a
+    Templar and a Cleric; the full gate identical.
+- [ ] **NR-81 - Gladiator: probe rows.** Depends: NR-80b
   - Work: Rows gladiator-10, gladiator-16, gladiator-20 and gladiator-25 in
     SimulationNaturalStarterProbeTests: prepared Gladiators on the two probe accounts, in
     the gear the route has given by that level, fight the monsters the Cleric's rows
@@ -5772,3 +5859,13 @@ report what was done, what is parked or blocked, and what the operator must deci
   guard-p8 (thirteen scopes identical), seven checks, three script tests, unit suite (4,629
   passed, 16 skipped) and Fast (nr80-fast) pass. Next: NR-80a, a skill that needs its
   target in a state.
+- 2026-10-10 — Loop: NR-80a done. The bot decodes SM_ABNORMAL_EFFECT and knows each
+  creature's abnormal states; a skill row holds the states its target must be in; the rule
+  table casts such a skill first while one is seen and at no other time. The Gladiator
+  casts Crashing Blow on a target Aerial Lockdown lifted. One-time check, and the probe row
+  gladiator-aerial (runs nr80a-probe-a1 and a2): Crashing Blow 1,002 ms after Aerial
+  Lockdown, completed by the server. NR-80's reading of the chain roll is corrected: a
+  skill without chain_skill_prob has 100, so Rupture follows Wrathful Strike. Found: the
+  mana reserve holds back the free skills too, item NR-80b. Full gate guard-p8 (thirteen
+  scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
+  (nr80a-fast) pass. Next: NR-80b, an attack that costs no mana and the reserve.

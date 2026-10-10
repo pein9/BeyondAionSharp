@@ -46,6 +46,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("templar-20", NaturalClassLine.WarriorTemplar, ProbeAccountA, "Asimtwetemp"),
 		new("templar-25", NaturalClassLine.WarriorTemplar, ProbeAccountB, "Asimtftemp"),
 		new("chanter-mantras", NaturalClassLine.PriestChanter, ProbeAccountA, "Asimmantra"),
+		new("gladiator-aerial", NaturalClassLine.WarriorGladiator, ProbeAccountB, "Asimaerial"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -236,6 +237,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "templar-20": await TemplarLevelTwentyRowAsync(probe, id, token); break;
 			case "templar-25": await TemplarLevelTwentyFiveRowAsync(probe, id, token); break;
 			case "chanter-mantras": await ChanterMantrasRowAsync(probe, id, token); break;
+			case "gladiator-aerial": await GladiatorAerialRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -1167,6 +1169,58 @@ public sealed partial class SimulationFastScenarioTests
 			$"Second check: casts {string.Join(" ", secondCasts)}; the server said nothing of a toggle. " +
 			$"Every effect ended by the director: the server said {Said(ended)}. Third check: casts {string.Join(" ", thirdCasts)}; the server said {Said(third)}. " +
 			$"At level 23: casts {string.Join(" ", fourthCasts)}; the server said {Said(fourth)}. On at the end: {On()}.");
+	}
+
+	private const string GladiatorTable = "natural-gladiator-v1:";
+
+	/// <summary>
+	/// NR-80a, row gladiator-aerial. Prepared by the director: the Warrior is made a level-25 Gladiator with the skills of
+	/// every level up to it, keeps the sword it was created with, so that a fight lasts, and is placed in Altgard by the
+	/// starved mosbears (210564, level 13), where the Cleric's row fights. The journey's buff check turns Slaughter on.
+	/// Then it fights one mosbear after another until Crashing Blow follows Aerial Lockdown: the lift lasts 2 s, a monster
+	/// may resist it, and Aerial Lockdown is ready once in 3 min. Crashing Blow is cast at no other time. A cast the
+	/// server completed is one it accepted, and it accepts Crashing Blow only on a target that is in the air.
+	/// </summary>
+	private async Task GladiatorAerialRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, aerial = 545, crashing = 508, slaughter = 697, mostFights = 40;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-five-gladiator-in-altgard");
+		await probe.BecomeAsync(PlayerClass.GLADIATOR, 25);
+		Assert.All(new[] { aerial, crashing, slaughter, 2868, 2881, 740, 626 }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 25."));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		int weapon = Held(probe, 1);
+
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s02", "buff-check-turns-slaughter-on", token);
+		Assert.Contains(slaughter, buffCasts);
+		Assert.Contains(slaughter, probe.World.ActiveToggles);
+
+		ClericFight? shown = null;
+		int fights = 0, kills = 0, lifts = 0;
+		while (shown == null && fights < mostFights)
+		{
+			fights++;
+			Npc next = NearestLiving(probe, mosbear);
+			ClericFight fight = await TableFightAsync(probe, GladiatorTable, $"s03-{fights:D2}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			Assert.Equal(0, fight.Result.Deaths);
+			AssertNoRefusedCastRepeats(fight);
+			kills += fight.Result.Killed ? 1 : 0;
+			lifts += fight.Casts.Count(cast => cast.SkillId == aerial);
+			// Crashing Blow is cast right after an Aerial Lockdown, and at no other time.
+			Assert.All(Enumerable.Range(0, fight.Casts.Count).Where(index => fight.Casts[index].SkillId == crashing),
+				index => Assert.True(index > 0 && fight.Casts[index - 1].SkillId == aerial, $"Crashing Blow did not follow Aerial Lockdown: {fight.Order}."));
+			if (fight.Run([aerial], [crashing]) >= 0) shown = fight;
+		}
+		Assert.True(shown != null, $"Crashing Blow never followed Aerial Lockdown in {fights} fights with {lifts} Aerial Lockdowns.");
+		int run = shown.Run([aerial], [crashing]);
+		TimeSpan gap = shown.Casts[run + 1].At - shown.Casts[run].At;
+		Assert.True(gap <= TimeSpan.FromSeconds(2), $"Crashing Blow came {gap.TotalMilliseconds:F0} ms after Aerial Lockdown: {shown.Order}.");
+		StarterTraceRecord decided = shown.Decided.First(record => Decided(record, "cast-target", crashing));
+		Assert.Contains(slaughter, probe.World.ActiveToggles);
+		Console.WriteLine($"{id}: level {probe.World.Level} Gladiator, max HP {probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, weapon {weapon}. " +
+			$"Buff check: casts {string.Join(" ", buffCasts)}; toggles on {string.Join(" ", probe.World.ActiveToggles.Order())}. " +
+			$"{fights} fight(s), {kills} kill(s), {lifts} Aerial Lockdown(s). The fight that showed it: {Outcome(shown)}; " +
+			$"Crashing Blow {gap.TotalMilliseconds:F0} ms after Aerial Lockdown, decided because: {decided.Fields.GetProperty("reason").GetString()} " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
 	}
 
 	private const string TemplarTable = "natural-templar-v1:";

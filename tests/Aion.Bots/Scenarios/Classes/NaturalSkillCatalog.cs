@@ -127,7 +127,10 @@ public static class NaturalSkillCatalog
 			GroundOnly: conditions.OfType<NoFlyingCondition>().Any() ||
 				conditions.OfType<SelfFlyingCondition>().Any(self => self.Restriction == FlyingRestriction.GROUND),
 			TargetFlight: conditions.OfType<TargetFlyingCondition>().FirstOrDefault()?.Restriction.ToString(),
-			RequiredOffHand: conditions.OfType<LeftHandCondition>().FirstOrDefault()?.type.ToString());
+			RequiredOffHand: conditions.OfType<LeftHandCondition>().FirstOrDefault()?.type.ToString(),
+			// Java TargetStatusProperty.set 20-28 asks nothing of the one stack it names.
+			TargetStates: properties?.GetTargetStatus() is { Count: > 0 } states && template.GetStack() != "RI_PROTECTIONCURTAIN"
+				? states.Select(state => state.ToString()).ToArray() : null);
 	}
 
 	/// <summary>

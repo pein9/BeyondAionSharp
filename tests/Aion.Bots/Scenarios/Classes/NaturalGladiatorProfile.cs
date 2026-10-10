@@ -19,8 +19,9 @@ public static class NaturalGladiatorProfile
 	/// Robust Blow. Body Smash opens a chain of its own. Explosion of Rage is paid with 2,000 DP: it cannot miss and
 	/// throws its target down for 2 s. Cleave (level 19) is thrown from 15 m and may halve its target's speed. Taunt
 	/// (level 10) sets a monster 15 m away on the Gladiator. Second Wind (level 20) heals 35% of its HP and raises the
-	/// most it has by as much for a minute. Aerial Lockdown (level 22) lifts its target for 2 s. Slaughter (level 13) is
-	/// a toggle: 15% more physical attack while it is on.
+	/// most it has by as much for a minute. Aerial Lockdown (level 22) lifts its target for 2 s, and Crashing Blow
+	/// (level 25) hits a target that is in the air (NR-80a). Slaughter (level 13) is a toggle: 15% more physical attack
+	/// while it is on.
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
@@ -35,6 +36,7 @@ public static class NaturalGladiatorProfile
 		[2981] = "taunt", [2982] = "taunt", [2983] = "taunt", [2984] = "taunt",
 		[648] = "wind",
 		[545] = "aerial",
+		[508] = "crashing",
 		[697] = "slaughter",
 		// NR-50a: the two powder skills, cast only in a rest.
 		[246] = "herb", [247] = "herb", [251] = "herb", [253] = "herb",
@@ -51,8 +53,6 @@ public static class NaturalGladiatorProfile
 		[772] = "Absorbing Fury IV " + Area,
 		[758] = "Roiling Hack follows Absorbing Fury and " + Area,
 		[3124] = "Charge raises run speed for 13 s; the journey's travel casts no skill, and the kit's running scroll is its speed.",
-		[508] = "Crashing Blow needs its target in the air (target_status OPENAERIAL; Java TargetStatusProperty.set 20-28), which it is " +
-			"for 2 s after Aerial Lockdown. No rule says that of a skill yet (NR-80a).",
 		[619] = "Defense Preparation is a toggle of Slaughter's kind, and the server keeps one of them on (Java EffectController.addEffect " +
 			"76-86). It raises parry, block and enmity; Slaughter's 15% of attack is kept.",
 	};
@@ -60,11 +60,13 @@ public static class NaturalGladiatorProfile
 	/// <summary>
 	/// NR-80: the Warrior's table with what the Gladiator adds. On the target, Explosion of Rage first when 2,000 DP are
 	/// there; then Ferocious Strike and Robust Blow, Rage when it is hurt, at or below 80% HP, and after Robust Blow
-	/// Wrathful Strike when it is ready (20 s; seven times in ten it throws the target down for 2 s) and Rupture
-	/// otherwise (8 s, the harder hit, no mana). As a rule one of the two follows a Robust Blow: Wrathful Strike ends the
-	/// chain, and Rupture ends it nine times in ten (chain_skill_prob 10); the cast's result says which. Then Body Smash,
-	/// Aerial Lockdown and Cleave. An open follow-up is always cast first, and the weapon swings whenever no skill is
-	/// ready.
+	/// Wrathful Strike when it is ready (20 s; seven times in ten it throws the target down for 2 s) and then Rupture
+	/// (8 s, the harder hit, no mana). Both follow Robust Blow, Rupture by the step before the current one (Java
+	/// ChainCondition.validate), and Wrathful Strike keeps the chain open: a skill without chain_skill_prob has 100.
+	/// After Rupture the chain is over nine times in ten (chain_skill_prob 10); the cast's result says which. Then Body
+	/// Smash, Aerial Lockdown and Cleave. An open follow-up is always cast first, and the weapon swings whenever no
+	/// skill is ready. NR-80a: Crashing Blow is cast before anything else while the target is seen in the air, which it
+	/// is for 2 s after an Aerial Lockdown it did not resist.
 	/// <para>
 	/// It pulls as the Templar does (NR-53b). From range: Cleave from level 19, which hits and may slow the monster on
 	/// its way, and otherwise Taunt (free, 10 s); then it holds where it stands until the monster is on it. Taunt is a
@@ -77,7 +79,7 @@ public static class NaturalGladiatorProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-gladiator-v1",
-		Adjacent: ["explosion", "strike", "robust", "rage", "wrathful", "rupture", "smash", "aerial", "cleave"],
+		Adjacent: ["explosion", "strike", "robust", "rage", "wrathful", "rupture", "smash", "aerial", "crashing", "cleave"],
 		AtRange: ["cleave", "taunt"],
 		Upkeep: [],
 		Recovery:
