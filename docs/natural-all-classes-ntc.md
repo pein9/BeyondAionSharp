@@ -4746,11 +4746,16 @@ The template:
       run guard-p8 (run/nr/NR-61a/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr61a-fast, 11 passed).
-- [ ] **NR-62 - Sorcerer: to Altgard.** Depends: NR-61; ticked by the round that gives it
+- [x] **NR-62 - Sorcerer: to Altgard.** Depends: NR-61; ticked by the round that gives it
   - Work: A fresh Asimsorcerer plays Ishalgen as a Mage, the trial, the Sorcerer choice at
     Munin, the ceremony with the spellbook and the dispatch Q2903, and is captured at the
     Altgard bind as altgard-sorcerer-s1.
   - Proof: The capture verifies.
+  - 2026-10-10: done in round 1 (NR-R1, run r1-a1 at 929993f52, world 1). A fresh
+    character of the line mage-sorcerer reached the Altgard bind in 201.5 game minutes: a Sorcerer of
+    level 14, 55 quests complete, 154 fights with 150 kills, no death. Its
+    bridge-completion.json says verified. Captured as altgard-sorcerer-s1, a record that points at
+    character 133266 in the round snapshot nr-r1-w1.
 - [ ] **NR-63 - Sorcerer: Altgard legs l1 to l5.** Depends: NR-62; ticked by its round
   - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
     with -sorcerer (NR-41). In leg 1 it shoots the fungus in flight.
@@ -5087,12 +5092,17 @@ The template:
       run guard-p8 (run/nr/NR-71/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr71-fast, 11 passed).
-- [ ] **NR-72 - Chanter: to Altgard.** Depends: NR-71; ticked by the round that gives it
+- [x] **NR-72 - Chanter: to Altgard.** Depends: NR-71; ticked by the round that gives it
   - Work: A fresh character of the line priest-chanter plays Ishalgen as a Priest, the
     trial, the Chanter choice at Munin, the ceremony with the staff and the dispatch
     Q2904, and is captured at the Altgard bind as altgard-chanter-s1. The preserved
     pandaemonium-chanter-start-s1 is left as it is: it was played by the placeholder.
   - Proof: The capture verifies.
+  - 2026-10-10: done in round 1 (NR-R1, run r1-a1 at 929993f52, world 2). A fresh
+    character of the line priest-chanter reached the Altgard bind in 197.3 game minutes: a Chanter of
+    level 14, 55 quests complete, 165 fights with 161 kills, no death. Its
+    bridge-completion.json says verified. Captured as altgard-chanter-s1, a record that points at
+    character 133266 in the round snapshot nr-r1-w2.
 - [ ] **NR-73 - Chanter: Altgard legs l1 to l5.** Depends: NR-72; ticked by its round
   - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
     with -chanter (NR-41). In leg 1 it shoots the fungus in flight.
@@ -5431,11 +5441,16 @@ The template:
       run guard-p8 (run/nr/NR-81/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr81-fast, 11 passed).
-- [ ] **NR-82 - Gladiator: to Altgard.** Depends: NR-81; ticked by the round that gives it
+- [x] **NR-82 - Gladiator: to Altgard.** Depends: NR-81; ticked by the round that gives it
   - Work: A fresh Asimgladiator plays Ishalgen as a Warrior, the trial, the Gladiator
     choice at Munin, the ceremony with the greatsword and the dispatch Q2901, and is
     captured at the Altgard bind as altgard-gladiator-s1.
   - Proof: The capture verifies.
+  - 2026-10-10: done in round 1 (NR-R1, run r1-a1 at 929993f52, world 3). A fresh
+    character of the line warrior-gladiator reached the Altgard bind in 205.8 game minutes: a Gladiator of
+    level 13, 55 quests complete, 152 fights with 140 kills, no death. Its
+    bridge-completion.json says verified. Captured as altgard-gladiator-s1, a record that points at
+    character 133266 in the round snapshot nr-r1-w3.
 - [ ] **NR-83 - Gladiator: Altgard legs l1 to l5.** Depends: NR-82; ticked by its round
   - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
     with -gladiator (NR-41). In leg 1 it has nothing that reaches from range yet and
@@ -5725,11 +5740,16 @@ The template:
       run guard-p8 (run/nr/NR-91/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr91-fast, 11 passed).
-- [ ] **NR-92 - Assassin: to Altgard.** Depends: NR-91; ticked by the round that gives it
+- [x] **NR-92 - Assassin: to Altgard.** Depends: NR-91; ticked by the round that gives it
   - Work: A fresh Asimassassin plays Ishalgen as a Scout, the trial, the Assassin choice
     at Munin, the ceremony with the dagger and the dispatch Q2902, and is captured at
     the Altgard bind as altgard-assassin-s1.
   - Proof: The capture verifies.
+  - 2026-10-10: done in round 1 (NR-R1, run r1-a1 at 929993f52, world 4). A fresh
+    character of the line scout-assassin reached the Altgard bind in 226.3 game minutes: a Assassin of
+    level 14, 55 quests complete, 193 fights with 167 kills, no death. Its
+    bridge-completion.json says verified. Captured as altgard-assassin-s1, a record that points at
+    character 133266 in the round snapshot nr-r1-w4.
 - [ ] **NR-93 - Assassin: Altgard legs l1 to l5.** Depends: NR-92; ticked by its round
   - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
     with -assassin (NR-41). In leg 1 it swings its daggers at the fungus in flight.
@@ -5935,11 +5955,16 @@ The template:
       run guard-p8 (run/nr/NR-101/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr101-fast, 11 passed).
-- [ ] **NR-102 - Ranger: to Altgard.** Depends: NR-101; ticked by the round that gives it
+- [x] **NR-102 - Ranger: to Altgard.** Depends: NR-101; ticked by the round that gives it
   - Work: A fresh Asimranger plays Ishalgen as a Scout, the trial, the Ranger choice at
     Munin, the ceremony with the bow and the dispatch Q2902, and is captured at the
     Altgard bind as altgard-ranger-s1. The bow is in its hands from the ceremony on.
   - Proof: The capture verifies.
+  - 2026-10-10: done in round 1 (NR-R1, run r1-a1 at 929993f52, world 5). A fresh
+    character of the line scout-ranger reached the Altgard bind in 203.9 game minutes: a Ranger of
+    level 14, 55 quests complete, 165 fights with 152 kills, no death. Its
+    bridge-completion.json says verified. Captured as altgard-ranger-s1, a record that points at
+    character 133266 in the round snapshot nr-r1-w5.
 - [ ] **NR-103 - Ranger: Altgard legs l1 to l5.** Depends: NR-102; ticked by its round
   - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
     with -ranger (NR-41). In leg 1 it shoots the fungus in flight.
@@ -6750,11 +6775,16 @@ The template:
       run guard-p8 (run/nr/NR-111/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr111-fast, 11 passed).
-- [ ] **NR-112 - Spirit Master: to Altgard.** Depends: NR-111; ticked by the round that gives it
+- [x] **NR-112 - Spirit Master: to Altgard.** Depends: NR-111; ticked by the round that gives it
   - Work: A fresh Asimspirit plays Ishalgen as a Mage, the trial, the Spirit Master
     choice at Munin, the ceremony with the spellbook and the dispatch Q2903, and is
     captured at the Altgard bind as altgard-spirit-master-s1.
   - Proof: The capture verifies.
+  - 2026-10-10: done in round 1 (NR-R1, run r1-a1 at 929993f52, world 6). A fresh
+    character of the line mage-spirit-master reached the Altgard bind in 211.5 game minutes: a Spirit Master of
+    level 14, 55 quests complete, 156 fights with 145 kills, no death. Its
+    bridge-completion.json says verified. Captured as altgard-spirit-master-s1, a record that points at
+    character 133266 in the round snapshot nr-r1-w6.
 - [ ] **NR-113 - Spirit Master: Altgard legs l1 to l5.** Depends: NR-112; ticked by its round
   - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
     with -spirit-master (NR-41). In leg 1 it casts Erosion at the fungus in flight.
@@ -7213,11 +7243,16 @@ The template:
       run guard-p8 (run/nr/NR-121b/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr121b-fast, 11 passed).
-- [ ] **NR-122 - Gunner: to Altgard.** Depends: NR-121; ticked by the round that gives it
+- [x] **NR-122 - Gunner: to Altgard.** Depends: NR-121; ticked by the round that gives it
   - Work: A fresh Asimgunner plays Ishalgen as an Engineer, the trial, the ceremony with
     the pistol and the dispatch Q29070, and is captured at the Altgard bind as
     altgard-gunner-s1. From level 10 it holds two pistols.
   - Proof: The capture verifies.
+  - 2026-10-10: done in round 1 (NR-R1, run r1-a1 at 929993f52, world 7). A fresh
+    character of the line engineer-gunner reached the Altgard bind in 217.3 game minutes: a Gunner of
+    level 14, 55 quests complete, 182 fights with 157 kills, no death. Its
+    bridge-completion.json says verified. Captured as altgard-gunner-s1, a record that points at
+    character 133266 in the round snapshot nr-r1-w7.
 - [ ] **NR-123 - Gunner: Altgard legs l1 to l5.** Depends: NR-122; ticked by its round
   - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
     with -gunner (NR-41). In leg 1 it shoots the fungus in flight.
@@ -7764,10 +7799,15 @@ The template:
       run guard-p8 (run/nr/NR-141/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr141-fast, 11 passed).
-- [ ] **NR-142 - Bard: to Altgard.** Depends: NR-141; ticked by the round that gives it
+- [x] **NR-142 - Bard: to Altgard.** Depends: NR-141; ticked by the round that gives it
   - Work: A fresh Asimbard plays Ishalgen as an Artist, the trial, the ceremony with the
     harp and the dispatch Q29071, and is captured at the Altgard bind as altgard-bard-s1.
   - Proof: The capture verifies.
+  - 2026-10-10: done in round 1 (NR-R1, run r1-a1 at 929993f52, world 8). A fresh
+    character of the line artist-bard reached the Altgard bind in 200.6 game minutes: a Bard of
+    level 14, 55 quests complete, 161 fights with 144 kills, no death. Its
+    bridge-completion.json says verified. Captured as altgard-bard-s1, a record that points at
+    character 133266 in the round snapshot nr-r1-w8.
 - [ ] **NR-143 - Bard: Altgard legs l1 to l5.** Depends: NR-142; ticked by its round
   - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
     with -bard (NR-41). In leg 1 it shoots the fungus in flight.
@@ -7838,7 +7878,7 @@ through these: each is ticked by the round that gave its capture.
       scopes identical. The script tests pass (run/nr/NR-R1a/script-tests.log). Seven
       pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and
       Fast passes (run nrr1a-fast, 11 passed).
-- [ ] **NR-R1 - Round 1: the nine classes from creation to the Altgard bind.** Depends: NR-R1a
+- [x] **NR-R1 - Round 1: the nine classes from creation to the Altgard bind.** Depends: NR-R1a
   - Work: One round by rule (w) and NR-Q11. The Sorcerer, Chanter, Gladiator, Assassin,
     Ranger, Spirit Master, Gunner, Rider and Bard, each a fresh character of its line, in
     eight worlds side by side; the Bard and the Rider share one, ten game minutes apart
@@ -7852,6 +7892,59 @@ through these: each is ticked by the round that gave its capture.
   - Proof: round.json with nine outcome records. For each class that reached the bind:
     its bridge-completion.json says verified, and its capture is written; its NR-x2 is
     ticked.
+  - 2026-10-10: played. Eight of the nine reached the Altgard bind and are captured. The
+    Rider stopped in Ishalgen; its stop is NR-R1b, and round 2 takes it on.
+    - **The round** (run r1-a1 at 929993f52, -Capture nr-r1; run/nr/NR-R1/r1-a1; round
+      file run/nr/NR-R1/round-1.json). Eight worlds side by side, 580 seconds of wall
+      time. No bot died.
+
+      | World | Line | Class | Outcome | Level | Quests | Game minutes | Fights | Capture |
+      |---|---|---|---|---|---|---|---|---|
+      | 1 | mage-sorcerer | Sorcerer | reached | 14 | 55 | 201.5 | 154, 150 kills | altgard-sorcerer-s1 |
+      | 2 | priest-chanter | Chanter | reached | 14 | 55 | 197.3 | 165, 161 kills | altgard-chanter-s1 |
+      | 3 | warrior-gladiator | Gladiator | reached | 13 | 55 | 205.8 | 152, 140 kills | altgard-gladiator-s1 |
+      | 4 | scout-assassin | Assassin | reached | 14 | 55 | 226.3 | 193, 167 kills | altgard-assassin-s1 |
+      | 5 | scout-ranger | Ranger | reached | 14 | 55 | 203.9 | 165, 152 kills | altgard-ranger-s1 |
+      | 6 | mage-spirit-master | Spirit Master | reached | 14 | 55 | 211.5 | 156, 145 kills | altgard-spirit-master-s1 |
+      | 7 | engineer-gunner | Gunner | reached | 14 | 55 | 217.3 | 182, 157 kills | altgard-gunner-s1 |
+      | 8 | artist-bard | Bard | reached | 14 | 55 | 200.6 | 161, 144 kills | altgard-bard-s1 |
+      | 8 | engineer-rider | Rider | stopped | 5 | 6 | 20.2 | 15, 14 kills | none |
+
+      Each that reached left Ishalgen at level 9, passed the trial, chose its class,
+      took the ceremony's weapon, played the capital pass and the dispatch, and stands
+      bound at the Altgard obelisk. Each bridge-completion.json says verified.
+    - **The captures.** Eight round snapshots, nr-r1-w1 to nr-r1-w8, and eight records
+      that point into them: altgard-sorcerer-s1, altgard-chanter-s1,
+      altgard-gladiator-s1, altgard-assassin-s1, altgard-ranger-s1,
+      altgard-spirit-master-s1, altgard-gunner-s1 and altgard-bard-s1. nr-r1-w8 holds
+      the Rider's character too, as it stopped.
+    - **The stop.** The Rider's line, the second bot of world 8, as an Engineer of level
+      5 at Q2002's hunt: "Natural journey expected 10, observed 7." It killed four of
+      the six Spriggs the quest asks, the last at 23:32 of the world's clock. From then
+      it stood at one place for fifteen tries and six minutes. Two Spriggs were in its
+      view, 21.3 and 21.6 m away, a step beyond the 20 m at which the hunt takes one,
+      and each try sent it to a standoff it had already reached. The Bard was not there:
+      it had ended Q2002 ten minutes before. Item NR-R1b.
+    - **Found, and logged (rule (f)).** A round of one bot to a world and stage bridge
+      took 9 min 40 s of wall time for 3 h 20 min to 3 h 46 min of game time each.
+- [ ] **NR-R1b - A Sprigg a step beyond the select distance is taken from the standoff.** Depends: NR-R1
+  - Work: Q2002's hunt sends the bot along its route to a standoff before a Sprigg and
+    takes the Sprigg when it is within the campaign's select distance of the bot. The
+    walk to a standoff ends within its arrival radius of it. So a standoff that is
+    within the select distance can be reached while the bot stands a step short of it
+    and the Sprigg a step beyond: the walk does not move, the Sprigg is not taken, and
+    every try is the same. A Sprigg that is within the select distance of the standoff
+    the bot was sent to is taken. Generic: the hunt, by the campaign's numbers; no
+    branch on a class. The recorded scopes must not change.
+  - Proof: The full gate identical. In round 2 the Rider's character, resumed at Q2002
+    from nr-r1-w8, ends the hunt and plays on.
+- [ ] **NR-R2 - Round 2: the Rider to the Altgard bind.** Depends: NR-R1b
+  - Work: The eight worlds of round 1 again, resumed from nr-r1 (-From nr-r1, -Capture
+    nr-r2), stage bridge. The eight that stand at the bind report it at once. The Rider
+    goes on from Q2002 to the Altgard bind and is captured as altgard-rider-s1. A stop
+    gets a lettered item.
+  - Proof: round.json with nine outcome records, the Rider's bridge-completion.json and
+    its capture; NR-132 is ticked.
 
 ### E. Close
 
@@ -8868,3 +8961,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   (4,629 passed, 16 skipped) and Fast (nrr1a-fast) pass. Round 1 is written: the nine
   classes that have no capture, in eight worlds, from creation to the Altgard bind. Next:
   NR-R1.
+- 2026-10-10 — Loop: NR-R1 played. Round 1 (r1-a1, eight worlds, 580 s): the Sorcerer,
+  Chanter, Gladiator, Assassin, Ranger, Spirit Master, Gunner and Bard reached the Altgard
+  bind, level 13 or 14 with 55 quests, with no death, and are captured as
+  altgard-<class>-s1 in the round snapshots nr-r1-w1 to w8; NR-62, 72, 82, 92, 102, 112,
+  122 and 142 are ticked. The Rider stopped at Q2002's hunt in Ishalgen: two Spriggs
+  stood 21.3 and 21.6 m from it, a step beyond the hunt's 20 m, and its standoff counted
+  as reached, for fifteen tries. Written: NR-R1b, the fix, and NR-R2, round 2 for the
+  Rider. Seven checks pass. Next: NR-R1b.
