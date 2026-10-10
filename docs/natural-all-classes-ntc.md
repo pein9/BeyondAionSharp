@@ -4627,7 +4627,7 @@ The template:
       run guard-p8 (run/nr/NR-60a/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr60a-fast, 11 passed).
-- [ ] **NR-61 - Sorcerer: probe rows.** Depends: NR-60a
+- [ ] **NR-61 - Sorcerer: probe rows.** Depends: NR-60a, NR-61a
   - Work: Rows sorcerer-10, sorcerer-16, sorcerer-20 and sorcerer-25 in
     SimulationNaturalStarterProbeTests: prepared Sorcerers on the two probe accounts, in
     the gear the route has given by that level, fight the monsters the Cleric's rows
@@ -4638,6 +4638,58 @@ The template:
     Freezing Wind earns its 194 MP. A fix is one small change (rule (i)).
   - Proof: The four rows end with the monster dead or a recorded retreat, no refused
     cast repeated and no skill outside the table cast.
+  - 2026-10-10: first attempt (runs nr61-probe-a1 and a1b, kept under
+    run/nr/NR-61/rows-a1). Rows sorcerer-10 and sorcerer-16 passed. Rows sorcerer-20 and
+    sorcerer-25 stopped at what NR-61a mends; the rows are written and not committed
+    (scratchpad nr61_rows.py), and the item is tried again after NR-61a.
+- [x] **NR-61a - A target that is about to die by a hit already made.** Depends: NR-60a
+  - Work: Java first: when the server takes no skill at a target, and what it says. The
+    fight knows which of its own hits is still on its way and waits for it. Generic: a
+    skill row and the fight, no branch on a class.
+  - Proof: One probe row on a probe account in which Delayed Blast is cast on a monster
+    it will kill, a cast after it is refused, and the fight ends in the kill; the full
+    gate identical.
+  - 2026-10-10: done.
+    - **Found in NR-61's first attempt.** The level-25 Sorcerer cast Ice Chain, Frozen
+      Shock and Delayed Blast at a starved mosbear. 0.7 s after the blast's cast the
+      server answered Flame Harpoon with STR_SKILL_TARGET_IS_NOT_VALID. The fight read
+      that as a monster another player had killed, gave the target up and ended with no
+      kill and no retreat (trace a1b, sorcerer-25, step s03-1, 7.3 s). The mosbear died
+      4 s later, by the blast. The level-20 row, next in that world, was given the same
+      mosbear and stopped at once; alone it passes (run/nr/NR-61/probe-diag.log).
+    - **Java.**
+      - When a hit is counted that takes its target's HP to 0, the target is marked
+        with the killing blow and is about to die (Effect.setReserveds 345-361;
+        CreatureLifeStats.isAboutToDie 59-61). The mark goes when it dies or is healed
+        above the blow (CreatureLifeStats 93, 107 and 189).
+      - No skill is taken at such a target (Skill.isValidTarget 244-245, which
+        canUseSkill reaches), and the caster is told STR_SKILL_TARGET_IS_NOT_VALID, the
+        message for a dead target too (validateEffectedList 208-213).
+      - For nearly every skill the mark lasts its hit time, which the fight waits out
+        after every cast. Delayed Blast counts its damage when the effect is applied
+        and deals it 4,000 ms later (DelayedSpellAttackInstantEffect.applyEffect
+        25-35): for those 4 s the monster lives, strikes, and can be given no skill.
+      - The port has the same lines (Effect.cs 376-386, Skill.cs 231).
+    - **The change, generic.**
+      - Sc/NaturalPriestCombatPolicy.cs and Sc/Classes/NaturalSkillCatalog.cs: a skill
+        row says how long after it is applied the skill's damage lands.
+      - Sc/NaturalIshalgenJourney.Combat.cs: after such a cast the fight keeps the
+        target and the time the hit lands: the cast's result, its hit time and the
+        delay. When the server calls that target not valid before then, the fight
+        waits until the hit has landed and looks again; the trace says
+        combat-target-about-to-die. At any other time the answer is read as before.
+    - **Proof, the probe row** sorcerer-blast (SimT/SimulationNaturalStarterProbeTests.cs,
+      probe account 98; `bash run/nr/NR-61a/probe.sh <attempt>`). Prepared by the
+      director: a level-25 Sorcerer with the spellbook of Q24016, by the starved
+      mosbears. First attempt (nr61a-probe-a1): passed. Ice Chain and Frozen Shock take
+      the mosbear to 35% HP; Delayed Blast is cast at 6.6 s; at 7.3 s the server refuses
+      Flame Harpoon; the fight waits 4,067 ms; the blast lands at 11.4 s, the mosbear
+      dies and the experience comes. One fight, one kill, in 10.0 s, and no target given
+      up.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-61a/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr61a-fast, 11 passed).
 - [ ] **NR-62 - Sorcerer: to Altgard.** Depends: NR-61; ticked by the round that gives it
   - Work: A fresh Asimsorcerer plays Ishalgen as a Mage, the trial, the Sorcerer choice at
     Munin, the ceremony with the spellbook and the dispatch Q2903, and is captured at the
@@ -7927,3 +7979,12 @@ report what was done, what is parked or blocked, and what the operator must deci
   gate guard-p8 (thirteen scopes identical), seven checks, three script tests, unit suite
   (4,629 passed, 16 skipped) and Fast (nr140-fast) pass. The ten surveys are done. Next:
   the probe rows, side by side (rule (w)), beginning with NR-61, the Sorcerer's.
+- 2026-10-10 — Loop: NR-61 tried once, and NR-61a done. In NR-61's first attempt the rows
+  sorcerer-10 and sorcerer-16 passed; sorcerer-25 gave up a mosbear that its own Delayed
+  Blast was about to kill, and sorcerer-20 was given the same mosbear after it. NR-61a:
+  the server takes no skill at a target that a counted hit will kill and answers as for a
+  dead one; a skill row says how long a skill's damage is on its way, and the fight waits
+  for its own hit and looks again. Probe row sorcerer-blast (nr61a-probe-a1) passed: the
+  refusal at 7.3 s, a wait of 4,067 ms, the kill at 11.4 s. Full gate guard-p8 (thirteen
+  scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
+  (nr61a-fast) pass. Next: NR-61 again, with a fresh two attempts.

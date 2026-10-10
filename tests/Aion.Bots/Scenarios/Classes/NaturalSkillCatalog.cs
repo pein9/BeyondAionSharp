@@ -149,7 +149,8 @@ public static class NaturalSkillCatalog
 			NeedsMech: conditions.OfType<RideRobotCondition>().Any(),
 			IsMech: template.GetEffects()?.GetEffects().OfType<RideRobotEffect>().Any() == true,
 			// Java MpCondition.getCost 48-51: with ratio the value is hundredths of the caster's whole mana, not mana.
-			ManaCostPercent: mana is { ratio: true } ? mana.value : 0);
+			ManaCostPercent: mana is { ratio: true } ? mana.value : 0,
+			DelayedHitMillis: template.GetEffects()?.GetEffects().OfType<DelayedSpellAttackInstantEffect>().FirstOrDefault()?.delay ?? 0);
 	}
 
 	/// <summary>

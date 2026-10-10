@@ -42,6 +42,8 @@ namespace Aion.Bots.Scenarios;
 /// <param name="IsMech">NR-130a: the skill puts its caster in a mech (effects/riderobot; Java RideRobotEffect).</param>
 /// <param name="ManaCostPercent">NR-130a: a mana cost that is so many hundredths of the caster's whole mana (mp with
 /// ratio; Java MpCondition.getCost 48-51); 0 for a plain cost, which is <paramref name="ManaCost"/>.</param>
+/// <param name="DelayedHitMillis">NR-61a: how long after it is applied the skill's damage lands (effects/delaydamage; Java
+/// DelayedSpellAttackInstantEffect.applyEffect 25-35); 0 for a skill whose damage lands with its hit.</param>
 public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role, int ManaCost,
 	float Range, int CooldownId, int CooldownDeciseconds, string? ChainCategory = null,
 	string? RequiresChainCategory = null, int ChainWindowMillis = 0, int DpCost = 0,
@@ -51,7 +53,7 @@ public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role
 	bool OutOfCombatOnly = false, bool GroundOnly = false, string? TargetFlight = null, string? RequiredOffHand = null,
 	IReadOnlyList<string>? TargetStates = null, string? CarvesRune = null, string? BurstsRune = null, int SummonsNpcId = 0,
 	bool OrdersSpirit = false, int HpCost = 0, int PreCount = 0, IReadOnlyList<int>? EndsCooldownIds = null,
-	bool NeedsMech = false, bool IsMech = false, int ManaCostPercent = 0);
+	bool NeedsMech = false, bool IsMech = false, int ManaCostPercent = 0, int DelayedHitMillis = 0);
 
 /// <summary>
 /// NR-18: every class's catalog is generated from the shipped skill data (<see cref="Classes.NaturalSkillCatalog"/>); the

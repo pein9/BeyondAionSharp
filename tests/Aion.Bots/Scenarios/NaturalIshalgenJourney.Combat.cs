@@ -40,6 +40,8 @@ public sealed partial class NaturalIshalgenJourney
 		private readonly NaturalSpiritDriver spiritDriver = new(session, runtime, geometry);
 		private ushort? lastCancelledSkillId;
 		private bool lastCastCompleted;
+		// NR-61a: the bot's own hit that is still on its way to a target, and when it lands (the Sorcerer's Delayed Blast).
+		private (int Target, ushort SkillId, long LandsAtMillis)? delayedHit;
 		private ushort? lastPowderSkill;
 		// NA-19: when the current visible-effect snapshot was first seen (its remaining times are as of then).
 		private IReadOnlyList<BotVisibleEffect>? effectsSnapshot;
@@ -1606,6 +1608,26 @@ public sealed partial class NaturalIshalgenJourney
 				}
 				if (target != session.CharacterId && started.Get<object>("name") is "STR_SKILL_TARGET_IS_NOT_VALID")
 				{
+					// NR-61a: a hit of the bot's own is still on its way to this target, and it will kill. The server marks the
+					// target as about to die when it counts such a hit (Java Effect.setReserveds 345-361) and takes no skill at
+					// it until the hit has landed (Skill.canUseSkill 244-245, then validateEffectedList 208-213 with this
+					// message). The monster lives and may strike until then. The bot waits for its hit and looks again.
+					if (delayedHit is { } onItsWay && onItsWay.Target == target && onItsWay.LandsAtMillis > runtime.NowMillis)
+					{
+						long wait = onItsWay.LandsAtMillis - runtime.NowMillis + 100;
+						session.TraceDiagnostic("combat-target-about-to-die", new Dictionary<string, object?>
+						{
+							["targetObjectId"] = target,
+							["skillId"] = skill.Id,
+							["hitSkillId"] = onItsWay.SkillId,
+							["waitMillis"] = wait,
+							["hp"] = session.Api.World.CurrentHp,
+						});
+						delayedHit = null;
+						await session.AdvanceAsync(TimeSpan.FromMilliseconds(wait), token);
+						await session.SynchronizeAsync(token);
+						return true;
+					}
 					// NR-110i: the target died between the fight's look and this cast, and its reward came to the bot: the kill
 					// is the bot's own, by its spirit's swing of the same turn or by damage of its own that was still running.
 					// Java NpcController.onDie 150-151 gives the reward as the monster dies, so the experience and the loot reach
@@ -1657,6 +1679,9 @@ public sealed partial class NaturalIshalgenJourney
 				// NA-18: flag 32 is a successful chain step (Java SM_CASTSPELL_RESULT); anything else resets it.
 				tableChain = tableChain.CastCompleted(skill, target, target == session.CharacterId, (result.Get<byte>("flags") & 32) != 0,
 					runtime.Epoch.AddMilliseconds(runtime.NowMillis));
+				// NR-61a: the damage is counted when the skill's effect is applied, at its hit time, and lands that long after.
+				if (skill.DelayedHitMillis > 0 && target != session.CharacterId)
+					delayedHit = (target, skill.Id, runtime.NowMillis + result.Get<ushort>("hitTime") + skill.DelayedHitMillis);
 			}
 			TimeSpan recovery = BotCastProtocol.RecoveryDelay(result);
 			// CP-48: the animation's last hit is waited out as well, as a client would: after Gunshot from 18 m the bullet

@@ -57,6 +57,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("gunner-chain", NaturalClassLine.EngineerGunner, ProbeAccountB, "Asimchain"),
 		new("gunner-reload", NaturalClassLine.EngineerGunner, ProbeAccountA, "Asimreload"),
 		new("rider-mech", NaturalClassLine.EngineerRider, ProbeAccountB, "Asimmech"),
+		new("sorcerer-blast", NaturalClassLine.MageSorcerer, ProbeAccountA, "Asimblast"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -258,6 +259,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "gunner-chain": await GunnerChainRowAsync(probe, id, token); break;
 			case "gunner-reload": await GunnerReloadRowAsync(probe, id, token); break;
 			case "rider-mech": await RiderMechRowAsync(probe, id, token); break;
+			case "sorcerer-blast": await SorcererBlastRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -2307,6 +2309,54 @@ public sealed partial class SimulationFastScenarioTests
 			$". Then against {pack.Length} starved mosbears the director spawned 4 m away and set on it: {Outcome(swarm)}; it left with {attackers} attackers: " +
 			$"{swarm.Decided[left].Fields.GetProperty("reason").GetString()} Rest: casts {string.Join(" ", restCasts)}, Odella Powder {probe.Owned(OdellaPowder)} of 20 left. " +
 			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, dead {probe.Server.IsDead()}.");
+	}
+
+	private const string SorcererTable = "natural-sorcerer-v1:";
+
+	/// <summary>
+	/// NR-61a, row sorcerer-blast. Prepared by the director: a level-25 Sorcerer with the spellbook of Q24016, by the
+	/// starved mosbears (210564, level 13). It fights one mosbear after another by its table until Delayed Blast is cast
+	/// on one that it will kill. The server then takes no skill at that mosbear, which is about to die. The fight waits
+	/// for the blast to land, where it gave the target up before, and ends in the kill.
+	/// </summary>
+	private async Task SorcererBlastRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, book = 100601431, blast = 1422, mostFights = 6;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-five-sorcerer-in-altgard");
+		await probe.BecomeAsync(PlayerClass.SORCERER, 25);
+		Assert.True(probe.World.Skills.ContainsKey(blast), "Delayed Blast II was not learned by level 25.");
+		await GiveAsync(probe, token, (book, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+
+		ClericFight? shown = null;
+		StarterTraceRecord? waited = null;
+		int fights = 0;
+		while (shown == null && fights < mostFights)
+		{
+			fights++;
+			Npc next = NearestLiving(probe, mosbear);
+			ClericFight fight = await TableFightAsync(probe, SorcererTable, $"s03-{fights:D2}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			Assert.DoesNotContain(fight.Records, record => record is { Direction: "action", Packet: "combat-target-taken" });
+			Assert.True(fight.Result is { Killed: true, Deaths: 0 }, $"Fight {fights} was no kill: {Outcome(fight)}.");
+			waited = fight.Records.FirstOrDefault(record => record is { Direction: "action", Packet: "combat-target-about-to-die" });
+			if (waited != null) shown = fight;
+		}
+		Assert.True(shown != null && waited != null, $"No fight of {fights} had a cast refused for a target about to die.");
+		Assert.Equal(blast, waited.Fields.GetProperty("hitSkillId").GetInt32());
+		long wait = waited.Fields.GetProperty("waitMillis").GetInt64();
+		Assert.InRange(wait, 1, 5100);
+		// The blast was cast, a cast after it was refused, and nothing was cast at the target after the wait.
+		(int SkillId, TimeSpan At) blasted = shown.Casts.Last(cast => cast.SkillId == blast);
+		Assert.True(blasted.At < waited.VirtualTime, $"Delayed Blast was cast at {blasted.At.TotalSeconds:F1} s and the wait began at {waited.VirtualTime.TotalSeconds:F1} s.");
+		Assert.Contains(shown.Records, record => record is { Direction: "<", Packet: "SM_SYSTEM_MESSAGE" } && record.VirtualTime == waited.VirtualTime &&
+			record.Fields.GetProperty("name").GetString() == "STR_SKILL_TARGET_IS_NOT_VALID");
+		Assert.DoesNotContain(shown.Casts, cast => cast.At > waited.VirtualTime);
+		Console.WriteLine($"{id}: level {probe.World.Level} Sorcerer, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}. {fights} fight(s), every one a kill. " +
+			$"The fight that showed it: {Outcome(shown)}. Delayed Blast was cast at {blasted.At.TotalSeconds:F1} s; at {waited.VirtualTime.TotalSeconds:F1} s the server refused skill " +
+			$"{waited.Fields.GetProperty("skillId").GetInt32()} at the mosbear, and the fight waited {wait} ms for the blast. HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
 	}
 
 	/// <summary>The living monster of a template nearest to another monster.</summary>
