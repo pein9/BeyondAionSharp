@@ -8041,12 +8041,60 @@ through these: each is ticked by the round that gave its capture.
       scopes identical. The script tests pass (run/nr/NR-R3a/script-tests.log). Seven
       pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and
       Fast passes (run nrr3a-fast, 11 passed).
-- [ ] **NR-R3 - Round 3: Altgard leg 1 for the nine classes.** Depends: NR-R3a
+- [x] **NR-R3 - Round 3: Altgard leg 1 for the nine classes.** Depends: NR-R3a
   - Work: The eight worlds resumed from nr-r2, stage l1, with -Capture nr-r3. A class
     that ends leg 1 is captured as altgard-rc-l1-<class> (NR-41). One outcome line for
     each class; a stop gets a lettered item.
   - Proof: round.json with nine outcome records; for each class that reached the leg's
     end its completion receipt says verified and its capture is written.
+  - 2026-10-10: played. Eight of the nine ended leg 1 and are captured. The Chanter
+    stopped at the leg's kills in flight; its stop is NR-R3b, and round 4 takes it on.
+    - **The round** (run r3-a1 at bc56e5d3b, -From nr-r2, -Capture nr-r3;
+      run/nr/NR-R3/r3-a1; round file run/nr/NR-R3/round-3.json). Eight worlds side by
+      side, 302 seconds of wall time. None of the eight died.
+
+      | World | Line | Class | Outcome | Level | Quests | Game minutes | Fungi in flight | Capture |
+      |---|---|---|---|---|---|---|---|---|
+      | 1 | mage-sorcerer | Sorcerer | reached | 15 | 66 | 39.1 | five, in 2 flights, with Ice Chain | altgard-rc-l1-sorcerer |
+      | 3 | warrior-gladiator | Gladiator | reached | 15 | 66 | 42.2 | five, in 2 flights, with its polearm | altgard-rc-l1-gladiator |
+      | 4 | scout-assassin | Assassin | reached | 15 | 66 | 43.7 | five, in 1 flight, with its daggers | altgard-rc-l1-assassin |
+      | 5 | scout-ranger | Ranger | reached | 15 | 66 | 39.9 | five, in 1 flight, with Deadshot | altgard-rc-l1-ranger |
+      | 6 | mage-spirit-master | Spirit Master | reached | 15 | 66 | 46.6 | five, in 1 flight, with Erosion | altgard-rc-l1-spirit-master |
+      | 7 | engineer-gunner | Gunner | reached | 15 | 66 | 39.8 | five, in 1 flight, with Direct Shot | altgard-rc-l1-gunner |
+      | 8 | artist-bard | Bard | reached | 15 | 66 | 40.0 | five, in 1 flight, with Pulse | altgard-rc-l1-bard |
+      | 8 | engineer-rider | Rider | reached | 15 | 66 | 47.4 | five, in 2 flights, with its cipher-blade | altgard-rc-l1-rider |
+      | 2 | priest-chanter | Chanter | stopped | 15 | 65 | 37.2 | two | none |
+
+      Each altgard-l1-completion.json says verified, with no death. The eight captures
+      are records that point into the round snapshots nr-r3-w1 to nr-r3-w8; nr-r3-w2
+      holds the Chanter as it stopped.
+    - **The stop.** The Chanter at Q24011's fungi (step af-037-air-kills): "No flight to
+      the landing: Leg (1628, 1832, 374) -> (1628, 1832, 414) is blocked." Its shot in
+      flight was Infernal Blaze, the first role of its list from range, which is ready
+      every 24 s; a fungus takes two. The air fight counts 8 s for a kill. The first
+      fungus took 32 FP where 19 were counted and the second 24 where 18 were, and with
+      4 FP left it had no way back to the landing. The other classes killed a fungus in
+      2 to 11 s. Item NR-R3b.
+    - **Found, and logged (rule (f)).** The Sorcerer shoots in flight with Ice Chain,
+      which is ready every 10 s: three of its five kills took 10 to 11 s, and it needed
+      two flights. NR-R3b's rule covers it.
+- [ ] **NR-R3b - The shot in flight is the listed skill that is ready again soonest.** Depends: NR-R3
+  - Work: The air fight takes the first role of the profile's air list whose skill may
+    be cast in flight. For a class whose air list is its whole list from range that is
+    its opener, whatever its cooldown. Of the roles that may be cast in flight it takes
+    the one that is ready again soonest, by its cooldown and its cast time; the
+    profile's order decides between equals. Generic: the air fight's choice, no branch
+    on a class. A class that names one role, or none, shoots as before.
+  - Proof: The full gate identical. In round 4 the Chanter ends leg 1.
+- [ ] **NR-R4 - Round 4: Altgard leg 2, and the Chanter's leg 1.** Depends: NR-R3b
+  - Work: The eight worlds resumed from nr-r3 with -Capture nr-r4. The eight that ended
+    leg 1 play leg 2 and are captured as altgard-rc-l2-<class>. The Chanter, resumed
+    where it stopped, plays leg 1 to its end and is captured as altgard-rc-l1-chanter;
+    if it cannot go on from where it was saved, its world is played again from nr-r2-w2,
+    which needs a round file that names a world's snapshot, and that is a lettered item.
+    One outcome line for each class; a stop gets a lettered item.
+  - Proof: round.json with nine outcome records; for each class that reached its
+    stage's end the completion receipt says verified and its capture is written.
 
 ### E. Close
 
@@ -9092,3 +9140,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   the way back, which round 3 will meet. Full gate guard-p8 (thirteen scopes identical),
   script tests, seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nrr3a-fast)
   pass. Next: NR-R3, round 3, leg 1 for the nine.
+- 2026-10-10 — Loop: NR-R3 played. Round 3 (r3-a1, -From nr-r2, 302 s): the Sorcerer,
+  Gladiator, Assassin, Ranger, Spirit Master, Gunner, Bard and Rider ended Altgard leg 1
+  at level 15 with 66 quests and no death, and are captured as altgard-rc-l1-<class> in
+  nr-r3-w1 to w8. The Chanter stopped at the fungi: it shot in flight with Infernal Blaze,
+  which is ready every 24 s, spent 56 FP on two kills and had no way back to the landing.
+  Written: NR-R3b, the shot in flight is the listed skill that is ready again soonest, and
+  NR-R4, round 4. Seven checks pass. Next: NR-R3b.
