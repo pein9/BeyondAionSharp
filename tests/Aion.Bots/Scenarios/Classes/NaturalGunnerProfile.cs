@@ -15,7 +15,8 @@ public static class NaturalGunnerProfile
 
 	/// <summary>
 	/// The Gunner's active skills to level 26, by role. Every shot needs a pistol, and from level 10 most of what is new
-	/// needs two (startconditions/lefthandweapon DUAL). Gunshot opens the chain Rapidfire follows, twice. Crosstrigger
+	/// needs two (startconditions/lefthandweapon DUAL). Gunshot opens the chain Rapidfire follows, twice, and Automatic
+	/// Fire (level 16) follows the second Rapidfire, twice (NR-120a). Crosstrigger
 	/// (level 22) opens the chain Canted Shot follows, twice; neither costs mana, and each takes mana from its target.
 	/// Gunshot and Crosstrigger share one cooldown, 16 s after the first and 24 s after the second, so one of the two
 	/// chains is opened at a time. Direct Shot is ready every 2 s and costs no mana before level 21. Hot Shot lowers its
@@ -28,6 +29,7 @@ public static class NaturalGunnerProfile
 		[2219] = "direct", [2220] = "direct", [2221] = "direct", [2222] = "direct", [2223] = "direct", [2224] = "direct",
 		[1957] = "gunshot", [1958] = "gunshot", [1959] = "gunshot", [1960] = "gunshot", [1961] = "gunshot",
 		[2142] = "rapid", [2143] = "rapid", [2144] = "rapid", [2145] = "rapid", [2146] = "rapid",
+		[2132] = "auto", [2133] = "auto", [2134] = "auto",
 		[2171] = "cross",
 		[2186] = "canted",
 		[1942] = "hot", [1943] = "hot", [1944] = "hot", [1945] = "hot",
@@ -41,8 +43,6 @@ public static class NaturalGunnerProfile
 		[249] = "mp-recovery", [250] = "mp-recovery", [252] = "mp-recovery", [254] = "mp-recovery",
 	};
 
-	private const string Twice = "follows Rapidfire only after Rapidfire was cast twice (chain/precount 2; Java ChainCondition), and the " +
-		"table's reading of a chain does not count the step before yet (NR-120a).";
 	private const string Stagger = "staggers its target 2 m back. The server tells a client where a monster lands only inside the cast " +
 		"result, which the bot does not read to its end (NR-110g, blocked by NR-Q17); a rooted monster would stay where the bot does not " +
 		"see it.";
@@ -55,7 +55,6 @@ public static class NaturalGunnerProfile
 	/// <summary>Every other active skill a Gunner learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
-		[2132] = "Automatic Fire I " + Twice, [2133] = "Automatic Fire II " + Twice, [2134] = "Automatic Fire III " + Twice,
 		[2053] = "Reload makes the cooldown that Gunshot, Trunk Shot and Crosstrigger share end at once. The fight loop keeps a cooldown " +
 			"from its own cast and does not read that it was ended (NR-120b).",
 		[2055] = "Trunk Shot I " + Stagger, [2056] = "Trunk Shot II " + Stagger, [2057] = "Trunk Shot III " + Stagger,
@@ -67,7 +66,8 @@ public static class NaturalGunnerProfile
 
 	/// <summary>
 	/// NR-120: the Engineer's table with the Gunner's own shots. Spend Success when 2,000 DP are there. From range Green
-	/// Grenade first: a rooted monster stands 4 s in the pistol's reach. Then Hot Shot, Gunshot and Rapidfire twice;
+	/// Grenade first: a rooted monster stands 4 s in the pistol's reach. Then Hot Shot, Gunshot, Rapidfire twice and
+	/// Automatic Fire twice;
 	/// Crosstrigger and Canted Shot, which the shared cooldown leaves for the time Gunshot cannot be paid for; Wing Clip;
 	/// and Direct Shot for everything between. With the monster on it the grenade comes last before Direct Shot. The
 	/// table holds an open chain, as the Engineer's does, and the pistols fire whenever no skill is ready.
@@ -79,8 +79,8 @@ public static class NaturalGunnerProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-gunner-v1",
-		Adjacent: ["success", "hot", "gunshot", "rapid", "cross", "canted", "clip", "grenade", "direct"],
-		AtRange: ["success", "grenade", "hot", "gunshot", "rapid", "cross", "canted", "clip", "direct"],
+		Adjacent: ["success", "hot", "gunshot", "rapid", "auto", "cross", "canted", "clip", "grenade", "direct"],
+		AtRange: ["success", "grenade", "hot", "gunshot", "rapid", "auto", "cross", "canted", "clip", "direct"],
 		Upkeep: [],
 		Recovery:
 		[

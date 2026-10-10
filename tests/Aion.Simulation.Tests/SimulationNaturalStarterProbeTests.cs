@@ -54,6 +54,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("spirit-master-orders", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimorders"),
 		new("spirit-master-pack", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimpack"),
 		new("spirit-master-place", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimplace"),
+		new("gunner-chain", NaturalClassLine.EngineerGunner, ProbeAccountB, "Asimchain"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -252,6 +253,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "spirit-master-orders": await SpiritMasterOrdersRowAsync(probe, id, token); break;
 			case "spirit-master-pack": await SpiritMasterPackRowAsync(probe, id, token); break;
 			case "spirit-master-place": await SpiritMasterPlaceRowAsync(probe, id, token); break;
+			case "gunner-chain": await GunnerChainRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -1667,6 +1669,66 @@ public sealed partial class SimulationFastScenarioTests
 			$"first cast, with the mosbear {metAt:F1} m from its master; it struck the mosbear {Hits(second, spiritId, crowdedId)} times, and the mosbear struck the " +
 			$"spirit {Hits(second, crowdedId, spiritId)} and its master {Hits(second, crowdedId, self)} times. The neighbour struck no one and lives. " +
 			$"The bot has {probe.World.CurrentHp}/{probe.World.MaxHp} HP.");
+	}
+
+	private const string GunnerTable = "natural-gunner-v1:";
+
+	/// <summary>
+	/// NR-120a, row gunner-chain. Prepared by the director: the Engineer is made a level-16 Gunner with the skills of
+	/// every level up to it, is given the ceremony's pistol (101800506) beside the one it was created with, and is placed
+	/// in Altgard by the starved mosbears (210564, level 13), where the Cleric's level-25 row fights. The journey's
+	/// equipment check takes a pistol into each hand. Then it fights one mosbear after another by its table until its
+	/// first chain is cast whole: Gunshot, Rapidfire twice, Automatic Fire twice. The server takes Automatic Fire only
+	/// after two Rapidfires (chain/precount 2), and the table decides it at no other time.
+	/// </summary>
+	private async Task GunnerChainRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, karmic = 101800506, mostFights = 12;
+		// Gunshot, Rapidfire and Automatic Fire in their ranks of level 16.
+		int[] gunshot = [1959], rapid = [2144], auto = [2132];
+		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-gunner-with-a-second-pistol");
+		await probe.BecomeAsync(PlayerClass.GUNNER, 16);
+		Assert.All(gunshot.Concat(rapid).Concat(auto), skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 16."));
+		Assert.True(probe.World.Skills.Keys.Any(NaturalGearPolicy.DualWieldSkillIds.Contains), "No dual-wield skill was learned by level 16.");
+		await GiveAsync(probe, token, (karmic, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+
+		probe.Session.BeginStep("s02", "equipment-check-takes-a-pistol-into-each-hand");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		(int main, int off) = (Held(probe, 1), Held(probe, 2));
+		Assert.True(main == karmic && off != 0, $"The hands hold {main} and {off}.");
+		Assert.Equal(off, probe.Server.GetEquipment().GetOffHandWeapon()?.GetItemId());
+
+		ClericFight? shown = null;
+		int fights = 0, kills = 0, autos = 0;
+		while (shown == null && fights < mostFights)
+		{
+			fights++;
+			Npc next = NearestLiving(probe, mosbear);
+			ClericFight fight = await TableFightAsync(probe, GunnerTable, $"s03-{fights:D2}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			Assert.Equal(0, fight.Result.Deaths);
+			AssertNoRefusedCastRepeats(fight);
+			kills += fight.Result.Killed ? 1 : 0;
+			autos += fight.Casts.Count(cast => auto.Contains(cast.SkillId));
+			// Automatic Fire is decided only when two Rapidfires were cast since the Gunshot that opened the chain.
+			foreach (StarterTraceRecord decided in fight.Decided.Where(record => Decided(record, "cast-target", auto)))
+			{
+				var before = fight.Casts.Where(cast => cast.At <= decided.VirtualTime).ToList();
+				int opened = before.FindLastIndex(cast => gunshot.Contains(cast.SkillId));
+				int rapids = opened < 0 ? 0 : before.Skip(opened + 1).Count(cast => rapid.Contains(cast.SkillId));
+				Assert.True(rapids >= 2, $"Automatic Fire was decided at {decided.VirtualTime.TotalSeconds:F1} s after {rapids} Rapidfire(s): {fight.Order}.");
+			}
+			// Every Automatic Fire that was decided was carried out: the server refused none.
+			Assert.Equal(fight.Decided.Count(record => Decided(record, "cast-target", auto)), fight.Casts.Count(cast => auto.Contains(cast.SkillId)));
+			if (fight.Run(gunshot, rapid, rapid, auto, auto) >= 0) shown = fight;
+		}
+		Assert.True(shown != null, $"The whole chain was never cast in {fights} fights with {autos} Automatic Fire(s).");
+		int at = shown.Run(gunshot, rapid, rapid, auto, auto);
+		TimeSpan span = shown.Casts[at + 4].At - shown.Casts[at].At;
+		Console.WriteLine($"{id}: level {probe.World.Level} Gunner, max HP {probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, pistols {main} and {off}. " +
+			$"{fights} fight(s), {kills} kill(s), {autos} Automatic Fire(s), each decided after two Rapidfires and none refused. " +
+			$"The fight that showed the whole chain: {Outcome(shown)}; Gunshot, Rapidfire twice and Automatic Fire twice in {span.TotalMilliseconds:F0} ms. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
 	}
 
 	private const string AssassinTable = "natural-assassin-v1:";

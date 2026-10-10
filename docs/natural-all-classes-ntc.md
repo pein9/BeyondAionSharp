@@ -6530,7 +6530,7 @@ The template:
       identical. Seven pre-commit checks pass, the three script tests pass
       (run/nr/NR-120/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
       skipped) and Fast passes (run nr120-fast, 11 passed).
-- [ ] **NR-120a - A follow-up that needs the step before it twice.** Depends: NR-120
+- [x] **NR-120a - A follow-up that needs the step before it twice.** Depends: NR-120
   - Work: Java first: ChainCondition's precount and where a chain step's use count
     comes from (ChainSkills). A skill row holds what a follow-up asks of the step
     before it, and the table's reading of an open chain takes the follow-up only when
@@ -6540,6 +6540,44 @@ The template:
   - Proof: A one-time check, or one probe row on a probe account, in which Gunshot,
     Rapidfire twice and Automatic Fire twice follow one another and Automatic Fire is
     decided at no other time; the full gate identical.
+  - 2026-10-10: done. The table takes a follow-up only when the step before it was cast
+    as often as the follow-up asks, and Automatic Fire is in the Gunner's table.
+    - **Java.** ChainCondition.validate 31-48. A follow-up names the category before
+      it. When that category is the player's current chain step, the step's use count
+      must reach the follow-up's precount (41-43); when it is the step before the
+      current one, the follow-up is a repeat of itself and nothing is counted. The use
+      count is the number of casts of the current step in a row
+      (ChainSkills.updateChain: a cast of the same category adds one, a cast of another
+      makes the current step the one before). Of the skills in the profiles written so
+      far only Automatic Fire asks for more than one; in the shipped data six others
+      do (Aerial Shot, Blast, Body Slice, Muzzle Flash, Revival Wave, Steel Shot). The
+      port has the same lines (SkillEngine/Condition/ChainCondition.cs 40-46).
+    - **The change, generic.** Sc/NaturalPriestCombatPolicy.cs and
+      Sc/Classes/NaturalSkillCatalog.cs: a skill row holds the precount of its chain
+      condition. Sc/Classes/NaturalRotationCombatPolicy.cs, the reading of an open
+      chain: a follow-up whose step before it is the current step is open only when
+      that step was cast so often. Every other follow-up asks for one cast, which an
+      open chain always has. With the table's hold on an open chain, the Gunner waits
+      for its second Rapidfire and casts no Automatic Fire in its place.
+    - **The Gunner.** Automatic Fire I to III have the role auto, after Rapidfire in
+      both lists. 43 of its 57 skills have a role now and 14 a reason.
+    - **Proof, the probe row** gunner-chain (SimT/SimulationNaturalStarterProbeTests.cs,
+      probe account 100; run nr120a-probe-a1, its first attempt). Prepared by the
+      director: a level-16 Gunner with the ceremony's pistol beside its own, by the
+      starved mosbears where the Cleric's level-25 row fights. The equipment check takes
+      a pistol into each hand. Three fights by the table, three kills:
+      - Green Grenade, Hot Shot, Gunshot, Rapidfire twice, Automatic Fire; the mosbear
+        is dead before a second.
+      - Direct Shot three times while the rest cools down, Gunshot, Rapidfire twice;
+        dead.
+      - Green Grenade, Hot Shot, Gunshot, Rapidfire twice, Automatic Fire twice: the
+        five chain casts in 3,970 ms.
+      Every Automatic Fire was decided after two Rapidfires, and the server carried out
+      each one.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-120a/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr120a-fast, 11 passed).
 - [ ] **NR-120b - A skill that ends a cooldown.** Depends: NR-120a
   - Work: Java first: SkillCooltimeResetEffect and the SM_SKILL_COOLDOWN it sends. The
     fight loop keeps a cooldown from the result of its own cast; it reads the server's
@@ -7420,3 +7458,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   Full gate guard-p8 (thirteen scopes identical), seven checks, three script tests, unit
   suite (4,629 passed, 16 skipped) and Fast (nr120-fast) pass. Next: NR-120a, a follow-up
   that needs the step before it twice.
+- 2026-10-10 — Loop: NR-120a done. A skill row holds what a follow-up asks of the step
+  before it (chain/precount), and the table takes the follow-up only when that step was
+  cast so often. Automatic Fire is in the Gunner's table after Rapidfire. Probe row
+  gunner-chain (nr120a-probe-a1): a level-16 Gunner with two pistols kills three mosbears;
+  every Automatic Fire is decided after two Rapidfires and none is refused, and the third
+  fight casts Gunshot, Rapidfire twice and Automatic Fire twice in 3,970 ms. Full gate
+  guard-p8 (thirteen scopes identical), seven checks, unit suite (4,629 passed, 16
+  skipped) and Fast (nr120a-fast) pass. Next: NR-120b, a skill that ends a cooldown.

@@ -504,7 +504,9 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 	/// The follow-up's step is open: its required category is the current chain category or the one before it, inside the
 	/// follow-up's own chain time counted from the step before it; one cast on a target follows only on the target the
 	/// chain was opened on, and one cast on the bot follows on any (the Warrior's Rage). A follow-up that is itself the
-	/// current step may repeat only while its self count allows.
+	/// current step may repeat only while its self count allows. NR-120a: a follow-up whose step before it is the
+	/// current step follows only when that step was cast as often as the follow-up asks (Java ChainCondition.validate
+	/// 41-43: the Gunner's Automatic Fire after two Rapidfires).
 	/// </summary>
 	private static bool ChainOpen(NaturalPriestSkill skill, bool self, NaturalCombatObservation state, DateTimeOffset now)
 	{
@@ -514,6 +516,7 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		bool category = repeat ? skill.RequiresChainCategory == state.PreviousChainCategory
 			: skill.RequiresChainCategory == state.OpenChainCategory || skill.RequiresChainCategory == state.PreviousChainCategory;
 		if (!category) return false;
+		if (!repeat && skill.RequiresChainCategory == state.OpenChainCategory && (state.OpenChainUseCount ?? 1) < skill.PreCount) return false;
 		if (skill.ChainWindowMillis <= 0) return state.ChainExpiresAt is not DateTimeOffset expires || expires > now;
 		return state.ChainStepAt is DateTimeOffset at ? now <= at.AddMilliseconds(skill.ChainWindowMillis) : state.ChainExpiresAt > now;
 	}
