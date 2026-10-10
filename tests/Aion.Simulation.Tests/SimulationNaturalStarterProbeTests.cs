@@ -45,6 +45,10 @@ public sealed partial class SimulationFastScenarioTests
 		new("templar-16", NaturalClassLine.WarriorTemplar, ProbeAccountB, "Asimsixtemp"),
 		new("templar-20", NaturalClassLine.WarriorTemplar, ProbeAccountA, "Asimtwetemp"),
 		new("templar-25", NaturalClassLine.WarriorTemplar, ProbeAccountB, "Asimtftemp"),
+		new("sorcerer-10", NaturalClassLine.MageSorcerer, ProbeAccountA, "Asimtensorc"),
+		new("sorcerer-16", NaturalClassLine.MageSorcerer, ProbeAccountB, "Asimsixsorc"),
+		new("sorcerer-20", NaturalClassLine.MageSorcerer, ProbeAccountA, "Asimtwesorc"),
+		new("sorcerer-25", NaturalClassLine.MageSorcerer, ProbeAccountB, "Asimtfsorc"),
 		new("chanter-mantras", NaturalClassLine.PriestChanter, ProbeAccountA, "Asimmantra"),
 		new("gladiator-aerial", NaturalClassLine.WarriorGladiator, ProbeAccountB, "Asimaerial"),
 		new("assassin-runes", NaturalClassLine.ScoutAssassin, ProbeAccountA, "Asimrunes"),
@@ -247,6 +251,10 @@ public sealed partial class SimulationFastScenarioTests
 			case "templar-16": await TemplarLevelSixteenRowAsync(probe, id, token); break;
 			case "templar-20": await TemplarLevelTwentyRowAsync(probe, id, token); break;
 			case "templar-25": await TemplarLevelTwentyFiveRowAsync(probe, id, token); break;
+			case "sorcerer-10": await SorcererLevelTenRowAsync(probe, id, token); break;
+			case "sorcerer-16": await SorcererLevelSixteenRowAsync(probe, id, token); break;
+			case "sorcerer-20": await SorcererLevelTwentyRowAsync(probe, id, token); break;
+			case "sorcerer-25": await SorcererLevelTwentyFiveRowAsync(probe, id, token); break;
 			case "chanter-mantras": await ChanterMantrasRowAsync(probe, id, token); break;
 			case "gladiator-aerial": await GladiatorAerialRowAsync(probe, id, token); break;
 			case "assassin-runes": await AssassinRunesRowAsync(probe, id, token); break;
@@ -2357,6 +2365,284 @@ public sealed partial class SimulationFastScenarioTests
 		Console.WriteLine($"{id}: level {probe.World.Level} Sorcerer, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}. {fights} fight(s), every one a kill. " +
 			$"The fight that showed it: {Outcome(shown)}. Delayed Blast was cast at {blasted.At.TotalSeconds:F1} s; at {waited.VirtualTime.TotalSeconds:F1} s the server refused skill " +
 			$"{waited.Fields.GetProperty("skillId").GetInt32()} at the mosbear, and the fight waited {wait} ms for the blast. HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
+	}
+
+	/// <summary>NR-61: every cast of a step is one of the skills named: the table's at the row's level, with what the
+	/// rest and the buff check before the fight cast.</summary>
+	private static void AssertOnlyCasts(ClericFight fight, params int[] allowed) =>
+		Assert.All(fight.Casts, cast => Assert.True(allowed.Contains(cast.SkillId), $"Skill {cast.SkillId} is outside the row's table: {fight.Order}."));
+
+	/// <summary>The item in the main hand, one-hand or two-hand.</summary>
+	private static int MainHand(StarterProbe probe) =>
+		probe.World.Inventory.Values.SingleOrDefault(item => item.Details.EquippedSlot is 1 or 3)?.ItemId ?? 0;
+
+	private static int HpPercentAt(StarterTraceRecord record) => record.Fields.GetProperty("observedState").GetProperty("Hp").GetInt32() * 100 /
+		record.Fields.GetProperty("observedState").GetProperty("MaxHp").GetInt32();
+
+	private static int MpPercentAt(StarterTraceRecord record) => record.Fields.GetProperty("observedState").GetProperty("Mp").GetInt32() * 100 /
+		record.Fields.GetProperty("observedState").GetProperty("MaxMp").GetInt32();
+
+	/// <summary>
+	/// NR-61, row sorcerer-10. Prepared by the director: the Mage is made a level-10 Sorcerer with the skills of every
+	/// level up to it, is given the ceremony's spellbook (100600532) and is placed in Altgard by the ice crasaurs (210415,
+	/// level 11), where the Cleric's row fights. The journey's equipment check takes the book and its buff check puts
+	/// Stone Skin and Robe of Flame up. Then it fights one crasaur after another by its table until both chain pairs are
+	/// seen: Frozen Shock after Ice Chain and Blaze after Flame Bolt, each inside 3 s. Last the director gives powder and
+	/// halves the HP, and the journey's rest casts Herb Treatment.
+	/// </summary>
+	private async Task SorcererLevelTenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int crasaur = 210415, book = 100600532, bolt = 1282, blaze = 1404, ice = 1363, shock = 1226, erosion = 1447, skin = 1155, robe = 1296,
+			empyrean = 1494, root = 1328, gain = 1192, herb = 246, mostFights = 6;
+		int[] table = [bolt, blaze, ice, shock, erosion, skin, robe, empyrean, root, gain, herb, 249];
+		probe.Session.BeginStep("s01", "director-makes-a-level-ten-sorcerer-in-altgard");
+		await probe.BecomeAsync(PlayerClass.SORCERER, 10);
+		Assert.All(table, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 10."));
+		await GiveAsync(probe, token, (book, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1473.2f, 1765.2f, 247.5f);
+		probe.Session.BeginStep("s02", "equipment-check-takes-the-spellbook");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(book, MainHand(probe));
+
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-puts-stone-skin-and-the-robe-up", token);
+		Assert.Contains(skin, buffCasts);
+		Assert.Contains(robe, buffCasts);
+		Assert.All(new[] { skin, robe }, buff => Assert.True(probe.Server.GetEffectController().FindBySkillId(buff) != null, $"Buff {buff} is not on the Sorcerer."));
+
+		var lines = new List<string>();
+		TimeSpan? shockGap = null, blazeGap = null;
+		int fights = 0, kills = 0, deaths = 0;
+		while ((shockGap == null || blazeGap == null) && fights < mostFights)
+		{
+			fights++;
+			Npc next = NearestLiving(probe, crasaur);
+			int mp = probe.World.CurrentMp;
+			ClericFight fight = await TableFightAsync(probe, SorcererTable, $"s04-{fights:D2}", $"fight-ice-crasaur-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"Fight {fights} ended no way: {fight.Result}.");
+			kills += fight.Result.Killed ? 1 : 0;
+			deaths += fight.Result.Deaths;
+			if (fight.Run([ice], [shock]) is >= 0 and int first) shockGap ??= fight.Casts[first + 1].At - fight.Casts[first].At;
+			if (fight.Run([bolt], [blaze]) is >= 0 and int second) blazeGap ??= fight.Casts[second + 1].At - fight.Casts[second].At;
+			lines.Add($"fight {fights}: {Outcome(fight)}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}, HP {probe.World.CurrentHp}/{probe.World.MaxHp}");
+		}
+		Assert.True(shockGap is { } afterIce && afterIce <= TimeSpan.FromSeconds(3), $"Frozen Shock did not follow Ice Chain inside 3 s in {fights} fights: {string.Join("; ", lines)}.");
+		Assert.True(blazeGap is { } afterBolt && afterBolt <= TimeSpan.FromSeconds(3), $"Blaze did not follow Flame Bolt inside 3 s in {fights} fights: {string.Join("; ", lines)}.");
+
+		// Prepared by the director: powder, and half HP. The rest is the journey's.
+		await GiveAsync(probe, token, (LesserOdellaPowder, 20));
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		int hpBefore = probe.World.CurrentHp;
+		(_, int[] restCasts) = await RestStepAsync(probe, "s05", "director-gives-powder-and-halves-hp-then-rest", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Sorcerer, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, book {book}. Buff check: casts {string.Join(" ", buffCasts)}. " +
+			$"{fights} fight(s), {kills} kill(s), {deaths} death(s): {string.Join("; ", lines)}. Frozen Shock {shockGap.Value.TotalMilliseconds:F0} ms after Ice Chain, " +
+			$"Blaze {blazeGap.Value.TotalMilliseconds:F0} ms after Flame Bolt. Rest from {hpBefore} HP: casts {string.Join(" ", restCasts)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-61, row sorcerer-16. Prepared by the director: a level-16 Sorcerer with the spellbook of Q24013 and the robe
+	/// shoes and tunic of Q24011 and Q24012 in the bag, by the tusked mosbears (210437, level 14) of the Cleric's row. The
+	/// journey's equipment check wears them. Then it fights one mosbear by its table: Flame Harpoon comes before Flame
+	/// Bolt, and Flame Cage has taken Erosion's place. A kill, a retreat and a death are recorded outcomes: the spot
+	/// brings more monsters, and with two on it the Sorcerer casts Root and leaves.
+	/// </summary>
+	private async Task SorcererLevelSixteenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210437, book = 100601429, shoes = 114101696, tunic = 110101836, bolt = 1285, blaze = 1405, ice = 1365, shock = 1227, cage = 1510,
+			erosion = 1447, skin = 1156, robe = 1297, empyrean = 1495, root = 1328, gain = 1193, harpoon = 1271;
+		int[] table = [bolt, blaze, ice, shock, cage, skin, robe, empyrean, root, gain, harpoon, 247, 250];
+		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-sorcerer-in-altgard");
+		await probe.BecomeAsync(PlayerClass.SORCERER, 16);
+		Assert.All(table, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 16."));
+		await GiveAsync(probe, token, (book, 1), (shoes, 1), (tunic, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1427.2f, 789.9f, 249.9f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		IReadOnlyList<NaturalGearUpgrade> worn = await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(book, MainHand(probe));
+		Assert.All(new[] { shoes, tunic }, piece => Assert.Contains(probe.World.Inventory.Values, item => item.ItemId == piece && item.Details.EquippedSlot.GetValueOrDefault() != 0));
+
+		Npc first = NearestLiving(probe, mosbear);
+		int mp = probe.World.CurrentMp;
+		ClericFight fight = await TableFightAsync(probe, SorcererTable, "s03", "fight-a-tusked-mosbear", () => Task.FromResult(first.GetObjectId()), token);
+		AssertNoRefusedCastRepeats(fight);
+		AssertOnlyCasts(fight, table);
+		Assert.DoesNotContain(fight.Casts, cast => cast.SkillId == erosion);
+		int firstHarpoon = fight.Casts.FindIndex(cast => cast.SkillId == harpoon), firstBolt = fight.Casts.FindIndex(cast => cast.SkillId == bolt);
+		Assert.True(firstHarpoon >= 0 && (firstBolt < 0 || firstHarpoon < firstBolt), $"Flame Harpoon did not come before Flame Bolt: {fight.Order}.");
+		Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"The fight ended no way: {fight.Result}.");
+		StarterTraceRecord? left = fight.Decided.FirstOrDefault(record => record.Fields.GetProperty("action").GetString() == "retreat");
+		int rooted = Array.FindIndex(fight.Decided, record => Decided(record, "cast-target", root));
+		Console.WriteLine($"{id}: level {probe.World.Level} Sorcerer, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}; the check asked for " +
+			$"{string.Join(", ", worn.Select(upgrade => $"{upgrade.ItemId} to slot {upgrade.Slot}"))}. One tusked mosbear: {Outcome(fight)}; MP {mp} to {probe.World.CurrentMp}. " +
+			$"Flame Harpoon was cast {fight.Casts.Count(cast => cast.SkillId == harpoon)} time(s), Flame Bolt {fight.Casts.Count(cast => cast.SkillId == bolt)}, " +
+			$"Flame Cage {fight.Casts.Count(cast => cast.SkillId == cage)}, in {fight.Decided.Length} decisions. " +
+			$"Root {(rooted >= 0 ? "decided: " + fight.Decided[rooted].Fields.GetProperty("reason").GetString() : "not decided.")} " +
+			$"It left: {left?.Fields.GetProperty("reason").GetString() ?? "no."} HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>
+	/// NR-61, row sorcerer-20. Prepared by the director: a level-20 Sorcerer with the spellbook of Q24016, by the starved
+	/// mosbears (210564, level 13) of the Cleric's row, with powder, two shield scrolls and three life potions in the bag.
+	/// The first fight is the journey's alone: Delayed Blast is cast. Before the second the director gives 2,000 DP and
+	/// cuts HP to 45%: Empyrean Fire is cast and the ladder answers. Before the third the director cuts MP to 45%: Gain
+	/// Mana is cast in the fight. Last the director cuts MP to a tenth and the journey's rest casts MP Recovery.
+	/// </summary>
+	private async Task SorcererLevelTwentyRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, book = 100601431, bolt = 1285, blaze = 1406, ice = 1366, shock = 1228, cage = 1510, skin = 1157, robe = 1298,
+			empyrean = 1496, root = 1328, gain = 1194, harpoon = 1272, blast = 1421, recovery = 252, scroll = 164000068, potion = 162000003;
+		int[] table = [bolt, blaze, ice, shock, cage, skin, robe, empyrean, root, gain, harpoon, blast, 251, recovery];
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-sorcerer-in-altgard");
+		await probe.BecomeAsync(PlayerClass.SORCERER, 20);
+		Assert.All(table, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 20."));
+		await GiveAsync(probe, token, (book, 1), (LesserOdellaPowder, 20), (scroll, 2), (potion, 3));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(book, MainHand(probe));
+
+		Npc first = NearestLiving(probe, mosbear);
+		ClericFight plain = await TableFightAsync(probe, SorcererTable, "s03", "fight-a-starved-mosbear", () => Task.FromResult(first.GetObjectId()), token);
+		AssertNoRefusedCastRepeats(plain);
+		AssertOnlyCasts(plain, table);
+		Assert.Contains(plain.Casts, cast => cast.SkillId == blast);
+		Assert.DoesNotContain(plain.Casts, cast => cast.SkillId == empyrean);
+		Assert.True(plain.Result is { Killed: true, Deaths: 0 }, $"The first fight was no kill: {Outcome(plain)}.");
+
+		Npc second = NearestLiving(probe, mosbear);
+		ClericFight hurt = await TableFightAsync(probe, SorcererTable, "s04", "fight-a-starved-mosbear-from-under-half-hp-with-dp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 2,000 DP and 45% HP as the fight begins.
+			await probe.SetDpAsync(2000);
+			await probe.CutHpAsync(45);
+			return second.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(hurt);
+		AssertOnlyCasts(hurt, table);
+		Assert.Contains(hurt.Casts, cast => cast.SkillId == empyrean);
+		Assert.True(probe.World.CurrentDp < 2000, $"The DP was not spent: {probe.World.CurrentDp}.");
+		StarterTraceRecord[] ladder = hurt.Decided.Where(record => record.Fields.GetProperty("action").GetString() is "shield-scroll" or "hot-potion").ToArray();
+		Assert.True(ladder.Length > 0, $"The ladder did not answer 45% HP: decisions {hurt.Counts}.");
+		Assert.Equal("shield-scroll", ladder[0].Fields.GetProperty("action").GetString());
+		Assert.True(HpPercentAt(ladder[0]) <= 50, $"The shield scroll was decided at {HpPercentAt(ladder[0])}% HP.");
+		Assert.Equal(0, hurt.Result.Deaths);
+
+		Npc third = NearestLiving(probe, mosbear);
+		ClericFight thirsty = await TableFightAsync(probe, SorcererTable, "s05", "fight-a-starved-mosbear-from-under-half-mana", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 45% of its mana as the fight begins.
+			await probe.CutMpAsync(45);
+			return third.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(thirsty);
+		AssertOnlyCasts(thirsty, table);
+		Assert.True(thirsty.Result.Killed || thirsty.Result.Retreats > 0, $"The third fight ended neither way: {Outcome(thirsty)}.");
+		StarterTraceRecord[] gained = thirsty.Decided.Where(record => Decided(record, "cast-self", gain)).ToArray();
+		Assert.True(gained.Length > 0, $"Gain Mana was not cast in the fight: {thirsty.Order}; decisions {thirsty.Counts}.");
+		Assert.All(gained, record => Assert.True(MpPercentAt(record) <= 50, $"Gain Mana was decided at {MpPercentAt(record)}% MP."));
+		Assert.Contains(thirsty.Casts, cast => cast.SkillId == gain);
+
+		// Prepared by the director: a tenth of its mana. The rest is the journey's; Gain Mana is cooling down.
+		probe.Session.BeginStep("s06", "director-cuts-mp");
+		await probe.CutMpAsync(10);
+		int mpBefore = probe.World.CurrentMp;
+		(_, int[] restCasts) = await RestStepAsync(probe, "s07", "rest-from-a-tenth-of-its-mana", token);
+		Assert.Contains(recovery, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Sorcerer, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}. Unhurt: {Outcome(plain)}. " +
+			$"From 45% HP with 2,000 DP: {Outcome(hurt)}; the ladder: {string.Join(", ", ladder.Select(record => $"{record.Fields.GetProperty("action").GetString()} at {HpPercentAt(record)}% HP"))}; " +
+			$"DP left {probe.World.CurrentDp}. From 45% MP: {Outcome(thirsty)}; Gain Mana decided at {string.Join(", ", gained.Select(MpPercentAt))}% MP. " +
+			$"Rest from {mpBefore} MP: casts {string.Join(" ", restCasts)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-61, row sorcerer-25. Prepared by the director: a level-25 Sorcerer with the spellbook of Q24016, by the starved
+	/// mosbears (210564, level 13), with Odella Powder in the bag. Three fights are the journey's alone, for the numbers.
+	/// Then the director spawns one starved mosbear 4 m from the Sorcerer and sets it on it: with the monster on it, the
+	/// table's instants come first, Freezing Wind before the others. Then two are spawned and set on it: with two
+	/// attackers the journey casts Root on its target and leaves. Last the director halves the HP and the rest casts the
+	/// fourth rank of Herb Treatment, which spends Odella Powder.
+	/// </summary>
+	private async Task SorcererLevelTwentyFiveRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, book = 100601431, bolt = 1286, blaze = 1407, ice = 1367, shock = 1229, cage = 1511, skin = 1158, robe = 1299,
+			empyrean = 1497, root = 1328, gain = 1195, harpoon = 1273, blast = 1422, frost = 1217, herb = 253;
+		int[] table = [bolt, blaze, ice, shock, cage, skin, robe, empyrean, root, gain, harpoon, blast, frost, herb, 254];
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-five-sorcerer-in-altgard");
+		await probe.BecomeAsync(PlayerClass.SORCERER, 25);
+		Assert.All(table, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 25."));
+		await GiveAsync(probe, token, (book, 1), (OdellaPowder, 20));
+		BotNavigationGeometry geometry = await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(book, MainHand(probe));
+
+		var lines = new List<string>();
+		for (int fights = 1; fights <= 3; fights++)
+		{
+			Npc next = NearestLiving(probe, mosbear);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, SorcererTable, $"s03-{fights}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.Equal(0, fight.Result.Deaths);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0, $"Fight {fights} ended neither way: {fight.Result}.");
+			lines.Add($"fight {fights}: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+
+		Npc[] one = [];
+		int mpClose = 0;
+		ClericFight close = await TableFightAsync(probe, SorcererTable, "s04", "fight-a-starved-mosbear-that-is-on-the-sorcerer", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: one starved mosbear 4 m away, set on the Sorcerer.
+			one = await SpawnSetOnAsync(probe, geometry, mosbear, 1, token);
+			mpClose = probe.World.CurrentMp;
+			return one[0].GetObjectId();
+		}, token);
+		RemoveSetOn(one);
+		AssertNoRefusedCastRepeats(close);
+		AssertOnlyCasts(close, table);
+		int frosts = close.Casts.Count(cast => cast.SkillId == frost), mpAfterClose = probe.World.CurrentMp;
+		Assert.True(frosts > 0, $"Freezing Wind was not cast with the mosbear on the Sorcerer: {close.Order}; decisions {close.Counts}.");
+		Assert.Equal(0, close.Result.Deaths);
+		// What Freezing Wind did: the target's HP as the fight saw it at the decision after the cast.
+		int frostAt = Array.FindIndex(close.Decided, record => Decided(record, "cast-target", frost));
+		string frostLeft = frostAt >= 0 && frostAt + 1 < close.Decided.Length &&
+			close.Decided[frostAt + 1].Fields.GetProperty("observedState").GetProperty("TargetHpPercent") is { ValueKind: JsonValueKind.Number } after
+			? after.GetInt32() + "%" : "unseen";
+
+		Npc[] pack = [];
+		ClericFight swarm = await TableFightAsync(probe, SorcererTable, "s05", "fight-a-pack-of-two-starved-mosbears", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: two starved mosbears 4 m away, set on the Sorcerer.
+			pack = await SpawnSetOnAsync(probe, geometry, mosbear, 2, token);
+			return pack[0].GetObjectId();
+		}, token);
+		RemoveSetOn(pack);
+		AssertOnlyCasts(swarm, table);
+		int rooted = Array.FindIndex(swarm.Decided, record => Decided(record, "cast-target", root));
+		Assert.True(rooted >= 0, $"Root was not cast: {swarm.Order}; decisions {swarm.Counts}.");
+		string? reason = swarm.Decided[rooted].Fields.GetProperty("reason").GetString();
+		Assert.StartsWith("Hold the target before retreating", reason);
+		Assert.Contains(swarm.Decided.Skip(rooted + 1), record => record.Fields.GetProperty("action").GetString() == "retreat");
+
+		// Prepared by the director: half HP. The rest is the journey's.
+		probe.Session.BeginStep("s06", "director-halves-hp");
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		(_, int[] restCasts) = await RestStepAsync(probe, "s07", "rest-from-half-hp-with-odella-powder", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(OdellaPowder) < 20, "No Odella Powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Sorcerer, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}. " + string.Join("; ", lines) +
+			$". With one mosbear set on it: {Outcome(close)}; Freezing Wind cast {frosts} time(s), the mosbear at {frostLeft} HP after the first, MP {mpClose} to {mpAfterClose}. " +
+			$"Then against {pack.Length} the director spawned 4 m away and set on it: {Outcome(swarm)}; Root decided with " +
+			$"{swarm.Decided[rooted].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32()} attackers: {reason} " +
+			$"Rest: casts {string.Join(" ", restCasts)}, Odella Powder {probe.Owned(OdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, dead {probe.Server.IsDead()}.");
 	}
 
 	/// <summary>The living monster of a template nearest to another monster.</summary>

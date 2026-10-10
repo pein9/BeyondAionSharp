@@ -4627,7 +4627,7 @@ The template:
       run guard-p8 (run/nr/NR-60a/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr60a-fast, 11 passed).
-- [ ] **NR-61 - Sorcerer: probe rows.** Depends: NR-60a, NR-61a
+- [x] **NR-61 - Sorcerer: probe rows.** Depends: NR-60a, NR-61a
   - Work: Rows sorcerer-10, sorcerer-16, sorcerer-20 and sorcerer-25 in
     SimulationNaturalStarterProbeTests: prepared Sorcerers on the two probe accounts, in
     the gear the route has given by that level, fight the monsters the Cleric's rows
@@ -4638,10 +4638,66 @@ The template:
     Freezing Wind earns its 194 MP. A fix is one small change (rule (i)).
   - Proof: The four rows end with the monster dead or a recorded retreat, no refused
     cast repeated and no skill outside the table cast.
-  - 2026-10-10: first attempt (runs nr61-probe-a1 and a1b, kept under
-    run/nr/NR-61/rows-a1). Rows sorcerer-10 and sorcerer-16 passed. Rows sorcerer-20 and
-    sorcerer-25 stopped at what NR-61a mends; the rows are written and not committed
-    (scratchpad nr61_rows.py), and the item is tried again after NR-61a.
+  - 2026-10-10: done. The four rows pass; the table changed in one place: Wind Spear
+    is out of it.
+    - **Java.** What the rows met is read under NR-61a (a target about to die) and
+      below (Wind Spear's three casts).
+    - **The rows** (SimT/SimulationNaturalStarterProbeTests.cs: sorcerer-10, sorcerer-16,
+      sorcerer-20, sorcerer-25, on the probe accounts 98 and 100, at the places and
+      monsters of the Cleric's rows). The director makes the Mage a Sorcerer of the level
+      with the skills of every level up to it, puts the spellbook and the robe pieces of
+      the route into its bag, and places it. From there the journey's equipment check,
+      buff check, fight and rest act. Two rows to a process, the two processes side by
+      side: `bash run/nr/NR-61/probe.sh <attempt>`.
+    - **Before NR-61a** (runs nr61-probe-a1 and a1b, kept under rows-a1): rows 10 and 16
+      passed; rows 20 and 25 stopped at what NR-61a mends. That attempt belongs to the
+      budget NR-61a renewed (rule (i)).
+    - **First attempt** (runs nr61-probe-a2 and a2b, kept under rows-a2): the four rows
+      passed with the table of NR-60. In nine fights Wind Spear was decided at no time.
+    - **Second attempt** (runs nr61-probe-a3 and a3b; the four traces are under
+      run/nr/NR-61/), with Wind Spear out of the table: the four rows pass, cast for
+      cast as before.
+
+      | Row | Prepared by the director | What the journey did | Outcome |
+      |---|---|---|---|
+      | sorcerer-10 | Level 10, the ceremony's spellbook; then 20 powder and half HP | The check took the book; the buff check cast Stone Skin and Robe of Flame. One ice crasaur: Ice Chain, Frozen Shock 701 ms after it, Flame Bolt, Blaze 1,159 ms after it. The rest cast Herb Treatment once. | A kill in 7.1 s; MP 1,140 to 981 of 1,367; HP untouched. |
+      | sorcerer-16 | Level 16; the spellbook of Q24013 and the robe shoes and tunic of Q24011 and Q24012 | The check wore all three. One tusked mosbear: Ice Chain, Frozen Shock, Flame Harpoon, Blaze; then two were on it: Root, and it left. | A retreat, as the Cleric leaves there; MP 2,199 to 1,691; HP untouched. |
+      | sorcerer-20 | Level 20; the spellbook of Q24016, 20 powder, two shield scrolls, three life potions; then 2,000 DP and 45% HP; then 45% of its mana; then a tenth of it | Unhurt: Ice Chain, Frozen Shock, Delayed Blast, Flame Harpoon, Blaze. Hurt with DP: the shield scroll and the life potion at 44% HP, Ice Chain, Empyrean Fire. Short of mana: Gain Mana at 44%, then the same line. The rest cast MP Recovery twice. | Three kills; DP 2,000 to 14; MP 249 to 2,369 of 2,491 by the rest, four powders. |
+      | sorcerer-25 | Level 25; the same spellbook, 20 Odella Powder; then one starved mosbear set on it; then two; then half HP | Three fights alone: the chain pairs, Delayed Blast, Flame Harpoon; in the first the fight waited 4,067 ms for the blast (NR-61a). With one on it: Delayed Blast before it struck, then Freezing Wind, Flame Cage, Flame Harpoon. With two: Gain Mana, Ice Chain, Root, a retreat that a corner refused, then Freezing Wind, Flame Cage, Flame Harpoon. The rest cast Herb Treatment IV. | Five kills in 10.0, 12.3, 11.9, 8.6 and 10.0 s; MP 3,032 to 1,452 over the first four; HP untouched. |
+
+      In no fight was a skill decided more than twice running, no skill outside the
+      table was cast, and no target was given up. Every decision carries the table
+      natural-sorcerer-v1.
+    - **What the rows decide.**
+      - **Wind Spear is out of the table** (Sc/Classes/NaturalSorcererProfile.cs: a
+        reason in place of its role). From range it stood behind Flame Bolt, which is
+        always ready, and was never reached. It is also the dearest damage of the table
+        for its mana: 216 for 103 MP in its third rank, where Flame Bolt gives 360 for
+        87 and Delayed Blast 407 for 92. 53 of the Sorcerer's 68 skills have a role now
+        and 15 a reason.
+      - **Freezing Wind keeps its place.** With the mosbear on the Sorcerer one cast
+        took it to half its HP, and that fight was the shortest of the five.
+      - **The ladder and the mana step answer** as the table says: the scroll and the
+        potion at 44% HP, Gain Mana at 44% and 48% of its mana.
+    - **Found, and logged (rule (f)).**
+      - **A skill cast several times in a row.** The server lets Wind Spear be cast
+        three times, each inside 3 s of the one before, and holds its 90 s only after
+        that (Player.isSkillDisabled 1525-1531; the second and third cast set no
+        cooldown, Skill.java 626-627, and have no cast time, calculateCastDuration
+        377-379). The table holds a skill by its cooldown after the first cast. The
+        Engineer's and the Gunner's Rapidfire is such a skill too; its cooldown is 1 s,
+        so the table waits that second. No class needs the form to finish; it has no
+        item.
+      - **The rows' monsters did not hurt the Sorcerer.** Its HP was untouched in the
+        seven fights of the rows 10, 16 and 25, so the rows say nothing of how it stands
+        a hit; the hurt fight is the director's. The rounds will say.
+      - **Mana.** Four fights in 44 s cost a level-25 Sorcerer 1,580 of 3,032 MP, 381 of
+        it the two buffs. Gain Mana and the powder carry that; the rounds will say for
+        how long.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-61/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr61-fast, 11 passed).
 - [x] **NR-61a - A target that is about to die by a hit already made.** Depends: NR-60a
   - Work: Java first: when the server takes no skill at a target, and what it says. The
     fight knows which of its own hits is still on its way and waits for it. Generic: a
@@ -7988,3 +8044,12 @@ report what was done, what is parked or blocked, and what the operator must deci
   refusal at 7.3 s, a wait of 4,067 ms, the kill at 11.4 s. Full gate guard-p8 (thirteen
   scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
   (nr61a-fast) pass. Next: NR-61 again, with a fresh two attempts.
+- 2026-10-10 — Loop: NR-61 done. The Sorcerer's four probe rows pass (nr61-probe-a3 and
+  a3b): the two chain pairs, Flame Harpoon, Delayed Blast with the wait of NR-61a, Empyrean
+  Fire for its DP, the scroll and the potion at 44% HP, Gain Mana at 44% mana, Root and a
+  retreat at two attackers, the rest with the powder. One change to the table: Wind Spear
+  is out; it was never reached and is the dearest damage for its mana. Freezing Wind keeps
+  its place. Logged: the server's rule for a skill cast several times in a row, which the
+  table has no form for. Full gate guard-p8 (thirteen scopes identical), seven checks, unit
+  suite (4,629 passed, 16 skipped) and Fast (nr61-fast) pass. Next: NR-71, the Chanter's
+  probe rows.

@@ -17,8 +17,8 @@ public static class NaturalSorcererProfile
 	/// The Sorcerer's active skills to level 26, by role, beside the Mage's it keeps. Flame Bolt and Flame Harpoon
 	/// (level 13) open the chain Blaze follows; Ice Chain opens the one Frozen Shock follows; each follow-up inside 3 s.
 	/// Flame Cage (level 16) takes Erosion's place and its cooldown. Delayed Blast (level 19) hits 4 s after its cast.
-	/// Empyrean Fire is paid with 2,000 DP. Wind Spear (level 15) may be cast three times in a row, once in 90 s.
-	/// Freezing Wind (level 25) reaches 3 m. Robe of Flame (level 10) gives magic boost and mana regeneration for 30 min.
+	/// Empyrean Fire is paid with 2,000 DP. Freezing Wind (level 25) reaches 3 m. Robe of Flame (level 10) gives magic
+	/// boost and mana regeneration for 30 min.
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
@@ -30,7 +30,6 @@ public static class NaturalSorcererProfile
 		[1271] = "harpoon", [1272] = "harpoon", [1273] = "harpoon",
 		[1421] = "blast", [1422] = "blast",
 		[1494] = "empyrean", [1495] = "empyrean", [1496] = "empyrean", [1497] = "empyrean",
-		[1259] = "spear", [1260] = "spear", [1261] = "spear",
 		[1217] = "frost",
 		[1328] = "root",
 		[1155] = "skin", [1156] = "skin", [1157] = "skin", [1158] = "skin",
@@ -45,9 +44,15 @@ public static class NaturalSorcererProfile
 	private const string WinterBinding = "hits and roots up to eight monsters within 15 m of the Sorcerer. The bot pulls one monster at a " +
 		"time, and an area skill wakes every other one in reach.";
 
+	private const string WindSpear = "is the dearest damage of the table for its mana (216 for 103 MP in its third rank, where Flame Bolt " +
+		"gives 360 for 87), and from range the table never came to it behind Flame Bolt, which is always ready (NR-61). The server lets it " +
+		"be cast three times inside 3 s each, once in 90 s (Java Player.isSkillDisabled 1525-1531); the table holds it by its cooldown " +
+		"after the first.";
+
 	/// <summary>Every other active skill a Sorcerer learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
+		[1259] = "Wind Spear I " + WindSpear, [1260] = "Wind Spear II " + WindSpear, [1261] = "Wind Spear III " + WindSpear,
 		[1417] = "Curse of Roots holds its target for 20 s after a 1.5 s cast, and a hit ends it. The table names one control, the " +
 			"instant Root, cast on the way out before a retreat.",
 		[1347] = "Blind Leap throws the Sorcerer 15 m ahead to a place the server picks; the bot walks checked routes only.",
@@ -62,10 +67,10 @@ public static class NaturalSorcererProfile
 	/// <summary>
 	/// NR-60: the Mage's table with what the Sorcerer adds. From range: Ice Chain, whose snare keeps the monster away
 	/// longer, then Frozen Shock at once; Empyrean Fire when 2,000 DP are there; Delayed Blast early, since it lands 4 s
-	/// later; then Flame Harpoon, Flame Bolt and Blaze, an open follow-up always first; Wind Spear last, the instant that
-	/// fills a gap. With the monster on it the instants come first, the ones a hit cannot push back: Freezing Wind,
-	/// which reaches 3 m, then Flame Cage or Erosion. Stone Skin goes up before the first hit. Root is cast only on the
-	/// way out, before a retreat.
+	/// later; then Flame Harpoon, Flame Bolt and Blaze, an open follow-up always first. With the monster on it the
+	/// instants come first, the ones a hit cannot push back: Freezing Wind, which reaches 3 m, then Flame Cage or
+	/// Erosion. Stone Skin goes up before the first hit. Root is cast only on the way out, before a retreat. NR-61:
+	/// Wind Spear is out of the table; Freezing Wind keeps its place, for it took half a mosbear's HP in one cast.
 	/// <para>
 	/// The ladder and the rest are the Mage's (CP-Q11, CP-Q12): the shield scroll at 50% HP and the life potion at or
 	/// below 75%; it leaves at two attackers, or at 25% HP with nothing ready; the mana potion only when the cheapest
@@ -77,8 +82,8 @@ public static class NaturalSorcererProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-sorcerer-v1",
-		Adjacent: ["frost", "erosion", "ice", "shock", "empyrean", "blast", "harpoon", "bolt", "blaze", "spear"],
-		AtRange: ["ice", "shock", "empyrean", "blast", "harpoon", "bolt", "blaze", "spear"],
+		Adjacent: ["frost", "erosion", "ice", "shock", "empyrean", "blast", "harpoon", "bolt", "blaze"],
+		AtRange: ["ice", "shock", "empyrean", "blast", "harpoon", "bolt", "blaze"],
 		Upkeep: [new("skin")],
 		Recovery: [new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
 		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.LastResort, ControlRole: "root",
