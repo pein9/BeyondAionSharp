@@ -5660,7 +5660,7 @@ The template:
       run guard-p8 (run/nr/NR-90a/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr90a-fast, 11 passed).
-- [ ] **NR-91 - Assassin: probe rows.** Depends: NR-90a
+- [x] **NR-91 - Assassin: probe rows.** Depends: NR-90a
   - Work: Rows assassin-10, assassin-16, assassin-20 and assassin-25 in
     SimulationNaturalStarterProbeTests: prepared Assassins on the two probe accounts, in
     the gear the route has given by that level and with two daggers held, fight the
@@ -5674,6 +5674,57 @@ The template:
     change (rule (i)).
   - Proof: The four rows end with the monster dead or a recorded retreat, no refused
     cast repeated and no skill outside the table cast.
+  - 2026-10-10: done. The four rows pass, and the table stands as NR-90a left it.
+    - **Java.** Nothing new is relied on.
+    - **The rows** (SimT/SimulationNaturalStarterProbeTests.cs: assassin-10, assassin-16,
+      assassin-20, assassin-25, on the probe accounts 98 and 100, at the places and
+      monsters of the Cleric's rows). The director makes the Scout an Assassin of the
+      level with the skills of every level up to it, puts two daggers and the leather
+      pieces of the route into its bag, and places it. From there the journey's
+      equipment check, buff check, fight and rest act. `bash run/nr/NR-91/probe.sh
+      <attempt>`.
+    - **First attempt** (runs nr91-probe-a1 and a1b, kept under rows-a1): the four rows
+      passed. One check of the level-20 row held by chance: it asked for Focused Evasion
+      as the ladder's first answer, and the Evasion it found belonged to a fight the
+      rest had been broken by. The row now asks only that Evasion is decided at or
+      below 70% HP, and says how often a rest was broken.
+    - **The last run** (nr91-probe-a2 and a2b; the four traces are under run/nr/NR-91/):
+      the four rows pass, cast for cast as before.
+
+      | Row | Prepared by the director | What the journey did | Outcome |
+      |---|---|---|---|
+      | assassin-10 | Level 10, the ceremony's dagger beside its own; then 20 powder and half HP | The check took a dagger into each hand. One ice crasaur, walked up to: Devotion, Swift Edge, Soul Slash 701 ms after it, Killer's Eye, the life potion, Focused Evasion, Swift Edge, three swings. The rest cast Herb Treatment. | A kill in 12.5 s; HP 670 to 546. |
+      | assassin-16 | Level 16; the dagger of Q24013 beside the ceremony's, the leather shoes and jerkin of Q24011 and Q24012; 65% HP as the fight begins | The check wore all four; the buff check put Apply Deadly Poison on. One tusked mosbear: Focused Evasion at 64% HP, Devotion, Swift Edge, Soul Slash, the life potion; then three were on it. | A retreat at three attackers, as the Cleric leaves there. |
+      | assassin-20 | Level 20; the dagger of Q24016 beside that of Q24013, 20 powder, two shield scrolls, three life potions; then 2,000 DP and 45% HP; then a tenth of its mana | The poison on. Unhurt: Devotion, Swift Edge, Soul Slash, Fang Strike, Rune Carve, Killer's Eye, Flurry, then the pair again. Its rest after that was broken by a monster that came for it; it fought that one with Focused Evasion at 62% HP and killed it. Hurt with DP: the scroll at 44% HP and the potion at 48%, Devotion, Divine Strike, the pair, Fang Strike, Rune Carve. The rest cast MP Recovery. | Three kills; HP 1,445 to 928 in the first; DP 2,000 to 7. |
+      | assassin-25 | Level 25; the same daggers, 20 Odella Powder; then three starved mosbears set on it; then half HP | The poison on. Three fights: the pair, Fang Strike, Rune Carve, Killer's Eye and Flurry; in the third Rune Slash after Soul Slash and Pain Rune on three runes. With three on it: the pair, and it left. The rest cast Herb Treatment IV. | Three kills in 10.0, 21.1 and 9.9 s and a retreat; runes carved seven times and burst once. |
+
+      In no fight was a skill decided more than twice running, and no skill outside the
+      catalog was cast. Every decision carries the table natural-assassin-v1.
+    - **What the rows decide.**
+      - **No pull is asked of the rows.** Every fight at the crasaurs and the starved
+        mosbears was one monster walked up to, and at the tusked mosbears every class
+        leaves. What Altgard's packs do to a class that walks in, the rounds will say.
+        A pull by Dash Attack would need the place the cast's result names, which is
+        the question NR-Q17 waits on.
+      - **Killer's Eye keeps its place.** It adds half to the next physical skill, once
+        in 30 s. Where it stands, behind the attacks, that skill is the next Swift Edge:
+        220 to 282 a hit at level 25, where Soul Slash does 243 to 335. Its hardest hits
+        are Pain Rune on three runes (582), Rune Slash (452) and Divine Strike (825 at
+        level 20), which come when the runes, the chain's one chance in ten or the DP
+        allow, and no rule times a buff to a hit that may not come. Standing before
+        Soul Slash it would break the chain.
+    - **Found, and logged (rule (f)).**
+      - **A leather class in reach is hit hard.** The level-20 Assassin lost 517 of its
+        1,445 HP and drank a potion in one fight with a monster seven levels below it;
+        the Gladiator lost 180 of 1,867 there and the Chanter 87 of 1,643.
+      - **It rests where it fought.** At the starved mosbears a monster came for the
+        resting Assassin and cancelled its Herb Treatment; the journey fought it,
+        killed it and rested again. The classes that fight from range rest where they
+        stood, away from the monsters. The rounds will say how often this costs a rest.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-91/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr91-fast, 11 passed).
 - [ ] **NR-92 - Assassin: to Altgard.** Depends: NR-91; ticked by the round that gives it
   - Work: A fresh Asimassassin plays Ishalgen as a Scout, the trial, the Assassin choice
     at Munin, the ceremony with the dagger and the dispatch Q2902, and is captured at
@@ -8177,3 +8228,12 @@ report what was done, what is parked or blocked, and what the operator must deci
   it are void and kept so, and the proof was run again alone. Full gate guard-p8 (thirteen
   scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
   (nr81-fast) pass. Next: NR-91, the Assassin's probe rows.
+- 2026-10-10 — Loop: NR-91 done. The Assassin's four probe rows pass (nr91-probe-a2 and
+  a2b) on the table of NR-90a, unchanged: a dagger in each hand, the walk in, Soul Slash
+  after Swift Edge, Fang Strike, Rune Carve, Rune Slash, Pain Rune on three runes, Divine
+  Strike for its DP, Devotion, Killer's Eye and Flurry, the poison on, Focused Evasion at
+  64% HP, the scroll and the potion, a retreat at three attackers, the rest with the
+  powder. Killer's Eye keeps its place, and the rows ask no pull. Logged: the level-20
+  Assassin lost a third of its HP in one fight, and a monster broke its rest where it had
+  fought. Full gate guard-p8 (thirteen scopes identical), seven checks, unit suite (4,629
+  passed, 16 skipped) and Fast (nr91-fast) pass. Next: NR-101, the Ranger's probe rows.
