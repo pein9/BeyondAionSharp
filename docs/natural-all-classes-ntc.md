@@ -6180,7 +6180,7 @@ The template:
       mage differs first at record 18,915 of 23,555: after Frozen Shock the next
       decision sees the target at 4.1 m where the recorded one saw 2.4 m. The unit suite
       (4,629 passed, 16 skipped), the seven checks and Fast (nr110g-fast) pass.
-- [ ] **NR-110h - The Spirit Master without its staggers, until NR-110g.** Depends: NR-110d
+- [x] **NR-110h - The Spirit Master without its staggers, until NR-110g.** Depends: NR-110d
   - Work: The way round NR-110g (rule (t)). A stagger puts the monster 2 m from the
     spirit that holds it, at a place the bot does not see, and the server's audit then
     names the bot's hit time. Stone Shock and Frozen Shock leave the Spirit Master's
@@ -6188,7 +6188,44 @@ The template:
     damage. NR-110g gives both back. Only the Spirit Master's own profile changes.
   - Proof: Rows spirit-master-fight and spirit-master-orders pass with no line of the
     server's audit; the full gate identical.
-- [ ] **NR-110e - A monster on the spirit is an attacker.** Depends: NR-110h
+  - 2026-10-10: done. Stone Shock and Frozen Shock are out of the Spirit Master's table,
+    and no fight of its rows leaves a monster where the bot does not see it.
+    - **The change.** Sc/Classes/NaturalSpiritMasterProfile.cs alone: the roles stone
+      and shock leave both lists, and Stone Shock I to III and Frozen Shock I are left
+      out with the reason and NR-110g's name. Chain of Earth and Ice Chain stay. 47 of
+      its 66 skills have a role now and 19 a reason.
+    - **Proof, the rows** (`bash run/nr/NR-110h/probe.sh <attempt>` with ROW set), each
+      on its first attempt and with no line of the server's audit.
+      - spirit-master-fight (nr110h-probe-fight-a1): the mosbear is dead after 14.4 s,
+        where it took 12.6 s with Stone Shock. Flame Bolt is cast twice from 17.6 m. The
+        mosbear strikes the spirit four times and its master never.
+      - spirit-master-orders (nr110h-probe-orders-a1): five skills asked for and five
+        answered, the spirit healed by its order and by Replenish Element, the armor
+        cast, as in NR-110d.
+    - **Found: a kill by the spirit is read as another player's.** In the second fight
+      of the orders row the mosbear is at 1% HP when the turn begins. The spirit's swing
+      goes out in its beat and kills it; the bot's Erosion, sent in the same turn, is
+      refused on a dead target (STR_SKILL_TARGET_IS_NOT_VALID). The fight loop reads that
+      refusal as NR-48 wrote it for another player's kill: the fight ends with no kill
+      and the corpse is left alone. The experience of the kill had reached the bot
+      before the refusal. Item NR-110i.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-110h/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr110h-fast, 11 passed).
+- [ ] **NR-110i - A kill by the spirit is the bot's own.** Depends: NR-110h
+  - Work: Found by NR-110h. The spirit's swing goes out in the beat before the bot's own
+    act. When that swing kills, the bot's cast of the same turn is refused on a dead
+    target, and the fight loop takes the kill for another player's (NR-48): no kill is
+    counted and the corpse is not looted. Java first: where Skill.canUseSkill refuses a
+    dead target, and in what order the server sends the kill's experience, its loot and
+    that refusal. The loop reads the refusal as its own kill when the kill's experience
+    or its loot reached the client before it. Generic: every class; a kill by the bot's
+    own lasting damage in that instant is read the same way.
+  - Proof: One probe row on a probe account in which the spirit's swing kills in the
+    turn of a cast, the fight ends as a kill and the step after a kill runs, the one the
+    journey's loot sweep hangs on; the full gate identical.
+- [ ] **NR-110e - A monster on the spirit is an attacker.** Depends: NR-110i
   - Work: Found by NR-110c: the bot counts as an attacker only a creature that strikes
     the bot itself. Java first: what the master is told of a strike at its spirit
     (SM_ATTACK, the hostile spells, SM_SUMMON_UPDATE). The attacker rule takes the bot's
@@ -7028,3 +7065,12 @@ report what was done, what is parked or blocked, and what the operator must deci
   NR-Q2 keeps the Cleric's scopes identical, so nothing is committed; the change is kept
   as run/nr/NR-110g/nr110g-change.patch. The Spirit Master goes round it: item NR-110h, its
   table without Stone Shock and Frozen Shock. Next: NR-110h.
+- 2026-10-10 — Loop: NR-110h done. Stone Shock and Frozen Shock are out of the Spirit
+  Master's table until NR-110g is answered; only its own profile changed. Rows
+  spirit-master-fight and spirit-master-orders pass with no line of the server's audit
+  (nr110h-probe-fight-a1, nr110h-probe-orders-a1). Found: when the spirit's swing kills in
+  the turn of a cast, the refused cast makes the fight loop take its own kill for another
+  player's, with no kill counted and no loot: item NR-110i, before NR-110e. Full gate
+  guard-p8 (thirteen scopes identical), seven checks, unit suite (4,629 passed, 16
+  skipped) and Fast (nr110h-fast) pass. Next: NR-110i, a kill by the spirit is the bot's
+  own.

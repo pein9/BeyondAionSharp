@@ -16,20 +16,20 @@ public static class NaturalSpiritMasterProfile
 	/// <summary>
 	/// The Spirit Master's own spells to level 26, by role, beside the Mage's it keeps. Erosion, which it has in every
 	/// rank, hits at once and for 15 s after, and is ready every 3 s. Chain of Earth (level 13) does the same lightly,
-	/// halves its target's speed for 15 to 20 s and opens the chain Stone Shock follows, which staggers the target.
-	/// Summon Wind Servant (level 10) sends two servants that strike three times each. Vacuum Choke (level 22) is its
-	/// hardest spell, a 2 s cast that is ready again after 1 s; Backdraft (level 26) gives back as HP and MP what it
-	/// takes. Of Flame Bolt, Blaze, Ice Chain and Frozen Shock it keeps the Mage's first rank only.
+	/// and halves its target's speed for 15 to 20 s. Summon Wind Servant (level 10) sends two servants that strike three
+	/// times each. Vacuum Choke (level 22) is its hardest spell, a 2 s cast that is ready again after 1 s; Backdraft
+	/// (level 26) gives back as HP and MP what it takes. Of Flame Bolt, Blaze and Ice Chain it keeps the Mage's first rank
+	/// only. NR-110h: the two follow-ups that stagger, Stone Shock after Chain of Earth and Frozen Shock after Ice Chain,
+	/// are left out until the bot reads where a stagger puts a monster (NR-110g).
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
 		[1447] = "erosion", [1448] = "erosion", [1449] = "erosion", [1450] = "erosion", [1451] = "erosion",
 		[3603] = "earth", [3604] = "earth", [3605] = "earth",
-		[3614] = "stone", [3615] = "stone", [3616] = "stone",
 		[3810] = "servant", [3812] = "servant", [3814] = "servant", [3816] = "servant",
 		[3593] = "choke",
 		[3640] = "backdraft",
-		[1282] = "bolt", [1403] = "blaze", [1363] = "ice", [1226] = "shock",
+		[1282] = "bolt", [1403] = "blaze", [1363] = "ice",
 		[1328] = "root",
 		[1155] = "skin", [1156] = "skin", [1157] = "skin", [1158] = "skin",
 		// NR-110a: the spirits it keeps.
@@ -52,6 +52,9 @@ public static class NaturalSpiritMasterProfile
 	private const string Spirit = "is not one of the two spirits the profile keeps, the Earth Spirit and before it the Fire Spirit: the server " +
 		"keeps one spirit at a time (Java SummonsService.createSummon 30-33).";
 	private const string Dispel = "takes a buff off its target and hits for each one taken; the monsters of the route carry none.";
+	private const string Stagger = "staggers its target 2 m back, off the spirit that holds it. The server tells a client where a monster " +
+		"lands only inside the cast result, which the bot does not read to its end (NR-110g, blocked by NR-Q17): the bot would believe " +
+		"the monster 2 m nearer than it is for as long as the spirit holds it there.";
 
 	/// <summary>Every other active skill a Spirit Master learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
@@ -65,14 +68,16 @@ public static class NaturalSpiritMasterProfile
 		[3742] = "Sandblaster hits up to six monsters around its target. The bot pulls one at a time, and an area skill wakes every other " +
 			"one in reach.",
 		[3777] = "Summon Group Member calls a member of its group to it; the bot plays alone.",
+		[3614] = "Stone Shock I " + Stagger, [3615] = "Stone Shock II " + Stagger, [3616] = "Stone Shock III " + Stagger,
+		[1226] = "Frozen Shock I " + Stagger,
 	};
 
 	/// <summary>
 	/// NR-110: the Mage's table with the Spirit Master's own spells. From range: Chain of Earth, whose snare keeps the
-	/// monster away longer, and Stone Shock at once; Erosion; Vacuum Choke and Backdraft; Summon Wind Servant; then what
-	/// is left of the Mage: Ice Chain and Frozen Shock, Flame Bolt and Blaze. With the monster on it Erosion comes first:
-	/// it has no cast time a hit can push back. An open follow-up is always cast first. Stone Skin goes up before the
-	/// first hit and is kept up between fights. Root is cast only on the way out, before a retreat.
+	/// monster away longer; Erosion; Vacuum Choke and Backdraft; Summon Wind Servant; then what is left of the Mage: Ice
+	/// Chain, Flame Bolt and Blaze. With the monster on it Erosion comes first: it has no cast time a hit can push back.
+	/// Stone Skin goes up before the first hit and is kept up between fights. Root is cast only on the way out, before a
+	/// retreat. NR-110h: neither chain has its follow-up, a stagger, for now.
 	/// <para>
 	/// NR-110d: the orders come before its own spells, once the spirit stands at the target: Spirit Disturbance, whose
 	/// hate keeps the monster on the spirit, and Spirit Erosion. On the spirit it casts Divine Spirit Armor whenever it
@@ -86,8 +91,8 @@ public static class NaturalSpiritMasterProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-spirit-master-v1",
-		Adjacent: ["disturbance", "erosion", "spirit-erosion", "earth", "stone", "choke", "backdraft", "servant", "ice", "shock", "bolt", "blaze"],
-		AtRange: ["disturbance", "spirit-erosion", "earth", "stone", "erosion", "choke", "backdraft", "servant", "ice", "shock", "bolt", "blaze"],
+		Adjacent: ["disturbance", "erosion", "spirit-erosion", "earth", "choke", "backdraft", "servant", "ice", "bolt", "blaze"],
+		AtRange: ["disturbance", "spirit-erosion", "earth", "erosion", "choke", "backdraft", "servant", "ice", "bolt", "blaze"],
 		Upkeep: [new("skin")],
 		Recovery: [new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
 		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.LastResort, ControlRole: "root",
