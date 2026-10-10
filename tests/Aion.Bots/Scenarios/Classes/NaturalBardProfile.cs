@@ -55,12 +55,13 @@ public static class NaturalBardProfile
 	};
 
 	/// <summary>
-	/// NR-140: the Artist's table with what the Bard adds. From range: Song of Ice, then Song of Fire and Song of Earth
-	/// at once, an open follow-up always first; Syncopated Echo early, since it lands 5 s later; Minstrel's Flair when
-	/// 2,000 DP are there; Bright Strike; and Pulse for the pull and everything between. With the monster on it the
-	/// instants come first, the ones a hit cannot push back: Syncopated Echo, Bright Strike and Minstrel's Flair, then the
-	/// songs and Pulse. Protective Ode goes up before the first hit. Captivate is cast only on the way out, before a
-	/// retreat.
+	/// NR-140: the Artist's table with what the Bard adds. NR-141: Minstrel's Flair first, whenever its 2,000 DP are
+	/// there: one cast takes from a monster about what the three songs take together (1,176 against 336, 402 and 456 in
+	/// the ranks of level 20), and behind the songs a level-13 monster died before its turn came. Then from range: Song of
+	/// Ice, then Song of Fire and Song of Earth at once, an open follow-up always first; Syncopated Echo early, since it
+	/// lands 5 s later; Bright Strike; and Pulse for the pull and everything between. With the monster on it the instants
+	/// come first, the ones a hit cannot push back: Minstrel's Flair, Syncopated Echo and Bright Strike, then the songs
+	/// and Pulse. Protective Ode goes up before the first hit. Captivate is cast only on the way out, before a retreat.
 	/// <para>
 	/// The ladder is the Artist's (CP-Q11), with the heal's follow-up: the shield scroll at 50% HP, the life potion at or
 	/// below 75%, and at or below 55% Soothing Counterpoint while Soothing Melody has opened it, else Soothing Melody. The
@@ -74,8 +75,8 @@ public static class NaturalBardProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-bard-v1",
-		Adjacent: ["echo", "strike", "flair", "ice", "fire", "earth", "pulse"],
-		AtRange: ["ice", "fire", "earth", "echo", "flair", "strike", "pulse"],
+		Adjacent: ["flair", "echo", "strike", "ice", "fire", "earth", "pulse"],
+		AtRange: ["flair", "ice", "fire", "earth", "echo", "strike", "pulse"],
 		Upkeep: [new("ode")],
 		Recovery:
 		[

@@ -77,6 +77,10 @@ public sealed partial class SimulationFastScenarioTests
 		new("rider-16", NaturalClassLine.EngineerRider, ProbeAccountB, "Asimsixride"),
 		new("rider-20", NaturalClassLine.EngineerRider, ProbeAccountA, "Asimtwride"),
 		new("rider-25", NaturalClassLine.EngineerRider, ProbeAccountB, "Asimtfride"),
+		new("bard-10", NaturalClassLine.ArtistBard, ProbeAccountA, "Asimtenbard"),
+		new("bard-16", NaturalClassLine.ArtistBard, ProbeAccountB, "Asimsixbard"),
+		new("bard-20", NaturalClassLine.ArtistBard, ProbeAccountA, "Asimtwbard"),
+		new("bard-25", NaturalClassLine.ArtistBard, ProbeAccountB, "Asimtfbard"),
 		new("chanter-mantras", NaturalClassLine.PriestChanter, ProbeAccountA, "Asimmantra"),
 		new("gladiator-aerial", NaturalClassLine.WarriorGladiator, ProbeAccountB, "Asimaerial"),
 		new("assassin-runes", NaturalClassLine.ScoutAssassin, ProbeAccountA, "Asimrunes"),
@@ -327,6 +331,10 @@ public sealed partial class SimulationFastScenarioTests
 			case "rider-16": await RiderLevelSixteenRowAsync(probe, id, token); break;
 			case "rider-20": await RiderLevelTwentyRowAsync(probe, id, token); break;
 			case "rider-25": await RiderLevelTwentyFiveRowAsync(probe, id, token); break;
+			case "bard-10": await BardLevelTenRowAsync(probe, id, token); break;
+			case "bard-16": await BardLevelSixteenRowAsync(probe, id, token); break;
+			case "bard-20": await BardLevelTwentyRowAsync(probe, id, token); break;
+			case "bard-25": await BardLevelTwentyFiveRowAsync(probe, id, token); break;
 			case "chanter-mantras": await ChanterMantrasRowAsync(probe, id, token); break;
 			case "gladiator-aerial": await GladiatorAerialRowAsync(probe, id, token); break;
 			case "assassin-runes": await AssassinRunesRowAsync(probe, id, token); break;
@@ -4900,6 +4908,336 @@ public sealed partial class SimulationFastScenarioTests
 	/// <summary>NR-131: how often anything struck a creature in a fight, as the client saw it.</summary>
 	private static int StrikesOf(ClericFight fight, int whom) => fight.Records.Count(record => record is { Direction: "<", Packet: "SM_ATTACK" } &&
 		record.Fields.GetProperty("targetObjId").GetInt32() == whom);
+
+	private const string BardTable = "natural-bard-v1:";
+
+	/// <summary>
+	/// NR-141, row bard-10. Prepared by the director: the Artist is made a level-10 Bard with the skills of every level up
+	/// to it, is given the ceremony's harp (102000523), and is placed in Altgard by the ice crasaurs (210415, level 11),
+	/// where the Cleric's row fights. The journey's equipment check takes the harp and its buff check puts Protective Ode
+	/// up. Then it fights three crasaurs by its table: from its stand-off the first cast at the first is Song of Ice, and
+	/// Song of Fire follows it. Last the director gives powder and halves the HP, and the journey's rest casts Herb
+	/// Treatment.
+	/// </summary>
+	private async Task BardLevelTenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int crasaur = 210415, harp = 102000523, fights = 3;
+		probe.Session.BeginStep("s01", "director-makes-a-level-ten-bard-with-a-harp");
+		await probe.BecomeAsync(PlayerClass.BARD, 10);
+		int[] table = probe.CatalogOf(PlayerClass.BARD);
+		int ice = probe.BestOf(PlayerClass.BARD, "ice"), fire = probe.BestOf(PlayerClass.BARD, "fire"), echo = probe.BestOf(PlayerClass.BARD, "echo"),
+			pulse = probe.BestOf(PlayerClass.BARD, "pulse"), ode = probe.BestOf(PlayerClass.BARD, "ode"), heal = probe.BestOf(PlayerClass.BARD, "heal"),
+			herb = probe.BestOf(PlayerClass.BARD, "herb");
+		int self = probe.Session.CharacterId;
+		await GiveAsync(probe, token, (harp, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1473.2f, 1765.2f, 247.5f);
+		probe.Session.BeginStep("s02", "equipment-check-takes-the-harp");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(harp, MainHand(probe));
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-puts-protective-ode-up", token);
+		Assert.Contains(ode, buffCasts);
+
+		var lines = new List<string>();
+		ClericFight? chain = null;
+		double firedFrom = 0;
+		int kills = 0, deaths = 0, swings = 0, echoes = 0, pulses = 0, odes = 0, heals = 0, struck = 0;
+		for (int number = 1; number <= fights; number++)
+		{
+			Npc next = NearestLiving(probe, crasaur);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, BardTable, $"s04-{number}", $"fight-ice-crasaur-{number}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"Fight {number} ended no way: {fight.Result}.");
+			kills += fight.Result.Killed ? 1 : 0;
+			deaths += fight.Result.Deaths;
+			swings += Swings(fight);
+			echoes += fight.Casts.Count(cast => cast.SkillId == echo);
+			pulses += fight.Casts.Count(cast => cast.SkillId == pulse);
+			odes += fight.Casts.Count(cast => cast.SkillId == ode);
+			heals += fight.Casts.Count(cast => cast.SkillId == heal);
+			int hits = StrikesBy(fight, next.GetObjectId(), self);
+			struck += hits;
+			if (number == 1)
+			{
+				// From its stand-off: with every cooldown clear the first cast at the target is Song of Ice.
+				StarterTraceRecord first = fight.Decided.First(record => record.Fields.GetProperty("action").GetString() == "cast-target");
+				firedFrom = first.Fields.GetProperty("targetDistance").GetDouble();
+				Assert.True(Decided(first, "cast-target", ice) && firedFrom > 6, $"The first cast was decided at {firedFrom:F1} m: {fight.Order}.");
+			}
+			if (fight.Run([ice], [fire]) >= 0) chain ??= fight;
+			lines.Add($"fight {number}: {Outcome(fight)}, struck {hits} time(s), HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+		Assert.True(chain != null, $"Song of Fire never followed Song of Ice in {fights} fights: {string.Join("; ", lines)}.");
+
+		// Prepared by the director: powder, and half HP. The rest is the journey's.
+		await GiveAsync(probe, token, (LesserOdellaPowder, 20));
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		int hpBefore = probe.World.CurrentHp;
+		(IReadOnlyList<StarterTraceRecord> rested, int[] restCasts) = await RestStepAsync(probe, "s05", "director-gives-powder-and-halves-hp-then-rest", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Bard, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, harp {MainHand(probe)}; the buff check cast {string.Join(" ", buffCasts)}. " +
+			$"{fights} fight(s), {kills} kill(s), {deaths} death(s): {string.Join("; ", lines)}. Song of Ice from {firedFrom:F1} m; Syncopated Echo cast {echoes} time(s), " +
+			$"Pulse {pulses}, Soothing Melody {heals}; Protective Ode cast again in the fights' steps {odes} time(s); the harp swung {swings} time(s); the crasaurs struck it {struck} time(s). " +
+			$"Rest from {hpBefore} HP: casts {string.Join(" ", restCasts)}, it did {RestDid(rested)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-141, row bard-16. Prepared by the director: a level-16 Bard with the harp of Q24013 beside the ceremony's and
+	/// the robe shoes and tunic of Q24011 and Q24012 in the bag, by the tusked mosbears (210437, level 14) of the Cleric's
+	/// row. The journey's equipment check wears them and its buff check puts Protective Ode up. Before the fight begins the
+	/// director cuts HP to 45%: the life potion and Soothing Melody answer, by the ladder. A kill, a retreat and a death
+	/// are recorded outcomes: the spot brings more monsters, and with two on it the Bard holds its target with Captivate
+	/// and leaves.
+	/// </summary>
+	private async Task BardLevelSixteenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210437, harp = 102001244, karmic = 102000523, shoes = 114101696, tunic = 110101836;
+		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-bard-in-altgard");
+		await probe.BecomeAsync(PlayerClass.BARD, 16);
+		int[] table = probe.CatalogOf(PlayerClass.BARD);
+		int ice = probe.BestOf(PlayerClass.BARD, "ice"), fire = probe.BestOf(PlayerClass.BARD, "fire"), earth = probe.BestOf(PlayerClass.BARD, "earth"),
+			ode = probe.BestOf(PlayerClass.BARD, "ode"), heal = probe.BestOf(PlayerClass.BARD, "heal"), captivate = probe.BestOf(PlayerClass.BARD, "captivate");
+		int self = probe.Session.CharacterId;
+		await GiveAsync(probe, token, (harp, 1), (karmic, 1), (shoes, 1), (tunic, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1427.2f, 789.9f, 249.9f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		IReadOnlyList<NaturalGearUpgrade> worn = await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(harp, MainHand(probe));
+		Assert.All(new[] { shoes, tunic }, piece => Assert.Contains(probe.World.Inventory.Values, item => item.ItemId == piece && item.Details.EquippedSlot.GetValueOrDefault() != 0));
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-puts-protective-ode-up", token);
+		Assert.Contains(ode, buffCasts);
+
+		Npc first = NearestLiving(probe, mosbear);
+		int mp = 0;
+		ClericFight fight = await TableFightAsync(probe, BardTable, "s04", "fight-a-tusked-mosbear-from-under-half-hp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 45% HP as the fight begins.
+			await probe.CutHpAsync(45);
+			mp = probe.World.CurrentMp;
+			return first.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(fight);
+		AssertOnlyCasts(fight, table);
+		Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"The fight ended no way: {fight.Result}.");
+		StarterTraceRecord[] healed = fight.Decided.Where(record => Decided(record, "cast-self", heal)).ToArray();
+		Assert.True(healed.Length > 0, $"Soothing Melody was not cast from 45% HP: {fight.Order}; decisions {fight.Counts}.");
+		Assert.All(healed, record => Assert.True(HpPercentAt(record) <= 55, $"Soothing Melody was decided at {HpPercentAt(record)}% HP."));
+		StarterTraceRecord[] left = fight.Decided.Where(record => record.Fields.GetProperty("action").GetString() == "retreat").ToArray();
+		int held = Array.FindIndex(fight.Decided, record => Decided(record, "cast-target", captivate));
+		Console.WriteLine($"{id}: level {probe.World.Level} Bard, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, harp {MainHand(probe)}; the check asked for " +
+			$"{string.Join(", ", worn.Select(upgrade => $"{upgrade.ItemId} to slot {upgrade.Slot}"))}; the buff check cast {string.Join(" ", buffCasts)}. " +
+			$"From 45% HP: {Outcome(fight)}; MP {mp} to {probe.World.CurrentMp}; Soothing Melody decided at {string.Join(", ", healed.Select(HpPercentAt))}% HP; " +
+			$"{SongLine(fight, ice, fire, earth, heal)}; its target struck it {StrikesBy(fight, first.GetObjectId(), self)} time(s) and others " +
+			$"{StrikesOf(fight, self) - StrikesBy(fight, first.GetObjectId(), self)}. Captivate: {(held >= 0 ? fight.Decided[held].Fields.GetProperty("reason").GetString() : "not cast.")} " +
+			$"It left: {(left.Length > 0 ? left[0].Fields.GetProperty("reason").GetString() : "no.")} HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>
+	/// NR-141, row bard-20. Prepared by the director: a level-20 Bard with the harp of Q24016 beside that of Q24013, by
+	/// the starved mosbears (210564, level 13) of the Cleric's row, with powder, two shield scrolls and three life potions
+	/// in the bag. Three fights are the journey's alone, for the numbers: what each song takes from the monster, how often
+	/// the mosbear strikes, and what a fight costs in mana. Before the next the director cuts MP to 40%: Resonating
+	/// Melody is cast, by the table's mana step. Before one more the director gives 2,000 DP and cuts HP to 40%:
+	/// Minstrel's Flair is cast and the ladder answers. Last the director cuts MP to a tenth and the journey rests.
+	/// </summary>
+	private async Task BardLevelTwentyRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, harp = 102001246, second = 102001244, scroll = 164000068, potion = 162000003, fights = 3;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-bard-in-altgard");
+		await probe.BecomeAsync(PlayerClass.BARD, 20);
+		int[] table = probe.CatalogOf(PlayerClass.BARD);
+		int ice = probe.BestOf(PlayerClass.BARD, "ice"), fire = probe.BestOf(PlayerClass.BARD, "fire"), earth = probe.BestOf(PlayerClass.BARD, "earth"),
+			echo = probe.BestOf(PlayerClass.BARD, "echo"), pulse = probe.BestOf(PlayerClass.BARD, "pulse"), flair = probe.BestOf(PlayerClass.BARD, "flair"),
+			ode = probe.BestOf(PlayerClass.BARD, "ode"), heal = probe.BestOf(PlayerClass.BARD, "heal"), counterpoint = probe.BestOf(PlayerClass.BARD, "counterpoint"),
+			resonate = probe.BestOf(PlayerClass.BARD, "resonate"), recovery = probe.BestOf(PlayerClass.BARD, "mp-recovery");
+		int self = probe.Session.CharacterId;
+		await GiveAsync(probe, token, (harp, 1), (second, 1), (LesserOdellaPowder, 20), (scroll, 2), (potion, 3));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(harp, MainHand(probe));
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-puts-protective-ode-up", token);
+		Assert.Contains(ode, buffCasts);
+
+		var lines = new List<string>();
+		var dealt = new Dictionary<string, List<int>>();
+		ClericFight? whole = null;
+		int struck = 0, odes = 0, swings = 0, mpStart = probe.World.CurrentMp;
+		for (int number = 1; number <= fights; number++)
+		{
+			Npc next = NearestLiving(probe, mosbear);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, BardTable, $"s04-{number}", $"fight-starved-mosbear-{number}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.True(fight.Result is { Killed: true, Deaths: 0 }, $"Fight {number} was no kill: {Outcome(fight)}.");
+			Assert.DoesNotContain(fight.Casts, cast => cast.SkillId == flair);
+			swings += Swings(fight);
+			odes += fight.Casts.Count(cast => cast.SkillId == ode);
+			int hits = StrikesBy(fight, next.GetObjectId(), self);
+			struck += hits;
+			foreach ((string name, int skill) in new[] { ("Song of Ice", ice), ("Song of Fire", fire), ("Song of Earth", earth), ("Syncopated Echo", echo), ("Pulse", pulse) })
+			{
+				if (!dealt.TryGetValue(name, out List<int>? taken)) dealt[name] = taken = [];
+				taken.AddRange(Dealt(fight, skill));
+			}
+			if (fight.Run([ice], [fire], [earth]) >= 0) whole ??= fight;
+			lines.Add($"fight {number}: {Outcome(fight)}, struck {hits} time(s), HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+		Assert.True(whole != null, $"The three songs were never cast in a row in {fights} fights: {string.Join("; ", lines)}.");
+		int mpAfter = probe.World.CurrentMp;
+
+		Npc shortTarget = NearestLiving(probe, mosbear);
+		int shortMp = 0;
+		ClericFight shortOf = await TableFightAsync(probe, BardTable, "s05", "fight-a-starved-mosbear-from-two-fifths-mp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 40% of its mana as the fight begins.
+			await probe.CutMpAsync(40);
+			shortMp = probe.World.CurrentMp;
+			return shortTarget.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(shortOf);
+		AssertOnlyCasts(shortOf, table);
+		StarterTraceRecord[] forMana = shortOf.Decided.Where(record => Decided(record, "cast-self", resonate)).ToArray();
+		Assert.True(forMana.Length > 0, $"Resonating Melody was not cast from 40% of its mana: {shortOf.Order}; decisions {shortOf.Counts}.");
+		Assert.StartsWith("Mana is at or below 50%", forMana[0].Fields.GetProperty("reason").GetString());
+		int shortAfter = probe.World.CurrentMp;
+
+		Npc hurtTarget = NearestLiving(probe, mosbear);
+		ClericFight hurt = await TableFightAsync(probe, BardTable, "s06", "fight-a-starved-mosbear-from-two-fifths-hp-with-dp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 2,000 DP and 40% HP as the fight begins.
+			await probe.SetDpAsync(2000);
+			await probe.CutHpAsync(40);
+			return hurtTarget.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(hurt);
+		AssertOnlyCasts(hurt, table);
+		Assert.Contains(hurt.Casts, cast => cast.SkillId == flair);
+		Assert.True(probe.World.CurrentDp < 2000, $"The DP was not spent: {probe.World.CurrentDp}.");
+		StarterTraceRecord[] ladder = hurt.Decided.Where(record => record.Fields.GetProperty("action").GetString() is "shield-scroll" or "hot-potion" ||
+			Decided(record, "cast-self", heal, counterpoint)).ToArray();
+		Assert.True(ladder.Length > 0, $"The ladder did not answer 40% HP: decisions {hurt.Counts}.");
+		Assert.Equal("shield-scroll", ladder[0].Fields.GetProperty("action").GetString());
+		Assert.All(ladder.Where(record => Decided(record, "cast-self", heal, counterpoint)), record => Assert.True(HpPercentAt(record) <= 55, $"A heal was decided at {HpPercentAt(record)}% HP."));
+		Assert.Equal(0, hurt.Result.Deaths);
+
+		// Prepared by the director: a tenth of its mana. The rest is the journey's.
+		probe.Session.BeginStep("s07", "director-cuts-mp");
+		await probe.CutMpAsync(10);
+		int mpBefore = probe.World.CurrentMp;
+		(IReadOnlyList<StarterTraceRecord> rested, int[] restCasts) = await RestStepAsync(probe, "s08", "rest-from-a-tenth-of-its-mana", token);
+		Assert.True(restCasts.Contains(resonate) || restCasts.Contains(recovery), $"The rest cast {string.Join(" ", restCasts)} for its mana.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Bard, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, harp {MainHand(probe)}; the buff check cast {string.Join(" ", buffCasts)}. " +
+			$"{fights} fight(s): {string.Join("; ", lines)}. They cost {mpStart - mpAfter} MP; the mosbears struck it {struck} time(s); Protective Ode cast again in the fights' steps {odes} time(s); " +
+			$"the harp swung {swings} time(s). Each hit of the three fights: {string.Join("; ", dealt.Select(entry => $"{entry.Key} {string.Join(" ", entry.Value)}"))}. " +
+			$"From {shortMp} MP: {Outcome(shortOf)}; Resonating Melody: {forMana[0].Fields.GetProperty("reason").GetString()} MP {shortAfter} after the fight. " +
+			$"From 40% HP with 2,000 DP: {Outcome(hurt)}; the ladder: {string.Join(", ", ladder.Select(record => $"{record.Fields.GetProperty("action").GetString()}" +
+				$"{(record.Fields.GetProperty("skillId") is { ValueKind: JsonValueKind.Number } skill ? " " + skill.GetInt32() : "")} at {HpPercentAt(record)}% HP"))}; " +
+			$"{SongLine(hurt, ice, fire, earth, heal, counterpoint)}; DP left {probe.World.CurrentDp}. " +
+			$"Rest from {mpBefore} MP: casts {string.Join(" ", restCasts)}, it did {RestDid(rested)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-141, row bard-25. Prepared by the director: a level-25 Bard with the harp of Q24016 beside that of Q24013, by
+	/// the starved mosbears (210564, level 13), with Odella Powder in the bag. The buff check puts Protective Ode and Etude
+	/// up. Three fights are the journey's alone, for the numbers. Then the director spawns two starved mosbears 4 m from
+	/// the Bard and sets them on it: with two attackers the journey holds its target with Captivate and leaves. Last the
+	/// director halves the HP and the rest casts the fourth rank of Herb Treatment.
+	/// </summary>
+	private async Task BardLevelTwentyFiveRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, harp = 102001246, second = 102001244;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-five-bard-in-altgard");
+		await probe.BecomeAsync(PlayerClass.BARD, 25);
+		int[] table = probe.CatalogOf(PlayerClass.BARD);
+		int ice = probe.BestOf(PlayerClass.BARD, "ice"), fire = probe.BestOf(PlayerClass.BARD, "fire"), earth = probe.BestOf(PlayerClass.BARD, "earth"),
+			strike = probe.BestOf(PlayerClass.BARD, "strike"), echo = probe.BestOf(PlayerClass.BARD, "echo"), ode = probe.BestOf(PlayerClass.BARD, "ode"),
+			etude = probe.BestOf(PlayerClass.BARD, "etude"), captivate = probe.BestOf(PlayerClass.BARD, "captivate"), heal = probe.BestOf(PlayerClass.BARD, "heal"),
+			counterpoint = probe.BestOf(PlayerClass.BARD, "counterpoint"), herb = probe.BestOf(PlayerClass.BARD, "herb");
+		int self = probe.Session.CharacterId;
+		await GiveAsync(probe, token, (harp, 1), (second, 1), (OdellaPowder, 20));
+		BotNavigationGeometry geometry = await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(harp, MainHand(probe));
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-puts-protective-ode-and-etude-up", token);
+		Assert.Contains(ode, buffCasts);
+		Assert.Contains(etude, buffCasts);
+
+		var lines = new List<string>();
+		int struck = 0, strikes = 0, echoes = 0, odes = 0, mpStart = probe.World.CurrentMp;
+		for (int fights = 1; fights <= 3; fights++)
+		{
+			Npc next = NearestLiving(probe, mosbear);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, BardTable, $"s04-{fights}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.Equal(0, fight.Result.Deaths);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0, $"Fight {fights} ended neither way: {fight.Result}.");
+			strikes += fight.Casts.Count(cast => cast.SkillId == strike);
+			echoes += fight.Casts.Count(cast => cast.SkillId == echo);
+			odes += fight.Casts.Count(cast => cast.SkillId == ode);
+			int hits = StrikesBy(fight, next.GetObjectId(), self);
+			struck += hits;
+			lines.Add($"fight {fights}: {Outcome(fight)}, struck {hits} time(s), HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+		int mpAfter = probe.World.CurrentMp;
+
+		Npc[] pack = [];
+		ClericFight swarm = await TableFightAsync(probe, BardTable, "s05", "fight-a-pack-of-two-starved-mosbears", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: two starved mosbears 4 m away, set on the Bard.
+			pack = await SpawnSetOnAsync(probe, geometry, mosbear, 2, token);
+			return pack[0].GetObjectId();
+		}, token);
+		RemoveSetOn(pack);
+		await probe.Session.SynchronizeAsync(token);
+		AssertOnlyCasts(swarm, table);
+		strikes += swarm.Casts.Count(cast => cast.SkillId == strike);
+		int held = Array.FindIndex(swarm.Decided, record => Decided(record, "cast-target", captivate));
+		Assert.True(held >= 0, $"Captivate was not cast: {swarm.Order}; decisions {swarm.Counts}.");
+		string? reason = swarm.Decided[held].Fields.GetProperty("reason").GetString();
+		Assert.StartsWith("Hold the target before retreating", reason);
+		Assert.Contains(swarm.Decided.Skip(held + 1), record => record.Fields.GetProperty("action").GetString() == "retreat");
+		int cornered = swarm.Records.Count(record => record is { Direction: "action", Packet: "combat-retreat-cornered" });
+
+		// Prepared by the director: half HP. The rest is the journey's.
+		probe.Session.BeginStep("s06", "director-halves-hp");
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		(IReadOnlyList<StarterTraceRecord> rested, int[] restCasts) = await RestStepAsync(probe, "s07", "rest-from-half-hp-with-odella-powder", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(OdellaPowder) < 20, "No Odella Powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Bard, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, harp {MainHand(probe)}; the buff check cast {string.Join(" ", buffCasts)}. " +
+			string.Join("; ", lines) + $". They cost {mpStart - mpAfter} MP; the mosbears struck it {struck} time(s); Syncopated Echo cast {echoes} time(s); Protective Ode cast again in the " +
+			$"fights' steps {odes} time(s). Then against {pack.Length} the director spawned 4 m away and set on it: {Outcome(swarm)}; Captivate decided with " +
+			$"{swarm.Decided[held].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32()} attackers: {reason} It found itself cornered {cornered} time(s); " +
+			$"{SongLine(swarm, ice, fire, earth, heal, counterpoint)}. Bright Strike cast {strikes} time(s) over the four. " +
+			$"Rest: casts {string.Join(" ", restCasts)}, it did {RestDid(rested)}, Odella Powder {probe.Owned(OdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>NR-141: what became of Song of Ice in a fight: how often it was cast, how often Song of Fire was the next
+	/// cast, and how often a heal came between.</summary>
+	private static string SongLine(ClericFight fight, int ice, int fire, int earth, params int[] heals)
+	{
+		List<int> casts = fight.Casts.Select(cast => cast.SkillId).ToList();
+		int opened = 0, followed = 0, healedOver = 0, earths = casts.Count(skill => skill == earth);
+		for (int index = 0; index < casts.Count; index++)
+		{
+			if (casts[index] != ice) continue;
+			opened++;
+			if (index + 1 >= casts.Count) continue;
+			if (casts[index + 1] == fire) followed++;
+			else if (heals.Contains(casts[index + 1])) healedOver++;
+		}
+		return $"Song of Ice cast {opened} time(s), Song of Fire next {followed}, a heal next {healedOver}, Song of Earth cast {earths}";
+	}
 
 	/// <summary>The living monster of a template nearest to another monster.</summary>
 	private Npc NearestLiving(StarterProbe probe, int templateId, Npc near) => probe.World.Objects.Values

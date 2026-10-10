@@ -7690,7 +7690,7 @@ The template:
       thirteen scopes identical. Seven pre-commit checks pass, the three script tests
       pass (run/nr/NR-140/script-tests.log), Aion.GameServer.Tests passes (4,629 passed,
       16 skipped) and Fast passes (run nr140-fast, 11 passed).
-- [ ] **NR-141 - Bard: probe rows.** Depends: NR-140
+- [x] **NR-141 - Bard: probe rows.** Depends: NR-140
   - Work: Rows bard-10, bard-16, bard-20 and bard-25 in
     SimulationNaturalStarterProbeTests: prepared Bards on the two probe accounts, in the
     gear the route has given by that level and with its harp, fight the monsters the
@@ -7706,6 +7706,64 @@ The template:
     (rule (i)).
   - Proof: The four rows end with the monster dead or a recorded retreat, no refused
     cast repeated and no skill outside the table cast.
+  - 2026-10-10: done on the second attempt. The four rows pass. The table has one
+    change: Minstrel's Flair stands first in both lists.
+    - **Java.** Nothing new is relied on.
+    - **The rows** (SimT/SimulationNaturalStarterProbeTests.cs: bard-10, bard-16, bard-20,
+      bard-25, on the probe accounts 98 and 100, at the places and monsters of the
+      Cleric's rows). The director makes the Artist a Bard of the level with the skills
+      of every level up to it, puts the harps and the robe pieces of the route into its
+      bag, and places it. From there the journey's equipment check, buff check, fight
+      and rest act. A row takes its skills from the profile's catalog by role. The two
+      rows at the starved mosbears each have a world of their own, as the Rider's (rows
+      10 and 25 in one process, 16 and 20 in the other).
+      `bash run/nr/NR-141/probe.sh <attempt>`.
+    - **The first attempt** (nr141-probe-a1 and a1b, kept under rows-a1): rows 10, 16 and
+      25 passed. Row 20, given 2,000 DP, never cast Minstrel's Flair: it stood fifth in
+      the list from range, behind the three songs and Syncopated Echo, and the mosbear
+      died to the songs with the DP unspent.
+    - **The one change** (rule (e); Sc/Classes/NaturalBardProfile.cs). Minstrel's Flair
+      is the first of both lists. It is cast only when its 2,000 DP are there, and one
+      cast is worth the three songs together: 1,176 against 336, 402 and 456 in the
+      ranks of level 20 (skill_templates.xml).
+    - **The run** (nr141-probe-a2 and a2b; the four traces are under run/nr/NR-141/).
+
+      | Row | Prepared by the director | What the journey did | Outcome |
+      |---|---|---|---|
+      | bard-10 | Level 10, the ceremony's harp; then 20 powder and half HP | The check took the harp; the buff check cast Protective Ode. Three ice crasaurs: Song of Ice from 20.9 m, Song of Fire at once, Syncopated Echo, Pulse. In the third its mana was at half, and it cast Resonating Melody. The rest cast Herb Treatment. | Three kills in 9.6, 13.3 and 13.6 s. One strike on it, and no HP lost. MP 1,098 to 686 over the first two; 1,022 after the third. |
+      | bard-16 | Level 16; the harp of Q24013 beside the ceremony's, the robe shoes and tunic of Q24011 and Q24012; 45% HP as the fight begins | The check took the harp and wore both pieces. One tusked mosbear, which has neighbours: the life potion and Soothing Melody at 48% HP, then Song of Ice, Song of Fire, Song of Earth and Syncopated Echo; then two were on it: Captivate, and it left. | A retreat at two attackers that got away. Its target never struck it; the others did, six times. |
+      | bard-20 | Level 20; the harps of Q24016 and Q24013, 20 powder, two shield scrolls, three life potions; later 40% of its mana; then 2,000 DP and 40% HP; then a tenth of its mana | Three fights alone: the three songs in a row in the first, Syncopated Echo, Pulse and Song of Ice in the others. From 865 MP: Resonating Melody first, then the songs. With DP and at 40% HP: the shield scroll, the life potion, Soothing Melody at 44% HP, and Minstrel's Flair from 23.5 m, which killed the mosbear alone. The rest cast MP Recovery and Resonating Melody. | Five kills. The three in 4.7, 10.3 and 13.9 s for 632 MP; three strikes on it and no HP lost. Its mana was full after the fourth. DP 2,000 to 7. |
+      | bard-25 | Level 25; the same harps, 20 Odella Powder; then two starved mosbears set on it; then half HP | The buff check cast Protective Ode and Etude. Three fights alone: the three songs; Syncopated Echo, Bright Strike and Pulse; the three songs. With two set on it: Syncopated Echo, Bright Strike, Captivate, a decision to leave that found no way out, and Pulse twice. The rest cast Herb Treatment IV and Soothing Melody. | Four kills in 4.7, 9.5, 9.0 and 9.5 s. No strike on it in the three, which cost 686 MP. |
+
+      No refused cast was repeated and no skill outside the catalog was cast. Every
+      decision carries the table natural-bard-v1. The harp never swung.
+    - **What the rows decide.**
+      - **Captivate stays for the way out.** The Bard sings from 20 m and more, and the
+        monsters of the rows struck it once in three fights at level 10, three times at
+        level 20 and never at level 25. A root at the pull has nothing to earn there,
+        and Captivate was ready at both decisions to leave (rows 16 and 25).
+      - **Protective Ode holds.** The buff check cast it once in each row, and no
+        fight's step cast it again: through five fights at level 20. The strikes that
+        landed took no HP.
+      - **A heal does not cost the chain.** Where the Bard was hurt as a fight began
+        (rows 16 and 20), the heal came before the first song, and Song of Fire
+        followed Song of Ice wherever the monster still lived. The rows show no heal
+        between a song and its follow-up.
+      - **It leaves at two attackers.** At the tusked mosbears it left with its HP
+        whole. In row 25 the place gave no way out, and it killed its target.
+    - **Found, and logged (rule (f)).**
+      - **Mana.** A fight costs 206 MP at level 10, of 1,191; 211 at level 20; 229 at
+        level 25, of 2,635. At level 10 that is half its mana in two fights. Resonating
+        Melody answers by itself: 686 MP to 1,022 inside the third fight at level 10,
+        and 865 to all 2,164 at level 20.
+      - **The rows' monsters** are far below a Bard of level 20 and 25: three songs
+        kill a level-13 mosbear in 4.7 s, and Minstrel's Flair alone.
+      - **Row 25's place has no way out** with two mosbears set on the bot, as for the
+        Gunner.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-141/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr141-fast, 11 passed).
 - [ ] **NR-142 - Bard: to Altgard.** Depends: NR-141; ticked by the round that gives it
   - Work: A fresh Asimbard plays Ishalgen as an Artist, the trial, the ceremony with the
     harp and the dispatch Q29071, and is captured at the Altgard bind as altgard-bard-s1.
@@ -8728,3 +8786,15 @@ report what was done, what is parked or blocked, and what the operator must deci
   other rows pass again. Full gate guard-p8 (thirteen scopes identical), seven checks,
   unit suite (4,629 passed, 16 skipped) and Fast (nr131a-fast) pass. Next: NR-141, the
   Bard's probe rows.
+- 2026-10-10 — Loop: NR-141 done on the second attempt. In the first, row 20 never cast
+  Minstrel's Flair with its 2,000 DP there: the songs killed the mosbear before its turn
+  came. One change to the table: Minstrel's Flair is first in both lists (1,176 against
+  the songs' 336, 402 and 456). The Bard's four probe rows then pass (nr141-probe-a2 and
+  a2b): Protective Ode and Etude by the buff check, Song of Ice from 20 m with Song of
+  Fire and Song of Earth behind it, Syncopated Echo, Pulse, Bright Strike, Soothing
+  Melody and the potion on the ladder, Resonating Melody at half its mana, Captivate
+  before a retreat at two attackers, the rest with the powder. Captivate stays for the
+  way out, the Ode holds, and no heal broke a chain. Full gate guard-p8 (thirteen scopes
+  identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr141-fast)
+  pass. With this every class has its probe rows. Next: the first round, NR-R1, which
+  the loop writes (rule (w)).
