@@ -3956,6 +3956,16 @@ The template:
     - **Replay l10-a8** (the code of the three items, from altgard-rc-l9-templar;
       run/nr/NR-54e/l10-a8/, replay.json: passed). Leg l10 complete and verified:
       level 24, 162 quests, 3 h 50 min of game time, no death.
+  - 2026-10-09, leg l10 captured; leg l11 stopped, and with NR-54g a replay played it
+    to its end.
+    - **Captured** at 77b893022: altgard-rc-l10-templar from altgard-rc-l9-templar with
+      -LaterCapital (run nr54-l10-a3, log run/nr/NR-54/l10-a3.log): the leg in 3 h 50 min
+      with no death; level 24, 162 quests, 68,874,001 ms of game time, dump sha256
+      510d5c982adc856a.
+    - **Leg l11, attempt 1** (capture run nr54-l11-a3 from altgard-rc-l10-templar;
+      nothing captured; evidence run/nr/NR-54/l11-a3/). Ten minutes into the leg, at
+      Heimdall: "q2900-stone did not hand over item 140000001". Heimdall hands the
+      Templar 140000003. NR-54g.
 - [x] **NR-54b - A bind revive while Return cools down replaces the cast.** Depends: NR-53c
   - Work: The stop of leg l9. Java first: nothing new; Return goes to the bind point and
     a bind revive stands there (as read for NA-27). The journey already lets a death at
@@ -4126,6 +4136,30 @@ The template:
     - **Proof.** The bundle of NR-54d, on the tree that holds the three items
       (run/nr/NR-54f/guard-p8/verdict.json): all twelve scopes identical; seven checks,
       the unit suite and Fast (nr54f-fast2) pass.
+- [x] **NR-54g - The destiny quest's stone step expects the class's stone.** Depends: NR-54f
+  - Work: The stop of leg l11. Java first: _2900NoEscapingDestiny.getStoneId (240-262)
+    hands one of four stones by second class, as read for NR-39. NR-39 gave the leg's
+    destiny campaign the class's stone, skill and reward. The contract's step at which
+    Heimdall hands the stone over still named the contract's stone, 140000001, which
+    is the Cleric's and the Chanter's.
+  - Proof: The Templar's leg l11 is played to its end in a replay; the Cleric's leg l11
+    is unchanged (rule (k)); the full gate identical.
+  - 2026-10-09: done.
+    - **The change.** J, where NR-39 makes the leg's destiny the class's own: a step
+      that receives the contract's stone receives the class's stone.
+    - **Proof, the Templar** (replay l11-a4 from altgard-rc-l10-templar; evidence
+      run/nr/NR-54g/l11-a4/, replay.json: passed). The stone is 140000003, the skill it
+      grants 11506. Leg l11 complete and verified: level 24, 164 quests, 12 min 35 s of
+      game time, no death, 8,894 records.
+    - **Proof, the Cleric** (replay cleric-l11-a1 from altgard-l10, the accepted line;
+      run/nr/NR-54g/cleric-l11-a1/, replay.json: passed). No recorded scope plays leg
+      l11, so it was played once. The class's own destiny is not asked for the
+      contract's class, so the changed lines do not run; the leg is complete and
+      verified: level 24, 144 quests, 9 min 53 s, no death.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-54g/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
+      16 skipped) and Fast passes (run nr54g-fast, 11 passed).
 - [ ] **NR-54a - The coin tiers buy the shield.** Depends: NR-50c
   - Work: Split from NR-50c. Java first: the reward shops as read for NR-38
     (TradeService.performBuyFromShop and validateBuyItems), and which trade tab of
@@ -4698,3 +4732,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   l10 from altgard-rc-l9 still put its rebirth up and ended verified. Proof by the bundle
   of NR-54d (twelve scopes identical, Fast nr54f-fast2). Next: NR-54, the captures of
   legs l10 and l11 from the committed code.
+- 2026-10-09 — Loop: NR-54 leg l10 captured, NR-54g done. altgard-rc-l10-templar is
+  captured at 77b893022: level 24, 162 quests, no death. Leg l11 stopped at Heimdall: the
+  contract's step expected the Cleric's stone, and the Templar is handed 140000003. The
+  step now expects the class's stone, as NR-39 has it for the rest of the campaign. Replay
+  l11-a4 played the leg to its end: level 24, 164 quests, no death; a replay of the
+  Cleric's leg l11 is unchanged. Full gate guard-p8 (twelve scopes identical), seven
+  checks, unit suite (4,629 passed, 16 skipped) and Fast (nr54g-fast) pass. Next: NR-54,
+  the capture of leg l11 from the committed code, which closes the item.

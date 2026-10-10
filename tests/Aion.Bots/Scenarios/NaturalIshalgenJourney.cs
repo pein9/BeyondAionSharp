@@ -382,7 +382,13 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				if (own.Destiny is { } destiny)
 				{
 					NaturalAltgardDestiny classDestiny = destiny.ForClass(observedClass, runtime.Data);
-					own = own with { Destiny = classDestiny };
+					// NR-54g: the step at which Heimdall hands the stone over expects the class's stone as well.
+					own = own with
+					{
+						Destiny = classDestiny,
+						Steps = [.. own.Steps.Select(step => step.ReceivesItemId == destiny.StoneItemId
+							? step with { ReceivesItemId = classDestiny.StoneItemId } : step)],
+					};
 					session.TraceDiagnostic("leg-destiny-stone", new Dictionary<string, object?>
 					{
 						["leg"] = leg.Leg, ["class"] = observedClass.ToString(), ["stone"] = classDestiny.StoneItemId,
