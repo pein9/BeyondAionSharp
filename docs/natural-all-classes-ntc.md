@@ -8108,13 +8108,61 @@ through these: each is ticked by the round that gave its capture.
       run guard-p8 (run/nr/NR-R3b/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nrr3b-fast, 11 passed).
-- [ ] **NR-R4 - Round 4: Altgard leg 2, and the Chanter's leg 1.** Depends: NR-R3b
+- [x] **NR-R4 - Round 4: Altgard leg 2, and the Chanter's leg 1.** Depends: NR-R3b
   - Work: The eight worlds resumed from nr-r3 with -Capture nr-r4. The eight that ended
     leg 1 play leg 2 and are captured as altgard-rc-l2-<class>. The Chanter, resumed
     where it stopped, plays leg 1 to its end and is captured as altgard-rc-l1-chanter;
     if it cannot go on from where it was saved, its world is played again from nr-r2-w2,
     which needs a round file that names a world's snapshot, and that is a lettered item.
     One outcome line for each class; a stop gets a lettered item.
+  - Proof: round.json with nine outcome records; for each class that reached its
+    stage's end the completion receipt says verified and its capture is written.
+  - 2026-10-10: played. Five classes ended leg 2 and the Chanter ended leg 1; all six are
+    captured. The Gladiator, the Assassin and the Bard stopped in leg 2 at one place;
+    their stop is NR-R4b, and round 5 takes them on.
+    - **The round** (run r4-a1 at 7798827fd, -From nr-r3, -Capture nr-r4;
+      run/nr/NR-R4/r4-a1; round file run/nr/NR-R4/round-4.json). Eight worlds side by
+      side, 136 seconds of wall time. No bot died.
+
+      | World | Line | Class | Stage | Outcome | Level | Quests | Game minutes | Fights | Deaths | Capture |
+      |---|---|---|---|---|---|---|---|---|---|---|
+      | 1 | mage-sorcerer | Sorcerer | l2 | reached | 16 | 76 | 38.9 | 69, 65 kills | 0 | altgard-rc-l2-sorcerer |
+      | 2 | priest-chanter | Chanter | l1 | reached | 15 | 66 | 9.4 | 0, 0 kills | 0 | altgard-rc-l1-chanter |
+      | 3 | warrior-gladiator | Gladiator | l2 | stopped | 16 | 71 | 21.5 | 37, 37 kills | 0 | none |
+      | 4 | scout-assassin | Assassin | l2 | stopped | 16 | 71 | 47.5 | 54, 32 kills | 0 | none |
+      | 5 | scout-ranger | Ranger | l2 | reached | 17 | 76 | 40.5 | 74, 66 kills | 0 | altgard-rc-l2-ranger |
+      | 6 | mage-spirit-master | Spirit Master | l2 | reached | 17 | 76 | 46.2 | 69, 64 kills | 0 | altgard-rc-l2-spirit-master |
+      | 7 | engineer-gunner | Gunner | l2 | reached | 16 | 76 | 41.7 | 69, 61 kills | 0 | altgard-rc-l2-gunner |
+      | 8 | artist-bard | Bard | l2 | stopped | 16 | 71 | 17.8 | 36, 35 kills | 0 | none |
+      | 8 | engineer-rider | Rider | l2 | reached | 16 | 76 | 40.7 | 69, 69 kills | 0 | altgard-rc-l2-rider |
+
+      Each receipt of a class that reached its stage's end says verified. The captures
+      are records that point into the round snapshots nr-r4-w1 to nr-r4-w8, which hold
+      the three that stopped as they stood.
+    - **The stop, the same for three.** Leg 2, Q2213's Okaru Tree (step
+      af-019-use-object): "Altgard leg l2 made no progress on use-object ... (0 of
+      182203208 looted)." The tree is used for 3 s. A monster struck the bot while the
+      bar ran, by a swing or by a skill, and the server cut the use short, as Java does
+      for a player who is attacked (ItemUseObserver 17-60, set by ActionItemNpcAI 44). The step used the tree
+      again at once, with the monster still on the bot, three times, and the leg's count
+      of repeated decisions ended it. The five that passed were not struck there. Only
+      leg 10 defends before a use (AM-era rule in the same step). Item NR-R4b.
+    - **The Chanter** went on from where round 3 had saved it and cast Smite at the
+      fungi (NR-R3b): leg 1 ended in 9.4 game minutes.
+- [ ] **NR-R4b - An object use that an attack cut short is followed by the defence.** Depends: NR-R4
+  - Work: Java first: what ends a use bar (read under NR-R4: ItemUseObserver). A leg's
+    object use that was cut short is followed by the journey's own defence and rest
+    before the step comes round again, on every leg, as leg 10 does before its use.
+    Generic: the leg's step, no branch on a class. A use that is not cut short plays as
+    before, so the recorded scopes must not change.
+  - Proof: The full gate identical. In round 5 the Gladiator, the Assassin and the Bard
+    take Q2213's item and end leg 2.
+- [ ] **NR-R5 - Round 5: Altgard leg 3 for five, leg 2 for four.** Depends: NR-R4b
+  - Work: The eight worlds resumed from nr-r4 with -Capture nr-r5. The Sorcerer, Ranger,
+    Spirit Master, Gunner and Rider play leg 3; the Chanter plays leg 2; the Gladiator,
+    the Assassin and the Bard go on in leg 2 from where they stopped. Captures as
+    altgard-rc-l3-<class> and altgard-rc-l2-<class>. One outcome line for each class; a
+    stop gets a lettered item.
   - Proof: round.json with nine outcome records; for each class that reached its
     stage's end the completion receipt says verified and its capture is written.
 
@@ -9176,3 +9224,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   quests. Full gate guard-p8 (thirteen scopes identical), seven checks, unit suite (4,629
   passed, 16 skipped) and Fast (nrr3b-fast) pass. Next: NR-R4, round 4: leg 2 for the
   eight and leg 1 for the Chanter.
+- 2026-10-10 — Loop: NR-R4 played. Round 4 (r4-a1, -From nr-r3, 136 s): the Sorcerer,
+  Ranger, Spirit Master, Gunner and Rider ended Altgard leg 2 (level 16 or 17, 76 quests)
+  and the Chanter ended leg 1; all six are captured in nr-r4-w1 to w8. The Gladiator, the
+  Assassin and the Bard stopped at Q2213's Okaru Tree: a monster struck them while the
+  tree's 3 s bar ran, the server cut the use short as Java does, and the step used the
+  tree again at once, three times. Written: NR-R4b, the defence after a use cut short,
+  and NR-R5, round 5. Seven checks pass. Next: NR-R4b.
