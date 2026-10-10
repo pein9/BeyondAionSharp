@@ -151,6 +151,7 @@ public static class NaturalClassProfiles
 		[PlayerClass.CHANTER] = NaturalChanterProfile.Create,
 		[PlayerClass.WARRIOR] = NaturalWarriorProfile.Create,
 		[PlayerClass.TEMPLAR] = NaturalTemplarProfile.Create,
+		[PlayerClass.SORCERER] = NaturalSorcererProfile.Create,
 		[PlayerClass.MAGE] = NaturalMageProfile.Create,
 		[PlayerClass.ARTIST] = NaturalArtistProfile.Create,
 		[PlayerClass.ENGINEER] = NaturalEngineerProfile.Create,

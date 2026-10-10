@@ -106,6 +106,7 @@ $lineSecondClass = [ordered]@{
 	'priest-cleric' = 'CLERIC'
 	'priest-chanter' = 'CHANTER'
 	'warrior-templar' = 'TEMPLAR'
+	'mage-sorcerer' = 'SORCERER'
 	'warrior' = $null
 	'scout' = $null
 	'mage' = $null

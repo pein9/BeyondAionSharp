@@ -45,9 +45,13 @@ public sealed record NaturalClassLine(string Id, PlayerClass Starter, PlayerClas
 	public static NaturalClassLine WarriorTemplar { get; } = new("warrior-templar", PlayerClass.WARRIOR, PlayerClass.TEMPLAR, 41, "Asimtemplar",
 		CeremonyItemId: 100000640);
 
+	/// <summary>NR-60: the Mage who becomes a Sorcerer and takes the spellbook at the ceremony (NR-Q5).</summary>
+	public static NaturalClassLine MageSorcerer { get; } = new("mage-sorcerer", PlayerClass.MAGE, PlayerClass.SORCERER, 41, "Asimsorcerer",
+		CeremonyItemId: 100600532);
+
 	/// <summary>Every line a run can name. Each class's first profile item adds its line here.</summary>
 	public static IReadOnlyList<NaturalClassLine> All { get; } =
-		[PriestCleric, PriestChanter, Warrior, Mage, Artist, Engineer, Scout, WarriorTemplar];
+		[PriestCleric, PriestChanter, Warrior, Mage, Artist, Engineer, Scout, WarriorTemplar, MageSorcerer];
 
 	public static NaturalClassLine Default => All[0];
 

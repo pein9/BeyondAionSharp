@@ -4455,7 +4455,177 @@ The template:
       script tests pass on the tree with the new row (run/nr/NR-58/evidence-run.log).
     - **The full gate from here** is set
       all+mage+warrior+artist+engineer+scout+templar: thirteen scopes.
-- [ ] **NR-60 - Sorcerer: survey and profile data.** Depends: the close of phase C
+- [x] **NR-60 - Sorcerer: survey and profile data.** Depends: the close of phase C
+  - 2026-10-10: done. The Sorcerer has a class line, a gear table and a profile the
+    validator accepts. Nothing has been played. One thing its skills need that the shared
+    forms cannot say yet is item NR-60a below.
+    - **Java.**
+      - **What it learns.** SkillLearnService.learnNewSkills 60-76 and autoLearnSkills
+        85-93, as read for NR-50. Of the Sorcerer's 97 rows to level 26, 76 are
+        auto-learned, 18 are stigma rows from level 20 and three are skill books
+        (learnSkillBook, 95): Sleep in its two looks at level 10 (books 169500932 and
+        169500933) and Homeward Bound at 21 (169500953, 242,500 Kinah). The route buys no
+        book, so its Sorcerer has no Sleep. 61 of the auto-learned are active skills, and
+        with the seven it keeps from the Mage the catalog has 68 to give a role or a
+        reason (run/nr/NR-60/survey.log).
+      - **Chains.** ChainCondition as read for NR-50. Flame Bolt and Flame Harpoon (level
+        13) are both first steps of one chain, and Blaze follows either inside 3 s. Ice
+        Chain opens the chain Frozen Shock follows. Wind Spear (level 15) is a chain on
+        itself: it may be cast three times in a row, each inside 3 s, once in 90 s.
+      - **One cooldown for two skills.** Flame Cage (level 16) has Erosion's cooldown id,
+        273. Both are an instant hit with 15 s of damage after it; the stronger one is
+        cast.
+      - **Class rewards on the route** are the two of NR-32, Q2009 and Q2947, the stone
+        of Q2900 (140000004, NR-39) and Haramel's chest 700831 (NR-40). Nothing new.
+    - **The class line.** `mage-sorcerer`: a Mage who becomes a Sorcerer (SETPRO11), SIM
+      account 41, character Asimsorcerer, the spellbook 100600532 at the ceremony (Q2009
+      offers it and the orb 100500500; NR-Q5). Its dispatch quest is Q2903 (NR-30). It is
+      in NaturalClassLine.All and in the script's list; the script test holds the two
+      together.
+    - **The gear table** (Sc/Classes/NaturalClassGearTable.cs, Sorcerer).
+
+      | Part | The Sorcerer's | From |
+      |---|---|---|
+      | Weapon group | spellbook; ranked by magic boost, then the most damage | NR-Q5 |
+      | Off hand | nothing | CP-Q10 |
+      | Armor | robe, clothes; item level first, the type breaks ties | NR-Q7, CP-Q24 |
+      | Bonus order at a reward | magic boost, magical accuracy, magical critical, then mana and concentration | NR-32 |
+      | Kept | life potions, its help kit, the mana potions, every help scroll and food | as the Cleric from Ascension |
+
+      Its masteries allow the orb too; NR-Q5 gives it the spellbook.
+    - **The help kit from level 10, as a manifest** (NR-Q8; the rows of
+      NaturalHelpItemAllowlist.Kit(caster: true, reagent: true), which is every row).
+
+      | Item | Family | Levels | Topped up to | When it owns fewer than |
+      |---|---|---|---|---|
+      | 162000002 | life potion | 10 to 19 | 30 | 10 |
+      | 162000003 | life potion | 20 to 29 | 30 | 10 |
+      | 162000004 | life potion | 30 to 39 | 30 | 10 |
+      | 162000017 | mana serum | 10 to 19 | 40 | 10 |
+      | 162000018 | mana serum | 20 to 29 | 40 | 10 |
+      | 162000019 | mana serum | 30 to 39 | 40 | 10 |
+      | 164000067 | shield scroll | 10 to 19 | 30 | 8 |
+      | 164000068 | shield scroll | 20 to 29 | 30 | 8 |
+      | 164000069 | shield scroll | 30 to 39 | 30 | 8 |
+      | 164000133 | Awakening scroll | 20 to 29 | 60 | 15 |
+      | 164000134 | Awakening scroll | 30 to 39 | 60 | 15 |
+      | 164000075 | running scroll | 20 to 29 | 20 | 5 |
+      | 164000076 | running scroll | 30 to 39 | 20 | 5 |
+      | 160002273 | DP jelly | 10 to 39 | 8 | 2 |
+      | 169300003 | powder | 10 to 24 | 200 | 50 |
+      | 169300004 | powder | 25 to 39 | 200 | 50 |
+
+      Levels 1 to 9 are the Mage's kit (CP-Q12).
+    - **Its skills by role** (Sc/Classes/NaturalSorcererProfile.cs; 52 skills of 68).
+
+      | Role | Skill, and the levels of its ranks | What it is |
+      |---|---|---|
+      | bolt | Flame Bolt: 1, 11, 16, 21, 26 | Opens the fire chain. 2 s cast, no cooldown. |
+      | harpoon | Flame Harpoon: 13, 18, 23 | Opens the same chain, harder. 2 s cast, 3 s. |
+      | blaze | Blaze: 5, 10, 15, 20, 25 | Follows either inside 3 s. Instant, 30 s. |
+      | ice | Ice Chain: 3, 13, 18, 23 | Opens the ice chain and snares. 2 s cast, 10 s. |
+      | shock | Frozen Shock: 7, 12, 17, 22 | Follows Ice Chain inside 3 s. Instant, 30 s. |
+      | erosion | Erosion: 5; Flame Cage: 16, 21, 26 | An instant hit and 15 s of damage. 3 s, then 5 s. |
+      | blast | Delayed Blast: 19, 24 | Hits 4 s after a 2 s cast. 30 s. |
+      | empyrean | Empyrean Fire: 10, 15, 20, 25 | 2,000 DP: the hardest hit it has. 2 s cast, 60 s. |
+      | spear | Wind Spear: 15, 20, 25 | An instant hit, three in a row, one time in three a snare. 90 s. |
+      | frost | Freezing Wind: 25 | An instant hit at 3 m. 194 MP, 2 s. |
+      | root | Root: 1 | Holds the target for 20 s until it is hit. 60 s. |
+      | skin | Stone Skin: 7, 12, 17, 22 | A shield for 5 min. 130 to 253 MP, 2 min. |
+      | robe | Robe of Flame: 10, 15, 20, 25 | Magic boost and mana regeneration for 30 min. 97 to 128 MP. |
+      | herb, mp-recovery | Herb Treatment and MP Recovery: 10, 15, 20, 25 | The two powder skills of a rest (NR-50a). |
+
+    - **The rule table, natural-sorcerer-v1.** The Mage's, with what the Sorcerer adds.
+      From range: Ice Chain, then Frozen Shock at once; Empyrean Fire when the DP are
+      there; Delayed Blast early, since it lands later; then Flame Harpoon, Flame Bolt
+      and Blaze, an open follow-up always first; Wind Spear last. With the monster on it
+      the instants come first, which a hit cannot push back: Freezing Wind, then Flame
+      Cage or Erosion. Stone Skin goes up before the first hit and is kept up between
+      fights, as is Robe of Flame. Root is cast only on the way out, before a retreat.
+      The ladder: the shield scroll at 50% HP, the life potion at or below 75%. It leaves
+      at two attackers, or at 25% HP with nothing ready. A mana serum is drunk only when
+      the cheapest attack cannot be paid; the spellbook swings only then. Between fights
+      it rests with the powder first, then as the Mage: the life potion below 90% HP, a
+      sit for mana below 40% until 80%. It holds for a patrol and assesses (NR-37) with
+      no heal to ask about, and a pull may bring one. In flight it shoots with the list
+      it has at range (NR-36).
+    - **Left out, with the reason** (16 skills).
+
+      | Skill, levels | Why it is not cast |
+      |---|---|
+      | Return, Bandage Heal, Escape: 1 | As for every class (CP-35, CP-Q11). |
+      | Gain Mana: 10, 15, 20, 25 | It restores mana at no cost, once in 3 min. The ladder has steps for HP only, and a rest knows the powder and a sit. NR-60a. |
+      | Curse of Roots: 10 | It holds its target for 20 s after a 1.5 s cast, and a hit ends it. The table names one control, the instant Root. |
+      | Blind Leap: 13 | It throws the Sorcerer 15 m ahead to a place the server picks; the bot walks checked routes only. |
+      | Winter Binding: 16, 21, 26 | It hits and roots up to eight monsters within 15 m. The bot pulls one at a time, and an area skill wakes every other one in reach. |
+      | Somnolence: 20 | A 4 s sleep for 268 MP that a hit ends; the table names one control. |
+      | Illusion: 20 | It dodges the next two hits inside 10 s for 269 MP; no rule times a defence against a hit that has not come. |
+      | Summon Rift: 22 | A rift for a group to travel by; the journey's travel casts no skill. |
+      | Boon of Peace: 25 | It lowers the enmity of monsters within 5 m; alone, they have no one else to turn to. |
+
+      Not in the catalog at all: Sleep, which is a book (above), and the stone's skill, as
+      for every class (NR-39).
+    - **Proof.** The one-time check, not committed (run/nr/NR-60/check.log): the line
+      parses and holds both classes; its character is a Mage until the client observes a
+      Sorcerer; NaturalClassProfiles builds the Sorcerer's profile, which requires the
+      validator: each of the 68 active skills has one role or one reason, every follow-up
+      has its opener, no rotation line breaks a chain, and the gear groups lie inside the
+      masteries. The check prints the 52 rows, the 16 reasons, the best rank of each role
+      at levels 10, 13, 16, 20, 25 and 26, the gear groups, the kit and the patrol view.
+      Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8, run guard-p8
+      (run/nr/NR-60/guard-p8/verdict.json): verdict pass, all thirteen scopes identical.
+      Seven pre-commit checks pass, the three script tests pass
+      (run/nr/NR-60/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
+      skipped) and Fast passes (run nr60-fast, 11 passed).
+- [ ] **NR-60a - A skill that restores mana.** Depends: NR-60
+  - Work: Gain Mana gives a Sorcerer 314 MP at once and 124 a second for 5 s more, at no
+    cost, once in 3 min; the Spirit Master and other classes have skills of the kind.
+    Java first: the skill's effects and what a fight or a rest refuses of it. The rule
+    table gets a step that casts the role below an MP percentage in a fight, before the
+    mana serum, and the rest casts it before the powder's MP Recovery. Generic: a role
+    and a number in the table, no branch on a class.
+  - Proof: One-time check of the decisions at three MP levels in a fight and in a rest;
+    the full gate identical.
+- [ ] **NR-61 - Sorcerer: probe rows.** Depends: NR-60a
+  - Work: Rows sorcerer-10, sorcerer-16, sorcerer-20 and sorcerer-25 in
+    SimulationNaturalStarterProbeTests: prepared Sorcerers on the two probe accounts, in
+    the gear the route has given by that level, fight the monsters the Cleric's rows
+    fight. Each row's trace shows the table in play: the two chain pairs, Flame Harpoon
+    before Flame Bolt, Flame Cage for Erosion from 16, Wind Spear's three casts, Delayed
+    Blast and Empyrean Fire, Stone Skin and Robe of Flame up, the ladder, the rest with
+    the powder. What a row shows decides the open rules: Wind Spear's worth, and whether
+    Freezing Wind earns its 194 MP. A fix is one small change (rule (i)).
+  - Proof: The four rows end with the monster dead or a recorded retreat, no refused
+    cast repeated and no skill outside the table cast.
+- [ ] **NR-62 - Sorcerer: to Altgard.** Depends: NR-61; ticked by the round that gives it
+  - Work: A fresh Asimsorcerer plays Ishalgen as a Mage, the trial, the Sorcerer choice at
+    Munin, the ceremony with the spellbook and the dispatch Q2903, and is captured at the
+    Altgard bind as altgard-sorcerer-s1.
+  - Proof: The capture verifies.
+- [ ] **NR-63 - Sorcerer: Altgard legs l1 to l5.** Depends: NR-62; ticked by its round
+  - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
+    with -sorcerer (NR-41). In leg 1 it shoots the fungus in flight.
+  - Proof: Each capture verifies.
+- [ ] **NR-64 - Sorcerer: Altgard legs l6 to l11.** Depends: NR-63; ticked by its round
+  - Work: As NR-63. Leg 11 is the destiny quest: its stone is 140000004 (NR-39).
+  - Proof: Each capture verifies.
+- [ ] **NR-65 - Sorcerer: coin gear and Haramel.** Depends: NR-64; ticked by its round
+  - Work: The coin-gear leg (cloth, by its manifest, NR-38a) and Haramel with chest
+    700831 (NR-40), captured as altgard-coingear-sorcerer and
+    altgard-rc-complete-s1-sorcerer.
+  - Proof: Each capture verifies.
+- [ ] **NR-66 - Sorcerer: the Abyss entry.** Depends: NR-65; ticked by its round
+  - Work: Q24020, then Q2945, Q2946, Q2947 and Q2042 with the coin tiers it can wear
+    (NR-38b, NR-Q14, NR-Q16), captured as morheim-abyss-entry-s1-sorcerer.
+  - Proof: The capture verifies.
+- [ ] **NR-67 - Sorcerer: the endpoint.** Depends: NR-66; ticked by its round
+  - Work: Captured and verified as ntc-ready-sorcerer-s1: alive at Morheim Ice Fortress,
+    level 25 or higher, Q2945, Q2946, Q2947 and Q2042 complete.
+  - Proof: The capture verifies.
+- [ ] **NR-68 - Sorcerer: the class scope.** Depends: NR-67
+  - Work: One scope of the Sorcerer's play, chosen where its rules differ most from the
+    Mage's, recorded by a bot alone, twice, and added to the gate's sets.
+  - Proof: The two recordings are identical.
 - [ ] **NR-70 - Chanter: survey and profile data.** Depends: the close of phase C
 - [ ] **NR-80 - Gladiator: survey and profile data.** Depends: the close of phase C
 - [ ] **NR-90 - Assassin: survey and profile data.** Depends: the close of phase C, NR-04
@@ -5069,3 +5239,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   death. The row stands in the baseline file, and the full gate is thirteen scopes from
   here: all+mage+warrior+artist+engineer+scout+templar. The pilot class is complete: every
   item from NR-50 to NR-58 is ticked. Next: NR-60, the Sorcerer's survey.
+- 2026-10-10 — Loop: NR-60 done. The Sorcerer has its class line (mage-sorcerer,
+  Asimsorcerer, the spellbook at the ceremony), its gear table and a profile the validator
+  accepts: 52 of its 68 active skills to level 26 have a role in the table
+  natural-sorcerer-v1 and 16 a reason. Sleep is a skill book and is not learned on the
+  route. Gain Mana needs a step the table does not have yet (NR-60a). The Sorcerer's items
+  NR-61 to NR-68 are written. Full gate guard-p8 (thirteen scopes identical), seven checks,
+  script tests, unit suite (4,629 passed, 16 skipped) and Fast (nr60-fast) pass. Next:
+  NR-60a.
