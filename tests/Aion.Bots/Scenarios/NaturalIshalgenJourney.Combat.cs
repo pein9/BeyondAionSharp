@@ -315,9 +315,10 @@ public sealed partial class NaturalIshalgenJourney
 					session.TraceDiagnostic("combat-cooldown-ended", new Dictionary<string, object?> { ["cooldownIds"] = ended });
 				}
 				observedPacketCount = session.PacketHistory.Count;
+				// NR-121a: only a status that carries HP says how much of it the target has left. A skill that takes mana from
+				// a monster says 0% of its mana, and the monster lives.
 				foreach (DecodedBotServerPacket status in session.PacketHistory.Skip(statusPacketCount)
-					.Where(packet => packet.PacketType == typeof(SmAttackStatus) &&
-						packet.Get<int>("objectId") == target))
+					.Where(packet => BotAttackStatus.CarriesHp(packet) && packet.Get<int>("objectId") == target))
 					observedTargetHpPercent = status.Get<byte>("hpOrMp");
 				statusPacketCount = session.PacketHistory.Count;
 				int nearbyAttackers = incomingAttackers.Count(attacker =>

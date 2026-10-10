@@ -4257,8 +4257,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				void RecordHaramelDeadHints()
 				{
 					if (leg.Haramel == null || session.Api.World.MapId != leg.Haramel.MapId) return;
-					var killed = session.PacketHistory.Skip(haramelKillHistoryStart).Where(packet => packet.PacketType == typeof(SmAttackStatus) &&
-						packet.Get<byte>("typeId") is not (19 or 20 or 21 or 22 or 23) && packet.Get<byte>("hpOrMp") == 0)
+					var killed = session.PacketHistory.Skip(haramelKillHistoryStart).Where(packet => BotAttackStatus.CarriesHp(packet) &&
+						packet.Get<byte>("hpOrMp") == 0)
 						.Select(packet => packet.Get<int>("objectId")).ToHashSet();
 					foreach (int deadObject in killed) navigator.UnavailableObjects.Add(deadObject);
 					foreach (DecodedBotServerPacket spawn in session.PacketHistory.Skip(haramelKillHistoryStart).Where(packet =>
@@ -5421,8 +5421,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						packet.PacketType == typeof(SM_NPC_INFO) && packet.Get<int>("npcId") == templateId))
 						sourceObjects.Add(packet.Get<int>("objectId"));
 					// Java SM_ATTACK_STATUS 19..23 carries MP; its zero percentage is not a kill.
-					return session.PacketHistory.Skip(sourceHistoryStart).Where(packet => packet.PacketType == typeof(SmAttackStatus) &&
-						packet.Get<byte>("typeId") is not (19 or 20 or 21 or 22 or 23) &&
+					return session.PacketHistory.Skip(sourceHistoryStart).Where(packet => BotAttackStatus.CarriesHp(packet) &&
 						packet.Get<byte>("hpOrMp") == 0 && sourceObjects.Contains(packet.Get<int>("objectId")))
 						.Select(packet => (int?)packet.Get<int>("objectId")).LastOrDefault();
 				}
@@ -8605,8 +8604,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					if (objectiveDone?.Invoke() == true) return 0;
 					if (CompletedCollectionSource() is int collectedFrom) return CollectedSource(collectedFrom);
 					if (altgardLegId is "l10" or "l12" && session.PacketHistory.Skip(approachEvidenceStart).Any(packet =>
-						packet.PacketType == typeof(SmAttackStatus) && packet.Get<byte>("typeId") is not (19 or 20 or 21 or 22 or 23) &&
-						packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0))
+						BotAttackStatus.CarriesHp(packet) && packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0))
 						return CollectedSource(target);
 					int revives = combat.ReviveCount;
 					int retreats = combat.CompletedRetreats;
@@ -8634,7 +8632,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					// it vanished when its corpse leaves the visible NPC list. At the level cap
 					// the EXP total cannot rise; its 0% HP packet is still kill evidence.
 					if (killed || session.PacketHistory.Skip(evidenceStart).Any(packet =>
-						packet.PacketType == typeof(SmAttackStatus) &&
+						BotAttackStatus.CarriesHp(packet) &&
 						packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0))
 						return CollectedSource(target);
 					// A pull can stop on SM_DIE before RestSafely performs the bind revive.
@@ -9205,7 +9203,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		for (int index = session.PacketHistory.Count - 1; index >= 0; index--)
 		{
 			DecodedBotServerPacket packet = session.PacketHistory[index];
-			if (packet.PacketType == typeof(SmAttackStatus) && packet.Get<int>("objectId") == objectId)
+			if (BotAttackStatus.CarriesHp(packet) && packet.Get<int>("objectId") == objectId)
 				return packet.Get<byte>("hpOrMp");
 		}
 		return 100; // Unknown target HP is not treated as wounded.

@@ -6998,7 +6998,7 @@ The template:
       run guard-p8 (run/nr/NR-120b/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr120b-fast, 11 passed).
-- [ ] **NR-121 - Gunner: probe rows.** Depends: NR-120b
+- [ ] **NR-121 - Gunner: probe rows.** Depends: NR-120b, NR-121a
   - Work: Rows gunner-10, gunner-16, gunner-22 and gunner-25 in
     SimulationNaturalStarterProbeTests: prepared Gunners on the two probe accounts, in
     the gear the route has given by that level and with two pistols, fight the monsters
@@ -7013,6 +7013,75 @@ The template:
     change (rule (i)).
   - Proof: The four rows end with the monster dead or a recorded retreat, no refused
     cast repeated and no skill outside the table cast.
+  - 2026-10-10: tried twice (rule (i)). First run (nr121-probe-a1 and a1b, kept under
+    run/nr/NR-121/rows-a1): the four rows passed, and in the thirteen fights of levels 22
+    and 25 Crosstrigger was never cast: Gunshot shares its cooldown and stands before
+    it. The rows could not say which chain should lead, so the level-22 row was given a
+    fight from 1% MP. Second run (nr121-probe-a2 and a2b, rows-a2): rows 10, 16 and 25
+    passed; row 22 stopped in that fight at what NR-121a mends. The rows are written and
+    not committed (scratchpad nr121_rows.py and nr121_rows2.py), and the item is tried
+    again after NR-121a.
+- [x] **NR-121a - A word of a monster's mana is not a word of its HP.** Depends: NR-120b
+  - Work: Java first: which percentage an attack status carries. The fight, and every
+    other reader of a status, takes a creature's HP only from a status that carries HP.
+    Generic: one reading for all of them, no branch on a class.
+  - Proof: One probe row on a probe account in which a Gunner casts the Crosstrigger
+    chain whole at a monster and the fight ends when the monster dies; the full gate
+    identical.
+  - 2026-10-10: done.
+    - **Found in NR-121's second run.** The level-22 Gunner, with 16 MP, cast
+      Crosstrigger at a starved mosbear at 1.0 s. The shot took the mosbear to 73% HP,
+      and the fight ended there, at 2.0 s, as a kill (trace a2b, gunner-22, step s03).
+      The mosbear lived.
+    - **Java.**
+      - Every attack status carries one percentage. It is the creature's MP for the
+        types HEAL_MP (19), DAMAGE_MP and ABSORBED_MP (20), MP (21), NATURAL_MP (22)
+        and USED_MP (23), and its HP for every other type
+        (SM_ATTACK_STATUS.writeImpl 121-157).
+      - Crosstrigger's second effect takes 80 MP from its target and Canted Shot's
+        takes 90 (skill_templates.xml, mpattackinstant). The effect lowers the
+        target's mana with a DAMAGE_MP status (MpAttackInstantEffect.applyEffect
+        36-39). A monster has no mana, and the status says 0%.
+      - Both skills name a penalty skill, which the server casts on the caster with
+        the cast, with a cast result of its own (Skill.startPenaltySkill 480-491;
+        penalty_skill_id 8938 and 8953). They give the Gunner 260 MP and 650 MP
+        (mphealinstant). The survey's table under NR-120 does not say so.
+      - The port has the same lines (SmAttackStatus.cs 59-83, Skill.cs 506).
+    - **The defect, the bot's.** The fight took the percentage of every status of its
+      target as the target's HP (Sc/NaturalIshalgenJourney.Combat.cs 319-321), and 0%
+      is a kill. Three readers in the journey already left the MP types out, each with
+      its own list. The fight, the kill evidence after a pull, the choice between two
+      engaged targets and the air fight's death check did not.
+    - **The change, generic.**
+      - Sc/BotAttackStatus.cs, new: CarriesHp says whether a packet is an attack status
+        whose percentage is HP.
+      - Sc/NaturalIshalgenJourney.Combat.cs, Sc/NaturalIshalgenJourney.cs (five
+        readers) and Sc/NaturalAirCombat.cs take a creature's HP only from such a
+        status. The spirit's reader (Bots/World/BotSummonWorldState.cs) already did and
+        is left as it is.
+    - **Proof, the probe row** gunner-cross (SimT/SimulationNaturalStarterProbeTests.cs,
+      probe account 100; `bash run/nr/NR-121a/probe.sh <attempt>`). Prepared by the
+      director: a level-22 Gunner with the pistols of Q24016 and Q24013, by the starved
+      mosbears, its MP cut to 1% (16 MP) as the fight begins.
+      - First attempt (nr121a-probe-a1, kept under row-a1): the fight was right and the
+        row's own check was not. It expected 650 MP from the second Canted Shot; the
+        server says what was gained, and with the mana full that was 608.
+      - Second attempt (nr121a-probe-a2): passed. The Gunner drinks a mana potion (16
+        to 75 MP) and casts Crosstrigger at 1.0 s (483 damage) and Canted Shot at 2.0
+        and 3.2 s (357 and 447). The server says the mosbear's mana three times, 0%
+        each, and the fight decides six times after the first of them. Then Green
+        Grenade, Hot Shot, Reload and Gunshot, and the mosbear dies at 7.8 s by a
+        status that carries HP. The penalty skills gave 260 + 650 + 608 MP: from 75 MP
+        to all 1,682 in 2.2 s. One fight, one kill.
+    - **For NR-121.** The Crosstrigger chain is three shots in 3.0 s for 1,287 damage;
+      it costs no mana and fills the Gunner's. The table casts it only when Gunshot
+      cannot be paid for beside the mana kept back. Which chain leads is NR-121's to
+      decide, with these numbers.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-121a/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical, so no recorded fight read a word of mana as HP. Seven
+      pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed, 16 skipped)
+      and Fast passes (run nr121a-fast, 11 passed).
 - [ ] **NR-122 - Gunner: to Altgard.** Depends: NR-121; ticked by the round that gives it
   - Work: A fresh Asimgunner plays Ishalgen as an Engineer, the trial, the ceremony with
     the pistol and the dispatch Q29070, and is captured at the Altgard bind as
@@ -8364,3 +8433,15 @@ report what was done, what is parked or blocked, and what the operator must deci
   attackers. Full gate guard-p8 (thirteen scopes identical), seven checks, unit suite
   (4,629 passed, 16 skipped) and Fast (nr111-fast) pass. Next: NR-121, the Gunner's probe
   rows.
+- 2026-10-10 — Loop: NR-121 tried twice, and NR-121a done. NR-121's four rows passed
+  once (nr121-probe-a1 and a1b), but Crosstrigger was never cast in them, so the level-22
+  row was given a fight from 1% MP; there the fight ended as a kill with the mosbear at
+  73% HP (a2b). NR-121a: an attack status carries a creature's MP for the types 19 to 23
+  and its HP for the others (Java SM_ATTACK_STATUS.writeImpl 121-157); Crosstrigger takes
+  mana from a monster that has none, and the fight read that 0% as its HP. One reading,
+  BotAttackStatus.CarriesHp, for the fight and the six other readers. Probe row
+  gunner-cross passed on its second attempt (nr121a-probe-a2; the first failed on the
+  row's own check): the chain whole in 3.0 s for 1,287 damage, 260 + 650 + 608 MP from
+  the two penalty skills, the kill at 7.8 s. Full gate guard-p8 (thirteen scopes
+  identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr121a-fast)
+  pass. Next: NR-121 again, with a fresh two attempts.

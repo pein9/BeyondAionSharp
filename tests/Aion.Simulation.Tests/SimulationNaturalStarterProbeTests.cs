@@ -80,6 +80,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("spirit-master-place", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimplace"),
 		new("gunner-chain", NaturalClassLine.EngineerGunner, ProbeAccountB, "Asimchain"),
 		new("gunner-reload", NaturalClassLine.EngineerGunner, ProbeAccountA, "Asimreload"),
+		new("gunner-cross", NaturalClassLine.EngineerGunner, ProbeAccountB, "Asimcross"),
 		new("rider-mech", NaturalClassLine.EngineerRider, ProbeAccountB, "Asimmech"),
 		new("sorcerer-blast", NaturalClassLine.MageSorcerer, ProbeAccountA, "Asimblast"),
 	];
@@ -142,6 +143,10 @@ public sealed partial class SimulationFastScenarioTests
 		/// its rest may cast.</summary>
 		public int[] CatalogOf(PlayerClass playerClass) =>
 			NaturalClassProfiles.For(playerClass.GetClassId(), line, runtime.Data).Skills.Select(skill => (int)skill.Id).ToArray();
+
+		/// <summary>NR-121a: the skill the server casts on the caster with a skill (skill_template/penalty_skill_id); 0 for
+		/// none.</summary>
+		public int PenaltyOf(int skill) => runtime.Data.SkillDataDh.GetSkillTemplate(skill)?.GetPenaltySkillId() ?? 0;
 
 		/// <summary>NR-111: the best skill of a role the character has learned, by the class's catalog.</summary>
 		public int BestOf(PlayerClass playerClass, string role) =>
@@ -317,6 +322,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "spirit-master-place": await SpiritMasterPlaceRowAsync(probe, id, token); break;
 			case "gunner-chain": await GunnerChainRowAsync(probe, id, token); break;
 			case "gunner-reload": await GunnerReloadRowAsync(probe, id, token); break;
+			case "gunner-cross": await GunnerCrossRowAsync(probe, id, token); break;
 			case "rider-mech": await RiderMechRowAsync(probe, id, token); break;
 			case "sorcerer-blast": await SorcererBlastRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
@@ -4116,6 +4122,74 @@ public sealed partial class SimulationFastScenarioTests
 			$"Root decided with {swarm.Decided[rooted].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32()} attackers: {reason} " +
 			$"Rest: casts {string.Join(" ", restCasts)}, Odella Powder {probe.Owned(OdellaPowder)} of 20 left. " +
 			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, the spirit {(probe.Server.GetSummon() == null ? "gone" : "out")}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>
+	/// NR-121a, row gunner-cross. Prepared by the director: the Engineer is made a level-22 Gunner with the pistol of
+	/// Q24016 beside that of Q24013 and is placed in Altgard by the starved mosbears (210564, level 13). Before its fight
+	/// the director cuts MP to 1%, less than Gunshot costs with the mana kept back: the table opens with Crosstrigger,
+	/// which costs none. Crosstrigger and Canted Shot take mana from their target as well (Java
+	/// MpAttackInstantEffect.applyEffect 36-39), and a monster has none: the server says 0% of the mosbear's mana with
+	/// each (SM_ATTACK_STATUS.writeImpl 137-141). The fight reads that as no word of its HP, casts the chain whole and
+	/// ends when the mosbear dies. The server casts each skill's penalty skill on the Gunner (Skill.startPenaltySkill
+	/// 480-491): 260 MP with Crosstrigger and 650 MP with each Canted Shot, as far as its mana has room.
+	/// </summary>
+	private async Task GunnerCrossRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, pistol = 101801218, second = 101801216;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-two-gunner-in-altgard");
+		await probe.BecomeAsync(PlayerClass.GUNNER, 22);
+		int cross = probe.BestOf(PlayerClass.GUNNER, "cross"), canted = probe.BestOf(PlayerClass.GUNNER, "canted"), gunshot = probe.BestOf(PlayerClass.GUNNER, "gunshot");
+		int[] penalties = [probe.PenaltyOf(cross), probe.PenaltyOf(canted)];
+		Assert.All(penalties, penalty => Assert.NotEqual(0, penalty));
+		int[] table = [.. probe.CatalogOf(PlayerClass.GUNNER), .. penalties];
+		await GiveAsync(probe, token, (pistol, 1), (second, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		(int main, int off) = (Held(probe, 1), Held(probe, 2));
+		Assert.True(main == pistol && off == second, $"The hands hold {main} and {off}.");
+
+		Npc target = NearestLiving(probe, mosbear);
+		int mp = 0;
+		ClericFight fight = await TableFightAsync(probe, GunnerTable, "s03", "fight-a-starved-mosbear-with-no-mana-for-gunshot", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 1% of its mana as the fight begins.
+			await probe.CutMpAsync(1);
+			mp = probe.World.CurrentMp;
+			return target.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(fight);
+		AssertOnlyCasts(fight, table);
+		Assert.True(fight.Result is { Killed: true, Deaths: 0 }, $"The fight was no kill: {Outcome(fight)}.");
+		// The Gunner's own casts, without what the server cast on it for them.
+		ClericFight own = fight with { Casts = fight.Casts.Where(cast => !penalties.Contains(cast.SkillId)).ToList() };
+		Assert.True(own.Run([cross], [canted], [canted]) >= 0, $"The Crosstrigger chain was not cast whole: {own.Order}; decisions {fight.Counts}.");
+		Assert.DoesNotContain(own.Casts.TakeWhile(cast => cast.SkillId != cross), cast => cast.SkillId == gunshot);
+		// What the server said of the mosbear: its mana with each shot of the chain, 0% of none, and its HP down to 0%.
+		StarterTraceRecord[] ofTarget = fight.Records.Where(record => record is { Direction: "<", Packet: "SmAttackStatus" } &&
+			record.Fields.GetProperty("objectId").GetInt32() == target.GetObjectId()).ToArray();
+		StarterTraceRecord[] mana = ofTarget.Where(record => record.Fields.GetProperty("typeId").GetInt32() == 20).ToArray();
+		Assert.True(mana.Length >= 3, $"The server said the mosbear's mana {mana.Length} time(s).");
+		Assert.All(mana, record => Assert.Equal(0, record.Fields.GetProperty("hpOrMp").GetInt32()));
+		StarterTraceRecord death = ofTarget.Last(record => record.Fields.GetProperty("typeId").GetInt32() is not (19 or 20 or 21 or 22 or 23));
+		Assert.Equal(0, death.Fields.GetProperty("hpOrMp").GetInt32());
+		Assert.True(mana[0].VirtualTime < death.VirtualTime, "The first word of the mosbear's mana was not before its death.");
+		// The fight went on after the first of them: with the mosbear's HP as the status before had said it.
+		StarterTraceRecord[] after = fight.Decided.Where(record => record.VirtualTime > mana[0].VirtualTime).ToArray();
+		Assert.True(after.Length >= 2, $"The fight decided {after.Length} time(s) after the first word of the mosbear's mana.");
+		Assert.All(after, record => Assert.True(record.Fields.GetProperty("observedState").GetProperty("TargetHpPercent") is { ValueKind: JsonValueKind.Number } hp && hp.GetInt32() > 0,
+			$"A decision at {record.VirtualTime.TotalSeconds:F1} s held the mosbear's HP for nothing."));
+		// The mana the penalty skills gave: HEAL_MP of the Gunner, as the server said it.
+		int[] given = fight.Records.Where(record => record is { Direction: "<", Packet: "SmAttackStatus" } &&
+			record.Fields.GetProperty("objectId").GetInt32() == probe.Server.GetObjectId() && record.Fields.GetProperty("typeId").GetInt32() == 19)
+			.Select(record => record.Fields.GetProperty("writtenValue").GetInt32()).ToArray();
+		// The third is what was missing of its mana: the server says what a creature gained, and it was full with less.
+		Assert.True(given is [260, 650, > 0 and <= 650, ..], $"The penalty skills gave {string.Join(" + ", given)} MP.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Gunner, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, pistols {main} and {off}. With {mp} MP: {Outcome(fight)}. " +
+			$"The server said the mosbear's mana {mana.Length} time(s), 0% each, the first at {mana[0].VirtualTime.TotalSeconds:F1} s; the fight decided {after.Length} time(s) after it " +
+			$"and ended at the mosbear's death at {death.VirtualTime.TotalSeconds:F1} s. The penalty skills {string.Join(" and ", penalties)} gave {string.Join(" + ", given)} MP. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
 	}
 
 	/// <summary>The living monster of a template nearest to another monster.</summary>

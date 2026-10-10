@@ -136,7 +136,7 @@ public static class NaturalAirCombat
 		int watched = session.PacketHistory.Count;
 		await session.SendPacketAsync(session.Api.Target(target), token);
 		bool DeathSeen() => session.PacketHistory.Skip(watched).Any(packet =>
-			packet.PacketType == typeof(SmAttackStatus) && packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0);
+			BotAttackStatus.CarriesHp(packet) && packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0);
 		bool CounterMoved() => questId > 0 && (QuestVar(session, questId) != varBefore || QuestStatus(session, questId) != 3);
 		if (attack is { SkillId: null })
 		{
