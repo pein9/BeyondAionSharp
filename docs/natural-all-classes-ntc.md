@@ -5018,7 +5018,7 @@ The template:
       (run/nr/NR-70a/bundle-a1/) failed one check: the probe row had an assertion the
       xunit analyzer warns of (XUNIT2029), one warning over the baseline. The assertion
       was reworded, the row played again, and the bundle run again from the start.
-- [ ] **NR-71 - Chanter: probe rows.** Depends: NR-70a
+- [x] **NR-71 - Chanter: probe rows.** Depends: NR-70a
   - Work: Rows chanter-10, chanter-16, chanter-20 and chanter-25 in
     SimulationNaturalStarterProbeTests: prepared Chanters on the two probe accounts, in
     the gear the route has given by that level, fight the monsters the Cleric's rows
@@ -5031,6 +5031,62 @@ The template:
     monster is on the Chanter. A fix is one small change (rule (i)).
   - Proof: The four rows end with the monster dead or a recorded retreat, no refused
     cast repeated and no skill outside the table cast.
+  - 2026-10-10: done. The four rows pass, and the table stands as NR-70a left it.
+    - **Java.** Nothing new is relied on.
+    - **The rows** (SimT/SimulationNaturalStarterProbeTests.cs: chanter-10, chanter-16,
+      chanter-20, chanter-25, on the probe accounts 98 and 100, at the places and
+      monsters of the Cleric's rows). The director makes the Priest a Chanter of the
+      level with the skills of every level up to it, puts the staff and the chain
+      pieces of the route into its bag, and places it. From there the journey's
+      equipment check, buff check, fight and rest act. A row's allowed casts are the
+      profile's own catalog. `bash run/nr/NR-71/probe.sh <attempt>`.
+    - **First attempt** (runs nr71-probe-a1 and a1b, kept under rows-a1): rows 10 and
+      20 passed. Rows 16 and 25 failed on checks of their own. The level-16 row asked for
+      a second fight at the tusked mosbears and named the monster the Chanter had just
+      left, which was walking home, the mistake NR-51's row once made; it has its one
+      fight now, and the chain of three is shown at level 20. The level-25 row expected
+      Herb Treatment of the rest; a class with a heal that is also short of mana casts
+      MP Recovery and then Healing Light, and the row now asks for a fourth-rank powder
+      skill and the HP back.
+    - **Second attempt** (nr71-probe-a2 and a2b, kept under rows-a2): the four rows
+      passed with one change tried, Smite out of the list for a monster on the Chanter.
+      The run's own numbers spoke against the change (below), and it was taken back.
+    - **Third run** (nr71-probe-a3 and a3b; the four traces are under run/nr/NR-71/),
+      on the table as surveyed: the four rows pass.
+
+      | Row | Prepared by the director | What the journey did | Outcome |
+      |---|---|---|---|
+      | chanter-10 | Level 10, the ceremony's staff; then 20 powder and half HP | The check took the staff; the buff check cast Protectorate's Prayer and turned Celerity Mantra on. Three ice crasaurs: Infernal Blaze from 20.9 m, Thunderbolt Strike 745 ms after it, Smite while the crasaur came; with it on the Chanter Hallowed Strike, Booming Strike 701 ms after it, Meteor Strike, Smite. The rest cast Herb Treatment. | Three kills in 11.5, 14.3 and 14.7 s; in the first two only the skills from range were cast. |
+      | chanter-16 | Level 16; the staff of Q24013 and the chain shoes and hauberk of Q24011 and Q24012 | The check wore all three; the buff check cast the prayer and Promise of Earth and turned two mantras on. One tusked mosbear: Infernal Blaze, Thunderbolt Strike, the life potion, Word of Revival once while it was hit, Smite; then three were on it. | A retreat at three attackers, as the Cleric leaves there. |
+      | chanter-20 | Level 20; the staff of Q24016, 20 powder, two shield scrolls, three life potions; then 2,000 DP and 45% HP; then a tenth of its mana | The buff check cast the prayer, the promise and Rage Spell: MP 2,373 to 1,912. Three fights: the pair from range, Smite, Word of Revival, Hallowed Strike with Booming Strike 701 ms and Crashing Strike 769 ms after; Meteor Strike with Incandescent Blow 701 ms after. Hurt with DP: the scroll and the potion at 44% HP, Healing Light at 49%, Winter Circle with the mosbear on it. The rest cast MP Recovery twice. | Four kills in 20.1, 16.3, 13.0 and 19.0 s; DP 2,000 to 7; MP 237 to 2,069 by the rest. |
+      | chanter-25 | Level 25; the same staff, 20 Odella Powder; then 55% HP; then three starved mosbears set on it; then half HP | The buff check cast the three buffs and turned the three mantras on. Three fights: the pair from range, Smite, the chain of three. From 55% HP: Protective Ward at 54%, the life potion, then the two chains. With three on it: Infernal Blaze, Thunderbolt Strike, Binding Word, and it left. The rest cast MP Recovery IV and Healing Light. | Four kills in 7.8, 9.7, 14.2 and 14.3 s and a retreat; three Odella Powders. |
+
+      In no fight was a skill decided more than twice running, and no skill outside the
+      catalog was cast. Every decision carries the table natural-chanter-v1.
+    - **What the rows decide.**
+      - **Rage Spell can be paid at level 20.** The Chanter has 2,373 MP there, and the
+        buff check with its three buffs left 1,912.
+      - **Smite keeps its place with the monster on the Chanter.** At level 10 a Smite
+        does 244 on the average of seven casts, and a swing of the staff 84 to 107 in
+        the same 2.1 s. The same fight, the third of the level-10 row, ended 4.2 s
+        sooner with Smite (14.7 s in the third run) than with the staff in its place
+        (18.9 s in the second attempt). In the first attempt a crasaur at its last HP
+        lived 6 s more because its stun cancelled a Smite; a stun stops a swing as well.
+        At levels 20 and 25 Smite does 293, and the chain of three killed before a gap
+        came.
+    - **Found, and logged (rule (f)).**
+      - **The Chanter's staff does not swing.** Smite is ready every 2 s and stands in
+        the list for a monster on it, so the weapon, which swings only when no skill is
+        ready, swung at no time in the third run. A player's weapon swings between
+        skills by itself; the bot does one thing a turn. By these rows Smite is the
+        better of the two; the rounds will say whether that holds against monsters of
+        its level.
+      - **The rows' monsters are far below a Chanter of level 20 or 25.** Its HP never
+        fell below 94% in the six fights it began unhurt.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-71/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr71-fast, 11 passed).
 - [ ] **NR-72 - Chanter: to Altgard.** Depends: NR-71; ticked by the round that gives it
   - Work: A fresh character of the line priest-chanter plays Ishalgen as a Priest, the
     trial, the Chanter choice at Munin, the ceremony with the staff and the dispatch
@@ -8053,3 +8109,13 @@ report what was done, what is parked or blocked, and what the operator must deci
   table has no form for. Full gate guard-p8 (thirteen scopes identical), seven checks, unit
   suite (4,629 passed, 16 skipped) and Fast (nr61-fast) pass. Next: NR-71, the Chanter's
   probe rows.
+- 2026-10-10 — Loop: NR-71 done. The Chanter's four probe rows pass (nr71-probe-a3 and
+  a3b) on the table of NR-70a: the pair from range, the chain of three, Meteor Strike with
+  Incandescent Blow, Winter Circle for its DP, Word of Revival while it is hit, Protective
+  Ward at 54% HP, the scroll, the potion and Healing Light, Binding Word and a retreat at
+  three attackers, the buffs and the mantras, the rest with the powder. The first attempt
+  failed on two checks of the rows' own. The second tried Smite out of the list for a
+  monster on the Chanter; its numbers spoke against it (244 a cast against 84 to 107 a
+  swing), and the change was taken back. Rage Spell's 379 MP are paid at level 20. Full
+  gate guard-p8 (thirteen scopes identical), seven checks, unit suite (4,629 passed, 16
+  skipped) and Fast (nr71-fast) pass. Next: NR-81, the Gladiator's probe rows.

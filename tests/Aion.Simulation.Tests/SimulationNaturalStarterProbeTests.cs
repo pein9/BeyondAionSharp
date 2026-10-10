@@ -49,6 +49,10 @@ public sealed partial class SimulationFastScenarioTests
 		new("sorcerer-16", NaturalClassLine.MageSorcerer, ProbeAccountB, "Asimsixsorc"),
 		new("sorcerer-20", NaturalClassLine.MageSorcerer, ProbeAccountA, "Asimtwesorc"),
 		new("sorcerer-25", NaturalClassLine.MageSorcerer, ProbeAccountB, "Asimtfsorc"),
+		new("chanter-10", NaturalClassLine.PriestChanter, ProbeAccountA, "Asimtenchan"),
+		new("chanter-16", NaturalClassLine.PriestChanter, ProbeAccountB, "Asimsixchan"),
+		new("chanter-20", NaturalClassLine.PriestChanter, ProbeAccountA, "Asimtwechan"),
+		new("chanter-25", NaturalClassLine.PriestChanter, ProbeAccountB, "Asimtfchan"),
 		new("chanter-mantras", NaturalClassLine.PriestChanter, ProbeAccountA, "Asimmantra"),
 		new("gladiator-aerial", NaturalClassLine.WarriorGladiator, ProbeAccountB, "Asimaerial"),
 		new("assassin-runes", NaturalClassLine.ScoutAssassin, ProbeAccountA, "Asimrunes"),
@@ -117,6 +121,11 @@ public sealed partial class SimulationFastScenarioTests
 		}
 
 		public long Owned(int itemId) => session.Api.World.Inventory.Values.Where(item => item.ItemId == itemId).Sum(item => item.Count);
+
+		/// <summary>NR-71: the skills of a class's catalog on the row's line, which is every skill its table, its buff check and
+		/// its rest may cast.</summary>
+		public int[] CatalogOf(PlayerClass playerClass) =>
+			NaturalClassProfiles.For(playerClass.GetClassId(), line, runtime.Data).Skills.Select(skill => (int)skill.Id).ToArray();
 
 		/// <summary>NR-16: the director makes the character its second class at a level, with the skills of every level up
 		/// to it. The client sees the class with its next SM_PLAYER_INFO, which the move to the row's map sends.</summary>
@@ -255,6 +264,10 @@ public sealed partial class SimulationFastScenarioTests
 			case "sorcerer-16": await SorcererLevelSixteenRowAsync(probe, id, token); break;
 			case "sorcerer-20": await SorcererLevelTwentyRowAsync(probe, id, token); break;
 			case "sorcerer-25": await SorcererLevelTwentyFiveRowAsync(probe, id, token); break;
+			case "chanter-10": await ChanterLevelTenRowAsync(probe, id, token); break;
+			case "chanter-16": await ChanterLevelSixteenRowAsync(probe, id, token); break;
+			case "chanter-20": await ChanterLevelTwentyRowAsync(probe, id, token); break;
+			case "chanter-25": await ChanterLevelTwentyFiveRowAsync(probe, id, token); break;
 			case "chanter-mantras": await ChanterMantrasRowAsync(probe, id, token); break;
 			case "gladiator-aerial": await GladiatorAerialRowAsync(probe, id, token); break;
 			case "assassin-runes": await AssassinRunesRowAsync(probe, id, token); break;
@@ -2379,6 +2392,9 @@ public sealed partial class SimulationFastScenarioTests
 	private static int HpPercentAt(StarterTraceRecord record) => record.Fields.GetProperty("observedState").GetProperty("Hp").GetInt32() * 100 /
 		record.Fields.GetProperty("observedState").GetProperty("MaxHp").GetInt32();
 
+	/// <summary>NR-71: the swings of the weapon the fight decided.</summary>
+	private static int Swings(ClericFight fight) => fight.Decisions.GetValueOrDefault("attack");
+
 	private static int MpPercentAt(StarterTraceRecord record) => record.Fields.GetProperty("observedState").GetProperty("Mp").GetInt32() * 100 /
 		record.Fields.GetProperty("observedState").GetProperty("MaxMp").GetInt32();
 
@@ -2641,6 +2657,310 @@ public sealed partial class SimulationFastScenarioTests
 			$". With one mosbear set on it: {Outcome(close)}; Freezing Wind cast {frosts} time(s), the mosbear at {frostLeft} HP after the first, MP {mpClose} to {mpAfterClose}. " +
 			$"Then against {pack.Length} the director spawned 4 m away and set on it: {Outcome(swarm)}; Root decided with " +
 			$"{swarm.Decided[rooted].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32()} attackers: {reason} " +
+			$"Rest: casts {string.Join(" ", restCasts)}, Odella Powder {probe.Owned(OdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, dead {probe.Server.IsDead()}.");
+	}
+
+	private const string ChanterTable = "natural-chanter-v1:";
+
+	/// <summary>
+	/// NR-71, row chanter-10. Prepared by the director: the Priest is made a level-10 Chanter with the skills of every
+	/// level up to it, is given the ceremony's staff (101500498) and is placed in Altgard by the ice crasaurs (210415,
+	/// level 11), where the Cleric's row fights. The journey's equipment check takes the staff, and its buff check casts
+	/// Protectorate's Prayer and turns Celerity Mantra on. Then it fights one crasaur after another by its table until
+	/// both pairs are seen: Thunderbolt Strike after Infernal Blaze, from range, and Booming Strike after Hallowed Strike,
+	/// with the crasaur on it. Last the director gives powder and halves the HP, and the journey's rest casts Herb
+	/// Treatment.
+	/// </summary>
+	private async Task ChanterLevelTenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int crasaur = 210415, staff = 101500498, infernal = 1814, thunderbolt = 1715, hallowed = 1615, booming = 1562, meteor = 1778,
+			blessing = 1685, celerity = 1809, herb = 246, mostFights = 6;
+		probe.Session.BeginStep("s01", "director-makes-a-level-ten-chanter-in-altgard");
+		await probe.BecomeAsync(PlayerClass.CHANTER, 10);
+		int[] table = probe.CatalogOf(PlayerClass.CHANTER);
+		Assert.All(new[] { infernal, thunderbolt, hallowed, booming, meteor, blessing, celerity, herb, 249, 1638 }, skill =>
+			Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 10."));
+		await GiveAsync(probe, token, (staff, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1473.2f, 1765.2f, 247.5f);
+		probe.Session.BeginStep("s02", "equipment-check-takes-the-staff");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(staff, MainHand(probe));
+
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-casts-the-prayer-and-turns-the-mantra-on", token);
+		Assert.Contains(blessing, buffCasts);
+		Assert.Contains(celerity, buffCasts);
+		Assert.Contains(celerity, probe.World.ActiveToggles);
+
+		var lines = new List<string>();
+		TimeSpan? boltGap = null, boomGap = null;
+		double firedFrom = 0;
+		int fights = 0, kills = 0, deaths = 0, swings = 0;
+		while ((boltGap == null || boomGap == null) && fights < mostFights)
+		{
+			fights++;
+			Npc next = NearestLiving(probe, crasaur);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, ChanterTable, $"s04-{fights:D2}", $"fight-ice-crasaur-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"Fight {fights} ended no way: {fight.Result}.");
+			kills += fight.Result.Killed ? 1 : 0;
+			deaths += fight.Result.Deaths;
+			if (boltGap == null && fight.Run([infernal], [thunderbolt]) is >= 0 and int first)
+			{
+				boltGap = fight.Casts[first + 1].At - fight.Casts[first].At;
+				firedFrom = fight.Decided.First(record => Decided(record, "cast-target", infernal)).Fields.GetProperty("targetDistance").GetDouble();
+			}
+			if (fight.Run([hallowed], [booming]) is >= 0 and int second) boomGap ??= fight.Casts[second + 1].At - fight.Casts[second].At;
+			swings += Swings(fight);
+			lines.Add($"fight {fights}: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+		Assert.True(boltGap is { } afterBlaze && afterBlaze <= TimeSpan.FromSeconds(3), $"Thunderbolt Strike did not follow Infernal Blaze inside 3 s in {fights} fights: {string.Join("; ", lines)}.");
+		Assert.True(boomGap is { } afterStrike && afterStrike <= TimeSpan.FromSeconds(3), $"Booming Strike did not follow Hallowed Strike inside 3 s in {fights} fights: {string.Join("; ", lines)}.");
+		Assert.True(firedFrom > 6, $"Infernal Blaze was decided at {firedFrom:F1} m.");
+
+		// Prepared by the director: powder, and half HP. The rest is the journey's.
+		await GiveAsync(probe, token, (LesserOdellaPowder, 20));
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		int hpBefore = probe.World.CurrentHp;
+		(_, int[] restCasts) = await RestStepAsync(probe, "s05", "director-gives-powder-and-halves-hp-then-rest", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Chanter, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, staff {staff}. Buff check: casts {string.Join(" ", buffCasts)}; " +
+			$"toggles on {string.Join(" ", probe.World.ActiveToggles.Order())}. {fights} fight(s), {kills} kill(s), {deaths} death(s): {string.Join("; ", lines)}. " +
+			$"Infernal Blaze from {firedFrom:F1} m, Thunderbolt Strike {boltGap.Value.TotalMilliseconds:F0} ms after it; Booming Strike {boomGap.Value.TotalMilliseconds:F0} ms after Hallowed Strike; " +
+			$"the staff swung {swings} time(s). " +
+			$"Rest from {hpBefore} HP: casts {string.Join(" ", restCasts)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-71, row chanter-16. Prepared by the director: a level-16 Chanter with the staff of Q24013 and the chain shoes
+	/// and hauberk of Q24011 and Q24012 in the bag, by the tusked mosbears (210437, level 14) of the Cleric's row. The
+	/// journey's equipment check wears them, and its buff check casts Protectorate's Prayer and Promise of Earth and turns
+	/// two mantras on. Then it fights one tusked mosbear by its table: Word of Revival is cast, and only while the
+	/// Chanter is being hit. A kill, a retreat and a death are recorded outcomes: the spot brings more monsters, and with
+	/// three on it the Chanter leaves, as the Cleric does there.
+	/// </summary>
+	private async Task ChanterLevelSixteenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210437, staff = 101501355, shoes = 114501726, hauberk = 110551139, hallowed = 1616, booming = 1563, crashing = 1703,
+			revival = 1735, promise = 1627, blessing = 1686, celerity = 1809, shieldMantra = 1657;
+		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-chanter-in-altgard");
+		await probe.BecomeAsync(PlayerClass.CHANTER, 16);
+		int[] table = probe.CatalogOf(PlayerClass.CHANTER);
+		Assert.All(new[] { hallowed, booming, crashing, revival, promise, blessing, celerity, shieldMantra }, skill =>
+			Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 16."));
+		await GiveAsync(probe, token, (staff, 1), (shoes, 1), (hauberk, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1427.2f, 789.9f, 249.9f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		IReadOnlyList<NaturalGearUpgrade> worn = await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(staff, MainHand(probe));
+		Assert.All(new[] { shoes, hauberk }, piece => Assert.Contains(probe.World.Inventory.Values, item => item.ItemId == piece && item.Details.EquippedSlot.GetValueOrDefault() != 0));
+
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-casts-the-buffs-and-turns-the-mantras-on", token);
+		Assert.All(new[] { blessing, promise, celerity, shieldMantra }, buff => Assert.Contains(buff, buffCasts));
+		Assert.Equal([shieldMantra, celerity], probe.World.ActiveToggles.Order());
+
+		Npc first = NearestLiving(probe, mosbear);
+		(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+		ClericFight fight = await TableFightAsync(probe, ChanterTable, "s04", "fight-a-tusked-mosbear", () => Task.FromResult(first.GetObjectId()), token);
+		AssertNoRefusedCastRepeats(fight);
+		AssertOnlyCasts(fight, table);
+		Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"The fight ended no way: {fight.Result}.");
+		StarterTraceRecord[] revived = fight.Decided.Where(record => Decided(record, "cast-self", revival)).ToArray();
+		Assert.True(revived.Length > 0, $"Word of Revival was not cast: {Outcome(fight)}.");
+		Assert.All(revived, record => Assert.True(record.Fields.GetProperty("observedState").GetProperty("Aggro").GetBoolean(), "Word of Revival was decided while the Chanter was not being hit."));
+		StarterTraceRecord? left = fight.Decided.FirstOrDefault(record => record.Fields.GetProperty("action").GetString() == "retreat");
+		Console.WriteLine($"{id}: level {probe.World.Level} Chanter, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}; the check asked for " +
+			$"{string.Join(", ", worn.Select(upgrade => $"{upgrade.ItemId} to slot {upgrade.Slot}"))}. Buff check: casts {string.Join(" ", buffCasts)}; " +
+			$"toggles on {string.Join(" ", probe.World.ActiveToggles.Order())}. One tusked mosbear: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, " +
+			$"MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}; the staff swung {Swings(fight)} time(s), the chain's skills were cast " +
+			$"{fight.Casts.Count(cast => cast.SkillId is hallowed or booming or crashing)} time(s). " +
+			$"Word of Revival decided {revived.Length} time(s), under attack each time, at {string.Join(", ", revived.Select(HpPercentAt))}% HP. " +
+			$"It left: {left?.Fields.GetProperty("reason").GetString() ?? "no."} HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>
+	/// NR-71, row chanter-20. Prepared by the director: a level-20 Chanter with the staff of Q24016, by the starved
+	/// mosbears (210564, level 13) of the Cleric's row, with powder, two shield scrolls and three life potions in the bag.
+	/// The buff check casts Rage Spell, which costs 379 MP, beside the prayer and the promise. It fights by its table
+	/// until the chain of three is seen, Hallowed Strike, Booming Strike and Crashing Strike, and Incandescent Blow has
+	/// followed Meteor Strike. Before one more fight the director gives 2,000 DP and cuts HP
+	/// to 45%: Winter Circle is cast with the mosbear on it, and the ladder answers. Last the director cuts MP to a tenth
+	/// and the journey's rest casts MP Recovery.
+	/// </summary>
+	private async Task ChanterLevelTwentyRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, staff = 101501357, meteor = 1780, incandescent = 1667, circle = 1638, rage = 1561, promise = 1627, blessing = 1687,
+			binding = 1574, recovery = 252, scroll = 164000068, potion = 162000003, hallowed = 1617, booming = 1564, crashing = 1704, mostFights = 5;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-chanter-in-altgard");
+		await probe.BecomeAsync(PlayerClass.CHANTER, 20);
+		int[] table = probe.CatalogOf(PlayerClass.CHANTER);
+		Assert.All(new[] { meteor, incandescent, circle, rage, promise, blessing, binding, recovery, 251 }, skill =>
+			Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 20."));
+		await GiveAsync(probe, token, (staff, 1), (LesserOdellaPowder, 20), (scroll, 2), (potion, 3));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(staff, MainHand(probe));
+
+		int mpFull = probe.World.CurrentMp;
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-casts-rage-spell", token);
+		Assert.All(new[] { blessing, promise, rage }, buff => Assert.Contains(buff, buffCasts));
+		Assert.True(probe.Server.GetEffectController().FindBySkillId(rage) != null, "Rage Spell is not on the Chanter.");
+		int mpBuffed = probe.World.CurrentMp;
+
+		var lines = new List<string>();
+		ClericFight? shown = null, chain = null;
+		int fights = 0, swings = 0;
+		while ((shown == null || chain == null) && fights < mostFights)
+		{
+			fights++;
+			Npc next = NearestLiving(probe, mosbear);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, ChanterTable, $"s04-{fights:D2}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.True(fight.Result is { Killed: true, Deaths: 0 }, $"Fight {fights} was no kill: {Outcome(fight)}.");
+			Assert.DoesNotContain(fight.Casts, cast => cast.SkillId == circle);
+			swings += Swings(fight);
+			if (fight.Run([meteor], [incandescent]) >= 0) shown ??= fight;
+			if (fight.Run([hallowed], [booming], [crashing]) >= 0) chain ??= fight;
+			lines.Add($"fight {fights}: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+		Assert.True(shown != null, $"Incandescent Blow never followed Meteor Strike in {fights} fights: {string.Join("; ", lines)}.");
+		int pair = shown.Run([meteor], [incandescent]);
+		TimeSpan gap = shown.Casts[pair + 1].At - shown.Casts[pair].At;
+		Assert.True(gap <= TimeSpan.FromSeconds(3), $"Incandescent Blow came {gap.TotalMilliseconds:F0} ms after Meteor Strike: {shown.Order}.");
+		Assert.True(chain != null, $"Crashing Strike never followed Booming Strike and Hallowed Strike in {fights} fights: {string.Join("; ", lines)}.");
+		int run = chain.Run([hallowed], [booming], [crashing]);
+		TimeSpan second = chain.Casts[run + 1].At - chain.Casts[run].At, third = chain.Casts[run + 2].At - chain.Casts[run + 1].At;
+		Assert.True(second <= TimeSpan.FromSeconds(3) && third <= TimeSpan.FromSeconds(3), $"The chain's steps came {second.TotalMilliseconds:F0} ms and {third.TotalMilliseconds:F0} ms apart: {chain.Order}.");
+
+		Npc hurtTarget = NearestLiving(probe, mosbear);
+		ClericFight hurt = await TableFightAsync(probe, ChanterTable, "s05", "fight-a-starved-mosbear-from-under-half-hp-with-dp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 2,000 DP and 45% HP as the fight begins.
+			await probe.SetDpAsync(2000);
+			await probe.CutHpAsync(45);
+			return hurtTarget.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(hurt);
+		AssertOnlyCasts(hurt, table);
+		Assert.Contains(hurt.Casts, cast => cast.SkillId == circle);
+		Assert.True(probe.World.CurrentDp < 2000, $"The DP was not spent: {probe.World.CurrentDp}.");
+		StarterTraceRecord[] ladder = hurt.Decided.Where(record => record.Fields.GetProperty("action").GetString() is "shield-scroll" or "hot-potion" ||
+			record.Fields.GetProperty("action").GetString() == "cast-self" && record.Fields.GetProperty("reason").GetString()?.Contains("HP is at or below") == true).ToArray();
+		Assert.True(ladder.Length > 0, $"The ladder did not answer 45% HP: decisions {hurt.Counts}.");
+		Assert.Equal("shield-scroll", ladder[0].Fields.GetProperty("action").GetString());
+		Assert.Equal(0, hurt.Result.Deaths);
+
+		// Prepared by the director: a tenth of its mana. The rest is the journey's.
+		probe.Session.BeginStep("s06", "director-cuts-mp");
+		await probe.CutMpAsync(10);
+		int mpBefore = probe.World.CurrentMp;
+		(_, int[] restCasts) = await RestStepAsync(probe, "s07", "rest-from-a-tenth-of-its-mana", token);
+		Assert.Contains(recovery, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Chanter, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}. Buff check: casts {string.Join(" ", buffCasts)}; MP {mpFull} to {mpBuffed}. " +
+			$"{fights} fight(s): {string.Join("; ", lines)}. Incandescent Blow {gap.TotalMilliseconds:F0} ms after Meteor Strike; Booming Strike {second.TotalMilliseconds:F0} ms " +
+			$"after Hallowed Strike and Crashing Strike {third.TotalMilliseconds:F0} ms after that; the staff swung {swings} time(s). " +
+			$"From 45% HP with 2,000 DP: {Outcome(hurt)}; the ladder: {string.Join(", ", ladder.Select(record => $"{record.Fields.GetProperty("action").GetString()}" +
+				$"{(record.Fields.GetProperty("skillId") is { ValueKind: JsonValueKind.Number } skill ? " " + skill.GetInt32() : "")} at {HpPercentAt(record)}% HP"))}; DP left {probe.World.CurrentDp}. " +
+			$"Rest from {mpBefore} MP: casts {string.Join(" ", restCasts)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-71, row chanter-25. Prepared by the director: a level-25 Chanter with the staff of Q24016, by the starved
+	/// mosbears (210564, level 13), with Odella Powder in the bag. The buff check turns the three mantras on. Three fights
+	/// are the journey's alone, for the numbers and for what Smite does once the mosbear is on the Chanter. Before one
+	/// more the director cuts HP to 55%: Protective Ward is cast, by the ladder. Then the director spawns three starved
+	/// mosbears 4 m from the Chanter and sets them on it: with three attackers the journey casts Binding Word on its
+	/// target and leaves. Last the director halves the HP and the rest spends Odella Powder on a fourth-rank powder
+	/// skill: MP Recovery when its mana is short too, with Healing Light for the HP while the powder cools down.
+	/// </summary>
+	private async Task ChanterLevelTwentyFiveRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, staff = 101501357, ward = 1690, binding = 1575, herb = 253, recovery = 254, smite = 4013, celerity = 1809, shieldMantra = 1659,
+			revivalMantra = 1746, rage = 1561, promise = 1628, blessing = 1688;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-five-chanter-in-altgard");
+		await probe.BecomeAsync(PlayerClass.CHANTER, 25);
+		int[] table = probe.CatalogOf(PlayerClass.CHANTER);
+		Assert.All(new[] { ward, binding, herb, smite, celerity, shieldMantra, revivalMantra, rage, promise, blessing, 1618, 1565, 1705, 1781, 1668, 1817, 1718 }, skill =>
+			Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 25."));
+		await GiveAsync(probe, token, (staff, 1), (OdellaPowder, 20));
+		BotNavigationGeometry geometry = await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(staff, MainHand(probe));
+
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-casts-the-buffs-and-turns-the-mantras-on", token);
+		Assert.All(new[] { blessing, promise, rage }, buff => Assert.Contains(buff, buffCasts));
+		Assert.Equal([shieldMantra, revivalMantra, celerity], probe.World.ActiveToggles.Order());
+
+		var lines = new List<string>();
+		int smitesOn = 0, smitesOff = 0, swings = 0;
+		for (int fights = 1; fights <= 3; fights++)
+		{
+			Npc next = NearestLiving(probe, mosbear);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, ChanterTable, $"s04-{fights}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.Equal(0, fight.Result.Deaths);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0, $"Fight {fights} ended neither way: {fight.Result}.");
+			StarterTraceRecord[] smites = fight.Decided.Where(record => Decided(record, "cast-target", smite)).ToArray();
+			smitesOn += smites.Count(record => record.Fields.GetProperty("observedState").GetProperty("TargetAdjacent").GetBoolean());
+			smitesOff += smites.Count(record => !record.Fields.GetProperty("observedState").GetProperty("TargetAdjacent").GetBoolean());
+			swings += Swings(fight);
+			lines.Add($"fight {fights}: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+
+		Npc hurtTarget = NearestLiving(probe, mosbear);
+		ClericFight hurt = await TableFightAsync(probe, ChanterTable, "s05", "fight-a-starved-mosbear-from-just-over-half-hp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 55% HP as the fight begins.
+			await probe.CutHpAsync(55);
+			return hurtTarget.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(hurt);
+		AssertOnlyCasts(hurt, table);
+		StarterTraceRecord[] warded = hurt.Decided.Where(record => Decided(record, "cast-self", ward)).ToArray();
+		Assert.True(warded.Length > 0, $"Protective Ward was not cast: {hurt.Order}; decisions {hurt.Counts}.");
+		Assert.All(warded, record => Assert.True(HpPercentAt(record) <= 60, $"Protective Ward was decided at {HpPercentAt(record)}% HP."));
+		Assert.Contains(hurt.Casts, cast => cast.SkillId == ward);
+		Assert.Equal(0, hurt.Result.Deaths);
+
+		Npc[] pack = [];
+		ClericFight swarm = await TableFightAsync(probe, ChanterTable, "s06", "fight-a-pack-of-three-starved-mosbears", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: three starved mosbears 4 m away, set on the Chanter.
+			pack = await SpawnSetOnAsync(probe, geometry, mosbear, 3, token);
+			return pack[0].GetObjectId();
+		}, token);
+		RemoveSetOn(pack);
+		AssertOnlyCasts(swarm, table);
+		int bound = Array.FindIndex(swarm.Decided, record => Decided(record, "cast-target", binding));
+		Assert.True(bound >= 0, $"Binding Word was not cast: {swarm.Order}; decisions {swarm.Counts}.");
+		string? reason = swarm.Decided[bound].Fields.GetProperty("reason").GetString();
+		Assert.StartsWith("Hold the target before retreating", reason);
+		Assert.Contains(swarm.Decided.Skip(bound + 1), record => record.Fields.GetProperty("action").GetString() == "retreat");
+
+		// Prepared by the director: half HP. The rest is the journey's.
+		probe.Session.BeginStep("s07", "director-halves-hp");
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		(_, int[] restCasts) = await RestStepAsync(probe, "s08", "rest-from-half-hp-with-odella-powder", token);
+		Assert.True(restCasts.Contains(herb) || restCasts.Contains(recovery), $"The rest cast no fourth-rank powder skill: {string.Join(" ", restCasts)}.");
+		Assert.True(probe.Owned(OdellaPowder) < 20, "No Odella Powder was spent.");
+		Assert.True(probe.World.CurrentHp * 100 >= probe.World.MaxHp * 90, $"The rest ended at {probe.World.CurrentHp}/{probe.World.MaxHp}.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Chanter, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}. Buff check: casts {string.Join(" ", buffCasts)}; " +
+			$"toggles on {string.Join(" ", probe.World.ActiveToggles.Order())}. " + string.Join("; ", lines) +
+			$". Smite decided {smitesOff} time(s) from range and {smitesOn} with the mosbear on the Chanter; the staff swung {swings} time(s). From 55% HP: {Outcome(hurt)}; Protective Ward decided at " +
+			$"{string.Join(", ", warded.Select(HpPercentAt))}% HP. Then against {pack.Length} the director spawned 4 m away and set on it: {Outcome(swarm)}; Binding Word decided with " +
+			$"{swarm.Decided[bound].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32()} attackers: {reason} " +
 			$"Rest: casts {string.Join(" ", restCasts)}, Odella Powder {probe.Owned(OdellaPowder)} of 20 left. " +
 			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, dead {probe.Server.IsDead()}.");
 	}
