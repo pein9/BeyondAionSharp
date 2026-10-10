@@ -4335,7 +4335,7 @@ The template:
       altgard-rc-complete-s1-templar (run nr56-ax-a4, log run/nr/NR-56/ax-a4.log): the leg
       in 16 min 02 s with no death; a Templar of level 25 at Morheim Ice Fortress, 181
       quests, Q24020, Q2945, Q2946, Q2947 and Q2042 among them; 77,810,164 ms of game
-      time (21 h 37 min since creation), dump sha256 9f9cdfd9d38dba24.
+      time (21 h 36 min since creation), dump sha256 9f9cdfd9d38dba24.
     - **Two stops**, each a lettered item: NR-56a (the reward step) and NR-56b (the
       leg's end at level 25, NR-Q16). The level-21 tier was paid from the Templar's own
       coins and the level-26 tier is not asked at level 25, so NR-Q14 was not met.
@@ -4407,10 +4407,30 @@ The template:
       (run/nr/NR-57a/guard-p8/verdict.json): verdict pass, all twelve scopes identical.
       Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed, 16
       skipped) and Fast passes (run nr57a-fast, 11 passed).
-- [ ] **NR-57 - Templar: the endpoint.** Depends: NR-56; ticked by its round
+- [x] **NR-57 - Templar: the endpoint.** Depends: NR-56; ticked by its round
   - Work: Captured and verified as ntc-ready-templar-s1: alive at Morheim Ice Fortress,
     level 25 or higher, Q2945, Q2946, Q2947 and Q2042 complete.
   - Proof: The capture verifies.
+  - 2026-10-09: done. ntc-ready-templar-s1 is captured and verified.
+    - **Captured** at 37870a51e: sim-snapshot.ps1 -Action Capture -AltgardLeg1 -Leg ax
+      -From altgard-rc-complete-s1-templar -Name ntc-ready-templar-s1 (run nr57-ax-a1,
+      log run/nr/NR-57/capture-a1.log; NR-57a lets the leg's capture take this name).
+      The leg was played once more, to the receipt morheim-abyss-entry-s1-templar has:
+      16 min 02 s, no death, 77,810,164 ms of game time since creation. Dump sha256
+      326663d8fcb9e437.
+    - **The endpoint, from the receipt.** Character 133266, the one created by packets
+      for altgard-templar-s1: a Templar of level 25, alive at Morheim Ice Fortress and
+      bound there; Q24020, Q2945, Q2946, Q2947 and Q2042 complete, 181 quests in all. It
+      wears Q2947's sword 100001562 and the level-21 coin shield 115001075, and holds
+      12 Bronze Coins and 18 Iron Coins.
+    - **Proof.** sim-snapshot.ps1 -Action Verify -Name ntc-ready-templar-s1, run
+      nr57-verify-a1 (run/nr/NR-57/verify-a1.log; evidence under
+      run/snapshots/_verify/nr57-verify-a1): "Verified snapshot ntc-ready-templar-s1:
+      character 133266 resumed at its endpoint." Seven pre-commit checks pass
+      (run/nr/NR-57/checks-run.log).
+    - **The Templar's line, for scale.** 21 h 36 min of game time from creation to the
+      endpoint, against the generic Cleric's 19 h 37 min. Twenty lettered items, NR-50a
+      to NR-57a, none of them a branch on the class.
 - [ ] **NR-58 - Templar: the class scope.** Depends: NR-57
   - Work: One scope of the Templar's play, chosen where its rules differ most from the
     Warrior's, recorded by a bot alone, twice, and added to the gate's sets.
@@ -5012,7 +5032,7 @@ report what was done, what is parked or blocked, and what the operator must deci
   death, no coin supplied. Proof by the bundle of NR-56a (twelve scopes identical, Fast
   nr56b-fast). Next: NR-56, the capture of the leg from the committed code.
 - 2026-10-09 — Loop: NR-56 done. morheim-abyss-entry-s1-templar is captured at 362b5baef:
-  a Templar of level 25 at Morheim Ice Fortress with the five quests complete, 21 h 37 min
+  a Templar of level 25 at Morheim Ice Fortress with the five quests complete, 21 h 36 min
   of game time since creation. Next: NR-57, the endpoint ntc-ready-templar-s1.
 - 2026-10-09 — Loop: NR-57a done. The snapshot script names a class line's leg capture
   after the accepted line's snapshot with the class behind it, and refused the plan's
@@ -5020,3 +5040,7 @@ report what was done, what is parked or blocked, and what the operator must deci
   well. Script tests, full gate guard-p8 (twelve scopes identical), seven checks, unit
   suite (4,629 passed, 16 skipped) and Fast (nr57a-fast) pass. Next: NR-57, the capture
   and verification of ntc-ready-templar-s1.
+- 2026-10-09 — Loop: NR-57 done. ntc-ready-templar-s1 is captured at 37870a51e and
+  verified: a Templar of level 25, alive at Morheim Ice Fortress, with Q2945, Q2946,
+  Q2947 and Q2042 complete. The pilot class has reached the plan's finish. Next: NR-58,
+  the Templar's class scope.
