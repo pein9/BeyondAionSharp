@@ -5756,7 +5756,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				var active = new HashSet<int>();
 				NaturalCombatRetreatPolicy.ObserveEngagement(active, session.PacketHistory.TakeLast(400), session.CharacterId,
 					id => observed.TryGetValue(id, out var npc) ? runtime.Data.NpcDataDh.GetNpcTemplate(npc.TemplateId)?.GetL10n() : null,
-					runtime.IsHostileSkill);
+					runtime.IsHostileSkill, session.Api.World.Summon?.ObjectId);
 				int[] attackers = active
 					.Where(id => observed.TryGetValue(id, out var npc) && Distance(session.CurrentPosition, npc.Position) < 30)
 					.ToArray();

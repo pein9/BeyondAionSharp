@@ -351,7 +351,8 @@ public sealed partial class NaturalIshalgenJourney
 			}
 			if (defending || DefendOnAttackAsync == null || session.Api.World.IsDead) return;
 			int[] attackers = session.PacketHistory.Skip(packetStart)
-				.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId)).OfType<int>().Distinct().ToArray();
+				.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId, session.Api.World.Summon?.ObjectId))
+				.OfType<int>().Distinct().ToArray();
 			if (attackers.Length == 0) return;
 			defending = true;
 			try

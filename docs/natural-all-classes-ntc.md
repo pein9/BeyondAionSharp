@@ -6249,7 +6249,7 @@ The template:
       run guard-p8 (run/nr/NR-110i/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr110i-fast, 11 passed).
-- [ ] **NR-110e - A monster on the spirit is an attacker.** Depends: NR-110i
+- [x] **NR-110e - A monster on the spirit is an attacker.** Depends: NR-110i
   - Work: Found by NR-110c: the bot counts as an attacker only a creature that strikes
     the bot itself. Java first: what the master is told of a strike at its spirit
     (SM_ATTACK, the hostile spells, SM_SUMMON_UPDATE). The attacker rule takes the bot's
@@ -6260,6 +6260,46 @@ The template:
     spirit is read from the row and is a rule for the class's own rows.
   - Proof: One probe row on a probe account in which a monster that is on the spirit
     alone when a fight ends is fought next or fled from; the full gate identical.
+  - 2026-10-10: done. A creature that strikes the bot's spirit, or casts a hostile skill
+    at it, is in the bot's fight as one that strikes the bot is.
+    - **Java.** A monster keeps the spirit and its master as two enemies and strikes
+      the one it hates more (NR-110c). Its swing goes to everyone who sees it as
+      SM_ATTACK (CreatureController.attackTarget 347-349), and its skills as
+      SM_CASTSPELL and SM_CASTSPELL_RESULT, whoever the target is. So the master sees
+      every strike at its spirit; SM_SUMMON_UPDATE (SummonController.onAttack) adds the
+      spirit's HP for the master alone. No server change.
+    - **The change, generic.** Bots/Navigation/NaturalCombatRetreatPolicy.cs: the three
+      readings of who attacks take the bot's own spirit, and a swing or a hostile skill
+      aimed at it names its attacker. What the bot and its spirit cast on each other
+      names none. Without a spirit nothing is read differently. It is asked with the
+      spirit in the fight's count of attackers, in the reading of a target that gave
+      up, in a retreat's list of pursuers, in a rest's defence, in the journey's look
+      for monsters still engaged before a new pull, and in the defence on a walk
+      (Sc/NaturalIshalgenJourney.Combat.cs, .cs and .Navigator.cs,
+      Sc/NaturalJourneyRuntime.cs). One reading stays the bot's alone: only a strike at
+      the bot says that the target stands at the bot.
+    - **Proof, the row** spirit-master-pack (SimT/SimulationNaturalStarterProbeTests.cs,
+      probe account 100; run nr110e-probe-a1, its first attempt). The fight of row
+      spirit-master-fight: a level-16 Spirit Master and its Earth Spirit at a tusked
+      mosbear among its family. The spirit goes first and hits after 2.5 s. By then a
+      ruthless mosbear has struck the bot and the tusked mosbear the spirit: the first
+      decision counts two attackers, of which one has not struck the bot. The table
+      leaves at two: it casts Root at the target, calls the spirit back and retreats
+      150 m from both. A cub strikes the spirit on the way. The spirit runs with its
+      master, 161 steps to the bot's 195. After 25 s nothing follows: no death, the bot
+      at full HP, the spirit at full HP in guard mode 3.0 m from its master.
+    - **What the row says of the table.** In NR-110c the bot killed this mosbear in
+      13.9 s with one creature on itself and three on its spirit, none of the three
+      counted. Counted, they make the table leave at once, as the Mage's number of two
+      says. Whether a class whose spirit takes the hits should leave at more than two
+      is a rule for its own rows (NR-111).
+    - **The other spirit rows, played again** (run/nr/NR-110e/probe-<row>-a1.log): all
+      four pass. spirit-master-fight is the same fight and now ends in the same
+      retreat; orders, walk and spirit are as before.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-110e/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr110e-fast, 11 passed).
 - [ ] **NR-110f - Where the spirit fights.** Depends: NR-110e
   - Work: Found by NR-110c: the spirit that goes first stands at its target, inside the
     circles of the target's neighbours, and draws them. Java first: the aggro range and
@@ -7106,3 +7146,13 @@ report what was done, what is parked or blocked, and what the operator must deci
   fights, three kills, the step after a kill run three times. Full gate guard-p8 (thirteen
   scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
   (nr110i-fast) pass. Next: NR-110e, a monster on the spirit is an attacker.
+- 2026-10-10 — Loop: NR-110e done. A creature that strikes the bot's spirit is an
+  attacker of the bot's fight: in the count, in a retreat's pursuers, in a rest's defence
+  and before a new pull. Probe row spirit-master-pack (nr110e-probe-a1): with a ruthless
+  mosbear on the bot and the target on the spirit the first decision counts two, the table
+  casts Root and leaves, the spirit runs with its master, and both are whole after 25 s.
+  The same fight was won in 13.9 s in NR-110c with the three creatures on the spirit not
+  counted: whether a class with a spirit leaves at more than two is for its rows. The four
+  other spirit rows pass. Full gate guard-p8 (thirteen scopes identical), seven checks,
+  unit suite (4,629 passed, 16 skipped) and Fast (nr110e-fast) pass. Next: NR-110f, where
+  the spirit fights.

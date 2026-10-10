@@ -33,13 +33,14 @@ public static class NaturalCombatRetreatPolicy
 	/// <summary>Track the monsters still fighting this client. Java EmoteManager sends
 	/// NEUTRALMODE_IN_MOVE when an NPC returns or idles; a later attack re-engages it.
 	/// SM_DELETE also ends the client's observation of that pursuer.</summary>
+	/// <param name="spirit">NR-110e: the bot's own spirit; a strike at it engages the striker as a strike at the bot does.</param>
 	public static void ObserveEngagement(HashSet<int> attackers,
 		IEnumerable<DecodedBotServerPacket> packets, int characterId, Func<int, string?>? localizedName = null,
-		Func<int, bool>? hostileSkill = null)
+		Func<int, bool>? hostileSkill = null, int? spirit = null)
 	{
 		foreach (DecodedBotServerPacket packet in packets)
 		{
-			if (IncomingAttacker(packet, characterId, hostileSkill) is int attacker)
+			if (IncomingAttacker(packet, characterId, hostileSkill, spirit) is int attacker)
 				attackers.Add(attacker);
 			else if (packet.PacketType == typeof(SM_EMOTION) &&
 				packet.Get<byte>("emotionType") == (byte)EmotionType.NEUTRALMODE_IN_MOVE)
@@ -55,8 +56,9 @@ public static class NaturalCombatRetreatPolicy
 
 	/// <summary>Stop attacking a monster that the client observed giving up. Never count this
 	/// as a kill. A subsequent swing at this player cancels the earlier return observation.</summary>
+	/// <param name="spirit">NR-110e: the bot's own spirit; a later swing at it cancels the return observation too.</param>
 	public static bool TargetReturned(IEnumerable<DecodedBotServerPacket> packets, int target,
-		int characterId, string? localizedName, Func<int, bool>? hostileSkill = null)
+		int characterId, string? localizedName, Func<int, bool>? hostileSkill = null, int? spirit = null)
 	{
 		bool returned = false;
 		foreach (DecodedBotServerPacket packet in packets)
@@ -65,7 +67,7 @@ public static class NaturalCombatRetreatPolicy
 				packet.Get<byte>("emotionType") == (byte)EmotionType.NEUTRALMODE_IN_MOVE ||
 				IsReturnMessage(packet, localizedName))
 				returned = true;
-			else if (IncomingAttacker(packet, characterId, hostileSkill) == target)
+			else if (IncomingAttacker(packet, characterId, hostileSkill, spirit) == target)
 				returned = false;
 		}
 		return returned;
@@ -74,18 +76,25 @@ public static class NaturalCombatRetreatPolicy
 	/// <summary>Java broadcasts targeted spell windups and results separately from SM_ATTACK.
 	/// Only a shipped hostile skill aimed at this character is engagement; heals, buffs,
 	/// self casts and ground targets are not evidence of an incoming attack.</summary>
+	/// <param name="spirit">NR-110e: the bot's own spirit, or null. A monster keeps a spirit and its master as two
+	/// enemies and strikes the one it hates more (Java AggroList.addDamage 37-52, AttackManager 75-80), and the server
+	/// shows a strike at the spirit to everyone who sees it, as it shows one at the master. With a spirit named, a
+	/// swing or a hostile skill aimed at the spirit names its attacker as one aimed at the bot does. What the bot and
+	/// its spirit cast on each other names none: an order and the spirit's own answer to it are of a hostile kind.</param>
 	public static int? IncomingAttacker(DecodedBotServerPacket packet, int characterId,
-		Func<int, bool>? hostileSkill)
+		Func<int, bool>? hostileSkill, int? spirit = null)
 	{
-		if (packet.PacketType == typeof(SM_ATTACK) && packet.Get<int>("targetObjId") == characterId)
+		bool Aimed(int at) => at == characterId || at == spirit;
+		bool Ours(int by) => by == characterId || by == spirit;
+		if (packet.PacketType == typeof(SM_ATTACK) && Aimed(packet.Get<int>("targetObjId")) && !Ours(packet.Get<int>("attackerObjId")))
 			return packet.Get<int>("attackerObjId");
 		if (hostileSkill == null) return null;
 		if (packet.PacketType == typeof(SM_CASTSPELL) && packet.Get<byte>("targetType") is 0 or 3 or 4 &&
-			packet.Get<int>("targetObjectId") == characterId && packet.Get<int>("objectId") != characterId &&
+			Aimed(packet.Get<int>("targetObjectId")) && !Ours(packet.Get<int>("objectId")) &&
 			hostileSkill(packet.Get<ushort>("spellId")))
 			return packet.Get<int>("objectId");
 		if (packet.PacketType == typeof(SM_CASTSPELL_RESULT) && packet.Get<byte>("targetType") is 0 or 3 or 4 &&
-			packet.Get<int>("targetId") == characterId && packet.Get<int>("effectorId") != characterId &&
+			Aimed(packet.Get<int>("targetId")) && !Ours(packet.Get<int>("effectorId")) &&
 			hostileSkill(packet.Get<ushort>("skillId")))
 			return packet.Get<int>("effectorId");
 		return null;

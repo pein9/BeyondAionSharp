@@ -39,8 +39,9 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 	public float AggroRadius(NpcTemplate? template) => NaturalHostility.AggroRadius(template, Data.TribeRelations, TribeClass.PC_DARK);
 	public bool IsHostileSkill(int skillId) => Data.SkillDataDh.GetSkillTemplate(skillId)?.GetHostileType() is
 		Aion.GameServer.SkillEngine.Model.HostileType.DIRECT or Aion.GameServer.SkillEngine.Model.HostileType.INDIRECT;
-	public int? IncomingAttacker(DecodedBotServerPacket packet, int characterId) =>
-		NaturalCombatRetreatPolicy.IncomingAttacker(packet, characterId, IsHostileSkill);
+	/// <param name="spirit">NR-110e: the bot's own spirit, when a strike at it is to count as one at the bot.</param>
+	public int? IncomingAttacker(DecodedBotServerPacket packet, int characterId, int? spirit = null) =>
+		NaturalCombatRetreatPolicy.IncomingAttacker(packet, characterId, IsHostileSkill, spirit);
 
 	public SpellCastData CreateSpellCast(BotWorldModel world, BotPosition origin, ushort skillId, byte level, int target)
 	{

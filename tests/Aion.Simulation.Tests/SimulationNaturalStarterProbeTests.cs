@@ -52,6 +52,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("spirit-master-walk", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimwalk"),
 		new("spirit-master-fight", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimfight"),
 		new("spirit-master-orders", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimorders"),
+		new("spirit-master-pack", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimpack"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -248,6 +249,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "spirit-master-walk": await SpiritMasterWalkRowAsync(probe, id, token); break;
 			case "spirit-master-fight": await SpiritMasterFightRowAsync(probe, id, token); break;
 			case "spirit-master-orders": await SpiritMasterOrdersRowAsync(probe, id, token); break;
+			case "spirit-master-pack": await SpiritMasterPackRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -1509,6 +1511,61 @@ public sealed partial class SimulationFastScenarioTests
 			$"Buff check: casts {string.Join(" ", buffCasts)}; spirit {spirit.GetNpcId()} out. Three kills, and the step after a kill ran {afterKills} times. " +
 			$"Spirit at 30%: {firstLine}. Spirit at 30% again: {secondLine}. With 2,000 DP: {Outcome(third)}; {Told(third)}; DP {probe.World.CurrentDp} after. " +
 			$"Orders given {string.Join(" ", ordered)}; the spirit cast {string.Join(" ", carried)}. The same spirit at the end, at {probe.World.Summon?.HpPercent}% HP by the client.");
+	}
+
+	/// <summary>
+	/// NR-110e, row spirit-master-pack. Prepared by the director as row spirit-master-fight: a level-16 Spirit Master by
+	/// the tusked mosbears (210437) in Altgard, where a ruthless mosbear and the cubs of the family stand near. The
+	/// journey's buff check summons the Earth Spirit, and the journey fights one tusked mosbear by its table. A creature
+	/// that strikes the spirit is counted among the fight's attackers although it has not struck the bot, and when the
+	/// table leaves, it leaves that creature too.
+	/// </summary>
+	private async Task SpiritMasterPackRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int earth = 3645, mosbear = 210437;
+		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-spirit-master-in-altgard");
+		await probe.BecomeAsync(PlayerClass.SPIRIT_MASTER, 16);
+		await probe.MoveToMapAsync(ClericProbeMap, 1427.2f, 789.9f, 249.9f);
+
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s02", "buff-check-summons-the-earth-spirit", token);
+		await probe.Session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+		await probe.Session.SynchronizeAsync(token);
+		Assert.Contains(earth, buffCasts);
+		Summon spirit = probe.Server.GetSummon() ?? throw new InvalidDataException("No spirit was summoned.");
+		int spiritId = spirit.GetObjectId(), self = probe.Session.CharacterId;
+
+		int preyId = NearestLiving(probe, mosbear).GetObjectId();
+		ClericFight fight = await TableFightAsync(probe, SpiritMasterTable, "s03", "fight-a-tusked-mosbear-among-its-family", () => Task.FromResult(preyId), token);
+		AssertNoRefusedCastRepeats(fight);
+		// Who struck whom, and when, by the server's SM_ATTACK.
+		(TimeSpan At, int By, int Whom)[] strikes = fight.Records.Where(record => record is { Direction: "<", Packet: "SM_ATTACK" })
+			.Select(record => (record.VirtualTime, record.Fields.GetProperty("attackerObjId").GetInt32(), record.Fields.GetProperty("targetObjId").GetInt32()))
+			.Where(strike => strike.Item3 == self || strike.Item3 == spiritId).ToArray();
+		int[] onBot = strikes.Where(strike => strike.Whom == self).Select(strike => strike.By).Distinct().ToArray();
+		int[] onSpiritOnly = strikes.Where(strike => strike.Whom == spiritId).Select(strike => strike.By).Distinct().Except(onBot).ToArray();
+		Assert.NotEmpty(onSpiritOnly);
+		// A decision that counts more attackers than had struck the bot by then counted one that struck the spirit.
+		StarterTraceRecord counted = fight.Decided.FirstOrDefault(record => record.Fields.GetProperty("observedAttackers").GetInt32() >
+			strikes.Where(strike => strike.Whom == self && strike.At <= record.VirtualTime).Select(strike => strike.By).Distinct().Count())
+			?? throw new InvalidDataException($"No decision counted a creature that struck the spirit alone: {Outcome(fight)}.");
+		int most = fight.Decided.Max(record => record.Fields.GetProperty("observedAttackers").GetInt32());
+		Assert.True(fight.Result.Killed || fight.Result.Retreats > 0, $"The fight ended with no kill and no retreat: {Outcome(fight)}.");
+		string left = "no retreat";
+		if (fight.Result.Retreats > 0)
+		{
+			StarterTraceRecord route = fight.Records.First(record => record is { Direction: "action", Packet: "combat-retreat-route" });
+			int[] fled = route.Fields.GetProperty("observedAttackers").EnumerateArray().Select(value => value.GetInt32()).ToArray();
+			Assert.Contains(fled, onSpiritOnly.Contains);
+			left = $"it left {fled.Length} creature(s), {fled.Count(onSpiritOnly.Contains)} of them on the spirit alone";
+		}
+		string spiritEnd = probe.Server.GetSummon() == null ? "the spirit is gone"
+			: $"the spirit has {spirit.GetLifeStats().GetCurrentHp()} HP, mode {spirit.GetMode()}, " +
+				$"{MathF.Sqrt(MathF.Pow(spirit.GetX() - probe.Server.GetX(), 2) + MathF.Pow(spirit.GetY() - probe.Server.GetY(), 2)):F1} m from its master";
+		Console.WriteLine($"{id}: level {probe.World.Level} Spirit Master, max HP {probe.World.MaxHp}. One tusked mosbear among its family: {Outcome(fight)}. " +
+			$"Struck the bot: {onBot.Length} creature(s); struck the spirit and never the bot: {onSpiritOnly.Length}. The first decision that counted one " +
+			$"of those: at {counted.VirtualTime.TotalSeconds:F1} s, {counted.Fields.GetProperty("observedAttackers").GetInt32()} attackers, action " +
+			$"{counted.Fields.GetProperty("action").GetString()}; the most counted: {most}. Retreats {fight.Result.Retreats}: {left}. " +
+			$"At the end {spiritEnd}; the bot has {probe.World.CurrentHp}/{probe.World.MaxHp} HP.");
 	}
 
 	private const string AssassinTable = "natural-assassin-v1:";

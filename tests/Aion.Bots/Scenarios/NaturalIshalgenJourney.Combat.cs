@@ -285,10 +285,12 @@ public sealed partial class NaturalIshalgenJourney
 				DecodedBotServerPacket[] recentPackets = session.PacketHistory.Skip(observedPacketCount).ToArray();
 				int[] recentAttacks = recentPackets
 					.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId)).OfType<int>().ToArray();
+				// NR-110e: a creature that strikes the bot's spirit is in the fight as one that strikes the bot is. Only a
+				// strike at the bot itself says that the target stands at the bot (the lines below).
 				NaturalCombatRetreatPolicy.ObserveEngagement(incomingAttackers,
-					recentPackets, session.CharacterId, LocalizedName, runtime.IsHostileSkill);
+					recentPackets, session.CharacterId, LocalizedName, runtime.IsHostileSkill, world.Summon?.ObjectId);
 				bool targetReturned = NaturalCombatRetreatPolicy.TargetReturned(recentPackets,
-					target, session.CharacterId, targetTemplate?.GetL10n(), runtime.IsHostileSkill);
+					target, session.CharacterId, targetTemplate?.GetL10n(), runtime.IsHostileSkill, world.Summon?.ObjectId);
 				foreach (int attacker in recentAttacks)
 				{
 					if (attacker == target) lastHitByTargetMillis = runtime.NowMillis;
@@ -755,7 +757,8 @@ public sealed partial class NaturalIshalgenJourney
 					await navigator.MoveAsync(segment, token);
 					await session.SynchronizeAsync(token);
 					NaturalCombatRetreatPolicy.ObserveEngagement(activeAttackers,
-						session.PacketHistory.Skip(packetStart), session.CharacterId, hostileSkill: runtime.IsHostileSkill);
+						session.PacketHistory.Skip(packetStart), session.CharacterId, hostileSkill: runtime.IsHostileSkill,
+						spirit: session.Api.World.Summon?.ObjectId);
 					packetStart = session.PacketHistory.Count;
 					if (session.Api.World.CurrentHp <= 0 || session.Api.World.IsDead)
 					{
@@ -1070,7 +1073,8 @@ public sealed partial class NaturalIshalgenJourney
 						lastPowderSkill = restSkill.Id;
 						await session.SynchronizeAsync(token);
 						int[] hitBy = session.PacketHistory.Skip(castStart)
-							.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId)).OfType<int>().Distinct().ToArray();
+							.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId, session.Api.World.Summon?.ObjectId))
+							.OfType<int>().Distinct().ToArray();
 						if (hitBy.Length > 0)
 						{
 							// The hit cancelled the cast: never cast or sit under attack, fight first.
@@ -1156,7 +1160,8 @@ public sealed partial class NaturalIshalgenJourney
 						await session.AdvanceAsync(duration, waitToken);
 						await session.SynchronizeAsync(waitToken);
 						int[] attackers = session.PacketHistory.Skip(attackHistoryStart)
-							.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId)).OfType<int>().ToArray();
+							.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId, session.Api.World.Summon?.ObjectId))
+							.OfType<int>().ToArray();
 						return new NaturalRestTick(world.IsDead || world.CurrentHp <= 0, attackers);
 					},
 					async (attackers, defendToken) =>
