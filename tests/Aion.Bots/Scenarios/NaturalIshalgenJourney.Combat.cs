@@ -388,7 +388,11 @@ public sealed partial class NaturalIshalgenJourney
 					// NR-80a: the target's states, for the skills that ask for one.
 					TargetAbnormals: world.AbnormalsOf(target),
 					// NR-90a: the runes seen on the target, for the skills that burst them.
-					TargetRunes: ObservedRunes(world.EffectsOf(target)));
+					TargetRunes: ObservedRunes(world.EffectsOf(target)),
+					// NR-110d: the bot's own spirit, for the skills cast on it and the orders to it.
+					SpiritOut: world.Summon != null, SpiritAtTarget: spiritDriver.At(target), SpiritHpPercent: world.Summon?.HpPercent,
+					SpiritDistance: world.Summon is { } ownSpirit && world.Objects.TryGetValue(ownSpirit.ObjectId, out BotKnownObject? spiritSeen)
+						? Distance(session.CurrentPosition, spiritSeen.Position) : null);
 				NaturalCombatChoice choice = policy.Decide(observation, now, mauPolicy);
 				// NR-110c: before the bot's first attack its spirit goes first. Time passes while the bot holds for the
 				// spirit's first hit, so the fight looks again.

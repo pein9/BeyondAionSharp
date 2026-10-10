@@ -51,6 +51,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("spirit-master-spirit", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimsummon"),
 		new("spirit-master-walk", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimwalk"),
 		new("spirit-master-fight", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimfight"),
+		new("spirit-master-orders", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimorders"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -246,6 +247,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "spirit-master-spirit": await SpiritMasterSpiritRowAsync(probe, id, token); break;
 			case "spirit-master-walk": await SpiritMasterWalkRowAsync(probe, id, token); break;
 			case "spirit-master-fight": await SpiritMasterFightRowAsync(probe, id, token); break;
+			case "spirit-master-orders": await SpiritMasterOrdersRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -1386,6 +1388,113 @@ public sealed partial class SimulationFastScenarioTests
 			$"After the fight the spirit has {afterFight} and stands {gapAfterFight:F1} m from its master; the bot has {botAfterFight} HP. " +
 			$"The walk on: {walked:F0} m in {approaches} approaches with {walkSteps} steps of the spirit; it stands {Gap():F1} m from its master at the end, " +
 			$"by the server's positions.");
+	}
+
+	/// <summary>
+	/// NR-110d, row spirit-master-orders. Prepared by the director: the Mage is made a level-22 Spirit Master with the
+	/// skills of every level up to it and is placed in Altgard by the starved mosbears (210564, level 13), where the
+	/// Cleric's level-25 row fights. The journey's buff check summons the Earth Spirit. Three fights by the table follow,
+	/// and before each the director prepares one thing: the spirit's HP cut to 30%; the same again, while Spirit Wrath
+	/// Position cools down; 2,000 DP. Every other act is the journey's. The spirit casts a skill of its own only when
+	/// the bot has answered the server's SM_SUMMON_USESKILL, so each cast of the spirit shows an order carried out.
+	/// </summary>
+	private async Task SpiritMasterOrdersRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int earth = 3647, earthNpc = 833290, mosbear = 210564;
+		const int disturbance = 3837, spiritErosion = 3643, wrath = 3852, replenish = 3631, armor = 3857;
+		// What the level-21 Earth Spirit casts for each order.
+		const int earthDisturbance = 22198, earthErosion = 22468, earthWrath = 22513;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-two-spirit-master-in-altgard");
+		await probe.BecomeAsync(PlayerClass.SPIRIT_MASTER, 22);
+		Assert.All(new[] { earth, disturbance, spiritErosion, wrath, replenish, armor },
+			skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 22."));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s02", "buff-check-summons-the-earth-spirit", token);
+		await probe.Session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+		await probe.Session.SynchronizeAsync(token);
+		Assert.Contains(earth, buffCasts);
+		Summon spirit = probe.Server.GetSummon() ?? throw new InvalidDataException("No spirit was summoned.");
+		Assert.Equal(earthNpc, spirit.GetNpcId());
+		int spiritId = spirit.GetObjectId(), self = probe.Session.CharacterId;
+		Assert.Equal(100, probe.World.Summon?.HpPercent);
+
+		// The director's cut, told to the client as the server tells every loss of HP.
+		async Task CutSpiritAsync(int percent)
+		{
+			var stats = spirit.GetLifeStats();
+			int cut = stats.GetCurrentHp() - (int)((long)stats.GetMaxHp() * percent / 100);
+			if (cut > 0) stats.ReduceHp(SmAttackStatus.TYPE.REGULAR, cut, 0, SmAttackStatus.LOG.REGULAR, spirit);
+			await probe.Session.SynchronizeAsync(token);
+			Assert.True(probe.World.Summon?.HpPercent <= percent, $"The client sees the spirit at {probe.World.Summon?.HpPercent}% HP after a cut to {percent}%.");
+		}
+		Task<ClericFight> FightAsync(string step, string name) =>
+			TableFightAsync(probe, SpiritMasterTable, step, name, () => Task.FromResult(NearestLiving(probe, mosbear).GetObjectId()), token);
+		int[] SpiritCasts(ClericFight fight) => fight.Records.Where(record => record is { Direction: "<", Packet: "SM_CASTSPELL_RESULT" } &&
+			record.Fields.GetProperty("effectorId").GetInt32() == spiritId).Select(record => record.Fields.GetProperty("skillId").GetInt32()).ToArray();
+		int Count(ClericFight fight, string direction, string packet) => fight.Records.Count(record => record.Direction == direction && record.Packet == packet);
+		string Told(ClericFight fight) => $"{Count(fight, "<", "SM_SUMMON_USESKILL")} asked, {Count(fight, ">", "CM_SUMMON_CASTSPELL")} answered, " +
+			$"the spirit cast {string.Join(" ", SpiritCasts(fight))}";
+		void EveryOrderAnswered(ClericFight fight)
+		{
+			AssertNoRefusedCastRepeats(fight);
+			Assert.Equal(0, fight.Result.Deaths);
+			Assert.Equal(Count(fight, "<", "SM_SUMMON_USESKILL"), Count(fight, ">", "CM_SUMMON_CASTSPELL"));
+			Assert.Equal(Count(fight, "<", "SM_SUMMON_USESKILL"), fight.Casts.Count(cast => cast.SkillId is disturbance or spiritErosion or wrath));
+		}
+
+		// The first fight: the spirit is hurt, and the order it carries out on itself heals it.
+		await CutSpiritAsync(30);
+		int hpBefore = spirit.GetLifeStats().GetCurrentHp();
+		ClericFight first = await FightAsync("s03", "fight-with-the-spirit-at-thirty-percent");
+		EveryOrderAnswered(first);
+		Assert.Contains(first.Casts, cast => cast.SkillId == wrath);
+		Assert.Contains(earthWrath, SpiritCasts(first));
+		// The order's heal is waited for: the heal that is paid with the bot's own HP does not follow it at once.
+		Assert.DoesNotContain(first.Casts, cast => cast.SkillId == replenish);
+		Assert.DoesNotContain(first.Casts, cast => cast.SkillId == armor);
+		int hpAfterWrath = spirit.GetLifeStats().GetCurrentHp();
+		Assert.True(hpAfterWrath > hpBefore, $"The spirit had {hpBefore} HP before the fight and {hpAfterWrath} after it.");
+		string firstLine = $"{Outcome(first)}; {Told(first)}; the spirit's HP {hpBefore} to {hpAfterWrath} of {spirit.GetLifeStats().GetMaxHp()}";
+
+		// The second fight: Spirit Wrath Position cools down, and the heal paid with the bot's own HP is cast.
+		await CutSpiritAsync(30);
+		hpBefore = spirit.GetLifeStats().GetCurrentHp();
+		ClericFight second = await FightAsync("s04", "fight-with-the-spirit-at-thirty-percent-again");
+		EveryOrderAnswered(second);
+		Assert.DoesNotContain(second.Casts, cast => cast.SkillId == wrath);
+		Assert.Contains(second.Casts, cast => cast.SkillId == replenish);
+		StarterTraceRecord healed = second.Records.First(record => record is { Direction: "<", Packet: "SM_CASTSPELL_RESULT" } &&
+			record.Fields.GetProperty("effectorId").GetInt32() == self && record.Fields.GetProperty("skillId").GetInt32() == replenish);
+		Assert.Equal(spiritId, healed.Fields.GetProperty("targetId").GetInt32());
+		StarterTraceRecord paid = second.Records.First(record => record is { Direction: "<", Packet: "SmAttackStatus" } &&
+			record.Fields.GetProperty("objectId").GetInt32() == self && record.Fields.GetProperty("typeId").GetInt32() == 4);
+		string secondLine = $"{Outcome(second)}; {Told(second)}; the heal cost the bot {Math.Abs(paid.Fields.GetProperty("writtenValue").GetInt32())} HP; " +
+			$"the spirit's HP {hpBefore} to {spirit.GetLifeStats().GetCurrentHp()} of {spirit.GetLifeStats().GetMaxHp()}";
+
+		// The third fight: with 2,000 DP the spirit is armed.
+		await probe.SetDpAsync(2000);
+		ClericFight third = await FightAsync("s05", "fight-with-two-thousand-dp");
+		EveryOrderAnswered(third);
+		Assert.Contains(third.Casts, cast => cast.SkillId == armor);
+		StarterTraceRecord armed = third.Records.First(record => record is { Direction: "<", Packet: "SM_CASTSPELL_RESULT" } &&
+			record.Fields.GetProperty("effectorId").GetInt32() == self && record.Fields.GetProperty("skillId").GetInt32() == armor);
+		Assert.Equal(spiritId, armed.Fields.GetProperty("targetId").GetInt32());
+		Assert.True(probe.World.CurrentDp < 2000, $"The bot has {probe.World.CurrentDp} DP after Divine Spirit Armor.");
+
+		// Over the three fights each order was given, and the spirit cast what each asks of it.
+		ClericFight[] fights = [first, second, third];
+		int[] ordered = fights.SelectMany(fight => fight.Casts).Select(cast => cast.SkillId).Where(skill => skill is disturbance or spiritErosion or wrath).ToArray();
+		int[] carried = fights.SelectMany(SpiritCasts).ToArray();
+		Assert.Contains(disturbance, ordered);
+		Assert.Contains(spiritErosion, ordered);
+		Assert.Contains(earthDisturbance, carried);
+		Assert.Contains(earthErosion, carried);
+		Assert.Equal(spiritId, probe.Server.GetSummon()?.GetObjectId());
+		Console.WriteLine($"{id}: level {probe.World.Level} Spirit Master, max HP {probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}. " +
+			$"Buff check: casts {string.Join(" ", buffCasts)}; spirit {spirit.GetNpcId()} out. " +
+			$"Spirit at 30%: {firstLine}. Spirit at 30% again: {secondLine}. With 2,000 DP: {Outcome(third)}; {Told(third)}; DP {probe.World.CurrentDp} after. " +
+			$"Orders given {string.Join(" ", ordered)}; the spirit cast {string.Join(" ", carried)}. The same spirit at the end, at {probe.World.Summon?.HpPercent}% HP by the client.");
 	}
 
 	private const string AssassinTable = "natural-assassin-v1:";

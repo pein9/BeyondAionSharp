@@ -1488,6 +1488,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			type == typeof(SM_CASTSPELL) || type == typeof(SM_CASTSPELL_RESULT) ||
 			type == typeof(SM_SKILL_CANCEL) || type == typeof(SM_SKILL_COOLDOWN) || type == typeof(SM_SKILL_ACTIVATION) ||
 			type == typeof(SM_SUMMON_PANEL) || type == typeof(SM_SUMMON_PANEL_REMOVE) || type == typeof(SM_SUMMON_OWNER_REMOVE) ||
+			type == typeof(SM_SUMMON_USESKILL) ||
 			type == typeof(SM_STATUPDATE_HP) || type == typeof(SM_STATUPDATE_MP) ||
 			 type == typeof(SM_STATUPDATE_EXP) || type == typeof(SM_DIE) ||
 			 type == typeof(SM_SYSTEM_MESSAGE) || type == typeof(SM_MESSAGE) ||

@@ -43,6 +43,13 @@ public sealed record NaturalRecoveryStep(NaturalRecoveryKind Kind, int HpPercent
 /// <param name="Role">The skill's role in the catalog.</param>
 public sealed record NaturalManaStep(string Role, int MpPercent);
 
+/// <summary>NR-110d: one step of the spirit's ladder: a skill cast on the bot's spirit when the spirit's HP is at or
+/// below <paramref name="SpiritHpPercent"/>.</summary>
+/// <param name="Role">The skill's role in the catalog; every skill of it has the spirit as its first target.</param>
+/// <param name="OwnHpAbovePercent">The step waits while the bot's own HP is at or below this (a heal that is paid with
+/// the bot's HP); 0 for no floor.</param>
+public sealed record NaturalSpiritStep(string Role, int SpiritHpPercent, int OwnHpAbovePercent = 0);
+
 /// <summary>NR-10: the attack cast in place of a recovery step that says so, once the fight has had a recovery cast and
 /// the target is nearly dead: the kill ends the damage sooner than another heal.</summary>
 /// <param name="TargetHpPercent">The target's HP at or below which the finisher is cast.</param>
@@ -108,13 +115,17 @@ public enum NaturalAutoAttack
 /// <param name="OnlyWithRunes">NR-90a: roles that burst the runes on their target, each with the least number of runes it
 /// is cast at; the role is out of the line while the target is seen with fewer (the Assassin's Pain Rune does a tenth of
 /// its damage on a target with none). Null for none.</param>
+/// <param name="SpiritLadder">NR-110d: what the class casts on its spirit in a fight, in the order the steps are tried,
+/// after an open follow-up and before its attacks. A step at 100% is cast whenever its skill can be paid for (a buff
+/// that costs DP). Null for a class that casts nothing on a spirit.</param>
 public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjacent, IReadOnlyList<string> AtRange,
 	IReadOnlyList<NaturalRotationUpkeep> Upkeep, IReadOnlyList<NaturalRecoveryStep> Recovery, int SwarmAttackers, int FleeHpPercent,
 	NaturalAutoAttack AutoAttack, string? ControlRole = null, int EmergencyPercent = 35, int EmergencyClearPercent = 45,
 	IReadOnlyDictionary<string, int>? OnlyWhenHurt = null, bool HoldOpenChain = false, int? EmergencySeasonedPairPercent = null,
 	NaturalFinisher? Finisher = null, string? ReserveRole = null, int? ManaPotionReserveMargin = null,
 	IReadOnlyList<string>? Openers = null, IReadOnlyDictionary<string, int>? OnlyWhileTargetAbove = null, float? RangedHoldWithin = null,
-	IReadOnlyList<string>? PullRoles = null, NaturalManaStep? ManaSkill = null, IReadOnlyDictionary<string, int>? OnlyWithRunes = null)
+	IReadOnlyList<string>? PullRoles = null, NaturalManaStep? ManaSkill = null, IReadOnlyDictionary<string, int>? OnlyWithRunes = null,
+	IReadOnlyList<NaturalSpiritStep>? SpiritLadder = null)
 {
 	/// <summary>The table's two attack lists as lines of skill ids, every rank of a role in level order, for
 	/// <see cref="NaturalProfileValidator"/>.</summary>
@@ -142,6 +153,9 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 {
 	private const string CoolingDown = "Client-observed cooldown is active.";
 
+	/// <summary>NR-110d: how long a step of the spirit's ladder is given to show its effect before the next is tried.</summary>
+	private const int SpiritStepSettleSeconds = 3;
+
 	private readonly NaturalRotationRules rules;
 	private readonly NaturalPriestSkill[] catalog;
 	private readonly NaturalFightMovement movement;
@@ -161,13 +175,16 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			.Concat(rules.Finisher == null ? [] : [rules.Finisher.Role])
 			.Concat(rules.ReserveRole == null ? [] : [rules.ReserveRole])
 			.Concat(rules.Openers ?? []).Concat(rules.OnlyWhileTargetAbove?.Keys ?? []).Concat(rules.PullRoles ?? [])
-			.Concat(rules.OnlyWithRunes?.Keys ?? []);
+			.Concat(rules.OnlyWithRunes?.Keys ?? []).Concat(rules.SpiritLadder?.Select(step => step.Role) ?? []);
 		foreach (string role in named.Distinct())
 			if (!this.catalog.Any(skill => skill.Role == role))
 				throw new InvalidDataException($"Rotation table {rules.Id} names the role '{role}', which its catalog does not hold.");
 		foreach (string role in rules.OnlyWithRunes?.Keys ?? [])
 			if (this.catalog.Any(skill => skill.Role == role && skill.BurstsRune == null))
 				throw new InvalidDataException($"Rotation table {rules.Id} counts runes for the role '{role}', which holds a skill that bursts none.");
+		foreach (NaturalSpiritStep step in rules.SpiritLadder ?? [])
+			if (this.catalog.Any(skill => skill.Role == step.Role && skill.TargetKind != "MYPET"))
+				throw new InvalidDataException($"Rotation table {rules.Id} casts the role '{step.Role}' on a spirit, and it holds a skill with another target.");
 		if (rules.EmergencyClearPercent < rules.EmergencyPercent || rules.SwarmAttackers < 1)
 			throw new InvalidDataException($"Rotation table {rules.Id} has an emergency or swarm limit that cannot be met.");
 		// NR-10: a number the run may replace is the run's baseline in the table, so the table still says what is played.
@@ -307,6 +324,22 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			if (Ready(followUp)) return Cast(followUp, $"The {followUp.Role} follow-up is open; cast it before the chain resets.");
 		if (rules.HoldOpenChain && line.Any(Pending))
 			return Choice("wait", null, "An open follow-up only cools down and clears inside its chain time; hold the chain for it.");
+		// NR-110d: the spirit's ladder, for a spirit that is out. Each step is cast on the spirit at or below its
+		// percentage of the spirit's HP, while the bot's own HP is above the step's floor. A step that was cast in the
+		// last 3 s has not shown its effect yet (an order the spirit has still to carry out): no later step is cast for
+		// the same loss.
+		if (state.SpiritOut && rules.SpiritLadder is { } ladder)
+		{
+			int spiritHp = state.SpiritHpPercent ?? 100;
+			foreach (NaturalSpiritStep step in ladder)
+			{
+				if (spiritHp > step.SpiritHpPercent || step.OwnHpAbovePercent > 0 && HpAtOrBelow(step.OwnHpAbovePercent)) continue;
+				if (Best(step.Role, state) is not { } aid) continue;
+				if (Ready(aid)) return Cast(aid, $"The spirit is at or below {step.SpiritHpPercent}% HP: {step.Role}.");
+				if (state.Cooldowns.TryGetValue(aid.CooldownId, out DateTimeOffset aidReady) &&
+					aidReady.AddMilliseconds(-100.0 * aid.CooldownDeciseconds) > now.AddSeconds(-SpiritStepSettleSeconds)) break;
+			}
+		}
 		if (!state.Aggro && Upkeep(duringFight: false) is { } before) return Cast(before, $"The {before.Role} buff goes up before the first hit.");
 		if (Upkeep(duringFight: true) is { } during) return Cast(during, $"The {during.Role} buff is absent from the observed effects.");
 		IEnumerable<NaturalPriestSkill> attacks = line.Where(skill => skill.RequiresChainCategory == null);
@@ -436,6 +469,20 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		if (skill.TargetStates != null && !skill.TargetStates.Any(name =>
 			Enum.TryParse(name, out AbnormalState wanted) && (state.TargetAbnormals & (int)wanted) == (int)wanted))
 			reasons.Add($"The target is in none of the states the skill needs ({string.Join(", ", skill.TargetStates)}).");
+		// NR-110d: a skill cast on the bot's spirit, and an order to it, need a spirit out (Java FirstTargetProperty
+		// 104-114 and PetOrderUseUltraSkillEffect 31-33). The first also needs the spirit within the skill's range. An
+		// order at a target needs the spirit at that target, where the spirit's own skill reaches: the server takes the
+		// order off its list whether the spirit's cast succeeds or not (Java CM_SUMMON_CASTSPELL.runImpl 68-75).
+		if (skill.TargetKind == "MYPET" || skill.OrdersSpirit)
+		{
+			if (!state.SpiritOut) reasons.Add("The skill is for the bot's spirit, and none is out.");
+			else if (skill.TargetKind == "MYPET" && state.SpiritDistance is float away && away > skill.Range)
+				reasons.Add("The spirit is outside the skill's reach.");
+			else if (skill.TargetKind != "MYPET" && !state.SpiritAtTarget)
+				reasons.Add("The spirit does not stand at the target, where its own skill reaches.");
+		}
+		// NR-110d: the server refuses a player whose HP is not above the skill's cost (Java HpCondition.canValidate 40-47).
+		if (skill.HpCost > 0 && state.Hp <= skill.HpCost) reasons.Add("Observed HP is not above the skill's cost.");
 		if (!self)
 		{
 			if (target == null || state.TargetDistance is not float distance) reasons.Add("No client-observed target position.");
@@ -541,6 +588,8 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 
 	private static bool LifePotionUsable(NaturalCombatObservation state) => state.HasHotPotion && state.HotPotionReady && !state.HotPotionActive;
 
-	/// <summary>The skill is cast on the bot: the template's first target is the caster, or a friend or the caster.</summary>
-	private static bool Self(NaturalPriestSkill skill) => skill.TargetKind is "ME" or "TARGETORME";
+	/// <summary>The skill is cast on the bot: the template's first target is the caster, or a friend or the caster.
+	/// NR-110d: or the caster's spirit, which the server finds itself whatever the caster has selected (Java
+	/// FirstTargetProperty 104-114).</summary>
+	private static bool Self(NaturalPriestSkill skill) => skill.TargetKind is "ME" or "TARGETORME" or "MYPET";
 }

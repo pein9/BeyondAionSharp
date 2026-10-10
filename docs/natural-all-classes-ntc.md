@@ -6006,14 +6006,128 @@ The template:
       run guard-p8 (run/nr/NR-110c/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr110c-fast, 11 passed).
-- [ ] **NR-110d - The spirit's orders, its heal and its armor.** Depends: NR-110c
+- [x] **NR-110d - The spirit's orders, its heal and its armor.** Depends: NR-110c
   - Work: Java first: PetOrderUseUltraSkillEffect and CM_SUMMON_CASTSPELL, and the skills
     whose first target is the spirit. The table gets Spirit Disturbance, Spirit Erosion
     and Spirit Wrath Position as orders, Replenish Element below a percentage of the
     spirit's HP, and Divine Spirit Armor for its DP.
   - Proof: One probe row on a probe account in which an order is carried out and the
     spirit is healed; the full gate identical.
-- [ ] **NR-110e - A monster on the spirit is an attacker.** Depends: NR-110d
+  - 2026-10-10: done. The table orders the spirit, the bot answers the server so that
+    the spirit casts, and a ladder of its own heals and arms the spirit. Found on the
+    way: the bot does not read where a stagger puts a monster, item NR-110g below.
+    - **Java, beyond NR-110c.**
+      - **An order.** A skill with PetOrderUseUltraSkillEffect makes the spirit cast
+        nothing by itself. applyEffect 28-52 looks up the spirit's own skill for this
+        order and this kind of spirit, puts it on the spirit's list with the order's
+        hate, and tells the master's client with SM_SUMMON_USESKILL: the spirit, the
+        skill, its level, the target. The spirit casts when the client answers with
+        CM_SUMMON_CASTSPELL (runImpl 68-75, SummonController.useSkill 126-136). The
+        order is taken off the list whether the spirit's cast succeeds or not.
+      - **The spirit's skills** (pet_skills.xml, skill_templates.xml), for the Earth
+        Spirit of level 16, 21 and 26. Spirit Disturbance: Command: Earth Disturbance
+        hits for 347, 455 or more, gives the spirit half of it as HP, and carries the
+        order's hate of 1,104; it reaches 5 m from the spirit. Spirit Erosion: Earth Erosion,
+        131 or 154 damage every 6 s for 30 s. Spirit Wrath Position: Command: Earth
+        Wrath, on the spirit itself: 14% more attack and 1,450 HP more for 30 s, with a
+        heal of 1,450.
+      - **A skill on the spirit.** First target MYPET: the server takes the caster's
+        spirit whatever the caster has selected, and refuses without one (Java
+        FirstTargetProperty 104-114). Replenish Element heals the spirit at once and
+        costs its caster HP, 226, 394 and 562 by rank; a player whose HP is not above
+        the cost is refused (HpCondition.canValidate 40-47). Divine Spirit Armor costs
+        2,000 DP and lasts 10 min.
+      - **The spirit's HP.** Every change of it goes to everyone who sees the spirit as
+        SM_ATTACK_STATUS, which carries the HP as a percentage.
+      - **The port** has the same effect, packets and conditions. No server change.
+    - **The change, generic.** No class is named; a table and a profile say what is
+      played.
+      - Bots/Protocol/BotServerPacketDecoder.cs decodes SM_SUMMON_USESKILL: 124 packet
+        types, with the decoder's own test, which reads the Java fixture.
+      - Bots/World/BotSummonWorldState.cs: the world state holds the spirit's HP as a
+        percentage, from the panel and then from each SM_ATTACK_STATUS of the spirit,
+        and the list of skills the server has asked the spirit for.
+      - Sc/Classes/NaturalSpiritDriver.cs: each beat, and the end of a fight, answers
+        every skill asked for with CM_SUMMON_CASTSPELL.
+      - Sc/NaturalPriestCombatPolicy.cs and Sc/Classes/NaturalSkillCatalog.cs: a skill
+        row says whether it is an order to the spirit and what HP it costs. The table
+        sees whether a spirit is out, whether it stands at the target, its HP and how
+        far it is.
+      - Sc/Classes/NaturalRotationCombatPolicy.cs. A skill for the spirit is refused
+        without a spirit; a skill on the spirit when it is out of the skill's range; an
+        order at a target until the spirit stands at that target, where its own skill
+        reaches; a skill that costs HP when the bot's HP is not above the cost. New in
+        the table: the spirit's ladder, steps cast on the spirit at or below a
+        percentage of its HP, each with a floor for the bot's own HP, tried after an
+        open follow-up and before the attacks. A step cast in the last 3 s has not
+        shown its effect yet, and no later step is cast for the same loss.
+      - Sc/Classes/NaturalProfileValidator.cs: a skill cast on the spirit is in no
+        attack line, and a profile that gives a role to a spirit skill keeps a spirit.
+      - SimT/SimulationFastScenarioTests.cs: a SIM trace holds SM_SUMMON_USESKILL.
+    - **The Spirit Master.** Spirit Disturbance and Spirit Erosion stand before its own
+      spells in both lines. The ladder: Divine Spirit Armor at any HP, which is cast
+      when it has the DP; Spirit Wrath Position at 60% of the spirit's HP; Replenish
+      Element at 40%, with its own HP above 70%. 51 of its 66 skills have a role now and
+      15 a reason.
+    - **Proof, the probe row** spirit-master-orders (SimT/SimulationNaturalStarterProbe
+      Tests.cs, probe account 98; `bash run/nr/NR-110d/probe.sh <attempt>`). Prepared by
+      the director: a level-22 Spirit Master by the starved mosbears where the Cleric's
+      level-25 row fights; before each of three fights one thing: the spirit's HP cut
+      to 30%, the same again, and 2,000 DP. Run nr110d-probe-a2, on the committed tree:
+      - **First fight, the spirit at 30%.** The table casts Spirit Wrath Position. The
+        server asks for Command: Earth Wrath 0.7 s later, the bot answers, and the
+        spirit casts it 0.5 s after that. Then the spirit is sent, and Spirit
+        Disturbance and Spirit Erosion follow: three skills asked for, three answered,
+        three cast by the spirit. The spirit's HP goes from 472 to 1,742. Replenish
+        Element is not cast.
+      - **Second fight, the spirit at 30% again**, Spirit Wrath Position cooling down:
+        Replenish Element is cast on the spirit and costs the bot 394 HP; the spirit's
+        HP goes from 690 to 2,278.
+      - **Third fight, 2,000 DP:** Divine Spirit Armor is cast on the spirit, and 2 DP
+        are left.
+      - Five skills were asked for over the three fights, and five answered. No death
+        and no refused cast repeated.
+      - **The first attempt** (nr110d-probe-a1) passed too. In its first fight
+        Replenish Element followed Spirit Wrath Position at once, before the order's
+        heal had landed, for 394 HP and a life potion. The 3 s of the ladder are from
+        that.
+    - **The other spirit rows, played again.** spirit-master-walk and
+      spirit-master-spirit pass as before. spirit-master-fight holds in all it asserts:
+      Spirit Disturbance goes first, and the mosbear stays on the spirit, four strikes
+      on it and none on its master. The run fails the log policy on one line of the
+      server's audit: the hit time of Flame Bolt was 48 ms short.
+    - **Found: a stagger moves a monster and the bot does not see it.** Stone Shock
+      staggers its target 2 m back (Java StaggerEffect.calculate 50-69). The server
+      moves it (startEffect 41) and sends SM_FORCED_MOVE for a player only (42-44); for
+      a monster the landing point is in SM_CASTSPELL_RESULT (140-151), which the bot
+      reads only the start of. A staggered monster that then runs at the bot tells its
+      place with its next move. One that the spirit holds stays 2 m farther away than
+      the bot believes, and the bot's hit time for a spell that flies is short by more
+      than the server allows. Shown by a run with one more line printed
+      (run/nr/NR-110d/probe-diag.log): the server has the mosbear at 1445.33, 797.36
+      and the bot at 1443.46, 796.64. Item NR-110g, taken before NR-110e.
+    - **Open for the Spirit Master's rows.** Replenish Element costs a third of the
+      bot's HP at level 22, and the ladder of the bot then drinks a life potion: whether
+      the heal earns that. What the table does when the spirit is hurt and both heals
+      are cooling down.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-110d/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr110d-fast, 11 passed).
+- [ ] **NR-110g - A stagger moves the monster for the bot too.** Depends: NR-110d
+  - Work: Found by NR-110d. Java first: SM_CASTSPELL_RESULT's list of effects, the
+    spell status of each and the place it carries for a stagger, a stumble, a lift and
+    a pull, and which of them send SM_FORCED_MOVE besides. The bot's decoder reads the
+    whole packet, and the world state puts the creature where the packet says. Generic:
+    every class and every skill that moves its target. A recorded scope whose bot
+    staggers or pulls a monster sees that monster in another place from then on. The
+    seven scopes of the Priest and the Cleric must stay identical (rule (j), NR-Q2); if
+    one changes, the item stops and goes under Blocked for the operator. A class scope
+    that changes is recorded again twice by rule (j).
+  - Proof: Row spirit-master-fight passes with no line of the server's audit; the gate
+    with the Priest's and the Cleric's seven scopes identical, and every class scope
+    identical or recorded again twice, its first difference explained by a stagger.
+- [ ] **NR-110e - A monster on the spirit is an attacker.** Depends: NR-110g
   - Work: Found by NR-110c: the bot counts as an attacker only a creature that strikes
     the bot itself. Java first: what the master is told of a strike at its spirit
     (SM_ATTACK, the hostile spells, SM_SUMMON_UPDATE). The attacker rule takes the bot's
@@ -6821,3 +6935,16 @@ report what was done, what is parked or blocked, and what the operator must deci
   NR-110e and NR-110f, before the Spirit Master's rows. Full gate guard-p8 (thirteen
   scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
   (nr110c-fast) pass. Next: NR-110d, the spirit's orders, its heal and its armor.
+- 2026-10-10 — Loop: NR-110d done. The table orders the spirit: the server queues the
+  spirit's skill and asks the client (SM_SUMMON_USESKILL), the bot answers
+  (CM_SUMMON_CASTSPELL), the spirit casts. A ladder of the spirit's own heals and arms it:
+  Divine Spirit Armor for its DP, Spirit Wrath Position at 60% of the spirit's HP,
+  Replenish Element at 40% with the bot's own HP above 70%. Probe row spirit-master-orders
+  (nr110d-probe-a1 and a2): five skills asked for and five answered over three fights, the
+  spirit healed from 472 to 1,742 HP by its order and from 690 to 2,278 by the heal, the
+  armor cast for 2,000 DP. Found: a stagger moves a monster 2 m and the bot does not read
+  the landing, so a monster the spirit holds is farther than the bot believes and the
+  server's audit names the hit time; row spirit-master-fight fails the log policy on that
+  line. Item NR-110g, before NR-110e. Full gate guard-p8 (thirteen scopes identical),
+  seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr110d-fast) pass. Next:
+  NR-110g, a stagger moves the monster for the bot too.

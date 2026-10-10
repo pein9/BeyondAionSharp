@@ -89,6 +89,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_SUMMON_PANEL)] = DecodeSummonPanel,
 			[typeof(SM_SUMMON_PANEL_REMOVE)] = DecodeSummonPanelRemove,
 			[typeof(SM_SUMMON_OWNER_REMOVE)] = DecodeSummonOwnerRemove,
+			[typeof(SM_SUMMON_USESKILL)] = DecodeSummonUseSkill,
 			[typeof(SM_RECIPE_LIST)] = DecodeRecipeList,
 			[typeof(SM_LEARN_RECIPE)] = DecodeLearnRecipe,
 			[typeof(SM_RECIPE_DELETE)] = DecodeRecipeDelete,
@@ -841,6 +842,15 @@ public sealed partial class BotServerPacketDecoder
 		var r = new PacketBodyReader(body);
 		var result = Fields(("summonObjId", r.ReadInt32()));
 		if (body.Length != 4) throw new InvalidDataException("SM_SUMMON_OWNER_REMOVE must contain exactly four bytes.");
+		return result;
+	}
+
+	// Java SM_SUMMON_USESKILL.writeImpl: the spirit, the skill it is to cast with its level, and the target.
+	private static IReadOnlyDictionary<string, object?> DecodeSummonUseSkill(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		var result = Fields(("summonId", r.ReadInt32()), ("skillId", r.ReadUInt16()), ("skillLvl", r.ReadByte()), ("targetId", r.ReadInt32()));
+		if (body.Length != 11) throw new InvalidDataException("SM_SUMMON_USESKILL must contain exactly eleven bytes.");
 		return result;
 	}
 

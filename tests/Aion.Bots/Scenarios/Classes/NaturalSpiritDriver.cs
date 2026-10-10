@@ -18,6 +18,9 @@ namespace Aion.Bots.Scenarios.Classes;
 /// A monster keeps a spirit and its master as two enemies (Java AggroList.addDamage 37-52: the hate is ten times the
 /// damage, of the one who dealt it) and turns on the one it hates more.
 /// The spirit acts in beats, between two acts of the bot. Nothing here waits, the opening apart.
+/// NR-110d: an order of the master (a skill with Java PetOrderUseUltraSkillEffect) makes the spirit cast nothing by
+/// itself. The server queues the spirit's skill and tells the master's client with SM_SUMMON_USESKILL; the spirit casts
+/// when the client answers with CM_SUMMON_CASTSPELL, which a beat does.
 /// </summary>
 internal sealed class NaturalSpiritDriver(INaturalJourneySession session, NaturalJourneyRuntime runtime, BotNavigationGeometry geometry)
 {
@@ -40,6 +43,25 @@ internal sealed class NaturalSpiritDriver(INaturalJourneySession session, Natura
 		World.Summon is { } spirit && World.Objects.TryGetValue(spirit.ObjectId, out BotKnownObject? seen) && seen.TemplateId is int kind &&
 		runtime.Data.NpcDataDh.GetNpcTemplate(kind) is { } template ? (spirit, seen, template) : null;
 
+	/// <summary>NR-110d: the spirit was sent at this target and stands in its own reach of it, where its skills reach.</summary>
+	public bool At(int prey) => target == prey && !walking && World.Summon?.ObjectId == spiritId;
+
+	/// <summary>NR-110d: answers every skill the server has asked the spirit for (SM_SUMMON_USESKILL) with
+	/// CM_SUMMON_CASTSPELL, which is what makes the spirit cast it. Without a spirit the list is empty.</summary>
+	public async Task AnswerOrdersAsync(CancellationToken token)
+	{
+		foreach (BotSummonSkillOrder order in World.TakeSummonSkillOrders())
+		{
+			await session.SendPacketAsync(GameClientPackets.SummonCastSpell(order.SummonObjectId, order.SkillId, order.SkillLevel,
+				order.TargetObjectId), token);
+			session.TraceDiagnostic("combat-spirit-order-answered", new Dictionary<string, object?>
+			{
+				["spiritObjectId"] = order.SummonObjectId, ["skillId"] = (int)order.SkillId, ["skillLevel"] = (int)order.SkillLevel,
+				["targetObjectId"] = order.TargetObjectId,
+			});
+		}
+	}
+
 	/// <summary>Tells the bot's own walks how fast its spirit runs: the client's data of its kind. The server names no
 	/// speed for it.</summary>
 	public void Know()
@@ -55,6 +77,7 @@ internal sealed class NaturalSpiritDriver(INaturalJourneySession session, Natura
 	/// </summary>
 	public async Task BeatAsync(int prey, CancellationToken token)
 	{
+		await AnswerOrdersAsync(token);
 		if (Own() is not { } own || !World.Objects.TryGetValue(prey, out BotKnownObject? seen) || seen.IsCorpse) return;
 		Know();
 		long now = runtime.NowMillis;
@@ -155,6 +178,7 @@ internal sealed class NaturalSpiritDriver(INaturalJourneySession session, Natura
 	/// along (BotMover.WeaveSpirit).</summary>
 	public async Task StandDownAsync(CancellationToken token)
 	{
+		await AnswerOrdersAsync(token);
 		if (target == 0) return;
 		int was = target;
 		target = 0;

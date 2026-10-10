@@ -7,8 +7,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// NR-110: the Spirit Master, the Mage's other choice at Ascension (docs/natural-all-classes-ntc.md). The catalog is
 /// generated from the shipped data to level 26, where the accepted line's Abyss-entry leg ends. It fights as the Mage it
 /// was, with what it casts itself from level 10 put into the same table form. NR-110a: it keeps a spirit beside it.
-/// Every skill that orders, heals or arms the spirit is left out with its reason and named in the plan's items after
-/// NR-110: no rule sends the spirit at a target yet.
+/// NR-110c: the spirit goes first into a fight. NR-110d: the table gives it orders, heals it and arms it.
 /// </summary>
 public static class NaturalSpiritMasterProfile
 {
@@ -36,6 +35,15 @@ public static class NaturalSpiritMasterProfile
 		// NR-110a: the spirits it keeps.
 		[3645] = "earth-spirit", [3647] = "earth-spirit", [3649] = "earth-spirit",
 		[3707] = "fire-spirit", [3709] = "fire-spirit", [3711] = "fire-spirit", [3713] = "fire-spirit",
+		// NR-110d: the orders. Spirit Disturbance (level 10) has the spirit strike once, hard, and with a hate of its
+		// own; it is ready every 14 s. Spirit Erosion (level 22) has it put 30 s of damage on the target and is ready
+		// every 2 min. Spirit Wrath Position (level 17) is an order the spirit carries out on itself: 30 s of a harder
+		// hit and, for the Earth Spirit, 1,450 HP more with a heal of as much.
+		[3837] = "disturbance", [3643] = "spirit-erosion", [3852] = "wrath",
+		// NR-110d: Replenish Element heals the spirit at once and costs the Spirit Master's own HP: 226, 394 and 562 by
+		// rank. Divine Spirit Armor arms the spirit for 10 min for 2,000 DP.
+		[3630] = "replenish", [3631] = "replenish", [3632] = "replenish",
+		[3855] = "armor", [3856] = "armor", [3857] = "armor", [3858] = "armor",
 		// NR-50a: the two powder skills, cast only in a rest.
 		[246] = "herb", [247] = "herb", [251] = "herb", [253] = "herb",
 		[249] = "mp-recovery", [250] = "mp-recovery", [252] = "mp-recovery", [254] = "mp-recovery",
@@ -43,7 +51,6 @@ public static class NaturalSpiritMasterProfile
 
 	private const string Spirit = "is not one of the two spirits the profile keeps, the Earth Spirit and before it the Fire Spirit: the server " +
 		"keeps one spirit at a time (Java SummonsService.createSummon 30-33).";
-	private const string Order = "is an order to the spirit, and no rule sends the spirit at a target yet (NR-110b).";
 	private const string Dispel = "takes a buff off its target and hits for each one taken; the monsters of the route carry none.";
 
 	/// <summary>Every other active skill a Spirit Master learns by itself to level 26, and why it is not cast.</summary>
@@ -51,14 +58,6 @@ public static class NaturalSpiritMasterProfile
 	{
 		[3685] = "Summon: Wind Spirit I " + Spirit, [3687] = "Summon: Wind Spirit II " + Spirit, [3689] = "Summon: Wind Spirit III " + Spirit,
 		[3665] = "Summon: Water Spirit I " + Spirit, [3667] = "Summon: Water Spirit II " + Spirit,
-		[3837] = "Spirit Disturbance " + Order, [3852] = "Spirit Wrath Position " + Order, [3643] = "Spirit Erosion " + Order,
-		[3630] = "Replenish Element I heals the spirit for the Spirit Master's own HP; no rule watches the spirit's HP in a fight yet (NR-110b).",
-		[3631] = "Replenish Element II heals the spirit for the Spirit Master's own HP; no rule watches the spirit's HP in a fight yet (NR-110b).",
-		[3632] = "Replenish Element III heals the spirit for the Spirit Master's own HP; no rule watches the spirit's HP in a fight yet (NR-110b).",
-		[3855] = "Divine Spirit Armor I arms the spirit for 2,000 DP; no rule casts a skill on the spirit yet (NR-110b).",
-		[3856] = "Divine Spirit Armor II arms the spirit for 2,000 DP; no rule casts a skill on the spirit yet (NR-110b).",
-		[3857] = "Divine Spirit Armor III arms the spirit for 2,000 DP; no rule casts a skill on the spirit yet (NR-110b).",
-		[3858] = "Divine Spirit Armor IV arms the spirit for 2,000 DP; no rule casts a skill on the spirit yet (NR-110b).",
 		[3780] = "Root of Enervation slows its target's attacks by a fifth for 35 to 45 s for 244 MP, which is the mana of four Erosions.",
 		[3571] = "Body Root binds its target for 8 to 10 s: it casts no physical skill and still swings. 108 MP for that buys two Erosions.",
 		[3572] = "Sigil of Silence silences its target; the table has no rule for a target that casts.",
@@ -75,17 +74,24 @@ public static class NaturalSpiritMasterProfile
 	/// it has no cast time a hit can push back. An open follow-up is always cast first. Stone Skin goes up before the
 	/// first hit and is kept up between fights. Root is cast only on the way out, before a retreat.
 	/// <para>
+	/// NR-110d: the orders come before its own spells, once the spirit stands at the target: Spirit Disturbance, whose
+	/// hate keeps the monster on the spirit, and Spirit Erosion. On the spirit it casts Divine Spirit Armor whenever it
+	/// has the DP, Spirit Wrath Position when the spirit is at or below 60% HP, and Replenish Element when the spirit is
+	/// at or below 40% and its own HP is above 70%, since that heal is paid with its own HP.
+	/// </para>
+	/// <para>
 	/// The ladder and the rest are the Mage's (CP-Q11, CP-Q12): the shield scroll at 50% HP and the life potion at or
 	/// below 75%; it leaves at two attackers, or at 25% HP with nothing ready; the mana potion only when the cheapest
 	/// attack cannot be paid. The spellbook swings only when no attack can be paid for.
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-spirit-master-v1",
-		Adjacent: ["erosion", "earth", "stone", "choke", "backdraft", "servant", "ice", "shock", "bolt", "blaze"],
-		AtRange: ["earth", "stone", "erosion", "choke", "backdraft", "servant", "ice", "shock", "bolt", "blaze"],
+		Adjacent: ["disturbance", "erosion", "spirit-erosion", "earth", "stone", "choke", "backdraft", "servant", "ice", "shock", "bolt", "blaze"],
+		AtRange: ["disturbance", "spirit-erosion", "earth", "stone", "erosion", "choke", "backdraft", "servant", "ice", "shock", "bolt", "blaze"],
 		Upkeep: [new("skin")],
 		Recovery: [new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
-		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.LastResort, ControlRole: "root");
+		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.LastResort, ControlRole: "root",
+		SpiritLadder: [new("armor", 100), new("wrath", 60), new("replenish", 40, OwnHpAbovePercent: 70)]);
 
 	/// <summary>NR-110a: the spirits kept, best first: the Earth Spirit, which takes the hits, from level 16, and the Fire
 	/// Spirit, its first, before. A cast takes 4.5 s and 145 MP or more.</summary>

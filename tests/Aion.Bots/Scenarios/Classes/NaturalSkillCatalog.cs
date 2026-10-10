@@ -136,7 +136,11 @@ public static class NaturalSkillCatalog
 			BurstsRune: template.GetEffects()?.GetEffects().OfType<SignetBurstEffect>().FirstOrDefault()?.signet,
 			// The effect of that very class: the servant's, the trap's and the totem's derive from it.
 			SummonsNpcId: template.GetEffects()?.GetEffects().FirstOrDefault(effect => effect.GetType() == typeof(SummonEffect)) is SummonEffect spirit
-				? spirit.npcId : 0);
+				? spirit.npcId : 0,
+			OrdersSpirit: template.GetEffects()?.GetEffects().OfType<PetOrderUseUltraSkillEffect>().Any() == true,
+			// Java HpCondition.getCost adds a delta by skill level and takes a ratio of the caster's HP; no skill of a
+			// catalog has either, and one that had would get no plain cost here.
+			HpCost: conditions.OfType<HpCondition>().FirstOrDefault() is { ratio: false, delta: 0 } cost ? cost.value : 0);
 	}
 
 	/// <summary>

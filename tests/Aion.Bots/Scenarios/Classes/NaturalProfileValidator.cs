@@ -24,6 +24,8 @@ public static class NaturalProfileValidator
 	/// StanceObserver), and the kept ones are no more than the server lets the class keep at once: a further one ends the
 	/// first (Java EffectController.addEffect 76-86), and the two would be cast in turn without end.</item>
 	/// <item>NR-110a: a skill that summons a spirit is in no rotation, and a kept spirit is such a skill.</item>
+	/// <item>NR-110d: a skill cast on the spirit is in no rotation, which is a list of attacks; and a profile that gives
+	/// a role to such a skill, or to an order, keeps a spirit.</item>
 	/// </list>
 	/// </summary>
 	/// <param name="skills">The profile's catalog.</param>
@@ -67,6 +69,7 @@ public static class NaturalProfileValidator
 				else if (skill.Activation == "TOGGLE") problems.Add($"Rotation {line} casts toggle {id}.");
 				else if (skill.SummonsNpcId != 0) problems.Add($"Rotation {line} casts skill {id}, which summons a spirit.");
 				else if (skill.OutOfCombatOnly) problems.Add($"Rotation {line} casts skill {id}, which cannot be cast in combat.");
+				else if (skill.TargetKind == "MYPET") problems.Add($"Rotation {line} casts skill {id}, which is cast on the spirit.");
 			}
 			for (int first = 0; first < rotation.Count; first++)
 			{
@@ -105,6 +108,9 @@ public static class NaturalProfileValidator
 			if (first.GetSubType() == SkillSubType.CHANT) chants++;
 			else others++;
 		}
+		if (spirits is not { Count: > 0 })
+			foreach (NaturalPriestSkill skill in skills.Where(skill => skill.TargetKind == "MYPET" || skill.OrdersSpirit))
+				problems.Add($"Skill {skill.Id} is for a spirit, and the profile keeps none.");
 		foreach (NaturalKeptSpirit kept in spirits ?? [])
 		{
 			NaturalPriestSkill[] ranks = skills.Where(skill => skill.Role == kept.Role).ToArray();

@@ -295,9 +295,13 @@ public sealed partial class BotWorldModel
 		else if (type == typeof(SM_SUMMON_PANEL))
 			ApplySummonPanel(packet);
 		else if (type == typeof(SM_SUMMON_PANEL_REMOVE))
-			Summon = null;
+			ForgetSummon();
 		else if (type == typeof(SM_SUMMON_OWNER_REMOVE))
 			ApplySummonOwnerRemove(packet);
+		else if (type == typeof(SM_SUMMON_USESKILL))
+			ApplySummonUseSkill(packet);
+		else if (type == typeof(SmAttackStatus))
+			ApplySummonStatus(packet);
 		else if (type == typeof(SM_EXCHANGE_REQUEST))
 			ExchangeRequestFrom = packet.Get<string>("receiver");
 		else
