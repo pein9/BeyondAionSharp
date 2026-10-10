@@ -4006,14 +4006,44 @@ The template:
       guard-p8 (run/nr/NR-54c/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
       16 skipped) and Fast passes (run nr54c-fast, 11 passed).
-- [ ] **NR-54d - A rest's defence fights the attacker it can reach first.** Depends: NR-54c
-  - Work: The second stop of leg l10. Java first: nothing of the server is relied on.
-    When a rest is interrupted, the defence takes the attackers in the order of their
-    hits. A walk to one of them that is refused (it shoots from inside its neighbours'
-    circles) ended the run. The attacker is set aside, the nearest one that can be
-    fought is fought first, and the one set aside is asked again after it.
-  - Proof: The Templar's leg l10 is played to its end in a replay; the full gate
+- [x] **NR-54d - A defence whose walk to an attacker is refused goes on.** Depends: NR-54c
+  - Work: The second stop of leg l10, and its fourth. Java first: nothing of the server
+    is relied on. A monster that shoots from inside its neighbours' circles cannot be
+    walked to: the fight refuses the walk when the pack would bring it to the swarm
+    limit. In a defence that refusal ended the run, outside Haramel. A refused attacker
+    is passed over and the next one is fought; the walk or the rest that was interrupted
+    then goes on and observes again.
+  - Proof: Both stops are passed in replays of the Templar's leg l10; the full gate
     identical.
+  - 2026-10-09: done. The item was written for the rest's defence; the fourth stop was
+    the same refusal in the travel defence, and it is one item.
+    - **The change.** J, the navigator's defence (DefendOnAttackAsync), which also
+      answers an interrupted rest first: a refused walk is traced
+      (navigation-defense-approach-blocked) and the next attacker is taken. Haramel's
+      own answer, which ends the defence there, stays. J.Combat, DefendDuringRestAsync:
+      a refused attacker is set aside and the nearest one that can be fought is fought;
+      after that fight the list is asked again. When none can be reached they get 2 s
+      to come, three times, and then the rest observes again
+      (rest-defend-approach-blocked).
+    - **Proof, the replays** (each from altgard-rc-l9-templar).
+      - l10-a4 (run/nr/NR-54d/l10-a4/, with the rest's defence alone). The stop at
+        Q2277 is passed, and Q2277, Q2280 and Q2281 are done. Four refusals were
+        answered in rests; in the last of them the monster had come by the third ask
+        and was killed. The replay stopped at Q2282 after 2 h 45 min (71,589 records,
+        213 fights, 130 kills): NR-54e.
+      - l10-a6 (run/nr/NR-54d/l10-a6/, with the travel defence's change and the first
+        form of NR-54e). The stop at Q24014's collect step is passed. Two refusals were
+        passed over in the travel defence: 210551 at Q2277, whose neighbour was fought,
+        and 210751 at the collect step. The replay stopped at Bregirun's door after
+        4 h 29 min (118,821 records): NR-54f.
+      - l10-a8 (run/nr/NR-54e/l10-a8/, the committed code of the three items): the leg
+        is played to its end, with one refusal passed over.
+    - **Proof.** One bundle ran on the tree that holds NR-54d, NR-54e and NR-54f
+      together; the three are committed one after the other from that tree. Gate, set
+      all+mage+warrior+artist+engineer+scout, -Parallel 8, run guard-p8
+      (run/nr/NR-54f/guard-p8/verdict.json): verdict pass, all twelve scopes identical.
+      Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed, 16
+      skipped) and Fast passes (run nr54f-fast2, 11 passed).
 - [ ] **NR-54a - The coin tiers buy the shield.** Depends: NR-50c
   - Work: Split from NR-50c. Java first: the reward shops as read for NR-38
     (TradeService.performBuyFromShop and validateBuyItems), and which trade tab of
@@ -4562,3 +4592,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   l10-a3 passed Q2273 and stopped at Q2277, where a rest's defence could not walk to an
   attacker (NR-54d, written here). Full gate guard-p8 (twelve scopes identical), seven
   checks, unit suite (4,629 passed, 16 skipped) and Fast (nr54c-fast) pass. Next: NR-54d.
+- 2026-10-09 — Loop: NR-54d done. A walk to an attacker that shoots from inside its
+  neighbours' circles is refused by the fight; in a defence that refusal ended the run,
+  at Q2277 in a rest and at Q24014's collect step on the road. The travel defence now
+  passes such an attacker over and takes the next, and the rest's defence sets it aside
+  and fights the nearest it can. Replays l10-a4 and l10-a6 passed both stops. One bundle
+  ran for NR-54d, NR-54e and NR-54f together: full gate guard-p8 (twelve scopes
+  identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr54f-fast2)
+  pass. Next: NR-54e.

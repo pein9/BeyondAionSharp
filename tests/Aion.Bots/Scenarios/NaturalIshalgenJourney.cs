@@ -562,6 +562,17 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						{ ["attacker"] = attacker, ["position"] = session.CurrentPosition, ["reason"] = blocked.Message });
 						return;
 					}
+					catch (NaturalCombatApproachBlockedException blocked)
+					{
+						// NR-54d: the walk to this attacker is refused: it shoots from inside its neighbours' circles. That
+						// is no end of the journey. The next attacker is fought, and the walk or the rest that was
+						// interrupted goes on and observes again.
+						session.TraceDiagnostic("navigation-defense-approach-blocked", new Dictionary<string, object?>
+						{
+							["attacker"] = attacker, ["npcId"] = npc.TemplateId, ["hp"] = session.Api.World.CurrentHp,
+							["position"] = session.CurrentPosition, ["reason"] = blocked.Message,
+						});
+					}
 				}
 			};
 			var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry,

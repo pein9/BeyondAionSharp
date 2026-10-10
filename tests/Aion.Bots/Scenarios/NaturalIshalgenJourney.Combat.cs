@@ -1092,12 +1092,18 @@ public sealed partial class NaturalIshalgenJourney
 			if (navigator.DefendOnAttackAsync is { } defend)
 				await defend(attackers.ToArray(), navigator.LastMovementStart ?? session.CurrentPosition,
 					attackHistoryStart, defendToken);
+			// NR-54d: a walk to an attacker can be refused: it shoots from inside its neighbours' circles. That attacker is
+			// set aside and the nearest one that can be fought is fought first, as a player kills what is on them; after
+			// that fight it is asked again, with one neighbour fewer. When none can be reached they are given time to
+			// come, and then the rest observes again.
+			var setAside = new HashSet<int>();
+			int waitsForAttackers = 0;
 			// Never sit under attack: fight whatever is still on the Priest, nearest first. A fight that
 			// ends in a retreat re-observes; attackers left more than 30 m behind are no longer a threat.
 			for (int fight = 0; fight < MaximumCombatActions && !world.IsDead && world.CurrentHp > 0; fight++)
 			{
 				int[] remaining = attackers.Distinct()
-					.Where(attacker => !navigator.UnavailableObjects.Contains(attacker) &&
+					.Where(attacker => !setAside.Contains(attacker) && !navigator.UnavailableObjects.Contains(attacker) &&
 						world.Objects.TryGetValue(attacker, out BotKnownObject? observed) &&
 						Distance(session.CurrentPosition, observed.Position) < 30)
 					.OrderBy(attacker => Distance(session.CurrentPosition, world.Objects[attacker].Position))
@@ -1105,7 +1111,14 @@ public sealed partial class NaturalIshalgenJourney
 				if (remaining.Length == 2 && mauPolicy.PreferWoundedWhenTwoAttackers)
 					remaining = remaining.OrderBy(attacker => PriorityForEngagedTarget(attacker,
 						remaining.Length, session, preferWounded: true)).ToArray();
-				if (remaining.Length == 0) break;
+				if (remaining.Length == 0)
+				{
+					if (setAside.Count == 0 || ++waitsForAttackers > 3) break;
+					setAside.Clear();
+					await session.AdvanceAsync(TimeSpan.FromSeconds(2), defendToken);
+					await session.SynchronizeAsync(defendToken);
+					continue;
+				}
 				session.TraceDiagnostic("rest-defend", new Dictionary<string, object?>
 				{
 					["attacker"] = remaining[0],
@@ -1113,8 +1126,21 @@ public sealed partial class NaturalIshalgenJourney
 					["hp"] = world.CurrentHp,
 					["position"] = session.CurrentPosition,
 				});
-				if (await TryKillAsync(remaining[0], defendToken, session.CurrentPosition))
-					navigator.UnavailableObjects.Add(remaining[0]);
+				try
+				{
+					if (await TryKillAsync(remaining[0], defendToken, session.CurrentPosition))
+						navigator.UnavailableObjects.Add(remaining[0]);
+					setAside.Clear();
+				}
+				catch (NaturalCombatApproachBlockedException refusal)
+				{
+					setAside.Add(remaining[0]);
+					session.TraceDiagnostic("rest-defend-approach-blocked", new Dictionary<string, object?>
+					{
+						["attacker"] = remaining[0], ["setAside"] = setAside.ToArray(), ["reason"] = refusal.Message,
+						["hp"] = world.CurrentHp, ["position"] = session.CurrentPosition,
+					});
+				}
 			}
 		}
 
