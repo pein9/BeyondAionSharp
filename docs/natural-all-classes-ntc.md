@@ -6372,10 +6372,13 @@ The template:
     in SimulationNaturalStarterProbeTests: prepared Spirit Masters on the two probe
     accounts, in the gear the route has given by that level, fight the monsters the
     Cleric's rows fight. Each row's trace shows the table in play: the spirit out and
-    sent, Erosion, the earth chain, the servants, Vacuum Choke from 22, Stone Skin up,
-    the ladder, the rest with the powder. What a row shows decides the open rules:
-    which spirit serves before level 16, and whether Root of Enervation or Body Root
-    earn their mana. A fix is one small change (rule (i)).
+    sent, the orders, Erosion, Chain of Earth, the servants, Vacuum Choke from 22, Stone
+    Skin up, both ladders, the rest with the powder. What a row shows decides the open
+    rules: which spirit serves before level 16; whether Root of Enervation or Body Root
+    earn their mana; and those NR-110d to NR-110f left open: at how many attackers a
+    class leaves whose spirit takes the hits, whether Replenish Element earns the HP
+    and the potion it costs, and whether the spirit needs a beat inside the bot's long
+    casts. A fix is one small change (rule (i)).
   - Proof: The four rows end with the monster dead or a recorded retreat, no refused
     cast repeated and no skill outside the table cast.
 - [ ] **NR-112 - Spirit Master: to Altgard.** Depends: NR-111; ticked by the round that gives it
@@ -6408,7 +6411,188 @@ The template:
   - Work: One scope of the Spirit Master's play, chosen where its rules differ most from
     the Mage's, recorded by a bot alone, twice, and added to the gate's sets.
   - Proof: The two recordings are identical.
-- [ ] **NR-120 - Gunner: survey and profile data.** Depends: the close of phase C, NR-03
+- [x] **NR-120 - Gunner: survey and profile data.** Depends: the close of phase C, NR-03
+  - 2026-10-10: done. The Gunner has a class line, a gear table and a profile the
+    validator accepts. Nothing has been played. Two of its skills ask for a form the
+    table does not have: items NR-120a and NR-120b.
+    - **Java.**
+      - **What it learns.** SkillLearnService as read for NR-50. To level 26 the
+        Gunner, with the Engineer it was, learns 57 active skills by itself, the three
+        common ones among them, and none is a toggle. 22 rows from level 20 are stigma
+        rows and one is a skill book, Homeward Bound at 21; the route buys no book
+        (run/nr/NR-120/check.log).
+      - **A pistol, and two.** Every shot's start condition names the pistol; two
+        skills of level 25 name the aethercannon, which the Gunner may hold from level
+        20 (WeaponCondition as read for NR-100). From level 10 most of what is new also
+        asks for a second weapon in the off hand or a two-hand weapon
+        (LeftHandCondition.validate 26-38, as read for NR-50b): Spend Success,
+        Bulletproof, Crosstrigger, Canted Shot, Wing Clip, and of those left out Reload,
+        Trunk Shot, Volley, Automatic Fire and Parting Shot. The Gunner learns to hold
+        two weapons at level 10 (skill 55), as the Scout does at 5.
+      - **Chains.** Gunshot opens the chain Rapidfire follows, twice, and Automatic
+        Fire (level 16) follows Rapidfire, twice. Crosstrigger (22) opens the chain
+        Canted Shot follows, twice. Trunk Shot (13) opens the chain Volley follows,
+        twice. Every step keeps its chain open every time (chain_skill_prob 100).
+        Automatic Fire is the one follow-up that asks more of the step before it:
+        Rapidfire must have been cast twice (ChainCondition 22-23 and 42, precount).
+      - **One cooldown for three openers.** Gunshot, Trunk Shot and Crosstrigger share
+        the cooldown 1802: 16 s after Gunshot, 24 s after either of the others. So one
+        chain is opened at a time.
+      - **Reload** ends that cooldown at once (SkillCooltimeResetEffect.applyEffect
+        30-47: every cooldown from first_cd to last_cd loses delta percent of what is
+        left, here all of 1802) and tells the player with SM_SKILL_COOLDOWN.
+      - **Skills that move.** Trunk Shot staggers its target 2 m (NR-110g). Parting Shot
+        throws the Gunner 15 m back by the cast's result alone (BackDashEffect, as read
+        for NR-100).
+      - **Class rewards on the route** are those of the table under NR-42: the pistol
+        101800506 at the ceremony (Q2009, choice 1) and the dispatch Q29070 (NR-30), the
+        leather rewards and the pistols of NR-32, the stone 140000002 (NR-39), Haramel's
+        chest 700830 (NR-40) and the leather coin armor with a pistol at Lateni and Nott
+        (NR-38). Nothing new.
+    - **The class line.** `engineer-gunner`: an Engineer who becomes a Gunner, SIM
+      account 41, character Asimgunner, the pistol 101800506 at the ceremony (NR-Q5).
+      Its Engineer holds one pistol, as the line `engineer` does. It is in
+      NaturalClassLine.All and in the script's list; the script test holds the two
+      together.
+    - **The gear table** (Sc/Classes/NaturalClassGearTable.cs, Gunner).
+
+      | Part | The Gunner's | From |
+      |---|---|---|
+      | Weapon group | pistol; ranked by the magical stat | NR-Q5, CP-Q7 |
+      | Off hand | a second pistol from level 10, when skill 55 is observed | NR-Q5, NR-Q6 |
+      | Armor | leather, robe, clothes; item level first, the type breaks ties | NR-Q7, CP-Q24 |
+      | Kept | life potions, its help kit, a mana potion it finds, every help scroll and food | as the Cleric from Ascension |
+
+      NR-Q5 gives the Gunner "the weapon their skills need". All but two of its skills
+      to level 26 need a pistol and most need two; with an aethercannon it would have
+      those two. So the table names the pistol alone. Every pistol of the route reaches
+      20 m. The second pistol is the one the Engineer already holds when the ceremony
+      gives the Karmic Pistol.
+    - **The help kit from level 10** is the manifest written under NR-50
+      (NaturalHelpItemAllowlist.Kit(caster: false, reagent: true)), the Templar's: no
+      mana serum and no Awakening scroll (NR-Q13). Levels 1 to 9 are the Engineer's kit
+      (CP-Q12).
+    - **Its skills by role** (Sc/Classes/NaturalGunnerProfile.cs; 40 skills of 57).
+
+      | Role | Skill, and the levels of its ranks | What it is |
+      |---|---|---|
+      | direct | Direct Shot: 1, 6, 11, 16, 21, 26 | A shot that is ready every 2 s. Free to level 20; 31 and 42 MP from 21. |
+      | gunshot | Gunshot: 3, 8, 13, 18, 23 | Opens the first chain. 8 to 31 MP, 16 s. |
+      | rapid | Rapidfire: 5, 10, 15, 20, 25 | Follows Gunshot inside 2 s, twice. 14 to 51 MP. |
+      | cross | Crosstrigger: 22 | Opens the second chain: a hard shot that takes 80 MP from its target. Free; two pistols. |
+      | canted | Canted Shot: 22 | Follows Crosstrigger inside 2 s, twice. Free; two pistols. |
+      | hot | Hot Shot: 9, 14, 19, 24 | A shot that lowers fire resistance and slows its target's attacks for 10 s. 50 MP and more, 24 s. |
+      | grenade | Green Grenade: 10, 15, 20, 25 | A light hit that roots its target for 4 s. 27 MP and more, 24 s. |
+      | clip | Wing Clip: 25 | A hard shot once a minute; what it does to a flyer does nothing on the ground. 50 MP; two pistols. |
+      | success | Spend Success: 10 | 2,000 DP: for 2 min 150 more magic boost and shots 15% faster. Two pistols. |
+      | resist | Bullet Resistance: 7, 12, 17 | The Engineer's: half of every hit for 10 s. 42 MP and more, 1 min. |
+      | proof | Bulletproof: 16 | 8 s in which every hit misses. 55 MP, 30 s; two pistols. |
+      | herb, mp-recovery | Herb Treatment and MP Recovery: 10, 15, 20, 25 | The two powder skills of a rest (NR-50a). |
+
+    - **The rule table, natural-gunner-v1.** The Engineer's with the Gunner's own
+      shots. Spend Success when the DP are there. From range Green Grenade first: a
+      rooted monster stands 4 s in the pistol's reach. Then Hot Shot, Gunshot and
+      Rapidfire twice; Crosstrigger and Canted Shot, which the shared cooldown leaves
+      for the time Gunshot cannot be paid for; Wing Clip; Direct Shot for everything
+      between. With the monster on it the grenade comes last before Direct Shot. It
+      holds an open chain and stands off at 18 m with the Engineer's distances and
+      thresholds, and the pistols fire whenever no skill is ready. The ladder is the
+      Engineer's with Bulletproof under it: the shield scroll at 50% HP, the life
+      potion at or below 75%, Bullet Resistance at 60%, Bulletproof at 45%. It leaves
+      at two attackers, or at 25% HP with nothing ready, and roots its target first.
+      Between fights it rests as the Templar (NR-50a). It holds for a patrol and
+      assesses (NR-37). In flight it fires Direct Shot (NR-36).
+    - **Left out, with the reason** (17 skills).
+
+      | Skill, levels | Why it is not cast |
+      |---|---|
+      | Return, Bandage Heal, Escape: 1 | As for every class (CP-35, CP-Q11). |
+      | Automatic Fire: 16, 21, 26 | It follows Rapidfire only after two Rapidfires, and the table's reading of a chain does not count the step before. Item NR-120a. |
+      | Reload: 10 | It ends the cooldown of the three openers; the fight loop keeps a cooldown from its own cast and does not read that it was ended. Item NR-120b. |
+      | Trunk Shot: 13, 18, 23 | It staggers its target, and the bot does not read where a stagger puts a monster (NR-110g, blocked by NR-Q17). |
+      | Volley: 13, 18, 23 | It follows Trunk Shot only. |
+      | Parting Shot: 19, 24 | It throws the Gunner 15 m back, to a place only the cast's result names. |
+      | Harassing Fire, Incendiary Shell: 25 | They need an aethercannon, and the Gunner holds pistols. |
+
+      Not in the catalog at all: the stigma rows, the book, and the stone's skill 11505,
+      as for every class (NR-39).
+    - **Proof.** The one-time check, not committed (run/nr/NR-120/check.log): the line
+      parses and holds both classes; its character is an Engineer, with nothing in the
+      off hand, until the client observes a Gunner; NaturalClassProfiles builds the
+      Gunner's profile, which requires the validator: each of the 57 active skills has
+      one role or one reason, every follow-up has its opener, no rotation line breaks a
+      chain, and the gear groups lie inside the masteries. The check prints the skill
+      tree with each chain step's chance to keep its chain, the 40 rows, the 17 reasons,
+      the best rank of each role at eight levels, which skills ask for which weapon and
+      hand, and the counts four follow-ups ask of the step before them. Gate, set
+      all+mage+warrior+artist+engineer+scout+templar, -Parallel 8, run guard-p8
+      (run/nr/NR-120/guard-p8/verdict.json): verdict pass, all thirteen scopes
+      identical. Seven pre-commit checks pass, the three script tests pass
+      (run/nr/NR-120/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
+      skipped) and Fast passes (run nr120-fast, 11 passed).
+- [ ] **NR-120a - A follow-up that needs the step before it twice.** Depends: NR-120
+  - Work: Java first: ChainCondition's precount and where a chain step's use count
+    comes from (ChainSkills). A skill row holds what a follow-up asks of the step
+    before it, and the table's reading of an open chain takes the follow-up only when
+    that step was cast so often. Automatic Fire then gets its role in the Gunner's
+    table, after Rapidfire. Generic: every class's follow-ups; all the others ask for
+    one cast.
+  - Proof: A one-time check, or one probe row on a probe account, in which Gunshot,
+    Rapidfire twice and Automatic Fire twice follow one another and Automatic Fire is
+    decided at no other time; the full gate identical.
+- [ ] **NR-120b - A skill that ends a cooldown.** Depends: NR-120a
+  - Work: Java first: SkillCooltimeResetEffect and the SM_SKILL_COOLDOWN it sends. The
+    fight loop keeps a cooldown from the result of its own cast; it reads the server's
+    word for a cooldown it holds and ends it as the server says. A skill row says which
+    cooldowns the skill ends, and the table casts such a skill only while one of them
+    runs. Reload then gets its role in the Gunner's table: after the chain, while
+    Gunshot cools down. Generic: every class with such a skill.
+  - Proof: One probe row on a probe account in which Reload is cast while Gunshot cools
+    down and Gunshot is cast again before its 16 s are over; the full gate identical.
+- [ ] **NR-121 - Gunner: probe rows.** Depends: NR-120b
+  - Work: Rows gunner-10, gunner-16, gunner-22 and gunner-25 in
+    SimulationNaturalStarterProbeTests: prepared Gunners on the two probe accounts, in
+    the gear the route has given by that level and with two pistols, fight the monsters
+    the Cleric's rows fight. Each row's trace shows the table in play: the stand-off at
+    18 m with the pistols firing between skills, Green Grenade first, Hot Shot, the
+    Gunshot chain with Automatic Fire and Reload, the Crosstrigger chain from 22, Wing
+    Clip at 25, Spend Success at 2,000 DP, Bullet Resistance and Bulletproof on the
+    ladder, the grenade before a retreat, the rest with the powder. What a row shows
+    decides the open rules: whether a root at range earns the first place, whether
+    Direct Shot's mana from level 21 empties the Gunner before a fight ends, and
+    whether the Crosstrigger chain should lead when mana is plenty. A fix is one small
+    change (rule (i)).
+  - Proof: The four rows end with the monster dead or a recorded retreat, no refused
+    cast repeated and no skill outside the table cast.
+- [ ] **NR-122 - Gunner: to Altgard.** Depends: NR-121; ticked by the round that gives it
+  - Work: A fresh Asimgunner plays Ishalgen as an Engineer, the trial, the ceremony with
+    the pistol and the dispatch Q29070, and is captured at the Altgard bind as
+    altgard-gunner-s1. From level 10 it holds two pistols.
+  - Proof: The capture verifies.
+- [ ] **NR-123 - Gunner: Altgard legs l1 to l5.** Depends: NR-122; ticked by its round
+  - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
+    with -gunner (NR-41). In leg 1 it shoots the fungus in flight.
+  - Proof: Each capture verifies.
+- [ ] **NR-124 - Gunner: Altgard legs l6 to l11.** Depends: NR-123; ticked by its round
+  - Work: As NR-123. Leg 11 is the destiny quest: its stone is 140000002 (NR-39).
+  - Proof: Each capture verifies.
+- [ ] **NR-125 - Gunner: coin gear and Haramel.** Depends: NR-124; ticked by its round
+  - Work: The coin-gear leg (leather, by its manifest, NR-38a) and Haramel with chest
+    700830 (NR-40), captured as altgard-coingear-gunner and
+    altgard-rc-complete-s1-gunner.
+  - Proof: Each capture verifies.
+- [ ] **NR-126 - Gunner: the Abyss entry.** Depends: NR-125; ticked by its round
+  - Work: Q24020, then Q2945, Q2946, Q2947 and Q2042 with the coin tiers it can wear
+    (NR-38b, NR-Q14, NR-Q16), captured as morheim-abyss-entry-s1-gunner.
+  - Proof: The capture verifies.
+- [ ] **NR-127 - Gunner: the endpoint.** Depends: NR-126; ticked by its round
+  - Work: Captured and verified as ntc-ready-gunner-s1: alive at Morheim Ice Fortress,
+    level 25 or higher, Q2945, Q2946, Q2947 and Q2042 complete.
+  - Proof: The capture verifies.
+- [ ] **NR-128 - Gunner: the class scope.** Depends: NR-127
+  - Work: One scope of the Gunner's play, chosen where its rules differ most from the
+    Engineer's, recorded by a bot alone, twice, and added to the gate's sets.
+  - Proof: The two recordings are identical.
 - [ ] **NR-130 - Rider: survey and profile data.** Depends: the close of phase C
 - [ ] **NR-140 - Bard: survey and profile data.** Depends: the close of phase C
 
@@ -7224,3 +7408,15 @@ report what was done, what is parked or blocked, and what the operator must deci
   identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr110f-fast)
   pass. Next: NR-111, the Spirit Master's probe rows, which wait for the surveys with the
   other classes' (rule (w)); so NR-120, the Gunner's survey.
+- 2026-10-10 — Loop: NR-120 done. The Gunner has the line engineer-gunner, which takes
+  the pistol at the ceremony, a gear table (two pistols from level 10, leather first) and
+  the table natural-gunner-v1 in the form of the Engineer's: Green Grenade first from
+  range, Hot Shot, Gunshot and Rapidfire, the free Crosstrigger chain for when Gunshot
+  cannot be paid for, Wing Clip, Direct Shot between, Spend Success for its DP, and
+  Bulletproof under the Engineer's ladder. Of its 57 active skills 40 have a role and 17 a
+  reason. Two ask for a form: Automatic Fire follows Rapidfire only after two of them
+  (NR-120a), and Reload ends a cooldown the fight loop keeps by itself (NR-120b). Trunk
+  Shot staggers and waits for NR-110g. The Gunner's items NR-121 to NR-128 are written.
+  Full gate guard-p8 (thirteen scopes identical), seven checks, three script tests, unit
+  suite (4,629 passed, 16 skipped) and Fast (nr120-fast) pass. Next: NR-120a, a follow-up
+  that needs the step before it twice.
