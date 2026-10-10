@@ -330,6 +330,12 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				int[] worn = NaturalAltgardContinuation.EquippedItemIds(world);
 				NaturalAltgardContract own = picked.WithProtectedItems(ids =>
 					NaturalAltgardContract.ProtectedFor(ids, picks, id => rewards.Item(id).IsEquipment, worn));
+				// NR-56a: a step at which a pinned reward is handed over expects the class's own pick.
+				own = own with
+				{
+					Steps = [.. own.Steps.Select(step => step.ReceivesItemId is int handed && picks.TryGetValue(handed, out int mine)
+						? step with { ReceivesItemId = mine } : step)],
+				};
 				// NR-38a: the coin-gear scope's vendor and purchases are the class's own, by its manifest and what it wears.
 				if (own.CoinGear is { } coins)
 				{

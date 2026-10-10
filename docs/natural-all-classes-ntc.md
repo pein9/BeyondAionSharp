@@ -4310,6 +4310,38 @@ The template:
   - Work: Q24020, then Q2945, Q2946, Q2947 and Q2042 with the two coin tiers at Nott
     (NR-38b, NR-Q14), captured as morheim-abyss-entry-s1-templar.
   - Proof: The capture verifies.
+  - 2026-10-09, the leg stopped twice, and with NR-56a and NR-56b a replay played it to
+    its end.
+    - **Attempt 1** (capture run nr56-ax-a1 from altgard-rc-complete-s1-templar; nothing
+      captured; evidence run/nr/NR-56/ax-a1/). At Aegir, 16 s into the leg: "q24020-aegir
+      did not hand over item 110551147", the Cleric's hauberk. NR-56a.
+    - **Attempt 2** (replay ax-a2 with NR-56a's change; evidence run/nr/NR-56a/ax-a2/).
+      The four missions are done in 15 min 52 s. The leg then stopped as its contract
+      says: "The missions are done and the Cleric is level 25, below 26: it needs a few
+      fortress quests, which are not listed yet (AX-11)." NR-56b, NR-Q16.
+- [x] **NR-56a - A reward's hand-over step expects the class's pick.** Depends: NR-55
+  - Work: The first stop of the Abyss entry. Java first: nothing new; a quest hands
+    over the reward selected, as read for NR-32. NR-32 gave a leg the class's own reward
+    picks. The contract's steps at which a pinned reward is handed over, Q24020's
+    hauberk and Q2947's staff, still named the contract's items.
+  - Proof: The stop is passed in a replay of the Templar's Abyss entry; the full gate
+    identical.
+  - 2026-10-09: done.
+    - **The change.** J, where a leg takes the class's reward picks: a step that
+      receives a pinned reward receives the class's pick.
+    - **Proof, the replay** (ax-a2 from altgard-rc-complete-s1-templar; evidence
+      run/nr/NR-56a/ax-a2/). Aegir hands the Templar the plate 110601626. At the level-21
+      tier it buys the shoes for 2 and the shield 115001075 for 3 from the 7 Bronze
+      Coins it has (NR-54a), and no coin is supplied. Garm's arena is done at the first
+      try, ten spirits with 172 s to spare, and the ring course at the first try with 24
+      s on the clock, with the one flight-speed scroll. The replay stopped at the leg's
+      level rule: NR-56b (14,817 records).
+    - **Proof.** One bundle ran on the tree that holds NR-56a and NR-56b together; the
+      two are committed one after the other from that tree. Gate, set
+      all+mage+warrior+artist+engineer+scout, -Parallel 8, run guard-p8
+      (run/nr/NR-56b/guard-p8/verdict.json): verdict pass, all twelve scopes identical,
+      ax among them. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr56b-fast, 11 passed).
 - [ ] **NR-57 - Templar: the endpoint.** Depends: NR-56; ticked by its round
   - Work: Captured and verified as ntc-ready-templar-s1: alive at Morheim Ice Fortress,
     level 25 or higher, Q2945, Q2946, Q2947 and Q2042 complete.
@@ -4900,3 +4932,10 @@ report what was done, what is parked or blocked, and what the operator must deci
   level 25, 176 quests, 21 h 20 min of game time since creation. The Templar has played
   every Altgard leg of the accepted line. Next: NR-56, the Templar's Abyss entry; its two
   coin tiers cost 78 Bronze Coins where 44 are approved (NR-Q14).
+- 2026-10-09 — Loop: NR-56a done. The Abyss entry stopped at Aegir: the step expected the
+  Cleric's hauberk as Q24020's reward, and the Templar picks plate. A step that receives a
+  pinned reward now receives the class's pick. Replay ax-a2 then played the four missions:
+  the level-21 tier's shoes and shield from the Templar's own 7 Bronze Coins, the arena
+  and the ring course each at the first try. One bundle ran for NR-56a and NR-56b
+  together: full gate guard-p8 (twelve scopes identical), seven checks, unit suite (4,629
+  passed, 16 skipped) and Fast (nr56b-fast) pass. Next: NR-56b.
