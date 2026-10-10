@@ -341,9 +341,13 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					int tab = manifest.Armor.Count == 0 ? coins.GoodsListId
 						: runtime.Data.TradeListDataDh.GetTradeListTemplate(manifest.VendorNpcId).GetTradeTablist().Select(entry => entry.GetId())
 							.First(id => runtime.Data.GoodsListDataDh.GetGoodsListById(id)?.GetItemIdList().Contains(manifest.Armor[0].ItemId) == true);
+					// NR-54a: the shield's own tab.
+					int shieldTab = manifest.Shield is not { } coinShield ? 0
+						: runtime.Data.TradeListDataDh.GetTradeListTemplate(manifest.VendorNpcId).GetTradeTablist().Select(entry => entry.GetId())
+							.First(id => runtime.Data.GoodsListDataDh.GetGoodsListById(id)?.GetItemIdList().Contains(coinShield.ItemId) == true);
 					NaturalCoinGear classGear = coins.ForClass(manifest,
 						[.. world.Inventory.Values.Select(item => new NaturalJourneyItem(item.ObjectId, item.ItemId, item.Count, item.EquipmentSlot))],
-						id => rules.Score(sold.Item(id)), tab);
+						id => rules.Score(sold.Item(id)), tab, shieldTab);
 					// NR-39: the stigma skill the leg must not find learned is the class's own stone's.
 					classGear = classGear with
 					{
@@ -410,12 +414,13 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					ushort weaponSlot = Aion.GameServer.Model.Templates.Items.Enums.ItemGroupExtensions.GetItemSubType(
 						Enum.Parse<Aion.GameServer.Model.Templates.Items.Enums.ItemGroup>(weapon.Group)) ==
 						Aion.GameServer.Model.Templates.Items.Enums.ItemSubType.TWO_HAND ? (ushort)3 : (ushort)1;
-					NaturalAbyssCoinArmor classArmor = armor.ForClass(manifests, Tab(manifests[0].Armor[0].ItemId), Tab(weapon.ItemId), weaponSlot);
+					NaturalAbyssCoinArmor classArmor = armor.ForClass(manifests, Tab(manifests[0].Armor[0].ItemId), Tab(weapon.ItemId), weaponSlot,
+						manifests[0].Shield is { } tierShield ? Tab(tierShield.ItemId) : 0);
 					own = own with { AbyssEntry = abyss with { CoinArmor = classArmor } };
 					session.TraceDiagnostic("leg-coin-manifest", new Dictionary<string, object?>
 					{
 						["leg"] = leg.Leg, ["class"] = observedClass.ToString(), ["vendor"] = classArmor.VendorNpcId,
-						["tabs"] = new[] { classArmor.GoodsListId, classArmor.StaffGoodsListId }, ["tiers"] = classArmor.Tiers,
+						["tabs"] = new[] { classArmor.GoodsListId, classArmor.StaffGoodsListId, classArmor.ShieldGoodsListId }, ["tiers"] = classArmor.Tiers,
 					});
 				}
 				// NR-41: the leg's incoming journal names the dispatch quest of the contract's class; another class did its own.

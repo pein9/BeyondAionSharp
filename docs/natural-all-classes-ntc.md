@@ -4172,7 +4172,7 @@ The template:
       guard-p8 (run/nr/NR-54g/guard-p8/verdict.json): verdict pass, all twelve scopes
       identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed,
       16 skipped) and Fast passes (run nr54g-fast, 11 passed).
-- [ ] **NR-54a - The coin tiers buy the shield.** Depends: NR-50c
+- [x] **NR-54a - The coin tiers buy the shield.** Depends: NR-50c
   - Work: Split from NR-50c. Java first: the reward shops as read for NR-38
     (TradeService.performBuyFromShop and validateBuyItems), and which trade tab of
     Lateni 203659 and of Nott 204360 holds the shield. For a class that holds a shield,
@@ -4183,6 +4183,44 @@ The template:
     themselves.
   - Proof: One-time check of each tier's purchases for a Templar from a prepared bag, with
     coins to spare and without; gates hm and ax identical with the full gate.
+  - 2026-10-09: done.
+    - **Java first.** TradeService.validateBuyItems (166-180) lets a reward shop sell
+      every item of every trade tab of its own; the buy names no tab. The tab is the
+      bot's own check of the offer. Lateni 203659 has the plate armor on tab 984 and the
+      shield on 986; Nott 204360 has them on 990 and 992, the weapons on 988.
+    - **The change, the coin-gear leg.** Sc/NaturalCoinGearPolicy.cs, ForClass: after
+      the armor, the manifest's shield is bought when the gear rules score it above the
+      shield held and the coins left pay for it, for the off hand (slot 2); the scope
+      names the shield's tab. The shield held at the end is one of the slots the leg's
+      end check holds, bought or not. Sc/NaturalCoinGearSteps.cs: the shop's offer is
+      checked on the armor's tab and, for the shield, on its own.
+    - **The change, the Abyss tiers.** Sc/NaturalAbyssEntry.cs: a tier names its shield
+      and the scope the shield's tab, both from the class's manifests. Sc/
+      NaturalAbyssCoinArmor.cs, Plan: the shield is compared by the class's own number,
+      as its weapon is. It is bought only when the coins owned, less what the tier's
+      armor and weapon cost, pay for it; so it never adds to the coins to supply.
+      Owned and not worn, it is worn by the inventory check like any piece.
+    - **Proof, the one-time check** (run/nr/NR-54a/check.log; the check file is not
+      committed).
+      - Coin-gear leg, the Templar with the bag of leg 11 and its 18 Iron Coins: it buys
+        the shoulders for 1, the greaves for 2 and the shield 115001074 for 2, wears the
+        shield in the off hand, and the leg's decisions run to their end with 18 coins.
+        From a bare bag with 2 coins the five armor pieces take all 7 and no shield is
+        bought. Holding the coin shield already, none is bought. The contract's Cleric
+        is as it was: three purchases, five slots, no shield tab.
+      - Abyss tiers, the Templar: at level 21 the armor and the sword cost 15 and the
+        shield 115001075 costs 3; with 17 coins it is kept, with 18 bought, and the
+        coins to supply are the same with it and without. At level 26 they cost 63 and
+        the shield 115001082 costs 13; kept with 75 coins, bought with 76.
+    - **Found, and logged (rule (f)).** The Templar's level-26 tier costs 63 Bronze
+      Coins for the armor and the sword, and 15 at level 21: 78 from the bag of leg 11,
+      where 44 are approved (NR-Q14). By that decision's default the Abyss-entry leg
+      stops at the vendor with its own refusal; NR-56 will meet it.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout, -Parallel 8, run
+      guard-p8 (run/nr/NR-54a/guard-p8/verdict.json): verdict pass, all twelve scopes
+      identical, hm and ax among them. Seven pre-commit checks pass,
+      Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and Fast passes (run
+      nr54a-fast, 11 passed).
 - [ ] **NR-55 - Templar: coin gear and Haramel.** Depends: NR-54, NR-54a; ticked by its round
   - Work: The coin-gear leg at Lateni (plate, and the shield by NR-54a) and Haramel with
     chest 700829 (NR-40), captured as altgard-coingear-templar and
@@ -4756,3 +4794,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   24, 164 quests, 19 h 20 min of game time since creation. The Templar's legs l6 to l11
   are captured, after six lettered items (NR-54b to NR-54g). Next: NR-54a, the coin tiers
   buy the shield.
+- 2026-10-09 — Loop: NR-54a done. A class that holds a shield buys the coin vendor's
+  shield from the coins left: in the coin-gear leg after the armor, in the two Abyss tiers
+  after the armor and the weapon, on the shield's own trade tab, and wears it in the off
+  hand. No coin is added for it. One-time check: the Templar with the bag of leg 11 buys
+  shoulders, greaves and the shield for 5 of its 23 Iron Coins. Logged: its two Abyss
+  tiers cost 78 Bronze Coins where 44 are approved (NR-Q14). Full gate guard-p8 (twelve
+  scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
+  (nr54a-fast) pass. Next: NR-55, the Templar's coin gear and Haramel.

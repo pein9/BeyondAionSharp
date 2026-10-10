@@ -24,6 +24,12 @@ public sealed record NaturalCoinGear(int QuestId, int Completions, int CoinItemI
 	/// weapon's is 1.</summary>
 	public ushort WeaponSlot { get; init; } = 3;
 
+	/// <summary>The equipment slot of a shield: the off hand beside a one-hand weapon.</summary>
+	public const ushort OffHandSlot = 2;
+
+	/// <summary>NR-54a: the vendor's trade tab that holds the manifest's shield; 0 when the scope buys none.</summary>
+	public int ShieldGoodsListId { get; init; }
+
 	/// <summary>The equipment slot of each body piece a coin manifest names.</summary>
 	public static readonly IReadOnlyDictionary<string, ushort> BodySlotMasks = new Dictionary<string, ushort>
 	{
@@ -41,8 +47,9 @@ public sealed record NaturalCoinGear(int QuestId, int Completions, int CoinItemI
 	/// <param name="inventory">What the character owns and wears as the leg starts.</param>
 	/// <param name="score">The class's gear score of an item id.</param>
 	/// <param name="goodsListId">The vendor's trade tab that holds the manifest's armor.</param>
+	/// <param name="shieldGoodsListId">NR-54a: the tab that holds the manifest's shield, for a class that holds one.</param>
 	public NaturalCoinGear ForClass(NaturalCoinManifest manifest, IReadOnlyList<NaturalJourneyItem> inventory, Func<int, long> score,
-		int goodsListId)
+		int goodsListId, int shieldGoodsListId = 0)
 	{
 		NaturalJourneyItem weapon = inventory.SingleOrDefault(item => item.EquipmentSlot is 1 or 3)
 			?? throw new InvalidDataException("The coin-gear leg needs a weapon held in the main hand.");
@@ -64,8 +71,23 @@ public sealed record NaturalCoinGear(int QuestId, int Completions, int CoinItemI
 			}
 			else if (worn != null) body.Add(new(slot, worn.ItemId));
 		}
+		// NR-54a: the manifest's shield, when it beats the one held, from the coins the armor leaves. No coin is added for it.
+		bool buysShield = false;
+		if (manifest.Shield is { } shield)
+		{
+			NaturalJourneyItem? held = inventory.FirstOrDefault(item => item.EquipmentSlot == OffHandSlot);
+			buysShield = (held == null || score(shield.ItemId) > score(held.ItemId)) && shield.Cost <= balance;
+			if (buysShield)
+			{
+				balance -= shield.Cost;
+				purchases.Add(new(shield.ItemId, shield.Cost, OffHandSlot));
+				body.Add(new(OffHandSlot, shield.ItemId));
+			}
+			else if (held != null) body.Add(new(OffHandSlot, held.ItemId));
+		}
 		return this with
 		{
+			ShieldGoodsListId = buysShield ? shieldGoodsListId : 0,
 			VendorNpcId = manifest.VendorNpcId, GoodsListId = goodsListId, StaffItemId = weapon.ItemId, WeaponSlot = weapon.EquipmentSlot,
 			IncomingCoins = incoming, EndpointCoins = balance, Purchases = [.. purchases], BodySlots = [.. body],
 			ProtectedItemIds = [.. ProtectedItemIds.Concat(purchases.Select(purchase => purchase.ItemId)).Append(weapon.ItemId).Distinct().Order()],

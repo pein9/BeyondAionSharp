@@ -43,6 +43,9 @@ public static class NaturalAbyssCoinArmorPolicy
 	/// (<see cref="Classes.NaturalGearRules.WeaponNumber"/>), given as the function the staff's magic boost is given as.</summary>
 	public const string ClassWeaponStat = "weapon-number";
 
+	/// <summary>NR-54a: a shield is compared by the same number of the class's gear rules, and bought on its own tab.</summary>
+	public const string ShieldStat = "shield-number";
+
 	/// <summary>"Better" is the leg's default: more physical defence. A tie is not better, so nothing is bought for it.
 	/// AX-12c: the tier's staff by the staff rule, more magic boost than the worn staff.</summary>
 	public static NaturalAbyssCoinManifest Plan(NaturalAbyssCoinArmor armor, NaturalAbyssCoinTier tier, IReadOnlyList<NaturalJourneyItem> inventory,
@@ -77,7 +80,23 @@ public static class NaturalAbyssCoinArmorPolicy
 				: ("buy", $"{coinBoost} {statName} against {heldBoost} worn.");
 			slots.Add(new(staff.Slot, held?.ItemId ?? 0, heldBoost, staff.ItemId, coinBoost, staff.Cost, action, reason, armor.StaffBetter));
 		}
-		return new(tier.Level, tier.Name, [.. slots], inventory.Where(item => item.ItemId == armor.CoinItemId).Sum(item => item.Count));
+		long coinsOwned = inventory.Where(item => item.ItemId == armor.CoinItemId).Sum(item => item.Count);
+		// NR-54a: the tier's shield, for a class that holds one. It is bought only from the coins the armor and the weapon
+		// leave, so it never adds to the coins to supply.
+		if (armor.Weapons && tier.Shield is { } shield)
+		{
+			NaturalJourneyItem? held = inventory.FirstOrDefault(item => item.EquipmentSlot == shield.Slot);
+			int heldNumber = held == null ? 0 : staffMagicBoost(held.ItemId), coinNumber = staffMagicBoost(shield.ItemId);
+			long left = coinsOwned - slots.Where(slot => slot.Action == "buy").Sum(slot => slot.Cost);
+			(string action, string reason) = held?.ItemId == shield.ItemId ? ("keep", "The shield is worn.")
+				: coinNumber <= heldNumber ? ("keep", coinNumber == heldNumber
+					? $"A tie at {coinNumber} is not better." : $"The worn shield has {heldNumber} against {coinNumber}.")
+				: inventory.Any(item => item.ItemId == shield.ItemId) ? ("wear", $"Owned and not worn: {coinNumber} against {heldNumber}.")
+				: left < shield.Cost ? ("keep", $"{Math.Max(left, 0)} coins are left after the armor and the weapon; the shield costs {shield.Cost}.")
+				: ("buy", $"{coinNumber} against {heldNumber} worn, from the {left} coins left.");
+			slots.Add(new(shield.Slot, held?.ItemId ?? 0, heldNumber, shield.ItemId, coinNumber, shield.Cost, action, reason, ShieldStat));
+		}
+		return new(tier.Level, tier.Name, [.. slots], coinsOwned);
 	}
 }
 
@@ -110,8 +129,9 @@ public static class NaturalAbyssCoinArmorSteps
 		var bought = new List<NaturalAbyssCoinPurchase>();
 		foreach (NaturalAbyssCoinSlot slot in manifest.Buys)
 		{
-			// The armor is on the vendor's chain tab and the staff on its weapon tab.
-			int tab = slot.Stat != NaturalAbyssCoinArmorPolicy.DefenceStat ? armor.StaffGoodsListId : armor.GoodsListId;
+			// The armor is on the vendor's chain tab and the staff on its weapon tab. NR-54a: the shield on a tab of its own.
+			int tab = slot.Stat == NaturalAbyssCoinArmorPolicy.DefenceStat ? armor.GoodsListId
+				: slot.Stat == NaturalAbyssCoinArmorPolicy.ShieldStat ? armor.ShieldGoodsListId : armor.StaffGoodsListId;
 			var offered = data.GoodsListDataDh.GetGoodsListById(tab)?.GetItemIdList() ?? [];
 			Acquisition? cost = data.ItemDataDh.GetItemTemplate(slot.CoinItemId)?.GetAcquisition();
 			if (!offered.Contains(slot.CoinItemId) || cost == null || cost.Type != AcquisitionType.REWARD || cost.ItemId != armor.CoinItemId ||

@@ -68,13 +68,16 @@ public sealed class NaturalCoinGearSteps(INaturalJourneySession session, StaticD
 		await session.WaitForPacketAsync(typeof(SM_TRADELIST), token, p => p.Get<int>("targetObjectId") == vendor);
 		BotTradeWindow trade = session.Api.World.Trade ?? throw new InvalidDataException("No observed reward shop.");
 		// Java writes TradeNpcType.index(), not its ordinal.
-		if (trade.NpcType != TradeNpcType.REWARD.Index() || !trade.ShowBuyTab || !trade.Tabs.Contains(gear.GoodsListId))
+		if (trade.NpcType != TradeNpcType.REWARD.Index() || !trade.ShowBuyTab || !trade.Tabs.Contains(gear.GoodsListId) ||
+			gear.ShieldGoodsListId != 0 && !trade.Tabs.Contains(gear.ShieldGoodsListId))
 			throw new InvalidDataException("The observed shop does not offer the audited chain tab.");
 		var offered = data.GoodsListDataDh.GetGoodsListById(gear.GoodsListId)?.GetItemIdList() ?? [];
+		// NR-54a: the shield is on a tab of its own.
+		var shields = gear.ShieldGoodsListId == 0 ? [] : data.GoodsListDataDh.GetGoodsListById(gear.ShieldGoodsListId)?.GetItemIdList() ?? [];
 		foreach (NaturalCoinGearPurchase purchase in gear.Purchases)
 		{
 			Acquisition? cost = data.ItemDataDh.GetItemTemplate(purchase.ItemId)?.GetAcquisition();
-			if (!offered.Contains(purchase.ItemId) || cost == null || cost.Type != AcquisitionType.REWARD ||
+			if (!(purchase.Slot == NaturalCoinGear.OffHandSlot ? shields : offered).Contains(purchase.ItemId) || cost == null || cost.Type != AcquisitionType.REWARD ||
 				cost.ItemId != gear.CoinItemId || cost.ItemCount != purchase.Cost || cost.Ap != 0)
 				throw new InvalidDataException($"The actual reward offer differs for {purchase.ItemId}.");
 		}

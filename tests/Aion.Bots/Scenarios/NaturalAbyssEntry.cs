@@ -112,6 +112,9 @@ public sealed record NaturalAbyssSupply(int ItemId, string Family, int MaxCount,
 public sealed record NaturalAbyssCoinArmor(int CoinItemId, int IncomingCoins, int VendorNpcId, float[] VendorPosition, int GoodsListId,
 	string Better, bool Weapons, NaturalAbyssCoinTier[] Tiers, int StaffGoodsListId = 0, string StaffBetter = "magic-boost")
 {
+	/// <summary>NR-54a: the vendor's trade tab that holds each tier's shield; 0 for a class that holds none.</summary>
+	public int ShieldGoodsListId { get; init; }
+
 	/// <summary>
 	/// NR-38b: the same two tiers for a class other than the contract's, made when the leg is taken up. The vendor, the
 	/// two trade tabs and each tier's pieces and weapon are the class's manifests (NR-38); the weapon is compared by the
@@ -120,15 +123,18 @@ public sealed record NaturalAbyssCoinArmor(int CoinItemId, int IncomingCoins, in
 	/// </summary>
 	/// <param name="manifests">The class's manifest at each tier's level.</param>
 	/// <param name="weaponSlot">The slot the class's weapon is worn in: 3 with both hands, 1 with one.</param>
+	/// <param name="shieldGoodsListId">NR-54a: the tab that holds the manifests' shield, for a class that holds one.</param>
 	public NaturalAbyssCoinArmor ForClass(IReadOnlyList<NaturalCoinManifest> manifests, int armorGoodsListId, int weaponGoodsListId,
-		ushort weaponSlot) => this with
+		ushort weaponSlot, int shieldGoodsListId = 0) => this with
 	{
+		ShieldGoodsListId = shieldGoodsListId,
 		VendorNpcId = manifests[0].VendorNpcId, GoodsListId = armorGoodsListId, StaffGoodsListId = weaponGoodsListId,
 		StaffBetter = NaturalAbyssCoinArmorPolicy.ClassWeaponStat,
 		Tiers = [.. Tiers.Select(tier => manifests.Single(manifest => manifest.ItemLevel == tier.Level) is var manifest ? tier with
 		{
 			Pieces = [.. manifest.Armor.Select(piece => new NaturalCoinGearPurchase(piece.ItemId, piece.Cost, NaturalCoinGear.BodySlotMasks[piece.Slot]))],
 			Staff = manifest.Weapon is { } weapon ? new(weapon.ItemId, weapon.Cost, weaponSlot) : null,
+			Shield = manifest.Shield is { } shield ? new(shield.ItemId, shield.Cost, NaturalCoinGear.OffHandSlot) : null,
 		} : tier)],
 	};
 }
@@ -136,6 +142,10 @@ public sealed record NaturalAbyssCoinArmor(int CoinItemId, int IncomingCoins, in
 /// <param name="Staff">AX-12c: the tier's best staff. It is not part of <see cref="Cost"/>, the tier's armor.</param>
 public sealed record NaturalAbyssCoinTier(int Level, string When, string Name, NaturalCoinGearPurchase[] Pieces, NaturalCoinGearPurchase? Staff = null)
 {
+	/// <summary>NR-54a: the tier's shield, for a class that holds one. It is bought only from the coins the armor and the
+	/// weapon leave.</summary>
+	public NaturalCoinGearPurchase? Shield { get; init; }
+
 	public int Cost => Pieces.Sum(piece => piece.Cost);
 }
 
