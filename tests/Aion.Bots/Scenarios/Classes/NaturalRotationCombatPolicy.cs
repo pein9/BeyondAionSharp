@@ -36,6 +36,11 @@ public sealed record NaturalRecoveryStep(NaturalRecoveryKind Kind, int HpPercent
 	bool EmergencyOnly = false, bool PassOverWhenCancelled = false, bool FinishInstead = false,
 	NaturalRunPercent FromRun = NaturalRunPercent.None);
 
+/// <summary>NR-60a: a skill that restores mana, cast on the bot when mana is at or below <paramref name="MpPercent"/>,
+/// before a mana potion is drunk.</summary>
+/// <param name="Role">The skill's role in the catalog.</param>
+public sealed record NaturalManaStep(string Role, int MpPercent);
+
 /// <summary>NR-10: the attack cast in place of a recovery step that says so, once the fight has had a recovery cast and
 /// the target is nearly dead: the kill ends the damage sooner than another heal.</summary>
 /// <param name="TargetHpPercent">The target's HP at or below which the finisher is cast.</param>
@@ -97,13 +102,14 @@ public enum NaturalAutoAttack
 /// target has to come. After that, or as soon as the fight is on, with the bot under attack or the target hurt, it is
 /// left out of the list: a target that does not come, because it attacks from range, runs or does not answer, is gone
 /// to. Null for none.</param>
+/// <param name="ManaSkill">NR-60a: the class's skill that restores mana and the MP it is cast at; null for none.</param>
 public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjacent, IReadOnlyList<string> AtRange,
 	IReadOnlyList<NaturalRotationUpkeep> Upkeep, IReadOnlyList<NaturalRecoveryStep> Recovery, int SwarmAttackers, int FleeHpPercent,
 	NaturalAutoAttack AutoAttack, string? ControlRole = null, int EmergencyPercent = 35, int EmergencyClearPercent = 45,
 	IReadOnlyDictionary<string, int>? OnlyWhenHurt = null, bool HoldOpenChain = false, int? EmergencySeasonedPairPercent = null,
 	NaturalFinisher? Finisher = null, string? ReserveRole = null, int? ManaPotionReserveMargin = null,
 	IReadOnlyList<string>? Openers = null, IReadOnlyDictionary<string, int>? OnlyWhileTargetAbove = null, float? RangedHoldWithin = null,
-	IReadOnlyList<string>? PullRoles = null)
+	IReadOnlyList<string>? PullRoles = null, NaturalManaStep? ManaSkill = null)
 {
 	/// <summary>The table's two attack lists as lines of skill ids, every rank of a role in level order, for
 	/// <see cref="NaturalProfileValidator"/>.</summary>
@@ -242,6 +248,10 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			if (!state.Cornered && HpAtOrBelow(rules.FleeHpPercent))
 				return Retreat($"HP is at or below {rules.FleeHpPercent}% and nothing is left to recover with.");
 		}
+		// NR-60a: the class's own mana skill comes before a mana potion.
+		if (rules.ManaSkill is { } manaStep && state.Mp * 100 <= state.MaxMp * manaStep.MpPercent &&
+			Best(manaStep.Role, state) is { } restore && Ready(restore))
+			return Cast(restore, $"Mana is at or below {manaStep.MpPercent}%: {manaStep.Role}.");
 		if (ManaShort(state) && state.HasManaPotion && state.ManaPotionReady)
 			return Choice("mana-potion", null, "Mana is below the cheapest attack; consume an owned mana potion.");
 		if (ReserveShort(state) && state.HasManaPotion && state.ManaPotionReady)

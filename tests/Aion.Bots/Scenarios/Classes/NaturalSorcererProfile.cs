@@ -35,13 +35,12 @@ public static class NaturalSorcererProfile
 		[1328] = "root",
 		[1155] = "skin", [1156] = "skin", [1157] = "skin", [1158] = "skin",
 		[1296] = "robe", [1297] = "robe", [1298] = "robe", [1299] = "robe",
+		// NR-60a: Gain Mana, cast by the table's mana step and first in a rest for mana.
+		[1192] = "gainmana", [1193] = "gainmana", [1194] = "gainmana", [1195] = "gainmana",
 		// The two powder skills, cast only in a rest (NR-50a).
 		[246] = "herb", [247] = "herb", [251] = "herb", [253] = "herb",
 		[249] = "mp-recovery", [250] = "mp-recovery", [252] = "mp-recovery", [254] = "mp-recovery",
 	};
-
-	private const string GainMana = "restores mana at no cost, once in 3 min. The ladder of a rule table has steps for HP only and a rest " +
-		"knows the powder and a sit, so no rule casts a skill for mana (NR-60a).";
 
 	private const string WinterBinding = "hits and roots up to eight monsters within 15 m of the Sorcerer. The bot pulls one monster at a " +
 		"time, and an area skill wakes every other one in reach.";
@@ -49,8 +48,6 @@ public static class NaturalSorcererProfile
 	/// <summary>Every other active skill a Sorcerer learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
-		[1192] = "Gain Mana I " + GainMana, [1193] = "Gain Mana II " + GainMana, [1194] = "Gain Mana III " + GainMana,
-		[1195] = "Gain Mana IV " + GainMana,
 		[1417] = "Curse of Roots holds its target for 20 s after a 1.5 s cast, and a hit ends it. The table names one control, the " +
 			"instant Root, cast on the way out before a retreat.",
 		[1347] = "Blind Leap throws the Sorcerer 15 m ahead to a place the server picks; the bot walks checked routes only.",
@@ -74,13 +71,18 @@ public static class NaturalSorcererProfile
 	/// below 75%; it leaves at two attackers, or at 25% HP with nothing ready; the mana potion only when the cheapest
 	/// attack cannot be paid. The spellbook swings only when no attack can be paid for.
 	/// </para>
+	/// <para>
+	/// NR-60a: Gain Mana (level 10) gives 314 MP at once and 124 a second for 5 s more, at no cost, once in 3 min. In a
+	/// fight it is cast at or below half its mana, before any mana potion; in a rest for mana it is cast first.
+	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-sorcerer-v1",
 		Adjacent: ["frost", "erosion", "ice", "shock", "empyrean", "blast", "harpoon", "bolt", "blaze", "spear"],
 		AtRange: ["ice", "shock", "empyrean", "blast", "harpoon", "bolt", "blaze", "spear"],
 		Upkeep: [new("skin")],
 		Recovery: [new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
-		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.LastResort, ControlRole: "root");
+		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.LastResort, ControlRole: "root",
+		ManaSkill: new("gainmana", 50));
 
 	// NR-Q5, NR-Q7 and NR-Q8: the spellbook, cloth, and the kit of a class that casts from mana and rests with the powder.
 	private static readonly NaturalGearRules Gear = NaturalClassGearTable.Sorcerer.Rules(NaturalClassLineContract.LoadDefault(),
@@ -111,7 +113,8 @@ public static class NaturalSorcererProfile
 			RangedHold = NaturalRangedHold.RunOption,
 			// NR-50a: the powder first, then as the Mage: the life potion below 90% HP, a sit for mana below 40% until 80%.
 			Rest = new NaturalRestRules(skills, HealBelowPercent: 90, ManaSitBelowPercent: 40, ManaSitUntilPercent: 80, MaximumQuietSits: 12,
-				PotionPlan: new NaturalPotionRestPlan(HpTargetPercent: 90, UsesMana: true), RestSkills: NaturalRestSkills.ReagentOnly(90)),
+				PotionPlan: new NaturalPotionRestPlan(HpTargetPercent: 90, UsesMana: true),
+				RestSkills: NaturalRestSkills.ReagentOnly(90) with { FreeMana = new("gainmana", "Gain Mana") }),
 			// A stand-off at 22 m with skills that reach 25 m: the Priest line's distances, thresholds and campaign numbers.
 			Ranges = NaturalPriestProfile.PriestLineRanges,
 			Readiness = NaturalPriestProfile.PriestLineReadiness,

@@ -43,6 +43,10 @@ public sealed record NaturalRestSkill(string Role, string Name);
 public sealed record NaturalRestSkills(NaturalRestSkill ReagentHealth, NaturalRestSkill ReagentMana, NaturalRestSkill? HealthForMana,
 	NaturalRestSkill? Heal, int SharedCooldownId, int HealBelowPercent, int HealthForManaMinimumHpPercent)
 {
+	/// <summary>NR-60a: a skill that restores mana at no cost on a long cooldown. A rest casts it first when mana is
+	/// needed and it is ready; a fight casts it too, by the rule table. Null for a class with no such skill.</summary>
+	public NaturalRestSkill? FreeMana { get; init; }
+
 	/// <summary>NR-50a: the two reagent skills every second class learns at level 10, for a class with no heal and no
 	/// health-for-mana skill. Herb Treatment is cast below <paramref name="healBelowPercent"/> HP.</summary>
 	public static NaturalRestSkills ReagentOnly(int healBelowPercent) => new(
@@ -54,6 +58,9 @@ public sealed record NaturalRestSkills(NaturalRestSkill ReagentHealth, NaturalRe
 
 	/// <summary>A skill only the rest casts: the reagent skills and the one that spends HP for mana.</summary>
 	public bool IsRestOnly(NaturalPriestSkill skill) => IsReagent(skill) || HealthForMana != null && skill.Role == HealthForMana.Role;
+
+	/// <summary>NR-60a: a skill the rest casts by the powder policy's choice: a rest-only one, or the free mana skill.</summary>
+	public bool IsCastInRest(NaturalPriestSkill skill) => IsRestOnly(skill) || FreeMana != null && skill.Role == FreeMana.Role;
 }
 
 /// <param name="Action"><see cref="NaturalRestRules.Powder"/>, <see cref="NaturalRestRules.CastHeal"/>,
@@ -109,7 +116,7 @@ public sealed record NaturalRestRules(NaturalPriestSkill[] Skills, int HealBelow
 			powder = NaturalPowderRestPolicy.Decide(new NaturalPowderRestObservation(
 				state.Level, state.Hp, state.MaxHp, state.Mp, state.MaxMp, recovering, state.Learned,
 				state.Cooldowns, state.ItemCounts, LastPowderSkillId: state.LastPowderSkillId), state.Now, Skills, restSkills);
-			if (powder.Skill is { } restSkill && restSkills.IsRestOnly(restSkill)) return new(Powder, restSkill, recovering, recovered, powder, null);
+			if (powder.Skill is { } restSkill && restSkills.IsCastInRest(restSkill)) return new(Powder, restSkill, recovering, recovered, powder, null);
 		}
 		if (!recovering)
 		{
@@ -147,7 +154,7 @@ public sealed record NaturalRestRules(NaturalPriestSkill[] Skills, int HealBelow
 			powder = NaturalPowderRestPolicy.Decide(new NaturalPowderRestObservation(
 				state.Level, state.Hp, state.MaxHp, state.Mp, state.MaxMp, recovering, state.Learned,
 				state.Cooldowns, state.ItemCounts, LastPowderSkillId: state.LastPowderSkillId), state.Now, Skills, restSkills);
-			if (powder.Skill is { } restSkill && restSkills.IsRestOnly(restSkill)) return new(Powder, restSkill, recovering, recovered, powder, null);
+			if (powder.Skill is { } restSkill && restSkills.IsCastInRest(restSkill)) return new(Powder, restSkill, recovering, recovered, powder, null);
 		}
 		if (needHealth && state.LifePotionOwned && state.LifePotionReady && !state.LifePotionHealing)
 			return new(DrinkLifePotion, null, recovering, recovered, powder, null);

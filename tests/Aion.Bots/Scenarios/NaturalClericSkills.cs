@@ -94,6 +94,11 @@ public static class NaturalPowderRestPolicy
 		// cooldown. Only with HP to spare; the powder and Healing Light put the HP back.
 		NaturalPriestSkill? penance = needMp && kinds.HealthForMana != null
 			? NaturalPriestSkills.Best(kinds.HealthForMana.Role, state.Level, state.Learned, skills) : null;
+		// NR-60a: a skill that gives mana at no cost is cast first when mana is needed and it is ready.
+		NaturalPriestSkill? free = needMp && kinds.FreeMana != null
+			? NaturalPriestSkills.Best(kinds.FreeMana.Role, state.Level, state.Learned, skills) : null;
+		if (free != null && !(state.Cooldowns.TryGetValue(free.CooldownId, out DateTimeOffset freeReadyAt) && freeReadyAt > now))
+			return new(free.Role, free, $"MP deficit {mpDeficit:P0}: {kinds.FreeMana!.Name} restores mana at no cost.");
 		if (penance != null && state.Hp * 100 >= state.MaxHp * kinds.HealthForManaMinimumHpPercent &&
 			!(state.Cooldowns.TryGetValue(penance.CooldownId, out DateTimeOffset penanceReadyAt) && penanceReadyAt > now))
 			return new(penance.Role, penance, $"MP deficit {mpDeficit:P0} and HP to spare: {kinds.HealthForMana!.Name} trades HP for mana over 30 s.");

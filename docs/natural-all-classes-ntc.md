@@ -4577,7 +4577,7 @@ The template:
       Seven pre-commit checks pass, the three script tests pass
       (run/nr/NR-60/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
       skipped) and Fast passes (run nr60-fast, 11 passed).
-- [ ] **NR-60a - A skill that restores mana.** Depends: NR-60
+- [x] **NR-60a - A skill that restores mana.** Depends: NR-60
   - Work: Gain Mana gives a Sorcerer 314 MP at once and 124 a second for 5 s more, at no
     cost, once in 3 min; the Spirit Master and other classes have skills of the kind.
     Java first: the skill's effects and what a fight or a rest refuses of it. The rule
@@ -4586,6 +4586,35 @@ The template:
     and a number in the table, no branch on a class.
   - Proof: One-time check of the decisions at three MP levels in a fight and in a rest;
     the full gate identical.
+  - 2026-10-10: done.
+    - **The skill, from the shipped template** the server loads (run/nr/NR-60/survey.log).
+      Gain Mana asks for nothing: no mana, no DP, no weapon, no state of the fight. It is
+      instant, on the caster, with a cooldown of 180 s of its own (id 1472). Rank I gives
+      314 MP at once and 124 a second for 5 s.
+    - **The change, the fight.** Sc/Classes/NaturalRotationCombatPolicy.cs: a rule table
+      may name a mana step, a role and an MP percentage. At or below it the best learned
+      skill of the role is cast on the bot when it is ready, before the table asks for a
+      mana potion. No table but the Sorcerer's names one.
+    - **The change, the rest.** Sc/Classes/NaturalRestRules.cs: a class's rest skills
+      may name a free mana skill. Sc/NaturalClericSkills.cs, the powder policy: when
+      mana is needed and that skill is ready, it is cast first, before the skill that
+      trades health for mana and before the powder. The Cleric's rest skills name none.
+    - **The Sorcerer.** Gain Mana has the role gainmana: 56 of its 68 active skills have
+      a role now and 12 a reason. The table casts it at or below half its mana, and its
+      rest casts it first.
+    - **Proof, the one-time check** (run/nr/NR-60a/check.log; the check file is not
+      committed; its first run, check-a1.log, failed on a number of the check's own). A
+      Sorcerer of level 10, 20 and 25, each with its rank:
+      - In a fight: at 51% mana it casts Ice Chain; at 50% Gain Mana; at 50% with Gain
+        Mana cooling down, Ice Chain; with no mana and a serum, Gain Mana, and with Gain
+        Mana cooling down, the serum.
+      - In a rest: at 60% mana it is done; at 39% it casts Gain Mana; with Gain Mana
+        cooling down, MP Recovery for two powders; with no powder either, it sits. While
+        the sit for mana is on it casts Gain Mana at 70%, and at 80% the rest is done.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-60a/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr60a-fast, 11 passed).
 - [ ] **NR-61 - Sorcerer: probe rows.** Depends: NR-60a
   - Work: Rows sorcerer-10, sorcerer-16, sorcerer-20 and sorcerer-25 in
     SimulationNaturalStarterProbeTests: prepared Sorcerers on the two probe accounts, in
@@ -5247,3 +5276,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   NR-61 to NR-68 are written. Full gate guard-p8 (thirteen scopes identical), seven checks,
   script tests, unit suite (4,629 passed, 16 skipped) and Fast (nr60-fast) pass. Next:
   NR-60a.
+- 2026-10-10 — Loop: NR-60a done. A rule table may name a mana step, and a class's rest a
+  free mana skill. The Sorcerer casts Gain Mana at or below half its mana in a fight,
+  before any serum, and first in a rest for mana; it has 56 roles and 12 reasons now.
+  One-time check at levels 10, 20 and 25. Full gate guard-p8 (thirteen scopes identical),
+  seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr60a-fast) pass. Next:
+  NR-61, the Sorcerer's probe rows.
