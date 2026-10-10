@@ -53,6 +53,10 @@ public sealed partial class SimulationFastScenarioTests
 		new("chanter-16", NaturalClassLine.PriestChanter, ProbeAccountB, "Asimsixchan"),
 		new("chanter-20", NaturalClassLine.PriestChanter, ProbeAccountA, "Asimtwechan"),
 		new("chanter-25", NaturalClassLine.PriestChanter, ProbeAccountB, "Asimtfchan"),
+		new("gladiator-10", NaturalClassLine.WarriorGladiator, ProbeAccountA, "Asimtenglad"),
+		new("gladiator-16", NaturalClassLine.WarriorGladiator, ProbeAccountB, "Asimsixglad"),
+		new("gladiator-20", NaturalClassLine.WarriorGladiator, ProbeAccountA, "Asimtweglad"),
+		new("gladiator-25", NaturalClassLine.WarriorGladiator, ProbeAccountB, "Asimtfglad"),
 		new("chanter-mantras", NaturalClassLine.PriestChanter, ProbeAccountA, "Asimmantra"),
 		new("gladiator-aerial", NaturalClassLine.WarriorGladiator, ProbeAccountB, "Asimaerial"),
 		new("assassin-runes", NaturalClassLine.ScoutAssassin, ProbeAccountA, "Asimrunes"),
@@ -268,6 +272,10 @@ public sealed partial class SimulationFastScenarioTests
 			case "chanter-16": await ChanterLevelSixteenRowAsync(probe, id, token); break;
 			case "chanter-20": await ChanterLevelTwentyRowAsync(probe, id, token); break;
 			case "chanter-25": await ChanterLevelTwentyFiveRowAsync(probe, id, token); break;
+			case "gladiator-10": await GladiatorLevelTenRowAsync(probe, id, token); break;
+			case "gladiator-16": await GladiatorLevelSixteenRowAsync(probe, id, token); break;
+			case "gladiator-20": await GladiatorLevelTwentyRowAsync(probe, id, token); break;
+			case "gladiator-25": await GladiatorLevelTwentyFiveRowAsync(probe, id, token); break;
 			case "chanter-mantras": await ChanterMantrasRowAsync(probe, id, token); break;
 			case "gladiator-aerial": await GladiatorAerialRowAsync(probe, id, token); break;
 			case "assassin-runes": await AssassinRunesRowAsync(probe, id, token); break;
@@ -2961,6 +2969,314 @@ public sealed partial class SimulationFastScenarioTests
 			$". Smite decided {smitesOff} time(s) from range and {smitesOn} with the mosbear on the Chanter; the staff swung {swings} time(s). From 55% HP: {Outcome(hurt)}; Protective Ward decided at " +
 			$"{string.Join(", ", warded.Select(HpPercentAt))}% HP. Then against {pack.Length} the director spawned 4 m away and set on it: {Outcome(swarm)}; Binding Word decided with " +
 			$"{swarm.Decided[bound].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32()} attackers: {reason} " +
+			$"Rest: casts {string.Join(" ", restCasts)}, Odella Powder {probe.Owned(OdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>NR-81: how often a fight's decisions refused one of the skills for the mana its ladder keeps back.</summary>
+	private static int HeldByReserve(ClericFight fight, params int[] skills) => fight.Decided.Count(record =>
+		record.Fields.GetProperty("candidateActions").EnumerateArray().Any(entry =>
+			entry.GetProperty("SkillId") is { ValueKind: JsonValueKind.Number } id && skills.Contains(id.GetInt32()) &&
+			entry.GetProperty("IllegalReasons") is { ValueKind: JsonValueKind.Array } reasons &&
+			reasons.EnumerateArray().Any(reason => reason.GetString()?.Contains("recovery reserve") == true)));
+
+	/// <summary>
+	/// NR-81, row gladiator-10. Prepared by the director: the Warrior is made a level-10 Gladiator with the skills of
+	/// every level up to it, is given the ceremony's greatsword (100900488) and is placed in Altgard by the ice crasaurs
+	/// (210415, level 11), where the Cleric's row fights. The journey's equipment check takes the sword. Then it fights
+	/// one crasaur after another by its table until Robust Blow has followed Ferocious Strike: the first fight opens
+	/// with Taunt from range, its pull, and Rage is decided only while it is hurt. Last the director gives powder and
+	/// halves the HP, and the journey's rest casts Herb Treatment.
+	/// </summary>
+	private async Task GladiatorLevelTenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int crasaur = 210415, sword = 100900488, strike = 2865, robust = 2878, smash = 2891, rage = 2903, taunt = 2981, herb = 246, mostFights = 4;
+		probe.Session.BeginStep("s01", "director-makes-a-level-ten-gladiator-in-altgard");
+		await probe.BecomeAsync(PlayerClass.GLADIATOR, 10);
+		int[] table = probe.CatalogOf(PlayerClass.GLADIATOR);
+		Assert.All(new[] { strike, robust, smash, rage, taunt, herb, 249, 519 }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 10."));
+		await GiveAsync(probe, token, (sword, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1473.2f, 1765.2f, 247.5f);
+		probe.Session.BeginStep("s02", "equipment-check-takes-the-greatsword");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(sword, MainHand(probe));
+
+		var lines = new List<string>();
+		var raged = new List<StarterTraceRecord>();
+		TimeSpan? gap = null;
+		double pulledFrom = 0;
+		int fights = 0, kills = 0, deaths = 0, swings = 0;
+		while (gap == null && fights < mostFights)
+		{
+			fights++;
+			Npc next = NearestLiving(probe, crasaur);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, GladiatorTable, $"s03-{fights:D2}", $"fight-ice-crasaur-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"Fight {fights} ended no way: {fight.Result}.");
+			kills += fight.Result.Killed ? 1 : 0;
+			deaths += fight.Result.Deaths;
+			swings += Swings(fight);
+			raged.AddRange(fight.Decided.Where(record => Decided(record, "cast-self", rage)));
+			if (fights == 1)
+			{
+				// From range: the fight opens with its pull.
+				StarterTraceRecord first = fight.Decided.First(record => record.Fields.GetProperty("action").GetString() == "cast-target");
+				pulledFrom = first.Fields.GetProperty("targetDistance").GetDouble();
+				Assert.True(Decided(first, "cast-target", taunt) && pulledFrom > 6, $"The first cast was decided at {pulledFrom:F1} m: {fight.Order}.");
+			}
+			if (fight.Run([strike], [robust]) is >= 0 and int at) gap ??= fight.Casts[at + 1].At - fight.Casts[at].At;
+			lines.Add($"fight {fights}: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+		Assert.True(gap is { } afterStrike && afterStrike <= TimeSpan.FromSeconds(3), $"Robust Blow did not follow Ferocious Strike inside 3 s in {fights} fights: {string.Join("; ", lines)}.");
+		Assert.All(raged, record => Assert.True(HpPercentAt(record) <= 80, $"Rage was decided at {HpPercentAt(record)}% HP."));
+
+		// Prepared by the director: powder, and half HP. The rest is the journey's.
+		await GiveAsync(probe, token, (LesserOdellaPowder, 20));
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		int hpBefore = probe.World.CurrentHp;
+		(_, int[] restCasts) = await RestStepAsync(probe, "s04", "director-gives-powder-and-halves-hp-then-rest", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Gladiator, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, sword {sword}. {fights} fight(s), {kills} kill(s), {deaths} death(s): " +
+			$"{string.Join("; ", lines)}. Taunt from {pulledFrom:F1} m; Robust Blow {gap.Value.TotalMilliseconds:F0} ms after Ferocious Strike; the sword swung {swings} time(s); " +
+			$"Rage decided {raged.Count} time(s){(raged.Count > 0 ? " at " + string.Join(", ", raged.Select(HpPercentAt)) + "% HP" : "")}. " +
+			$"Rest from {hpBefore} HP: casts {string.Join(" ", restCasts)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-81, row gladiator-16. Prepared by the director: a level-16 Gladiator with the greatsword of Q24013 and the
+	/// plate shoes and breastplate of Q24011 and Q24012 in the bag, by the tusked mosbears (210437, level 14) of the
+	/// Cleric's row. The journey's equipment check wears them and its buff check turns Slaughter on. Before the fight
+	/// begins the director cuts HP to 70%: Rage is cast only while it is hurt, at its place in the chain. A kill, a
+	/// retreat and a death are recorded outcomes: the spot brings more monsters, and with three on it the Gladiator
+	/// leaves.
+	/// </summary>
+	private async Task GladiatorLevelSixteenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210437, sword = 100901373, shoes = 114601575, plate = 110601622, slaughter = 697, wrathful = 624, rupture = 739, rage = 2904,
+			strike = 2867, robust = 2879;
+		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-gladiator-in-altgard");
+		await probe.BecomeAsync(PlayerClass.GLADIATOR, 16);
+		int[] table = probe.CatalogOf(PlayerClass.GLADIATOR);
+		Assert.All(new[] { slaughter, wrathful, rupture, rage, strike, robust, 2892, 520, 2982 }, skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 16."));
+		await GiveAsync(probe, token, (sword, 1), (shoes, 1), (plate, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1427.2f, 789.9f, 249.9f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		IReadOnlyList<NaturalGearUpgrade> worn = await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(sword, MainHand(probe));
+		Assert.All(new[] { shoes, plate }, piece => Assert.Contains(probe.World.Inventory.Values, item => item.ItemId == piece && item.Details.EquippedSlot.GetValueOrDefault() != 0));
+
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-turns-slaughter-on", token);
+		Assert.Contains(slaughter, buffCasts);
+		Assert.Contains(slaughter, probe.World.ActiveToggles);
+
+		Npc first = NearestLiving(probe, mosbear);
+		ClericFight fight = await TableFightAsync(probe, GladiatorTable, "s04", "fight-a-tusked-mosbear-from-seven-tenths-hp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 70% HP as the fight begins.
+			await probe.CutHpAsync(70);
+			return first.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(fight);
+		AssertOnlyCasts(fight, table);
+		Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"The fight ended no way: {fight.Result}.");
+		StarterTraceRecord[] raged = fight.Decided.Where(record => Decided(record, "cast-self", rage)).ToArray();
+		Assert.All(raged, record => Assert.True(HpPercentAt(record) <= 80, $"Rage was decided at {HpPercentAt(record)}% HP."));
+		StarterTraceRecord? left = fight.Decided.FirstOrDefault(record => record.Fields.GetProperty("action").GetString() == "retreat");
+		Console.WriteLine($"{id}: level {probe.World.Level} Gladiator, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}; the check asked for " +
+			$"{string.Join(", ", worn.Select(upgrade => $"{upgrade.ItemId} to slot {upgrade.Slot}"))}. Buff check: casts {string.Join(" ", buffCasts)}; " +
+			$"toggles on {string.Join(" ", probe.World.ActiveToggles.Order())}. From 70% HP: {Outcome(fight)}; the sword swung {Swings(fight)} time(s); " +
+			$"Rage decided {raged.Length} time(s){(raged.Length > 0 ? " at " + string.Join(", ", raged.Select(HpPercentAt)) + "% HP" : "")}, " +
+			$"Wrathful Strike cast {fight.Casts.Count(cast => cast.SkillId == wrathful)} time(s), Rupture {fight.Casts.Count(cast => cast.SkillId == rupture)}. " +
+			$"It left: {left?.Fields.GetProperty("reason").GetString() ?? "no."} HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, " +
+			$"MP {probe.World.CurrentMp}/{probe.World.MaxMp}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>
+	/// NR-81, row gladiator-20. Prepared by the director: a level-20 Gladiator with the greatsword of Q24016, by the
+	/// starved mosbears (210564, level 13) of the Cleric's row, with powder, two shield scrolls and three life potions in
+	/// the bag. It fights by its table until Wrathful Strike has followed Robust Blow and Ferocious Strike and Rupture
+	/// has been cast; the first fight opens with Cleave from range. Before one more fight the director gives 2,000 DP
+	/// and cuts HP to 45%: Explosion of Rage is cast with the mosbear on it, and the ladder answers, Second Wind in its
+	/// turn. Last the director cuts MP to a tenth and the journey's rest casts MP Recovery. The row counts how often the
+	/// mana kept back for Second Wind held Rage or Wrathful Strike.
+	/// </summary>
+	private async Task GladiatorLevelTwentyRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, sword = 100901375, strike = 2867, robust = 2880, wrathful = 625, rupture = 739, cleave = 710, wind = 648, explosion = 521,
+			rage = 2905, slaughter = 697, recovery = 252, scroll = 164000068, potion = 162000003, mostFights = 5;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-gladiator-in-altgard");
+		await probe.BecomeAsync(PlayerClass.GLADIATOR, 20);
+		int[] table = probe.CatalogOf(PlayerClass.GLADIATOR);
+		Assert.All(new[] { strike, robust, wrathful, rupture, cleave, wind, explosion, rage, slaughter, recovery, 251, 2893, 2983 }, skill =>
+			Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 20."));
+		await GiveAsync(probe, token, (sword, 1), (LesserOdellaPowder, 20), (scroll, 2), (potion, 3));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(sword, MainHand(probe));
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-turns-slaughter-on", token);
+		Assert.Contains(slaughter, probe.World.ActiveToggles);
+
+		var lines = new List<string>();
+		ClericFight? chain = null;
+		double pulledFrom = 0;
+		int fights = 0, swings = 0, ruptures = 0, held = 0;
+		while ((chain == null || ruptures == 0) && fights < mostFights)
+		{
+			fights++;
+			Npc next = NearestLiving(probe, mosbear);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, GladiatorTable, $"s04-{fights:D2}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.True(fight.Result is { Killed: true, Deaths: 0 }, $"Fight {fights} was no kill: {Outcome(fight)}.");
+			Assert.DoesNotContain(fight.Casts, cast => cast.SkillId == explosion);
+			swings += Swings(fight);
+			ruptures += fight.Casts.Count(cast => cast.SkillId == rupture);
+			held += HeldByReserve(fight, rage, wrathful);
+			if (fights == 1)
+			{
+				// From range: the fight opens with Cleave, the pull that hurts.
+				StarterTraceRecord first = fight.Decided.First(record => record.Fields.GetProperty("action").GetString() == "cast-target");
+				pulledFrom = first.Fields.GetProperty("targetDistance").GetDouble();
+				Assert.True(Decided(first, "cast-target", cleave) && pulledFrom > 6, $"The first cast was decided at {pulledFrom:F1} m: {fight.Order}.");
+			}
+			if (fight.Run([strike], [robust], [wrathful]) >= 0) chain ??= fight;
+			lines.Add($"fight {fights}: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+		Assert.True(chain != null, $"Wrathful Strike never followed Robust Blow and Ferocious Strike in {fights} fights: {string.Join("; ", lines)}.");
+		Assert.True(ruptures > 0, $"Rupture was not cast in {fights} fights: {string.Join("; ", lines)}.");
+		int run = chain.Run([strike], [robust], [wrathful]);
+		TimeSpan second = chain.Casts[run + 1].At - chain.Casts[run].At, third = chain.Casts[run + 2].At - chain.Casts[run + 1].At;
+		Assert.True(second <= TimeSpan.FromSeconds(3) && third <= TimeSpan.FromSeconds(3), $"The chain's steps came {second.TotalMilliseconds:F0} ms and {third.TotalMilliseconds:F0} ms apart: {chain.Order}.");
+
+		Npc hurtTarget = NearestLiving(probe, mosbear);
+		ClericFight hurt = await TableFightAsync(probe, GladiatorTable, "s05", "fight-a-starved-mosbear-from-under-half-hp-with-dp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 2,000 DP and 45% HP as the fight begins.
+			await probe.SetDpAsync(2000);
+			await probe.CutHpAsync(45);
+			return hurtTarget.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(hurt);
+		AssertOnlyCasts(hurt, table);
+		Assert.Contains(hurt.Casts, cast => cast.SkillId == explosion);
+		Assert.True(probe.World.CurrentDp < 2000, $"The DP was not spent: {probe.World.CurrentDp}.");
+		StarterTraceRecord[] ladder = hurt.Decided.Where(record => record.Fields.GetProperty("action").GetString() is "shield-scroll" or "hot-potion" ||
+			Decided(record, "cast-self", wind)).ToArray();
+		Assert.True(ladder.Length > 0, $"The ladder did not answer 45% HP: decisions {hurt.Counts}.");
+		Assert.Equal("shield-scroll", ladder[0].Fields.GetProperty("action").GetString());
+		Assert.All(hurt.Decided.Where(record => Decided(record, "cast-self", wind)), record => Assert.True(HpPercentAt(record) <= 45, $"Second Wind was decided at {HpPercentAt(record)}% HP."));
+		Assert.Equal(0, hurt.Result.Deaths);
+		held += HeldByReserve(hurt, rage, wrathful);
+
+		// Prepared by the director: a tenth of its mana. The rest is the journey's.
+		probe.Session.BeginStep("s06", "director-cuts-mp");
+		await probe.CutMpAsync(10);
+		int mpBefore = probe.World.CurrentMp;
+		(_, int[] restCasts) = await RestStepAsync(probe, "s07", "rest-from-a-tenth-of-its-mana", token);
+		Assert.Contains(recovery, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Gladiator, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}. Buff check: casts {string.Join(" ", buffCasts)}. " +
+			$"{fights} fight(s): {string.Join("; ", lines)}. Cleave from {pulledFrom:F1} m; Robust Blow {second.TotalMilliseconds:F0} ms after Ferocious Strike and Wrathful Strike " +
+			$"{third.TotalMilliseconds:F0} ms after that; Rupture cast {ruptures} time(s); the sword swung {swings} time(s). " +
+			$"From 45% HP with 2,000 DP: {Outcome(hurt)}; the ladder: {string.Join(", ", ladder.Select(record => $"{record.Fields.GetProperty("action").GetString()}" +
+				$"{(record.Fields.GetProperty("skillId") is { ValueKind: JsonValueKind.Number } skill ? " " + skill.GetInt32() : "")} at {HpPercentAt(record)}% HP"))}; DP left {probe.World.CurrentDp}. " +
+			$"Rage or Wrathful Strike was held for the mana kept back in {held} decision(s). " +
+			$"Rest from {mpBefore} MP: casts {string.Join(" ", restCasts)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-81, row gladiator-25. Prepared by the director: a level-25 Gladiator with the greatsword of Q24016, by the
+	/// starved mosbears (210564, level 13), with Odella Powder in the bag. Three fights are the journey's alone, for the
+	/// numbers. Before one more the director cuts HP to 40%: with no shield scroll in the bag the ladder comes to Second
+	/// Wind. Then the director spawns three starved mosbears 4 m from the Gladiator and sets them on it: with three
+	/// attackers the journey leaves. Last the director halves the HP and the rest casts the fourth rank of Herb
+	/// Treatment, which spends Odella Powder.
+	/// </summary>
+	private async Task GladiatorLevelTwentyFiveRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, sword = 100901375, aerial = 545, crashing = 508, herb = 253, slaughter = 697, rage = 2906, wrathful = 626, wind = 648;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-five-gladiator-in-altgard");
+		await probe.BecomeAsync(PlayerClass.GLADIATOR, 25);
+		int[] table = probe.CatalogOf(PlayerClass.GLADIATOR);
+		Assert.All(new[] { aerial, crashing, herb, slaughter, rage, wrathful, 2868, 2881, 2894, 740, 711, 648, 522, 2984, 254 }, skill =>
+			Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 25."));
+		await GiveAsync(probe, token, (sword, 1), (OdellaPowder, 20));
+		BotNavigationGeometry geometry = await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(sword, MainHand(probe));
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-turns-slaughter-on", token);
+		Assert.Contains(slaughter, probe.World.ActiveToggles);
+
+		var lines = new List<string>();
+		int swings = 0, lockdowns = 0, blows = 0, held = 0;
+		for (int fights = 1; fights <= 3; fights++)
+		{
+			Npc next = NearestLiving(probe, mosbear);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, GladiatorTable, $"s04-{fights}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.Equal(0, fight.Result.Deaths);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0, $"Fight {fights} ended neither way: {fight.Result}.");
+			swings += Swings(fight);
+			lockdowns += fight.Casts.Count(cast => cast.SkillId == aerial);
+			blows += fight.Casts.Count(cast => cast.SkillId == crashing);
+			held += HeldByReserve(fight, rage, wrathful);
+			lines.Add($"fight {fights}: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+
+		Npc hurtTarget = NearestLiving(probe, mosbear);
+		int hpHurt = 0;
+		ClericFight hurt = await TableFightAsync(probe, GladiatorTable, "s05", "fight-a-starved-mosbear-from-two-fifths-hp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 40% HP as the fight begins.
+			await probe.CutHpAsync(40);
+			hpHurt = probe.World.CurrentHp;
+			return hurtTarget.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(hurt);
+		AssertOnlyCasts(hurt, table);
+		StarterTraceRecord[] winded = hurt.Decided.Where(record => Decided(record, "cast-self", wind)).ToArray();
+		Assert.True(winded.Length > 0, $"Second Wind was not cast: {hurt.Order}; decisions {hurt.Counts}.");
+		Assert.All(winded, record => Assert.True(HpPercentAt(record) <= 45, $"Second Wind was decided at {HpPercentAt(record)}% HP."));
+		Assert.Contains(hurt.Casts, cast => cast.SkillId == wind);
+		Assert.Equal(0, hurt.Result.Deaths);
+		(int hpWinded, int maxWinded) = (probe.World.CurrentHp, probe.World.MaxHp);
+
+		Npc[] pack = [];
+		ClericFight swarm = await TableFightAsync(probe, GladiatorTable, "s06", "fight-a-pack-of-three-starved-mosbears", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: three starved mosbears 4 m away, set on the Gladiator.
+			pack = await SpawnSetOnAsync(probe, geometry, mosbear, 3, token);
+			return pack[0].GetObjectId();
+		}, token);
+		RemoveSetOn(pack);
+		AssertOnlyCasts(swarm, table);
+		int left = Array.FindIndex(swarm.Decided, record => record.Fields.GetProperty("action").GetString() == "retreat");
+		Assert.True(left >= 0, $"The Gladiator did not leave three attackers: {swarm.Order}; decisions {swarm.Counts}.");
+		int attackers = swarm.Decided[left].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32();
+		Assert.True(attackers >= 3, $"It left with {attackers} attackers: {swarm.Decided[left].Fields.GetProperty("reason").GetString()}");
+
+		// Prepared by the director: half HP. The rest is the journey's.
+		probe.Session.BeginStep("s07", "director-halves-hp");
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		(_, int[] restCasts) = await RestStepAsync(probe, "s08", "rest-from-half-hp-with-odella-powder", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(OdellaPowder) < 20, "No Odella Powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Gladiator, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}. Buff check: casts {string.Join(" ", buffCasts)}. " +
+			string.Join("; ", lines) + $". Aerial Lockdown cast {lockdowns} time(s), Crashing Blow {blows}; the sword swung {swings} time(s); " +
+			$"Rage or Wrathful Strike was held for the mana kept back in {held} decision(s). From {hpHurt} HP: {Outcome(hurt)}; Second Wind decided at " +
+			$"{string.Join(", ", winded.Select(HpPercentAt))}% HP, {hurt.Decisions.GetValueOrDefault("hot-potion")} life potion(s) before it; HP {hpWinded}/{maxWinded} after the fight. " +
+			$"Then against {pack.Length} the director spawned 4 m away and set on it: " +
+			$"{Outcome(swarm)}; it left with {attackers} attackers: {swarm.Decided[left].Fields.GetProperty("reason").GetString()} " +
 			$"Rest: casts {string.Join(" ", restCasts)}, Odella Powder {probe.Owned(OdellaPowder)} of 20 left. " +
 			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, dead {probe.Server.IsDead()}.");
 	}

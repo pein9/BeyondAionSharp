@@ -5369,7 +5369,7 @@ The template:
       run guard-p8 (run/nr/NR-80b/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr80b-fast, 11 passed).
-- [ ] **NR-81 - Gladiator: probe rows.** Depends: NR-80b
+- [x] **NR-81 - Gladiator: probe rows.** Depends: NR-80b
   - Work: Rows gladiator-10, gladiator-16, gladiator-20 and gladiator-25 in
     SimulationNaturalStarterProbeTests: prepared Gladiators on the two probe accounts, in
     the gear the route has given by that level, fight the monsters the Cleric's rows
@@ -5382,6 +5382,55 @@ The template:
     Strike at level 20. A fix is one small change (rule (i)).
   - Proof: The four rows end with the monster dead or a recorded retreat, no refused
     cast repeated and no skill outside the table cast.
+  - 2026-10-10: done. The four rows pass, and the table stands as NR-80b left it.
+    - **Java.** Nothing new is relied on.
+    - **The rows** (SimT/SimulationNaturalStarterProbeTests.cs: gladiator-10,
+      gladiator-16, gladiator-20, gladiator-25, on the probe accounts 98 and 100, at the
+      places and monsters of the Cleric's rows). The director makes the Warrior a
+      Gladiator of the level with the skills of every level up to it, puts the
+      greatsword and the plate pieces of the route into its bag, and places it. From
+      there the journey's equipment check, buff check, fight and rest act.
+      `bash run/nr/NR-81/probe.sh <attempt>`.
+    - **First attempt** (runs nr81-probe-a1 and a1b, kept under rows-a1): the four rows
+      passed. Second Wind was not reached: at 45% HP the shield scroll and the life
+      potion answered first. The level-25 row got one fight more, from 40% HP with no
+      scroll in the bag.
+    - **The last run** (nr81-probe-a4 and a4b; the four traces are under run/nr/NR-81/):
+      the four rows pass, the first three cast for cast as before.
+
+      | Row | Prepared by the director | What the journey did | Outcome |
+      |---|---|---|---|
+      | gladiator-10 | Level 10, the ceremony's greatsword; then 20 powder and half HP | The check took the sword. One ice crasaur: Taunt from 10.9 m, then it held; Ferocious Strike, Robust Blow 802 ms after it, Body Smash, three swings. Rage was not decided: its HP stayed above 80%. The rest cast Herb Treatment. | A kill in 14.2 s; HP 911 to 755; no mana spent. |
+      | gladiator-16 | Level 16; the greatsword of Q24013 and the plate shoes and breastplate of Q24011 and Q24012; 70% HP as the fight begins | The check wore all three; the buff check turned Slaughter on. One tusked mosbear: Taunt, Ferocious Strike, Robust Blow, Rage at 65% HP, Wrathful Strike, Body Smash, the life potion; then three were on it. | A retreat at three attackers, as the Cleric leaves there. |
+      | gladiator-20 | Level 20; the greatsword of Q24016, 20 powder, two shield scrolls, three life potions; then 2,000 DP and 45% HP; then a tenth of its mana | Slaughter on. Unhurt: Cleave from 10.9 m, Ferocious Strike, Robust Blow 802 ms and Wrathful Strike 701 ms after, Rupture, Body Smash. Hurt with DP: the scroll and the potion at 44% HP, Taunt, Explosion of Rage, Ferocious Strike, Robust Blow, Rage, Rupture, Body Smash. The rest cast MP Recovery. | Two kills in 8.9 and 12.8 s; DP 2,000 to 7; MP 1,502 to 1,466 in the first. |
+      | gladiator-25 | Level 25; the same greatsword, 20 Odella Powder; then 40% HP; then three starved mosbears set on it; then half HP | Slaughter on. Three fights: Cleave, then it held 4 to 7 s while the slowed mosbear came; Ferocious Strike, Robust Blow, Wrathful Strike, Rupture. From 40% HP: the life potion, then Second Wind at 41%: HP 998 of 2,403 to 2,480 of 3,194, for 269 MP. With three on it: Taunt, and it left. The rest cast Herb Treatment IV. | Four kills in 19.2, 21.1, 20.0 and 13.9 s and a retreat; HP lost 138, 43 and 57 in the first three. |
+
+      In no fight was a skill decided more than twice running, and no skill outside the
+      catalog was cast. Every decision carries the table natural-gladiator-v1.
+    - **What the rows decide.**
+      - **The pull stands.** With Taunt at level 10 and Cleave from 19 the Gladiator
+        lost 17% of its HP in the level-10 fight, 10% at level 20 and 2 to 6% at level
+        25, and left no fight but the two the director crowded.
+      - **The mana kept back for Second Wind starves nothing.** At level 20 it has 1,502
+        MP and a fight cost 36. In no decision of the rows was Rage or Wrathful Strike
+        held for the reserve.
+    - **Found, and logged (rule (f)).**
+      - **Cleave slows the monster it pulls.** At level 25 the Gladiator stood 4.3, 6.9
+        and 6.4 s between Cleave and its first blow, where Taunt at level 10 took 2.7 s.
+        It holds on purpose (NR-53b: walking in put the Templar inside every pack); the
+        rounds will say whether the wait costs more than Cleave's hit gives.
+      - **Aerial Lockdown and Crashing Blow were not reached** in the level-25 fights:
+        the first chain killed before their place came. Row gladiator-aerial (NR-80a)
+        plays them.
+      - **A stopped bundle that was not stopped.** The item's first bundle was stopped
+        to add the level-25 fight; its inner shell ran on to the end. A rows run made
+        beside it (kept under rows-a2-void) and one more on a test assembly that build
+        had left stale (rows-a3-void) count for nothing, and so does that bundle
+        (void-bundle). The proof below was run after the last rows run, alone.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-81/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr81-fast, 11 passed).
 - [ ] **NR-82 - Gladiator: to Altgard.** Depends: NR-81; ticked by the round that gives it
   - Work: A fresh Asimgladiator plays Ishalgen as a Warrior, the trial, the Gladiator
     choice at Munin, the ceremony with the greatsword and the dispatch Q2901, and is
@@ -8119,3 +8168,12 @@ report what was done, what is parked or blocked, and what the operator must deci
   swing), and the change was taken back. Rage Spell's 379 MP are paid at level 20. Full
   gate guard-p8 (thirteen scopes identical), seven checks, unit suite (4,629 passed, 16
   skipped) and Fast (nr71-fast) pass. Next: NR-81, the Gladiator's probe rows.
+- 2026-10-10 — Loop: NR-81 done. The Gladiator's four probe rows pass (nr81-probe-a4 and
+  a4b) on the table of NR-80b, unchanged: the pull by Taunt and from 19 by Cleave, the
+  first chain with Wrathful Strike and Rupture, Rage only when hurt, Explosion of Rage for
+  its DP, the scroll and the potion at 44% HP, Second Wind at 41%, Slaughter on, a retreat
+  at three attackers, the rest with the powder. The pull stands, and the mana kept back
+  for Second Wind held no skill. A bundle I stopped ran on by itself; two rows runs beside
+  it are void and kept so, and the proof was run again alone. Full gate guard-p8 (thirteen
+  scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
+  (nr81-fast) pass. Next: NR-91, the Assassin's probe rows.
