@@ -4317,7 +4317,7 @@ The template:
     - **Proof.** The bundle of NR-55a, on the tree that holds both items
       (run/nr/NR-55b/guard-p8/verdict.json): all twelve scopes identical; seven checks,
       the unit suite and Fast (nr55b-fast) pass.
-- [ ] **NR-56 - Templar: the Abyss entry.** Depends: NR-55; ticked by its round
+- [x] **NR-56 - Templar: the Abyss entry.** Depends: NR-55; ticked by its round
   - Work: Q24020, then Q2945, Q2946, Q2947 and Q2042 with the two coin tiers at Nott
     (NR-38b, NR-Q14), captured as morheim-abyss-entry-s1-templar.
   - Proof: The capture verifies.
@@ -4330,6 +4330,16 @@ The template:
       The four missions are done in 15 min 52 s. The leg then stopped as its contract
       says: "The missions are done and the Cleric is level 25, below 26: it needs a few
       fortress quests, which are not listed yet (AX-11)." NR-56b, NR-Q16.
+  - 2026-10-09: done. The leg is captured.
+    - **Captured** at 362b5baef: morheim-abyss-entry-s1-templar from
+      altgard-rc-complete-s1-templar (run nr56-ax-a4, log run/nr/NR-56/ax-a4.log): the leg
+      in 16 min 02 s with no death; a Templar of level 25 at Morheim Ice Fortress, 181
+      quests, Q24020, Q2945, Q2946, Q2947 and Q2042 among them; 77,810,164 ms of game
+      time (21 h 37 min since creation), dump sha256 9f9cdfd9d38dba24.
+    - **Two stops**, each a lettered item: NR-56a (the reward step) and NR-56b (the
+      leg's end at level 25, NR-Q16). The level-21 tier was paid from the Templar's own
+      coins and the level-26 tier is not asked at level 25, so NR-Q14 was not met.
+      Seven pre-commit checks pass (run/nr/NR-56/checks-run.log).
 - [x] **NR-56a - A reward's hand-over step expects the class's pick.** Depends: NR-55
   - Work: The first stop of the Abyss entry. Java first: nothing new; a quest hands
     over the reward selected, as read for NR-32. NR-32 gave a leg the class's own reward
@@ -4983,3 +4993,6 @@ report what was done, what is parked or blocked, and what the operator must deci
   leg to its endpoint: level 25 at Morheim Ice Fortress, the five quests complete, no
   death, no coin supplied. Proof by the bundle of NR-56a (twelve scopes identical, Fast
   nr56b-fast). Next: NR-56, the capture of the leg from the committed code.
+- 2026-10-09 — Loop: NR-56 done. morheim-abyss-entry-s1-templar is captured at 362b5baef:
+  a Templar of level 25 at Morheim Ice Fortress with the five quests complete, 21 h 37 min
+  of game time since creation. Next: NR-57, the endpoint ntc-ready-templar-s1.
