@@ -197,6 +197,18 @@ by a lettered item. Answers already given are quoted.
   tier as the Cleric is, and meets NR-Q14 there. To decide: whether such a class should
   play fortress quests to level 26 for the last tier (AX-11), and with it the coins of
   NR-Q14.
+- **NR-Q17. May a Cleric scope be recorded again for where a stagger puts a monster?**
+  Asked by NR-110g. The bot does not read where a stagger, a stumble, a lift or a pull
+  puts a monster. The server says it to a client only inside the cast result, and for a
+  weapon's swing inside SM_ATTACK. The fix is generic: every class then sees such a
+  monster where it is, from the cast result on and not from the monster's next move on.
+  With it the Cleric's scope b differs first at record 125,694 of 131,197, where a
+  critical Hallowed Strike with the staff makes its target stumble 2 m, and the Mage's
+  scope at record 18,915 of 23,555, after Frozen Shock; the other eleven scopes are
+  identical. NR-Q2 keeps the Priest's and the Cleric's scopes identical outside phase B.
+  Default: the scopes stay as they are. NR-110g waits under Blocked with its change kept
+  as a patch, and the Spirit Master goes round it by NR-110h. To decide: whether scope b
+  may be recorded again for this fix, with the Mage's scope by rule (j).
 
 ## Standing rules
 
@@ -6127,7 +6139,56 @@ The template:
   - Proof: Row spirit-master-fight passes with no line of the server's audit; the gate
     with the Priest's and the Cleric's seven scopes identical, and every class scope
     identical or recorded again twice, its first difference explained by a stagger.
-- [ ] **NR-110e - A monster on the spirit is an attacker.** Depends: NR-110g
+  - 2026-10-10: stopped by its own rule and written under Blocked (NR-Q17): the change
+    is made and proven, and it changes the Cleric's scope b. Nothing of it is committed.
+    - **Java.**
+      - **Who moves, and who is told.** A stagger, a stumble, a lift and a pull move
+        their target on the server (StaggerEffect.startEffect 41, StumbleEffect 42,
+        OpenAerialEffect 62, PulledEffect 65), and each sends SM_FORCED_MOVE for a
+        player only. A step back sends SM_POSITION for a creature that is no player
+        (SimpleRootEffect 54-58).
+      - **The cast result.** SM_CASTSPELL_RESULT.writeImpl 121-165: an entry for each
+        effect, with the creature, the result, both HP percentages and the spell
+        status. A status of 1, 2, 4 or 8 (stumble, stagger, lift, the fall after it) is
+        followed by the place; 16 by a heading. A pull and a step back put their place
+        there too, with a status that names none, and nothing in the packet says so.
+      - **A critical hit can do it too.** One critical hit in ten of a physical skill
+        makes the target stumble when the weapon is a polearm, a staff or a greatsword,
+        and staggers it with a bow (Effect 534-543, SkillEngine.createCriticalProcEffect
+        193-219). A weapon's swing does the same (CreatureController.attackTarget
+        342-346), and its place is in SM_ATTACK, which this change does not read yet.
+      - **The port** has the same effects and the same packet.
+    - **The change** (run/nr/NR-110g/nr110g-change.patch, 147 lines; not committed).
+      Bots/Protocol/BotServerPacketDecoder.cs reads the cast result to its end and gives
+      the places beside the decoded fields, not among them: a trace writes the fields,
+      so every recorded trace keeps this packet as it was. A pull's place is found by
+      trying both readings against the packet's length. Bots/World/BotWorldModel.cs
+      puts a creature that is no player at its place, as it does for SM_FORCED_MOVE.
+    - **Proof, the one-time check** (run/nr/NR-110g/check.log; the check file is not
+      committed): nine packets built by hand, among them the Java fixture, a stagger, a
+      stumble after a shielded hit, a pull, a spin, a skill of an item, a dash that
+      staggers two and a packet cut short; each gives the places it holds and no other.
+      The world state moves the monster and no other object.
+    - **Proof, the row** spirit-master-fight (run nr110g-probe-a1): it passes with no
+      line of the server's audit. The spirit follows the staggered mosbear, seven steps
+      where it took five, and the mosbear strikes the spirit four times and its master
+      never.
+    - **The gate** (run guard-p8, run/nr/NR-110g/guard-p8/verdict.json): eleven scopes
+      identical. Scope b differs first at record 125,694 of 131,197: the Cleric casts
+      Hallowed Strike, the hit is critical and its staff makes the target stumble, and
+      the next decision sees the target at 4.8 m where the recorded one saw 2.8 m. Scope
+      mage differs first at record 18,915 of 23,555: after Frozen Shock the next
+      decision sees the target at 4.1 m where the recorded one saw 2.4 m. The unit suite
+      (4,629 passed, 16 skipped), the seven checks and Fast (nr110g-fast) pass.
+- [ ] **NR-110h - The Spirit Master without its staggers, until NR-110g.** Depends: NR-110d
+  - Work: The way round NR-110g (rule (t)). A stagger puts the monster 2 m from the
+    spirit that holds it, at a place the bot does not see, and the server's audit then
+    names the bot's hit time. Stone Shock and Frozen Shock leave the Spirit Master's
+    lists and are left out with that reason. Chain of Earth stays for its snare and its
+    damage. NR-110g gives both back. Only the Spirit Master's own profile changes.
+  - Proof: Rows spirit-master-fight and spirit-master-orders pass with no line of the
+    server's audit; the full gate identical.
+- [ ] **NR-110e - A monster on the spirit is an attacker.** Depends: NR-110h
   - Work: Found by NR-110c: the bot counts as an attacker only a creature that strikes
     the bot itself. Java first: what the master is told of a strike at its spirit
     (SM_ATTACK, the hostile spells, SM_SUMMON_UPDATE). The attacker rule takes the bot's
@@ -6219,6 +6280,16 @@ Nothing is blocked at the start.
   with this reason (the Templar's Shield Counter, Avenging Blow and Courageous Shield).
   To decide: whether the port should read both statuses, as a logged retail correction
   offered upstream.
+- **NR-110g, blocked by NR-Q17: where a stagger puts a monster.** The bot does not read
+  the place a cast result gives for a staggered, stumbled, lifted or pulled monster, so it
+  believes the monster 2 m nearer than it is until the monster's next move. The fix is
+  written and proven (the item's record; the patch run/nr/NR-110g/nr110g-change.patch)
+  and changes the Cleric's scope b, where a critical Hallowed Strike with the staff
+  makes its target stumble, and the Mage's scope. NR-Q2 keeps the Cleric's scopes
+  identical, so nothing is committed. No class is parked: the Spirit Master, whose
+  spirit holds a staggered monster in place, plays without its two staggers by NR-110h.
+  To decide: NR-Q17. With a yes, NR-110g applies the patch, reads SM_ATTACK for a swing's
+  critical too, records b and mage again and gives the Spirit Master its staggers back.
 
 ## Loop prompt
 
@@ -6948,3 +7019,12 @@ report what was done, what is parked or blocked, and what the operator must deci
   line. Item NR-110g, before NR-110e. Full gate guard-p8 (thirteen scopes identical),
   seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr110d-fast) pass. Next:
   NR-110g, a stagger moves the monster for the bot too.
+- 2026-10-10 — Loop: NR-110g stopped and written under Blocked (NR-Q17). The change is
+  made and proven: the bot reads the place a cast result gives for a staggered, stumbled,
+  lifted or pulled monster and puts the monster there; row spirit-master-fight passes with
+  no audit line (nr110g-probe-a1). The gate, run guard-p8: eleven scopes identical; the
+  Cleric's scope b differs first at record 125,694, where a critical Hallowed Strike with
+  the staff makes its target stumble, and the Mage's at record 18,915, after Frozen Shock.
+  NR-Q2 keeps the Cleric's scopes identical, so nothing is committed; the change is kept
+  as run/nr/NR-110g/nr110g-change.patch. The Spirit Master goes round it: item NR-110h, its
+  table without Stone Shock and Frozen Shock. Next: NR-110h.
