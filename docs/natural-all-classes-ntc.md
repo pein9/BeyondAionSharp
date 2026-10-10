@@ -7433,7 +7433,7 @@ The template:
       run guard-p8 (run/nr/NR-130a/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr130a-fast, 11 passed).
-- [ ] **NR-131 - Rider: probe rows.** Depends: NR-130a
+- [x] **NR-131 - Rider: probe rows.** Depends: NR-130a
   - Work: Rows rider-10, rider-16, rider-20 and rider-25 in
     SimulationNaturalStarterProbeTests: prepared Riders on the two probe accounts, in
     the gear the route has given by that level and with its cipher-blade, fight the
@@ -7449,7 +7449,80 @@ The template:
     small change (rule (i)).
   - Proof: The four rows end with the monster dead or a recorded retreat, no refused
     cast repeated and no skill outside the table cast.
-- [ ] **NR-132 - Rider: to Altgard.** Depends: NR-131; ticked by the round that gives it
+  - 2026-10-10: done on the third attempt, by one override of the attempt budget (rule
+    (e)). The four rows pass and the table stands as NR-130a left it. One thing it
+    should do and does not is item NR-131a.
+    - **The override, and its reason.** Both failures were of the rows' own preparation
+      and neither was of the Rider's play.
+      - First attempt (nr131-probe-a1 and a1b, kept under rows-a1): rows 10, 16 and 20
+        passed. Row 25 chose, for its fight on foot, a mosbear the director had just
+        removed and the client had not yet been told of; the fight began and ended in
+        the same instant. The row now lets the client hear of it first.
+      - Second attempt (a2 and a2b, rows-a2): rows 10, 16 and 25 passed. Rows 20 and 25
+        fight at the same starved mosbears and ran in one world, 25 first; after its
+        five kills row 20 found a third mosbear nowhere.
+      - Third attempt: each of the two has a world of its own (rows 10 and 25 in one
+        process, 16 and 20 in the other).
+    - **Java.** Nothing bars a player in a mech from sitting, from a skill of the rest
+      or from an item: of all the server's checks only the private store asks
+      isInRobotMode (PrivateStoreService 69). The mech ends when the blade leaves the
+      hand and when Embark's effect ends (RideRobotEffect, read under NR-130a).
+    - **The rows** (SimT/SimulationNaturalStarterProbeTests.cs: rider-10, rider-16,
+      rider-20, rider-25, on the probe accounts 98 and 100, at the places and monsters
+      of the Cleric's rows). The director makes the Engineer a Rider of the level with
+      the skills of every level up to it, puts the cipher-blades and the chain pieces of
+      the route into its bag, and places it. From there the journey's equipment check,
+      buff check, fight and rest act. A row takes its skills from the profile's catalog
+      by role. `bash run/nr/NR-131/probe.sh <attempt>`.
+    - **The run** (nr131-probe-a3 and a3b; the four traces are under run/nr/NR-131/).
+
+      | Row | Prepared by the director | What the journey did | Outcome |
+      |---|---|---|---|
+      | rider-10 | Level 10, the ceremony's cipher-blade; then 20 powder and half HP | The check took the blade; the buff check cast Embark and the server said mech 2500003. Three ice crasaurs, each the same way: Cinder Cannon from range (10.9 m at the first), then Bludgeon, Battery, Provoking Whispers, Bludgeon as the crasaur came. The rest, in the mech: Herb Treatment, a life potion, and it sat. | Three kills in 11.5, 14.9 and 17.5 s. The crasaurs struck it seven times. It was in its mech after the rest. |
+      | rider-16 | Level 16; the cipher-blade of Q24013 beside the ceremony's, the chain shoes and hauberk of Q24011 and Q24012; 70% HP as the fight begins | The check took the blade and wore both pieces; the buff check boarded. One tusked mosbear, which has neighbours: Cinder Cannon from 17.6 m, the life potion at 69% HP, Rocket Punch, Bludgeon; then three were on it, and it left. | A retreat at three attackers that got away, in its mech; its target struck it once and the others four times. HP 1,016 of 1,405 at the end. |
+      | rider-20 | Level 20; the cipher-blades of Q24016 and Q24013, 20 powder, two shield scrolls, three life potions; later 2,000 DP and 40% HP; then a tenth of its mana | Four fights alone: Cinder Cannon, Electric Shock, Rocket Punch, Bludgeon, Battery, Provoking Whispers. With DP and at 40% HP: the shield scroll, Nullification Trigger, Overdrive Trigger, the life potion. The rest, in the mech: MP Recovery, and it sat. | Five kills. The four in 10.5, 18.1, 16.2 and 17.2 s for 243 MP; the mosbears struck it nine times. DP 2,000 to 7. |
+      | rider-25 | Level 25; the same blades, 20 Odella Powder; then two starved mosbears set on it; then three; then the mech ended as a fight begins; then half HP | Three fights alone: Cinder Cannon, Electric Shock, Sundering Blade, Rocket Punch, the Bludgeon chain. With two on it: the Bludgeon chain twice, Provoking Whispers, Electric Shock and Lightning Tether, a life potion; it stayed. With three: Cinder Cannon, and it left. On foot: thirteen swings of the blade and a life potion; it did not board. The rest boarded again and cast Herb Treatment IV. | Three kills in 8.0, 17.8 and 17.6 s for 326 MP. Against two a kill in 15.0 s for 415 HP. A retreat at three that got away. On foot a kill in 35.8 s. |
+
+      No refused cast was repeated and no skill outside the catalog was cast. Every
+      decision carries the table natural-rider-v1.
+    - **What the rows decide.**
+      - **A Rider sits, eats the powder and drinks in its mech.** The server lets it,
+        and it was in its mech after every rest and every potion.
+      - **It leaves at three attackers.** With two level-13 mosbears on it the
+        level-25 Rider killed its target in 15.0 s for 415 of its 2,250 HP and one
+        potion. At three it left, and both retreats got away (rows 16 and 25).
+      - **Kinetic Battery stays out.** It takes 64 MP every 6 s in each of its ranks,
+        and half of what it keeps off. A fight of the level-20 Rider costs 61 MP and 33
+        to 114 HP: the shield would take some 200 MP to keep 10 to 34 HP.
+      - **The Templar's distances serve the mech.** Cinder Cannon was decided from 10
+        to 20 m and every skill of the arms from 2.8 to 5.3 m. The server refused one
+        cast for distance in the four rows, at a mosbear on a walk (NR-121b).
+      - **A Rider that a fight finds on foot should board, and does not.** On foot the
+        mosbear took 35.8 s and a life potion; from the mech 8 to 18 s. The table
+        cannot say it: the mech is the buff check's to board. Item NR-131a.
+    - **Found, and logged (rule (f)).**
+      - **Electric Shock is never cast from its 8 m.** It was decided at 2.8 to 5.3 m:
+        the monster is on the mech by the time Cinder Cannon's animation is over.
+      - **It holds for the monster.** After Cinder Cannon the Rider stands 1 to 4 s
+        until the monster has come, as the table means it to.
+      - **Mana.** A fight costs 10 to 28 MP at level 10, 61 at level 20 and 109 at
+        level 25, of 1,117 to 2,457. Embark's own cost comes once.
+      - **Two rows at one place** find too few starved mosbears when the first has
+        killed five; the rows of the other classes kill there in the order that
+        leaves enough.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-131/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr131-fast, 11 passed).
+- [ ] **NR-131a - A Rider that a fight finds on foot boards its mech.** Depends: NR-131
+  - Work: Java first: when Embark is taken (its conditions, its cost and its cooldown,
+    and whether a player who is being struck may cast it). In a fight, when a skill of
+    the table's lists needs the mech and the server has not said the bot rides, the
+    table decides the toggle that boards. Generic: a rule of the table for a toggle
+    that boards, no branch on a class.
+  - Proof: Row rider-25's fight on foot: Embark is the first decision, the server says
+    the mech, and the kill comes from the mech; the full gate identical.
+- [ ] **NR-132 - Rider: to Altgard.** Depends: NR-131a; ticked by the round that gives it
   - Work: A fresh Asimrider plays Ishalgen as an Engineer, the trial, the ceremony with
     the cipher-blade and the dispatch Q29070, and is captured at the Altgard bind as
     altgard-rider-s1. The blade is in its hands from the ceremony on.
@@ -8598,3 +8671,15 @@ report what was done, what is parked or blocked, and what the operator must deci
   leading. Direct Shot's mana does not empty it, and the grenade keeps its first place.
   Full gate guard-p8 (thirteen scopes identical), seven checks, unit suite (4,629 passed,
   16 skipped) and Fast (nr121-fast) pass. Next: NR-131, the Rider's probe rows.
+- 2026-10-10 — Loop: NR-131 done on the third attempt, by one override of the attempt
+  budget: both failures were of the rows' own preparation (a target the director had
+  removed; two rows at one place's mosbears in one world). The Rider's four probe rows
+  pass (nr131-probe-a3 and a3b) on the table of NR-130a, unchanged: the mech by the buff
+  check, Cinder Cannon from range, the Bludgeon chain, Rocket Punch, Electric Shock and
+  Lightning Tether, Sundering Blade, Overdrive Trigger for its DP, the scroll,
+  Nullification Trigger and the potion, the rest with the powder. It sits, eats and
+  drinks in its mech; it leaves at three attackers and stays at two; Kinetic Battery
+  stays out (64 MP every 6 s); the Templar's distances serve. On foot a kill took 35.8 s
+  against 8 to 18 s, and it does not board in a fight: item NR-131a. Full gate guard-p8
+  (thirteen scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and
+  Fast (nr131-fast) pass. Next: NR-131a, a Rider on foot boards its mech.

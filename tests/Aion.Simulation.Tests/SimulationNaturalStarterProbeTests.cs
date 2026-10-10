@@ -73,6 +73,10 @@ public sealed partial class SimulationFastScenarioTests
 		new("gunner-16", NaturalClassLine.EngineerGunner, ProbeAccountB, "Asimsixgunn"),
 		new("gunner-22", NaturalClassLine.EngineerGunner, ProbeAccountA, "Asimttgunn"),
 		new("gunner-25", NaturalClassLine.EngineerGunner, ProbeAccountB, "Asimtfgunn"),
+		new("rider-10", NaturalClassLine.EngineerRider, ProbeAccountA, "Asimtenride"),
+		new("rider-16", NaturalClassLine.EngineerRider, ProbeAccountB, "Asimsixride"),
+		new("rider-20", NaturalClassLine.EngineerRider, ProbeAccountA, "Asimtwride"),
+		new("rider-25", NaturalClassLine.EngineerRider, ProbeAccountB, "Asimtfride"),
 		new("chanter-mantras", NaturalClassLine.PriestChanter, ProbeAccountA, "Asimmantra"),
 		new("gladiator-aerial", NaturalClassLine.WarriorGladiator, ProbeAccountB, "Asimaerial"),
 		new("assassin-runes", NaturalClassLine.ScoutAssassin, ProbeAccountA, "Asimrunes"),
@@ -319,6 +323,10 @@ public sealed partial class SimulationFastScenarioTests
 			case "gunner-16": await GunnerLevelSixteenRowAsync(probe, id, token); break;
 			case "gunner-22": await GunnerLevelTwentyTwoRowAsync(probe, id, token); break;
 			case "gunner-25": await GunnerLevelTwentyFiveRowAsync(probe, id, token); break;
+			case "rider-10": await RiderLevelTenRowAsync(probe, id, token); break;
+			case "rider-16": await RiderLevelSixteenRowAsync(probe, id, token); break;
+			case "rider-20": await RiderLevelTwentyRowAsync(probe, id, token); break;
+			case "rider-25": await RiderLevelTwentyFiveRowAsync(probe, id, token); break;
 			case "chanter-mantras": await ChanterMantrasRowAsync(probe, id, token); break;
 			case "gladiator-aerial": await GladiatorAerialRowAsync(probe, id, token); break;
 			case "assassin-runes": await AssassinRunesRowAsync(probe, id, token); break;
@@ -4541,6 +4549,349 @@ public sealed partial class SimulationFastScenarioTests
 		.Where(record => record is { Direction: "<", Packet: "SmAttackStatus" } && record.Fields.GetProperty("typeId").GetInt32() == 19 &&
 			record.Fields.GetProperty("objectId").GetInt32() == creature)
 		.Sum(record => record.Fields.GetProperty("writtenValue").GetInt32());
+
+	/// <summary>
+	/// NR-131, row rider-10. Prepared by the director: the Engineer is made a level-10 Rider with the skills of every level
+	/// up to it, is given the ceremony's cipher-blade (102100489), and is placed in Altgard by the ice crasaurs (210415,
+	/// level 11), where the Cleric's row fights. The journey's equipment check takes the blade and its buff check boards
+	/// the mech. Then it fights three crasaurs by its table: the first shot at the first is Cinder Cannon from range, and
+	/// Battery follows Bludgeon. Last the director gives powder and halves the HP, and the journey's rest casts Herb
+	/// Treatment; the row says whether the Rider is still in its mech after it.
+	/// </summary>
+	private async Task RiderLevelTenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int crasaur = 210415, karmic = 102100489, fights = 3;
+		probe.Session.BeginStep("s01", "director-makes-a-level-ten-rider-with-a-cipher-blade");
+		await probe.BecomeAsync(PlayerClass.RIDER, 10);
+		int[] table = probe.CatalogOf(PlayerClass.RIDER);
+		int embark = probe.BestOf(PlayerClass.RIDER, "embark"), cinder = probe.BestOf(PlayerClass.RIDER, "cinder"),
+			bludgeon = probe.BestOf(PlayerClass.RIDER, "bludgeon"), battery = probe.BestOf(PlayerClass.RIDER, "battery"),
+			whispers = probe.BestOf(PlayerClass.RIDER, "whispers"), herb = probe.BestOf(PlayerClass.RIDER, "herb");
+		int self = probe.Session.CharacterId;
+		await GiveAsync(probe, token, (karmic, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1473.2f, 1765.2f, 247.5f);
+		probe.Session.BeginStep("s02", "equipment-check-takes-the-cipher-blade");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(karmic, MainHand(probe));
+		(_, int[] boardCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-boards-the-mech", token);
+		Assert.Contains(embark, boardCasts);
+		int robot = probe.World.RobotId;
+		Assert.True(robot != 0 && probe.Server.IsInRobotMode(), $"After the buff check the client knows mech {robot} and the server {probe.Server.GetRobotId()}.");
+
+		var lines = new List<string>();
+		ClericFight? chain = null;
+		double firedFrom = 0;
+		int kills = 0, deaths = 0, swings = 0, whispered = 0, struck = 0;
+		for (int number = 1; number <= fights; number++)
+		{
+			Npc next = NearestLiving(probe, crasaur);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, RiderTable, $"s04-{number}", $"fight-ice-crasaur-{number}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"Fight {number} ended no way: {fight.Result}.");
+			kills += fight.Result.Killed ? 1 : 0;
+			deaths += fight.Result.Deaths;
+			swings += Swings(fight);
+			whispered += fight.Casts.Count(cast => cast.SkillId == whispers);
+			struck += StrikesBy(fight, next.GetObjectId(), self);
+			if (number == 1)
+			{
+				// From range: with every cooldown clear the first cast is Cinder Cannon, decided outside the reach of the mech's arms.
+				StarterTraceRecord first = fight.Decided.First(record => record.Fields.GetProperty("action").GetString() == "cast-target");
+				firedFrom = first.Fields.GetProperty("targetDistance").GetDouble();
+				Assert.True(Decided(first, "cast-target", cinder) && firedFrom > 6, $"The first cast was decided at {firedFrom:F1} m: {fight.Order}.");
+			}
+			if (fight.Run([bludgeon], [battery]) >= 0) chain ??= fight;
+			lines.Add($"fight {number}: {Outcome(fight)}, HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+		Assert.True(chain != null, $"Battery never followed Bludgeon in {fights} fights: {string.Join("; ", lines)}.");
+
+		// Prepared by the director: powder, and half HP. The rest is the journey's.
+		await GiveAsync(probe, token, (LesserOdellaPowder, 20));
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		int hpBefore = probe.World.CurrentHp, robotBefore = probe.World.RobotId;
+		(IReadOnlyList<StarterTraceRecord> rested, int[] restCasts) = await RestStepAsync(probe, "s05", "director-gives-powder-and-halves-hp-then-rest", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Rider, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, blade {MainHand(probe)}, mech {robot} by the buff check " +
+			$"(casts {string.Join(" ", boardCasts)}). {fights} fight(s), {kills} kill(s), {deaths} death(s): {string.Join("; ", lines)}. " +
+			$"Cinder Cannon from {firedFrom:F1} m; Provoking Whispers cast {whispered} time(s); the blade swung {swings} time(s); the crasaurs struck it {struck} time(s). " +
+			$"Rest from {hpBefore} HP in mech {robotBefore}: casts {string.Join(" ", restCasts)}, it did {RestDid(rested)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left; " +
+			$"mech {probe.World.RobotId} after it (the server: {probe.Server.IsInRobotMode()}). " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-131, row rider-16. Prepared by the director: a level-16 Rider with the cipher-blade of Q24013 beside the
+	/// ceremony's and the chain shoes and hauberk of Q24011 and Q24012 in the bag, by the tusked mosbears (210437,
+	/// level 14) of the Cleric's row. The journey's equipment check wears them and its buff check boards the mech. Before
+	/// the fight begins the director cuts HP to 70%: the life potion is drunk, in the mech. A kill, a retreat and a death
+	/// are recorded outcomes: the spot brings more monsters, and the Rider leaves at three.
+	/// </summary>
+	private async Task RiderLevelSixteenRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210437, blade = 102101070, karmic = 102100489, shoes = 114501728, hauberk = 110551141;
+		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-rider-in-altgard");
+		await probe.BecomeAsync(PlayerClass.RIDER, 16);
+		int[] table = probe.CatalogOf(PlayerClass.RIDER);
+		int embark = probe.BestOf(PlayerClass.RIDER, "embark"), rocket = probe.BestOf(PlayerClass.RIDER, "rocket"),
+			bludgeon = probe.BestOf(PlayerClass.RIDER, "bludgeon"), battery = probe.BestOf(PlayerClass.RIDER, "battery");
+		int self = probe.Session.CharacterId;
+		await GiveAsync(probe, token, (blade, 1), (karmic, 1), (shoes, 1), (hauberk, 1));
+		await probe.MoveToMapAsync(ClericProbeMap, 1427.2f, 789.9f, 249.9f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		IReadOnlyList<NaturalGearUpgrade> worn = await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(blade, MainHand(probe));
+		Assert.All(new[] { shoes, hauberk }, piece => Assert.Contains(probe.World.Inventory.Values, item => item.ItemId == piece && item.Details.EquippedSlot.GetValueOrDefault() != 0));
+		(_, int[] boardCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-boards-the-mech", token);
+		Assert.Contains(embark, boardCasts);
+		int robot = probe.World.RobotId;
+		Assert.True(robot != 0 && probe.Server.IsInRobotMode(), $"After the buff check the client knows mech {robot} and the server {probe.Server.GetRobotId()}.");
+
+		Npc first = NearestLiving(probe, mosbear);
+		int mp = 0;
+		ClericFight fight = await TableFightAsync(probe, RiderTable, "s04", "fight-a-tusked-mosbear-from-seven-tenths-hp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 70% HP as the fight begins.
+			await probe.CutHpAsync(70);
+			mp = probe.World.CurrentMp;
+			return first.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(fight);
+		AssertOnlyCasts(fight, table);
+		Assert.True(fight.Result.Killed || fight.Result.Retreats > 0 || fight.Result.Deaths > 0, $"The fight ended no way: {fight.Result}.");
+		StarterTraceRecord[] drunk = fight.Decided.Where(record => record.Fields.GetProperty("action").GetString() == "hot-potion").ToArray();
+		Assert.True(drunk.Length > 0, $"No life potion was drunk from 70% HP: decisions {fight.Counts}.");
+		Assert.All(drunk, record => Assert.True(HpPercentAt(record) <= 75, $"The life potion was decided at {HpPercentAt(record)}% HP."));
+		StarterTraceRecord[] left = fight.Decided.Where(record => record.Fields.GetProperty("action").GetString() == "retreat").ToArray();
+		Assert.All(left, record => Assert.True(record.Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32() >= 3 || HpPercentAt(record) <= 25,
+			$"It left with {record.Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32()} attackers at {HpPercentAt(record)}% HP."));
+		Console.WriteLine($"{id}: level {probe.World.Level} Rider, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, blade {MainHand(probe)}, mech {robot}; the check asked for " +
+			$"{string.Join(", ", worn.Select(upgrade => $"{upgrade.ItemId} to slot {upgrade.Slot}"))}. From 70% HP: {Outcome(fight)}; MP {mp} to {probe.World.CurrentMp}; " +
+			$"the life potion decided at {string.Join(", ", drunk.Select(HpPercentAt))}% HP; Rocket Punch cast {fight.Casts.Count(cast => cast.SkillId == rocket)} time(s), " +
+			$"Bludgeon {fight.Casts.Count(cast => cast.SkillId == bludgeon)}, Battery {fight.Casts.Count(cast => cast.SkillId == battery)}; the blade swung {Swings(fight)} time(s); " +
+			$"its target struck it {StrikesBy(fight, first.GetObjectId(), self)} time(s) and others {StrikesOf(fight, self) - StrikesBy(fight, first.GetObjectId(), self)}. " +
+			$"It left: {(left.Length > 0 ? left[0].Fields.GetProperty("reason").GetString() : "no.")} Mech {probe.World.RobotId} at the end (the server: {probe.Server.IsInRobotMode()}). " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>
+	/// NR-131, row rider-20. Prepared by the director: a level-20 Rider with the cipher-blade of Q24016 beside that of
+	/// Q24013, by the starved mosbears (210564, level 13) of the Cleric's row, with powder, two shield scrolls and three
+	/// life potions in the bag. Four fights are the journey's alone, for the numbers: what it cast, how often the mosbear
+	/// struck it, and what a fight costs in HP and mana. Before one more fight the director gives 2,000 DP and cuts HP to
+	/// 40%: Overdrive Trigger is cast and the ladder answers, Nullification Trigger among it. Last the director cuts MP to
+	/// a tenth and the journey's rest casts MP Recovery.
+	/// </summary>
+	private async Task RiderLevelTwentyRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, blade = 102101072, second = 102101070, scroll = 164000068, potion = 162000003, fights = 4;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-rider-in-altgard");
+		await probe.BecomeAsync(PlayerClass.RIDER, 20);
+		int[] table = probe.CatalogOf(PlayerClass.RIDER);
+		int embark = probe.BestOf(PlayerClass.RIDER, "embark"), cinder = probe.BestOf(PlayerClass.RIDER, "cinder"), rocket = probe.BestOf(PlayerClass.RIDER, "rocket"),
+			bludgeon = probe.BestOf(PlayerClass.RIDER, "bludgeon"), battery = probe.BestOf(PlayerClass.RIDER, "battery"), shock = probe.BestOf(PlayerClass.RIDER, "shock"),
+			whispers = probe.BestOf(PlayerClass.RIDER, "whispers"), overdrive = probe.BestOf(PlayerClass.RIDER, "overdrive"),
+			nullify = probe.BestOf(PlayerClass.RIDER, "nullify"), recovery = probe.BestOf(PlayerClass.RIDER, "mp-recovery");
+		int self = probe.Session.CharacterId;
+		await GiveAsync(probe, token, (blade, 1), (second, 1), (LesserOdellaPowder, 20), (scroll, 2), (potion, 3));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(blade, MainHand(probe));
+		(_, int[] boardCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-boards-the-mech", token);
+		Assert.Contains(embark, boardCasts);
+		int robot = probe.World.RobotId;
+		Assert.True(robot != 0 && probe.Server.IsInRobotMode(), $"After the buff check the client knows mech {robot} and the server {probe.Server.GetRobotId()}.");
+
+		var lines = new List<string>();
+		var dealt = new Dictionary<string, List<int>>();
+		int swings = 0, struck = 0, mpStart = probe.World.CurrentMp;
+		for (int number = 1; number <= fights; number++)
+		{
+			Npc next = NearestLiving(probe, mosbear);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, RiderTable, $"s04-{number}", $"fight-starved-mosbear-{number}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.True(fight.Result is { Killed: true, Deaths: 0 }, $"Fight {number} was no kill: {Outcome(fight)}.");
+			Assert.DoesNotContain(fight.Casts, cast => cast.SkillId == overdrive);
+			Assert.Equal(robot, probe.World.RobotId);
+			swings += Swings(fight);
+			int hits = StrikesBy(fight, next.GetObjectId(), self);
+			struck += hits;
+			foreach ((string name, int skill) in new[] { ("Cinder Cannon", cinder), ("Rocket Punch", rocket), ("Bludgeon", bludgeon), ("Battery", battery), ("Electric Shock", shock), ("Provoking Whispers", whispers) })
+			{
+				if (!dealt.TryGetValue(name, out List<int>? taken)) dealt[name] = taken = [];
+				taken.AddRange(Dealt(fight, skill));
+			}
+			lines.Add($"fight {number}: {Outcome(fight)}, struck {hits} time(s), HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+		int mpAfter = probe.World.CurrentMp;
+
+		Npc hurtTarget = NearestLiving(probe, mosbear);
+		ClericFight hurt = await TableFightAsync(probe, RiderTable, "s05", "fight-a-starved-mosbear-from-two-fifths-hp-with-dp", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: 2,000 DP and 40% HP as the fight begins.
+			await probe.SetDpAsync(2000);
+			await probe.CutHpAsync(40);
+			return hurtTarget.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(hurt);
+		AssertOnlyCasts(hurt, table);
+		Assert.Contains(hurt.Casts, cast => cast.SkillId == overdrive);
+		Assert.True(probe.World.CurrentDp < 2000, $"The DP was not spent: {probe.World.CurrentDp}.");
+		StarterTraceRecord[] ladder = hurt.Decided.Where(record => record.Fields.GetProperty("action").GetString() is "shield-scroll" or "hot-potion" ||
+			Decided(record, "cast-self", nullify)).ToArray();
+		Assert.True(ladder.Length > 0, $"The ladder did not answer 40% HP: decisions {hurt.Counts}.");
+		Assert.Equal("shield-scroll", ladder[0].Fields.GetProperty("action").GetString());
+		Assert.Contains(ladder, record => Decided(record, "cast-self", nullify));
+		Assert.All(ladder.Where(record => Decided(record, "cast-self", nullify)), record => Assert.True(HpPercentAt(record) <= 60, $"Nullification Trigger was decided at {HpPercentAt(record)}% HP."));
+		Assert.Equal(0, hurt.Result.Deaths);
+
+		// Prepared by the director: a tenth of its mana. The rest is the journey's.
+		probe.Session.BeginStep("s06", "director-cuts-mp");
+		await probe.CutMpAsync(10);
+		int mpBefore = probe.World.CurrentMp;
+		(IReadOnlyList<StarterTraceRecord> rested, int[] restCasts) = await RestStepAsync(probe, "s07", "rest-from-a-tenth-of-its-mana", token);
+		Assert.Contains(recovery, restCasts);
+		Assert.True(probe.Owned(LesserOdellaPowder) < 20, "No powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Rider, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, blade {MainHand(probe)}, mech {robot}. " +
+			$"{fights} fight(s): {string.Join("; ", lines)}. They cost {mpStart - mpAfter} MP; the mosbears struck it {struck} time(s); the blade swung {swings} time(s). " +
+			$"Each hit of the four fights: {string.Join("; ", dealt.Select(entry => $"{entry.Key} {string.Join(" ", entry.Value)}"))}. " +
+			$"From 40% HP with 2,000 DP: {Outcome(hurt)}; the ladder: {string.Join(", ", ladder.Select(record => $"{record.Fields.GetProperty("action").GetString()}" +
+				$"{(record.Fields.GetProperty("skillId") is { ValueKind: JsonValueKind.Number } skill ? " " + skill.GetInt32() : "")} at {HpPercentAt(record)}% HP"))}; DP left {probe.World.CurrentDp}. " +
+			$"Rest from {mpBefore} MP: casts {string.Join(" ", restCasts)}, it did {RestDid(rested)}, powder {probe.Owned(LesserOdellaPowder)} of 20 left; " +
+			$"mech {probe.World.RobotId} after it. HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}.");
+	}
+
+	/// <summary>
+	/// NR-131, row rider-25. Prepared by the director: a level-25 Rider with the cipher-blade of Q24016 beside that of
+	/// Q24013, by the starved mosbears (210564, level 13), with Odella Powder in the bag. Three fights are the journey's
+	/// alone, for the numbers. Then the director spawns two starved mosbears 4 m from the Rider and sets them on it, and
+	/// after that three: the journey leaves at three attackers, not at two. Then the director ends the mech as a fight
+	/// begins: the row says what the Rider does on foot. Last the director halves the HP and the rest casts the fourth
+	/// rank of Herb Treatment.
+	/// </summary>
+	private async Task RiderLevelTwentyFiveRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, blade = 102101072, second = 102101070;
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-five-rider-in-altgard");
+		await probe.BecomeAsync(PlayerClass.RIDER, 25);
+		int[] table = probe.CatalogOf(PlayerClass.RIDER);
+		int embark = probe.BestOf(PlayerClass.RIDER, "embark"), sundering = probe.BestOf(PlayerClass.RIDER, "sundering"), shock = probe.BestOf(PlayerClass.RIDER, "shock"),
+			tether = probe.BestOf(PlayerClass.RIDER, "tether"), rocket = probe.BestOf(PlayerClass.RIDER, "rocket"), herb = probe.BestOf(PlayerClass.RIDER, "herb");
+		int self = probe.Session.CharacterId;
+		await GiveAsync(probe, token, (blade, 1), (second, 1), (OdellaPowder, 20));
+		BotNavigationGeometry geometry = await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		probe.Session.BeginStep("s02", "equipment-check");
+		await probe.Journey.RunObservedEquipmentCheckAsync(token);
+		Assert.Equal(blade, MainHand(probe));
+		(_, int[] boardCasts) = await BuffCheckStepAsync(probe, "s03", "buff-check-boards-the-mech", token);
+		Assert.Contains(embark, boardCasts);
+		int robot = probe.World.RobotId;
+		Assert.True(robot != 0 && probe.Server.IsInRobotMode(), $"After the buff check the client knows mech {robot} and the server {probe.Server.GetRobotId()}.");
+
+		var lines = new List<string>();
+		int swings = 0, struck = 0, sundered = 0, shocks = 0, tethers = 0, rockets = 0;
+		void Tally(ClericFight fight)
+		{
+			swings += Swings(fight);
+			sundered += fight.Casts.Count(cast => cast.SkillId == sundering);
+			shocks += fight.Casts.Count(cast => cast.SkillId == shock);
+			tethers += fight.Casts.Count(cast => cast.SkillId == tether);
+			rockets += fight.Casts.Count(cast => cast.SkillId == rocket);
+		}
+		for (int fights = 1; fights <= 3; fights++)
+		{
+			Npc next = NearestLiving(probe, mosbear);
+			(int hp, int mp) = (probe.World.CurrentHp, probe.World.CurrentMp);
+			ClericFight fight = await TableFightAsync(probe, RiderTable, $"s04-{fights}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			AssertNoRefusedCastRepeats(fight);
+			AssertOnlyCasts(fight, table);
+			Assert.Equal(0, fight.Result.Deaths);
+			Assert.True(fight.Result.Killed || fight.Result.Retreats > 0, $"Fight {fights} ended neither way: {fight.Result}.");
+			Tally(fight);
+			int hits = StrikesBy(fight, next.GetObjectId(), self);
+			struck += hits;
+			lines.Add($"fight {fights}: {Outcome(fight)}, struck {hits} time(s), HP {hp} to {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {mp} to {probe.World.CurrentMp}/{probe.World.MaxMp}");
+		}
+
+		Npc[] pair = [];
+		int pairHp = 0;
+		ClericFight two = await TableFightAsync(probe, RiderTable, "s05", "fight-a-pack-of-two-starved-mosbears", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: two starved mosbears 4 m away, set on the Rider.
+			pair = await SpawnSetOnAsync(probe, geometry, mosbear, 2, token);
+			pairHp = probe.World.CurrentHp;
+			return pair[0].GetObjectId();
+		}, token);
+		RemoveSetOn(pair);
+		// The client is told they are gone before the next target is chosen from what it sees.
+		await probe.Session.SynchronizeAsync(token);
+		AssertOnlyCasts(two, table);
+		Tally(two);
+		// With two on it the table stays: it leaves at three, or at a quarter of its HP with nothing ready.
+		Assert.All(two.Decided.Where(record => record.Fields.GetProperty("action").GetString() == "retreat"), record =>
+			Assert.True(record.Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32() >= 3 || HpPercentAt(record) <= 25,
+				$"It left with {record.Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32()} attackers at {HpPercentAt(record)}% HP."));
+		int pairHpAfter = probe.World.CurrentHp;
+
+		Npc[] pack = [];
+		ClericFight swarm = await TableFightAsync(probe, RiderTable, "s06", "fight-a-pack-of-three-starved-mosbears", async () =>
+		{
+			// Prepared by the director, after the journey's own rest: three starved mosbears 4 m away, set on the Rider.
+			pack = await SpawnSetOnAsync(probe, geometry, mosbear, 3, token);
+			return pack[0].GetObjectId();
+		}, token);
+		RemoveSetOn(pack);
+		await probe.Session.SynchronizeAsync(token);
+		AssertOnlyCasts(swarm, table);
+		int left = Array.FindIndex(swarm.Decided, record => record.Fields.GetProperty("action").GetString() == "retreat");
+		Assert.True(left >= 0, $"The Rider did not decide to leave three attackers: {swarm.Order}; decisions {swarm.Counts}.");
+		int attackers = swarm.Decided[left].Fields.GetProperty("observedState").GetProperty("NearbyAggressors").GetInt32();
+		Assert.True(attackers >= 3, $"It left with {attackers} attackers: {swarm.Decided[left].Fields.GetProperty("reason").GetString()}");
+		int cornered = swarm.Records.Count(record => record is { Direction: "action", Packet: "combat-retreat-cornered" });
+
+		Npc afootTarget = NearestLiving(probe, mosbear);
+		Assert.True(afootTarget.IsSpawned() && !pair.Concat(pack).Contains(afootTarget), "The next target is one the director removed.");
+		ClericFight afoot = await TableFightAsync(probe, RiderTable, "s07", "director-ends-the-mech-as-the-fight-begins", async () =>
+		{
+			// Prepared by the director: after the rest and its buff check the mech is ended, as a death ends it.
+			probe.Server.GetEffectController().RemoveEffect(embark);
+			await probe.Session.SynchronizeAsync(token);
+			Assert.Equal(0, probe.World.RobotId);
+			return afootTarget.GetObjectId();
+		}, token);
+		AssertNoRefusedCastRepeats(afoot);
+		AssertOnlyCasts(afoot, table);
+		Assert.True(afoot.Result.Killed || afoot.Result.Retreats > 0 || afoot.Result.Deaths > 0, $"The fight on foot ended no way: {afoot.Result}.");
+		int boardedIn = afoot.Casts.Count(cast => cast.SkillId == embark);
+
+		// Prepared by the director: half HP. The rest is the journey's.
+		probe.Session.BeginStep("s08", "director-halves-hp");
+		if (!probe.Server.IsDead()) await probe.CutHpAsync(50);
+		(IReadOnlyList<StarterTraceRecord> rested, int[] restCasts) = await RestStepAsync(probe, "s09", "rest-from-half-hp-with-odella-powder", token);
+		Assert.Contains(herb, restCasts);
+		Assert.True(probe.Owned(OdellaPowder) < 20, "No Odella Powder was spent.");
+		Console.WriteLine($"{id}: level {probe.World.Level} Rider, max HP {probe.World.MaxHp}, MP {probe.World.MaxMp}, blade {MainHand(probe)}, mech {robot}. " + string.Join("; ", lines) +
+			$". The mosbears struck it {struck} time(s) in the three. Then against {pair.Length} the director spawned 4 m away and set on it: {Outcome(two)}; HP {pairHp} to {pairHpAfter}. " +
+			$"Then against {pack.Length}: {Outcome(swarm)}; it decided to leave with {attackers} attackers ({swarm.Decided[left].Fields.GetProperty("reason").GetString()}) " +
+			$"and found itself cornered {cornered} time(s). Over the five: Sundering Blade cast {sundered} time(s), Rocket Punch {rockets}, Electric Shock {shocks}, " +
+			$"Lightning Tether {tethers}; the blade swung {swings} time(s). With the mech ended by the director: {Outcome(afoot)}; it boarded {boardedIn} time(s) in the fight; " +
+			$"mech {probe.World.RobotId} after it. Rest: casts {string.Join(" ", restCasts)}, it did {RestDid(rested)}, Odella Powder {probe.Owned(OdellaPowder)} of 20 left. " +
+			$"HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, dead {probe.Server.IsDead()}.");
+	}
+
+	/// <summary>NR-131: what a rest's trace says it did, in the order it first did each.</summary>
+	private static string RestDid(IReadOnlyList<StarterTraceRecord> rested) =>
+		string.Join(" ", rested.Where(record => record.Direction == "action" && record.Packet is "rest-life-potion" or "rest-sit-for-health" or "rest-relocate" or
+			"rest-interrupted-by-attack" or "rest-defend").Select(record => record.Packet).Distinct().DefaultIfEmpty("nothing it names"));
+
+	/// <summary>NR-131: how often anything struck a creature in a fight, as the client saw it.</summary>
+	private static int StrikesOf(ClericFight fight, int whom) => fight.Records.Count(record => record is { Direction: "<", Packet: "SM_ATTACK" } &&
+		record.Fields.GetProperty("targetObjId").GetInt32() == whom);
 
 	/// <summary>The living monster of a template nearest to another monster.</summary>
 	private Npc NearestLiving(StarterProbe probe, int templateId, Npc near) => probe.World.Objects.Values
