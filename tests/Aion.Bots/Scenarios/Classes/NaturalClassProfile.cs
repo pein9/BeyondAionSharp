@@ -162,6 +162,7 @@ public static class NaturalClassProfiles
 		[PlayerClass.TEMPLAR] = NaturalTemplarProfile.Create,
 		[PlayerClass.GLADIATOR] = NaturalGladiatorProfile.Create,
 		[PlayerClass.SORCERER] = NaturalSorcererProfile.Create,
+		[PlayerClass.SPIRIT_MASTER] = NaturalSpiritMasterProfile.Create,
 		[PlayerClass.MAGE] = NaturalMageProfile.Create,
 		[PlayerClass.ARTIST] = NaturalArtistProfile.Create,
 		[PlayerClass.ENGINEER] = NaturalEngineerProfile.Create,

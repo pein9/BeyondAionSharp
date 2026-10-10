@@ -5631,7 +5631,175 @@ The template:
   - Work: One scope of the Ranger's play, chosen where its rules differ most from the
     Scout's, recorded by a bot alone, twice, and added to the gate's sets.
   - Proof: The two recordings are identical.
-- [ ] **NR-110 - Spirit Master: survey and profile data.** Depends: the close of phase C
+- [x] **NR-110 - Spirit Master: survey and profile data.** Depends: the close of phase C
+  - 2026-10-10: done. The Spirit Master has a class line, a gear table and a profile the
+    validator accepts. Nothing has been played. The profile is a caster's: its spirit,
+    and all that orders, heals or arms the spirit, need forms the table does not have,
+    items NR-110a and NR-110b below.
+    - **Java.**
+      - **What it learns.** SkillLearnService as read for NR-50. Of the Spirit Master's
+        91 rows to level 26, 73 are auto-learned, 17 are stigma rows from level 20 and
+        one is a skill book, Homeward Bound at 21. 59 of the auto-learned are active
+        skills, and with the seven ranks it keeps from the Mage the catalog has 66 to
+        give a role or a reason; none is a toggle (run/nr/NR-110/check.log).
+      - **Chains.** ChainCondition as read for NR-50. Chain of Earth (level 13) opens
+        the chain Stone Shock follows. Of the Mage's two chains it keeps the first rank
+        only: Flame Bolt with Blaze, Ice Chain with Frozen Shock. Every chain step it
+        has keeps its chain open every time (chain_skill_prob 100).
+      - **A spirit.** SummonEffect.applyEffect 31-39 and SummonsService.createSummon
+        29-40: a Summon spell puts a spirit beside its master, tells the master with
+        SM_SUMMON_PANEL and those around with SM_SUMMON_UPDATE, and is refused while the
+        master has one. The client sends the spirit by CM_SUMMON_COMMAND:
+        SummonsService.doMode 184-216 takes attack with a target, guard, rest and
+        release. A skill whose first target is MYPET is refused without a spirit
+        (FirstTargetProperty 104-111). Fire Spirit comes at level 10, Wind at 13, Earth
+        at 16 and Water at 19; each cast takes 4.5 s.
+      - **Class rewards on the route** are the Sorcerer's at every point (the table
+        under NR-42): the spellbook 100600532 at the ceremony and the dispatch Q2903
+        (NR-30), the cloth rewards and the spellbooks of NR-32, the stone 140000004
+        (NR-39), Haramel's chest 700831 (NR-40) and the cloth coin armor with a
+        spellbook at Lohaban and Vebna (NR-38). Nothing new.
+    - **The class line.** `mage-spirit-master`: a Mage who becomes a Spirit Master, SIM
+      account 41, character Asimspirit, the spellbook 100600532 at the ceremony (Q2009,
+      choice 1; NR-Q5). Its dispatch quest is Q2903 (NR-30). Its snapshots end in
+      -spirit-master. It is in NaturalClassLine.All and in the script's list; the script
+      test holds the two together.
+    - **The gear table** (Sc/Classes/NaturalClassGearTable.cs, SpiritMaster) is the
+      Sorcerer's: a spellbook, ranked by magic boost; nothing in the off hand; robe,
+      then clothes; the bonus order of a class that casts; and the Sorcerer's kept
+      items.
+    - **The help kit from level 10** is every row of the manifest written under NR-60
+      (NaturalHelpItemAllowlist.Kit(caster: true, reagent: true)). Levels 1 to 9 are the
+      Mage's kit (CP-Q12).
+    - **Its skills by role** (Sc/Classes/NaturalSpiritMasterProfile.cs; 34 skills of 66).
+
+      | Role | Skill, and the levels of its ranks | What it is |
+      |---|---|---|
+      | erosion | Erosion: 5, 10, 15, 20, 25 | A hit at once and every 3 s for 15 s. Instant, 51 MP and more, 3 s. |
+      | earth | Chain of Earth: 13, 18, 23 | Opens a chain: a light hit at once and for 15 s, and half speed for 15 to 20 s. Instant, 60 MP and more, 15 s. |
+      | stone | Stone Shock: 13, 18, 23 | Follows Chain of Earth and staggers the target. Instant, 88 MP and more, 30 s. |
+      | servant | Summon Wind Servant: 10, 15, 20, 25 | Two servants that strike three times each. 1.5 s cast, 120 MP and more, 10 s. |
+      | choke | Vacuum Choke: 22 | Its hardest spell. 2 s cast, 86 MP, ready again after 1 s. |
+      | backdraft | Backdraft: 26 | A hit that gives back as HP and MP what it takes. 2 s cast, 110 MP, 24 s. |
+      | bolt, blaze, ice, shock | Flame Bolt: 1; Blaze: 5; Ice Chain: 3; Frozen Shock: 7 | The Mage's two chains in their first rank; it learns no later one. |
+      | root | Root: 1 | The Mage's: holds the target for 20 s until it is hit. 60 s. |
+      | skin | Stone Skin: 7, 12, 17, 22 | A shield for 5 min. 2 min. |
+      | herb, mp-recovery | Herb Treatment and MP Recovery: 10, 15, 20, 25 | The two powder skills of a rest (NR-50a). |
+
+    - **The rule table, natural-spirit-master-v1.** The Mage's, with the Spirit Master's
+      own spells. From range: Chain of Earth, whose snare keeps the monster away longer,
+      and Stone Shock at once; Erosion; Vacuum Choke and Backdraft; Summon Wind Servant;
+      then the Mage's two chains. With the monster on it Erosion comes first, which a
+      hit cannot push back. An open follow-up is always cast first. Stone Skin goes up
+      before the first hit and is kept up between fights. Root is cast only on the way
+      out, before a retreat. The ladder: the shield scroll at 50% HP, the life potion at
+      or below 75%. It leaves at two attackers, or at 25% HP with nothing ready. A mana
+      serum is drunk only when the cheapest attack cannot be paid; the spellbook swings
+      only then. Between fights it rests with the powder first, then as the Mage. It
+      holds for a patrol and assesses (NR-37) with no heal to ask about, and a pull
+      brings one. In flight it casts Erosion (NR-36).
+    - **Left out, with the reason** (32 skills).
+
+      | Skill, levels | Why it is not cast |
+      |---|---|
+      | Return, Bandage Heal, Escape: 1 | As for every class (CP-35, CP-Q11). |
+      | Summon: Fire Spirit: 10, 15, 20, 25; Wind Spirit: 13, 18, 23; Earth Spirit: 16, 21, 26; Water Spirit: 19, 24 | A spirit that fights beside it. No rule summons a spirit, keeps it or sends it at a target yet. NR-110a. |
+      | Spirit Disturbance: 10; Spirit Wrath Position: 17; Spirit Erosion: 22 | Orders to the spirit. NR-110b. |
+      | Replenish Element: 16, 21, 26 | It heals the spirit for the Spirit Master's own HP. NR-110b. |
+      | Divine Spirit Armor: 10, 15, 20, 25 | 2,000 DP that arm the spirit for 10 min. NR-110b. |
+      | Root of Enervation: 10 | A fifth slower attacks for 35 to 45 s, for 244 MP: the mana of four Erosions. |
+      | Body Root: 20 | For 8 to 10 s its target casts no physical skill and still swings. 108 MP. |
+      | Sigil of Silence: 21 | It silences its target; the table has no rule for a target that casts. |
+      | Dispel Magic: 16; Ignite Aether: 25 | They take a buff off the target and hit for each one taken; the monsters of the route carry none. |
+      | Sandblaster: 25 | It hits up to six monsters around its target; an area skill wakes every other one in reach. |
+      | Summon Group Member: 23 | It calls a member of its group; the bot plays alone. |
+
+      Not in the catalog at all: Homeward Bound, which is a book, and the stone's skill
+      11507, as for every class (NR-39).
+    - **What the class is without its spirit.** It can play the route as a caster:
+      Erosion every 3 s, the earth chain, the servants, and Vacuum Choke from level 22.
+      It is not the class a group expects, and it has no pet between it and the monster.
+      The plan's order holds: NR-110a and NR-110b come before its probe rows.
+    - **Proof.** The one-time check, not committed (run/nr/NR-110/check.log): the line
+      parses and holds both classes; its character is a Mage until the client observes
+      a Spirit Master; NaturalClassProfiles builds the Spirit Master's profile, which
+      requires the validator: each of the 66 active skills has one role or one reason,
+      every follow-up has its opener, no rotation line breaks a chain, and the gear
+      groups lie inside the masteries. The check prints the skill tree with each chain
+      step's chance to keep its chain, the 34 rows, the 32 reasons, the best rank of
+      each role at eight levels, the gear groups and the patrol view. Gate, set
+      all+mage+warrior+artist+engineer+scout+templar, -Parallel 8, run guard-p8
+      (run/nr/NR-110/guard-p8/verdict.json): verdict pass, all thirteen scopes
+      identical. Seven pre-commit checks pass, the three script tests pass
+      (run/nr/NR-110/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
+      skipped) and Fast passes (run nr110-fast, 11 passed).
+- [ ] **NR-110a - A spirit summoned and kept.** Depends: NR-110
+  - Work: Java first, beyond what NR-110 read: what ends a spirit (its death, its
+    master's death, a release, a move to another map, a logout, a timer) and what the
+    client is told of its own spirit (SM_SUMMON_PANEL, SM_SUMMON_UPDATE and the packets
+    that take it away). The bot's world state knows whether it has a spirit, which one,
+    and its HP. A profile names the spirits it keeps, best first; the buff check between
+    fights summons the best learned one when none is out, and never while one is. The
+    Spirit Master names Earth Spirit, then Fire Spirit: the one that takes the hits when
+    it has it, and its first before. Generic: roles and an order in the profile, no
+    branch on a class.
+  - Proof: A one-time check, or one probe row on a probe account, that shows the spirit
+    out after the rule ran once, not summoned again while it is out, and summoned again
+    after it was released; the full gate identical.
+- [ ] **NR-110b - The spirit fights.** Depends: NR-110a
+  - Work: Java first: CM_SUMMON_COMMAND and SummonsService.doMode, what a spirit does in
+    each mode, whose enmity a monster keeps when a spirit and its master both hit it,
+    and the three orders, the heal and the armor that name the spirit as their target.
+    The fight loop sends the spirit at the target it pulls and calls it back when the
+    fight ends. The journey's fight rules are read for a monster that is on the spirit
+    and not on the bot: what counts as an attacker, when the bot is hit, the stand-off,
+    the retreat. The table gets Spirit Disturbance, Spirit Erosion and Spirit Wrath
+    Position as orders, Replenish Element below a spirit's HP percentage, and Divine
+    Spirit Armor for its DP. An item that turns out to be several is split (rule (q)).
+  - Proof: One probe row on a probe account in which the spirit is sent at a monster,
+    the monster is on the spirit, an order is carried out, and the fight ends with the
+    monster dead or a recorded retreat; the full gate identical.
+- [ ] **NR-111 - Spirit Master: probe rows.** Depends: NR-110b
+  - Work: Rows spirit-master-10, spirit-master-16, spirit-master-20 and spirit-master-25
+    in SimulationNaturalStarterProbeTests: prepared Spirit Masters on the two probe
+    accounts, in the gear the route has given by that level, fight the monsters the
+    Cleric's rows fight. Each row's trace shows the table in play: the spirit out and
+    sent, Erosion, the earth chain, the servants, Vacuum Choke from 22, Stone Skin up,
+    the ladder, the rest with the powder. What a row shows decides the open rules:
+    which spirit serves before level 16, and whether Root of Enervation or Body Root
+    earn their mana. A fix is one small change (rule (i)).
+  - Proof: The four rows end with the monster dead or a recorded retreat, no refused
+    cast repeated and no skill outside the table cast.
+- [ ] **NR-112 - Spirit Master: to Altgard.** Depends: NR-111; ticked by the round that gives it
+  - Work: A fresh Asimspirit plays Ishalgen as a Mage, the trial, the Spirit Master
+    choice at Munin, the ceremony with the spellbook and the dispatch Q2903, and is
+    captured at the Altgard bind as altgard-spirit-master-s1.
+  - Proof: The capture verifies.
+- [ ] **NR-113 - Spirit Master: Altgard legs l1 to l5.** Depends: NR-112; ticked by its round
+  - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
+    with -spirit-master (NR-41). In leg 1 it casts Erosion at the fungus in flight.
+  - Proof: Each capture verifies.
+- [ ] **NR-114 - Spirit Master: Altgard legs l6 to l11.** Depends: NR-113; ticked by its round
+  - Work: As NR-113. Leg 11 is the destiny quest: its stone is the Sorcerer's, 140000004
+    (NR-39).
+  - Proof: Each capture verifies.
+- [ ] **NR-115 - Spirit Master: coin gear and Haramel.** Depends: NR-114; ticked by its round
+  - Work: The coin-gear leg (cloth, by its manifest, NR-38a) and Haramel with chest
+    700831 (NR-40), captured as altgard-coingear-spirit-master and
+    altgard-rc-complete-s1-spirit-master.
+  - Proof: Each capture verifies.
+- [ ] **NR-116 - Spirit Master: the Abyss entry.** Depends: NR-115; ticked by its round
+  - Work: Q24020, then Q2945, Q2946, Q2947 and Q2042 with the coin tiers it can wear
+    (NR-38b, NR-Q14, NR-Q16), captured as morheim-abyss-entry-s1-spirit-master.
+  - Proof: The capture verifies.
+- [ ] **NR-117 - Spirit Master: the endpoint.** Depends: NR-116; ticked by its round
+  - Work: Captured and verified as ntc-ready-spirit-master-s1: alive at Morheim Ice
+    Fortress, level 25 or higher, Q2945, Q2946, Q2947 and Q2042 complete.
+  - Proof: The capture verifies.
+- [ ] **NR-118 - Spirit Master: the class scope.** Depends: NR-117
+  - Work: One scope of the Spirit Master's play, chosen where its rules differ most from
+    the Mage's, recorded by a bot alone, twice, and added to the gate's sets.
+  - Proof: The two recordings are identical.
 - [ ] **NR-120 - Gunner: survey and profile data.** Depends: the close of phase C, NR-03
 - [ ] **NR-130 - Rider: survey and profile data.** Depends: the close of phase C
 - [ ] **NR-140 - Bard: survey and profile data.** Depends: the close of phase C
@@ -6334,3 +6502,12 @@ report what was done, what is parked or blocked, and what the operator must deci
   Ranger's items NR-101 to NR-108 are written. Full gate guard-p8 (thirteen scopes
   identical), seven checks, three script tests, unit suite (4,629 passed, 16 skipped) and
   Fast (nr100-fast) pass. Next: NR-110, the Spirit Master's survey.
+- 2026-10-10 — Loop: NR-110 done. The Spirit Master has the line mage-spirit-master, which
+  takes the spellbook at the ceremony, the Sorcerer's gear table and the table
+  natural-spirit-master-v1: the Mage's with Erosion in every rank, Chain of Earth and Stone
+  Shock, Summon Wind Servant, Vacuum Choke and Backdraft. Of its 66 active skills 34 have a
+  role and 32 a reason. Its four spirits, the three orders, the spirit's heal and its armor
+  are left out: a spirit summoned and kept is item NR-110a, a spirit that fights item
+  NR-110b. The Spirit Master's items NR-111 to NR-118 are written. Full gate guard-p8
+  (thirteen scopes identical), seven checks, three script tests, unit suite (4,629 passed,
+  16 skipped) and Fast (nr110-fast) pass. Next: NR-110a, a spirit summoned and kept.

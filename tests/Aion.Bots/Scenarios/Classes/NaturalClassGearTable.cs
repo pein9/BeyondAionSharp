@@ -117,6 +117,10 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 	public static NaturalClassGearTable Sorcerer { get; } = new(PlayerClass.SORCERER, ["SPELLBOOK"], NaturalWeaponStat.Magical,
 		["ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies);
 
+	// NR-110 (NR-Q5, NR-Q7): the Spirit Master holds a spellbook and wears cloth, as the Sorcerer does.
+	public static NaturalClassGearTable SpiritMaster { get; } = new(PlayerClass.SPIRIT_MASTER, ["SPELLBOOK"], NaturalWeaponStat.Magical,
+		["ROBE", "CLOTHES"], DefaultConsumableOrder, PriestLineSupplies);
+
 	// The defaults of CP-Q10 for the five new starters. Each holds one weapon and nothing in the off hand, but the Scout.
 	public static NaturalClassGearTable Warrior { get; } = new(PlayerClass.WARRIOR, ["SWORD", "MACE"], NaturalWeaponStat.Physical,
 		["CHAIN", "LEATHER", "ROBE", "CLOTHES"], DefaultConsumableOrder);
@@ -138,7 +142,7 @@ public sealed record NaturalClassGearTable(PlayerClass Class, IReadOnlyList<stri
 
 	/// <summary>NR-50c: every class's table; a class's first item adds its own.</summary>
 	public static IReadOnlyList<NaturalClassGearTable> All { get; } =
-		[Priest, Cleric, Chanter, Templar, Gladiator, Assassin, Ranger, Sorcerer, Warrior, Scout, Mage, Engineer, Artist];
+		[Priest, Cleric, Chanter, Templar, Gladiator, Assassin, Ranger, Sorcerer, SpiritMaster, Warrior, Scout, Mage, Engineer, Artist];
 
 	/// <summary>The class's table; null for a class that has none yet.</summary>
 	public static NaturalClassGearTable? Of(PlayerClass playerClass) => All.FirstOrDefault(table => table.Class == playerClass);

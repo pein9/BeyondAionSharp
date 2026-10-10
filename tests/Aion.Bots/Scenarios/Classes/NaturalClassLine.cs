@@ -61,11 +61,15 @@ public sealed record NaturalClassLine(string Id, PlayerClass Starter, PlayerClas
 	public static NaturalClassLine ScoutRanger { get; } = new("scout-ranger", PlayerClass.SCOUT, PlayerClass.RANGER, 41, "Asimranger",
 		CeremonyItemId: 101700515);
 
+	/// <summary>NR-110: the Mage who becomes a Spirit Master and takes the spellbook at the ceremony (NR-Q5).</summary>
+	public static NaturalClassLine MageSpiritMaster { get; } = new("mage-spirit-master", PlayerClass.MAGE, PlayerClass.SPIRIT_MASTER, 41, "Asimspirit",
+		CeremonyItemId: 100600532);
+
 	/// <summary>Every line a run can name. Each class's first profile item adds its line here.</summary>
 	public static IReadOnlyList<NaturalClassLine> All { get; } =
 	[
 		PriestCleric, PriestChanter, Warrior, Mage, Artist, Engineer, Scout, WarriorTemplar, MageSorcerer, WarriorGladiator, ScoutAssassin,
-		ScoutRanger,
+		ScoutRanger, MageSpiritMaster,
 	];
 
 	public static NaturalClassLine Default => All[0];
