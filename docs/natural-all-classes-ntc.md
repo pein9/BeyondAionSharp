@@ -4942,7 +4942,179 @@ The template:
   - Work: One scope of the Chanter's play, chosen where its rules differ most from the
     Cleric's, recorded by a bot alone, twice, and added to the gate's sets.
   - Proof: The two recordings are identical.
-- [ ] **NR-80 - Gladiator: survey and profile data.** Depends: the close of phase C
+- [x] **NR-80 - Gladiator: survey and profile data.** Depends: the close of phase C
+  - 2026-10-10: done. The Gladiator has a class line, a gear table and a profile the
+    validator accepts. Nothing has been played. One thing its skills need that the shared
+    forms cannot say yet is item NR-80a below.
+    - **Java.**
+      - **What it learns.** SkillLearnService as read for NR-50. Of the Gladiator's 100
+        rows to level 26, 79 are auto-learned, 20 are stigma rows from level 20 and one
+        is a skill book, Homeward Bound at 21. 50 of the auto-learned are active skills,
+        and with the six ranks it keeps from the Warrior the catalog has 56 to give a
+        role or a reason; two more are toggles (run/nr/NR-80/check.log).
+      - **Chains.** ChainCondition as read for NR-50. Ferocious Strike opens the first
+        chain; Robust Blow and Rage are its second steps; Wrathful Strike (level 13) and
+        Rupture (16) are both third steps after Robust Blow. Wrathful Strike carries no
+        chain_skill_prob and Rupture carries 10 (Skill.java 630-639), so the chain is
+        over after the one and, nine times in ten, after the other; the cast's result
+        says which. Body Smash opens a chain of its own. Absorbing Fury (10) opens the
+        chain Roiling Hack follows. Cleave (19) opens a chain nothing follows before
+        level 26.
+      - **A target in a state.** Crashing Blow (level 25) names target_status
+        OPENAERIAL. Properties.validateEffectedList 103-117 and TargetStatusProperty.set
+        20-28 refuse a skill whose first target has none of the states it names. Aerial
+        Lockdown (22) puts its target into that state for 2 s by its sub-effect, Aether's
+        Hold 8224. 139 templates of the shipped data name a target status; the port has
+        the same check (SkillEngine/Properties/TargetStatusProperty.cs).
+      - **Toggles.** Slaughter (13) and Defense Preparation (25) are toggles of the slot
+        NOSHOW and no mantras, and no stances. The server keeps one such toggle on
+        (EffectController.addEffect 76-86, as read for NR-70): the second ends the first.
+      - **Class rewards on the route** are those of the table under NR-42: the
+        greatsword 100900488 at the ceremony and the dispatch Q2901 (NR-30), the plate
+        rewards and the greatswords of NR-32, the stone 140000003 (NR-39), Haramel's
+        chest 700829 (NR-40) and the plate coin armor with a greatsword at Lateni and
+        Nott (NR-38). Nothing new.
+    - **The class line.** `warrior-gladiator`: a Warrior who becomes a Gladiator, SIM
+      account 41, character Asimgladiator, the greatsword 100900488 at the ceremony
+      (Q2009; NR-Q5). Its dispatch quest is Q2901 (NR-30). Its Warrior holds nothing in
+      the off hand, as the line `warrior` does. It is in NaturalClassLine.All and in the
+      script's list; the script test holds the two together.
+    - **The gear table** (Sc/Classes/NaturalClassGearTable.cs, Gladiator).
+
+      | Part | The Gladiator's | From |
+      |---|---|---|
+      | Weapon groups | greatsword, then polearm; ranked by the physical stat | NR-Q5, CP-Q7 |
+      | Off hand | nothing | CP-Q10 |
+      | Armor | plate, chain, leather, robe, clothes; item level first, the type breaks ties | NR-Q7, CP-Q24 |
+      | Bonus order at a reward | physical attack, critical, accuracy, then HP | NR-32 |
+      | Kept | life potions, its help kit, a mana potion it finds, every help scroll and food | as the Cleric from Ascension |
+
+      NR-Q5 asks for the best two-hand weapon and gives damage per second as the
+      default. The table's form ranks a group before its numbers, and the order
+      greatsword, polearm is that default at the ceremony: the Karmic Greatsword swings
+      for 93 to 99 every 2.4 s, 40.0 a second, and the Karmic Spear for 71 to 133 every
+      2.8 s, 36.4 a second, though by the stat of one swing the spear is ahead. Every
+      row NR-32 and NR-38 wrote for the Gladiator names a greatsword and plate, which is
+      what this table ranks first. A polearm of a higher level from a drop would stay in
+      the bag; a table that ranks its groups together by damage per second is not
+      written, because nothing on the route asks for it.
+    - **The help kit from level 10** is the manifest written under NR-50
+      (NaturalHelpItemAllowlist.Kit(caster: false, reagent: true)), the Templar's: no
+      mana serum and no Awakening scroll. Levels 1 to 9 are the Warrior's kit (CP-Q12).
+    - **Its skills by role** (Sc/Classes/NaturalGladiatorProfile.cs; 47 skills of 58).
+
+      | Role | Skill, and the levels of its ranks | What it is |
+      |---|---|---|
+      | strike | Ferocious Strike: 1, 6, 11, 16, 21, 26 | Opens the first chain. 10 s. |
+      | robust | Robust Blow: 3, 8, 13, 18, 23 | Follows Ferocious Strike inside 3 s. 8 s. |
+      | rage | Rage: 7, 12, 17, 22 | Follows Ferocious Strike: attack and a shield for 10 s. 17 to 26 MP, 24 s. |
+      | wrathful | Wrathful Strike: 13, 18, 23 | Follows Robust Blow; seven times in ten it throws the target down for 2 s. 28 to 44 MP, 20 s. |
+      | rupture | Rupture: 16, 21, 26 | Follows Robust Blow too: the harder hit, for no mana. 8 s. |
+      | smash | Body Smash: 5, 10, 15, 20, 25 | Opens a chain of its own. 12 s. |
+      | explosion | Explosion of Rage: 10, 15, 20, 25 | 2,000 DP: a hit that cannot miss and throws the target down for 2 s. 10 s. |
+      | cleave | Cleave: 19, 24 | Thrown from 15 m; one time in two it halves the target's speed for 6 to 8 s. 23 to 26 MP, 18 s. |
+      | taunt | Taunt: 10, 15, 20, 25 | Sets a monster 15 m away on the Gladiator; no damage. Free, 10 s. |
+      | aerial | Aerial Lockdown: 22 | A hit that lifts the target for 2 s. 40 MP, 3 min. |
+      | wind | Second Wind: 20 | Heals 35% of its HP and raises the most it has by 35% for a minute. 298 MP, 3 min. |
+      | slaughter | Slaughter: 13 | A toggle: 15% more physical attack while it is on. Free. |
+      | herb, mp-recovery | Herb Treatment and MP Recovery: 10, 15, 20, 25 | The two powder skills of a rest (NR-50a). |
+
+    - **The rule table, natural-gladiator-v1.** The Warrior's, with what the Gladiator
+      adds. With the monster on it: Explosion of Rage when the DP are there; Ferocious
+      Strike and Robust Blow; Rage when it is at or below 80% HP; after Robust Blow,
+      Wrathful Strike when it is ready and Rupture otherwise; then Body Smash, Aerial
+      Lockdown and Cleave. An open follow-up is always cast first, and the weapon swings
+      whenever no skill is ready. It pulls as the Templar does (NR-53b), with the
+      Templar's distances: from range Cleave from level 19, otherwise Taunt, and then it
+      holds where it stands until the monster is on it. The ladder: the shield scroll at
+      50% HP, the life potion at or below 75%, Second Wind at or below 45%; Second
+      Wind's 298 MP are kept back from every attack. It leaves at three attackers, or at
+      25% HP with nothing ready. Between fights it rests as the Templar (NR-50a) and
+      keeps Slaughter on (NR-70a). It holds for a patrol and assesses (NR-37) with Second
+      Wind to ask about, and a pull may bring two. In flight it throws Cleave from level
+      19 and swings its weapon before (NR-36).
+    - **Left out, with the reason** (11 skills).
+
+      | Skill, levels | Why it is not cast |
+      |---|---|
+      | Return, Bandage Heal, Escape: 1 | As for every class (CP-35, CP-Q11). |
+      | Absorbing Fury: 10, 15, 20, 25; Roiling Hack: 10 | They hit up to three monsters within 7 m of the Gladiator. The bot pulls one at a time, and an area skill wakes every other one in reach. |
+      | Charge: 16 | Run speed for 13 s; the journey's travel casts no skill. |
+      | Crashing Blow: 25 | It needs its target in the air, which it is for 2 s after Aerial Lockdown. No rule says that of a skill yet. NR-80a. |
+      | Defense Preparation: 25 | A toggle of Slaughter's kind, and the server keeps one of them on. It raises parry, block and enmity; Slaughter's attack is kept. |
+
+      Not in the catalog at all: Homeward Bound, which is a book, and the stone's skill
+      11506, as for every class (NR-39).
+    - **Proof.** The one-time check, not committed (run/nr/NR-80/check.log): the line
+      parses and holds both classes; its character is a Warrior, with an empty off hand,
+      until the client observes a Gladiator; NaturalClassProfiles builds the Gladiator's
+      profile, which requires the validator: each of the 56 active skills and the two
+      toggles has one role or one reason, every follow-up has its opener, no rotation
+      line breaks a chain, the one kept toggle is within what the server keeps, and the
+      gear groups lie inside the masteries. The check prints the skill tree, the 47
+      rows, the 11 reasons, the best rank of each role at eight levels, the gear groups,
+      the score of the ceremony's three weapons (the greatsword first) and the patrol
+      view. Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8, run
+      guard-p8 (run/nr/NR-80/guard-p8/verdict.json): verdict pass, all thirteen scopes
+      identical. Seven pre-commit checks pass, the three script tests pass
+      (run/nr/NR-80/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
+      skipped) and Fast passes (run nr80-fast, 11 passed).
+- [ ] **NR-80a - A skill that needs its target in a state.** Depends: NR-80
+  - Work: Crashing Blow hits a target that is in the air for more than twice what
+    Rupture does, and the Gladiator's own Aerial Lockdown puts it there for 2 s. Other
+    classes have skills of the kind: 139 templates name a target status. Java first:
+    TargetStatusProperty, what puts a target into each state and for how long, and what
+    the client is told of a monster's state. The skill row holds the states its target
+    must have. The table casts such a skill only while the bot has seen one of them on
+    its target, and the validator refuses one in a rotation line whose catalog has no
+    skill that causes it. Generic: the states in the row, no branch on a class.
+  - Proof: A one-time check of the decisions with the state seen and not seen, and one
+    probe row on a probe account that casts Crashing Blow after Aerial Lockdown; the
+    full gate identical.
+- [ ] **NR-81 - Gladiator: probe rows.** Depends: NR-80a
+  - Work: Rows gladiator-10, gladiator-16, gladiator-20 and gladiator-25 in
+    SimulationNaturalStarterProbeTests: prepared Gladiators on the two probe accounts, in
+    the gear the route has given by that level, fight the monsters the Cleric's rows
+    fight. Each row's trace shows the table in play: the first chain with Wrathful
+    Strike and Rupture, Rage only when hurt, Explosion of Rage at 2,000 DP, the pull by
+    Taunt and from 19 by Cleave, Second Wind on the ladder, Aerial Lockdown and Crashing
+    Blow, Slaughter on, the rest with the powder. What a row shows decides the open
+    rules: whether a class without a shield should pull by Taunt as the Templar does or
+    walk in, and whether the 298 MP kept back for Second Wind starve Rage and Wrathful
+    Strike at level 20. A fix is one small change (rule (i)).
+  - Proof: The four rows end with the monster dead or a recorded retreat, no refused
+    cast repeated and no skill outside the table cast.
+- [ ] **NR-82 - Gladiator: to Altgard.** Depends: NR-81; ticked by the round that gives it
+  - Work: A fresh Asimgladiator plays Ishalgen as a Warrior, the trial, the Gladiator
+    choice at Munin, the ceremony with the greatsword and the dispatch Q2901, and is
+    captured at the Altgard bind as altgard-gladiator-s1.
+  - Proof: The capture verifies.
+- [ ] **NR-83 - Gladiator: Altgard legs l1 to l5.** Depends: NR-82; ticked by its round
+  - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
+    with -gladiator (NR-41). In leg 1 it has nothing that reaches from range yet and
+    swings its weapon at the fungus in flight, as the Templar did.
+  - Proof: Each capture verifies.
+- [ ] **NR-84 - Gladiator: Altgard legs l6 to l11.** Depends: NR-83; ticked by its round
+  - Work: As NR-83. Leg 11 is the destiny quest: its stone is the Templar's, 140000003
+    (NR-39).
+  - Proof: Each capture verifies.
+- [ ] **NR-85 - Gladiator: coin gear and Haramel.** Depends: NR-84; ticked by its round
+  - Work: The coin-gear leg (plate, by its manifest, NR-38a) and Haramel with chest
+    700829 (NR-40), captured as altgard-coingear-gladiator and
+    altgard-rc-complete-s1-gladiator.
+  - Proof: Each capture verifies.
+- [ ] **NR-86 - Gladiator: the Abyss entry.** Depends: NR-85; ticked by its round
+  - Work: Q24020, then Q2945, Q2946, Q2947 and Q2042 with the coin tiers it can wear
+    (NR-38b, NR-Q14, NR-Q16), captured as morheim-abyss-entry-s1-gladiator.
+  - Proof: The capture verifies.
+- [ ] **NR-87 - Gladiator: the endpoint.** Depends: NR-86; ticked by its round
+  - Work: Captured and verified as ntc-ready-gladiator-s1: alive at Morheim Ice Fortress,
+    level 25 or higher, Q2945, Q2946, Q2947 and Q2042 complete.
+  - Proof: The capture verifies.
+- [ ] **NR-88 - Gladiator: the class scope.** Depends: NR-87
+  - Work: One scope of the Gladiator's play, chosen where its rules differ most from the
+    Templar's, recorded by a bot alone, twice, and added to the gate's sets.
+  - Proof: The two recordings are identical.
 - [ ] **NR-90 - Assassin: survey and profile data.** Depends: the close of phase C, NR-04
 - [ ] **NR-100 - Ranger: survey and profile data.** Depends: the close of phase C
 - [ ] **NR-110 - Spirit Master: survey and profile data.** Depends: the close of phase C
@@ -5590,3 +5762,13 @@ report what was done, what is parked or blocked, and what the operator must deci
   (nr70a-fast2) pass, on the second bundle: the first met one analyzer warning in the probe
   row. Next: NR-80, the Gladiator's survey; the probe rows NR-61 and NR-71 wait for the
   surveys (rule (w)).
+- 2026-10-10 — Loop: NR-80 done. The Gladiator has the line warrior-gladiator, which takes
+  the greatsword at the ceremony, a gear table (greatsword, then polearm; plate first) and
+  the table natural-gladiator-v1: the Warrior's with Wrathful Strike and Rupture after
+  Robust Blow, Explosion of Rage, a pull by Taunt and from 19 by Cleave, Second Wind on the
+  ladder, Aerial Lockdown, and Slaughter kept on. Of its 56 active skills and two toggles 47
+  have a role and 11 a reason. Crashing Blow needs its target in the air, which no rule
+  says yet: item NR-80a. The Gladiator's items NR-81 to NR-88 are written. Full gate
+  guard-p8 (thirteen scopes identical), seven checks, three script tests, unit suite (4,629
+  passed, 16 skipped) and Fast (nr80-fast) pass. Next: NR-80a, a skill that needs its
+  target in a state.

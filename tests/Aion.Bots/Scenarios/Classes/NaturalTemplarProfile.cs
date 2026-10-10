@@ -107,7 +107,7 @@ public static class NaturalTemplarProfile
 	/// is one to cast from. NR-54c: the fight-through's firing range is not the pull's: it says which of a route's
 	/// blockers is taken, from the route's last point outside its circle, and the pull is then planned from there. It is
 	/// the one every line that has played uses; at 14 m a patrol's blocker on the road was never taken.</summary>
-	private static readonly NaturalEngageRanges Ranges = new(
+	internal static readonly NaturalEngageRanges Ranges = new(
 		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, SpellRange: 14, PullDistance: 13,
 		FiringRange: Navigation.NaturalFightThrough.FiringRange,
 		SpawnApproachRange: 13, SpawnPullScanRange: 20, FightThroughPullRange: 20,
@@ -116,7 +116,7 @@ public static class NaturalTemplarProfile
 	/// <summary>NR-53b: a stand-off: a ranged route while the target is farther than 15 m, then up to it; after a distance
 	/// refusal come to 10 m, or inside melee reach for a melee skill. NR-53c: when it walks up, it walks to the monster it
 	/// fights and to no other of its kind.</summary>
-	private static readonly NaturalFightMovement Movement = new(NaturalPullStyle.StandOff,
+	internal static readonly NaturalFightMovement Movement = new(NaturalPullStyle.StandOff,
 		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, RangedRouteBeyond: 15, RangeRefusalCloseIn: 10, WalksToItsTarget: true);
 
 	// NR-Q5, NR-Q7 and NR-Q13: a one-hand weapon and a shield, plate first, and the kit of a class that does not cast
