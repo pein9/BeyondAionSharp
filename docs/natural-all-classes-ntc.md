@@ -7927,7 +7927,7 @@ through these: each is ticked by the round that gave its capture.
       it had ended Q2002 ten minutes before. Item NR-R1b.
     - **Found, and logged (rule (f)).** A round of one bot to a world and stage bridge
       took 9 min 40 s of wall time for 3 h 20 min to 3 h 46 min of game time each.
-- [ ] **NR-R1b - A Sprigg a step beyond the select distance is taken from the standoff.** Depends: NR-R1
+- [x] **NR-R1b - A Sprigg a step beyond the select distance is taken from the standoff.** Depends: NR-R1
   - Work: Q2002's hunt sends the bot along its route to a standoff before a Sprigg and
     takes the Sprigg when it is within the campaign's select distance of the bot. The
     walk to a standoff ends within its arrival radius of it. So a standoff that is
@@ -7938,6 +7938,26 @@ through these: each is ticked by the round that gave its capture.
     branch on a class. The recorded scopes must not change.
   - Proof: The full gate identical. In round 2 the Rider's character, resumed at Q2002
     from nr-r1-w8, ends the hunt and plays on.
+  - 2026-10-10: done, on the gate. What the Rider does at Q2002 is round 2's to show: a
+    captured round wants this change committed first.
+    - **Java.** No server behavior is involved.
+    - **The numbers of the stop** (round 1, world 8, the Rider's trace). The Engineer's
+      campaign routes to a Sprigg farther than 20 m, stands at the route's last point 18
+      m or more from it, and takes a Sprigg within 20 m. The bot stood at 924.06,
+      2182.28. One Sprigg was 21.3 m away, and the standoff on the route to it was 1.9 m
+      from the bot and 19.4 m from the Sprigg; the other was 21.6 m away with a standoff
+      as near. The walk to a standoff ends within its arrival radius, so each walk ended
+      where it began.
+    - **The change, generic** (Sc/NaturalIshalgenJourney.cs, Q2002's hunt). A Sprigg
+      that is still in view and within the select distance of the standoff the bot was
+      sent to is taken, and the trace says sprigg-taken-from-standoff with both
+      distances. The fight walks what is left, as it does to any target out of reach. A
+      Sprigg within the select distance of the bot is taken as before, and first.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-R1b/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical: no recorded hunt of any starter met that place. Seven pre-commit
+      checks pass, Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and Fast
+      passes (run nrr1b-fast, 11 passed).
 - [ ] **NR-R2 - Round 2: the Rider to the Altgard bind.** Depends: NR-R1b
   - Work: The eight worlds of round 1 again, resumed from nr-r1 (-From nr-r1, -Capture
     nr-r2), stage bridge. The eight that stand at the bind report it at once. The Rider
@@ -8969,3 +8989,9 @@ report what was done, what is parked or blocked, and what the operator must deci
   stood 21.3 and 21.6 m from it, a step beyond the hunt's 20 m, and its standoff counted
   as reached, for fifteen tries. Written: NR-R1b, the fix, and NR-R2, round 2 for the
   Rider. Seven checks pass. Next: NR-R1b.
+- 2026-10-10 — Loop: NR-R1b done, on the gate. Q2002's hunt takes a Sprigg that is
+  within the select distance of the standoff the bot was sent to, where the walk to that
+  standoff ended a step short: the Rider's two Spriggs at 21.3 and 21.6 m with standoffs
+  1.9 m from where it stood. Full gate guard-p8 (thirteen scopes identical), seven checks,
+  unit suite (4,629 passed, 16 skipped) and Fast (nrr1b-fast) pass. Next: NR-R2, round 2,
+  which resumes the Rider at Q2002.

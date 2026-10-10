@@ -6957,6 +6957,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						foreach (NaturalNavigationObject candidate in candidates)
 						{
 							NaturalCampaignRules campaign = combat.ClassProfile.Campaign;
+							BotPosition? stoodAt = null;
 							if (Distance(session.CurrentPosition, candidate.Position) > campaign.SpriggRouteBeyond)
 							{
 								IReadOnlyList<BotPosition> route = await navigator.FindRouteAsync(
@@ -6970,10 +6971,29 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								NaturalNavigationResult staging = await NaturalIshalgenNavigator.ExploreAnchorAsync(
 									contract.MapId, -1, standoff, navigator, "sprigg-spell-range-standoff", token);
 								if (!staging.Arrived) continue;
+								stoodAt = standoff;
 							}
-							if (navigator.Observe().Npcs.Any(npc => npc.ObjectId == candidate.ObjectId) &&
-								Distance(session.CurrentPosition, candidate.Position) <= campaign.SpriggSelectWithin)
+							bool seen = navigator.Observe().Npcs.Any(npc => npc.ObjectId == candidate.ObjectId);
+							if (seen && Distance(session.CurrentPosition, candidate.Position) <= campaign.SpriggSelectWithin)
 							{
+								selected = candidate.ObjectId;
+								break;
+							}
+							// NR-R1b: the walk to a standoff ends within its arrival radius of it. A standoff that is within the
+							// select distance was reached, though the bot stands a step short of it and the Sprigg a step beyond the
+							// distance. The Sprigg is taken, and the fight walks what is left. Without this the walk does not move,
+							// the Sprigg is not taken and every try is the same: the Rider's line in round 1, with two Spriggs at
+							// 21.3 and 21.6 m and a select distance of 20 m.
+							if (seen && stoodAt is { } stood && Distance(stood, candidate.Position) <= campaign.SpriggSelectWithin)
+							{
+								session.TraceDiagnostic("sprigg-taken-from-standoff", new Dictionary<string, object?>
+								{
+									["targetObjectId"] = candidate.ObjectId,
+									["distance"] = Distance(session.CurrentPosition, candidate.Position),
+									["standoffDistance"] = Distance(stood, candidate.Position),
+									["selectWithin"] = campaign.SpriggSelectWithin,
+									["position"] = session.CurrentPosition,
+								});
 								selected = candidate.ObjectId;
 								break;
 							}
