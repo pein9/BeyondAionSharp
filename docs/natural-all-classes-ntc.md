@@ -4389,6 +4389,24 @@ The template:
     - **Proof.** The bundle of NR-56a, on the tree that holds both items
       (run/nr/NR-56b/guard-p8/verdict.json): all twelve scopes identical; seven checks,
       the unit suite and Fast (nr56b-fast) pass.
+- [x] **NR-57a - The Abyss entry's capture may take the plan's finish name.** Depends: NR-56
+  - Work: The plan preserves each class as ntc-ready-<class>-s1, as the accepted line's
+    ntc-ready-cleric-s1 is. NR-41 has a leg capture of another line named after the
+    accepted line's snapshot with the class behind it (morheim-abyss-entry-s1-templar),
+    and the script refuses every other name. The Abyss-entry leg ends the plan, so its
+    capture may take the finish name as well.
+  - Proof: scripts/sim/test-sim-snapshot.ps1 passes; the full gate identical. The
+    capture itself is NR-57.
+  - 2026-10-09: done.
+    - **The change.** scripts/sim/sim-snapshot.ps1, the capture of a leg for a line with
+      a second class: the name ends with the class, or the leg is ax and the name is
+      ntc-ready-<class>-s1. Every other name is refused as before.
+    - **Proof.** The three script tests pass (run/nr/NR-57a/script-tests.log), the one
+      that holds the refusal among them. Gate, set
+      all+mage+warrior+artist+engineer+scout, -Parallel 8, run guard-p8
+      (run/nr/NR-57a/guard-p8/verdict.json): verdict pass, all twelve scopes identical.
+      Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed, 16
+      skipped) and Fast passes (run nr57a-fast, 11 passed).
 - [ ] **NR-57 - Templar: the endpoint.** Depends: NR-56; ticked by its round
   - Work: Captured and verified as ntc-ready-templar-s1: alive at Morheim Ice Fortress,
     level 25 or higher, Q2945, Q2946, Q2947 and Q2042 complete.
@@ -4996,3 +5014,9 @@ report what was done, what is parked or blocked, and what the operator must deci
 - 2026-10-09 — Loop: NR-56 done. morheim-abyss-entry-s1-templar is captured at 362b5baef:
   a Templar of level 25 at Morheim Ice Fortress with the five quests complete, 21 h 37 min
   of game time since creation. Next: NR-57, the endpoint ntc-ready-templar-s1.
+- 2026-10-09 — Loop: NR-57a done. The snapshot script names a class line's leg capture
+  after the accepted line's snapshot with the class behind it, and refused the plan's
+  finish name. The Abyss-entry leg's capture may now be named ntc-ready-<class>-s1 as
+  well. Script tests, full gate guard-p8 (twelve scopes identical), seven checks, unit
+  suite (4,629 passed, 16 skipped) and Fast (nr57a-fast) pass. Next: NR-57, the capture
+  and verification of ntc-ready-templar-s1.

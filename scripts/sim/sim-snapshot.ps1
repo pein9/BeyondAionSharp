@@ -441,9 +441,12 @@ try {
 					$line = Set-ClassLine $extra $From
 					# NR-41: a leg capture of another line that has a second class takes the accepted line's snapshot name with
 					# the class after it (altgard-l1-chanter), so the two lines' snapshots stand side by side.
+					# NR-57a: the Abyss-entry leg ends the plan, and its capture may take the plan's finish name instead,
+					# ntc-ready-<class>-s1, as the accepted line's ntc-ready-cleric-s1 does.
 					if ($line -ne $defaultClassLine -and $lineSecondClass[$line]) {
 						$suffix = '-' + $lineSecondClass[$line].ToLowerInvariant().Replace('_', '-')
-						if (-not $Name.EndsWith($suffix, [StringComparison]::Ordinal)) {
+						if (-not $Name.EndsWith($suffix, [StringComparison]::Ordinal) -and
+							-not ($Leg -eq 'ax' -and $Name -ceq "ntc-ready$suffix-s1")) {
 							throw "A leg capture of class line $line must be named <the accepted line's snapshot name>$suffix; '$Name' is not."
 						}
 					}
