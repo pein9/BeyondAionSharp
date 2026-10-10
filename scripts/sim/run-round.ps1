@@ -11,6 +11,10 @@
 #   stage              NR-R1a: how far the bot plays. Leave it out for the plain journey, to Munin. "bridge" goes on through
 #                      the trial, the class choice, the ceremony, the capital pass and the dispatch to the Altgard bind, as
 #                      sim-snapshot.ps1 -Bridge does for one bot. The bot's folder then holds bridge-completion.json.
+#                      NR-R3a: "l1" to "l11", "cg", "l12" and "ax" are the Altgard legs, the coin gear, Haramel and the Abyss
+#                      entry, as sim-snapshot.ps1 -AltgardLeg1 -Leg <id> -LaterCapital plays them for one bot, for a
+#                      character that stands at the end of the stage before (-From). The folder then holds
+#                      altgard-<stage>-completion.json. A bot has reached its stage when that receipt says verified.
 #   startAfterMinutes  game minutes after the world begins; ten apart is the operator's figure.
 #   stopAt             a diagnostic stop boundary (questId:status:packedVars). Leave it out to play to the stage's end.
 #   name               the character's name when it is not the line's (the Cleric's and the Chanter's lines share one).

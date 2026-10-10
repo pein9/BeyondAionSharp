@@ -18,6 +18,8 @@ public sealed partial class SimulationFastScenarioTests
 	/// logs it in on its account instead of creating one.
 	/// NR-R1a: <c>Stage</c> is how far the bot plays. Unset, it is the plain journey, to Munin. "bridge" goes on through the
 	/// trial, the class choice, the ceremony, the capital pass and the dispatch to the Altgard bind.
+	/// NR-R3a: "l1" to "l11", "cg", "l12" and "ax" are the Altgard legs, the coin gear, Haramel and the Abyss entry, each
+	/// played by a character that stands at the end of the stage before it.
 	/// </summary>
 	private sealed record NaturalRoundBot(string Line, double StartAfterMinutes = 0, string? StopAt = null, double? StopAfterMinutes = null,
 		int? Account = null, string? Name = null, int? ResumeCharacter = null, string? Stage = null);
@@ -31,7 +33,26 @@ public sealed partial class SimulationFastScenarioTests
 	{
 		null or "" => new NaturalJourneyOptions(StopAt: entry.StopAt, ClassLine: line),
 		"bridge" => new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, ClassLine: line),
-		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not opened for a round. A round plays the plain journey (no stage) or the bridge."),
+		// NR-R3a: a leg, as sim-snapshot.ps1 -AltgardLeg1 -Leg <id> -LaterCapital plays it for one bot. Leg 1 starts on the
+		// bridge's end, which is no later-capital snapshot: AF_ALTGARD=1 and RC_CAPITAL=1 alone. Every later stage starts on
+		// a later-capital one and has NA_ASCENSION=1 as well (the script's Restore-Snapshot and Get-LegEnvironment).
+		"l1" => new NaturalJourneyOptions(StopAt: entry.StopAt, AltgardLeg1: true, LaterCapital: true, ClassLine: line),
+		"l2" or "l3" or "l4" or "l5" or "l6" or "l7" or "l8" or "l9" or "l10" or "l11" or "cg" or "l12" or "ax" =>
+			new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: entry.Stage, LaterCapital: true, ClassLine: line),
+		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12 or ax."),
+	};
+
+	/// <summary>
+	/// NR-R3a: the receipt the journey writes at a stage's end, beside its trace, once the end has been checked again
+	/// across a relog. A run of one bot is captured only when it says verified for the character played
+	/// (scripts/sim/sim-snapshot.ps1), and a bot of a round has reached its stage on the same word. Null for the plain
+	/// journey and for a bot stopped on purpose, which write none.
+	/// </summary>
+	private static string? StageReceipt(NaturalRoundBot entry) => entry.StopAt is { Length: > 0 } ? null : entry.Stage switch
+	{
+		null or "" => null,
+		"bridge" => "bridge-completion.json",
+		_ => $"altgard-{entry.Stage}-completion.json",
 	};
 
 	private sealed record NaturalRoundFile(NaturalRoundBot[] Bots);
@@ -171,6 +192,14 @@ public sealed partial class SimulationFastScenarioTests
 					? SupplyHelpItemAsync : null,
 			};
 			await new NaturalIshalgenJourney(playing, runtime, RoundOptions(entry, line)).RunAsync(token);
+			if (StageReceipt(entry) is { } receipt)
+			{
+				string receiptPath = Path.Combine(folder, receipt);
+				if (!File.Exists(receiptPath)) throw new InvalidDataException($"Stage {entry.Stage} ended with no {receipt}; the stage's end was not checked.");
+				using JsonDocument written = JsonDocument.Parse(File.ReadAllText(receiptPath));
+				if (!written.RootElement.GetProperty("verified").GetBoolean() || written.RootElement.GetProperty("CharacterId").GetInt32() != playing.CharacterId)
+					throw new InvalidDataException($"Stage {entry.Stage}: {receipt} does not say verified for character {playing.CharacterId}.");
+			}
 			outcome = "reached";
 
 			async Task SupplyHelpItemAsync(int itemId, long count, CancellationToken supplyToken)

@@ -7988,7 +7988,7 @@ through these: each is ticked by the round that gave its capture.
       back: other Spriggs stood nearer, and the rule of NR-R1b was not called on
       (sprigg-taken-from-standoff 0 times). It stays untested in play until a round
       meets that place again.
-- [ ] **NR-R3a - A round's bot plays an Altgard leg.** Depends: NR-R2
+- [x] **NR-R3a - A round's bot plays an Altgard leg.** Depends: NR-R2
   - Work: The stages a run of one bot names with -Leg and -LaterCapital, opened for a
     round: l1 to l11, cg, l12 and ax. Read first what such a run takes from the snapshot
     it starts on besides the character (the later-capital checkpoint, the Haramel
@@ -7998,6 +7998,49 @@ through these: each is ticked by the round that gave its capture.
     character. Generic: by stage, no branch on a class.
   - Proof: The script tests pass. A smoke round resumed from nr-r2 in which two classes
     play leg 1 to an early stop. The full gate identical.
+  - 2026-10-10: done.
+    - **Java.** No server behavior is involved.
+    - **What a leg's run of one bot takes** (scripts/sim/sim-snapshot.ps1,
+      Restore-Snapshot and Get-LegEnvironment; the Templar's snapshots as the example).
+      - The character, its account and name, the world's clock: a round's -From gives
+        them already (NR-47).
+      - The stage's switches. Leg 1 starts on the bridge's end, which is no
+        later-capital snapshot: AF_ALTGARD=1 and RC_CAPITAL=1. Every later stage starts
+        on a later-capital snapshot: AF_ALTGARD=<stage>, RC_CAPITAL=1 and
+        NA_ASCENSION=1. That is how altgard-rc-l1-templar to ntc-ready-templar-s1 were
+        played.
+      - No file of the snapshot before. The later-capital checkpoint and each leg's
+        completion receipt are written by the journey beside its trace and are checked
+        when a capture is made or restored; the journey does not read them. Only a
+        Haramel run resumed from a Haramel snapshot reads that snapshot's
+        haramel-progress.json, which no round has needed yet.
+    - **The change.**
+      - SimT/SimulationNaturalRoundTests.cs: the stages l1 to l11, cg, l12 and ax give
+        the journey those options for each bot. A bot has reached its stage only when
+        the receipt the journey writes at the stage's end says verified, for its
+        character: bridge-completion.json or altgard-<stage>-completion.json. A bot
+        stopped on purpose writes none and is not asked for one.
+      - scripts/sim/run-round.ps1: the stages are in the round file's description.
+    - **One change from the proof as written.** The smoke round plays leg 1 to its end,
+      not to an early stop: a leg is 40 game minutes, and its end is what the receipt
+      is about.
+    - **Proof, the smoke round** (run smoke-a1, run/nr/NR-R3a/smoke-a1; round file
+      run/nr/NR-R3a/round-smoke.json; -From nr-r2, no capture). Worlds 1 and 2 of round
+      2 resumed, stage l1. 145 seconds of wall time.
+
+      | World | Line | Outcome | Level | Quests | Game minutes | Where it ended |
+      |---|---|---|---|---|---|---|
+      | 1 | mage-sorcerer | reached | 15 | 66 | 39.1 | The leg's end; altgard-l1-completion.json says verified, and the later-capital checkpoint is written. |
+      | 2 | priest-chanter | stopped | 15 | 65 | 37.2 | af-037-air-kills: "No flight to the landing: Leg (1628, 1832, 374) -> (1628, 1832, 414) is blocked." |
+
+      The Chanter's stop is the leg's, not the round's: it killed two fungi in flight
+      for 32 and 24 FP where it had counted 19 and 18, and had 4 FP left for the way
+      back. Round 3 will meet it and gets the item for it.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-R3a/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. The script tests pass (run/nr/NR-R3a/script-tests.log). Seven
+      pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed, 16 skipped) and
+      Fast passes (run nrr3a-fast, 11 passed).
 - [ ] **NR-R3 - Round 3: Altgard leg 1 for the nine classes.** Depends: NR-R3a
   - Work: The eight worlds resumed from nr-r2, stage l1, with -Capture nr-r3. A class
     that ends leg 1 is captured as altgard-rc-l1-<class> (NR-41). One outcome line for
@@ -9041,3 +9084,11 @@ report what was done, what is parked or blocked, and what the operator must deci
   place of round 1's stop did not come back, so NR-R1b's rule was not used in play.
   Written: NR-R3a, a round's bot plays an Altgard leg, and NR-R3, round 3, leg 1 for the
   nine. Seven checks pass. Next: NR-R3a.
+- 2026-10-10 — Loop: NR-R3a done. A round's bot has the stages l1 to l11, cg, l12 and ax,
+  with the options a run of one bot takes from -Leg and -LaterCapital, and has reached a
+  stage only when the journey's receipt for it says verified. Smoke round smoke-a1, worlds
+  1 and 2 resumed from nr-r2, leg 1: the Sorcerer reached the leg's end in 39.1 game
+  minutes (level 15, 66 quests); the Chanter stopped at the air kills with 4 FP left for
+  the way back, which round 3 will meet. Full gate guard-p8 (thirteen scopes identical),
+  script tests, seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nrr3a-fast)
+  pass. Next: NR-R3, round 3, leg 1 for the nine.
