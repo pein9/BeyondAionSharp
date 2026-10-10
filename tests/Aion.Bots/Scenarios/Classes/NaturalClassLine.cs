@@ -73,11 +73,15 @@ public sealed record NaturalClassLine(string Id, PlayerClass Starter, PlayerClas
 	public static NaturalClassLine EngineerRider { get; } = new("engineer-rider", PlayerClass.ENGINEER, PlayerClass.RIDER, 41, "Asimrider",
 		CeremonyItemId: 102100489);
 
+	/// <summary>NR-140: the Artist who becomes a Bard and takes the harp at the ceremony (NR-Q5).</summary>
+	public static NaturalClassLine ArtistBard { get; } = new("artist-bard", PlayerClass.ARTIST, PlayerClass.BARD, 41, "Asimbard",
+		CeremonyItemId: 102000523);
+
 	/// <summary>Every line a run can name. Each class's first profile item adds its line here.</summary>
 	public static IReadOnlyList<NaturalClassLine> All { get; } =
 	[
 		PriestCleric, PriestChanter, Warrior, Mage, Artist, Engineer, Scout, WarriorTemplar, MageSorcerer, WarriorGladiator, ScoutAssassin,
-		ScoutRanger, MageSpiritMaster, EngineerGunner, EngineerRider,
+		ScoutRanger, MageSpiritMaster, EngineerGunner, EngineerRider, ArtistBard,
 	];
 
 	public static NaturalClassLine Default => All[0];

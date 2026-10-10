@@ -180,6 +180,7 @@ public static class NaturalClassProfiles
 		[PlayerClass.RANGER] = NaturalRangerProfile.Create,
 		[PlayerClass.GUNNER] = NaturalGunnerProfile.Create,
 		[PlayerClass.RIDER] = NaturalRiderProfile.Create,
+		[PlayerClass.BARD] = NaturalBardProfile.Create,
 	};
 
 	private static readonly ConcurrentDictionary<PlayerClass, NaturalClassProfile> Built = new();

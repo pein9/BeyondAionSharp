@@ -6909,7 +6909,152 @@ The template:
   - Work: One scope of the Rider's play, chosen where its rules differ most from the
     Engineer's, recorded by a bot alone, twice, and added to the gate's sets.
   - Proof: The two recordings are identical.
-- [ ] **NR-140 - Bard: survey and profile data.** Depends: the close of phase C
+- [x] **NR-140 - Bard: survey and profile data.** Depends: the close of phase C
+  - 2026-10-10: done. The Bard has a class line, a gear table and a profile the
+    validator accepts. Nothing has been played. Everything it casts fits the table as
+    it is, so the survey names no form item; the last of the ten surveys is done.
+    - **Java.**
+      - **What it learns.** SkillLearnService as read for NR-50. To level 26 the Bard,
+        with the Artist it was, learns 63 active skills by itself, the three common
+        skills among them, and no toggle. 20 rows from level 20 are stigma rows and one
+        is a skill book, Homeward Bound at 21 (run/nr/NR-140/check.log).
+      - **Every skill of its own needs a harp** (WeaponCondition), which it holds from
+        its creation on.
+      - **A song cast on a friend or itself** (first target TARGETORME, relation
+        FRIEND) is turned onto the caster when the selected target is an enemy
+        (FirstTargetProperty 26-41), as the Artist's Soothing Melody has been since
+        CP-47. Soothing Counterpoint, Resonating Melody and Etude are of that kind.
+      - **The chains.** Song of Ice opens the chain Song of Fire follows and Song of
+        Earth after it, each inside 3 s. Soothing Melody opens the one Soothing
+        Counterpoint follows inside 3 s; a follow-up cast on the caster follows whatever
+        is selected, as the Warrior's Rage does (ChainCondition). Syncopated Echo,
+        Bright Strike and Resonating Melody each open a chain nothing learned by level
+        26 follows; as another chain's first step, each ends an open chain.
+      - **Syncopated Echo** puts an effect on its target that lasts 5 s and, when its
+        time is over, applies the damage skill it names (DelayedSkillEffect.endEffect
+        22-26), as the Sorcerer's Delayed Blast does.
+      - **Protective Ode** takes every hit until it has taken its value, 1,067 in its
+        fourth rank, or 5 min are over (ShieldEffect.startEffect 37-43,
+        AttackShieldObserver 90-121). It is ready every 2 min.
+      - **Resonating Melody** gives mana at once and every 2 s for 30 s more, at no
+        cost, once in 30 s: 765 and 240 in its fourth rank.
+      - **Class rewards on the route** are those of the table under NR-42: the harp
+        102000523 at the ceremony (Q2009, choice 1) and the dispatch Q29071 (NR-30), the
+        robe rewards and the harps of NR-32, the stone 140000001 (NR-39), Haramel's
+        chest 700831 (NR-40) and the robe coin armor with a harp at Lohaban and Vebna
+        (NR-38). Nothing new.
+    - **The class line.** `artist-bard`: an Artist who becomes a Bard, SIM account 41,
+      character Asimbard, the harp 102000523 at the ceremony (NR-Q5). It is in
+      NaturalClassLine.All and in the script's list; the script test holds the two
+      together.
+    - **The gear table** (Sc/Classes/NaturalClassGearTable.cs, Bard).
+
+      | Part | The Bard's | From |
+      |---|---|---|
+      | Weapon group | harp; ranked by the magical stat | NR-Q5, CP-Q7 |
+      | Off hand | nothing | CP-Q10 |
+      | Armor | robe, clothes; item level first, the type breaks ties | NR-Q7, CP-Q24 |
+      | Kept | life potions, its help kit, the mana potions, every help scroll and food | as the Cleric from Ascension |
+
+    - **The help kit from level 10** is every row of the manifest written under NR-60
+      (NaturalHelpItemAllowlist.Kit(caster: true, reagent: true)), as the Sorcerer's.
+      Levels 1 to 9 are the Artist's kit (CP-Q12).
+    - **Its skills by role** (Sc/Classes/NaturalBardProfile.cs; 52 skills of 63).
+
+      | Role | Skill, and the levels of its ranks | What it is |
+      |---|---|---|
+      | pulse | Pulse: 1, 6, 11, 16, 21, 26 | The pull and the filler: 25 m, a 1 s cast, ready every 2 s. |
+      | ice, fire, earth | Song of Ice: 3, 8, 13, 18, 23; Song of Fire: 10, 15, 20, 25; Song of Earth: 15, 20, 25 | The chain: Song of Ice has a 1 s cast and 12 s between; the two that follow are instant. |
+      | echo | Syncopated Echo: 10, 15, 20, 25 | An instant whose damage lands 5 s later; every 16 s. |
+      | strike | Bright Strike: 24 | An instant attack every 16 s. |
+      | flair | Minstrel's Flair: 10, 15, 20, 25 | The attack paid with 2,000 DP. |
+      | heal, counterpoint | Soothing Melody: 5, 10, 15, 20, 25; Soothing Counterpoint: 17, 22 | Its heal, a 1 s cast, and the instant heal that follows it. |
+      | resonate | Resonating Melody: 10, 15, 20, 25 | Mana at no cost, by the table's mana step and first in a rest for mana (NR-60a). |
+      | ode, etude | Protective Ode: 10, 15, 20, 25; Etude: 22 | Kept up by the buff check: the shield, and a tenth more HP for an hour. The table also puts the shield up before the first hit. |
+      | captivate | Captivate: 10 | A root for 8 s from 25 m, cast before a retreat. |
+      | herb, mp-recovery | Herb Treatment and MP Recovery: 10, 15, 20, 25 | The two powder skills of a rest (NR-50a). |
+
+    - **The rule table, natural-bard-v1,** is the Artist's with what the Bard adds.
+
+      | Where | In cast order |
+      |---|---|
+      | From range | Song of Ice, Song of Fire and Song of Earth, an open follow-up always first; Syncopated Echo; Minstrel's Flair; Bright Strike; Pulse. |
+      | On the target | The instants first, which a hit cannot push back: Syncopated Echo, Bright Strike, Minstrel's Flair; then the songs and Pulse. |
+      | Ladder | The shield scroll at 50% HP, the life potion at or below 75%, and at or below 55% Soothing Counterpoint while Soothing Melody has opened it, else Soothing Melody. The attacks keep Soothing Melody's mana back. |
+      | Mana | Resonating Melody at or below half its mana, before any mana potion. |
+      | Leaves | At two attackers, or at 25% HP with nothing ready; Captivate first when it is ready. |
+      | In flight | Pulse. |
+
+      The harp swings only when no attack can be paid for. It stands off at the Priest
+      line's distances, rests with the powder first, then Soothing Melody, and holds for
+      a patrol (NR-37).
+    - **Left out, with the reason** (11 skills).
+
+      | Skill, levels | Why it is not cast |
+      |---|---|
+      | Return, Bandage Heal, Escape: 1 | As for every class (CP-35, CP-Q11). |
+      | Fiery Descant: 7, 12, 17, 22 | A charge skill; the bot holds no charge (CP-Q16). |
+      | Requiem: 13 | It puts up to six monsters within 7 m to sleep for 6 s; the bot pulls one at a time. |
+      | Sonicportation: 15 | It throws the Bard to a place the server picks, for 323 MP. |
+      | Purifying Paean: 19 | It removes a physical debuff; no rule reads the bot's own debuffs. |
+      | Soaring Sonnet: 25 | It gives back flight time to a group in flight; the journey's flights are short. |
+
+      Not in the catalog at all: the stigma rows, the book, and the stone's skill 11504,
+      as for every class (NR-39).
+    - **Proof.** The one-time check, not committed (run/nr/NR-140/check.log): the line
+      parses and holds both classes; its character is an Artist until the client
+      observes a Bard; NaturalClassProfiles builds the Bard's profile, which requires
+      the validator: each of the 63 skills has one role or one reason, no line casts
+      another chain's opener between a song and its follow-up, and the gear groups lie
+      inside the masteries. The check prints the skill tree, the 52 rows, the 11 reasons
+      and the gear groups. Gate, set all+mage+warrior+artist+engineer+scout+templar,
+      -Parallel 8, run guard-p8 (run/nr/NR-140/guard-p8/verdict.json): verdict pass, all
+      thirteen scopes identical. Seven pre-commit checks pass, the three script tests
+      pass (run/nr/NR-140/script-tests.log), Aion.GameServer.Tests passes (4,629 passed,
+      16 skipped) and Fast passes (run nr140-fast, 11 passed).
+- [ ] **NR-141 - Bard: probe rows.** Depends: NR-140
+  - Work: Rows bard-10, bard-16, bard-20 and bard-25 in
+    SimulationNaturalStarterProbeTests: prepared Bards on the two probe accounts, in the
+    gear the route has given by that level and with its harp, fight the monsters the
+    Cleric's rows fight. Each row's trace shows the table in play: Protective Ode up
+    before the pull and Etude from 22, the stand-off, Song of Ice with Song of Fire and
+    from 15 Song of Earth behind it, Syncopated Echo, Pulse between, Bright Strike at
+    25, Minstrel's Flair at 2,000 DP, Soothing Melody and from 17 Soothing Counterpoint
+    on the ladder, Resonating Melody at half its mana, Captivate before a retreat, the
+    rest with the powder. What a row shows decides the open rules: whether Captivate at
+    the pull earns its mana, as the Gunner's grenade is asked; whether Protective Ode
+    holds through a fight; whether a heal between Song of Ice and its follow-ups costs
+    the chain too often; and at how many attackers it leaves. A fix is one small change
+    (rule (i)).
+  - Proof: The four rows end with the monster dead or a recorded retreat, no refused
+    cast repeated and no skill outside the table cast.
+- [ ] **NR-142 - Bard: to Altgard.** Depends: NR-141; ticked by the round that gives it
+  - Work: A fresh Asimbard plays Ishalgen as an Artist, the trial, the ceremony with the
+    harp and the dispatch Q29071, and is captured at the Altgard bind as altgard-bard-s1.
+  - Proof: The capture verifies.
+- [ ] **NR-143 - Bard: Altgard legs l1 to l5.** Depends: NR-142; ticked by its round
+  - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
+    with -bard (NR-41). In leg 1 it shoots the fungus in flight.
+  - Proof: Each capture verifies.
+- [ ] **NR-144 - Bard: Altgard legs l6 to l11.** Depends: NR-143; ticked by its round
+  - Work: As NR-143. Leg 11 is the destiny quest: its stone is 140000001 (NR-39).
+  - Proof: Each capture verifies.
+- [ ] **NR-145 - Bard: coin gear and Haramel.** Depends: NR-144; ticked by its round
+  - Work: The coin-gear leg (robe, by its manifest, NR-38a) and Haramel with chest
+    700831 (NR-40), captured as altgard-coingear-bard and altgard-rc-complete-s1-bard.
+  - Proof: Each capture verifies.
+- [ ] **NR-146 - Bard: the Abyss entry.** Depends: NR-145; ticked by its round
+  - Work: Q24020, then Q2945, Q2946, Q2947 and Q2042 with the coin tiers it can wear
+    (NR-38b, NR-Q14, NR-Q16), captured as morheim-abyss-entry-s1-bard.
+  - Proof: The capture verifies.
+- [ ] **NR-147 - Bard: the endpoint.** Depends: NR-146; ticked by its round
+  - Work: Captured and verified as ntc-ready-bard-s1: alive at Morheim Ice Fortress,
+    level 25 or higher, Q2945, Q2946, Q2947 and Q2042 complete.
+  - Proof: The capture verifies.
+- [ ] **NR-148 - Bard: the class scope.** Depends: NR-147
+  - Work: One scope of the Bard's play, chosen where its rules differ most from the
+    Artist's, recorded by a bot alone, twice, and added to the gate's sets.
+  - Proof: The two recordings are identical.
 
 ### E. Close
 
@@ -7773,3 +7918,12 @@ report what was done, what is parked or blocked, and what the operator must deci
   scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
   (nr130a-fast) pass. Next: NR-140, the Bard's survey; the Rider's rows NR-131 wait for
   the surveys (rule (w)).
+- 2026-10-10 — Loop: NR-140 done. The Bard has the line artist-bard, which takes the harp
+  at the ceremony, a gear table (the harp, cloth) and the profile natural-bard-v1: the
+  Artist's table with the song chain to Song of Earth, Syncopated Echo, Bright Strike,
+  Minstrel's Flair for its DP, the heal's follow-up on the ladder, Resonating Melody for
+  mana, and Protective Ode and Etude kept up. Of its 63 skills 52 have a role and 11 a
+  reason; no form item was needed. The Bard's items NR-141 to NR-148 are written. Full
+  gate guard-p8 (thirteen scopes identical), seven checks, three script tests, unit suite
+  (4,629 passed, 16 skipped) and Fast (nr140-fast) pass. The ten surveys are done. Next:
+  the probe rows, side by side (rule (w)), beginning with NR-61, the Sorcerer's.
