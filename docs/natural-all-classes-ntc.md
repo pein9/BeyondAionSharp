@@ -6300,7 +6300,7 @@ The template:
       run guard-p8 (run/nr/NR-110e/guard-p8/verdict.json): verdict pass, all thirteen
       scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
       passed, 16 skipped) and Fast passes (run nr110e-fast, 11 passed).
-- [ ] **NR-110f - Where the spirit fights.** Depends: NR-110e
+- [x] **NR-110f - Where the spirit fights.** Depends: NR-110e
   - Work: Found by NR-110c: the spirit that goes first stands at its target, inside the
     circles of the target's neighbours, and draws them. Java first: the aggro range and
     the call for help that an attack makes. The rule: the spirit goes first only at a
@@ -6311,6 +6311,62 @@ The template:
     where the spirit goes first and no other monster strikes it, and a target in a
     family, where the bot pulls and the spirit fights beside its master; the full gate
     identical.
+  - 2026-10-10: done. The spirit goes first only at a target that stands clear. At any
+    other target the bot pulls by its table, and the spirit is sent once the target is
+    within 8 m of its master.
+    - **Java.** Two things bring a second monster into a fight. A monster's own circle:
+      it takes whoever comes within its aggro range. And the call for help
+      (AggroEventHandler.onCreatureNeedsSupport 26-35): a monster whose tribe may help
+      the one that is hit joins against the attacker when it is within its own aggro
+      range and 2 m of either of them (isInSupportRange 51-52). So a helper comes
+      whoever strikes and wherever the fight is, and goes for the one who struck. A
+      monster that is no helper comes only for someone inside its circle: for a spirit
+      that stands at the target, and not for a bot that pulls from 17 m. The mosbear
+      cubs help the tusked mosbear and it helps them (tribe_relations.xml); the starved,
+      fierce and ruthless mosbears help no one.
+    - **The change, generic.** Sc/NaturalIshalgenJourney.Combat.cs: at the fight's
+      first attack, a bot with a spirit asks who would join a fight at the target's own
+      place, with the count the walk-in plan uses (CP-56a: the helpers and every circle
+      that reaches the spot). With no one, the spirit goes first as before. With anyone,
+      the spirit is held back: the bot pulls, and the spirit has its first beat when
+      the target is within 8 m of the bot (Sc/Classes/NaturalSpiritDriver.cs,
+      `MeetMetres`), and every beat from then on. Orders on the spirit are answered in
+      the meantime. A probe can ask for that count (NaturalIshalgenJourney
+      .ObservedPackOf). No class is named; a bot without a spirit asks nothing.
+    - **Proof, the row** spirit-master-place (SimT/SimulationNaturalStarterProbeTests.cs,
+      probe account 98; run nr110f-probe-a1, its first attempt). Prepared by the
+      director: a level-16 Spirit Master by the starved mosbears where the Cleric's
+      level-25 row fights. They stand alone there and help no one, so before the second
+      fight the director spawns one more 5 m beside the next mosbear, on the side away
+      from the bot.
+      - **A mosbear that stands clear.** No one would join. The spirit is sent from
+        21.0 m, 3.7 s before the bot's first cast, and strikes four times. The kill
+        takes 12.2 s. Only the mosbear strikes the spirit or the bot.
+      - **A mosbear with a neighbour.** The count names the neighbour. The spirit is
+        held back with the mosbear 20.5 m away. The bot casts first; 3.5 s later the
+        mosbear is 4.2 m from the bot and the spirit is sent. The kill takes 13.2 s. The
+        neighbour strikes no one and lives.
+    - **The rows of NR-110c and NR-110e stood at the tusked mosbear's family** and no
+      longer showed their subject there: a cub is counted, the spirit is held back, the
+      mosbear comes to the bot with its helpers, and the table leaves at two
+      (run/nr/NR-110f/rows-a1/). Both now stand by the starved mosbears.
+      - spirit-master-fight (nr110f-probe-fight-a2): the spirit goes first from 21.0 m,
+        the kill takes 12.2 s, the mosbear strikes the spirit four times and its master
+        never, and after a walk of 77 m the spirit is 3.0 m from its master again.
+      - spirit-master-pack (nr110f-probe-pack-a2): the director sets a second mosbear
+        on the spirit alone. Nothing strikes the bot; two creatures strike the spirit.
+        The first decision counts one and casts; the next counts two, and the table
+        casts Root and leaves both.
+      - spirit-master-orders, -walk and -spirit pass as before.
+    - **Open for the Spirit Master's rows.** In the second fight the spirit swung once
+      in 5.4 s: it reached the mosbear only with the bot's next act, after a 1.8 s cast.
+      A beat comes with each act of the bot (NR-110c), and a long cast is a long wait.
+      And the spirit stood 13 m from the mosbear when it was sent, behind its master: a
+      walk of the bot takes the spirit along only while the bot walks (NR-110b).
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-110f/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr110f-fast, 11 passed).
 - [ ] **NR-111 - Spirit Master: probe rows.** Depends: NR-110f
   - Work: Rows spirit-master-10, spirit-master-16, spirit-master-20 and spirit-master-25
     in SimulationNaturalStarterProbeTests: prepared Spirit Masters on the two probe
@@ -7156,3 +7212,15 @@ report what was done, what is parked or blocked, and what the operator must deci
   other spirit rows pass. Full gate guard-p8 (thirteen scopes identical), seven checks,
   unit suite (4,629 passed, 16 skipped) and Fast (nr110e-fast) pass. Next: NR-110f, where
   the spirit fights.
+- 2026-10-10 — Loop: NR-110f done. The spirit goes first only at a target that stands
+  clear, by the count of who joins a fight at the target's own place; at any other target
+  the bot pulls and the spirit is sent once the target is within 8 m of its master. Probe
+  row spirit-master-place (nr110f-probe-a1): at a mosbear that stands alone the spirit is
+  sent 3.7 s before the bot's first cast; at one with a neighbour 5 m beside it the bot
+  casts first, the spirit is sent with the mosbear 4.2 m from its master, and the neighbour
+  strikes no one. Rows spirit-master-fight and spirit-master-pack stood at the tusked
+  mosbear's family, where a cub now holds the spirit back; both moved to the starved
+  mosbears and pass, as do the three others. Full gate guard-p8 (thirteen scopes
+  identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr110f-fast)
+  pass. Next: NR-111, the Spirit Master's probe rows, which wait for the surveys with the
+  other classes' (rule (w)); so NR-120, the Gunner's survey.

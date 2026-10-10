@@ -29,6 +29,10 @@ internal sealed class NaturalSpiritDriver(INaturalJourneySession session, Natura
 
 	/// <summary>How long the bot holds its own first attack for the spirit's first hit.</summary>
 	public const int OpeningMillis = 8000;
+
+	/// <summary>NR-110f: a spirit that is held back from a target among other monsters is sent once the target is this
+	/// near its master, so that it fights beside its master and outside the others' circles.</summary>
+	public const float MeetMetres = 8f;
 	private const int OpeningBeatMillis = 500;
 
 	// The target the spirit is on, 0 for none, and the spirit that was sent at it.
@@ -42,6 +46,9 @@ internal sealed class NaturalSpiritDriver(INaturalJourneySession session, Natura
 	private (BotOwnSummon Spirit, BotKnownObject Seen, NpcTemplate Kind)? Own() =>
 		World.Summon is { } spirit && World.Objects.TryGetValue(spirit.ObjectId, out BotKnownObject? seen) && seen.TemplateId is int kind &&
 		runtime.Data.NpcDataDh.GetNpcTemplate(kind) is { } template ? (spirit, seen, template) : null;
+
+	/// <summary>NR-110f: the spirit has been sent at this target in this fight.</summary>
+	public bool Sent(int prey) => target == prey && World.Summon?.ObjectId == spiritId;
 
 	/// <summary>NR-110d: the spirit was sent at this target and stands in its own reach of it, where its skills reach.</summary>
 	public bool At(int prey) => target == prey && !walking && World.Summon?.ObjectId == spiritId;
@@ -92,6 +99,7 @@ internal sealed class NaturalSpiritDriver(INaturalJourneySession session, Natura
 			{
 				["spiritObjectId"] = spiritId, ["spiritNpcId"] = own.Seen.TemplateId, ["targetObjectId"] = prey,
 				["distance"] = Distance(own.Seen.Position, seen.Position), ["speed"] = World.SummonSpeed,
+				["targetFromMaster"] = Distance(session.CurrentPosition, seen.Position),
 			});
 		}
 		BotPosition at = walking ? place : own.Seen.Position;

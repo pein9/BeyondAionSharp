@@ -53,6 +53,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("spirit-master-fight", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimfight"),
 		new("spirit-master-orders", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimorders"),
 		new("spirit-master-pack", NaturalClassLine.MageSpiritMaster, ProbeAccountB, "Asimpack"),
+		new("spirit-master-place", NaturalClassLine.MageSpiritMaster, ProbeAccountA, "Asimplace"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -250,6 +251,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "spirit-master-fight": await SpiritMasterFightRowAsync(probe, id, token); break;
 			case "spirit-master-orders": await SpiritMasterOrdersRowAsync(probe, id, token); break;
 			case "spirit-master-pack": await SpiritMasterPackRowAsync(probe, id, token); break;
+			case "spirit-master-place": await SpiritMasterPlaceRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -1313,19 +1315,21 @@ public sealed partial class SimulationFastScenarioTests
 
 	/// <summary>
 	/// NR-110c, row spirit-master-fight. Prepared by the director: the Mage is made a level-16 Spirit Master with the
-	/// skills of every level up to it and is placed in Altgard by the tusked mosbears (210437, level 14), where the
-	/// Cleric's row fights. The journey's buff check summons the Earth Spirit. Then the journey fights one mosbear by its
-	/// table. The spirit is sent first, runs to the mosbear and strikes it; the bot holds its own first attack until it
-	/// sees that hit. The mosbear strikes the spirit. At the end the spirit is called back. Then the journey walks on,
-	/// 60 m or more by its own routes, and the spirit, which stood where it fought, is at its side again.
+	/// skills of every level up to it and is placed in Altgard by the starved mosbears (210564, level 13), where the
+	/// Cleric's level-25 row fights. A mosbear there stands clear of every other monster, so the spirit goes first
+	/// (NR-110f; the row was played at a tusked mosbear among its family before that item). The journey's buff check
+	/// summons the Earth Spirit. Then the journey fights one mosbear by its table. The spirit is sent first, runs to the
+	/// mosbear and strikes it; the bot holds its own first attack until it sees that hit. The mosbear strikes the spirit.
+	/// At the end the spirit is called back. Then the journey walks on, 60 m or more by its own routes, and the spirit,
+	/// which stood where it fought, is at its side again.
 	/// </summary>
 	private async Task SpiritMasterFightRowAsync(StarterProbe probe, string id, CancellationToken token)
 	{
-		const int earth = 3645, earthNpc = 833288, mosbear = 210437;
+		const int earth = 3645, earthNpc = 833288, mosbear = 210564;
 		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-spirit-master-in-altgard");
 		await probe.BecomeAsync(PlayerClass.SPIRIT_MASTER, 16);
 		Assert.True(probe.World.Skills.ContainsKey(earth), "Summon: Earth Spirit was not learned by level 16.");
-		await probe.MoveToMapAsync(ClericProbeMap, 1427.2f, 789.9f, 249.9f);
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
 
 		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s02", "buff-check-summons-the-earth-spirit", token);
 		await probe.Session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
@@ -1337,7 +1341,7 @@ public sealed partial class SimulationFastScenarioTests
 
 		Npc prey = NearestLiving(probe, mosbear);
 		int preyId = prey.GetObjectId();
-		ClericFight fight = await TableFightAsync(probe, SpiritMasterTable, "s03", "fight-a-tusked-mosbear-with-the-spirit", () => Task.FromResult(preyId), token);
+		ClericFight fight = await TableFightAsync(probe, SpiritMasterTable, "s03", "fight-a-starved-mosbear-with-the-spirit", () => Task.FromResult(preyId), token);
 		AssertNoRefusedCastRepeats(fight);
 		int Sent(string packet) => fight.Records.Count(record => record.Direction == ">" && record.Packet == packet);
 		StarterTraceRecord[] attacks = fight.Records.Where(record => record is { Direction: "<", Packet: "SM_ATTACK" }).ToArray();
@@ -1374,7 +1378,7 @@ public sealed partial class SimulationFastScenarioTests
 		int approaches = 0;
 		for (; approaches < 8 && walked < 60 && !probe.World.IsDead; approaches++)
 		{
-			await probe.Journey.RunObservedZoneApproachAsync(new BotPosition(1867.3f, 456.0f, 270.2f, 0), [], token);
+			await probe.Journey.RunObservedZoneApproachAsync(new BotPosition(1427.2f, 789.9f, 249.9f, 0), [], token);
 			await probe.Session.SynchronizeAsync(token);
 			walked = MathF.Sqrt(MathF.Pow(probe.Session.CurrentPosition.X - from.X, 2) + MathF.Pow(probe.Session.CurrentPosition.Y - from.Y, 2));
 		}
@@ -1384,7 +1388,7 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.True(Gap() <= 6, $"The spirit stands {Gap():F1} m from its master after a walk of {walked:F0} m; it stood {gapAfterFight:F1} m away after the fight.");
 		int walkSteps = probe.TraceOf("s04").Count(record => record is { Direction: ">", Packet: "CM_SUMMON_MOVE" });
 		Console.WriteLine($"{id}: level {probe.World.Level} Spirit Master, max HP {probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}. " +
-			$"Buff check: casts {string.Join(" ", buffCasts)}; spirit {spirit.GetNpcId()} out with {spiritHp} HP. One tusked mosbear: {Outcome(fight)}. " +
+			$"Buff check: casts {string.Join(" ", buffCasts)}; spirit {spirit.GetNpcId()} out with {spiritHp} HP. One starved mosbear: {Outcome(fight)}. " +
 			$"The spirit: sent from {sent.Fields.GetProperty("distance").GetDouble():F1} m at {sent.Fields.GetProperty("speed")} m/s; the opening ended by " +
 			$"{opening.Fields.GetProperty("ended").GetString()} after {opening.Fields.GetProperty("millis").GetInt64()} ms; {orders} orders, {steps} steps, {swings} swings sent; " +
 			$"the server showed {spiritHits} attacks of the spirit on the mosbear, {onSpirit} of the mosbear on the spirit and {onMaster} on its master. " +
@@ -1515,17 +1519,18 @@ public sealed partial class SimulationFastScenarioTests
 
 	/// <summary>
 	/// NR-110e, row spirit-master-pack. Prepared by the director as row spirit-master-fight: a level-16 Spirit Master by
-	/// the tusked mosbears (210437) in Altgard, where a ruthless mosbear and the cubs of the family stand near. The
-	/// journey's buff check summons the Earth Spirit, and the journey fights one tusked mosbear by its table. A creature
-	/// that strikes the spirit is counted among the fight's attackers although it has not struck the bot, and when the
-	/// table leaves, it leaves that creature too.
+	/// the starved mosbears (210564) in Altgard, with the Earth Spirit out by the journey's buff check. The director then
+	/// spawns one more starved mosbear 4 m from the spirit and sets it on the spirit alone. The journey fights the
+	/// nearest mosbear by its table. A creature that strikes the spirit is counted among the fight's attackers although
+	/// it has not struck the bot, and when the table leaves, it leaves that creature too. (NR-110f: the row was played
+	/// at a tusked mosbear among its family before that item, which holds the spirit back there.)
 	/// </summary>
 	private async Task SpiritMasterPackRowAsync(StarterProbe probe, string id, CancellationToken token)
 	{
-		const int earth = 3645, mosbear = 210437;
+		const int earth = 3645, mosbear = 210564;
 		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-spirit-master-in-altgard");
 		await probe.BecomeAsync(PlayerClass.SPIRIT_MASTER, 16);
-		await probe.MoveToMapAsync(ClericProbeMap, 1427.2f, 789.9f, 249.9f);
+		BotNavigationGeometry geometry = await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
 
 		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s02", "buff-check-summons-the-earth-spirit", token);
 		await probe.Session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
@@ -1535,7 +1540,17 @@ public sealed partial class SimulationFastScenarioTests
 		int spiritId = spirit.GetObjectId(), self = probe.Session.CharacterId;
 
 		int preyId = NearestLiving(probe, mosbear).GetObjectId();
-		ClericFight fight = await TableFightAsync(probe, SpiritMasterTable, "s03", "fight-a-tusked-mosbear-among-its-family", () => Task.FromResult(preyId), token);
+		// The director's second monster: spawned 4 m from the spirit, on the side away from the bot, and set on the spirit.
+		BotPosition here = probe.Session.CurrentPosition;
+		BotPosition beside = geometry.GroundAround(ClericProbeMap, new BotPosition(spirit.GetX(), spirit.GetY(), spirit.GetZ(), 0), [4f])
+			.OrderByDescending(point => MathF.Pow(point.X - here.X, 2) + MathF.Pow(point.Y - here.Y, 2)).First();
+		Npc second = Assert.IsType<Npc>(Aion.GameServer.SpawnEngine.SpawnEngine.SpawnObject(new Aion.GameServer.Model.Templates.Spawns.SpawnTemplate(
+			new Aion.GameServer.Model.Templates.Spawns.SpawnGroup(ClericProbeMap, mosbear, 0, null), beside.X, beside.Y, beside.Z, 0, 0, null, 0),
+			probe.Server.GetInstanceId()), exactMatch: false);
+		second.GetAggroList().AddHate(spirit, 1);
+		await probe.Session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+		await probe.Session.SynchronizeAsync(token);
+		ClericFight fight = await TableFightAsync(probe, SpiritMasterTable, "s03", "fight-a-mosbear-with-another-on-the-spirit", () => Task.FromResult(preyId), token);
 		AssertNoRefusedCastRepeats(fight);
 		// Who struck whom, and when, by the server's SM_ATTACK.
 		(TimeSpan At, int By, int Whom)[] strikes = fight.Records.Where(record => record is { Direction: "<", Packet: "SM_ATTACK" })
@@ -1561,11 +1576,97 @@ public sealed partial class SimulationFastScenarioTests
 		string spiritEnd = probe.Server.GetSummon() == null ? "the spirit is gone"
 			: $"the spirit has {spirit.GetLifeStats().GetCurrentHp()} HP, mode {spirit.GetMode()}, " +
 				$"{MathF.Sqrt(MathF.Pow(spirit.GetX() - probe.Server.GetX(), 2) + MathF.Pow(spirit.GetY() - probe.Server.GetY(), 2)):F1} m from its master";
-		Console.WriteLine($"{id}: level {probe.World.Level} Spirit Master, max HP {probe.World.MaxHp}. One tusked mosbear among its family: {Outcome(fight)}. " +
+		RemoveSetOn([second]);
+		Console.WriteLine($"{id}: level {probe.World.Level} Spirit Master, max HP {probe.World.MaxHp}. One starved mosbear, with another set on the spirit: {Outcome(fight)}. " +
 			$"Struck the bot: {onBot.Length} creature(s); struck the spirit and never the bot: {onSpiritOnly.Length}. The first decision that counted one " +
 			$"of those: at {counted.VirtualTime.TotalSeconds:F1} s, {counted.Fields.GetProperty("observedAttackers").GetInt32()} attackers, action " +
 			$"{counted.Fields.GetProperty("action").GetString()}; the most counted: {most}. Retreats {fight.Result.Retreats}: {left}. " +
 			$"At the end {spiritEnd}; the bot has {probe.World.CurrentHp}/{probe.World.MaxHp} HP.");
+	}
+
+	/// <summary>
+	/// NR-110f, row spirit-master-place. Prepared by the director: the Mage is made a level-16 Spirit Master and is placed
+	/// in Altgard by the starved mosbears (210564, level 13), where the Cleric's level-25 row fights. They stand alone
+	/// there, and their tribe helps no one. So before the second fight the director spawns one more starved mosbear 5 m
+	/// beside the next one, on the side away from the bot: a neighbour whose circle holds whoever stands at that
+	/// mosbear, and that does not come when the mosbear is hit from afar. The journey's buff check summons the Earth
+	/// Spirit. Two fights by the table follow. At the mosbear that stands clear the spirit goes first. At the mosbear
+	/// with the neighbour the bot pulls, and the spirit is sent once the mosbear is within 8 m of its master.
+	/// </summary>
+	private async Task SpiritMasterPlaceRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int earth = 3645, mosbear = 210564;
+		probe.Session.BeginStep("s01", "director-makes-a-level-sixteen-spirit-master-in-altgard");
+		await probe.BecomeAsync(PlayerClass.SPIRIT_MASTER, 16);
+		BotNavigationGeometry geometry = await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s02", "buff-check-summons-the-earth-spirit", token);
+		await probe.Session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+		await probe.Session.SynchronizeAsync(token);
+		Assert.Contains(earth, buffCasts);
+		Summon spirit = probe.Server.GetSummon() ?? throw new InvalidDataException("No spirit was summoned.");
+		int spiritId = spirit.GetObjectId(), self = probe.Session.CharacterId;
+		StarterTraceRecord[] Said(ClericFight fight, string action) =>
+			fight.Records.Where(record => record.Direction == "action" && record.Packet == action).ToArray();
+		int[] Strikers(ClericFight fight, int whom) => fight.Records.Where(record => record is { Direction: "<", Packet: "SM_ATTACK" } &&
+			record.Fields.GetProperty("targetObjId").GetInt32() == whom).Select(record => record.Fields.GetProperty("attackerObjId").GetInt32()).Distinct().ToArray();
+		int Hits(ClericFight fight, int by, int whom) => fight.Records.Count(record => record is { Direction: "<", Packet: "SM_ATTACK" } &&
+			record.Fields.GetProperty("attackerObjId").GetInt32() == by && record.Fields.GetProperty("targetObjId").GetInt32() == whom);
+
+		// The first fight: nothing joins a fight at this mosbear's place, and the spirit goes first.
+		int clearId = NearestLiving(probe, mosbear).GetObjectId();
+		Assert.Empty(probe.Journey.ObservedPackOf(clearId));
+		ClericFight first = await TableFightAsync(probe, SpiritMasterTable, "s03", "fight-a-mosbear-that-stands-clear", () => Task.FromResult(clearId), token);
+		AssertNoRefusedCastRepeats(first);
+		Assert.True(first.Result.Killed, $"The first fight did not end as a kill: {Outcome(first)}.");
+		Assert.Empty(Said(first, "combat-spirit-held-back"));
+		StarterTraceRecord wentFirst = Assert.Single(Said(first, "combat-spirit-sent"));
+		Assert.Single(Said(first, "combat-spirit-opening"));
+		Assert.True(first.Casts.Count > 0 && wentFirst.VirtualTime < first.Casts[0].At, "The bot cast before its spirit was sent at a target that stands clear.");
+		Assert.All(Strikers(first, spiritId), striker => Assert.Equal(clearId, striker));
+		Assert.All(Strikers(first, self), striker => Assert.Equal(clearId, striker));
+
+		// The director's neighbour, 5 m beside the next mosbear on the side away from the bot.
+		probe.Session.BeginStep("s04", "director-spawns-a-neighbour-beside-the-next-mosbear");
+		Npc crowded = NearestLiving(probe, mosbear);
+		int crowdedId = crowded.GetObjectId();
+		BotPosition here = probe.Session.CurrentPosition;
+		BotPosition beside = geometry.GroundAround(ClericProbeMap, new BotPosition(crowded.GetX(), crowded.GetY(), crowded.GetZ(), 0), [5f])
+			.OrderByDescending(point => MathF.Pow(point.X - here.X, 2) + MathF.Pow(point.Y - here.Y, 2)).First();
+		Npc neighbour = Assert.IsType<Npc>(Aion.GameServer.SpawnEngine.SpawnEngine.SpawnObject(new Aion.GameServer.Model.Templates.Spawns.SpawnTemplate(
+			new Aion.GameServer.Model.Templates.Spawns.SpawnGroup(ClericProbeMap, mosbear, 0, null), beside.X, beside.Y, beside.Z, 0, 0, null, 0),
+			probe.Server.GetInstanceId()), exactMatch: false);
+		int neighbourId = neighbour.GetObjectId();
+		await probe.Session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+		await probe.Session.SynchronizeAsync(token);
+		Assert.True(probe.World.Objects.ContainsKey(neighbourId), "The client does not see the neighbour.");
+		int[] pack = probe.Journey.ObservedPackOf(crowdedId).ToArray();
+		Assert.Equal([neighbourId], pack);
+
+		// The second fight: the bot pulls, and the spirit meets the mosbear near its master.
+		ClericFight second = await TableFightAsync(probe, SpiritMasterTable, "s05", "fight-the-mosbear-with-a-neighbour", () => Task.FromResult(crowdedId), token);
+		AssertNoRefusedCastRepeats(second);
+		StarterTraceRecord held = Assert.Single(Said(second, "combat-spirit-held-back"));
+		Assert.Contains(neighbourId, held.Fields.GetProperty("pack").EnumerateArray().Select(value => value.GetInt32()));
+		Assert.Empty(Said(second, "combat-spirit-opening"));
+		Assert.True(second.Result.Killed || second.Result.Retreats > 0, $"The second fight ended with no kill and no retreat: {Outcome(second)}.");
+		// The neighbour was drawn by no one.
+		Assert.Equal(0, Hits(second, neighbourId, spiritId) + Hits(second, neighbourId, self));
+		Assert.False(neighbour.IsDead(), "The neighbour is dead.");
+		StarterTraceRecord met = Assert.Single(Said(second, "combat-spirit-sent"));
+		double metAt = met.Fields.GetProperty("targetFromMaster").GetDouble();
+		Assert.True(metAt <= held.Fields.GetProperty("meetMetres").GetDouble(), $"The spirit was sent with the mosbear {metAt:F1} m from its master.");
+		Assert.True(second.Casts.Count > 0 && second.Casts[0].At < met.VirtualTime, "The spirit was sent before the bot's own pull.");
+		Assert.True(Hits(second, spiritId, crowdedId) > 0, "The spirit never struck the mosbear it met.");
+		RemoveSetOn([neighbour]);
+		Console.WriteLine($"{id}: level {probe.World.Level} Spirit Master, max HP {probe.World.MaxHp}. Buff check: casts {string.Join(" ", buffCasts)}. " +
+			$"A mosbear that stands clear: {Outcome(first)}; the spirit sent from {wentFirst.Fields.GetProperty("distance").GetDouble():F1} m " +
+			$"{(first.Casts[0].At - wentFirst.VirtualTime).TotalSeconds:F1} s before the bot's first cast; it struck the mosbear {Hits(first, spiritId, clearId)} times. " +
+			$"A mosbear with a neighbour 5 m beside it: pack {pack.Length}; {Outcome(second)}; the spirit held back with the mosbear " +
+			$"{held.Fields.GetProperty("targetDistance").GetDouble():F1} m from its master and sent {(met.VirtualTime - second.Casts[0].At).TotalSeconds:F1} s after the bot's " +
+			$"first cast, with the mosbear {metAt:F1} m from its master; it struck the mosbear {Hits(second, spiritId, crowdedId)} times, and the mosbear struck the " +
+			$"spirit {Hits(second, crowdedId, spiritId)} and its master {Hits(second, crowdedId, self)} times. The neighbour struck no one and lives. " +
+			$"The bot has {probe.World.CurrentHp}/{probe.World.MaxHp} HP.");
 	}
 
 	private const string AssassinTable = "natural-assassin-v1:";

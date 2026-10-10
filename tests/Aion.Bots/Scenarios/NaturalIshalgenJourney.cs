@@ -145,6 +145,22 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			(long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF, [], token, gear);
 	}
 
+	/// <summary>NR-110f: a controlled probe asks who joins a fight at a monster's own place, as the journey's fight counts
+	/// them for a class that walks in and for a spirit that is sent (CP-56a). Nothing is sent.</summary>
+	public IReadOnlyList<int> ObservedPackOf(int targetObjectId)
+	{
+		int map = session.Api.World.MapId ?? throw new InvalidDataException("Pack map unobserved.");
+		BotNavigationGeometry geometry = runtime.CreateGeometry();
+		var navigator = new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, [], geometry), geometry, runtime,
+			stopOnDeath: false);
+		var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry, stopOnDeath: false,
+			conservativeRangedHold: false, NaturalMauPolicyParameters.Baseline, ClassLine)
+		{
+			ApproachMapId = map,
+		};
+		return combat.PackOf(targetObjectId);
+	}
+
 	/// <summary>NR-70a: a controlled probe runs the journey's ordinary buff check before a pull and nothing else, for the
 	/// class line of the options: the profile's buffs, its kept toggles, and the help scrolls it owns.</summary>
 	public async Task RunObservedBuffCheckAsync(CancellationToken token)

@@ -267,6 +267,9 @@ public sealed partial class NaturalIshalgenJourney
 			bool inEmergency = false;
 			// NR-110c: whether this fight has had its opening, in which a spirit goes first.
 			bool opened = false;
+			// NR-110f: the spirit is held back until the target has come to its master, because other monsters stand at
+			// the target.
+			bool spiritMeets = false;
 			var targetTemplate = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == target) is { } observedTarget
 				? runtime.Data.NpcDataDh.GetNpcTemplate(observedTarget.TemplateId) : null;
 			bool targetSeasoned = targetTemplate != null && targetTemplate.GetRank() >= Aion.GameServer.Model.Templates.Npc.NpcRank.SEASONED;
@@ -328,8 +331,14 @@ public sealed partial class NaturalIshalgenJourney
 				}
 				if (!world.Objects.TryGetValue(target, out BotKnownObject? npc))
 					return false; // Reacquire a new client-observed mob; do not count this as a kill.
-				// NR-110c: the spirit's beat: its walk to the target and its swings, between two acts of the bot.
-				if (opened) await spiritDriver.BeatAsync(target, token);
+				// NR-110c: the spirit's beat: its walk to the target and its swings, between two acts of the bot. NR-110f: a
+				// spirit that is held back has its beat once the target is near its master, and from then on.
+				if (opened)
+				{
+					if (!spiritMeets || spiritDriver.Sent(target) || Distance(session.CurrentPosition, npc.Position) <= NaturalSpiritDriver.MeetMetres)
+						await spiritDriver.BeatAsync(target, token);
+					else await spiritDriver.AnswerOrdersAsync(token);
+				}
 				DateTimeOffset now = runtime.Epoch.AddMilliseconds(runtime.NowMillis);
 				NaturalClassProfile profile = ClassProfile;
 				// A monster that hit us in the last 3 s is in melee reach whatever its lagging client position says.
@@ -398,10 +407,22 @@ public sealed partial class NaturalIshalgenJourney
 				NaturalCombatChoice choice = policy.Decide(observation, now, mauPolicy);
 				// NR-110c: before the bot's first attack its spirit goes first. Time passes while the bot holds for the
 				// spirit's first hit, so the fight looks again.
+				// NR-110f: the spirit goes first only at a target that stands clear. A spirit at its target stands in the
+				// circle of every monster that stands near it, and those come for the spirit; the bot's own pull from
+				// range draws none of them. The walk-in plan already counts who joins a fight at the target's own place
+				// (CP-56a): with anyone there, the bot pulls by its table and the spirit meets the target near its master.
 				if (!opened && choice.Action is "cast-target" or "attack")
 				{
 					opened = true;
-					if (await spiritDriver.OpenAsync(target, observation.Aggro, token)) continue;
+					int[] pack = world.Summon != null ? WalkInPack(target) : [];
+					spiritMeets = pack.Length > 0;
+					if (spiritMeets)
+						session.TraceDiagnostic("combat-spirit-held-back", new Dictionary<string, object?>
+						{
+							["targetObjectId"] = target, ["pack"] = pack, ["meetMetres"] = NaturalSpiritDriver.MeetMetres,
+							["targetDistance"] = Distance(session.CurrentPosition, npc.Position),
+						});
+					else if (await spiritDriver.OpenAsync(target, observation.Aggro, token)) continue;
 				}
 				NaturalCombatCandidate[] candidates = policy.CandidateActions(observation, now, choice, mauPolicy);
 				if (!candidates.Any(candidate => candidate.Action == choice.Action &&
@@ -1420,6 +1441,9 @@ public sealed partial class NaturalIshalgenJourney
 		/// CP-56a: the monsters that join a fight at the target's own position, as the walk-in planner counts them
 		/// (<see cref="NaturalPullPlanner.AddsAt"/>: the server's support rule and every circle that reaches the spot).
 		/// </summary>
+		/// <summary>NR-110f: for a probe, the pack as the fight counts it.</summary>
+		public int[] PackOf(int targetObjectId) => WalkInPack(targetObjectId);
+
 		private int[] WalkInPack(int targetObjectId)
 		{
 			NaturalPullMonster? Monster(NaturalNavigationObject npc) =>
