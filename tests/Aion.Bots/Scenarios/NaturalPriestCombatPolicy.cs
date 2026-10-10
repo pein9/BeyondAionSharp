@@ -23,6 +23,10 @@ namespace Aion.Bots.Scenarios;
 /// it asks nothing.</param>
 /// <param name="TargetStates">NR-80a: the abnormal states one of which the target must be in (properties/target_status;
 /// Java TargetStatusProperty), by the names of AbnormalState; null when it asks nothing.</param>
+/// <param name="CarvesRune">NR-90a: the rune the skill carves into its target (effects/carvesignet, the signet's name;
+/// Java CarveSignetEffect); null when it carves none.</param>
+/// <param name="BurstsRune">NR-90a: the rune the skill bursts (effects/signetburst; Java SignetBurstEffect multiplies the
+/// damage by the number of the rune's level and ends the rune); null when it bursts none.</param>
 public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role, int ManaCost,
 	float Range, int CooldownId, int CooldownDeciseconds, string? ChainCategory = null,
 	string? RequiresChainCategory = null, int ChainWindowMillis = 0, int DpCost = 0,
@@ -30,7 +34,7 @@ public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role
 	string? TargetKind = null, int CastMillis = 0, IReadOnlyList<string>? RequiredWeaponGroups = null,
 	bool AddWeaponRange = false, int SelfCount = 0, string? Activation = null, string? CounterStatus = null,
 	bool OutOfCombatOnly = false, bool GroundOnly = false, string? TargetFlight = null, string? RequiredOffHand = null,
-	IReadOnlyList<string>? TargetStates = null);
+	IReadOnlyList<string>? TargetStates = null, string? CarvesRune = null, string? BurstsRune = null);
 
 /// <summary>
 /// NR-18: every class's catalog is generated from the shipped skill data (<see cref="Classes.NaturalSkillCatalog"/>); the
@@ -68,6 +72,8 @@ public static class NaturalPriestSkills
 /// <param name="CastThisFight">NR-53b: the skills the bot has cast in this fight; null when the caller does not say.</param>
 /// <param name="TargetAbnormals">NR-80a: the target's abnormal states as the server last told them
 /// (<see cref="BotWorldModel.AbnormalsOf"/>), as the bits of AbnormalState; 0 when it told none.</param>
+/// <param name="TargetRunes">NR-90a: the runes seen on the target, each by its name with its level; null when none is
+/// seen.</param>
 public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int Mp, int MaxMp,
 	bool Dead, bool Aggro, float? TargetDistance, int? TargetObjectId,
 	IReadOnlyDictionary<int, BotSkill> Learned, IReadOnlyDictionary<int, DateTimeOffset> Cooldowns,
@@ -82,7 +88,7 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	int? WeaponAttackRangeMillis = null, int? WeaponAttackSpeedMillis = null,
 	string? PreviousChainCategory = null, DateTimeOffset? ChainStepAt = null, int? OpenChainUseCount = null,
 	IReadOnlySet<int>? ActiveEffectSkillIds = null, string? OffHand = null, IReadOnlySet<ushort>? CastThisFight = null,
-	int TargetAbnormals = 0);
+	int TargetAbnormals = 0, IReadOnlyDictionary<string, int>? TargetRunes = null);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);

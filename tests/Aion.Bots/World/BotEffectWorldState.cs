@@ -40,12 +40,33 @@ public sealed partial class BotWorldModel
 
 	private readonly Dictionary<int, int> objectAbnormals = [];
 
-	private void ApplyCreatureEffects(DecodedBotServerPacket packet) =>
-		objectAbnormals[packet.Get<int>("objectId")] = packet.Get<int>("abnormals");
+	/// <summary>
+	/// NR-90a: a creature's visible effects as the server last told them; none for one it told nothing of. The packet
+	/// lists every effect of the slots it names (Java SM_ABNORMAL_EFFECT's constructor filters by the slot of the effect
+	/// that started or ended; 127 is every slot): those are replaced and the others kept. A row's slot is the slot's
+	/// place in Java's enum, and the packet's slots are its bits.
+	/// </summary>
+	public IReadOnlyList<BotVisibleEffect> EffectsOf(int objectId) => objectEffects.GetValueOrDefault(objectId) ?? [];
+
+	private readonly Dictionary<int, BotVisibleEffect[]> objectEffects = [];
+
+	private void ApplyCreatureEffects(DecodedBotServerPacket packet)
+	{
+		int objectId = packet.Get<int>("objectId");
+		objectAbnormals[objectId] = packet.Get<int>("abnormals");
+		int slots = packet.Get<byte>("slots");
+		IEnumerable<BotVisibleEffect> told = packet.Get<List<IReadOnlyDictionary<string, object?>>>("effects")
+			.Select(row => new BotVisibleEffect((int)row["effectorId"]!, (ushort)row["skillId"]!,
+				(byte)row["skillLevel"]!, (byte)row["targetSlot"]!, (int)row["remainingMillis"]!));
+		IEnumerable<BotVisibleEffect> kept = slots != 127 && objectEffects.TryGetValue(objectId, out BotVisibleEffect[]? before)
+			? before.Where(effect => (slots & 1 << effect.TargetSlot) == 0) : [];
+		objectEffects[objectId] = [.. kept, .. told];
+	}
 
 	private void ForgetEffectObservations()
 	{
 		objectAbnormals.Clear();
+		objectEffects.Clear();
 		VisibleEffects = null;
 		LastAbyssReward = null;
 	}

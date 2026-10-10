@@ -47,6 +47,7 @@ public sealed partial class SimulationFastScenarioTests
 		new("templar-25", NaturalClassLine.WarriorTemplar, ProbeAccountB, "Asimtftemp"),
 		new("chanter-mantras", NaturalClassLine.PriestChanter, ProbeAccountA, "Asimmantra"),
 		new("gladiator-aerial", NaturalClassLine.WarriorGladiator, ProbeAccountB, "Asimaerial"),
+		new("assassin-runes", NaturalClassLine.ScoutAssassin, ProbeAccountA, "Asimrunes"),
 	];
 
 	public static TheoryData<string> StarterProbeRowNames => new(StarterProbeRows.Select(row => row.Name));
@@ -238,6 +239,7 @@ public sealed partial class SimulationFastScenarioTests
 			case "templar-25": await TemplarLevelTwentyFiveRowAsync(probe, id, token); break;
 			case "chanter-mantras": await ChanterMantrasRowAsync(probe, id, token); break;
 			case "gladiator-aerial": await GladiatorAerialRowAsync(probe, id, token); break;
+			case "assassin-runes": await AssassinRunesRowAsync(probe, id, token); break;
 			default: throw new InvalidOperationException($"Row {row.Name} has no body.");
 		}
 		policy.AssertClean();
@@ -1169,6 +1171,61 @@ public sealed partial class SimulationFastScenarioTests
 			$"Second check: casts {string.Join(" ", secondCasts)}; the server said nothing of a toggle. " +
 			$"Every effect ended by the director: the server said {Said(ended)}. Third check: casts {string.Join(" ", thirdCasts)}; the server said {Said(third)}. " +
 			$"At level 23: casts {string.Join(" ", fourthCasts)}; the server said {Said(fourth)}. On at the end: {On()}.");
+	}
+
+	private const string AssassinTable = "natural-assassin-v1:";
+
+	/// <summary>
+	/// NR-90a, row assassin-runes. Prepared by the director: the Scout is made a level-25 Assassin with the skills of
+	/// every level up to it, keeps the dagger it was created with, so that a fight lasts, and is placed in Altgard by the
+	/// starved mosbears (210564, level 13), where the Cleric's row fights. The journey's buff check puts Apply Deadly
+	/// Poison on its dagger. Then it fights one mosbear after another until Pain Rune is cast: the table casts it once
+	/// the target is seen with three runes and at no other time, and each decision says how many it saw.
+	/// </summary>
+	private async Task AssassinRunesRowAsync(StarterProbe probe, string id, CancellationToken token)
+	{
+		const int mosbear = 210564, poison = 3481, pain = 3376, binding = 3406, mostFights = 40;
+		// Rune Slash, Fang Strike and Rune Carve in their ranks of level 25.
+		int[] carving = [3283, 3418, 3387];
+		probe.Session.BeginStep("s01", "director-makes-a-level-twenty-five-assassin-in-altgard");
+		await probe.BecomeAsync(PlayerClass.ASSASSIN, 25);
+		Assert.All(carving.Append(pain).Append(binding).Append(poison), skill => Assert.True(probe.World.Skills.ContainsKey(skill), $"Skill {skill} was not learned by level 25."));
+		await probe.MoveToMapAsync(ClericProbeMap, 1867.3f, 456.0f, 270.2f);
+		int weapon = Held(probe, 1);
+
+		(_, int[] buffCasts) = await BuffCheckStepAsync(probe, "s02", "buff-check-puts-the-poison-on", token);
+		Assert.Contains(poison, buffCasts);
+
+		static string Runes(StarterTraceRecord decision, string role) => decision.Fields.GetProperty("checks").EnumerateArray()
+			.Where(check => check.GetProperty("Rule").GetString() == "runes-" + role)
+			.Select(check => $"{check.GetProperty("Verdict").GetString()}: {check.GetProperty("Reason").GetString()}").FirstOrDefault() ?? "not asked";
+		ClericFight? shown = null;
+		int fights = 0, kills = 0, carved = 0;
+		while (shown == null && fights < mostFights)
+		{
+			fights++;
+			Npc next = NearestLiving(probe, mosbear);
+			ClericFight fight = await TableFightAsync(probe, AssassinTable, $"s03-{fights:D2}", $"fight-starved-mosbear-{fights}", () => Task.FromResult(next.GetObjectId()), token);
+			Assert.Equal(0, fight.Result.Deaths);
+			AssertNoRefusedCastRepeats(fight);
+			kills += fight.Result.Killed ? 1 : 0;
+			carved += fight.Casts.Count(cast => carving.Contains(cast.SkillId));
+			// A burst is decided only on a target seen with three runes or more.
+			Assert.All(fight.Decided.Where(record => Decided(record, "cast-target", pain)), record => Assert.StartsWith("pass:", Runes(record, "pain")));
+			Assert.All(fight.Decided.Where(record => Decided(record, "cast-target", binding)), record => Assert.StartsWith("pass:", Runes(record, "binding")));
+			if (fight.Casts.Any(cast => cast.SkillId == pain)) shown = fight;
+		}
+		Assert.True(shown != null, $"Pain Rune was never cast in {fights} fights with {carved} carving casts.");
+		int at = shown.Casts.FindIndex(cast => cast.SkillId == pain);
+		int before = shown.Casts.Take(at).Count(cast => carving.Contains(cast.SkillId));
+		Assert.True(before >= 3, $"Pain Rune was cast after {before} carving casts: {shown.Order}.");
+		StarterTraceRecord decided = shown.Decided.First(record => Decided(record, "cast-target", pain));
+		string[] counts = shown.Decided.Select(record => Runes(record, "pain")).Where(text => text != "not asked")
+			.Select(text => text.Split("seen with ")[1][..1]).ToArray();
+		Console.WriteLine($"{id}: level {probe.World.Level} Assassin, max HP {probe.World.MaxHp}, MP {probe.World.CurrentMp}/{probe.World.MaxMp}, weapon {weapon}. " +
+			$"Buff check: casts {string.Join(" ", buffCasts)}. {fights} fight(s), {kills} kill(s), {carved} carving cast(s). " +
+			$"The fight that showed it: {Outcome(shown)}; runes seen at each decision {string.Join("", counts)}; " +
+			$"Pain Rune after {before} carving casts, decided with: {Runes(decided, "pain")} HP at the end {probe.World.CurrentHp}/{probe.World.MaxHp}.");
 	}
 
 	private const string GladiatorTable = "natural-gladiator-v1:";

@@ -105,13 +105,16 @@ public enum NaturalAutoAttack
 /// left out of the list: a target that does not come, because it attacks from range, runs or does not answer, is gone
 /// to. Null for none.</param>
 /// <param name="ManaSkill">NR-60a: the class's skill that restores mana and the MP it is cast at; null for none.</param>
+/// <param name="OnlyWithRunes">NR-90a: roles that burst the runes on their target, each with the least number of runes it
+/// is cast at; the role is out of the line while the target is seen with fewer (the Assassin's Pain Rune does a tenth of
+/// its damage on a target with none). Null for none.</param>
 public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjacent, IReadOnlyList<string> AtRange,
 	IReadOnlyList<NaturalRotationUpkeep> Upkeep, IReadOnlyList<NaturalRecoveryStep> Recovery, int SwarmAttackers, int FleeHpPercent,
 	NaturalAutoAttack AutoAttack, string? ControlRole = null, int EmergencyPercent = 35, int EmergencyClearPercent = 45,
 	IReadOnlyDictionary<string, int>? OnlyWhenHurt = null, bool HoldOpenChain = false, int? EmergencySeasonedPairPercent = null,
 	NaturalFinisher? Finisher = null, string? ReserveRole = null, int? ManaPotionReserveMargin = null,
 	IReadOnlyList<string>? Openers = null, IReadOnlyDictionary<string, int>? OnlyWhileTargetAbove = null, float? RangedHoldWithin = null,
-	IReadOnlyList<string>? PullRoles = null, NaturalManaStep? ManaSkill = null)
+	IReadOnlyList<string>? PullRoles = null, NaturalManaStep? ManaSkill = null, IReadOnlyDictionary<string, int>? OnlyWithRunes = null)
 {
 	/// <summary>The table's two attack lists as lines of skill ids, every rank of a role in level order, for
 	/// <see cref="NaturalProfileValidator"/>.</summary>
@@ -157,10 +160,14 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			.Concat(rules.ControlRole == null ? [] : [rules.ControlRole])
 			.Concat(rules.Finisher == null ? [] : [rules.Finisher.Role])
 			.Concat(rules.ReserveRole == null ? [] : [rules.ReserveRole])
-			.Concat(rules.Openers ?? []).Concat(rules.OnlyWhileTargetAbove?.Keys ?? []).Concat(rules.PullRoles ?? []);
+			.Concat(rules.Openers ?? []).Concat(rules.OnlyWhileTargetAbove?.Keys ?? []).Concat(rules.PullRoles ?? [])
+			.Concat(rules.OnlyWithRunes?.Keys ?? []);
 		foreach (string role in named.Distinct())
 			if (!this.catalog.Any(skill => skill.Role == role))
 				throw new InvalidDataException($"Rotation table {rules.Id} names the role '{role}', which its catalog does not hold.");
+		foreach (string role in rules.OnlyWithRunes?.Keys ?? [])
+			if (this.catalog.Any(skill => skill.Role == role && skill.BurstsRune == null))
+				throw new InvalidDataException($"Rotation table {rules.Id} counts runes for the role '{role}', which holds a skill that bursts none.");
 		if (rules.EmergencyClearPercent < rules.EmergencyPercent || rules.SwarmAttackers < 1)
 			throw new InvalidDataException($"Rotation table {rules.Id} has an emergency or swarm limit that cannot be met.");
 		// NR-10: a number the run may replace is the run's baseline in the table, so the table still says what is played.
@@ -271,9 +278,20 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		bool PullSpent(string role) => rules.PullRoles?.Contains(role) == true && (fightIsOn ||
 			catalog.Any(skill => skill.Role == role && state.CastThisFight?.Contains(skill.Id) == true &&
 				!(state.Cooldowns.TryGetValue(skill.CooldownId, out DateTimeOffset pullReady) && pullReady > now)));
+		// NR-90a: a burst is out of the line while its target is seen with fewer runes than the table asks.
+		bool RunesEnough(string role)
+		{
+			if (rules.OnlyWithRunes == null || !rules.OnlyWithRunes.TryGetValue(role, out int least)) return true;
+			if (Best(role, state) is not { } burst) return true; // not learned: the role gives the line no skill
+			int seen = burst.BurstsRune is { } rune && state.TargetRunes?.TryGetValue(rune, out int level) == true ? level : 0;
+			checks.Add(new($"runes-{role}", seen >= least ? "pass" : "skip",
+				$"The target is seen with {seen} of the {least} runes the {role} skill is cast at."));
+			return seen >= least;
+		}
 		// A role that is cast only when hurt is left out of the line while HP is above its percentage.
 		NaturalPriestSkill[] line = list
 			.Where(role => !PullSpent(role))
+			.Where(RunesEnough)
 			.Where(role => rules.OnlyWhenHurt == null || !rules.OnlyWhenHurt.TryGetValue(role, out int percent) || HpAtOrBelow(percent))
 			.Where(role => rules.OnlyWhileTargetAbove == null || !rules.OnlyWhileTargetAbove.TryGetValue(role, out int least) ||
 				state.TargetHpPercent is not int targetHp || targetHp > least)

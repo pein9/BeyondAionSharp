@@ -12,6 +12,7 @@ using Aion.GameServer.Model;
 using Aion.GameServer.Model.Templates.Npc;
 using Aion.GameServer.Model.Templates.Quest;
 using Aion.GameServer.Network.Aion.ServerPackets;
+using Aion.GameServer.SkillEngine.Effects;
 
 using Require = Aion.Bots.Scenarios.NaturalJourneyRequirements;
 
@@ -376,7 +377,9 @@ public sealed partial class NaturalIshalgenJourney
 					OffHand: NaturalSkillCatalog.OffHandHeld(world.Inventory.Values, runtime.Data.ItemDataDh.GetItemTemplate),
 					CastThisFight: castThisFight,
 					// NR-80a: the target's states, for the skills that ask for one.
-					TargetAbnormals: world.AbnormalsOf(target));
+					TargetAbnormals: world.AbnormalsOf(target),
+					// NR-90a: the runes seen on the target, for the skills that burst them.
+					TargetRunes: ObservedRunes(world.EffectsOf(target)));
 				NaturalCombatChoice choice = policy.Decide(observation, now, mauPolicy);
 				NaturalCombatCandidate[] candidates = policy.CandidateActions(observation, now, choice, mauPolicy);
 				if (!candidates.Any(candidate => candidate.Action == choice.Action &&
@@ -874,6 +877,18 @@ public sealed partial class NaturalIshalgenJourney
 					["position"] = session.CurrentPosition,
 				});
 			}
+		}
+
+		/// <summary>NR-90a: the runes among a creature's effects, each by its name with its level. A rune is an effect skill
+		/// of its own, and the server finds it by its stack name (Java CarveSignetEffect, SignetBurstEffect).</summary>
+		private IReadOnlyDictionary<string, int>? ObservedRunes(IReadOnlyList<BotVisibleEffect> effects)
+		{
+			Dictionary<string, int>? runes = null;
+			foreach (BotVisibleEffect effect in effects)
+				if (runtime.Data.SkillDataDh.GetSkillTemplate(effect.SkillId) is { } template && template.GetStack() is { } name &&
+					template.GetEffects()?.GetEffects().OfType<SignetEffect>().Any() == true)
+					(runes ??= [])[name] = effect.SkillLevel;
+			return runes;
 		}
 
 		public bool IsCleric => session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass ==

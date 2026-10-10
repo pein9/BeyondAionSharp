@@ -5248,7 +5248,8 @@ The template:
         and with the nine ranks it keeps from the Scout the catalog has 64 to give a
         role or a reason; one more is a toggle (run/nr/NR-90/check.log).
       - **Chains.** ChainCondition as read for NR-50. Swift Edge opens the chain Soul
-        Slash follows and Rune Slash (level 21) follows that. Fang Strike (16) opens the
+        Slash follows and Rune Slash (level 21) follows that, one time in ten (corrected
+        by NR-90a: Soul Slash's chain_skill_prob is 10). Fang Strike (16) opens the
         chain Beast Kick (26) follows. Rune Carve (13), Surprise Attack, Dash Attack (10)
         and Ambush (25) each open a chain nothing follows before level 26.
       - **Runes.** CarveSignetEffect.applyEffect 31-45: a carving skill ends the rune
@@ -5301,7 +5302,7 @@ The template:
       |---|---|---|
       | edge | Swift Edge: 1, 6, 11, 16, 21, 26 | Opens the first chain. 7 s. |
       | slash | Soul Slash: 7, 12, 17, 22 | Follows Swift Edge inside 3 s. 6 s. |
-      | runeslash | Rune Slash: 21, 26 | Follows Soul Slash: the hardest hit of the three, and one rune, to three. 5 s. |
+      | runeslash | Rune Slash: 21, 26 | Follows Soul Slash one time in ten (NR-90a): the hardest hit of the three, and one rune, to three. 5 s. |
       | fang | Fang Strike: 16, 21, 26 | Opens the second chain: a hit and one rune, to five. 31 to 39 MP, 6 s. |
       | kick | Beast Kick: 26 | Follows Fang Strike: a hit and one rune, to five. 42 MP, 6 s. |
       | carve | Rune Carve: 13, 18, 23 | A light hit and one rune, to three. Free, 7 s. |
@@ -5355,7 +5356,7 @@ The template:
       scopes identical. Seven pre-commit checks pass, the three script tests pass
       (run/nr/NR-90/script-tests.log), Aion.GameServer.Tests passes (4,629 passed, 16
       skipped) and Fast passes (run nr90-fast, 11 passed).
-- [ ] **NR-90a - A skill that bursts the runes on its target.** Depends: NR-90
+- [x] **NR-90a - A skill that bursts the runes on its target.** Depends: NR-90
   - Work: Pain Rune is the Assassin's hardest hit beside Divine Strike when its target
     carries three runes, and a waste of 68 MP when it carries none. Java first, beyond
     what NR-90 read: what the client is told of the rune effect on a monster (its skill
@@ -5368,6 +5369,72 @@ The template:
     the Ranger's and the Gunner's bursts use the same form if they have one.
   - Proof: A one-time check of the decisions at each rune count, and one probe row on a
     probe account that carves three runes and bursts them; the full gate identical.
+  - 2026-10-10: done. The bot knows the runes on its target, and the rule table casts a
+    burst only on a target seen with as many as the table names. The Assassin casts Pain
+    Rune and Binding Rune at three.
+    - **Java, beyond NR-90.**
+      - **What the client is told of a rune.** A rune is an effect of the slot DEBUFF
+        on the monster, and when it starts or ends EffectController.broadCastEffects
+        304-308 sends SM_ABNORMAL_EFFECT for that slot. The packet's constructor keeps
+        every effect of the slots it names and no other, so a packet for one slot is
+        that slot's whole list and says nothing of the rest; 127 names them all. Each
+        row has the effect's skill and its level: 8303 at level 1 to 8307 at level 5.
+      - **Soul Slash keeps its chain open one time in ten** (chain_skill_prob 10, in
+        every rank). NR-90 wrote that Rune Slash follows Soul Slash and did not say how
+        seldom. So the runes come from Fang Strike and Rune Carve, and from Rune Slash
+        now and then. NR-90's record and the profile's comment are corrected.
+    - **The change, generic.**
+      - Bots/World/BotEffectWorldState.cs: the world state holds each creature's visible
+        effects, replaced slot by slot as the packets name them.
+      - Sc/NaturalPriestCombatPolicy.cs and Sc/Classes/NaturalSkillCatalog.cs: a skill
+        row holds the rune it carves and the rune it bursts, from its template's
+        effects; the fight's observation holds the runes seen on the target, each by
+        its name with its level. The fight loop finds them among the target's effects:
+        an effect whose template holds a rune, named by its stack as the server names
+        it. The decision record's observed state is as it was.
+      - Sc/Classes/NaturalRotationCombatPolicy.cs: a rule table may name, for a role
+        that bursts a rune, the least number of runes it is cast at. The role is out of
+        the line while the target is seen with fewer, and each decision writes a check,
+        runes-<role>, with the number seen. A table that counts runes for a role that
+        bursts none is refused when it is built.
+      - No profile but the Assassin's has a row that carves or bursts a rune.
+    - **The Assassin.** Pain Rune has the role pain and Binding Rune the role binding,
+      both at three runes, where the burst does all of its damage and Pain Rune always
+      stuns. They stand before Swift Edge in the list; an open follow-up still goes
+      first. 40 of its 65 skills have a role now and 25 a reason.
+    - **Proof, the one-time check** (run/nr/NR-90a/check.log; the check file is not
+      committed). Of the seventeen profiles of the eleven class lines only the
+      Assassin's has rune rows: four roles carve SIGNET1 and two burst it. An Assassin
+      of level 13 and one of level 25 on a monster that is on it: with no rune, one or
+      two it casts Swift Edge and the check says how many it saw; with three or five,
+      Pain Rune; with three and a follow-up open, Soul Slash; with three and Pain Rune
+      cooling down, Binding Rune at level 25 and Swift Edge at 13. The world state
+      keeps a buff when the debuff slot is told with the second rune in the first one's
+      place, and when it is told empty.
+    - **Proof, the probe row** assassin-runes (SimT/SimulationNaturalStarterProbeTests
+      .cs, probe account 98; `bash run/nr/NR-90a/probe.sh <attempt>`). Prepared by the
+      director: a level-25 Assassin with the skills of every level up to it, with the
+      dagger it was created with so that a fight lasts, by the starved mosbears of the
+      Cleric's row. Every other act is the journey's. Run nr90a-probe-a1 failed on the
+      row's own list, which named Rune Slash's rank of level 26. Runs nr90a-probe-a2
+      and, after the comment was corrected, nr90a-probe-a3 passed alike:
+      - The buff check casts Apply Deadly Poison.
+      - Three fights, three kills. The first two ended with two runes on the target
+        and no burst. The third, 17.5 s: Swift Edge, Soul Slash, Fang Strike, Devotion,
+        Rune Carve, Killer's Eye, Swift Edge, Soul Slash, Fang Strike, and then Pain
+        Rune III. The decisions saw 0, 0, 0, 1, 1, 2, 2, 2, 2, 2, 2, 2 and 3 runes; Pain
+        Rune was decided at the one that saw three. The server completed it.
+      - Soul Slash never left the chain open in the three fights, so Rune Slash was not
+        cast: one time in ten.
+      - A level-25 Assassin has 1,794 HP and 1,853 MP.
+    - **For NR-91.** Three runes take about ten seconds of a fight at level 25 and
+      longer before level 16, where Rune Carve alone carves, once in 7 s. The probe rows
+      decide whether Pain Rune should be cast at two there: half its damage, and the
+      stun four times in ten.
+    - **Proof.** Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8,
+      run guard-p8 (run/nr/NR-90a/guard-p8/verdict.json): verdict pass, all thirteen
+      scopes identical. Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629
+      passed, 16 skipped) and Fast passes (run nr90a-fast, 11 passed).
 - [ ] **NR-91 - Assassin: probe rows.** Depends: NR-90a
   - Work: Rows assassin-10, assassin-16, assassin-20 and assassin-25 in
     SimulationNaturalStarterProbeTests: prepared Assassins on the two probe accounts, in
@@ -6096,3 +6163,13 @@ report what was done, what is parked or blocked, and what the operator must deci
   written. Full gate guard-p8 (thirteen scopes identical), seven checks, three script
   tests, unit suite (4,629 passed, 16 skipped) and Fast (nr90-fast) pass. Next: NR-90a, a
   skill that bursts the runes on its target.
+- 2026-10-10 — Loop: NR-90a done. The world state holds each creature's visible effects,
+  slot by slot; a skill row holds the rune it carves and the rune it bursts; a rule table
+  names the least number of runes a burst is cast at. The Assassin casts Pain Rune and
+  Binding Rune at three. One-time check, and the probe row assassin-runes (runs
+  nr90a-probe-a2 and a3): Pain Rune decided when the target was seen with three runes and
+  at no other time. NR-90's reading is corrected: Soul Slash keeps its chain open one time
+  in ten, so Rune Slash is seldom cast. Full gate guard-p8 (thirteen scopes identical),
+  seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr90a-fast) pass. Next:
+  NR-100, the Ranger's survey; the probe rows NR-61, NR-71, NR-81 and NR-91 wait for the
+  surveys (rule (w)).

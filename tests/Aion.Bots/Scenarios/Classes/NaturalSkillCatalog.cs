@@ -5,6 +5,7 @@ using Aion.GameServer.Model.Templates.Items;
 using Aion.GameServer.Model.Templates.Items.Enums;
 using Aion.GameServer.SkillEngine.Action;
 using Aion.GameServer.SkillEngine.Condition;
+using Aion.GameServer.SkillEngine.Effects;
 using Aion.GameServer.SkillEngine.Model;
 using Aion.GameServer.SkillEngine.Properties;
 
@@ -130,7 +131,9 @@ public static class NaturalSkillCatalog
 			RequiredOffHand: conditions.OfType<LeftHandCondition>().FirstOrDefault()?.type.ToString(),
 			// Java TargetStatusProperty.set 20-28 asks nothing of the one stack it names.
 			TargetStates: properties?.GetTargetStatus() is { Count: > 0 } states && template.GetStack() != "RI_PROTECTIONCURTAIN"
-				? states.Select(state => state.ToString()).ToArray() : null);
+				? states.Select(state => state.ToString()).ToArray() : null,
+			CarvesRune: template.GetEffects()?.GetEffects().OfType<CarveSignetEffect>().FirstOrDefault()?.signet,
+			BurstsRune: template.GetEffects()?.GetEffects().OfType<SignetBurstEffect>().FirstOrDefault()?.signet);
 	}
 
 	/// <summary>

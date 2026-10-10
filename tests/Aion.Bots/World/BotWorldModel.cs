@@ -186,6 +186,7 @@ public sealed partial class BotWorldModel
 		{
 			objects.Remove(packet.Get<int>("objectId"));
 			objectAbnormals.Remove(packet.Get<int>("objectId"));
+			objectEffects.Remove(packet.Get<int>("objectId"));
 			ForgetPrivateStore(packet.Get<int>("objectId"));
 			lootStatuses.Remove(packet.Get<int>("objectId"));
 			if (OwnedKiskRemoval is { } removal && removal.ObjectId == packet.Get<int>("objectId"))
