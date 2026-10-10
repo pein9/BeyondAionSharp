@@ -4655,7 +4655,195 @@ The template:
   - Work: One scope of the Sorcerer's play, chosen where its rules differ most from the
     Mage's, recorded by a bot alone, twice, and added to the gate's sets.
   - Proof: The two recordings are identical.
-- [ ] **NR-70 - Chanter: survey and profile data.** Depends: the close of phase C
+- [x] **NR-70 - Chanter: survey and profile data.** Depends: the close of phase C
+  - 2026-10-10: done. The Chanter's placeholder is a profile of its own now, and the
+    validator accepts it. Its class line and its gear table stood already (CP-29a, CP-32).
+    Nothing has been played. One thing its skills need that the shared forms cannot say
+    yet is item NR-70a below.
+    - **Before.** NaturalChanterProfile took the Priest's catalog and the Priest's table,
+      and left every skill a Chanter learns out with one reason: no Chanter leg exists.
+    - **Java.**
+      - **What it learns.** SkillLearnService as read for NR-50. Of the Chanter's 104
+        rows to level 26, 79 are auto-learned, 24 are stigma rows from level 20 and one
+        is a skill book, Homeward Bound at 21. 56 of the auto-learned are active skills,
+        and with the eight ranks it keeps from the Priest the catalog has 64 to give a
+        role or a reason (run/nr/NR-70/survey.log). Six more are toggles, the mantras:
+        below.
+      - **Chains.** ChainCondition as read for NR-50. Hallowed Strike opens a chain of
+        three: Booming Strike (level 10) follows it inside 3 s and Crashing Strike (13)
+        follows that. From level 22 Booming Smash is a second follow-up of Hallowed
+        Strike, and nothing follows it. Meteor Strike (10) opens the chain Incandescent
+        Blow (19) follows. Infernal Blaze opens the chain Thunderbolt Strike (10)
+        follows, both from 25 m. A chain skill keeps its chain open on a roll of its
+        own chain_skill_prob (Skill.java 630-639): the three openers and Booming Strike
+        have 100, so no follow-up of the table is lost to the roll.
+      - **A counter skill.** Parrying Strike (level 25) has counter_skill PARRY. The
+        server takes it only within 5 s of a parry of the Chanter's own (Skill.java
+        163-169), and the bot does not observe its parries.
+      - **The mantras.** Celerity Mantra (level 10), Shield Mantra (13, 18, 23), Revival
+        Mantra (22) and Wind Mantra (25) are toggles of the sub type CHANT in the slot
+        NOSHOW. They cost nothing and have no timer. While one is on,
+        AuraEffect.startEffect 75-77 applies its effect skill every 6.5 s, for 6.5 s
+        each; a Chanter alone gets it itself (onPeriodicAction 45-68). Celerity adds
+        1,000 to the speed stat, which is the run speed times 1,000
+        (PlayerGameStats.getMovementSpeed 101-123). Shield adds 20 physical defence, 40
+        block, 40 parry and 20 evasion at its first rank. Revival heals 40 HP every 3 s.
+        Wind adds flight speed and flight time. A Chanter may keep three at once: a
+        fourth ends the first (EffectController.addEffect 76-86; the port has the same
+        lines). The four share one cooldown id, 1519, and only Wind Mantra sets a time
+        on it, 10 s. Every start and every end tells the caster with SM_SKILL_ACTIVATION
+        (Effect.startEffect 670-678, endEffect 735-737), a death included
+        (EffectController.removeAllEffects 660-671).
+      - **Class rewards on the route** are the Cleric's at every point (the table under
+        NR-42): the staff 101500498 at the ceremony and the dispatch Q2904 (NR-30), the
+        chain rewards and the staves of NR-32, the stone 140000001 (NR-39), Haramel's
+        chest 700832 (NR-40) and the chain coin armor at Lohaban and Vebna (NR-38).
+        Nothing new.
+    - **The class line**, as it stood: `priest-chanter`, a Priest who becomes a Chanter
+      (SETPRO13), SIM account 41. Its character name is the Cleric's line's, Asimnjour;
+      a round gives its bots their names (NR-47). The line names no ceremony item: the
+      bridge's reviewed pick, the staff, is taken.
+    - **The gear table**, as it stood (Sc/Classes/NaturalClassGearTable.cs, Chanter).
+
+      | Part | The Chanter's | From |
+      |---|---|---|
+      | Weapon group | staff, then mace; ranked by magic boost, then the most damage | NR-Q5, CP-Q7 |
+      | Off hand | nothing | CP-Q10 |
+      | Armor | chain, leather, robe, clothes; item level first, the type breaks ties | NR-Q7, CP-Q24 |
+      | Bonus order at a reward | magic boost, magical accuracy, healing boost, then mana and concentration | NR-32 |
+      | Kept | life potions, its help kit, the mana potions, every help scroll and food | as the Cleric from Ascension |
+
+      Six of its eight attack roles hit with the staff's physical attack; only Infernal
+      Blaze and Smite are spells. CP-Q7 ranks its staff by magic boost all the same.
+      Every staff a quest or a coin vendor of the route offers it is the Cleric's, so the
+      order decides nothing there. It is the operator's to change.
+    - **The help kit from level 10** is every row of the manifest written under NR-60
+      (NaturalHelpItemAllowlist.Kit(caster: true, reagent: true)), which is the Cleric's.
+      Levels 1 to 9 are the Priest's kit (CP-Q12).
+    - **Its skills by role** (Sc/Classes/NaturalChanterProfile.cs; 58 skills of 64).
+
+      | Role | Skill, and the levels of its ranks | What it is |
+      |---|---|---|
+      | infernal | Infernal Blaze: 7, 14, 19, 24 | Opens the chain from range; one time in two a 3 s stun. Instant, 25 m, 24 s. |
+      | thunderbolt | Thunderbolt Strike: 10, 15, 20, 25 | Follows Infernal Blaze inside 3 s, a hit of the weapon from 25 m. Instant, 22 s. |
+      | smite | Smite: 1, 6 | The Priest's spell from 25 m; it has no rank after 6. 1.5 s cast, 2 s. |
+      | hallowed | Hallowed Strike: 3, 8, 13, 18, 23 | Opens the chain of three and slows the target's attacks. 8 s. |
+      | booming | Booming Strike: 10, 15, 20, 25 | Follows Hallowed Strike and lowers physical defence. 6 s. |
+      | crashing | Crashing Strike: 13, 18, 23 | Follows Booming Strike: the hardest hit of the three. 6 s. |
+      | meteor | Meteor Strike: 10, 15, 20, 25 | Opens the second chain and lowers physical defence. 8 s. |
+      | incandescent | Incandescent Blow: 19, 24 | Follows Meteor Strike. 8 s. |
+      | circle | Winter Circle: 10 | 2,000 DP: twice the physical attack for 30 s. 60 s. |
+      | heal | Healing Light: 1, 6, 11, 16, 21, 26 | The Priest's heal. 2 s cast, no cooldown, 13 to 75 MP. |
+      | revival | Word of Revival: 13, 18, 23 | A heal at once and every 2 s for 38 s. Instant, 5 s, 52 to 76 MP. |
+      | ward | Protective Ward: 22 | For 10 s it takes three tenths of every hit. 74 MP, 2 min. |
+      | blessing | Blessing of Guardianship: 5; Protectorate's Prayer: 10, 15, 20, 25 | The Priest's blessing and its next ranks. 41 to 56 MP. |
+      | promise | Promise of Earth: 16, 21, 26 | For 30 min one weapon hit in ten strikes with earth as well. 60 to 85 MP. |
+      | rage | Rage Spell: 20 | For 30 min 15% more physical attack, and heals are cast a fifth faster. 379 MP. |
+      | binding | Binding Word: 20, 25 | For 5 s the target moves at half speed and casts no physical skill. 221 to 251 MP, 30 s. |
+      | herb, mp-recovery | Herb Treatment and MP Recovery: 10, 15, 20, 25 | The two powder skills of a rest (NR-50a). |
+
+    - **The rule table, natural-chanter-v1.** The Priest's, with what the Chanter adds.
+      From range: Infernal Blaze and Thunderbolt Strike at once after it, both instant,
+      then Smite while the monster comes. With the monster on it: Winter Circle when the
+      DP are there; the same pair when it is ready again; Hallowed Strike, Booming
+      Strike and Crashing Strike; Meteor Strike and Incandescent Blow; Smite last. An
+      open follow-up is always cast first, and the staff swings between skills.
+      Protectorate's Prayer goes up before the first hit, and Word of Revival is kept up
+      while the Chanter is being hit. Promise of Earth and Rage Spell are kept up between
+      fights. The ladder is the Priest's with one step more: the shield scroll at 50% HP,
+      Protective Ward at 60%, the life potion at 90%, Healing Light at 55% against one
+      attacker and at 70% against two or more; the potion's and the heal's percentages
+      are the run's, as the Priest's. Once a fight has had its heal and the target is at
+      or below 15% HP, Smite finishes it in the heal's place. Healing Light's cost is
+      kept back from every attack. It leaves at three attackers, or at 30% HP with
+      nothing of the ladder left, and casts Binding Word on its target first. Its rest,
+      its ranges, its readiness and its restock are the Priest line's. It holds for a
+      patrol and assesses (NR-37) with Healing Light and Word of Revival to ask about,
+      and a pull may bring two. In flight it shoots with the list it has at range
+      (NR-36).
+    - **Left out, with the reason** (6 skills).
+
+      | Skill, levels | Why it is not cast |
+      |---|---|
+      | Return, Bandage Heal, Escape: 1 | As for every class (CP-35, CP-Q11). |
+      | Light of Resurrection: 10 | It revives another player; the bot plays alone. |
+      | Booming Smash: 22 | It takes Booming Strike's place after Hallowed Strike: a weaker hit with an 8 s snare, and Crashing Strike does not follow it. The table keeps the chain of three. |
+      | Parrying Strike: 25 | A counter skill (above): the bot does not observe its own parries. |
+
+      Not in the catalog at all: the six mantra rows, which are toggles (NR-70a);
+      Homeward Bound, which is a book; and the stone's skill, as for every class (NR-39).
+    - **Proof.** The one-time check, not committed (run/nr/NR-70/check.log): the line
+      parses and holds both classes; its character is a Priest until the client observes
+      a Chanter; NaturalClassProfiles builds the Chanter's profile, which requires the
+      validator: each of the 64 active skills has one role or one reason, every follow-up
+      has its opener, no rotation line breaks a chain or casts a counter skill, and the
+      gear groups lie inside the masteries. The check prints the 58 rows, the 6 reasons,
+      the best rank of each role at levels 10, 13, 16, 20, 25 and 26, the gear groups,
+      the patrol view and the six mantra rows. Its first run (check-a1.log) was refused
+      by the validator: the table had Parrying Strike in its list, a counter skill.
+      Gate, set all+mage+warrior+artist+engineer+scout+templar, -Parallel 8, run guard-p8
+      (run/nr/NR-70/guard-p8/verdict.json): verdict pass, all thirteen scopes identical.
+      Seven pre-commit checks pass, Aion.GameServer.Tests passes (4,629 passed, 16
+      skipped) and Fast passes (run nr70-fast, 11 passed).
+- [ ] **NR-70a - A toggle kept on.** Depends: NR-70
+  - Work: The form NR-50d left to the first class that keeps a toggle. Java first, beyond
+    what NR-50d and NR-70 read: what else ends a mantra (a logout, a move to another map,
+    a fourth mantra), the cooldown the four share, and what the client is told of a
+    toggle (SM_SKILL_ACTIVATION, SM_MANTRA_EFFECT, the effect skill among its effects).
+    The bot's world state observes which toggles are on. A profile names, in order, the
+    toggle roles it keeps on; the buff check between fights casts one that is observed
+    off and never one that is on. The Chanter names Celerity Mantra, Shield Mantra and,
+    from level 22, Revival Mantra: three, which is what the server lets a Chanter keep.
+    Wind Mantra is for flight and stays off. The bot moves at the speed the server gives
+    it, as with the running scroll. Generic: roles and an order in the profile, no branch
+    on a class; the Gladiator's, the Assassin's and the Rider's toggles use the same form.
+  - Proof: A one-time check, or one probe row on a probe account, that shows each named
+    mantra on after the rule ran once, none cast while it is on, and each cast again
+    after it was ended; the full gate identical.
+- [ ] **NR-71 - Chanter: probe rows.** Depends: NR-70a
+  - Work: Rows chanter-10, chanter-16, chanter-20 and chanter-25 in
+    SimulationNaturalStarterProbeTests: prepared Chanters on the two probe accounts, in
+    the gear the route has given by that level, fight the monsters the Cleric's rows
+    fight. Each row's trace shows the table in play: Infernal Blaze and Thunderbolt
+    Strike from range, the chain of three, Meteor Strike with Incandescent Blow from 19,
+    Winter Circle at 2,000 DP, Protectorate's Prayer, Promise of Earth and Rage Spell up,
+    Word of Revival while it is hit, Protective Ward and the ladder, the mantras on, the
+    rest with the powder. What a row shows decides the open rules: whether Rage Spell's
+    379 MP can be paid at level 20, and whether Smite earns its 1.5 s cast once the
+    monster is on the Chanter. A fix is one small change (rule (i)).
+  - Proof: The four rows end with the monster dead or a recorded retreat, no refused
+    cast repeated and no skill outside the table cast.
+- [ ] **NR-72 - Chanter: to Altgard.** Depends: NR-71; ticked by the round that gives it
+  - Work: A fresh character of the line priest-chanter plays Ishalgen as a Priest, the
+    trial, the Chanter choice at Munin, the ceremony with the staff and the dispatch
+    Q2904, and is captured at the Altgard bind as altgard-chanter-s1. The preserved
+    pandaemonium-chanter-start-s1 is left as it is: it was played by the placeholder.
+  - Proof: The capture verifies.
+- [ ] **NR-73 - Chanter: Altgard legs l1 to l5.** Depends: NR-72; ticked by its round
+  - Work: The Cleric's legs in order, each end captured under the Cleric's snapshot name
+    with -chanter (NR-41). In leg 1 it shoots the fungus in flight.
+  - Proof: Each capture verifies.
+- [ ] **NR-74 - Chanter: Altgard legs l6 to l11.** Depends: NR-73; ticked by its round
+  - Work: As NR-73. Leg 11 is the destiny quest: its stone is the Cleric's, 140000001
+    (NR-39).
+  - Proof: Each capture verifies.
+- [ ] **NR-75 - Chanter: coin gear and Haramel.** Depends: NR-74; ticked by its round
+  - Work: The coin-gear leg (chain, by its manifest, NR-38a) and Haramel with chest
+    700832 (NR-40), captured as altgard-coingear-chanter and
+    altgard-rc-complete-s1-chanter.
+  - Proof: Each capture verifies.
+- [ ] **NR-76 - Chanter: the Abyss entry.** Depends: NR-75; ticked by its round
+  - Work: Q24020, then Q2945, Q2946, Q2947 and Q2042 with the coin tiers it can wear
+    (NR-38b, NR-Q14, NR-Q16), captured as morheim-abyss-entry-s1-chanter.
+  - Proof: The capture verifies.
+- [ ] **NR-77 - Chanter: the endpoint.** Depends: NR-76; ticked by its round
+  - Work: Captured and verified as ntc-ready-chanter-s1: alive at Morheim Ice Fortress,
+    level 25 or higher, Q2945, Q2946, Q2947 and Q2042 complete.
+  - Proof: The capture verifies.
+- [ ] **NR-78 - Chanter: the class scope.** Depends: NR-77
+  - Work: One scope of the Chanter's play, chosen where its rules differ most from the
+    Cleric's, recorded by a bot alone, twice, and added to the gate's sets.
+  - Proof: The two recordings are identical.
 - [ ] **NR-80 - Gladiator: survey and profile data.** Depends: the close of phase C
 - [ ] **NR-90 - Assassin: survey and profile data.** Depends: the close of phase C, NR-04
 - [ ] **NR-100 - Ranger: survey and profile data.** Depends: the close of phase C
@@ -5282,3 +5470,13 @@ report what was done, what is parked or blocked, and what the operator must deci
   One-time check at levels 10, 20 and 25. Full gate guard-p8 (thirteen scopes identical),
   seven checks, unit suite (4,629 passed, 16 skipped) and Fast (nr60a-fast) pass. Next:
   NR-61, the Sorcerer's probe rows.
+- 2026-10-10 — Loop: NR-70 done. By rule (w) the surveys come before any class's probe
+  rows, so NR-61 waits and the Chanter's survey was taken. Its placeholder is a profile of
+  its own: the table natural-chanter-v1, the Priest's with the chain of three, Meteor
+  Strike and Incandescent Blow, Thunderbolt Strike after Infernal Blaze, Winter Circle,
+  Word of Revival, Protective Ward, and Promise of Earth and Rage Spell kept up. Of its 64
+  active skills 58 have a role and 6 a reason; Parrying Strike is a counter skill, which
+  the validator refused in the table. The six mantra rows are toggles and need the form of
+  item NR-70a. The Chanter's items NR-71 to NR-78 are written. Full gate guard-p8 (thirteen
+  scopes identical), seven checks, unit suite (4,629 passed, 16 skipped) and Fast
+  (nr70-fast) pass. Next: NR-70a, a toggle kept on.
