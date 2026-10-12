@@ -1,8 +1,9 @@
 # Group NTC leg
 
-Status: planned 2026-10-12; N1 to N7 are done: the six take the quests, go into one instance of the camp, fight
-through it, kill the four named monsters of Q4733, destroy the fortress gate, and each takes its four chest items
-for Q4734. The General is next. The step list at the end is worked one step at a time.
+Status: planned 2026-10-12; N1 to N8 are done: the six take the quests, go into one instance of the camp, fight
+through it, kill the four named monsters of Q4733, destroy the fortress gate, each takes its four chest items for
+Q4734, and they kill the General. The disband and the turn-in are next. The step list at the end is worked one step
+at a time.
 
 It follows [natural-group-healer.md](natural-group-healer.md): group formation, F1 following, the Cleric's
 healing-only role, resurrection waiting and round-robin loot are there and are reused. Gear, supplies, shards and the
@@ -38,8 +39,8 @@ pwsh -NoProfile -File scripts/sim/run-round.ps1 -Round run/ntc/<round>.json -Ite
 
 The stage is `"group-ntc"`, with the same `groupLeader`, `groupRoster`, `groupLoot` and `"role": "healer"` as
 `group-coin`, and `groupUntil` naming how far the leg is played (so far `"quests"`, `"entrance"`, `"protector"`,
-`"field-guard"`, `"gate"` or `"chests"`). `run/ntc/n2.json` to `n7.json` are the round files of those steps. Each
-member writes `group-ntc-completion.json`.
+`"field-guard"`, `"gate"`, `"chests"` or `"general"`). `run/ntc/n2.json` to `n8.json` are the round files of those
+steps. Each member writes `group-ntc-completion.json`.
 
 Code changes stay; the world does not. `run/ntc/baseline.json` holds the snapshot's hashes, checked 2026-10-12:
 dump `8d0787cf…cf8f97`, manifest `26fb3931…68ce96`, the same as `run/group/baseline.json`. They are checked again
@@ -246,7 +247,15 @@ the run, how far the group got, the deaths and what stopped it.
       inside now goes back through Vallack, whatever was said last.
   - Still not shown: a resurrection (the Templar died after the Cleric had left the instance), and a member's way
     back from the landing to a group that stands inside the walls.
-- [ ] **N8 The General.** Dead and looted.
+- [x] **N8 The General.** Dead and looted.
+  - 2026-10-12, round `n8-1` (`run/ntc/ntc/n8-1`), first attempt: the General fell sixteen seconds after his pull,
+    33 min 6 s after login. The Templar's lowest health in that fight was 2,542 of 3,465. Seventy-four pulls since
+    the landing, no death in the whole run. The Ranger, whose turn it was, took his corpse: two items.
+  - The five fighters' receipts say each saw the gate and the General fall in a fight of its own. The Cleric's says
+    it saw neither, as it fights nothing: no attack sent, 37 cleanses, 13 heals, 15 top-ups. Round-robin loot: 165
+    entries over the six.
+  - No boss needed a rule of its own. The Templar's taunt, the artifact's shield and a resurrection were not needed
+    and are not shown.
 - [ ] **N9 Disband and turn in.** F1 disbands; all six arrive at the exit point; each hands in Q4733 and Q4734.
 - [ ] **N10 Q4732 under D32.** Handler, test, deviation log and upstream offer by
   [retail-quest-completion.md](retail-quest-completion.md); the six take it with the others and hand it in.
