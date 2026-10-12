@@ -1,0 +1,265 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 4731,
+    "name": "Nochsana Calls",
+    "nameId": 1199483,
+    "zone": "Nochsana Training Camp",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 25,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [],
+        "unfinished": [
+          4701
+        ],
+        "noacquired": [
+          4701
+        ]
+      },
+      {
+        "finished": [],
+        "unfinished": [
+          24241
+        ],
+        "noacquired": [
+          24241
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/reshanta.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 800519,
+        "id": 4731,
+        "start_npc_ids": 204301
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204301,
+        "name": "aegir",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 225.225,
+            "y": 2415.47,
+            "z": 454.109,
+            "heading": 48,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204301,
+      "name": "aegir",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 225.225,
+          "y": 2415.47,
+          "z": 454.109,
+          "heading": 48,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 800519,
+      "name": "kelmar",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 265.6332,
+          "y": 2370.595,
+          "z": 445.1223,
+          "heading": 86,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 800519,
+          "name": "kelmar",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 265.6332,
+              "y": 2370.595,
+              "z": 445.1223,
+              "heading": 86,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 285255,
+        "rewardItems": [],
+        "selectableItems": [
+          {
+            "count": 1,
+            "item_id": 114101700
+          },
+          {
+            "count": 1,
+            "item_id": 114301825
+          },
+          {
+            "count": 1,
+            "item_id": 114301827
+          },
+          {
+            "count": 1,
+            "item_id": 114501734
+          },
+          {
+            "count": 1,
+            "item_id": 114501736
+          },
+          {
+            "count": 1,
+            "item_id": 114601579
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 4731,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 25,
+      "name": "Nochsana Calls",
+      "nameId": 1199483,
+      "quest_zone": "Nochsana Training Camp",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 285255
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 114101700
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 114301825
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 114301827
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 114501734
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 114501736
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 114601579
+            }
+          }
+        ]
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "unfinished",
+            "text": [
+              4701
+            ]
+          },
+          {
+            "tag": "noacquired",
+            "text": [
+              4701
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "unfinished",
+            "text": [
+              24241
+            ]
+          },
+          {
+            "tag": "noacquired",
+            "text": [
+              24241
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -24,7 +24,7 @@ public sealed partial class SimulationFastScenarioTests
 	private sealed record NaturalRoundBot(string Line, double StartAfterMinutes = 0, string? StopAt = null, double? StopAfterMinutes = null,
 		int? Account = null, string? Name = null, int? ResumeCharacter = null, string? Stage = null, int? TargetNpcId = null,
 		string? Role = null, string? SupportInvite = null, bool AcceptSupportInvite = false,
-		string[]? GroupRoster = null, string? GroupLeader = null, bool GroupLoot = false);
+		string[]? GroupRoster = null, string? GroupLeader = null, bool GroupLoot = false, string? GroupUntil = null);
 
 	/// <summary>
 	/// NR-R1a: the journey's options for a bot's stage. A run of one bot takes them from its environment
@@ -55,7 +55,12 @@ public sealed partial class SimulationFastScenarioTests
 		"group-coin" => new NaturalJourneyOptions(AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
 			ClassLine: line, GroupRoster: entry.GroupRoster ?? throw new InvalidDataException("group-coin needs a roster."),
 			GroupLeader: entry.GroupLeader ?? throw new InvalidDataException("group-coin needs a leader."), GroupLoot: entry.GroupLoot),
-		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, muster, gh-survey, support or group-coin."),
+		// The Group NTC leg (docs/natural-group-ntc.md), played as far as groupUntil names.
+		"group-ntc" => new NaturalJourneyOptions(AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
+			ClassLine: line, GroupRoster: entry.GroupRoster ?? throw new InvalidDataException("group-ntc needs a roster."),
+			GroupLeader: entry.GroupLeader ?? throw new InvalidDataException("group-ntc needs a leader."), GroupLoot: entry.GroupLoot,
+			GroupStage: "ntc", GroupUntil: entry.GroupUntil),
+		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, muster, gh-survey, support, group-coin or group-ntc."),
 		}) with { Role = entry.Role };
 	}
 
@@ -65,7 +70,8 @@ public sealed partial class SimulationFastScenarioTests
 	/// (scripts/sim/sim-snapshot.ps1), and a bot of a round has reached its stage on the same word. Null for the plain
 	/// journey and for a bot stopped on purpose, which write none.
 	/// </summary>
-	private static string? StageReceipt(NaturalRoundBot entry) => entry.Stage == "group-coin" ? "group-coin-completion.json" : entry.Role == "healer" || entry.StopAt is { Length: > 0 } ? null : entry.Stage switch
+	private static string? StageReceipt(NaturalRoundBot entry) => entry.Stage == "group-coin" ? "group-coin-completion.json"
+		: entry.Stage == "group-ntc" ? "group-ntc-completion.json" : entry.Role == "healer" || entry.StopAt is { Length: > 0 } ? null : entry.Stage switch
 	{
 		null or "" or "support" => null,
 		"bridge" => "bridge-completion.json",

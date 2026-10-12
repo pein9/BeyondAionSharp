@@ -1,0 +1,459 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 4734,
+    "name": "[Group] Weapons Wanted",
+    "nameId": 1199486,
+    "zone": "Nochsana Training Camp",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 25,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [],
+        "unfinished": [
+          4704
+        ],
+        "noacquired": [
+          4704
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/reshanta.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 4734,
+        "start_npc_ids": 800519
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 800519,
+        "name": "kelmar",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 265.6332,
+            "y": 2370.595,
+            "z": 445.1223,
+            "heading": 86,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 800519,
+      "name": "kelmar",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 265.6332,
+          "y": 2370.595,
+          "z": 445.1223,
+          "heading": 86,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 800519,
+      "name": "kelmar",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 265.6332,
+          "y": 2370.595,
+          "z": 445.1223,
+          "heading": 86,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 4,
+      "item_id": 182205680,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182205680,
+          "npc_id": 700415,
+          "npc": {
+            "id": 700415,
+            "name": "weapons chest",
+            "positions": [
+              {
+                "mapId": 300030000,
+                "x": 281.055,
+                "y": 321.628,
+                "z": 378.148,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 284.516,
+                "y": 345.294,
+                "z": 379.174,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 285.858,
+                "y": 314.617,
+                "z": 398.402,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 287.177,
+                "y": 292.122,
+                "z": 397.785,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 301.255,
+                "y": 282.445,
+                "z": 392.862,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 303.585,
+                "y": 288.75,
+                "z": 380.096,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 306.165,
+                "y": 271.032,
+                "z": 392.431,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 307.008,
+                "y": 326.36,
+                "z": 393.093,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 307.367,
+                "y": 343.67,
+                "z": 380.514,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 312.493,
+                "y": 329.229,
+                "z": 380.415,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 314.07,
+                "y": 338.62,
+                "z": 393.11,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 314.758,
+                "y": 303.675,
+                "z": 380.096,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 320.998,
+                "y": 328.764,
+                "z": 393.092,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 326.061,
+                "y": 345.991,
+                "z": 393.11,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 335.63,
+                "y": 305.494,
+                "z": 403.39,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 335.822,
+                "y": 351.089,
+                "z": 392.415,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 353.294,
+                "y": 278.459,
+                "z": 380.096,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 361.394,
+                "y": 320.393,
+                "z": 393.095,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 365.614,
+                "y": 352.302,
+                "z": 377.86,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 367.588,
+                "y": 280.593,
+                "z": 380.096,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 369.023,
+                "y": 338.781,
+                "z": 393.11,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 371.501,
+                "y": 287.362,
+                "z": 380.096,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 373.765,
+                "y": 322.837,
+                "z": 380.415,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 377.672,
+                "y": 331.132,
+                "z": 378.7,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 378.061,
+                "y": 320.83,
+                "z": 397.222,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 385.585,
+                "y": 304.38,
+                "z": 397.958,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 392.065,
+                "y": 309.257,
+                "z": 378.257,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              },
+              {
+                "mapId": 300030000,
+                "x": 395.586,
+                "y": 289.207,
+                "z": 378.425,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 800519,
+          "name": "kelmar",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 265.6332,
+              "y": 2370.595,
+              "z": 445.1223,
+              "heading": 86,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 285255,
+        "gold": 108690,
+        "rewardItems": [],
+        "selectableItems": [
+          {
+            "count": 1,
+            "item_id": 122001672
+          },
+          {
+            "count": 1,
+            "item_id": 122001673
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 4734,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 25,
+      "name": "[Group] Weapons Wanted",
+      "nameId": 1199486,
+      "quest_zone": "Nochsana Training Camp",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 4,
+              "item_id": 182205680
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 285255,
+          "gold": 108690
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 122001672
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 122001673
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182205680,
+          "npc_id": 700415
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "unfinished",
+            "text": [
+              4704
+            ]
+          },
+          {
+            "tag": "noacquired",
+            "text": [
+              4704
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

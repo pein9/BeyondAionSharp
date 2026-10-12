@@ -258,7 +258,8 @@ class CheckedInPlanDriftTests(unittest.TestCase):
     data change (a spawn refinement, a new handler) cannot leave a plan pointing at the old world."""
 
     def test_checked_in_plans_match_a_fresh_compile(self) -> None:
-        folders = [E2E_ARTIFACTS / "retail-quest-plans", *sorted(E2E_ARTIFACTS.glob("natural-altgard*-plans"))]
+        folders = [E2E_ARTIFACTS / "retail-quest-plans", *sorted(E2E_ARTIFACTS.glob("natural-altgard*-plans")),
+                   E2E_ARTIFACTS / "natural-group-ntc-plans"]
         plans = {folder.name: sorted(folder.glob("*.json")) for folder in folders}
         # An emptied or renamed folder would otherwise pass with nothing to compare.
         self.assertGreaterEqual(len(folders), 6, "expected retail-quest-plans and the natural-altgard leg folders")

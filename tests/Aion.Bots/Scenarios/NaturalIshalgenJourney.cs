@@ -286,7 +286,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			bool resuming = await runtime.EnterAsync(token);
 			if (options.GroupRoster != null)
 			{
-				await RunGroupCoinAsync(token);
+				await RunGroupQuestAsync(token);
 				return;
 			}
 			if (options.Role == "healer")

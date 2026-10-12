@@ -1,0 +1,348 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 4733,
+    "name": "[Group] Training Terminated",
+    "nameId": 1199485,
+    "zone": "Nochsana Training Camp",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 25,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 5,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [],
+        "unfinished": [
+          4703
+        ],
+        "noacquired": [
+          4703
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/reshanta.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 4733,
+        "start_npc_ids": 800519
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 800519,
+        "name": "kelmar",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 265.6332,
+            "y": 2370.595,
+            "z": 445.1223,
+            "heading": 86,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 800519,
+      "name": "kelmar",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 265.6332,
+          "y": 2370.595,
+          "z": 445.1223,
+          "heading": 86,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 800519,
+      "name": "kelmar",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 265.6332,
+          "y": 2370.595,
+          "z": 445.1223,
+          "heading": 86,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 1,
+      "npc_ids": "256690 290158",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 256690,
+          "name": "nochsana protector",
+          "positions": [
+            {
+              "mapId": 300030000,
+              "x": 306.93,
+              "y": 590.44,
+              "z": 373.03226,
+              "heading": 113,
+              "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 290158,
+          "name": "nochsana protector",
+          "positions": [],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 1,
+      "npc_ids": "256689 290157",
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 256689,
+          "name": "nochsana guard",
+          "positions": [
+            {
+              "mapId": 300030000,
+              "x": 357.389,
+              "y": 438.693,
+              "z": 361.74,
+              "heading": 25,
+              "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 290157,
+          "name": "nochsana guard",
+          "positions": [],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 1,
+      "npc_ids": "256692 290160",
+      "seq": 2,
+      "step": 0,
+      "var": 2,
+      "npcs": [
+        {
+          "id": 256692,
+          "name": "aetheric field guard",
+          "positions": [
+            {
+              "mapId": 300030000,
+              "x": 381.684,
+              "y": 409.118,
+              "z": 376.827,
+              "heading": 55,
+              "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 290160,
+          "name": "aetheric field guard",
+          "positions": [],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 1,
+      "npc_ids": "256691 290159",
+      "seq": 3,
+      "step": 0,
+      "var": 3,
+      "npcs": [
+        {
+          "id": 256691,
+          "name": "nochsana teleporter",
+          "positions": [
+            {
+              "mapId": 300030000,
+              "x": 352.558,
+              "y": 270.688,
+              "z": 392.481,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Instances/300030000_Nochsana_Training_Camp.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 290159,
+          "name": "nochsana teleporter",
+          "positions": [],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 800519,
+          "name": "kelmar",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 265.6332,
+              "y": 2370.595,
+              "z": 445.1223,
+              "heading": 86,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 285255,
+        "rewardItems": [
+          {
+            "count": 2,
+            "item_id": 186000007
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 4733,
+      "max_repeat_count": 5,
+      "minlevel_permitted": 25,
+      "name": "[Group] Training Terminated",
+      "nameId": 1199485,
+      "quest_zone": "Nochsana Training Camp",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 285255
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 2,
+              "item_id": 186000007
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 1,
+          "npc_ids": "256690 290158",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 1,
+          "npc_ids": "256689 290157",
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 1,
+          "npc_ids": "256692 290160",
+          "seq": 2,
+          "step": 0,
+          "var": 2
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 1,
+          "npc_ids": "256691 290159",
+          "seq": 3,
+          "step": 0,
+          "var": 3
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "unfinished",
+            "text": [
+              4703
+            ]
+          },
+          {
+            "tag": "noacquired",
+            "text": [
+              4703
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

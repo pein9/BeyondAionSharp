@@ -12,9 +12,25 @@ namespace Aion.Bots.Scenarios;
 
 public sealed partial class NaturalIshalgenJourney
 {
-	private async Task RunGroupCoinAsync(CancellationToken token)
+	/// <summary>The Group NTC leg (docs/natural-group-ntc.md): its Morheim quests in the order they are taken, their
+	/// givers, and how far the leg is played so far.</summary>
+	private static readonly int[] GroupNtcQuests = [4731, 4733, 4734];
+	private const int GroupNtcAegir = 204301, GroupNtcKelmar = 800519;
+	private static readonly string[] GroupNtcCheckpoints = ["quests"];
+
+	/// <summary>
+	/// A group plays quests together: the leader (F1) leads and speaks the commands in group chat, the others follow, do
+	/// what each must do itself at an NPC, and report their journals. The coin stage plays the fortress's repeatable
+	/// quest once (docs/natural-group-healer.md); the NTC stage plays the Group NTC leg.
+	/// </summary>
+	private async Task RunGroupQuestAsync(CancellationToken token)
 	{
 		BotWorldModel world = session.Api.World;
+		bool ntc = options.GroupStage == "ntc";
+		if (!ntc && options.GroupStage != null) throw new InvalidDataException($"Unknown group stage '{options.GroupStage}'.");
+		if (ntc && !GroupNtcCheckpoints.Contains(options.GroupUntil))
+			throw new InvalidDataException($"The Group NTC leg is played to one of [{string.Join(", ", GroupNtcCheckpoints)}] so far, not to '{options.GroupUntil}'.");
+		string tag = ntc ? "group-ntc" : "group-coin";
 		string[] roster = options.GroupRoster!;
 		string leaderName = options.GroupLeader!;
 		string name = world.Objects[session.CharacterId].Name!;
@@ -24,8 +40,14 @@ public sealed partial class NaturalIshalgenJourney
 		if (leads && options.Role == "healer") throw new InvalidDataException("This quest's bot leader must be a fighter.");
 		if (world.MapId != NaturalAbyssEntry.Morheim) throw new InvalidDataException("The group starts in Morheim.");
 		var geometry = runtime.CreateGeometry();
-		QuestRunPlan quest = NaturalAltgardContract.LoadMusterPlans().Values.Single();
-		QuestRunOperation[] kills = [.. QuestRunBook.Build(quest).Operations.Where(op => op.Kind == QuestRunOperationKind.Kill)];
+		QuestRunPlan[] quests = ntc ? [.. GroupNtcQuests.Select(id => NaturalAltgardContract.LoadGroupNtcPlans()[id])]
+			: [NaturalAltgardContract.LoadMusterPlans().Values.Single()];
+		// What a journal counts for each quest: its kills, then the items it collects.
+		var tasks = quests.ToDictionary(plan => plan.Id, plan => QuestRunBook.Build(plan).Operations.Where(op => op.Kind is
+			QuestRunOperationKind.Kill or QuestRunOperationKind.CollectQuestDrop or QuestRunOperationKind.UseQuestObject).ToArray());
+		// The coin stage's one quest; the NTC stage's first, whose NPCs stand on the starting map.
+		QuestRunPlan quest = quests[0];
+		QuestRunOperation[] kills = [.. tasks[quest.Id].Where(op => op.Kind == QuestRunOperationKind.Kill)];
 		var navigator = new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, [quest.Id], geometry),
 			geometry, runtime, stopOnDeath: false) { AvoidHostileAggro = true,
 			Planner = leads ? BotTravelPlanner.For(world.MapId.Value, geometry, runtime.Data) : null };
@@ -37,8 +59,9 @@ public sealed partial class NaturalIshalgenJourney
 		long started = runtime.NowMillis;
 		int chatCursor = 0;
 		string command = "", lastReport = "";
+		int[] arguments = [];
 		int? assist = null;
-		var progress = new Dictionary<int, (int Status, int[] Counts)>();
+		var progress = new Dictionary<(int Member, int Quest), (int Status, int[] Counts)>();
 		var failedTargets = new Dictionary<int, int>();
 		using var healer = options.Role == "healer" ? new NaturalGroupHealDriver(session, runtime, combat.ClassProfile) : null;
 		var loot = new NaturalGroupLootDriver(session, runtime, item => world.Quests.Values.Where(entry => entry.Status == 3)
@@ -46,14 +69,19 @@ public sealed partial class NaturalIshalgenJourney
 			.Any(required => required.GetItemId() == item && ItemCount(world, item) < required.GetCount()));
 		var rewardItems = new Dictionary<int, long>();
 
-		async Task SayAsync(string value) => await session.SendPacketAsync(session.Api.Say("group-coin:" + value, 5), token);
-		int Status() => world.Quests.GetValueOrDefault(quest.Id)?.Status ?? 0;
+		async Task SayAsync(string value) => await session.SendPacketAsync(session.Api.Say(tag + ":" + value, 5), token);
+		int Status(int? id = null) => world.Quests.GetValueOrDefault(id ?? quest.Id)?.Status ?? 0;
 		bool GoneOrKilled(int target) => !world.Objects.TryGetValue(target, out var seen) || seen.IsCorpse ||
 			session.PacketHistory.TakeLast(4000).Any(packet => BotAttackStatus.CarriesHp(packet) &&
 				packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0);
-		int[] Counts() => kills.Select(kill => Status() is 4 or 5 ? kill.Count : Status() == 3
-			? NaturalQuestProgress.KillCount(world.Quests[quest.Id], quest.Steps.Single(step => step.Kind == "kill" && step.Sequence == kill.Sequence)
-				.Data.GetProperty("var").GetInt32(), kill.Count) : 0).ToArray();
+		int[] Counts(QuestRunPlan? of = null)
+		{
+			QuestRunPlan plan = of ?? quest;
+			return tasks[plan.Id].Select(task => Status(plan.Id) is 4 or 5 ? task.Count : Status(plan.Id) != 3 ? 0
+				: task.Kind != QuestRunOperationKind.Kill ? (int)Math.Min(task.Count, ItemCount(world, task.ItemId))
+				: NaturalQuestProgress.KillCount(world.Quests[plan.Id], plan.Steps.Single(step => step.Kind == "kill" && step.Sequence == task.Sequence)
+					.Data.GetProperty("var").GetInt32(), task.Count)).ToArray();
+		}
 		async Task ObserveAsync()
 		{
 			await session.SynchronizeAsync(token);
@@ -62,22 +90,33 @@ public sealed partial class NaturalIshalgenJourney
 				int sender = packet.Get<int>("senderObjectId");
 				if (!world.GroupMembers.ContainsKey(sender)) continue;
 				string[] words = packet.Get<string>("message").Split(':');
-				if (words.Length < 3 || words[0] != "group-coin") continue;
-				if (words[1] == "progress" && words.Length == 4 && int.TryParse(words[2], out int status))
+				if (words.Length < 3 || words[0] != tag) continue;
+				// One line for the whole journal: quest=status=counts, a bar between quests.
+				if (words[1] == "progress" && words.Length == 3)
 				{
-					int[] counts = words[3].Split(',').Select(value => int.TryParse(value, out int count) ? count : -1).ToArray();
-					if (counts.Length == kills.Length && counts.All(count => count >= 0)) progress[sender] = (status, counts);
+					foreach (string[] entry in words[2].Split('|').Select(part => part.Split('=')))
+					{
+						if (entry.Length != 3 || !int.TryParse(entry[0], out int about) || !int.TryParse(entry[1], out int status) ||
+							!tasks.TryGetValue(about, out var wanted)) continue;
+						int[] counts = entry[2].Length == 0 ? [] : entry[2].Split(',').Select(value => int.TryParse(value, out int count) ? count : -1).ToArray();
+						if (counts.Length == wanted.Length && counts.All(count => count >= 0)) progress[(sender, about)] = (status, counts);
+					}
 				}
-				else if (sender == world.GroupLeaderId && words[1] == "command") command = words[2];
+				else if (sender == world.GroupLeaderId && words[1] == "command")
+				{
+					command = words[2];
+					arguments = [.. words.Skip(3).Select(value => int.TryParse(value, out int number) ? number : 0)];
+				}
 				else if (sender == world.GroupLeaderId && words[1] == "assist" && int.TryParse(words[2], out int target)) assist = target;
 			}
 			chatCursor = session.PacketHistory.Count;
-			progress[session.CharacterId] = (Status(), Counts());
-			string report = $"progress:{Status()}:{string.Join(',', Counts())}";
+			foreach (QuestRunPlan plan in quests) progress[(session.CharacterId, plan.Id)] = (Status(plan.Id), Counts(plan));
+			string report = "progress:" + string.Join('|', quests.Select(plan => $"{plan.Id}={Status(plan.Id)}={string.Join(',', Counts(plan))}"));
 			if (world.GroupId != null && report != lastReport)
 			{
 				await SayAsync(report); lastReport = report;
-				session.TraceDiagnostic("group-quest-progress", new Dictionary<string, object?> { ["quest"] = quest.Id, ["status"] = Status(), ["counts"] = Counts() });
+				session.TraceDiagnostic("group-quest-progress", new Dictionary<string, object?>
+				{ ["quest"] = quest.Id, ["status"] = Status(), ["counts"] = Counts(), ["journal"] = report });
 			}
 		}
 		async Task PauseAsync()
@@ -252,11 +291,12 @@ public sealed partial class NaturalIshalgenJourney
 		}
 		await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRelog, token);
 
-		bool Everybody(Func<(int Status, int[] Counts), bool> predicate) => world.GroupMembers.Keys.All(id => progress.TryGetValue(id, out var entry) && predicate(entry));
-		bool OwnKillsDone() => Counts().Select((count, index) => count >= kills[index].Count).All(done => done);
-		async Task DialogQuestAsync(bool finish)
+		bool Everybody(Func<(int Status, int[] Counts), bool> predicate, int? about = null) =>
+			world.GroupMembers.Keys.All(id => progress.TryGetValue((id, about ?? quest.Id), out var entry) && predicate(entry));
+		bool OwnTasksDone(QuestRunPlan plan) => Counts(plan).Select((count, index) => count >= tasks[plan.Id][index].Count).All(done => done);
+		async Task DialogQuestAsync(QuestRunPlan quest, int npc, bool finish)
 		{
-			var giver = world.Objects.Values.Where(known => known.TemplateId == 204360 && !known.IsCorpse && Distance(session.CurrentPosition, known.Position) <= 15)
+			var giver = world.Objects.Values.Where(known => known.TemplateId == npc && !known.IsCorpse && Distance(session.CurrentPosition, known.Position) <= 15)
 				.OrderBy(known => Distance(session.CurrentPosition, known.Position)).FirstOrDefault();
 			if (giver == null) return;
 			// Following stops a little behind F1. Each member still needs its own short NPC interaction approach.
@@ -270,7 +310,18 @@ public sealed partial class NaturalIshalgenJourney
 			if (finish)
 			{
 				var before = world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count));
-				await FinishStandardQuestAsync(session, giver.ObjectId, quest.Id, token);
+				int rewardAction = DialogAction.SELECTED_QUEST_NOREWARD;
+				if (quest.HasSelectableReward)
+				{
+					// The class's own choice, by the rule of every leg (NaturalIshalgenInventoryPolicy.ChooseReward).
+					int choice = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId), ClassLine)
+						.ChooseReward(quest.Id, world.Level, world.Inventory.Values, combat.ClassProfile.Gear);
+					if (choice < 0) throw new InvalidDataException($"Q{quest.Id} offers no reward this class can choose.");
+					rewardAction = DialogAction.SELECTED_QUEST_REWARD1 + choice;
+				}
+				if (quest.Template == "item_collecting" && Status(quest.Id) != 4)
+					await FinishItemQuestAsync(session, giver.ObjectId, quest.Id, token, rewardAction);
+				else await FinishStandardQuestAsync(session, giver.ObjectId, quest.Id, token, rewardAction);
 				await session.SynchronizeAsync(token);
 				foreach (var owned in world.Inventory.Values.GroupBy(item => item.ItemId))
 					if (owned.Sum(item => item.Count) > before.GetValueOrDefault(owned.Key)) rewardItems[owned.Key] = owned.Sum(item => item.Count) - before.GetValueOrDefault(owned.Key);
@@ -296,8 +347,11 @@ public sealed partial class NaturalIshalgenJourney
 				if (world.IsDead) { await combat.RestAsync(token); continue; }
 				if (command == "regroup" && !returnedForRegroup) { await ReturnToBindAsync(); returnedForRegroup = true; }
 				if (command != "regroup") returnedForRegroup = false;
-				if (command == "accept" && Status() is not (3 or 4)) await DialogQuestAsync(false);
-				else if (command == "turn-in" && Status() is 3 or 4 && OwnKillsDone()) await DialogQuestAsync(true);
+				if (command is "accept" or "turn-in" && arguments is [int about, int npc] && quests.FirstOrDefault(plan => plan.Id == about) is { } asked)
+				{
+					if (command == "accept" && Status(about) is not (3 or 4 or 5)) await DialogQuestAsync(asked, npc, false);
+					else if (command == "turn-in" && Status(about) is 3 or 4 && OwnTasksDone(asked)) await DialogQuestAsync(asked, npc, true);
+				}
 				if (healer != null) await healer.StepAsync(token);
 				else if (assist is int target && world.Objects.TryGetValue(target, out var enemy) && !enemy.IsCorpse &&
 					Distance(session.CurrentPosition, enemy.Position) <= 35 && session.PacketHistory.TakeLast(400)
@@ -317,11 +371,30 @@ public sealed partial class NaturalIshalgenJourney
 				await PauseAsync();
 			}
 		}
+		else if (ntc)
+		{
+			// N2: the entry quest from Aegir to Kelmar, then Kelmar's two group quests, every member for itself.
+			async Task TogetherAtAsync(QuestRunPlan plan, int npc, bool finish)
+			{
+				await NpcAsync(npc);
+				await SayAsync($"command:{(finish ? "turn-in" : "accept")}:{plan.Id}:{npc}");
+				await DialogQuestAsync(plan, npc, finish);
+				await WaitAsync(() => Everybody(entry => finish ? entry.Status == 5 : entry.Status is 3 or 4, plan.Id),
+					$"every member to {(finish ? "turn in" : "accept")} Q{plan.Id}");
+				session.TraceDiagnostic("group-ntc-step", new Dictionary<string, object?>
+				{ ["quest"] = plan.Id, ["npc"] = npc, ["done"] = finish ? "turned-in" : "accepted", ["members"] = world.GroupMembers.Count });
+			}
+			await TogetherAtAsync(quests[0], GroupNtcAegir, false);
+			await TogetherAtAsync(quests[0], GroupNtcKelmar, true);
+			foreach (QuestRunPlan plan in quests.Skip(1)) await TogetherAtAsync(plan, GroupNtcKelmar, false);
+			await SayAsync("command:done");
+			await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+		}
 		else
 		{
 			await NpcAsync(204360);
-			await SayAsync("command:accept");
-			await DialogQuestAsync(false);
+			await SayAsync($"command:accept:{quest.Id}:204360");
+			await DialogQuestAsync(quest, 204360, false);
 			await WaitAsync(() => Everybody(entry => entry.Status == 3), "every member to accept Q2318");
 			await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
 			foreach (var kill in kills)
@@ -376,13 +449,30 @@ public sealed partial class NaturalIshalgenJourney
 				}
 			}
 			await NpcAsync(204360);
-			await SayAsync("command:turn-in");
-			await DialogQuestAsync(true);
+			await SayAsync($"command:turn-in:{quest.Id}:204360");
+			await DialogQuestAsync(quest, 204360, true);
 			await WaitAsync(() => Everybody(entry => entry.Status == 5), "every member to turn in Q2318");
 			await SayAsync("command:done");
 			await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
 		}
 		await ObserveAsync();
+		if (ntc)
+		{
+			// N2's end: the entry quest handed in and Kelmar's two in the journal.
+			int[] wanted = [5, .. quests.Skip(1).Select(_ => 3)];
+			int[] journal = [.. quests.Select(plan => Status(plan.Id))];
+			if (!journal.SequenceEqual(wanted))
+				throw new InvalidDataException($"The group member's journal is [{string.Join(", ", journal)}], not [{string.Join(", ", wanted)}].");
+			runtime.AssertClean();
+			var reached = new { verified = true, CharacterId = session.CharacterId, name, until = options.GroupUntil,
+				leader = world.GroupLeaderId, roster, quests = quests.ToDictionary(plan => plan.Id.ToString(), plan => Status(plan.Id)),
+				elapsedMillis = runtime.NowMillis - started, map = world.MapId, position = session.CurrentPosition,
+				deaths = combat.ReviveCount, rewardItems };
+			File.WriteAllText(Path.Combine(Path.GetDirectoryName(session.CombatTracePath!)!, "group-ntc-completion.json"),
+				JsonSerializer.Serialize(reached, new JsonSerializerOptions { WriteIndented = true }));
+			session.TraceDiagnostic("group-ntc-reached", new Dictionary<string, object?> { ["receipt"] = reached });
+			return;
+		}
 		if (Status() != 5 || world.Quests[quest.Id].CompleteCount != repeatBefore + 1 || rewardItems.Count == 0)
 			throw new InvalidDataException("The group member has not completed exactly one new coin quest repeat.");
 		runtime.AssertClean();

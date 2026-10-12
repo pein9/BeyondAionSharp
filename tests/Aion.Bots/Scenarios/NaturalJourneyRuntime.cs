@@ -117,4 +117,5 @@ public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? R
 	string? CoinGearReceiptPath = null, string? HaramelProgressPath = null, string? CapitalStage = null,
 	bool LaterCapital = false, string? AbyssArenaFirstTry = null, string? AbyssRingFirstTry = null,
 	NaturalClassLine? ClassLine = null, bool Muster = false, int? SurveyNpcId = null, string? Role = null, bool SupportWatch = false,
-	string[]? GroupRoster = null, string? GroupLeader = null, bool GroupLoot = false);
+	string[]? GroupRoster = null, string? GroupLeader = null, bool GroupLoot = false,
+	string? GroupStage = null, string? GroupUntil = null);

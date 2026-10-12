@@ -14,9 +14,10 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 	private int? leader;
 	private BotPosition? lastSample;
 	private DateTimeOffset lastSeen;
+	private DateTimeOffset blockedUntil;
 	private bool leaderMoving;
 
-	public void Reset() { trail.Clear(); lastSample = null; cursor = session.PacketHistory.Count; }
+	public void Reset() { trail.Clear(); lastSample = null; cursor = session.PacketHistory.Count; blockedUntil = default; }
 
 	public async Task<bool> StepAsync(CancellationToken token)
 	{
@@ -51,13 +52,43 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 		while (trail.TryPeek(out var reached) && MathF.Abs(session.CurrentPosition.Z - reached.Z) <= 3 &&
 			MathF.Sqrt(MathF.Pow(session.CurrentPosition.X - reached.X, 2) + MathF.Pow(session.CurrentPosition.Y - reached.Y, 2)) <= .8f)
 			trail.Dequeue();
-		if (!trail.TryPeek(out var next)) return false;
+		if (!trail.TryPeek(out var next) || session.Api.Timing.Now < blockedUntil) return false;
 		// A short checked connection to the next leader sample also accommodates a stopped caster.
-		var path = geometry.FindLocalPath(world.MapId!.Value, session.CurrentPosition, next);
+		int map = world.MapId!.Value;
+		var path = geometry.FindLocalPath(map, session.CurrentPosition, next);
 		if (path.Count == 0)
 		{
-			session.TraceDiagnostic("group-follow-blocked", new Dictionary<string, object?> { ["leader"] = leaderId, ["next"] = next });
-			return false;
+			// A sample can lie on ground this follower cannot step onto from where it stands: the edge beside the stairs F1
+			// went down. The samples after it are tried, then a checked route to where F1 is seen now.
+			BotPosition refused = next;
+			int skipped = 0;
+			foreach (BotPosition later in trail.Skip(1).Take(24).ToArray())
+			{
+				skipped++;
+				path = geometry.FindLocalPath(map, session.CurrentPosition, later);
+				if (path.Count == 0) continue;
+				for (int drop = 0; drop < skipped; drop++) trail.Dequeue();
+				next = later;
+				break;
+			}
+			if (path.Count == 0)
+			{
+				path = geometry.FindInteractionPath(map, session.CurrentPosition, currentLeader);
+				if (path.Count > 0)
+				{
+					trail.Clear();
+					foreach (BotPosition point in path) trail.Enqueue(point);
+					lastSample = path[^1];
+					next = path[0];
+				}
+			}
+			session.TraceDiagnostic(path.Count == 0 ? "group-follow-blocked" : "group-follow-around", new Dictionary<string, object?>
+			{ ["leader"] = leaderId, ["refused"] = refused, ["next"] = next, ["samples"] = trail.Count });
+			if (path.Count == 0)
+			{
+				blockedUntil = session.Api.Timing.Now + TimeSpan.FromSeconds(2);
+				return false;
+			}
 		}
 		var segment = new List<BotPosition>();
 		BotPosition from = session.CurrentPosition;
@@ -66,13 +97,9 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 		{
 			float length = Distance(from, point);
 			if (length < .01f) continue;
-			if (length > remaining)
-			{
-				float part = remaining / length;
-				segment.Add(new(from.X + (point.X - from.X) * part, from.Y + (point.Y - from.Y) * part,
-					from.Z + (point.Z - from.Z) * part, point.Heading));
-				break;
-			}
+			// A step ends on a checked sample of the path. A point between two samples can lie on the face of a stair,
+			// where no path starts and the follower would stand for good.
+			if (length > remaining && segment.Count > 0) break;
 			segment.Add(point); remaining -= length; from = point;
 			if (remaining <= .01f) break;
 		}

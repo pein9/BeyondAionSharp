@@ -84,6 +84,13 @@ public sealed record NaturalAltgardContract(
 	public static IReadOnlyDictionary<int, QuestRunPlan> LoadMusterPlans() =>
 		QuestRunPlan.LoadDirectory(Path.Combine(RepoRoot(), "parity-artifacts/e2e", MusterPlans)).ToDictionary(plan => plan.Id);
 
+	/// <summary>The quests of the Group NTC leg (docs/natural-group-ntc.md): the entry quest and Kelmar's two group
+	/// quests, given in Morheim Ice Fortress.</summary>
+	public const string GroupNtcPlans = "natural-group-ntc-plans";
+
+	public static IReadOnlyDictionary<int, QuestRunPlan> LoadGroupNtcPlans() =>
+		QuestRunPlan.LoadDirectory(Path.Combine(RepoRoot(), "parity-artifacts/e2e", GroupNtcPlans)).ToDictionary(plan => plan.Id);
+
 	public NaturalAltgardObjectUse[] ObjectUseList => ObjectUses ?? [];
 	public NaturalAltgardZoneStep[] ZoneStepList => ZoneSteps ?? [];
 	public NaturalAltgardCollection[] CollectionList => Collections ?? [];
