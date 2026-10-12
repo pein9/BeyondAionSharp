@@ -1,8 +1,8 @@
 # Group NTC leg
 
-Status: planned 2026-10-12; N1 to N5 are done: the six take the quests, go into one instance of the camp, fight
-through it and kill the Protector, the Guard and the Aetheric Field Guard. They stand before the fortress gate. The
-step list at the end is worked one step at a time.
+Status: planned 2026-10-12; N1 to N6 are done: the six take the quests, go into one instance of the camp, fight
+through it, kill the Protector, the Guard and the Aetheric Field Guard, and destroy the fortress gate. The step list
+at the end is worked one step at a time.
 
 It follows [natural-group-healer.md](natural-group-healer.md): group formation, F1 following, the Cleric's
 healing-only role, resurrection waiting and round-robin loot are there and are reused. Gear, supplies, shards and the
@@ -37,8 +37,8 @@ pwsh -NoProfile -File scripts/sim/run-round.ps1 -Round run/ntc/<round>.json -Ite
 ```
 
 The stage is `"group-ntc"`, with the same `groupLeader`, `groupRoster`, `groupLoot` and `"role": "healer"` as
-`group-coin`, and `groupUntil` naming how far the leg is played (so far `"quests"`, `"entrance"`, `"protector"` or
-`"field-guard"`). `run/ntc/n2.json` to `n5.json` are the round files of those steps. Each member writes
+`group-coin`, and `groupUntil` naming how far the leg is played (so far `"quests"`, `"entrance"`, `"protector"`,
+`"field-guard"` or `"gate"`). `run/ntc/n2.json` to `n6.json` are the round files of those steps. Each member writes
 `group-ntc-completion.json`.
 
 Code changes stay; the world does not. `run/ntc/baseline.json` holds the snapshot's hashes, checked 2026-10-12:
@@ -210,7 +210,17 @@ the run, how far the group got, the deaths and what stopped it.
   - Round `n5-1` is void. It ran a bot binary that lacked the step's code and stopped at login: another session
     built in this checkout at the same second, and its older compile landed over the newer source. From here a
     round is started only after the binary is seen to hold the step's new code.
-- [ ] **N6 The gate.**
+- [x] **N6 The gate.**
+  - 2026-10-12, round `n6-2` (`run/ntc/ntc/n6-2`): the gate fell 46 seconds after the first blow, 11 min 26 s after
+    login. Twenty-four pulls since the landing, no death, and no member's client sees the gate standing at the end.
+    The Cleric sent no attack (9 cleanses, 5 heals). Round-robin loot: 74 entries over the six. Two members reached
+    level 27 on the way.
+  - The gate comes at nobody, so the rule of "what would wake on the way" never names it: at the gateway F1 names
+    the gate itself. No quest of the leg counts it until Q4732 has a handler (N10), so its fall is what F1 saw.
+  - Round `n6-1` destroyed the gate the same way, and five members ended well. The Sorcerer did not: it was resting
+    for mana when F1 spoke its last command and logged out, read the words when F1 was no longer the leader, and
+    ignored them. A member now takes a command from the leader it last saw leading, also when that leader has left.
+    The leg's own last command is the disband, where the same would have happened.
 - [ ] **N7 Inside the walls.** The Teleporter dead; every member has its four chest items.
 - [ ] **N8 The General.** Dead and looted.
 - [ ] **N9 Disband and turn in.** F1 disbands; all six arrive at the exit point; each hands in Q4733 and Q4734.
