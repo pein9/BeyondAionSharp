@@ -1,9 +1,9 @@
 # Group NTC leg
 
-Status: planned 2026-10-12; N1 to N8 are done: the six take the quests, go into one instance of the camp, fight
-through it, kill the four named monsters of Q4733, destroy the fortress gate, each takes its four chest items for
-Q4734, and they kill the General. The disband and the turn-in are next. The step list at the end is worked one step
-at a time.
+Status: played, 2026-10-12. Round `n9-3` plays the whole leg in one run from `ntc-group-s4`: the six take the
+quests, go into one instance of the camp, fight through it to the General and kill him, end the group, come out
+beside Kelmar and hand in. No death, 35 min 43 s. [The report](#the-report) has the numbers. One step is open: N10,
+the quest Q4732, which has no handler yet.
 
 It follows [natural-group-healer.md](natural-group-healer.md): group formation, F1 following, the Cleric's
 healing-only role, resurrection waiting and round-robin loot are there and are reused. Gear, supplies, shards and the
@@ -39,8 +39,9 @@ pwsh -NoProfile -File scripts/sim/run-round.ps1 -Round run/ntc/<round>.json -Ite
 
 The stage is `"group-ntc"`, with the same `groupLeader`, `groupRoster`, `groupLoot` and `"role": "healer"` as
 `group-coin`, and `groupUntil` naming how far the leg is played (so far `"quests"`, `"entrance"`, `"protector"`,
-`"field-guard"`, `"gate"`, `"chests"` or `"general"`). `run/ntc/n2.json` to `n8.json` are the round files of those
-steps. Each member writes `group-ntc-completion.json`.
+`"field-guard"`, `"gate"`, `"chests"`, `"general"` or `"home"`). `"home"` is the whole leg. `run/ntc/n2.json` to
+`n9.json` are the round files of the steps; `n9.json` is the one to play the leg with. Each member writes
+`group-ntc-completion.json`.
 
 Code changes stay; the world does not. `run/ntc/baseline.json` holds the snapshot's hashes, checked 2026-10-12:
 dump `8d0787cf…cf8f97`, manifest `26fb3931…68ce96`, the same as `run/group/baseline.json`. They are checked again
@@ -256,12 +257,95 @@ the run, how far the group got, the deaths and what stopped it.
     entries over the six.
   - No boss needed a rule of its own. The Templar's taunt, the artifact's shield and a resurrection were not needed
     and are not shown.
-- [ ] **N9 Disband and turn in.** F1 disbands; all six arrive at the exit point; each hands in Q4733 and Q4734.
+- [x] **N9 Disband and turn in.** F1 disbands; all six arrive at the exit point; each hands in Q4733 and Q4734.
+  - 2026-10-12, round `n9-3` (`run/ntc/ntc/n9-3`): with the General dead and looted the Templar gathered the group
+    and spoke the word; the five others had left half a second later and the group was gone. Thirty seconds after
+    that, to the millisecond, each of the six stood at the exit point (264.7, 2366.4, 445.1) in Morheim, in no
+    group, and handed in Q4733 and Q4734 at Kelmar by itself. All six journals: Q4731, Q4733 and Q4734 complete.
+    Each got two Bronze Coins for Q4733, and 108,690 Kinah and a ring of its choice for Q4734.
+  - 4.8 has no word that ends a group: Java ends one when its members leave until fewer than two are left
+    (`PlayerGroupLeavedEvent`). So the "disband" is F1's word, on which the others leave; F1 leaves last.
+  - Rounds `n9-1` and `n9-2` killed the General and never got to the word: the Templar waited ten minutes for the
+    group to gather and gave up. The General's fear had run the Cleric 22 metres off, down a level. Two things were
+    missing, both in code every bot shares:
+    - At the end of a fear Java tells the player where it stands (`FearEffect.endEffect` sends `SM_POSITION`; the C#
+      server does the same). The bot did not read that packet, so the Cleric believed it still stood beside the
+      Templar, and cast 731 heals the server refused for distance and line of sight. The bot reads it now and
+      stands where it says, as it already did after a knockback or a pull. It moves players only in the bot's
+      picture of the world; a monster is left where the client has it.
+    - A follower walks the trail of its leader's steps. Moved away from a leader that then stands still, it had no
+      trail and stood too. It now walks to where its leader stands.
+  - Checks before the commit: the unit suite (4,632 passed, 16 skipped), the seven pre-commit checks, the packet coverage check, Fast (run `n9-fast`, 11 passed) and the five starter scopes of the neutral gate, identical (`run/ntc/N9`).
+  - The coin stage on the same code: round `six-n9` (`run/group/coin/six-n9`), six members from `ntc-group-s4`, completed its Q2318 cycle for all six with no death.
 - [ ] **N10 Q4732 under D32.** Handler, test, deviation log and upstream offer by
   [retail-quest-completion.md](retail-quest-completion.md); the six take it with the others and hand it in.
-- [ ] **N11 The whole leg in one run** from `ntc-group-s4`, with the report the operator asked for: how far the
+  - 2026-10-12: not started. The leg is played without it, and the work stopped there as it was told to. It is a
+    server change, and is taken up on the operator's word (see the report's first question).
+- [x] **N11 The whole leg in one run** from `ntc-group-s4`, with the report the operator asked for: how far the
   group gets, quests per member, deaths, the healing, dispels and resurrections seen, loot, and what was not
   exercised.
+  - 2026-10-12: round `n9-3` is that run, without Q4732 (N10). The report is below. The baseline's hashes were
+    checked again after it and are unchanged: dump `8d0787cf…cf8f97`, manifest `26fb3931…68ce96`. Every round's
+    throwaway schema was dropped.
+
+## The report
+
+Round `n9-3`, 2026-10-12, seed 1, from `ntc-group-s4`, not captured. Evidence: `run/ntc/ntc/n9-3`.
+
+**How far the group gets.** To the end. Times are game time after login.
+
+| When | What |
+|---|---|
+| 2 min 42 s | All six inside one instance, with Q4731 handed in and Q4733 and Q4734 taken |
+| 6 min 29 s | The Protector dead |
+| 10 min 35 s | The Guard dead |
+| 11 min 42 s | The Aetheric Field Guard dead |
+| 16 min 19 s | The fortress gate down |
+| 30 min 10 s | Every member has its four chest items: 24 chest turns, 7 outside the walls and 17 inside |
+| 31 min 50 s | The Teleporter dead |
+| 34 min 15 s | The General dead; his corpse taken by the member whose turn it was |
+| 35 min 8 s | The word spoken; the group gone half a second later |
+| 35 min 38 s | All six put out beside Kelmar by the instance, thirty seconds after leaving |
+| 35 min 43 s | All six have handed in Q4733 and Q4734 |
+
+Eighty-four pulls and 61 kills up to the General. The group stayed together: F1 gathered it before every pull, every
+walk and every chest.
+
+**Quests per member.** The same for all six: Q4731 "Nochsana Calls", Q4733 "[Group] Training Terminated" and Q4734
+"[Group] Weapons Wanted", each complete. Rewards per member: a piece of its own armor for Q4731, two Bronze Coins
+for Q4733, 108,690 Kinah and a ring for Q4734. All six went from level 26 to 27.
+
+**Deaths.** None, by any member, in this run. The Templar's lowest health was 1,707 of 3,465.
+
+**Healing, dispels and resurrections.** The Cleric sent no attack and no cast at an enemy. Its support decisions:
+40 cleanses, 10 heals, 17 top-ups, 353 Lights of Rejuvenation, 5 blessings, and its mana recovery 5 times. The
+server refused three of its casts. No resurrection: nobody died.
+
+**Loot.** Round-robin, 167 entries over the six (Templar 21, Cleric 41, Gladiator 17, Ranger 20, Sorcerer 37,
+Chanter 31). The quest items came from the chests, one member to a chest.
+
+**What was not exercised.**
+
+- A resurrection. The only fighter's death of the whole work (round `n7-1`) came after the Cleric had left the
+  instance.
+- A member's way back to a group inside the walls after a revive. The rule is written (a member outside goes back
+  through Vallack and follows); no clean run has had a death to show it.
+- A boss rule. No named monster needed one: not the Templar's taunt, not the artifact's shield.
+- Q4732 "[Group] General Malevolence" (N10), Q24241 and the four quests given in Reshanta.
+- The five characters of the world that are not in the roster.
+- A second run of the camp by the same characters: the instance's entry cooldown and Q4733's five repeats.
+
+**What the operator must decide.**
+
+1. **Q4732 (N10).** It is the 4.8 quest for the gate and the General, given by Kelmar, and it has no handler in
+   Java or C#. Adding one is a server change under D32, with its test, its deviation entry and an offer upstream
+   ([retail-quest-completion.md](retail-quest-completion.md)). It was left for a word from the operator. With it,
+   the General's kill would be in every journal instead of in what each member saw.
+2. **The chests before the disband.** The operator's point 9 names the chests after the disband. They are taken
+   before it, because the server puts a member out thirty seconds after it leaves its group.
+3. **The Reshanta quests** (Q4701 to Q4704) stay out unless the operator wants the trip to Primum Landing; a
+   character can hold only one of each pair with the Morheim set anyway.
+4. **Deaths inside the camp** are still unproven. Nothing forces one; the next hard instance will show them.
 
 ## Working rules
 
