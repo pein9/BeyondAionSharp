@@ -13,9 +13,10 @@ public static class NaturalIshalgenPotionPolicy
 	public const int LesserLifePotionId = 162000003, LifePotionId = 162000004;
 	/// <summary>CP-06: the level 1-9 kit's potion (CP-05's manifest): 1,694 HP over the same 20 s, on the same 30 s delay.</summary>
 	public const int MajorLifePotionId = 162000006;
-	/// <summary>Owned mana potions: the supplied instant Mana Serums first, highest tier first (NA-21), then the starter
-	/// Minor Mana Potion and the Minor and Lesser Mana Elixirs (NA-20a).</summary>
-	public static readonly int[] ManaPotionIds = [162000019, 162000018, 162000017, 162000007, 162000057, 162000058];
+	/// <summary>Owned mana potions: the supplied instant Mana Serums first, highest tier first (NA-21; the Major and the
+	/// Greater since 2026-10-12, when the kit became the best usable tier), then the starter Minor Mana Potion and the
+	/// Minor and Lesser Mana Elixirs (NA-20a).</summary>
+	public static readonly int[] ManaPotionIds = [162000021, 162000020, 162000019, 162000018, 162000017, 162000007, 162000057, 162000058];
 	public const int SharedUseDelayId = 11;
 	public const int RestockAtOrBelow = 5;
 	public const int RestockTarget = 12;

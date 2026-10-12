@@ -220,7 +220,9 @@ public sealed class NaturalAbyssEntryContractTests
 		Assert.Throws<InvalidOperationException>(() => NaturalHelpItemSupply.RequireApproved(164000079, 2, "ax"));
 		NaturalHelpItemSupply.RequireApproved(186000007, 4, "ax");
 		NaturalHelpItemSupply.RequireApproved(186000007, 40, "ax", alreadySupplied: 4);
-		Assert.Throws<InvalidOperationException>(() => NaturalHelpItemSupply.RequireApproved(186000007, 41, "ax", alreadySupplied: 4));
+		// The operator, 2026-10-12: the supplied coins have no limit.
+		NaturalHelpItemSupply.RequireApproved(186000007, 41, "ax", alreadySupplied: 4);
+		Assert.Throws<InvalidOperationException>(() => NaturalHelpItemSupply.RequireApproved(186000007, 0, "ax", alreadySupplied: 4));
 		// Outside the ax leg neither item is help at all.
 		foreach (string? leg in new[] { null, "l12", "cg", "all" })
 		{
@@ -228,9 +230,9 @@ public sealed class NaturalAbyssEntryContractTests
 			Assert.Throws<InvalidOperationException>(() => NaturalHelpItemSupply.RequireApproved(186000007, 1, leg));
 		}
 		// The level-band kit is unchanged on every leg.
-		NaturalHelpItemSupply.RequireApproved(164000133, 60, "ax");
-		NaturalHelpItemSupply.RequireApproved(164000133, 60, "l12");
-		Assert.Throws<InvalidOperationException>(() => NaturalHelpItemSupply.RequireApproved(164000133, 61, "ax"));
+		NaturalHelpItemSupply.RequireApproved(164000134, 60, "ax");
+		NaturalHelpItemSupply.RequireApproved(164000134, 60, "l12");
+		Assert.Throws<InvalidOperationException>(() => NaturalHelpItemSupply.RequireApproved(164000134, 61, "ax"));
 	}
 
 	[Fact]
@@ -481,14 +483,15 @@ public sealed class NaturalAbyssEntryContractTests
 		Assert.Equal([(177, 177), (80, 107), (80, 123), (107, 142), (80, 123), (370, 470)], manifest.Slots.Select(slot => (slot.WornDefence, slot.CoinDefence)));
 		Assert.Contains("tie", manifest.Slots.Single(slot => slot.Slot == 8).Reason);
 		Assert.Equal((50, 3L, 47L, false), (manifest.Cost, manifest.CoinsOwned, manifest.CoinsToSupply, manifest.Done));
-		// With the lowest and the highest chest the supply is 35 and 28 coins; both are inside the approved 44 with the level-21 tier's none.
+		// With the lowest and the highest chest the supply is 35 and 28 coins. The supply has no limit (2026-10-12).
 		NaturalAbyssSupply approved = Scope.Supplies.Single(supply => supply.ItemId == Scope.CoinArmor.CoinItemId);
+		Assert.Null(approved.MaxCount);
 		Assert.All(new[] { (15, 35L), (22, 28L) }, chest =>
 		{
 			NaturalAbyssCoinManifest held = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, tier,
 				[.. worn.Inventory!.Where(item => item.ItemId != 186000007), new(157702, 186000007, chest.Item1, 65535)], DefenceOf, StaffBoost);
 			Assert.Equal(chest.Item2, held.CoinsToSupply);
-			Assert.InRange(held.CoinsToSupply, 1, approved.MaxCount);
+			Assert.InRange(held.CoinsToSupply, 1, 47);
 		});
 		// Bought and worn, nothing of either tier is left to buy, and the Rank 8 pieces in the cube are not put back on.
 		NaturalAltgardObservation dressed = Dressed(worn);

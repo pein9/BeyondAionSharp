@@ -218,6 +218,11 @@ def main(argv=None):
     parser.add_argument('--ignore', action='append', default=[], metavar='PATH',
                         help="a field left out of the comparison: 'fields.x.y' or 'packet:fields.x.y'")
     arguments = parser.parse_args(argv)
+    # A record can hold text the console's code page has no character for (an item's client name). The two differing
+    # records are printed all the same.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, 'reconfigure'):
+            stream.reconfigure(errors='backslashreplace')
     try:
         ignores = parse_ignore(arguments.ignore)
         if arguments.counts or arguments.digest:

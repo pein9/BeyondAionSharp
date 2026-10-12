@@ -13,6 +13,19 @@ public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, f
 	NaturalAbyssCoinArmor CoinArmor, NaturalAbyssLevel Level, NaturalAbyssWeapon Weapon)
 {
 	public const string Leg = "ax";
+
+	/// <summary>
+	/// The muster (the operator, 2026-10-12): what a character that stands at this leg's end still needs to be ready for
+	/// the legs after it. The containers it opens beside the leg's own: the chest the fortress's repeatable coin quest
+	/// pays (Bronze Coins) and the Supply Scroll Bundle (five Greater speed scrolls). The Lesser Supply Manastone Box asks
+	/// the player to choose a manastone and stays closed: no bot sockets one.
+	/// </summary>
+	public static readonly int[] MusterOpen = [188050866, 188053405];
+
+	/// <summary>The most turns of the repeatable coin quest one muster plays for its level.</summary>
+	public const int MusterMaxTurns = 12;
+
+	public const string MusterReceipt = "altgard-muster-completion.json";
 	public const int Morheim = 220020000, Pandaemonium = 120010000, Altgard = 220030000, ArenaMap = 320090000;
 
 	/// <summary>The objects the leg uses that no dialog step names: the arena's doors, its spirits and the coin vendor.</summary>
@@ -72,7 +85,8 @@ public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, f
 			CoinArmor.VendorPosition.Length != 3 ||
 			!CoinArmor.Tiers.Select(tier => (tier.Level, tier.When, tier.Cost)).SequenceEqual([(21, "after-commander", 11), (26, "endpoint", 44)]) ||
 			CoinArmor.Tiers.Any(tier => !tier.Pieces.Select(piece => piece.Slot).Order().SequenceEqual(new ushort[] { 8, 16, 32, 2048, 4096 })) ||
-			Supplies.Single(supply => supply.ItemId == CoinArmor.CoinItemId).MaxCount != CoinArmor.Tiers.Max(tier => tier.Cost))
+			// The operator, 2026-10-12: the supplied coins have no limit.
+			Supplies.Single(supply => supply.ItemId == CoinArmor.CoinItemId).MaxCount != null)
 			throw new InvalidDataException("The coin armor differs from the Rank 8 and Elite Rank 7 chain tiers Vebna sells.");
 		if (Level is not { Minimum: 26, By: "quests", Fallback: "fortress-quests", Hunting: false, SoulHealing: false } ||
 			contract.Endpoint.MinimumLevel != Level.Minimum)
@@ -106,7 +120,8 @@ public sealed record NaturalAbyssRing(string Name, float[] Center);
 public sealed record NaturalAbyssInventory(int[] Open, int[] Discard, int[] KeepSealed, bool AfterEveryTurnIn);
 
 /// <summary>A help item the operator approved for this leg only, with the decision that approved it.</summary>
-public sealed record NaturalAbyssSupply(int ItemId, string Family, int MaxCount, string Trigger, string Decision);
+/// <param name="MaxCount">The most the leg may supply; null for no limit (the Bronze Coins, 2026-10-12).</param>
+public sealed record NaturalAbyssSupply(int ItemId, string Family, int? MaxCount, string Trigger, string Decision);
 
 /// <param name="StaffGoodsListId">AX-12c: the vendor's weapon tab, where each tier's staff is sold.</param>
 public sealed record NaturalAbyssCoinArmor(int CoinItemId, int IncomingCoins, int VendorNpcId, float[] VendorPosition, int GoodsListId,
@@ -124,8 +139,10 @@ public sealed record NaturalAbyssCoinArmor(int CoinItemId, int IncomingCoins, in
 	/// <param name="manifests">The class's manifest at each tier's level.</param>
 	/// <param name="weaponSlot">The slot the class's weapon is worn in: 3 with both hands, 1 with one.</param>
 	/// <param name="shieldGoodsListId">NR-54a: the tab that holds the manifests' shield, for a class that holds one.</param>
+	/// <param name="secondWeapon">The class holds a second one-hand weapon in its off hand: the tier's weapon is asked
+	/// for there too (2026-10-12).</param>
 	public NaturalAbyssCoinArmor ForClass(IReadOnlyList<NaturalCoinManifest> manifests, int armorGoodsListId, int weaponGoodsListId,
-		ushort weaponSlot, int shieldGoodsListId = 0) => this with
+		ushort weaponSlot, int shieldGoodsListId = 0, bool secondWeapon = false) => this with
 	{
 		ShieldGoodsListId = shieldGoodsListId,
 		VendorNpcId = manifests[0].VendorNpcId, GoodsListId = armorGoodsListId, StaffGoodsListId = weaponGoodsListId,
@@ -135,6 +152,8 @@ public sealed record NaturalAbyssCoinArmor(int CoinItemId, int IncomingCoins, in
 			Pieces = [.. manifest.Armor.Select(piece => new NaturalCoinGearPurchase(piece.ItemId, piece.Cost, NaturalCoinGear.BodySlotMasks[piece.Slot]))],
 			Staff = manifest.Weapon is { } weapon ? new(weapon.ItemId, weapon.Cost, weaponSlot) : null,
 			Shield = manifest.Shield is { } shield ? new(shield.ItemId, shield.Cost, NaturalCoinGear.OffHandSlot) : null,
+			OffHand = secondWeapon && weaponSlot == 1 && manifest.Weapon is { } second
+				? new(second.ItemId, second.Cost, NaturalCoinGear.OffHandSlot) : null,
 		} : tier)],
 	};
 }
@@ -142,9 +161,12 @@ public sealed record NaturalAbyssCoinArmor(int CoinItemId, int IncomingCoins, in
 /// <param name="Staff">AX-12c: the tier's best staff. It is not part of <see cref="Cost"/>, the tier's armor.</param>
 public sealed record NaturalAbyssCoinTier(int Level, string When, string Name, NaturalCoinGearPurchase[] Pieces, NaturalCoinGearPurchase? Staff = null)
 {
-	/// <summary>NR-54a: the tier's shield, for a class that holds one. It is bought only from the coins the armor and the
-	/// weapon leave.</summary>
+	/// <summary>NR-54a: the tier's shield, for a class that holds one. Since 2026-10-12 it is bought when it is better,
+	/// like every other piece; until then only from the coins the armor and the weapon left.</summary>
 	public NaturalCoinGearPurchase? Shield { get; init; }
+
+	/// <summary>The tier's weapon again, for the off hand of a class that holds two (2026-10-12).</summary>
+	public NaturalCoinGearPurchase? OffHand { get; init; }
 
 	public int Cost => Pieces.Sum(piece => piece.Cost);
 }
@@ -409,7 +431,7 @@ public static class NaturalAbyssEntryLeg
 			Require(discards.Length == 0, "an item was discarded before Q2947's reward");
 		NaturalAbyssAttempt[] flights = ledger.Attempts.Where(attempt => attempt.Kind == NaturalAbyssAttempts.RingCourse).ToArray();
 		NaturalAbyssSupply scrollSupply = scope.Supplies.Single(supply => supply.Family == "flight-speed");
-		Require(ledger.ScrollsSupplied <= scrollSupply.MaxCount && ledger.ScrollsUsed <= 1, $"{ledger.ScrollsSupplied} flight-speed scrolls were supplied and {ledger.ScrollsUsed} used");
+		Require((scrollSupply.MaxCount is not int most || ledger.ScrollsSupplied <= most) && ledger.ScrollsUsed <= 1, $"{ledger.ScrollsSupplied} flight-speed scrolls were supplied and {ledger.ScrollsUsed} used");
 		if (flown)
 		{
 			// The ring course: one try in order per attempt, the last one all six rings; no more than the allowed tries. No
@@ -474,9 +496,11 @@ public static class NaturalAbyssEntryLeg
 			shortfall += decided.CoinsToSupply;
 		}
 		Require(ledger.CoinsSupplied == shortfall, $"{ledger.CoinsSupplied} coins were supplied where the manifests were {shortfall} short");
-		Require(ledger.CoinsSupplied <= scope.Supplies.Single(supply => supply.ItemId == scope.CoinArmor.CoinItemId).MaxCount, $"{ledger.CoinsSupplied} supplied coins exceed the approval");
+		// The piece bought last for a slot is the one worn there. A class that holds two of the tier's weapon may wear
+		// either bought copy in either hand.
 		Require(ledger.CoinPurchases.GroupBy(purchase => purchase.Slot).Select(slot => slot.Last()).All(purchase => inventory.Any(item =>
-			item.ObjectId == purchase.ObjectId && item.ItemId == purchase.ItemId && item.EquipmentSlot != NotWorn && (item.EquipmentSlot & purchase.Slot) != 0)),
+			item.ItemId == purchase.ItemId && ledger.CoinPurchases.Any(bought => bought.ItemId == item.ItemId && bought.ObjectId == item.ObjectId) &&
+			item.EquipmentSlot != NotWorn && (item.EquipmentSlot & purchase.Slot) != 0)),
 			"a bought piece is not worn");
 		BotBindPoint bound = state.Bind!;
 		return new(leg.Leg, frontier, start.CharacterId, state.MapId!.Value, state.Position, state.Level, experienceGained, state.Kinah, start.Kinah, fares,

@@ -15,6 +15,8 @@
 #                      entry, as sim-snapshot.ps1 -AltgardLeg1 -Leg <id> -LaterCapital plays them for one bot, for a
 #                      character that stands at the end of the stage before (-From). The folder then holds
 #                      altgard-<stage>-completion.json. A bot has reached its stage when that receipt says verified.
+#                      "muster" (2026-10-12, docs/natural-muster.md) follows "ax": the level by the fortress's repeatable coin
+#                      quest, the best coin tier with no coin limit, the surplus gear sold and the kit filled.
 #   startAfterMinutes  game minutes after the world begins; ten apart is the operator's figure.
 #   stopAt             a diagnostic stop boundary (questId:status:packedVars). Leave it out to play to the stage's end.
 #   name               the character's name when it is not the line's (the Cleric's and the Chanter's lines share one).

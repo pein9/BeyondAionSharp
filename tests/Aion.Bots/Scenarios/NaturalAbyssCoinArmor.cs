@@ -81,20 +81,35 @@ public static class NaturalAbyssCoinArmorPolicy
 			slots.Add(new(staff.Slot, held?.ItemId ?? 0, heldBoost, staff.ItemId, coinBoost, staff.Cost, action, reason, armor.StaffBetter));
 		}
 		long coinsOwned = inventory.Where(item => item.ItemId == armor.CoinItemId).Sum(item => item.Count);
-		// NR-54a: the tier's shield, for a class that holds one. It is bought only from the coins the armor and the weapon
-		// leave, so it never adds to the coins to supply.
+		// NR-54a: the tier's shield, for a class that holds one. 2026-10-12: it is bought when it is better, like every
+		// other piece; the supplied coins have no limit.
 		if (armor.Weapons && tier.Shield is { } shield)
 		{
 			NaturalJourneyItem? held = inventory.FirstOrDefault(item => item.EquipmentSlot == shield.Slot);
 			int heldNumber = held == null ? 0 : staffMagicBoost(held.ItemId), coinNumber = staffMagicBoost(shield.ItemId);
-			long left = coinsOwned - slots.Where(slot => slot.Action == "buy").Sum(slot => slot.Cost);
 			(string action, string reason) = held?.ItemId == shield.ItemId ? ("keep", "The shield is worn.")
 				: coinNumber <= heldNumber ? ("keep", coinNumber == heldNumber
 					? $"A tie at {coinNumber} is not better." : $"The worn shield has {heldNumber} against {coinNumber}.")
 				: inventory.Any(item => item.ItemId == shield.ItemId) ? ("wear", $"Owned and not worn: {coinNumber} against {heldNumber}.")
-				: left < shield.Cost ? ("keep", $"{Math.Max(left, 0)} coins are left after the armor and the weapon; the shield costs {shield.Cost}.")
-				: ("buy", $"{coinNumber} against {heldNumber} worn, from the {left} coins left.");
+				: ("buy", $"{coinNumber} against {heldNumber} worn.");
 			slots.Add(new(shield.Slot, held?.ItemId ?? 0, heldNumber, shield.ItemId, coinNumber, shield.Cost, action, reason, ShieldStat));
+		}
+		// 2026-10-12: the tier's weapon again, for the off hand of a class that holds two. A copy is spare when it is owned
+		// beyond the one the main hand holds or is about to hold.
+		if (armor.Weapons && tier.OffHand is { } second)
+		{
+			NaturalJourneyItem? held = inventory.FirstOrDefault(item => item.EquipmentSlot == second.Slot);
+			int heldNumber = held == null ? 0 : staffMagicBoost(held.ItemId), coinNumber = staffMagicBoost(second.ItemId);
+			NaturalAbyssCoinSlot? main = slots.FirstOrDefault(slot => slot.Stat == armor.StaffBetter && slot.CoinItemId == second.ItemId);
+			int forMain = main is { Action: "wear" } || main is { Action: "keep" } && main.WornItemId == second.ItemId ? 1 : 0;
+			int forOffHand = held?.ItemId == second.ItemId ? 1 : 0;
+			bool spare = inventory.Count(item => item.ItemId == second.ItemId) > forMain + forOffHand;
+			(string action, string reason) = held?.ItemId == second.ItemId ? ("keep", "The second weapon is worn.")
+				: coinNumber <= heldNumber ? ("keep", coinNumber == heldNumber
+					? $"A tie at {coinNumber} weapon number is not better." : $"The worn second weapon has {heldNumber} weapon number against {coinNumber}.")
+				: spare ? ("wear", $"Owned and not worn: {coinNumber} weapon number against {heldNumber}.")
+				: ("buy", $"{coinNumber} weapon number against {heldNumber} in the off hand.");
+			slots.Add(new(second.Slot, held?.ItemId ?? 0, heldNumber, second.ItemId, coinNumber, second.Cost, action, reason, armor.StaffBetter));
 		}
 		return new(tier.Level, tier.Name, [.. slots], coinsOwned);
 	}

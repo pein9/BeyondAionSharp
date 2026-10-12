@@ -1027,9 +1027,9 @@
       {
         "itemId": 186000007,
         "family": "bronze-coin",
-        "maxCount": 44,
+        "maxCount": null,
         "trigger": "coin-armor",
-        "decision": "AX-Q5 revision"
+        "decision": "AX-Q5 revision, no limit"
       }
     ],
     "coinArmor": {

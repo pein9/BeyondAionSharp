@@ -12,6 +12,10 @@ public sealed record NaturalHelpItem(int ItemId, string Family, int ItemLevel, i
 	int UseDelayMillis, int DurationMillis, int EffectSlot, int? TierLevel = null)
 {
 	public int Tier => TierLevel ?? ItemLevel;
+
+	/// <summary>The level the item's restrict row asks of every class; 1 when it has none. This, not the item level, is
+	/// what the server checks at a use (Java PlayerRestrictions.canUseItem).</summary>
+	public int RequiredLevel { get; init; } = 1;
 }
 
 /// <summary>When the buff-ourself check runs.</summary>
@@ -36,6 +40,8 @@ public sealed record NaturalHelpItemChoice(NaturalHelpItem? Item, string Reason,
 /// Awakening is kept up always (OD-15), never Courage (both fill effect slot 30184, so either replaces the other);
 /// Running (never with another speed effect, slot 30182) only before a long leg; the Anti-Shock shield only in
 /// combat at 50% HP, and the combat policy orders it. With nothing owned it chooses nothing.
+/// The operator, 2026-10-12: from level 10 the best owned tier the character can use is the one used. Until then a
+/// tier above the character's level (ten above, for the shield) was never used, though the server allows it.
 /// </summary>
 public static class NaturalHelpItemPolicy
 {
@@ -45,8 +51,6 @@ public static class NaturalHelpItemPolicy
 	public const float LongTravelMeters = 150;
 	public const int ShieldHpPercent = 50;
 	public const int SalvationDp = 2000;
-	/// <summary>Anti-Shock tiers come from quests about ten levels early (Q2206 at 10 hands out the level 20 tier).</summary>
-	public const int ShieldLevelAllowance = 10;
 
 	public static readonly NaturalHelpItem[] All =
 	[
@@ -64,20 +68,23 @@ public static class NaturalHelpItemPolicy
 		new(164000068, "anti-shock", 30, 9954, 32, 60_000, 24_000, ShieldSlot),
 		new(164000069, "anti-shock", 40, 9955, 32, 60_000, 24_000, ShieldSlot),
 		new(164000070, "anti-shock", 50, 9956, 32, 60_000, 24_000, ShieldSlot),
-		new(164000131, "anti-shock", 60, 9964, 32, 60_000, 24_000, ShieldSlot),
+		new(164000131, "anti-shock", 60, 9964, 32, 60_000, 24_000, ShieldSlot) { RequiredLevel = 50 },
+		new(164000259, "anti-shock", 70, 10770, 32, 60_000, 24_000, ShieldSlot) { RequiredLevel = 60 },
 		// NA-20a: veteran-reward event scrolls the natural character already owns (Java VeteranRewardService).
 		new(164002118, "awakening", 30, 10467, 34, 1_000, 1_800_000, AwakeningSlot, TierLevel: 10),
 		new(164002116, "running", 30, 10465, 35, 1_000, 1_800_000, SpeedSlot, TierLevel: 10),
 		new(164002117, "courage", 30, 10466, 34, 1_000, 1_800_000, AwakeningSlot, TierLevel: 10),
 		// NA-20a: DP for Salvation (Q2904 rewards five).
-		new(160002273, "dp-jelly", 40, 10164, 23, 1_800_000, 0, 0),
+		new(160002273, "dp-jelly", 40, 10164, 23, 1_800_000, 0, 0) { RequiredLevel = 10 },
+		// The Cippo Aether Jelly: the same skill at level 4, twice the DP.
+		new(160002274, "dp-jelly", 50, 10164, 23, 1_800_000, 0, 0) { RequiredLevel = 10 },
 	];
 
 	/// <summary>
 	/// CP-06: the scrolls of the level 1-9 manifest (docs/natural-class-profiles.md): the supplied Lesser Anti-Shock and
 	/// Greater Running Scroll and the three event scrolls every starter owns. Below level 10 the policy picks among
-	/// these and nothing else. The tier rule does not apply there: a consumable is gated by its restrict row, not by
-	/// its item level, and none of the five has one. From level 10 on the tier rule decides, as before.
+	/// these and nothing else. A consumable is gated by its restrict row, not by its item level, and none of the five
+	/// has one. From level 10 on the pick is the best owned tier whose restrict row the character meets.
 	/// </summary>
 	public static readonly int[] StarterScrollIds = [164000067, 164000076, 164002116, 164002117, 164002118];
 
@@ -99,8 +106,9 @@ public static class NaturalHelpItemPolicy
 			return new(null, "In combat only the Anti-Shock shield is used, by the combat policy.", [.. checks]);
 
 		// The shared slot's scroll, always (OD-15: Awakening for the Priest line).
-		NaturalHelpItem? awakening = Best(state, sharedSlotFamily, state.Level);
+		NaturalHelpItem? awakening = Best(state, sharedSlotFamily);
 		BotVisibleEffect? slot = Active(state, AwakeningSlot);
+		// The texts of these checks are in the recorded traces; they keep the wording of the tier rule they were written for.
 		if (awakening == null) checks.Add(new(sharedSlotFamily, "skip", $"No {kept} scroll at or below the character's level is owned."));
 		else if (slot != null && Family(slot.SkillId) != sharedSlotFamily)
 			checks.Add(new(sharedSlotFamily, "skip", $"{other} fills the same slot; let it expire rather than waste a scroll swapping."));
@@ -116,7 +124,7 @@ public static class NaturalHelpItemPolicy
 
 		// Running, before a long leg only; never on top of another speed effect.
 		bool longLeg = trigger == NaturalHelpTrigger.TravelLeg && (state.CrossMapTravel || state.PlannedTravelMeters >= LongTravelMeters);
-		NaturalHelpItem? running = Best(state, "running", state.Level);
+		NaturalHelpItem? running = Best(state, "running");
 		BotVisibleEffect? speed = Active(state, SpeedSlot);
 		if (!longLeg) checks.Add(new("running", "skip", $"Not a travel leg of {LongTravelMeters} m or to another map."));
 		else if (running == null) checks.Add(new("running", "skip", "No Running scroll at or below the character's level is owned."));
@@ -131,7 +139,7 @@ public static class NaturalHelpItemPolicy
 		}
 
 		// NA-20a: a Zeller Aether Jelly when Salvation is learned and observed DP cannot pay for it.
-		NaturalHelpItem? jelly = Best(state, "dp-jelly", int.MaxValue);
+		NaturalHelpItem? jelly = Best(state, "dp-jelly");
 		if (!state.SalvationLearned) checks.Add(new("dp-jelly", "skip", "Salvation is not learned."));
 		else if (state.Dp >= SalvationDp) checks.Add(new("dp-jelly", "pass", $"Observed DP {state.Dp} pays for Salvation."));
 		else if (jelly == null) checks.Add(new("dp-jelly", "skip", "No DP jelly is owned."));
@@ -150,7 +158,7 @@ public static class NaturalHelpItemPolicy
 	{
 		var checks = new List<NaturalDecisionCheck>();
 		if (Blocked(state, checks) is string blocked) return new(null, blocked, [.. checks]);
-		NaturalHelpItem? shield = Best(state, "anti-shock", state.Level + ShieldLevelAllowance);
+		NaturalHelpItem? shield = Best(state, "anti-shock");
 		if (shield == null) return Skip("No Anti-Shock scroll at or below level + 10 is owned.");
 		if (state.Hp * 100 > state.MaxHp * ShieldHpPercent) return Skip($"HP is above {ShieldHpPercent}%.");
 		if (Active(state, ShieldSlot) != null) return Skip("A damage shield is active; a lower tier cannot replace a higher one.");
@@ -174,9 +182,10 @@ public static class NaturalHelpItemPolicy
 		return reason;
 	}
 
-	private static NaturalHelpItem? Best(NaturalHelpItemObservation state, string family, int maximumItemLevel) =>
+	private static NaturalHelpItem? Best(NaturalHelpItemObservation state, string family) =>
 		All.Where(item => item.Family == family && state.ItemCounts.GetValueOrDefault(item.ItemId) > 0 &&
-				(state.Level <= NaturalHelpItemAllowlist.StarterMaxLevel ? StarterScrollIds.Contains(item.ItemId) : item.Tier <= maximumItemLevel))
+				(state.Level <= NaturalHelpItemAllowlist.StarterMaxLevel
+					? StarterScrollIds.Contains(item.ItemId) : item.RequiredLevel <= state.Level))
 			.OrderByDescending(item => item.Tier).ThenByDescending(item => item.DurationMillis).FirstOrDefault();
 
 	private static BotVisibleEffect? Active(NaturalHelpItemObservation state, int effectSlot) =>

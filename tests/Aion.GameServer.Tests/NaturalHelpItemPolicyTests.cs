@@ -10,7 +10,7 @@ public sealed class NaturalHelpItemPolicyTests
 	private static readonly DateTimeOffset Now = new(2026, 9, 28, 12, 0, 0, TimeSpan.Zero);
 	private const int LesserAwakening = 164000132, Awakening = 164000133, LesserCourage = 164000071;
 	private const int LesserRunning = 164000074, MovementSpeed = 164000033, LesserShield = 164000067, Shield = 164000068;
-	private const int Castafodin = 164002118, Accelerox = 164002116, Blitzopan = 164002117, Jelly = 160002273;
+	private const int Castafodin = 164002118, Accelerox = 164002116, Blitzopan = 164002117, Jelly = 160002273, FineShield = 164000131;
 
 	[Fact]
 	public void CatalogAgreesWithShippedItemsAndSkills()
@@ -22,10 +22,8 @@ public sealed class NaturalHelpItemPolicyTests
 		{
 			XElement item = Assert.Single(items.Descendants("item_template"), node => (int?)node.Attribute("id") == help.ItemId);
 			Assert.Equal(help.ItemLevel, (int?)item.Attribute("level"));
-			// A required level (only Fine Anti-Shock: 50) never exceeds the first level the tier rule picks it at.
-			int firstPick = help.ItemLevel - (help.Family == "anti-shock" ? NaturalHelpItemPolicy.ShieldLevelAllowance : 0);
-			Assert.True(((string?)item.Attribute("restrict"))?.Split(' ').Select(int.Parse).Max() is not int required || required <= firstPick,
-				$"{help.ItemId} requires a level above {firstPick}.");
+			// The level the pick is gated by is the item's restrict row (the Fine Anti-Shock: 50; the Premium: 60).
+			Assert.Equal(((string?)item.Attribute("restrict"))?.Split(' ').Select(int.Parse).Max() ?? 1, help.RequiredLevel);
 			Assert.Equal(help.SkillId, (int?)item.Element("actions")?.Element("skilluse")?.Attribute("skillid"));
 			Assert.Equal(help.UseDelayId, (int?)item.Element("uselimits")?.Attribute("usedelayid"));
 			Assert.Equal(help.UseDelayMillis, (int?)item.Element("uselimits")?.Attribute("usedelay"));
@@ -37,20 +35,21 @@ public sealed class NaturalHelpItemPolicyTests
 		}
 	}
 
+	// 2026-10-12: from level 10 the best owned tier is used whatever its item level; the restrict row is the gate.
 	[Theory]
-	[InlineData(10, LesserAwakening)]
-	[InlineData(19, LesserAwakening)]
+	[InlineData(10, Awakening)]
+	[InlineData(19, Awakening)]
 	[InlineData(20, Awakening)]
 	public void AwakeningUsesTheHighestTierAtOrBelowTheLevel(int level, int expected) =>
 		Assert.Equal(expected, Buffs(State(level, owned: [LesserAwakening, Awakening])).Item?.ItemId);
 
 	[Theory]
-	[InlineData(10, LesserShield)]
-	[InlineData(19, LesserShield)]
-	[InlineData(20, Shield)]
+	[InlineData(10, Shield)]
+	[InlineData(49, Shield)] // the Fine tier's restrict row asks for level 50
+	[InlineData(50, FineShield)]
 	[InlineData(9, LesserShield)] // CP-06: below level 10 the level 1-9 kit's scroll is picked, by the restrict gate
 	public void AntiShockAllowsTenLevelsAbove(int level, int? expected) =>
-		Assert.Equal(expected, NaturalHelpItemPolicy.DecideShield(State(level, owned: [LesserShield, Shield], hp: 50), Now).Item?.ItemId);
+		Assert.Equal(expected, NaturalHelpItemPolicy.DecideShield(State(level, owned: [LesserShield, Shield, FineShield], hp: 50), Now).Item?.ItemId);
 
 	[Fact]
 	public void AwakeningIsRefreshedOnlyInsideTheWindowAndCourageIsLeftToExpire()

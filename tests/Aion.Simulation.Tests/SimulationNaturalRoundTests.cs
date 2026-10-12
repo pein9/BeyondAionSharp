@@ -19,7 +19,7 @@ public sealed partial class SimulationFastScenarioTests
 	/// NR-R1a: <c>Stage</c> is how far the bot plays. Unset, it is the plain journey, to Munin. "bridge" goes on through the
 	/// trial, the class choice, the ceremony, the capital pass and the dispatch to the Altgard bind.
 	/// NR-R3a: "l1" to "l11", "cg", "l12" and "ax" are the Altgard legs, the coin gear, Haramel and the Abyss entry, each
-	/// played by a character that stands at the end of the stage before it.
+	/// played by a character that stands at the end of the stage before it. "muster" follows "ax" (docs/natural-muster.md).
 	/// </summary>
 	private sealed record NaturalRoundBot(string Line, double StartAfterMinutes = 0, string? StopAt = null, double? StopAfterMinutes = null,
 		int? Account = null, string? Name = null, int? ResumeCharacter = null, string? Stage = null);
@@ -39,7 +39,10 @@ public sealed partial class SimulationFastScenarioTests
 		"l1" => new NaturalJourneyOptions(StopAt: entry.StopAt, AltgardLeg1: true, LaterCapital: true, ClassLine: line),
 		"l2" or "l3" or "l4" or "l5" or "l6" or "l7" or "l8" or "l9" or "l10" or "l11" or "cg" or "l12" or "ax" =>
 			new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: entry.Stage, LaterCapital: true, ClassLine: line),
-		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12 or ax."),
+		// The muster (2026-10-12): a character that stands at the Abyss entry's end, in that leg's fortress.
+		"muster" => new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
+			ClassLine: line, Muster: true),
+		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax or muster."),
 	};
 
 	/// <summary>
@@ -52,6 +55,7 @@ public sealed partial class SimulationFastScenarioTests
 	{
 		null or "" => null,
 		"bridge" => "bridge-completion.json",
+		"muster" => NaturalAbyssEntry.MusterReceipt,
 		_ => $"altgard-{entry.Stage}-completion.json",
 	};
 

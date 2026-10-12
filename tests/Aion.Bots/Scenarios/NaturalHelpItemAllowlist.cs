@@ -9,6 +9,9 @@ public enum NaturalHelpKind
 	Caster,
 	/// <summary>A class that rests with a reagent skill: the powder.</summary>
 	Reagent,
+	/// <summary>A class that keeps the Courage scroll up in the slot it shares with Awakening: the Courage scroll, which
+	/// shortens a weapon swing.</summary>
+	Striker,
 }
 
 /// <summary>One approved supplied help item for a level band (docs/natural-ascension-altgard.md Appendix D.2).</summary>
@@ -24,27 +27,26 @@ public sealed record NaturalHelpSupply(int ItemId, string Family, int FromLevel,
 /// timed-healing Life Potion (heal over time, more HP in total than the instant serums) and there are no Revival
 /// Stones; powder is supplied too ("GM them anything they need"). NA-21 supplies it. Data only, pinned against the
 /// shipped item templates by a test.
-/// At levels 10–19 the veteran-reward event scrolls the character already owns (Castafodin, Accelerox: the Lesser
-/// tiers' effect, 30 min each) cover casting and run speed, so the kit starts those families at level 20.
+/// The operator, 2026-10-12: "We need to give our characters the BEST they can use (as some are level limited) for
+/// consumables. This includes all the way down to level 10." A consumable is gated by its restrict row, not by its item
+/// level (Java PlayerRestrictions.canUseItem). So from level 10 each family's row is the best tier whose restrict row
+/// lets the character use it: the Major potion, serum and shield scroll, the Greater speed scrolls and the Cippo Aether
+/// Jelly. The next tiers (Fine) need level 50, so these bands end at 49; a leg that reaches 50 adds them. The class
+/// that keeps Courage up is supplied the Courage scroll, as the caster is the Awakening scroll. The powder is no
+/// choice: it is the reagent the learned level of Herb Treatment and MP Recovery consumes. Until that day the rows were
+/// bands of ten levels with the tier of that level, and no Courage scroll.
 /// </summary>
 public static class NaturalHelpItemAllowlist
 {
 	public static readonly NaturalHelpSupply[] Approved =
 	[
-		new(164000133, "awakening", 20, 29, 60, 15, 20, 9965, 34, NaturalHelpKind.Caster),
-		new(164000134, "awakening", 30, 39, 60, 15, 30, 9965, 34, NaturalHelpKind.Caster),
-		new(164000075, "running", 20, 29, 20, 5, 20, 9960, 35),
-		new(164000076, "running", 30, 39, 20, 5, 30, 9960, 35),
-		new(164000067, "anti-shock", 10, 19, 30, 8, 20, 9953, 32),
-		new(164000068, "anti-shock", 20, 29, 30, 8, 30, 9954, 32),
-		new(164000069, "anti-shock", 30, 39, 30, 8, 40, 9955, 32),
-		new(162000002, "life-potion", 10, 19, 30, 10, 10, 9889, 11),
-		new(162000003, "life-potion", 20, 29, 30, 10, 20, 9890, 11),
-		new(162000004, "life-potion", 30, 39, 30, 10, 30, 9891, 11),
-		new(162000017, "mana-serum", 10, 19, 40, 10, 10, 9904, 11, NaturalHelpKind.Caster),
-		new(162000018, "mana-serum", 20, 29, 40, 10, 20, 9905, 11, NaturalHelpKind.Caster),
-		new(162000019, "mana-serum", 30, 39, 40, 10, 30, 9906, 11, NaturalHelpKind.Caster),
-		new(160002273, "dp-jelly", 10, 39, 8, 2, 40, 10164, 23),
+		new(164000134, "awakening", 10, 49, 60, 15, 30, 9965, 34, NaturalHelpKind.Caster),
+		new(164000073, "courage", 10, 49, 60, 15, 30, 9959, 34, NaturalHelpKind.Striker),
+		new(164000076, "running", 10, 49, 20, 5, 30, 9960, 35),
+		new(164000070, "anti-shock", 10, 49, 30, 8, 50, 9956, 32),
+		new(162000006, "life-potion", 10, 49, 30, 10, 50, 9893, 11),
+		new(162000021, "mana-serum", 10, 49, 40, 10, 50, 9908, 11, NaturalHelpKind.Caster),
+		new(160002274, "dp-jelly", 10, 49, 8, 2, 50, 10164, 23),
 		new(169300003, "powder", 10, 24, 200, 50, 10, 0, 0, NaturalHelpKind.Reagent),
 		new(169300004, "powder", 25, 39, 200, 50, 20, 0, 0, NaturalHelpKind.Reagent),
 	];
@@ -54,7 +56,7 @@ public static class NaturalHelpItemAllowlist
 	/// potions, the shield scroll, greater running scroll." Its manifest is the table in docs/natural-class-profiles.md,
 	/// and a test requires the two to agree. A consumable is gated by its restrict row, not by its item level (Java
 	/// PlayerRestrictions.canUseItem), so a level 1 character may use all three. The rows are keyed by item and level,
-	/// not by class. <see cref="Approved"/> holds the Cleric's bands from level 10 on and is not edited.
+	/// not by class. <see cref="Approved"/> holds the rows from level 10 on.
 	/// </summary>
 	public const int StarterMaxLevel = 9;
 
@@ -70,13 +72,13 @@ public static class NaturalHelpItemAllowlist
 
 	/// <summary>
 	/// NR-34 (NR-Q8): the kit of a class that plays past level 9, by the kinds its profile takes: the level 1-9 kit, then
-	/// the bands from level 10 on that are for every class or of a kind it takes. With both kinds it is
-	/// <see cref="AllLevels"/>, row for row: the Cleric's.
+	/// the bands from level 10 on that are for every class or of a kind it takes.
 	/// </summary>
-	public static NaturalHelpSupply[] Kit(bool caster, bool reagent) => [.. AllLevels.Where(row => row.Kind switch
+	public static NaturalHelpSupply[] Kit(bool caster, bool reagent, bool striker = false) => [.. AllLevels.Where(row => row.Kind switch
 	{
 		NaturalHelpKind.Caster => caster,
 		NaturalHelpKind.Reagent => reagent,
+		NaturalHelpKind.Striker => striker,
 		_ => true,
 	})];
 
@@ -86,17 +88,19 @@ public static class NaturalHelpItemAllowlist
 	/// <summary>
 	/// Help the operator approved for one leg only, beyond the level-band kit. AX-Q3 (2026-10-06): one flight-speed scroll,
 	/// used when Q2042's timed flight starts. The AX-Q5 revision the same day: enough Bronze Coins for the level-21 and then
-	/// the best level-26 coin armor, for the slots it improves; 44 is the whole legendary set.
+	/// the best level-26 coin armor, for the slots it improves. The operator, 2026-10-12: "We shouldn't have a coin limit."
+	/// The coins supplied are what a manifest is short, whatever that comes to.
 	/// </summary>
 	public static readonly NaturalHelpLegSupply[] LegApproved =
 	[
 		new("ax", 164000079, "flight-speed", 1, "AX-Q3"),
-		new("ax", 186000007, "bronze-coin", 44, "AX-Q5 revision"),
+		new("ax", 186000007, "bronze-coin", null, "AX-Q5 revision, no limit"),
 	];
 }
 
-/// <summary>One approved leg-scoped help item: at most <paramref name="MaxCount"/> over the whole leg.</summary>
-public sealed record NaturalHelpLegSupply(string Leg, int ItemId, string Family, int MaxCount, string Decision);
+/// <summary>One approved leg-scoped help item: at most <paramref name="MaxCount"/> over the whole leg, or as many as
+/// the leg asks for when it is null.</summary>
+public sealed record NaturalHelpLegSupply(string Leg, int ItemId, string Family, int? MaxCount, string Decision);
 
 /// <summary>One help item supplied, as the run profile (help-items.json) and the trace record it.</summary>
 public sealed record NaturalHelpSupplied(string Trigger, int ItemId, string Family, long Count, long Before, long After,
@@ -119,11 +123,12 @@ public static class NaturalHelpItemSupply
 	public static bool Enabled(string? value) => value != "0";
 
 	/// <param name="kit">CP-16: the class profile's kit; every approved row when none is given.</param>
+	/// <param name="full">The muster's stock check (2026-10-12): every row is brought to its N, whatever is owned.</param>
 	public static IReadOnlyList<NaturalHelpTopUp> Plan(int level, IReadOnlyDictionary<int, long> owned,
-		IEnumerable<NaturalHelpSupply>? kit = null) =>
+		IEnumerable<NaturalHelpSupply>? kit = null, bool full = false) =>
 		(kit ?? NaturalHelpItemAllowlist.AllLevels)
 			.Where(supply => supply.FromLevel <= level && level <= supply.ToLevel &&
-				owned.GetValueOrDefault(supply.ItemId) < supply.Below)
+				owned.GetValueOrDefault(supply.ItemId) < (full ? supply.TopUpTo : supply.Below))
 			.Select(supply => new NaturalHelpTopUp(supply.ItemId, supply.Family, owned.GetValueOrDefault(supply.ItemId),
 				supply.TopUpTo - owned.GetValueOrDefault(supply.ItemId)))
 			.ToArray();
@@ -142,7 +147,7 @@ public static class NaturalHelpItemSupply
 			RequireApproved(itemId, count);
 			return;
 		}
-		if (count <= 0 || alreadySupplied < 0 || alreadySupplied + count > scoped.MaxCount)
+		if (count <= 0 || alreadySupplied < 0 || scoped.MaxCount is int most && alreadySupplied + count > most)
 			throw new InvalidOperationException(
 				$"Refusing to supply {count} of {scoped.Family} item {itemId} on leg {leg}: {scoped.Decision} allows {scoped.MaxCount} in all, {alreadySupplied} already supplied.");
 	}

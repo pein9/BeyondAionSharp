@@ -455,7 +455,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						Enum.Parse<Aion.GameServer.Model.Templates.Items.Enums.ItemGroup>(weapon.Group)) ==
 						Aion.GameServer.Model.Templates.Items.Enums.ItemSubType.TWO_HAND ? (ushort)3 : (ushort)1;
 					NaturalAbyssCoinArmor classArmor = armor.ForClass(manifests, Tab(manifests[0].Armor[0].ItemId), Tab(weapon.ItemId), weaponSlot,
-						manifests[0].Shield is { } tierShield ? Tab(tierShield.ItemId) : 0);
+						manifests[0].Shield is { } tierShield ? Tab(tierShield.ItemId) : 0, secondWeapon: rules.OffHand == NaturalOffHand.SecondWeapon);
 					// NR-56b: the leg's level is a receipt of the accepted run, as its start facts are (NR-41). For another class
 					// it is the level the leg starts from, which is the plan's finish; a tier above it is asked only of a
 					// character that has reached it.
@@ -520,7 +520,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			int[] destinyIncomingSkills = altgardLeg?.Destiny is { } incomingDestiny
 				? session.Api.World.Skills.Keys.Where(id => id != incomingDestiny.StigmaSkillId).ToArray() : [];
 			IReadOnlyDictionary<int, QuestRunPlan> altgardPlans = altgardLegId is { } planLeg
-				? NaturalAltgardContract.LoadPlans(planLeg) : new Dictionary<int, QuestRunPlan>();
+				? options.Muster ? NaturalAltgardContract.LoadMusterPlans() : NaturalAltgardContract.LoadPlans(planLeg)
+				: new Dictionary<int, QuestRunPlan>();
 			var collectionLimits = altgardPlans.Values.SelectMany(plan => plan.Steps
 				.Where(step => step.Kind == "collect" && step.ItemId > 0 && step.Count > 0)
 				.Select(step => (plan.Id, step.ItemId, step.Count)))
@@ -1798,14 +1799,14 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			// every character below level 10, and only when the runtime may supply (SIM, or the isolated LIVE stack's
 			// director). Every supply is checked from the client's inventory, traced, and listed in help-items.json beside
 			// the run's other evidence.
-			async Task TopUpHelpItemsAsync(string trigger)
+			async Task TopUpHelpItemsAsync(string trigger, bool full = false)
 			{
 				BotWorldModel world = session.Api.World;
 				helpCheckedAtLevel = world.Level;
 				NaturalHelpItemRules help = combat.ClassProfile.HelpItems;
 				if (runtime.SupplyHelpItemAsync is not { } supply || !help.Supplied(world.Level) || world.IsDead) return;
 				var owned = world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count));
-				IReadOnlyList<NaturalHelpTopUp> plan = NaturalHelpItemSupply.Plan(world.Level, owned, help.Kit);
+				IReadOnlyList<NaturalHelpTopUp> plan = NaturalHelpItemSupply.Plan(world.Level, owned, help.Kit, full);
 				foreach (NaturalHelpTopUp topUp in plan)
 				{
 					NaturalHelpItemSupply.RequireApproved(topUp.ItemId, topUp.Count);
@@ -1940,6 +1941,289 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				}
 				NaturalAbyssEntryEndpoint ObservedEndpoint() => NaturalAbyssEntryLeg.VerifyEndpoint(leg,
 					NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition), session.CharacterId, StaffMagicBoost, PhysicalDefence);
+
+				// The muster (the operator, 2026-10-12; docs/natural-muster.md): what a character that stands at the Abyss
+				// entry's end still needs to be ready for the legs after it, played in the one world that holds every
+				// character. Its level: the fortress's repeatable coin quest, until the leg's level is reached ("just do the
+				// skipped repeatable coin quest that is given in Morheim fortress, until they reach level 26"). Its gear: the
+				// best coin tier it can wear, with the weapon, the shield and the second weapon, from coins supplied without
+				// a limit. Its bags: the containers opened and the gear its class rules call surplus sold. Its kit: every
+				// row at its full count. Then a relog, and the receipt.
+				async Task RunMusterAsync()
+				{
+					session.BeginStep("muster-start", "take-up-the-character-at-the-abyss-entry-end");
+					// The shipped leg's level; a class's own copy of the leg holds the level it started the leg at (NR-56b).
+					int minimum = NaturalAltgardContract.LoadLeg(leg.Leg).AbyssEntry!.Level.Minimum;
+					QuestRunPlan coinQuest = altgardPlans.Values.Single();
+					NaturalAbyssCoinArmor armor = scope.CoinArmor;
+					BotPosition hubAt = new(leg.Hub.Anchor[0], leg.Hub.Anchor[1], leg.Hub.Anchor[2], 0);
+					Require.True(world.MapId == leg.Hub.MapId && !world.IsDead && Distance(session.CurrentPosition, hubAt) <= leg.Hub.Radius,
+						"The muster starts in the fortress the Abyss entry ends in.");
+					int startLevel = world.Level, startDeaths = combat.ReviveCount;
+					long startExperience = ObservedExperience(), startKinah = world.Kinah, startCoins = ItemCount(world, armor.CoinItemId),
+						startedMillis = runtime.NowMillis;
+					int[] Worn() => [.. session.Api.World.Inventory.Values.Where(item => (item.Details.EquippedSlot ?? 0) > 0).Select(item => item.ItemId).Order()];
+					int[] wornAtStart = Worn();
+					int stacksAtStart = world.Inventory.Count;
+					var turns = new List<Dictionary<string, object?>>();
+					var manifests = new List<NaturalAbyssCoinManifest>();
+					var purchases = new List<NaturalAbyssCoinPurchase>();
+					var openedNow = new List<NaturalOpenedContainer>();
+					var notOpenedNow = new List<int>();
+					var sold = new List<NaturalSale>();
+					long coinsSuppliedNow = 0, saleKinah = 0;
+					session.TraceDiagnostic("muster-start", new Dictionary<string, object?>
+					{
+						["class"] = combat.ObservedCharacter, ["level"] = startLevel, ["minimum"] = minimum, ["experience"] = startExperience,
+						["kinah"] = startKinah, ["bronzeCoins"] = startCoins, ["worn"] = wornAtStart, ["stacks"] = stacksAtStart,
+						["position"] = session.CurrentPosition,
+					});
+					// The hunts are in the open field: walk around what would attack, and defend on the way.
+					void EnterFortressMap()
+					{
+						EnterObservedMap();
+						navigator.AvoidHostileAggro = true;
+						navigationDefense = combat;
+					}
+					await FallFromLoginPlaceAsync();
+					EnterFortressMap();
+					combat.AfterBindRevive = EnterFortressMap;
+					await TopUpHelpItemsAsync("run-start");
+					await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRelog, token);
+					NaturalAbyssInventory rules = scope.Inventory with { Open = [.. scope.Inventory.Open, .. NaturalAbyssEntry.MusterOpen] };
+					async Task CheckAsync(string trigger)
+					{
+						session.BeginStep("muster-inventory-check", trigger);
+						NaturalInventoryCheckResult checkedNow = await NaturalInventoryCheck.RunAsync(session, trigger, rules, EquipUpgradesAsync,
+							runtime.Data.ItemDataDh.GetItemTemplate,
+							() => NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId), ClassLine)
+								.Decide(world, QuestNeededItems()).FreeSlots, token);
+						openedNow.AddRange(checkedNow.Opened);
+						notOpenedNow.AddRange(checkedNow.NotOpened);
+					}
+					async Task<int> ApproachInFortressAsync(int npcId)
+					{
+						// From the field the way home is the Return every class has: it lands at the bind, inside the fortress.
+						if (Distance(session.CurrentPosition, hubAt) > leg.Hub.Radius)
+						{
+							await UseLearnedReturnToBindAsync();
+							await session.SynchronizeAsync(token);
+							await RestSafelyAsync(token);
+						}
+						return await ApproachCapitalNpcAsync(npcId);
+					}
+					await CheckAsync("muster-start");
+
+					// 1. The level. The world keeps a completed quest in its completed list for good, so a repeatable quest is
+					// read from its journal entry: 3 while it is worked, 4 on Nott's reward page, 5 once it is paid.
+					QuestRunBook book = QuestRunBook.Build(coinQuest);
+					int Live() => world.Quests.TryGetValue(coinQuest.Id, out BotQuestState? entry) ? entry.Status : 0;
+					int Remaining(QuestRunOperation kill)
+					{
+						if (!world.Quests.TryGetValue(coinQuest.Id, out BotQuestState? entry) || entry.Status != 3) return 0;
+						QuestRunStep step = coinQuest.Steps.Single(counted => counted.Kind == "kill" && counted.Sequence == kill.Sequence);
+						return Math.Max(0, kill.Count - NaturalQuestProgress.KillCount(entry, step.Data.GetProperty("var").GetInt32(), kill.Count));
+					}
+					for (int turn = 1; world.Level < minimum; turn++)
+					{
+						Require.True(turn <= NaturalAbyssEntry.MusterMaxTurns,
+							$"The muster did not reach level {minimum} in {NaturalAbyssEntry.MusterMaxTurns} turns of Q{coinQuest.Id}.");
+						long xp = ObservedExperience(), coinsBefore = ItemCount(world, armor.CoinItemId), began = runtime.NowMillis;
+						int deaths = combat.ReviveCount, levelBefore = world.Level;
+						foreach (QuestRunOperation operation in book.Operations)
+						{
+							session.BeginStep($"muster-q{coinQuest.Id}-turn-{turn}-{operation.Kind}", $"repeatable-coin-quest-{operation.Kind}");
+							switch (operation.Kind)
+							{
+								case QuestRunOperationKind.Prepare:
+								case QuestRunOperationKind.Report:
+									break;
+								case QuestRunOperationKind.StartAtNpc:
+								{
+									if (Live() is 3 or 4) break;
+									int giverId = operation.Npcs?.FirstOrDefault()?.Id ?? throw new InvalidDataException($"Q{coinQuest.Id} has no shipped NPC starter.");
+									int giver = await ApproachInFortressAsync(giverId);
+									for (int attempt = 1; ; attempt++)
+									{
+										try { await session.StartQuestAsync(giver, coinQuest.Id, token); break; }
+										catch (NaturalDialogTooFarException) when (attempt < 3) { giver = await ApproachInFortressAsync(giverId); }
+									}
+									Require.Equal(3, Live());
+									break;
+								}
+								case QuestRunOperationKind.Kill:
+								{
+									// Quest data lists kinds that have no spawn on the map: hunt what is there, the nearest kind first.
+									int[] kinds = [.. (operation.Npcs?.Select(npc => npc.Id).Distinct() ?? []).Where(SpawnsOnMap)];
+									if (kinds.Length == 0) throw new InvalidDataException($"Q{coinQuest.Id} kill has no shipped target.");
+									while (Remaining(operation) > 0)
+									{
+										int target = await KillShippedSpawnAsync(NearestKind(kinds), objectiveDone: () => Remaining(operation) == 0);
+										if (target != 0) navigator.UnavailableObjects.Add(target);
+										await RestSafelyAsync(token);
+									}
+									break;
+								}
+								case QuestRunOperationKind.ClaimReward:
+								{
+									// Java MonsterHunt: with every kill counted the quest is still worked (3); Nott's reward page turns it (4).
+									Require.True(Live() is 3 or 4 && book.Operations.Where(kill => kill.Kind == QuestRunOperationKind.Kill).All(kill => Remaining(kill) == 0),
+										$"Q{coinQuest.Id} is not ready to hand in.");
+									int payerId = operation.Npcs?.FirstOrDefault()?.Id ?? throw new InvalidDataException($"Q{coinQuest.Id} has no shipped reward NPC.");
+									int payer = await ApproachInFortressAsync(payerId);
+									for (int attempt = 1; ; attempt++)
+									{
+										try { await FinishStandardQuestAsync(session, payer, coinQuest.Id, token); break; }
+										catch (NaturalDialogTooFarException) when (attempt < 3) { payer = await ApproachInFortressAsync(payerId); }
+									}
+									Require.Equal(5, Live());
+									break;
+								}
+								default:
+									throw new InvalidDataException($"Q{coinQuest.Id} needs natural {operation.Kind} capability.");
+							}
+						}
+						await CheckAsync($"turn-in-q{coinQuest.Id}");
+						if (world.Level != helpCheckedAtLevel && !world.IsDead) await TopUpHelpItemsAsync("level-up");
+						var row = new Dictionary<string, object?>
+						{
+							["turn"] = turn, ["quest"] = coinQuest.Id, ["experience"] = ObservedExperience() - xp, ["levelBefore"] = levelBefore,
+							["level"] = (int)world.Level, ["bronzeCoins"] = ItemCount(world, armor.CoinItemId) - coinsBefore,
+							["deaths"] = combat.ReviveCount - deaths, ["gameMillis"] = runtime.NowMillis - began,
+						};
+						turns.Add(row);
+						session.TraceDiagnostic("muster-coin-quest-turn", row);
+					}
+
+					// 2. The coin gear: the best tier the character can wear. A piece is bought when it beats what is worn, and
+					// the coins the manifest is short are supplied, whatever that comes to.
+					session.BeginStep("muster-coin-gear", "buy-the-best-coin-tier");
+					NaturalAbyssCoinTier tier = armor.Tiers.Where(entry => entry.Level <= world.Level).MaxBy(entry => entry.Level)
+						?? throw new InvalidDataException($"No coin tier is for level {world.Level}.");
+					NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(armor, tier, Observed().Inventory!, PhysicalDefence, StaffMagicBoost);
+					manifests.Add(manifest);
+					session.TraceDiagnostic(NaturalAbyssCoinArmorSteps.ManifestDiagnostic, NaturalAbyssCoinArmorSteps.Row(manifest));
+					if (manifest.CoinsToSupply > 0)
+					{
+						Func<int, long, CancellationToken, Task> supply = runtime.SupplyHelpItemAsync
+							?? throw new InvalidDataException($"The manifest is {manifest.CoinsToSupply} Bronze Coins short and this run supplies no help items.");
+						NaturalHelpLegSupply approved = NaturalHelpItemAllowlist.LegApproved.Single(entry => entry.Leg == leg.Leg && entry.ItemId == armor.CoinItemId);
+						NaturalHelpItemSupply.RequireApproved(armor.CoinItemId, manifest.CoinsToSupply, leg.Leg, coinsSuppliedNow);
+						long owned = ItemCount(world, armor.CoinItemId);
+						await supply(armor.CoinItemId, manifest.CoinsToSupply, token);
+						await session.SynchronizeAsync(token);
+						long after = ItemCount(world, armor.CoinItemId);
+						Require.True(after == owned + manifest.CoinsToSupply, $"The supplied Bronze Coins did not arrive: {owned} -> {after}.");
+						coinsSuppliedNow += manifest.CoinsToSupply;
+						helpSupplied.Add(new NaturalHelpSupplied($"coin-armor-{tier.Level}", armor.CoinItemId, approved.Family, manifest.CoinsToSupply, owned,
+							after, world.Level, runtime.NowMillis));
+						session.TraceDiagnostic("help-item-supplied", new Dictionary<string, object?>
+						{
+							["trigger"] = $"coin-armor-{tier.Level}", ["itemId"] = armor.CoinItemId, ["family"] = approved.Family,
+							["count"] = manifest.CoinsToSupply, ["before"] = owned, ["after"] = after, ["level"] = world.Level, ["decision"] = approved.Decision,
+						});
+						await File.WriteAllTextAsync(Path.Combine(folder, "help-items.json"), NaturalHelpItemSupply.ProfileJson(helpSupplied), token);
+					}
+					if (manifest.Buys.Length > 0)
+					{
+						int vendor = await ApproachInFortressAsync(armor.VendorNpcId);
+						purchases.AddRange(await NaturalAbyssCoinArmorSteps.BuyAsync(session, runtime.Data, armor, manifest, vendor, token));
+					}
+					await CheckAsync($"coin-armor-{tier.Level}");
+					foreach (NaturalAbyssCoinTier wearable in armor.Tiers.Where(entry => entry.Level <= world.Level))
+					{
+						NaturalAbyssCoinManifest left = NaturalAbyssCoinArmorPolicy.Plan(armor, wearable, Observed().Inventory!, PhysicalDefence, StaffMagicBoost);
+						Require.True(left.Done, $"A {wearable.Name} piece still beats what is worn: " +
+							string.Join(", ", left.Slots.Where(slot => slot.Action != "keep").Select(slot => $"{slot.CoinItemId} ({slot.Action})")));
+					}
+
+					// 3. The bags: the gear and the accessories the class rules call surplus are sold to the fortress's nearest
+					// merchant. What the leg protects is kept, and so is everything that is not gear.
+					session.BeginStep("muster-sale", "sell-the-surplus-gear");
+					NaturalInventoryPlan bags = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId), ClassLine)
+						.Decide(world, QuestNeededItems());
+					List<NaturalSale> sales = [.. bags.Sales.Where(sale => sale.Reason is "surplus-gear" or "surplus-accessory" && !scope.ProtectedItemIds.Contains(sale.ItemId))
+						.Select(sale => new NaturalSale(sale.ObjectId, sale.ItemId, sale.Count))];
+					session.TraceDiagnostic("muster-sale-plan", new Dictionary<string, object?>
+					{
+						["sell"] = sales.Select(sale => sale.ItemId).ToArray(), ["freeSlots"] = bags.FreeSlots,
+						["kept"] = bags.Decisions.Where(decision => decision.Action != "sell").GroupBy(decision => decision.Reason)
+							.ToDictionary(group => group.Key, group => group.Count()),
+					});
+					if (sales.Count > 0)
+					{
+						int merchantId = runtime.Data.SpawnsDh.GetSpawnsByWorldId(leg.Hub.MapId)
+							.Where(group => runtime.Data.TradeListDataDh.GetTradeListTemplate(group.GetNpcId()) is { } list &&
+								list.GetTradeNpcType() == Aion.GameServer.Model.Templates.Tradelist.TradeNpcType.NORMAL)
+							.SelectMany(group => group.GetSpawnTemplates().Select(spot => (Npc: group.GetNpcId(), At: new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0))))
+							.Where(spot => Distance(spot.At, hubAt) <= leg.Hub.Radius)
+							.OrderBy(spot => Distance(spot.At, session.CurrentPosition)).ThenBy(spot => spot.Npc).Select(spot => spot.Npc).First();
+						int merchant = await ApproachInFortressAsync(merchantId);
+						long before = world.Kinah;
+						NaturalVendorResult trade = await services.TradeAsync(merchant, sales, [],
+							id => runtime.Data.GoodsListDataDh.GetGoodsListById(id)?.GetItemIdList() ?? [],
+							id => runtime.Data.ItemDataDh.GetItemTemplate(id).GetPrice(), token);
+						sold.AddRange(trade.Sold);
+						saleKinah = world.Kinah - before;
+						session.TraceDiagnostic("muster-sale", new Dictionary<string, object?>
+						{
+							["merchant"] = merchantId, ["sold"] = trade.Sold.Select(sale => sale.ItemId).ToArray(),
+							["notSold"] = sales.Except(trade.Sold).Select(sale => sale.ItemId).ToArray(), ["kinah"] = saleKinah,
+						});
+					}
+					await CheckAsync("muster-end");
+
+					// 4. The kit, every row at its full count.
+					session.BeginStep("muster-stock", "fill-the-kit");
+					await TopUpHelpItemsAsync("muster", full: true);
+					await session.SynchronizeAsync(token);
+					NaturalHelpSupply[] kitNow = [.. combat.ClassProfile.HelpItems.Kit.Where(row => row.FromLevel <= world.Level && world.Level <= row.ToLevel)];
+					if (runtime.SupplyHelpItemAsync != null)
+						Require.All(kitNow, row => Require.True(ItemCount(world, row.ItemId) >= row.TopUpTo,
+							$"The kit's {row.Family} {row.ItemId} is at {ItemCount(world, row.ItemId)} of {row.TopUpTo}."));
+					Require.True(world.Level >= minimum && !world.IsDead, $"The character is level {world.Level}, below {minimum}.");
+
+					// 5. The end: the character as the fortress leaves it, checked again across a relog.
+					session.BeginStep("muster-endpoint", "verify-and-relog-at-the-muster-end");
+					int[] wornBefore = Worn();
+					Dictionary<int, long> kitBefore = kitNow.ToDictionary(row => row.ItemId, row => ItemCount(world, row.ItemId));
+					int level = world.Level;
+					long experience = ObservedExperience(), kinah = world.Kinah, coinsLeft = ItemCount(world, armor.CoinItemId);
+					int deathsNow = combat.ReviveCount - startDeaths, stacks = world.Inventory.Count;
+					long elapsed = runtime.NowMillis;
+					(NaturalJourneyCheckpoint musterBefore, NaturalJourneyCheckpoint musterAfter) = await RelogAtEndpointAsync();
+					BotWorldModel again = session.Api.World;
+					Require.True(again.Level == level && Worn().SequenceEqual(wornBefore) &&
+						kitBefore.All(row => ItemCount(again, row.Key) == row.Value) && ItemCount(again, armor.CoinItemId) == coinsLeft,
+						"The mustered character changed across a relog.");
+					foreach (NaturalAbyssCoinTier wearable in armor.Tiers.Where(entry => entry.Level <= again.Level))
+						Require.True(NaturalAbyssCoinArmorPolicy.Plan(armor, wearable,
+							NaturalAltgardObservation.Observe(again, session.CurrentPosition).Inventory!, PhysicalDefence, StaffMagicBoost).Done,
+							$"A {wearable.Name} piece beats what is worn after the relog.");
+					await File.WriteAllTextAsync(Path.Combine(folder, NaturalAbyssEntry.MusterReceipt), System.Text.Json.JsonSerializer.Serialize(new
+					{
+						verified = true, session.CharacterId, Class = combat.ObservedCharacter, Line = ClassLine.Id, StartLevel = startLevel, Level = level,
+						Experience = experience, ExperienceGained = experience - startExperience, Turns = turns,
+						CoinTier = tier.Level, CoinManifest = NaturalAbyssCoinArmorSteps.Row(manifest), CoinPurchases = purchases, CoinsSupplied = coinsSuppliedNow,
+						BronzeCoinsAtStart = startCoins, BronzeCoins = coinsLeft, Opened = openedNow, NotOpened = notOpenedNow,
+						Sold = sold, SaleKinah = saleKinah, Kinah = kinah, KinahAtStart = startKinah, WornAtStart = wornAtStart, Worn = wornBefore,
+						Kit = kitBefore, StacksAtStart = stacksAtStart, Stacks = stacks, Deaths = deathsNow, GameMillis = elapsed - startedMillis,
+						ElapsedMillis = elapsed, before = musterBefore, after = musterAfter,
+					}), token);
+					session.TraceDiagnostic("muster-completed", new Dictionary<string, object?>
+					{
+						["class"] = combat.ObservedCharacter, ["startLevel"] = startLevel, ["level"] = level, ["turns"] = turns.Count,
+						["experienceGained"] = experience - startExperience, ["coinsSupplied"] = coinsSuppliedNow,
+						["bought"] = purchases.Select(purchase => purchase.ItemId).ToArray(), ["sold"] = sold.Count, ["opened"] = openedNow.Count,
+						["worn"] = wornBefore, ["kit"] = kitBefore, ["deaths"] = deathsNow, ["generation"] = musterAfter.ConnectionGeneration,
+					});
+				}
+				if (options.Muster)
+				{
+					Require.True(leg.Order.All(world.CompletedQuestIds.Contains), "The muster is for a character that stands at the Abyss entry's end.");
+					await RunMusterAsync();
+					return;
+				}
 
 				// AX-14: a run resumed on the endpoint snapshot has nothing left to play. The endpoint is checked from this fresh login
 				// and again across one more relog, and the resume receipt is written.

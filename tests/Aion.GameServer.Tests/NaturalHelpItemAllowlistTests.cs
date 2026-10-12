@@ -27,17 +27,38 @@ public sealed class NaturalHelpItemAllowlistTests
 	}
 
 	[Fact]
-	public void ScrollTiersMatchTheHelpPolicyAndNeverIncludeCourage()
+	public void EveryRowIsTheBestTierItsBandCanUse()
 	{
-		foreach (NaturalHelpSupply supply in NaturalHelpItemAllowlist.Approved.Where(s => s.Family is "awakening" or "running" or "anti-shock"))
+		// The operator, 2026-10-12: the best a character can use, from level 10. A tier is one of the items whose client
+		// name differs from the row's only in its number (remedy_hp_50a: remedy_hp_10a to remedy_hp_70a); a better one has
+		// the higher item level; "can use" is the restrict row.
+		static int Required(XElement item) =>
+			((string?)item.Attribute("restrict"))?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).Max() ?? 1;
+		static string Stem(XElement item) => System.Text.RegularExpressions.Regex.Match((string)item.Attribute("cName")!, @"^(.*_)\d+a$").Groups[1].Value;
+		foreach (NaturalHelpSupply supply in NaturalHelpItemAllowlist.Approved.Where(row => row.Kind != NaturalHelpKind.Reagent))
+		{
+			XElement item = Item(supply.ItemId);
+			string stem = Stem(item);
+			Assert.NotEqual("", stem);
+			XElement[] better = Items.Value.Descendants("item_template")
+				.Where(other => (string?)other.Attribute("cName") is { } name && name.StartsWith(stem, StringComparison.Ordinal) && Stem(other) == stem &&
+					(int)other.Attribute("level")! > supply.ItemLevel).ToArray();
+			// No better tier is usable anywhere in the band, and the band ends where the next one becomes usable.
+			Assert.All(better, other => Assert.True(Required(other) > supply.ToLevel, $"{(int)other.Attribute("id")!} is usable inside {supply.ItemId}'s band."));
+			Assert.Equal(10, supply.FromLevel);
+			Assert.Equal(better.Select(Required).DefaultIfEmpty(50).Min() - 1, supply.ToLevel);
+		}
+		foreach (NaturalHelpSupply supply in NaturalHelpItemAllowlist.Approved.Where(s => s.Family is "awakening" or "courage" or "running" or "anti-shock" or "dp-jelly"))
 		{
 			NaturalHelpItem help = Assert.Single(NaturalHelpItemPolicy.All, item => item.ItemId == supply.ItemId);
 			Assert.Equal(supply.Family, help.Family);
-			// The band is where the NA-19 tier rule picks this tier.
-			int allowance = help.Family == "anti-shock" ? NaturalHelpItemPolicy.ShieldLevelAllowance : 0;
-			Assert.Equal(supply.FromLevel, Math.Max(10, help.ItemLevel - allowance));
+			Assert.True(help.RequiredLevel <= supply.FromLevel);
 		}
-		Assert.DoesNotContain(NaturalHelpItemAllowlist.Approved, supply => supply.Family == "courage");
+		// The two scrolls of the shared slot go to different kinds of class, so no class is supplied both.
+		Assert.All(NaturalHelpItemAllowlist.Approved.Where(supply => supply.Family == "awakening"), row => Assert.Equal(NaturalHelpKind.Caster, row.Kind));
+		Assert.All(NaturalHelpItemAllowlist.Approved.Where(supply => supply.Family == "courage"), row => Assert.Equal(NaturalHelpKind.Striker, row.Kind));
+		Assert.DoesNotContain(NaturalHelpItemAllowlist.Kit(caster: true, reagent: true), row => row.Family == "courage");
+		Assert.DoesNotContain(NaturalHelpItemAllowlist.Kit(caster: false, reagent: true, striker: true), row => row.Family is "awakening" or "mana-serum");
 		// Bands of one family never overlap, so one tier is supplied at a time.
 		foreach (var family in NaturalHelpItemAllowlist.Approved.GroupBy(supply => supply.Family))
 			Assert.All(family.Zip(family.Skip(1)), pair => Assert.True(pair.First.ToLevel < pair.Second.FromLevel));

@@ -10,14 +10,22 @@ public sealed class NaturalHelpItemSupplyTests
 {
 	private static Dictionary<int, long> Owned(params (int Id, long Count)[] items) => items.ToDictionary(i => i.Id, i => i.Count);
 
+	/// <summary>The kit of a class that casts from mana and rests with the powder: the Cleric's.</summary>
+	private static readonly NaturalHelpSupply[] Caster = NaturalHelpItemAllowlist.Kit(caster: true, reagent: true);
+
 	[Fact]
 	public void AtLevelTenTheKitIsShieldHealOverTimeManaJellyAndPowder()
 	{
-		var plan = NaturalHelpItemSupply.Plan(10, Owned()).ToDictionary(topUp => topUp.ItemId, topUp => topUp.Count);
+		// 2026-10-12: the best tier the character can use, from level 10: the Major potion, serum and shield scroll, the
+		// Greater speed scrolls and the Cippo jelly.
+		var plan = NaturalHelpItemSupply.Plan(10, Owned(), Caster).ToDictionary(topUp => topUp.ItemId, topUp => topUp.Count);
 		Assert.Equal(new Dictionary<int, long>
 		{
-			[164000067] = 30, [162000002] = 30, [162000017] = 40, [160002273] = 8, [169300003] = 200,
+			[164000134] = 60, [164000076] = 20, [164000070] = 30, [162000006] = 30, [162000021] = 40, [160002274] = 8, [169300003] = 200,
 		}, plan);
+		// A class that keeps Courage up takes that scroll, and neither the Awakening scroll nor the mana serum.
+		Assert.Equal(new[] { 160002274, 162000006, 164000070, 164000073, 164000076, 169300003 },
+			NaturalHelpItemSupply.Plan(10, Owned(), NaturalHelpItemAllowlist.Kit(caster: false, reagent: true, striker: true)).Select(topUp => topUp.ItemId).Order());
 		// Below level 10 the kit is the level 1-9 one the operator approved for every class line on 2026-10-07 (CP-05).
 		Assert.Equal(new Dictionary<int, long> { [162000006] = 30, [164000067] = 30, [164000076] = 20 },
 			NaturalHelpItemSupply.Plan(9, Owned()).ToDictionary(topUp => topUp.ItemId, topUp => topUp.Count));
@@ -26,28 +34,29 @@ public sealed class NaturalHelpItemSupplyTests
 	[Fact]
 	public void ItTopsUpToNOnlyWhenBelowM()
 	{
-		// The bridge endpoint owns 32 Minor Life Potions and 5 jellies: at or above M, so nothing for them.
-		var plan = NaturalHelpItemSupply.Plan(10, Owned((162000002, 32), (160002273, 5), (169300003, 30), (164000067, 8)));
-		Assert.DoesNotContain(plan, topUp => topUp.ItemId is 162000002 or 160002273 or 164000067);
+		// 32 potions and 5 jellies are at or above M, so nothing for them.
+		var plan = NaturalHelpItemSupply.Plan(10, Owned((162000006, 32), (160002274, 5), (169300003, 30), (164000070, 8)), Caster);
+		Assert.DoesNotContain(plan, topUp => topUp.ItemId is 162000006 or 160002274 or 164000070);
 		Assert.Equal(170, Assert.Single(plan, topUp => topUp.ItemId == 169300003).Count);
-		Assert.Equal(23, Assert.Single(NaturalHelpItemSupply.Plan(10, Owned((164000067, 7))), topUp => topUp.ItemId == 164000067).Count);
+		Assert.Equal(23, Assert.Single(NaturalHelpItemSupply.Plan(10, Owned((164000070, 7)), Caster), topUp => topUp.ItemId == 164000070).Count);
 	}
 
 	[Theory]
-	[InlineData(20, new[] { 164000133, 164000075, 164000068, 162000003, 162000018, 160002273, 169300003 })]
-	[InlineData(25, new[] { 164000133, 164000075, 164000068, 162000003, 162000018, 160002273, 169300004 })]
-	[InlineData(30, new[] { 164000134, 164000076, 164000069, 162000004, 162000019, 160002273, 169300004 })]
+	[InlineData(20, new[] { 164000134, 164000076, 164000070, 162000006, 162000021, 160002274, 169300003 })]
+	[InlineData(25, new[] { 164000134, 164000076, 164000070, 162000006, 162000021, 160002274, 169300004 })]
+	[InlineData(30, new[] { 164000134, 164000076, 164000070, 162000006, 162000021, 160002274, 169300004 })]
 	public void EachBandSuppliesItsOwnTierAndLetsTheOldOneRunOut(int level, int[] ids)
 	{
-		// Old-tier stock does not stop the new tier from being supplied.
+		// Stock of a lower tier does not stop the best tier from being supplied. Only the powder still changes with the
+		// level: it is the reagent of the learned skill.
 		var owned = Owned((164000067, 30), (162000002, 30), (162000017, 40));
-		Assert.Equal(ids.Order(), NaturalHelpItemSupply.Plan(level, owned).Select(topUp => topUp.ItemId).Order());
+		Assert.Equal(ids.Order(), NaturalHelpItemSupply.Plan(level, owned, Caster).Select(topUp => topUp.ItemId).Order());
 	}
 
 	[Theory]
 	[InlineData(161001001, 3)]   // Revival Stone: dropped by the operator
 	[InlineData(162000012, 30)]  // Minor Life Serum: replaced by the heal-over-time Life Potion
-	[InlineData(164000071, 60)]  // Courage: never (OD-15)
+	[InlineData(164000071, 60)]  // the Lesser Courage scroll: only the best tier is supplied
 	[InlineData(101500498, 1)]   // gear is never supplied
 	[InlineData(182400001, 1000)] // nor Kinah
 	public void AnythingNotApprovedIsRefused(int itemId, long count) =>

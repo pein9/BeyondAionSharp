@@ -18,10 +18,11 @@ public sealed record NaturalHelpItemRules(IReadOnlyList<NaturalHelpSupply> Kit, 
 	/// <summary>
 	/// NR-34 (NR-Q8): the rules of a class that plays past level 9, by the kinds of help it takes
 	/// (<see cref="NaturalHelpItemAllowlist.Kit"/>): what every class gets, the mana serum and the Awakening scroll for a
-	/// class that casts from mana, the powder for a class that rests with a reagent skill. On at every level.
+	/// class that casts from mana, the powder for a class that rests with a reagent skill, the Courage scroll for a class
+	/// that keeps it up in the shared slot. On at every level.
 	/// </summary>
 	public static NaturalHelpItemRules ForKinds(bool caster, bool reagent, string sharedSlotFamily = "awakening") =>
-		new(NaturalHelpItemAllowlist.Kit(caster, reagent), null, sharedSlotFamily);
+		new(NaturalHelpItemAllowlist.Kit(caster, reagent, striker: sharedSlotFamily == "courage"), null, sharedSlotFamily);
 
 	/// <summary>The stock check supplies the kit.</summary>
 	public bool Supplied(int level) => On(level);

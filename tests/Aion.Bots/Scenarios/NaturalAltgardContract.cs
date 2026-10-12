@@ -77,6 +77,13 @@ public sealed record NaturalAltgardContract(
 		[NaturalAbyssEntry.Leg] = ("natural-abyss-entry-contract.json", null),
 	};
 
+	/// <summary>The muster's template quest: the fortress's repeatable coin quest (docs/natural-muster.md). The plans are
+	/// apart from the Abyss entry's, which has none, so that leg's navigation graph is what it was.</summary>
+	public const string MusterPlans = "natural-altgard-muster-plans";
+
+	public static IReadOnlyDictionary<int, QuestRunPlan> LoadMusterPlans() =>
+		QuestRunPlan.LoadDirectory(Path.Combine(RepoRoot(), "parity-artifacts/e2e", MusterPlans)).ToDictionary(plan => plan.Id);
+
 	public NaturalAltgardObjectUse[] ObjectUseList => ObjectUses ?? [];
 	public NaturalAltgardZoneStep[] ZoneStepList => ZoneSteps ?? [];
 	public NaturalAltgardCollection[] CollectionList => Collections ?? [];
