@@ -18,11 +18,11 @@ public sealed partial class NaturalIshalgenJourney
 	private const int GroupNtcAegir = 204301, GroupNtcKelmar = 800519, GroupNtcVallack = 800510, GroupNtcMap = 300030000;
 	/// <summary>Vallack's dialog choice that sends a member into the camp (portal_template2.xml).</summary>
 	private const ushort GroupNtcEnterDialog = 10000;
-	private const int GroupNtcGate = 256694, GroupNtcChest = 700415;
+	private const int GroupNtcGate = 256694, GroupNtcChest = 700415, GroupNtcGeneral = 256693;
 	/// <summary>A point just inside the gateway. The fortress is a navmesh island of its own (docs/bot-navigation.md):
 	/// a way to an exact point crosses the seam in the gateway, so the leader goes to this point first.</summary>
 	private static readonly BotPosition GroupNtcInside = new(346.4f, 350f, 379.1f, 0);
-	private static readonly string[] GroupNtcCheckpoints = ["quests", "entrance", "protector", "field-guard", "gate", "chests"];
+	private static readonly string[] GroupNtcCheckpoints = ["quests", "entrance", "protector", "field-guard", "gate", "chests", "general"];
 
 	/// <summary>
 	/// A group plays quests together: the leader (F1) leads and speaks the commands in group chat, the others follow, do
@@ -72,6 +72,9 @@ public sealed partial class NaturalIshalgenJourney
 		int? leaderSeen = null;
 		// The chest this member was last told to open, so that a turn is taken once.
 		int toldChest = 0;
+		// The kinds of monster this member saw fall in a fight of its own, for a target no quest of the leg counts
+		// (the gate, the General).
+		var killedKinds = new HashSet<int>();
 		// This member has been inside the camp: outside it again, it goes back in to its leader.
 		bool beenInside = false;
 		// Where each member says it stands: its map and the instance of it.
@@ -472,7 +475,10 @@ public sealed partial class NaturalIshalgenJourney
 					Distance(session.CurrentPosition, enemy.Position) <= 35 && session.PacketHistory.TakeLast(400)
 						.Any(packet => runtime.IncomingAttacker(packet, target) == world.GroupLeaderId))
 				{
-					try { await combat.TryKillAsync(target, token); }
+					try
+					{
+						if (await combat.TryKillAsync(target, token) && enemy.TemplateId is int fallen) killedKinds.Add(fallen);
+					}
 					catch (NaturalCombatApproachBlockedException blocked)
 					{
 						if (GoneOrKilled(target)) combat.NoteTargetTaken();
@@ -522,8 +528,6 @@ public sealed partial class NaturalIshalgenJourney
 			// next stretch of the way would wake it, is killed first, by all: F1 names it and the others assist.
 			var refused = new Dictionary<int, int>();
 			var killed = new HashSet<int>();
-			// The kinds of monster the group has killed, for a target no quest of the leg counts (the gate).
-			var killedKinds = new HashSet<int>();
 			int named = 0;
 			long namedAt = 0;
 			(BotKnownObject Seen, float Reach)[] Hostiles() => [.. world.Objects.Values
@@ -590,9 +594,10 @@ public sealed partial class NaturalIshalgenJourney
 				}
 				killed.Add(target);
 				if (template is int kind) killedKinds.Add(kind);
-				// Whoever has the right to the corpse takes its turn; F1 does not stand long for it.
+				// Whoever has the right to the corpse takes its turn; F1 does not stand long for it, but for the General's
+				// it stands until it is taken or a quarter of a minute is over.
 				if (options.GroupLoot)
-					for (int wait = 0; wait < 12 && world.Objects.ContainsKey(target); wait++)
+					for (int wait = 0; wait < (template == GroupNtcGeneral ? 60 : 12) && world.Objects.ContainsKey(target); wait++)
 					{
 						await loot.StepAsync(token);
 						await PauseAsync();
@@ -779,6 +784,11 @@ public sealed partial class NaturalIshalgenJourney
 				if (!AllHaveTheirs()) throw new IOException("The chests of the camp are used up and not every member has its four items.");
 				await HuntNamedAsync(quests[1], 3);
 			}
+			if (reach >= 6)
+			{
+				// N8: the end boss. No quest of the leg counts him until Q4732 has a handler; his fall is what F1 saw.
+				await AdvanceAsync("the General", Spawn(GroupNtcGeneral), GroupNtcGeneral, () => killedKinds.Contains(GroupNtcGeneral));
+			}
 			await SayAsync("command:done");
 			await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
 		}
@@ -869,7 +879,9 @@ public sealed partial class NaturalIshalgenJourney
 			var reached = new { verified = true, CharacterId = session.CharacterId, name, until = options.GroupUntil,
 				leader = world.GroupLeaderId, roster, quests = quests.ToDictionary(plan => plan.Id.ToString(), plan => Status(plan.Id)),
 				counts = quests.ToDictionary(plan => plan.Id.ToString(), plan => Counts(plan)), lootCollected = loot.Collected,
-				// What F1 saw of a target no quest counts: the gate still standing in its gateway, or gone.
+				// The gate and the General, which no quest of the leg counts: whether this member saw them fall in a fight
+				// of its own, and whether its client still shows the gate standing.
+				sawFall = new { gate = killedKinds.Contains(GroupNtcGate), general = killedKinds.Contains(GroupNtcGeneral) },
 				gateSeenStanding = world.Objects.Values.Any(known => known.TemplateId == GroupNtcGate && !known.IsCorpse),
 				elapsedMillis = runtime.NowMillis - started, map = world.MapId, instance = world.InstanceId, position = session.CurrentPosition,
 				deaths = combat.ReviveCount, rewardItems };
