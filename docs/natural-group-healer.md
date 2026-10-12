@@ -1,6 +1,7 @@
 # The Cleric as a group healer: heal the group, remove debuffs, never fight
 
-Status: plan, 2026-10-12. Nothing in it is implemented. The operator answered its questions the same day; the
+Status: GH-01 survey waiting for a decision, 2026-10-12. The Java facts and two field attempts are recorded below;
+the healer mode is not implemented. The operator answered the plan's questions the same day; the
 answers are under [Decisions](#decisions). It is the last task before group play, and it follows
 [natural-muster.md](natural-muster.md): the characters are the eleven of the one world, `ntc-group-s4`, and that
 document's rules (MR-a to MR-f) hold here. The prompt to start the work with is at the end.
@@ -54,12 +55,13 @@ on it.
   The stigma skills of level 20 (Noble Grace, Saving Grace, Sympathetic Heal) are not used: no bot takes a stigma.
   So at level 26 "group heal" means healing the members one at a time, the one in most need first. The plan's table
   takes Healing Wind up by itself on the day the Cleric learns it.
-- **Cleanse removes every debuff it can from its target in one cast**: every effect in the debuff slot whose dispel
-  category is physical, mental or both and whose dispel level is 1 (`AbstractDispelEffect`, `EffectController.
-  removeEffectByDispelCat`). About 2,280 debuff skills in the data are of that kind. Stuns (about 400), debuffs with
+- **Cleanse removes up to 100 eligible debuffs from its target in one cast**: effects in the debuff slot whose dispel
+  category is physical, mental or both and whose dispel level is at most 1, with at most 30 remaining dispel resistance
+  (`AbstractDispelEffect`, `EffectController.removeEffectByDispelCat`). A stronger resistance is reduced by 30 and
+  leaves the effect in place. About 2,280 debuff skills in the data have the category and level. Stuns (about 400), debuffs with
   no dispel category (about 400) and those of level 3 and 5 (about 140) are not removable.
 - **The monsters beside the fortress give something to remove.** The ruthless worg's Rabies (poison and blindness,
-  15 s), the savvy daru's Lower-body Paralysis (a snare, 4 s) and the ettins' Weaken Defense (5 s) are physical
+  19.3 s at its learned rank 12), the savvy daru's Lower-body Paralysis (a snare, 4 s) and the ettins' Weaken Defense (5 s) are physical
   debuffs of level 1. These are the monsters of the coin quest the muster already hunts.
 
 **What the bots know of a group.** `BotWorldModel` holds the group's id, leader and loot rule, and for each member
@@ -155,6 +157,40 @@ members' own means are not enough.
 
 ## Checklist
 
+### GH-01 survey facts (2026-10-12)
+
+Java paths below are relative to `../aion-server/game-server/src/com/aionemu/gameserver/`, on branch `4.8`.
+The corresponding C# packet, life-stat updater, effect controller and revive paths retain these rules.
+
+| Fact | Java reference |
+|---|---|
+| A group member packet carries object/group ids, exact HP/MP and flight points, map and instance, XYZ, class, gender, level, fly state and mentor state. Offline members carry zero vitals. ENTER/UPDATE includes the visible effects; UPDATE_EFFECTS replaces the named slot mask, with caster, skill/rank, target-slot ordinal and remaining milliseconds. | `network/aion/serverpackets/SM_GROUP_MEMBER_INFO.java:28, 53` |
+| Joining or reconnecting exchanges member packets. HP/MP changes queue a MOVEMENT update on a 500 ms FIFO; movement has its own 2 s updater. Adding/removing a nonpassive effect sends MOVEMENT and an immediate UPDATE_EFFECTS for its slot. Updates go to every other group member. | `model/team/group/events/PlayerGroupEnteredEvent.java:26`; `PlayerConnectedEvent.java:34`; `PlayerGroupUpdateEvent.java:32`; `model/stats/container/PlayerLifeStats.java:38, 67`; `taskmanager/tasks/TeamStatUpdater.java:26`; `TeamMoveUpdater.java:26`; `controllers/effect/PlayerEffectController.java:70` |
+| Sighted players receive SM_ATTACK_STATUS on HP changes, with the current HP **percentage**, not exact HP. MP packet types 19–23 carry MP percentages; they must never be mistaken for deaths. The member itself receives exact SM_STATUPDATE_HP. Ordinary attacks and spell results identify attackers and targets. | `model/stats/container/CreatureLifeStats.java:152`; `PlayerLifeStats.java:93`; `network/aion/serverpackets/SM_ATTACK_STATUS.java:124`; `SM_ATTACK.java:52`; `SM_CASTSPELL_RESULT.java` |
+| Indirect effects add their hate to nearby creatures already hating the caster or recipient. A heal can therefore draw an engaged monster to the healer; the effect's hate is zeroed after broadcasting. | `skillengine/model/Effect.java:622` |
+| Dispel count is the inherited base value; power is `power + dpower * skillLevel`. Cleanse III's data gives count 100, power 30, level 1 and ALL categories in DEBUFF. Each eligible effect loses 30 resistance; only one reaching zero ends. STUN is a separate category; long-duration protected effects and already-designated effects are excluded. | `skillengine/effect/AbstractDispelEffect.java:32`; `DispelDebuffEffect.java:20`; `controllers/effect/EffectController.java:528, 604, 649`; `skillengine/model/Effect.java:154, 1057`; Java `data/static_data/skills/skill_templates.xml`, skill 3937 |
+| Default loot is ROUNDROBIN. Ordinary loot cycles through the nearby entitled members. Quest drops are processed separately: each-member drops make a personal item for every eligible member; a shared drop chooses the first eligible member in the supplied member collection, records that member as item owner and opens the corpse to it. It is not alternating quest ownership by the ordinary loot counter. | `model/team/common/legacy/LootGroupRules.java:36`; `services/drop/DropRegistrationService.java:84, 122`; `services/QuestService.java:666, 733`; `model/templates/quest/QuestDrop.java:29, 67` |
+| Opening a corpse and taking its items still requires loot rights. SM_LOOT_STATUS is corpse-level permission; SM_LOOT_ITEMLIST filters out items the player cannot view. The bot must inspect that list and take only its needed quest items. A dead corpse entering sight sends LOOT_ENABLE to an entitled player. | `services/drop/DropService.java:90, 277, 488`; `network/aion/serverpackets/SM_LOOT_ITEMLIST.java:26` |
+| Resurrection on a dead player enables its offer and sends SM_RESURRECT. Accepting is CM_REVIVE with SKILL_REVIVE id 3; the server requires the active offer and revives at 35% HP/MP with soul sickness. A normal resurrection stays at the corpse unless the positional-resurrection state is set. | `skillengine/effect/ResurrectEffect.java:27, 37`; `network/aion/serverpackets/SM_RESURRECT.java`; `network/aion/clientpackets/CM_REVIVE.java:49`; `model/gameobjects/player/ReviveType.java:22`; `services/player/PlayerReviveService.java:42` |
+
+The three candidates, with the hard-fight choice pending the decision below:
+
+- **Hard fight:** King Zugog (212644), level 27 HERO/MASTER, shipped at (896.833, 2169.32, 213.125),
+  about 691 m in a straight line from the fortress hub. Java's NPC template, Morheim spawn and NPC skill rows
+  name it. The port's approved retail `battle_cycle` table drives it (pattern `ND2_KnN`); the proof uses that
+  shipped behavior and the Templar's existing potion, scroll and retreat rules.
+- **Removable debuff:** ruthless worg (211302), Rabies (16819), rank 12: DEBUFF_PHYSICAL, level 1,
+  resistance 10, poison and blindness. Java `Effect.calculateTemplateDuration` uses `15100 + 350 * 12 = 19300 ms`.
+  Sources: Java `data/static_data/npc_skills/npc_skills.xml`, NPC 211302; `skills/skill_templates.xml`, skill 16819;
+  `skillengine/model/Effect.java:900`. The port ships the same rows.
+- **Shared quest drop:** Q2307 "Irresistible Soup", started at Favyr (204378). Its four ingredient drops omit
+  `drop_each_member` (Java defaults it to 0), including the worg's Meat (182204107). Neither Q2307 nor Q2430 has a
+  row in the group snapshot's `player_quests` table; Q2307 has no prerequisite and avoids Q2430's prerequisite
+  and collecting-step-8 sequence. Sources: Java `data/static_data/quest_data/quest_data.xml`, quest 2307;
+  `data/handlers/quest/morheim/_2307IrresistibleSoup.java:30`; `model/templates/quest/QuestDrop.java:29`.
+
+### Items
+
 - [ ] **GH-01 Survey.** Read the Java for: when `SM_GROUP_MEMBER_INFO` is sent and what it carries; how HP of a
   member in sight reaches another client sooner; `Effect.broadcastHate`; `AbstractDispelEffect` and what Cleanse's
   count and power mean; `QuestService.getQuestDrop` and `DropService` for a group; the default loot rule; the
@@ -165,6 +201,33 @@ members' own means are not enough.
   "Irresistible Soup", Q2430 "Secret Information").
   - Proof: a facts table in this document, each row with its Java reference; the three choices named, with one
     uncaptured round of a fighter alone in the hard fight as evidence of what it costs.
+  - 2026-10-12, code `3dd8f2b41`: the `gh-survey` round stage resumes a mustered level-26 character, walks to
+    `targetNpcId`, and makes one attempt with its existing fight table. The receipt verifies that the survey was
+    played, including a death; the trace audit separately decides whether its evidence meets the hard-fight criterion.
+    No new unit tests, fighter policy changes or healer mode were added.
+  - Two uncaptured seed-1 rounds from `ntc-group-s4`, under `run/gh/GH-01`, audited by
+    `scripts/sim/trace/group_healer_survey.py <absolute round folder>`:
+
+    | Run | Target | Lowest living HP | Deaths | Target killed | Fight time | Life potions consumed | Anti-Shock consumed / attempted |
+    |---|---|---:|---:|---|---:|---:|---:|
+    | `zugog-solo1` | King Zugog (212644), 504,427 HP | 19.86% (then 0%) | 1 | no | 13.948 s | 1 | 0 / 1 |
+    | `seku-solo1` | Seku the Youngest (213800), level 25 elite, 12,513 HP | 74.65% | 0 | yes | 35.129 s | 1 | 0 / 0 |
+
+    Zugog's scroll was refused with `STR_SKILL_CAN_NOT_USE_ITEM_WHILE_IN_ABNORMAL_STATE`; the count remained 30.
+    Its Courage scroll was consumed at the start of the fight. Seku never drove the fighter below half HP.
+    Both remained level 26 and made no retreat. Both survey stages reached their end; both owned schemas were
+    dropped, and no snapshot was captured or changed.
+  - The bundle, `run/gh/GH-01/bundle.log`: server tests 4,632 passed, 16 skipped; seven checks and the three script
+    checks passed; Fast `gh01-fast` 11 scenarios passed (its simulation prerequisites: 115 passed, 96 skipped).
+    Gate `guard-starters`, parallel 5: mage 23,555, warrior 24,199, artist 23,104, engineer 24,580 and scout 27,592
+    normalized trace records, each count and digest identical to its baseline. Build servers shut down after the bundle.
+  - **Stop after two attempts, as the handoff prompt requires.** The audit interprets "although it uses its own
+    potion and scroll" as a consumed life potion and defensive Anti-Shock scroll, rather than an attempted scroll
+    or the speed scroll. Under that interpretation both audits say `passed: false`. This qualification is an
+    interpretation, not a new operator decision. The Java survey, worg and Q2307 choices are ready, but GH-01 stays
+    unticked until the operator either accepts Zugog's normal-fighter result with its recorded refusal, or authorizes
+    another hard-fight survey (a level-26 veteran elite such as Klaw Spawnguard, 212816, 28,351 HP, is untested).
+    GH-02 through GH-13 remain untouched.
 - [ ] **GH-02 What the client sees of a group.** The world model keeps a member's MP, class, flight state and
   effects from `SM_GROUP_MEMBER_INFO`, counts HP 0 as dead, and takes the freshest HP of the group packet and what
   it sees of a member in sight. It keeps who attacks whom for every creature in sight, not for itself alone.
