@@ -1,8 +1,8 @@
 # Group NTC leg
 
-Status: planned 2026-10-12; N1 to N6 are done: the six take the quests, go into one instance of the camp, fight
-through it, kill the Protector, the Guard and the Aetheric Field Guard, and destroy the fortress gate. The step list
-at the end is worked one step at a time.
+Status: planned 2026-10-12; N1 to N7 are done: the six take the quests, go into one instance of the camp, fight
+through it, kill the four named monsters of Q4733, destroy the fortress gate, and each takes its four chest items
+for Q4734. The General is next. The step list at the end is worked one step at a time.
 
 It follows [natural-group-healer.md](natural-group-healer.md): group formation, F1 following, the Cleric's
 healing-only role, resurrection waiting and round-robin loot are there and are reused. Gear, supplies, shards and the
@@ -38,8 +38,8 @@ pwsh -NoProfile -File scripts/sim/run-round.ps1 -Round run/ntc/<round>.json -Ite
 
 The stage is `"group-ntc"`, with the same `groupLeader`, `groupRoster`, `groupLoot` and `"role": "healer"` as
 `group-coin`, and `groupUntil` naming how far the leg is played (so far `"quests"`, `"entrance"`, `"protector"`,
-`"field-guard"` or `"gate"`). `run/ntc/n2.json` to `n6.json` are the round files of those steps. Each member writes
-`group-ntc-completion.json`.
+`"field-guard"`, `"gate"` or `"chests"`). `run/ntc/n2.json` to `n7.json` are the round files of those steps. Each
+member writes `group-ntc-completion.json`.
 
 Code changes stay; the world does not. `run/ntc/baseline.json` holds the snapshot's hashes, checked 2026-10-12:
 dump `8d0787cf…cf8f97`, manifest `26fb3931…68ce96`, the same as `run/group/baseline.json`. They are checked again
@@ -74,6 +74,10 @@ the fortress walls behind the gate, on three levels, and 7 on the camp's own gro
 registered to itself alone (the quest drop is not an each-member drop), and the chest dies
 (`ai/quests/QuestItemNpcAI.java`). So every member opens four chests itself, and only four are to spare: a member
 uses a chest only while it still needs an item.
+
+As played (N7): with the gate down F1 leads the group to the seven chests outside the walls, nearest first, then
+through the gateway to the chests inside. At each chest F1 gathers the group and names the member that lacks the
+most; that member opens the chest and takes its item. F1 goes on when that member's journal shows it.
 
 ### Entrance and exit
 
@@ -221,7 +225,27 @@ the run, how far the group got, the deaths and what stopped it.
     for mana when F1 spoke its last command and logged out, read the words when F1 was no longer the leader, and
     ignored them. A member now takes a command from the leader it last saw leading, also when that leader has left.
     The leg's own last command is the disband, where the same would have happened.
-- [ ] **N7 Inside the walls.** The Teleporter dead; every member has its four chest items.
+- [x] **N7 Inside the walls.** The Teleporter dead; every member has its four chest items.
+  - 2026-10-12, round `n7-2` (`run/ntc/ntc/n7-2`): twenty-four chest turns, each one taken, seven outside the
+    walls and seventeen inside; every member holds four items 29 min 45 s after login. The Teleporter died fourteen
+    seconds after its pull. All six journals: Q4733 with its four kills, Q4734 with four items. Seventy-one pulls
+    since the landing, no death, 31 min 18 s in all. All six are level 27.
+  - The Cleric sent no attack: 30 cleanses, 11 heals, 11 top-ups, 316 Lights of Rejuvenation, and its mana recovery
+    four times. Round-robin loot: 155 entries over the six.
+  - Round `n7-1` took the chests the same way, with no death to that point, and then failed at the Teleporter with
+    the leg's first two deaths, the Cleric and the Templar. What it showed, all changed:
+    - F1 stood 88 seconds under the Teleporter's spells, waiting for a caster 13 metres off to come within 12.
+      Inside the camp F1 does not wait for the group in the middle of a fight; it gathers it before a pull and a
+      walk.
+    - The client then had the Teleporter at the map's origin, led the group across the fortress towards it, and
+      failed some 390 times to approach it. A "fall after a lift" names its status in the cast result and no place:
+      Java's `CloseAerialEffect.calculate` sets none, the packet carries three zeros, and the C# server does the
+      same. The bot's world model took the zeros for a place. It no longer does, for any bot.
+    - The Cleric revived at its bind in Morheim and stayed there: it went back in only on the command "enter", and
+      the last command had been a chest turn. A member that has been inside and stands outside while its leader is
+      inside now goes back through Vallack, whatever was said last.
+  - Still not shown: a resurrection (the Templar died after the Cleric had left the instance), and a member's way
+    back from the landing to a group that stands inside the walls.
 - [ ] **N8 The General.** Dead and looted.
 - [ ] **N9 Disband and turn in.** F1 disbands; all six arrive at the exit point; each hands in Q4733 and Q4734.
 - [ ] **N10 Q4732 under D32.** Handler, test, deviation log and upstream offer by
