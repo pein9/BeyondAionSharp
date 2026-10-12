@@ -9,7 +9,8 @@ namespace Aion.Bots.Scenarios;
 public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, NaturalJourneyRuntime runtime)
 {
 	private readonly Queue<BotPosition> trail = new();
-	private readonly BotNavigationGeometry geometry = runtime.CreateGeometry();
+	private BotNavigationGeometry geometry = runtime.CreateGeometry();
+	private (int? Map, int? Instance) place;
 	private int cursor;
 	private int? leader;
 	private BotPosition? lastSample;
@@ -23,6 +24,13 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 	{
 		await session.SynchronizeAsync(token);
 		var world = session.Api.World;
+		if ((world.MapId, world.InstanceId) != place)
+		{
+			// Checked ground belongs to the map and instance the client stands in; a trail of another map leads nowhere.
+			place = (world.MapId, world.InstanceId);
+			geometry = runtime.CreateGeometry();
+			trail.Clear(); lastSample = null; cursor = session.PacketHistory.Count;
+		}
 		if (world.GroupLeaderId != leader)
 		{
 			leader = world.GroupLeaderId;

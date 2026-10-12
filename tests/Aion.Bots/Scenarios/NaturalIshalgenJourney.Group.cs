@@ -15,8 +15,10 @@ public sealed partial class NaturalIshalgenJourney
 	/// <summary>The Group NTC leg (docs/natural-group-ntc.md): its Morheim quests in the order they are taken, their
 	/// givers, and how far the leg is played so far.</summary>
 	private static readonly int[] GroupNtcQuests = [4731, 4733, 4734];
-	private const int GroupNtcAegir = 204301, GroupNtcKelmar = 800519;
-	private static readonly string[] GroupNtcCheckpoints = ["quests"];
+	private const int GroupNtcAegir = 204301, GroupNtcKelmar = 800519, GroupNtcVallack = 800510, GroupNtcMap = 300030000;
+	/// <summary>Vallack's dialog choice that sends a member into the camp (portal_template2.xml).</summary>
+	private const ushort GroupNtcEnterDialog = 10000;
+	private static readonly string[] GroupNtcCheckpoints = ["quests", "entrance"];
 
 	/// <summary>
 	/// A group plays quests together: the leader (F1) leads and speaks the commands in group chat, the others follow, do
@@ -58,8 +60,10 @@ public sealed partial class NaturalIshalgenJourney
 			world.CompletedQuests.GetValueOrDefault(quest.Id)?.CompleteCount ?? 0);
 		long started = runtime.NowMillis;
 		int chatCursor = 0;
-		string command = "", lastReport = "";
+		string command = "", lastReport = "", lastPlace = "";
 		int[] arguments = [];
+		// Where each member says it stands: its map and the instance of it.
+		var places = new Dictionary<int, (int Map, int Instance)>();
 		int? assist = null;
 		var progress = new Dictionary<(int Member, int Quest), (int Status, int[] Counts)>();
 		var failedTargets = new Dictionary<int, int>();
@@ -102,6 +106,8 @@ public sealed partial class NaturalIshalgenJourney
 						if (counts.Length == wanted.Length && counts.All(count => count >= 0)) progress[(sender, about)] = (status, counts);
 					}
 				}
+				else if (words[1] == "place" && words.Length == 4 && int.TryParse(words[2], out int map) && int.TryParse(words[3], out int instance))
+					places[sender] = (map, instance);
 				else if (sender == world.GroupLeaderId && words[1] == "command")
 				{
 					command = words[2];
@@ -117,6 +123,12 @@ public sealed partial class NaturalIshalgenJourney
 				await SayAsync(report); lastReport = report;
 				session.TraceDiagnostic("group-quest-progress", new Dictionary<string, object?>
 				{ ["quest"] = quest.Id, ["status"] = Status(), ["counts"] = Counts(), ["journal"] = report });
+			}
+			if (ntc)
+			{
+				places[session.CharacterId] = (world.MapId ?? 0, world.InstanceId ?? 0);
+				string place = $"place:{world.MapId ?? 0}:{world.InstanceId ?? 0}";
+				if (world.GroupId != null && place != lastPlace) { await SayAsync(place); lastPlace = place; }
 			}
 		}
 		async Task PauseAsync()
@@ -140,9 +152,10 @@ public sealed partial class NaturalIshalgenJourney
 			// Finish an existing fight before recovering a dead/out-of-range group. Never begin another pull without them.
 			if (combat.InCombat && world.GroupMembers.Values.Any(member => member.Dead)) return;
 			bool clericDead = world.GroupMembers.Values.Any(member => member.PlayerClass == (byte)PlayerClass.CLERIC && member.Dead);
-			bool atBind = world.ObeliskBindPoint is { } point && Distance(session.CurrentPosition, point.Position) < 30;
-			bool memberAtBind = world.ObeliskBindPoint is { } common && world.GroupMembers.Values.Any(member =>
-				Distance(member.Position, common.Position) < 30 && Distance(session.CurrentPosition, member.Position) > 150);
+			// The bind is a place on one map. Inside an instance nobody is at it, and recovery there is not played yet.
+			bool atBind = world.ObeliskBindPoint is { } point && point.MapId == world.MapId && Distance(session.CurrentPosition, point.Position) < 30;
+			bool memberAtBind = world.ObeliskBindPoint is { } common && common.MapId == world.MapId && world.GroupMembers.Values.Any(member =>
+				member.MapId == common.MapId && Distance(member.Position, common.Position) < 30 && Distance(session.CurrentPosition, member.Position) > 150);
 			if (clericDead || memberAtBind || atBind && world.GroupMembers.Values.Any(member => Distance(session.CurrentPosition, member.Position) > 150))
 			{
 				await SayAsync("command:regroup");
@@ -165,6 +178,16 @@ public sealed partial class NaturalIshalgenJourney
 			await WaitAsync(Together, "followers to regroup");
 		}
 		navigator.BeforeMovementAsync = WaitForFollowersAsync;
+		// The member changed maps: checked movement and combat are bound to the map the client stands on now.
+		void EnterMap()
+		{
+			geometry = runtime.CreateGeometry();
+			navigator = new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, [quest.Id], geometry),
+				geometry, runtime, stopOnDeath: false) { AvoidHostileAggro = true,
+				Planner = leads ? BotTravelPlanner.For(world.MapId!.Value, geometry, runtime.Data) : null, BeforeMovementAsync = WaitForFollowersAsync };
+			combat.EnterMap(navigator, geometry, world.MapId!.Value);
+			following.Reset();
+		}
 		combat.WaitForGroupResurrectionAsync = async ct =>
 		{
 			if (healer != null) return false;
@@ -191,7 +214,7 @@ public sealed partial class NaturalIshalgenJourney
 		};
 		async Task ReturnToBindAsync()
 		{
-			if (world.ObeliskBindPoint is { } point && Distance(session.CurrentPosition, point.Position) < 20) { following.Reset(); return; }
+			if (world.ObeliskBindPoint is { } point && point.MapId == world.MapId && Distance(session.CurrentPosition, point.Position) < 20) { following.Reset(); return; }
 			const ushort skill = 243;
 			if (!world.Skills.ContainsKey(skill) || session.Api.Timing.TimeUntilCast(skill) > TimeSpan.Zero) throw new IOException("Group recovery needs Return, but it is unavailable.");
 			await session.SendPacketAsync(session.Api.Target(session.CharacterId), token);
@@ -330,6 +353,27 @@ public sealed partial class NaturalIshalgenJourney
 			await ObserveAsync();
 		}
 
+		// Through a portal NPC's dialog, every member for itself (Java PortalService: the first of a group makes the
+		// instance, the others are sent into that same one).
+		async Task EnterAsync(int portal, int destination)
+		{
+			var gate = world.Objects.Values.Where(known => known.TemplateId == portal && !known.IsCorpse && Distance(session.CurrentPosition, known.Position) <= 15)
+				.OrderBy(known => Distance(session.CurrentPosition, known.Position)).FirstOrDefault();
+			if (gate == null) return;
+			if (Distance(session.CurrentPosition, gate.Position) > 4)
+			{
+				var path = geometry.FindInteractionPath(world.MapId!.Value, session.CurrentPosition, gate.Position);
+				if (path.Count == 0) return;
+				await navigator.MoveAsync(path, token);
+			}
+			session.BeginStep("group-enter", $"npc{portal}");
+			await NaturalCapitalSteps.PortalAsync(session, new NaturalCapitalPortal(portal, world.MapId!.Value, destination, 0, GroupNtcEnterDialog), gate.ObjectId, token);
+			EnterMap();
+			session.TraceDiagnostic("group-entered", new Dictionary<string, object?>
+			{ ["map"] = world.MapId, ["instance"] = world.InstanceId, ["position"] = session.CurrentPosition });
+			await ObserveAsync();
+		}
+
 		if (!leads)
 		{
 			long? leaderMissingAt = null;
@@ -352,6 +396,7 @@ public sealed partial class NaturalIshalgenJourney
 					if (command == "accept" && Status(about) is not (3 or 4 or 5)) await DialogQuestAsync(asked, npc, false);
 					else if (command == "turn-in" && Status(about) is 3 or 4 && OwnTasksDone(asked)) await DialogQuestAsync(asked, npc, true);
 				}
+				else if (command == "enter" && arguments is [int portal, int destination] && world.MapId != destination) await EnterAsync(portal, destination);
 				if (healer != null) await healer.StepAsync(token);
 				else if (assist is int target && world.Objects.TryGetValue(target, out var enemy) && !enemy.IsCorpse &&
 					Distance(session.CurrentPosition, enemy.Position) <= 35 && session.PacketHistory.TakeLast(400)
@@ -387,6 +432,19 @@ public sealed partial class NaturalIshalgenJourney
 			await TogetherAtAsync(quests[0], GroupNtcAegir, false);
 			await TogetherAtAsync(quests[0], GroupNtcKelmar, true);
 			foreach (QuestRunPlan plan in quests.Skip(1)) await TogetherAtAsync(plan, GroupNtcKelmar, false);
+			if (options.GroupUntil != "quests")
+			{
+				// N3: nobody talks to Vallack until all six stand before him; then each goes in, into one instance.
+				await NpcAsync(GroupNtcVallack);
+				await WaitForFollowersAsync(token);
+				await SayAsync($"command:enter:{GroupNtcVallack}:{GroupNtcMap}");
+				await EnterAsync(GroupNtcVallack, GroupNtcMap);
+				if (world.MapId != GroupNtcMap) throw new IOException("The group leader did not enter the camp.");
+				await WaitAsync(() => world.GroupMembers.Keys.All(id => places.TryGetValue(id, out var at) && at == places[session.CharacterId]),
+					"every member inside the leader's instance", 180);
+				session.TraceDiagnostic("group-ntc-step", new Dictionary<string, object?>
+				{ ["done"] = "entered", ["map"] = world.MapId, ["instance"] = world.InstanceId, ["members"] = world.GroupMembers.Count });
+			}
 			await SayAsync("command:done");
 			await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
 		}
@@ -458,15 +516,17 @@ public sealed partial class NaturalIshalgenJourney
 		await ObserveAsync();
 		if (ntc)
 		{
-			// N2's end: the entry quest handed in and Kelmar's two in the journal.
+			// N2's end: the entry quest handed in and Kelmar's two in the journal. N3's: that, inside the camp.
 			int[] wanted = [5, .. quests.Skip(1).Select(_ => 3)];
 			int[] journal = [.. quests.Select(plan => Status(plan.Id))];
 			if (!journal.SequenceEqual(wanted))
 				throw new InvalidDataException($"The group member's journal is [{string.Join(", ", journal)}], not [{string.Join(", ", wanted)}].");
+			if (options.GroupUntil != "quests" && (world.MapId != GroupNtcMap || world.InstanceId == null))
+				throw new InvalidDataException($"The group member stands on map {world.MapId}, not inside the camp.");
 			runtime.AssertClean();
 			var reached = new { verified = true, CharacterId = session.CharacterId, name, until = options.GroupUntil,
 				leader = world.GroupLeaderId, roster, quests = quests.ToDictionary(plan => plan.Id.ToString(), plan => Status(plan.Id)),
-				elapsedMillis = runtime.NowMillis - started, map = world.MapId, position = session.CurrentPosition,
+				elapsedMillis = runtime.NowMillis - started, map = world.MapId, instance = world.InstanceId, position = session.CurrentPosition,
 				deaths = combat.ReviveCount, rewardItems };
 			File.WriteAllText(Path.Combine(Path.GetDirectoryName(session.CombatTracePath!)!, "group-ntc-completion.json"),
 				JsonSerializer.Serialize(reached, new JsonSerializerOptions { WriteIndented = true }));
