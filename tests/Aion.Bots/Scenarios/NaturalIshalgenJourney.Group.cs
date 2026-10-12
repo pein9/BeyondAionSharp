@@ -18,7 +18,7 @@ public sealed partial class NaturalIshalgenJourney
 	private const int GroupNtcAegir = 204301, GroupNtcKelmar = 800519, GroupNtcVallack = 800510, GroupNtcMap = 300030000;
 	/// <summary>Vallack's dialog choice that sends a member into the camp (portal_template2.xml).</summary>
 	private const ushort GroupNtcEnterDialog = 10000;
-	private static readonly string[] GroupNtcCheckpoints = ["quests", "entrance", "protector"];
+	private static readonly string[] GroupNtcCheckpoints = ["quests", "entrance", "protector", "field-guard"];
 
 	/// <summary>
 	/// A group plays quests together: the leader (F1) leads and speaks the commands in group chat, the others follow, do
@@ -554,14 +554,13 @@ public sealed partial class NaturalIshalgenJourney
 						if (world.IsDead || moved < .1f || walked >= stretch || OnTheGroup(Hostiles()) != null) return;
 					}
 			}
-			async Task HuntNamedAsync(QuestRunPlan plan, int index)
+			// To a place inside the camp, fighting what is in the way, until done says so. kind is the monster fought at
+			// the place itself, when there is one.
+			async Task AdvanceAsync(string what, BotPosition lair, int kind, Func<bool> done)
 			{
-				QuestRunOperation kill = tasks[plan.Id][index];
-				int kind = kill.Npcs!.Select(npc => npc.Id).First(id => runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value).Any(group => group.GetNpcId() == id));
-				BotPosition lair = Spawn(kind);
-				session.TraceDiagnostic("group-ntc-hunt", new Dictionary<string, object?> { ["quest"] = plan.Id, ["npc"] = kind, ["lair"] = lair });
+				session.TraceDiagnostic("group-ntc-hunt", new Dictionary<string, object?> { ["what"] = what, ["npc"] = kind, ["lair"] = lair });
 				int idle = 0;
-				while (!Everybody(entry => entry.Counts[index] >= kill.Count, plan.Id))
+				while (!done())
 				{
 					await ObserveAsync();
 					if (world.IsDead) { await combat.RestAsync(token); continue; }
@@ -602,8 +601,8 @@ public sealed partial class NaturalIshalgenJourney
 					if (pick is int target) { idle = 0; await GroupKillAsync(target); continue; }
 					if (route.Count == 0)
 					{
-						// At the lair with nothing to fight: the named monster is not there, or a member lacks its count.
-						if (++idle > 480) throw new IOException($"Q{plan.Id}: npc {kind} was not found at its lair, and not every member has its kill.");
+						// At the place with nothing to fight: the named monster is not there, or a member lacks its count.
+						if (++idle > 480) throw new IOException($"{what}: the group stands at the place, npc {kind} is not there to fight, and it is not done.");
 						await PauseAsync();
 						continue;
 					}
@@ -611,13 +610,27 @@ public sealed partial class NaturalIshalgenJourney
 					await WalkStretchAsync(route, 8);
 				}
 				session.TraceDiagnostic("group-ntc-step", new Dictionary<string, object?>
-				{ ["done"] = "killed", ["quest"] = plan.Id, ["npc"] = kind, ["members"] = world.GroupMembers.Count, ["kills"] = killed.Count, ["deaths"] = combat.ReviveCount });
+				{ ["done"] = what, ["npc"] = kind, ["members"] = world.GroupMembers.Count, ["kills"] = killed.Count, ["deaths"] = combat.ReviveCount,
+					["position"] = session.CurrentPosition });
+			}
+			// A named monster of a kill quest: done when every member's journal has it.
+			Task HuntNamedAsync(QuestRunPlan plan, int index)
+			{
+				QuestRunOperation kill = tasks[plan.Id][index];
+				int kind = kill.Npcs!.Select(npc => npc.Id).First(id => runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value).Any(group => group.GetNpcId() == id));
+				return AdvanceAsync($"Q{plan.Id} npc {kind}", Spawn(kind), kind, () => Everybody(entry => entry.Counts[index] >= kill.Count, plan.Id));
 			}
 			if (reach >= 2)
 			{
 				// N4: west through the lower camp to the Protector.
 				await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
 				await HuntNamedAsync(quests[1], 0);
+			}
+			if (reach >= 3)
+			{
+				// N5: north to the Guard, then the Aetheric Field Guard.
+				await HuntNamedAsync(quests[1], 1);
+				await HuntNamedAsync(quests[1], 2);
 			}
 			await SayAsync("command:done");
 			await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
@@ -697,8 +710,11 @@ public sealed partial class NaturalIshalgenJourney
 				throw new InvalidDataException($"The group member's journal is [{string.Join(", ", journal)}], not [{string.Join(", ", wanted)}].");
 			if (options.GroupUntil != "quests" && (world.MapId != GroupNtcMap || world.InstanceId == null))
 				throw new InvalidDataException($"The group member stands on map {world.MapId}, not inside the camp.");
-			// N4's: the Protector in the journal of Q4733.
-			if (reach >= 2 && Counts(quests[1])[0] < 1) throw new InvalidDataException("The group member has no kill of the Protector in its journal.");
+			// N4's: the Protector in the journal of Q4733. N5's: the Guard and the Aetheric Field Guard beside him.
+			int[] namedKills = Counts(quests[1]);
+			if (reach >= 2 && namedKills[0] < 1) throw new InvalidDataException("The group member has no kill of the Protector in its journal.");
+			if (reach >= 3 && (namedKills[1] < 1 || namedKills[2] < 1))
+				throw new InvalidDataException("The group member lacks the Guard or the Aetheric Field Guard in its journal.");
 			runtime.AssertClean();
 			var reached = new { verified = true, CharacterId = session.CharacterId, name, until = options.GroupUntil,
 				leader = world.GroupLeaderId, roster, quests = quests.ToDictionary(plan => plan.Id.ToString(), plan => Status(plan.Id)),
