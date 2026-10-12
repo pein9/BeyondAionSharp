@@ -1,7 +1,8 @@
 # Group NTC leg
 
-Status: planned 2026-10-12; N1 to N4 are done: the six take the quests, go into one instance of the camp, fight
-through the lower camp and kill the Protector. The step list at the end is worked one step at a time.
+Status: planned 2026-10-12; N1 to N5 are done: the six take the quests, go into one instance of the camp, fight
+through it and kill the Protector, the Guard and the Aetheric Field Guard. They stand before the fortress gate. The
+step list at the end is worked one step at a time.
 
 It follows [natural-group-healer.md](natural-group-healer.md): group formation, F1 following, the Cleric's
 healing-only role, resurrection waiting and round-robin loot are there and are reused. Gear, supplies, shards and the
@@ -36,8 +37,9 @@ pwsh -NoProfile -File scripts/sim/run-round.ps1 -Round run/ntc/<round>.json -Ite
 ```
 
 The stage is `"group-ntc"`, with the same `groupLeader`, `groupRoster`, `groupLoot` and `"role": "healer"` as
-`group-coin`, and `groupUntil` naming how far the leg is played (so far `"quests"`, `"entrance"` or `"protector"`).
-`run/ntc/n2.json` to `n4.json` are the round files of those steps. Each member writes `group-ntc-completion.json`.
+`group-coin`, and `groupUntil` naming how far the leg is played (so far `"quests"`, `"entrance"`, `"protector"` or
+`"field-guard"`). `run/ntc/n2.json` to `n5.json` are the round files of those steps. Each member writes
+`group-ntc-completion.json`.
 
 Code changes stay; the world does not. `run/ntc/baseline.json` holds the snapshot's hashes, checked 2026-10-12:
 dump `8d0787cf…cf8f97`, manifest `26fb3931…68ce96`, the same as `run/group/baseline.json`. They are checked again
@@ -199,7 +201,15 @@ the run, how far the group got, the deaths and what stopped it.
     approach the Protector because other monsters' circles lay across the approach (inside the camp nobody plans
     around them); F1 stood waiting for the Cleric's mana while a picket was on the Cleric (a monster on a member ends
     the wait and is fought); and the dead-Cleric regroup at the bind was not yet tied to the bind's map.
-- [ ] **N5 The Guard and the Aetheric Field Guard.**
+- [x] **N5 The Guard and the Aetheric Field Guard.**
+  - 2026-10-12, round `n5-2` (`run/ntc/ntc/n5-2`): the Guard is dead 2 min 3 s after the Protector and the
+    Aetheric Field Guard a minute after that, 9 min 39 s after login. All six journals count the three for Q4733.
+    Seventeen pulls in all, no death. Round-robin loot: 49 entries over the six.
+  - The Cleric sent no attack: 9 cleanses, 4 heals, 9 top-ups, 98 Lights of Rejuvenation, 4 blessings, and its
+    mana recovery twice.
+  - Round `n5-1` is void. It ran a bot binary that lacked the step's code and stopped at login: another session
+    built in this checkout at the same second, and its older compile landed over the newer source. From here a
+    round is started only after the binary is seen to hold the step's new code.
 - [ ] **N6 The gate.**
 - [ ] **N7 Inside the walls.** The Teleporter dead; every member has its four chest items.
 - [ ] **N8 The General.** Dead and looted.
