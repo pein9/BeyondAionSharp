@@ -195,6 +195,8 @@ public sealed partial class BotWorldModel
 			ApplyMove(packet);
 		else if (type == typeof(SM_FORCED_MOVE))
 			ApplyForcedMove(packet);
+		else if (type == typeof(SM_POSITION))
+			ApplyPosition(packet);
 		else if (packet.Landings is { } landings)
 			ApplyLandings(landings);
 		else if (type == typeof(SM_DELETE))
@@ -431,6 +433,17 @@ public sealed partial class BotWorldModel
 				{
 					Position = new BotPosition(landing.X, landing.Y, landing.Z, known.Position.Heading), MoveTarget = null,
 				};
+	}
+
+	// The server ran a player somewhere itself and says where it stands now: the end of a fear or of a confusion
+	// (Java FearEffect.endEffect, ConfuseEffect.endEffect). A creature that is no player is left where the client has it.
+	private void ApplyPosition(DecodedBotServerPacket packet)
+	{
+		var objectId = packet.Get<int>("objectId");
+		if (objects.TryGetValue(objectId, out var known) && known.Kind == BotKnownObjectKind.Player)
+			objects[objectId] = known with { Position = ReadPosition(packet.Fields), MoveTarget = null };
+		if (SelfObjectId == objectId)
+			Position = ReadPosition(packet.Fields);
 	}
 
 	// A knockback, stumble or pull moved the creature on the server; the client puts it where it landed.

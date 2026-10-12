@@ -22,7 +22,7 @@ public sealed partial class NaturalIshalgenJourney
 	/// <summary>A point just inside the gateway. The fortress is a navmesh island of its own (docs/bot-navigation.md):
 	/// a way to an exact point crosses the seam in the gateway, so the leader goes to this point first.</summary>
 	private static readonly BotPosition GroupNtcInside = new(346.4f, 350f, 379.1f, 0);
-	private static readonly string[] GroupNtcCheckpoints = ["quests", "entrance", "protector", "field-guard", "gate", "chests", "general"];
+	private static readonly string[] GroupNtcCheckpoints = ["quests", "entrance", "protector", "field-guard", "gate", "chests", "general", "home"];
 
 	/// <summary>
 	/// A group plays quests together: the leader (F1) leads and speaks the commands in group chat, the others follow, do
@@ -410,6 +410,43 @@ public sealed partial class NaturalIshalgenJourney
 			await ObserveAsync();
 		}
 
+		// The end of the leg. 4.8 has no word that ends a group: it ends when its members leave until fewer than two are
+		// left (Java PlayerGroupLeavedEvent). Java moves a member that left its group inside an instance to the
+		// instance's exit point thirty seconds later (PlayerLeavedEvent, InstanceService.moveToExitPoint), which for
+		// this camp is beside Kelmar. There every member hands in its own quests.
+		async Task LeaveAndGoHomeAsync()
+		{
+			int leftAt = session.PacketHistory.Count;
+			session.BeginStep("group-disband", "leave-the-group");
+			// A member that read the word late may be outside already: the instance put it out before it looked.
+			bool alreadyOut = world.MapId != GroupNtcMap;
+			if (world.GroupId != null) await session.SendPacketAsync(session.Api.LeaveGroup(), token);
+			long began = runtime.NowMillis;
+			while (!alreadyOut && !session.PacketHistory.Skip(leftAt).Any(packet =>
+				packet.PacketType == typeof(SM_PLAYER_SPAWN) && packet.Get<int>("worldId") != GroupNtcMap))
+			{
+				if (runtime.NowMillis - began > 120_000) throw new IOException("The instance did not put the member out after it left the group.");
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
+				await session.SynchronizeAsync(token);
+			}
+			int spawned = session.PacketHistory.Count - 1;
+			while (spawned >= leftAt && session.PacketHistory[spawned].PacketType != typeof(SM_PLAYER_SPAWN)) spawned--;
+			if (spawned >= leftAt && !session.PacketHistory.Skip(spawned).Any(packet => packet.PacketType == typeof(SM_PLAYER_INFO) && packet.Get<int>("objectId") == session.CharacterId))
+				await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
+			session.AcceptTeleportPosition();
+			await session.SynchronizeAsync(token);
+			EnterMap();
+			session.TraceDiagnostic("group-ntc-home", new Dictionary<string, object?>
+			{ ["map"] = world.MapId, ["position"] = session.CurrentPosition, ["group"] = world.GroupId, ["waitedMillis"] = runtime.NowMillis - began });
+			foreach (QuestRunPlan plan in quests.Skip(1))
+			{
+				if (!world.Objects.Values.Any(known => known.TemplateId == GroupNtcKelmar && Distance(session.CurrentPosition, known.Position) <= 15))
+					await WalkAsync(Spawn(GroupNtcKelmar));
+				for (int attempt = 0; attempt < 3 && Status(plan.Id) != 5; attempt++) await DialogQuestAsync(plan, GroupNtcKelmar, true);
+				if (Status(plan.Id) != 5) throw new IOException($"Q{plan.Id} was not handed in at Kelmar.");
+			}
+		}
+
 		// A weapons chest gives its item to the member that opens it, and is gone (Java QuestItemNpcAI). A member opens
 		// one on its turn, while it still lacks an item.
 		async Task OpenChestAsync(int chest)
@@ -470,6 +507,11 @@ public sealed partial class NaturalIshalgenJourney
 					toldChest = chest;
 					await OpenChestAsync(chest);
 				}
+				else if (command == "disband")
+				{
+					await LeaveAndGoHomeAsync();
+					break;
+				}
 				if (healer != null) await healer.StepAsync(token);
 				else if (assist is int target && world.Objects.TryGetValue(target, out var enemy) && !enemy.IsCorpse &&
 					Distance(session.CurrentPosition, enemy.Position) <= 35 && session.PacketHistory.TakeLast(400)
@@ -506,6 +548,8 @@ public sealed partial class NaturalIshalgenJourney
 				{ ["quest"] = plan.Id, ["npc"] = npc, ["done"] = finish ? "turned-in" : "accepted", ["members"] = world.GroupMembers.Count });
 			}
 			BotPosition landing = default;
+			// The group was ended by its leader's word (N9), not by "done".
+			bool gone = false;
 			await TogetherAtAsync(quests[0], GroupNtcAegir, false);
 			await TogetherAtAsync(quests[0], GroupNtcKelmar, true);
 			foreach (QuestRunPlan plan in quests.Skip(1)) await TogetherAtAsync(plan, GroupNtcKelmar, false);
@@ -560,7 +604,19 @@ public sealed partial class NaturalIshalgenJourney
 					if (world.GroupMembers.Values.Where(member => member.ObjectId != session.CharacterId).All(member =>
 						member.Online && !member.Dead && member.MapId == world.MapId && (member.MaxMp <= 0 || member.CurrentMp * 100L / member.MaxMp >= 50) &&
 						Distance(session.CurrentPosition, world.Objects.GetValueOrDefault(member.ObjectId)?.Position ?? member.Position) <= 12)) return true;
-					if (runtime.NowMillis - began > 600_000) throw new IOException("Group wait timed out: the group to gather inside the camp.");
+					if (runtime.NowMillis - began > 600_000)
+					{
+						session.TraceDiagnostic("group-ntc-not-gathered", new Dictionary<string, object?>
+						{
+							["position"] = session.CurrentPosition,
+							["members"] = world.GroupMembers.Values.Select(member => new
+							{
+								member.Name, member.Online, member.Dead, member.MapId, member.CurrentMp, member.MaxMp,
+								Distance = Distance(session.CurrentPosition, world.Objects.GetValueOrDefault(member.ObjectId)?.Position ?? member.Position),
+							}).ToArray(),
+						});
+						throw new IOException("Group wait timed out: the group to gather inside the camp.");
+					}
 					await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
 				}
 			}
@@ -789,8 +845,27 @@ public sealed partial class NaturalIshalgenJourney
 				// N8: the end boss. No quest of the leg counts him until Q4732 has a handler; his fall is what F1 saw.
 				await AdvanceAsync("the General", Spawn(GroupNtcGeneral), GroupNtcGeneral, () => killedKinds.Contains(GroupNtcGeneral));
 			}
-			await SayAsync("command:done");
-			await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+			if (reach >= 7)
+			{
+				// N9: the General is dead and looted. F1 gathers the group once more, speaks the word, and leaves last.
+				while (!await RegroupedAsync())
+					if (OnTheGroup(Hostiles()) is int attacker) await GroupKillAsync(attacker);
+					else if (world.IsDead) await combat.RestAsync(token);
+				await SayAsync("command:disband");
+				session.TraceDiagnostic("group-ntc-step", new Dictionary<string, object?> { ["done"] = "disband spoken", ["members"] = world.GroupMembers.Count });
+				long spoken = runtime.NowMillis;
+				while (world.GroupId != null && world.GroupMembers.Count > 1 && runtime.NowMillis - spoken < 30_000) await PauseAsync();
+				session.TraceDiagnostic("group-ntc-step", new Dictionary<string, object?>
+				{ ["done"] = "the others left", ["group"] = world.GroupId, ["members"] = world.GroupMembers.Count, ["waitedMillis"] = runtime.NowMillis - spoken });
+				await LeaveAndGoHomeAsync();
+				// The word is spoken and the group is gone: no "done" follows.
+				gone = true;
+			}
+			if (!gone)
+			{
+				await SayAsync("command:done");
+				await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+			}
 		}
 		else
 		{
@@ -861,12 +936,15 @@ public sealed partial class NaturalIshalgenJourney
 		if (ntc)
 		{
 			// N2's end: the entry quest handed in and Kelmar's two in the journal. N3's: that, inside the camp.
-			int[] wanted = [5, .. quests.Skip(1).Select(_ => 3)];
+			int[] wanted = [5, .. quests.Skip(1).Select(_ => reach >= 7 ? 5 : 3)];
 			int[] journal = [.. quests.Select(plan => Status(plan.Id))];
 			if (!journal.SequenceEqual(wanted))
 				throw new InvalidDataException($"The group member's journal is [{string.Join(", ", journal)}], not [{string.Join(", ", wanted)}].");
-			if (options.GroupUntil != "quests" && (world.MapId != GroupNtcMap || world.InstanceId == null))
+			if (reach is >= 1 and < 7 && (world.MapId != GroupNtcMap || world.InstanceId == null))
 				throw new InvalidDataException($"The group member stands on map {world.MapId}, not inside the camp.");
+			// N9's: out of the camp, in no group, the quests handed in (the journal above).
+			if (reach >= 7 && (world.MapId == GroupNtcMap || world.GroupId != null))
+				throw new InvalidDataException($"The group member is on map {world.MapId} in group {world.GroupId}: not home, or not out of its group.");
 			// N4's: the Protector in the journal of Q4733. N5's: the Guard and the Aetheric Field Guard beside him.
 			int[] namedKills = Counts(quests[1]);
 			if (reach >= 2 && namedKills[0] < 1) throw new InvalidDataException("The group member has no kill of the Protector in its journal.");
@@ -877,7 +955,7 @@ public sealed partial class NaturalIshalgenJourney
 				throw new InvalidDataException("The group member lacks the Teleporter or its chest items.");
 			runtime.AssertClean();
 			var reached = new { verified = true, CharacterId = session.CharacterId, name, until = options.GroupUntil,
-				leader = world.GroupLeaderId, roster, quests = quests.ToDictionary(plan => plan.Id.ToString(), plan => Status(plan.Id)),
+				leader = world.GroupLeaderId, group = world.GroupId, roster, quests = quests.ToDictionary(plan => plan.Id.ToString(), plan => Status(plan.Id)),
 				counts = quests.ToDictionary(plan => plan.Id.ToString(), plan => Counts(plan)), lootCollected = loot.Collected,
 				// The gate and the General, which no quest of the leg counts: whether this member saw them fall in a fight
 				// of its own, and whether its client still shows the gate standing.

@@ -1420,8 +1420,9 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 				PublishDashboard();
 				if (response != null)
 					await SendAsync(response, cancellationToken);
-				// A knockback, stumble or pull moved the character on the server: the client stands where it landed.
-				if (packet.PacketType == typeof(SM_FORCED_MOVE) && packet.Get<int>("objectId") == characterId &&
+				// A knockback, stumble or pull moved the character on the server: the client stands where it landed. The
+				// end of a fear says where the server ran it to (SM_POSITION), and the client stands there.
+				if ((packet.PacketType == typeof(SM_FORCED_MOVE) || packet.PacketType == typeof(SM_POSITION)) && packet.Get<int>("objectId") == characterId &&
 					api.World.Position is BotPosition landed)
 				{
 					BotPosition standing = ResolveForcedLanding?.Invoke(landed) ?? landed;

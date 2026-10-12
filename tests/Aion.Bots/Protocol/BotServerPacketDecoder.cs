@@ -52,6 +52,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_ATTACK)] = DecodeAttack,
 			[typeof(SM_MOVE)] = DecodeMove,
 			[typeof(SM_FORCED_MOVE)] = DecodeForcedMove,
+			[typeof(SM_POSITION)] = DecodePosition,
 			[typeof(SM_DELETE)] = DecodeDelete,
 			[typeof(SM_TELEPORT_LOC)] = DecodeTeleport,
 			[typeof(SM_DIALOG_WINDOW)] = DecodeDialog,
@@ -633,6 +634,17 @@ public sealed partial class BotServerPacketDecoder
 
 	// Java SM_FORCED_MOVE.writeImpl: the effector, the creature moved, a constant 16, then where it landed. Sent by
 	// knockback, stumble and pull effects (StaggerEffect, StumbleEffect, PulledEffect) and the anti-hack move-back.
+	// Java SM_POSITION.writeImpl: D the object, three F its place, C its heading. The server puts the object there at
+	// once and the client's own movement of it ends: FearEffect.endEffect sends it to a player whom the fear made run.
+	private static IReadOnlyDictionary<string, object?> DecodePosition(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		var fields = Fields(("objectId", r.ReadInt32()), ("x", r.ReadSingle()), ("y", r.ReadSingle()), ("z", r.ReadSingle()),
+			("heading", r.ReadByte()));
+		if (r.Remaining != 0) throw new InvalidDataException("Position has unexpected trailing bytes.");
+		return fields;
+	}
+
 	private static IReadOnlyDictionary<string, object?> DecodeForcedMove(ReadOnlySpan<byte> body)
 	{
 		var r = new PacketBodyReader(body);

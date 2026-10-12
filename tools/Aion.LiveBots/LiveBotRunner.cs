@@ -1378,7 +1378,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 			}
 			var response = api.Observe(packet);
 			PacketObserved?.Invoke(packet);
-			if (naturalJourney && packet.PacketType == typeof(SM_FORCED_MOVE) && packet.Get<int>("objectId") == characterId &&
+			if (naturalJourney && (packet.PacketType == typeof(SM_FORCED_MOVE) || packet.PacketType == typeof(SM_POSITION)) && packet.Get<int>("objectId") == characterId &&
 				api.World.Position is BotPosition landed)
 			{
 				BotPosition standing = ResolveForcedLanding?.Invoke(landed) ?? landed;

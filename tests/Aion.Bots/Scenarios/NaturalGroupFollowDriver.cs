@@ -55,6 +55,9 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 		// A stopped player sends no movement heartbeat. Its visible, unchanged position remains usable.
 		if ((session.Api.Timing.Now - lastSeen).TotalSeconds > 5 && (leaderMoving || !world.Objects.ContainsKey(leaderId))) return false;
 		if (Distance(session.CurrentPosition, currentLeader) <= 3) { trail.Clear(); return false; }
+		// The follower stood beside its leader with nothing left to walk, and was then moved away while the leader stood
+		// still (a fear, a knockback): no sample comes from a leader that does not move. Where it stands is the sample.
+		if (trail.Count == 0) { lastSample = null; Add(currentLeader); }
 		// Ground snapping can put the follower slightly below an interpolated leader sample on a slope.
 		// Requiring the identical Z would leave it standing forever at the same horizontal point.
 		while (trail.TryPeek(out var reached) && MathF.Abs(session.CurrentPosition.Z - reached.Z) <= 3 &&

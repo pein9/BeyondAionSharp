@@ -41,7 +41,8 @@ public sealed class BotServerPacketDecoderTests
 	[Fact]
 	public void DecoderInventoryContainsExpectedBotPerceptionPackets()
 	{
-		Assert.Equal(126, decoder.PacketTypes.Count);
+		Assert.Equal(127, decoder.PacketTypes.Count);
+		Assert.Contains(typeof(SM_POSITION), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_RESURRECT), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_INSTANCE_INFO), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_GAME_TIME), decoder.PacketTypes);
