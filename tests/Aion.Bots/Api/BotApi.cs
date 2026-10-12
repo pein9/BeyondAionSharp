@@ -12,7 +12,7 @@ using Aion.GameServer.SkillEngine.Model;
 namespace Aion.Bots.Api;
 
 /// <summary>Intent-level bot API over the protocol writers, world model, reflexes and timing contract.</summary>
-public sealed class BotApi
+public sealed partial class BotApi
 {
 	private readonly BotMotionTiming? motionTiming;
 
@@ -124,13 +124,16 @@ public sealed class BotApi
 
 	public BotClientPacket Target(int targetObjectId, bool selectTargetOfTarget = false)
 	{
+		BotClientPacket packet = GameClientPackets.TargetSelect(targetObjectId, selectTargetOfTarget);
+		ValidateOutgoing(packet);
 		Timing.RecordTargetSelection(targetObjectId);
-		return GameClientPackets.TargetSelect(targetObjectId, selectTargetOfTarget);
+		return packet;
 	}
 
 	public BotClientPacket Attack(int targetObjectId, int attackSpeedMillis, byte attackNumber = 0,
 		ushort clientTime = 0, byte type = 0)
 	{
+		ValidateOutgoing(GameClientPackets.Attack(targetObjectId, attackNumber, clientTime, type));
 		if (Timing.SelectedTargetId != targetObjectId)
 			throw new InvalidOperationException($"Target({targetObjectId}) must precede Attack({targetObjectId}).");
 		Timing.RecordAttack(attackSpeedMillis);
@@ -148,8 +151,10 @@ public sealed class BotApi
 			cast = cast with { HitTime = checked((ushort)hitTime) };
 		}
 		int? target = cast.TargetType is 0 or 3 or 4 ? cast.TargetObjectId : null;
+		BotClientPacket packet = GameClientPackets.CastSpell(cast);
+		ValidateOutgoing(packet);
 		Timing.RecordCastStarted(cast.SkillId, target);
-		return GameClientPackets.CastSpell(cast);
+		return packet;
 	}
 
 	public BotClientPacket SummonCommand(byte mode, int targetObjectId, int unknown1 = 0, int unknown2 = 0) =>
@@ -389,7 +394,7 @@ public sealed class BotApi
 
 	public BotClientPacket? Observe(DecodedBotServerPacket packet, int animationLastHitMillis = 0)
 	{
-		World.Apply(packet);
+		World.Apply(packet, packet.ReceivedAt ?? Timing.Now);
 		if (packet.PacketType == typeof(SM_GAME_TIME)) World.GameTimeObservedAt = packet.ReceivedAt ?? Timing.Now;
 		QuestDialogEchoes.Observe(packet);
 		if (packet.PacketType == typeof(SM_SKILL_COOLDOWN))

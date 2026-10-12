@@ -1378,6 +1378,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 
 		private Task SendAsync(BotClientPacket packet, CancellationToken cancellationToken)
 		{
+			api.ValidateOutgoing(packet);
 			BeforeSend?.Invoke();
 			InProcessBotTransport active = transport ?? throw new EndOfStreamException("Simulation game connection is not open.");
 			byte[] encoded = packet.Encode(active.Codec, state);

@@ -63,6 +63,12 @@ public sealed partial class BotWorldModel
 	public IReadOnlyList<BotVisibleEffect> EffectsOf(int objectId) => objectEffects.GetValueOrDefault(objectId) ?? [];
 
 	private readonly Dictionary<int, BotVisibleEffect[]> objectEffects = [];
+	private readonly Dictionary<int, DateTimeOffset> effectsObservedAt = [];
+	private readonly Dictionary<(int Object, int Skill, int Caster), DateTimeOffset> effectSeenAt = [];
+
+	public int RemainingEffectMillis(int objectId, BotVisibleEffect effect, DateTimeOffset now) =>
+		effect.RemainingMillis < 0 ? int.MaxValue : effectSeenAt.GetValueOrDefault((objectId, effect.SkillId, effect.EffectorId)) is var at && at != default
+			? (int)Math.Clamp(effect.RemainingMillis - (now - at).TotalMilliseconds, 0, int.MaxValue) : effect.RemainingMillis;
 
 	private void ApplyCreatureEffects(DecodedBotServerPacket packet)
 	{
@@ -72,15 +78,26 @@ public sealed partial class BotWorldModel
 		IEnumerable<BotVisibleEffect> told = packet.Get<List<IReadOnlyDictionary<string, object?>>>("effects")
 			.Select(row => new BotVisibleEffect((int)row["effectorId"]!, (ushort)row["skillId"]!,
 				(byte)row["skillLevel"]!, (byte)row["targetSlot"]!, (int)row["remainingMillis"]!));
+		ApplyEffectSnapshot(objectId, slots, told);
+	}
+
+	private void ApplyEffectSnapshot(int objectId, int slots, IEnumerable<BotVisibleEffect> told)
+	{
+		if (effectsObservedAt.GetValueOrDefault(objectId) > ObservationTime) return;
+		BotVisibleEffect[] incoming = told.ToArray();
 		IEnumerable<BotVisibleEffect> kept = slots != 127 && objectEffects.TryGetValue(objectId, out BotVisibleEffect[]? before)
 			? before.Where(effect => (slots & 1 << effect.TargetSlot) == 0) : [];
-		objectEffects[objectId] = [.. kept, .. told];
+		objectEffects[objectId] = [.. kept, .. incoming];
+		foreach (BotVisibleEffect effect in incoming) effectSeenAt[(objectId, effect.SkillId, effect.EffectorId)] = ObservationTime;
+		effectsObservedAt[objectId] = ObservationTime;
 	}
 
 	private void ForgetEffectObservations()
 	{
 		objectAbnormals.Clear();
 		objectEffects.Clear();
+		effectsObservedAt.Clear();
+		effectSeenAt.Clear();
 		VisibleEffects = null;
 		LastAbyssReward = null;
 	}
@@ -98,6 +115,11 @@ public sealed partial class BotWorldModel
 		// Duration is display evidence, not authority to remove an effect locally. Java
 		// uses -1 for permanent effects and may serialize an expiry before its timer runs.
 		VisibleEffects = Array.AsReadOnly(effects);
+		if (SelfObjectId is int self)
+		{
+			effectsObservedAt[self] = ObservationTime;
+			foreach (BotVisibleEffect effect in effects) effectSeenAt[(self, effect.SkillId, effect.EffectorId)] = ObservationTime;
+		}
 	}
 
 	private void ObserveAbyssReward(BotAbyssRank? before, BotAbyssRank after)

@@ -70,6 +70,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_WINDSTREAM)] = DecodeWindstream,
 			[typeof(SM_WINDSTREAM_ANNOUNCE)] = DecodeWindstreamAnnounce,
 			[typeof(SM_DIE)] = DecodeDie,
+			[typeof(SM_RESURRECT)] = DecodeResurrect,
 			[typeof(SM_BIND_POINT_INFO)] = DecodeBindPoint,
 			[typeof(SM_KISK_UPDATE)] = DecodeKiskUpdate,
 			[typeof(SM_INVENTORY_INFO)] = DecodeInventoryInfo,
@@ -150,7 +151,14 @@ public sealed partial class BotServerPacketDecoder
 	public DecodedBotServerPacket DecodeOrRaw(DecodedGamePacket packet)
 	{
 		if (Decoders.TryGetValue(packet.PacketType, out var decoder))
-			return new DecodedBotServerPacket(packet.PacketType, decoder(packet.Body)) { Landings = Landings(packet.PacketType, packet.Body) };
+			return new DecodedBotServerPacket(packet.PacketType, decoder(packet.Body))
+			{
+				Landings = Landings(packet.PacketType, packet.Body),
+				// SM_ATTACK's two health percentages are metadata so existing packet traces stay unchanged.
+				Health = packet.PacketType == typeof(SM_ATTACK) && packet.Body.Length >= 15
+					? [new(BinaryPrimitives.ReadInt32LittleEndian(packet.Body.AsSpan(9)), packet.Body[13]),
+					   new(BinaryPrimitives.ReadInt32LittleEndian(packet.Body), packet.Body[14])] : null,
+			};
 		return new DecodedBotServerPacket(
 			packet.PacketType,
 			new Dictionary<string, object?>(StringComparer.Ordinal)
@@ -477,6 +485,12 @@ public sealed partial class BotServerPacketDecoder
 	{
 		var r = new PacketBodyReader(body);
 		return Fields(("token", r.ReadBytes(r.ReadInt32())));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeResurrect(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		return Fields(("casterName", r.ReadString()), ("skillId", r.ReadUInt16()), ("reserved", r.ReadInt32()));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeMessage(ReadOnlySpan<byte> body)
@@ -1300,12 +1314,14 @@ public sealed record BotDecomposableChoice(byte Index, int ItemId, int MinCount,
 
 /// <summary>NR-110g: a creature and the place a packet puts it at.</summary>
 public sealed record BotCreatureLanding(int ObjectId, float X, float Y, float Z);
+public sealed record BotCreatureHealth(int ObjectId, byte Percent);
 
 public sealed record DecodedBotServerPacket(Type PacketType, IReadOnlyDictionary<string, object?> Fields)
 {
 	/// <summary>NR-110g: where the packet puts creatures; null for none. It is no field: a trace writes the fields, and
 	/// every recorded trace holds this packet as it was decoded before.</summary>
 	public IReadOnlyList<BotCreatureLanding>? Landings { get; init; }
+	public IReadOnlyList<BotCreatureHealth>? Health { get; init; }
 
 	/// <summary>AK-04: when the transport received the packet (the virtual clock in SIM, wall time live), so state that runs on
 	/// from a packet (the game clock) is not dated by when the bot got round to applying it.</summary>

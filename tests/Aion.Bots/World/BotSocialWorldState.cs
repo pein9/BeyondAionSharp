@@ -118,10 +118,23 @@ public sealed partial class BotWorldModel
 			int id = packet.Get<int>("objectId");
 			byte action = packet.Get<byte>("event");
 			if (action == 0) { groupMembers.Remove(id); return; }
-			string? name = packet.Fields.GetValueOrDefault("name") as string ?? groupMembers.GetValueOrDefault(id)?.Name;
+			BotGroupMember? previous = groupMembers.GetValueOrDefault(id);
+			string? name = packet.Fields.GetValueOrDefault("name") as string ?? previous?.Name;
 			groupMembers[id] = new BotGroupMember(id, name, packet.Get<int>("mapId"),
 				new BotPosition(packet.Get<float>("x"), packet.Get<float>("y"), packet.Get<float>("z"), 0),
-				packet.Get<int>("currentHp"), packet.Get<int>("maxHp"), packet.Get<byte>("level"), action is not (3 or 7));
+				packet.Get<int>("currentHp"), packet.Get<int>("maxHp"), packet.Get<byte>("level"), action is not (3 or 7))
+			{
+				CurrentMp = packet.Get<int>("currentMp"), MaxMp = packet.Get<int>("maxMp"),
+				PlayerClass = packet.Get<byte>("playerClass"), FlyState = packet.Get<byte>("flyState"),
+				InstanceMapId = packet.Get<int>("instanceMapId"), HealthObservedAt = ObservationTime,
+			};
+			if (previous != null && previous.HealthObservedAt > ObservationTime && groupMembers[id].Online)
+				groupMembers[id] = groupMembers[id] with
+				{
+					CurrentHp = previous.CurrentHp, MaxHp = previous.MaxHp, SightedHpPercent = previous.SightedHpPercent,
+					HealthObservedAt = previous.HealthObservedAt,
+				};
+			ApplyGroupEffects(packet);
 		}
 		else if (packet.PacketType == typeof(SM_LEGION_INFO))
 		{
@@ -163,7 +176,18 @@ public sealed partial class BotWorldModel
 	}
 }
 
-public sealed record BotGroupMember(int ObjectId, string? Name, int MapId, BotPosition Position, int CurrentHp, int MaxHp, byte Level, bool Online);
+public sealed record BotGroupMember(int ObjectId, string? Name, int MapId, BotPosition Position, int CurrentHp, int MaxHp, byte Level, bool Online)
+{
+	public int CurrentMp { get; init; }
+	public int MaxMp { get; init; }
+	public byte PlayerClass { get; init; }
+	public byte FlyState { get; init; }
+	public int InstanceMapId { get; init; }
+	public DateTimeOffset HealthObservedAt { get; init; }
+	public int? SightedHpPercent { get; init; }
+	public double HpPercent => SightedHpPercent ?? (MaxHp > 0 ? CurrentHp * 100.0 / MaxHp : 0);
+	public bool Dead => Online && HpPercent <= 0;
+}
 public sealed record BotAllianceMember(int ObjectId, string? Name, int GroupId, int MapId, BotPosition Position, int CurrentHp, int MaxHp, byte Level, bool Online);
 public sealed record BotLeagueAlliance(int AllianceId, int Position, int MemberCount, string CaptainName, int MapId);
 public sealed record BotLegionMember(int ObjectId, string Name, byte Rank, byte PlayerClass, int Level, int MapId, bool Online);

@@ -199,6 +199,11 @@ public static class NaturalPriestProfile
 		{
 			Class = PlayerClass.CLERIC,
 			Skills = skills,
+			SupportSkills = NaturalSkillCatalog.Build(data, PlayerClass.CLERIC,
+				ClericRoles.Where(row => row.Value is "heal" or "grace" or "flash-recovery" or "rejuvenation" or "blessing" or "penance" or "mp-recovery" or "herb")
+					.Concat(new Dictionary<int, string> { [3935] = "cleanse", [3936] = "cleanse", [3937] = "cleanse",
+						[1699] = "resurrect", [243] = "return" })
+					.ToDictionary(row => row.Key, row => row.Value)),
 			Excluded = excluded,
 			Combat = new NaturalRotationCombatPolicy(ClericRules, skills, PriestLineMovement),
 			// OD-13: the approved kit at every level. NR-34: a Cleric casts from mana and rests with the powder, so it

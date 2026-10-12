@@ -1341,6 +1341,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 
 	private async Task SendGameAsync(BotClientPacket packet, CancellationToken cancellationToken)
 	{
+		Api.ValidateOutgoing(packet);
 		BeforeSend?.Invoke();
 		var activeTransport = transport ?? throw new InvalidOperationException("The game connection is not open.");
 		await sendLock.WaitAsync(cancellationToken);

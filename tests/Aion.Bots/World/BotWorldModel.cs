@@ -163,8 +163,11 @@ public sealed partial class BotWorldModel
 		LastKiskUpdate = null;
 	}
 
-	public void Apply(DecodedBotServerPacket packet)
+	public DateTimeOffset ObservationTime { get; private set; }
+
+	public void Apply(DecodedBotServerPacket packet, DateTimeOffset? observedAt = null)
 	{
+		ObservationTime = observedAt ?? packet.ReceivedAt ?? ObservationTime;
 		var type = packet.PacketType;
 		if (type == typeof(SM_STATS_INFO)) StatsObserved = true;
 		if (type == typeof(SM_SKILL_LIST)) SkillsObserved = true;
@@ -320,6 +323,7 @@ public sealed partial class BotWorldModel
 			ExchangeRequestFrom = packet.Get<string>("receiver");
 		else
 			ApplySocial(packet);
+		ApplyGroupHealth(packet);
 	}
 
 	private void ApplyPlayerSpawn(DecodedBotServerPacket packet)

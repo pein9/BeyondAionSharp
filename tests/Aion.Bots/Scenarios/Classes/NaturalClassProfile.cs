@@ -82,6 +82,9 @@ public sealed record NaturalClassProfile
 	/// <summary>The class's skill catalog. The learned skill list is still the authority: a catalog never grants a skill.</summary>
 	public required NaturalPriestSkill[] Skills { get; init; }
 
+	/// <summary>Optional healing-only catalog. Separate from the solo fight table.</summary>
+	public NaturalPriestSkill[] SupportSkills { get; init; } = [];
+
 	/// <summary>Auto-learned active skills the class does not cast, each with its reason.</summary>
 	public required IReadOnlyDictionary<int, string> Excluded { get; init; }
 

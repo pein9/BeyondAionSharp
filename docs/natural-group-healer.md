@@ -1,381 +1,380 @@
-# The Cleric as a group healer: heal the group, remove debuffs, never fight
+# Cleric healing and initial group mechanics
 
-Status: GH-01 survey waiting for a decision, 2026-10-12. The Java facts and two field attempts are recorded below;
-the healer mode is not implemented. The operator answered the plan's questions the same day; the
-answers are under [Decisions](#decisions). It is the last task before group play, and it follows
-[natural-muster.md](natural-muster.md): the characters are the eleven of the one world, `ntc-group-s4`, and that
-document's rules (MR-a to MR-f) hold here. The prompt to start the work with is at the end.
+Status: initial group goal completed, 2026-10-12. Group formation, F1 following, healer support, the coin-quest
+controller, resurrection waiting and rights-aware round-robin looting are implemented. Groups of two, three,
+four, five and six completed one new coin-quest cycle each from the same rollback baseline. Unexercised paths
+and the validation limits are recorded below.
 
-## What the operator said
+This scope replaces the old GH-01–GH-13 checklist and its copied goal prompts. Encounter qualification and the
+stop-after-two-proof-attempts rule are withdrawn. There is no pending decision on accepting the earlier solo runs.
 
-2026-10-12: "we need to do one more task before we do group stuff: Cleric needs to learn to 'group heal' and dispell
-negative buffs. When in group healing mode, the cleric needs to never do combat (but will need to loot when it's
-their turn for quest items). Plan this out. This is critical for group play."
+The group starts from `ntc-group-s4`: eleven Asmodian second classes at level 26, accounts 111 to 121, in one world
+database. [natural-muster.md](natural-muster.md), rules MR-a to MR-f, still governs their gear, supplies, shards and
+bag cleanup.
 
-The same day, on the plan's four questions:
+## The operator's clarified goal
 
-1. On raising the dead: "Yes when posisble but not a priority."
-2. On changing how a healed fighter plays: "No, others fight just the same, healer is just there to make sure we
-   survive thru bosses."
-3. On the healer under attack: "Heal yourself is the priority."
-4. On buffing the members: "Yes, buff."
+2026-10-12:
 
-## The goal
+> The only goal here should have been: We are getting ready to do group instances (like NTC), and our Cleric needs
+> to have a "healing only" mode. That means, it constantly watches every group member, dispels and heals, and follows
+> the group member 1, and loots when it's their turn (looting might have to come later under different group
+> mechanics training).
 
-A Cleric that is told to play as its group's healer does four things and nothing else:
+The operator also clarified: "This is just rules on group healing. This needs no crazy proof work or any solo
+fighting."
 
-1. keeps itself and every member of its group alive with its heals, itself first;
-2. removes the debuffs it can remove from them;
-3. never attacks, pulls or fights back;
-4. loots a corpse when the server gives it a quest item there.
+The earlier decisions still apply: "Heal yourself is the priority"; "Yes, buff"; and "others fight just the same,
+healer is just there to make sure we survive thru bosses." Resurrection was initially a low-priority follow-up
+to the core healer task; waiting for it is now part of the group-mechanics scope below.
 
-It is there to bring the group through the fights it would not survive on its own, a boss above all. The other
-members fight just as they do alone: their potions, scrolls, rests and retreats are untouched. A Cleric that is not
-told to heal plays alone as it does today. Nothing in this plan changes solo play.
+Earlier steering, 2026-10-12: group mechanics are not built yet, so following member 1 can wait. Implement group HP
+checking, dispelling and healing now, and keep a HoT on every member when possible by cycling through them while
+otherwise idle. "Do what you can, then we will work on Group mechanics. Don't over-do anything."
 
-## What is there today
+## Group-mechanics goal
 
-Found by reading the port and the shipped data; GH-01 checks each against the Java source before anything is built
-on it.
+Latest steering, 2026-10-12: form a group with the Templar as leader and the Cleric following while continuing to
+heal and dispel. Both start together, bound at Morheim, accept Q2318 "[Coin] Foes of the Fortress" from Nott, and
+complete and turn in one cycle. The Templar does the killing. F1 always means the current observed group leader,
+including a future human leader; the leader chooses the route and everyone else follows.
 
-**The Cleric's skills at level 26.** All of these are learned automatically and the group's Cleric has them.
+Preserve an immutable starting world and restore it for retries and roster expansions. After the two-member
+success, add one existing character at a time and repeat through six members. Additional fighters retain their
+normal class combat and recovery rules. A fallen member waits for a living Cleric's resurrection; a Cleric death
+uses the existing bind-revive and regrouping flow. Add round-robin looting after the first two-member success,
+respecting initial ownership, later group access and separate quest-drop eligibility.
 
-| Skill | Learned | Cast, cooldown | What it does | Used today |
-|---|---|---|---|---|
-| Healing Light VI (1843) | 1, rank at 26 | 2 s, none | 594 HP to one friend within 23 m; 75 MP | on itself only |
-| Light of Rejuvenation IV (3942) | 10, rank at 25 | instant, 5 s | heal over 30 s on one friend within 23 m; 39 MP | on itself only |
-| Healing Grace II (4204) | 19, rank at 24 | 3 s, 6 s | 1,502 HP to one friend within 23 m; 134 MP | on itself only |
-| Flash of Recovery I (3951) | 24 | instant, 30 s | 1,353 HP to one friend within 23 m; 127 MP | on itself only |
-| Cleanse III (3937) | 13, rank at 23 | instant, 0.5 s | removes debuffs from one friend within 25 m; 106 MP | never: left out of the table |
-| Blessing of Guardianship (1684) | 5 | instant | one hour of defence on one friend within 15 m | on itself only |
-| Light of Resurrection (1699) | 10 | 6 s | raises a dead player within 15 m | never |
+Q2318 has kill objectives. It can exercise group quest credit, but its completion does not establish shared or
+unshared quest-item behavior. Record unexercised paths without expanding into another quest survey.
+The [goal prompt](#goal-prompt) below is retained for repeating this setup and its rollback iterations.
 
-- **There is no heal for the whole group at level 26.** Healing Wind (4195: 1,291 HP to every member within 25 m,
-  3.5 s cast) is learned at level 28, Acquittal (the group's debuffs and a heal) at 31, Splendor of Recovery at 40.
-  The stigma skills of level 20 (Noble Grace, Saving Grace, Sympathetic Heal) are not used: no bot takes a stigma.
-  So at level 26 "group heal" means healing the members one at a time, the one in most need first. The plan's table
-  takes Healing Wind up by itself on the day the Cleric learns it.
-- **Cleanse removes up to 100 eligible debuffs from its target in one cast**: effects in the debuff slot whose dispel
-  category is physical, mental or both and whose dispel level is at most 1, with at most 30 remaining dispel resistance
-  (`AbstractDispelEffect`, `EffectController.removeEffectByDispelCat`). A stronger resistance is reduced by 30 and
-  leaves the effect in place. About 2,280 debuff skills in the data have the category and level. Stuns (about 400), debuffs with
-  no dispel category (about 400) and those of level 3 and 5 (about 140) are not removable.
-- **The monsters beside the fortress give something to remove.** The ruthless worg's Rabies (poison and blindness,
-  19.3 s at its learned rank 12), the savvy daru's Lower-body Paralysis (a snare, 4 s) and the ettins' Weaken Defense (5 s) are physical
-  debuffs of level 1. These are the monsters of the coin quest the muster already hunts.
+## The mode
 
-**What the bots know of a group.** `BotWorldModel` holds the group's id, leader and loot rule, and for each member
-its id, name, map, position, level, HP and whether it is online. The bot API can invite, leave, set the loot rule and
-roll. Two Fast scenarios form a group and loot in it. The world model also holds the effects of every creature in
-sight (`EffectsOf`) and the loot status of every corpse (`LootStatuses`). What is missing: a member's MP, class and
-debuffs when it is out of sight (the server sends them in `SM_GROUP_MEMBER_INFO`; the bot drops them), who is
-attacking a member, and any code that heals, cleanses or follows another character.
+When the Cleric is assigned `"role": "healer"`, its existing action loop runs support rules:
 
-**What the server does.**
+1. Continuously observe every group member's HP and debuffs, including its own.
+2. Heal itself first when it needs healing, then the member most in need.
+3. Remove debuffs that its learned dispel can remove.
+4. Cycle Light of Rejuvenation through living group members while otherwise idle, skipping members already covered.
+5. Keep Blessing of Guardianship on itself and the group between fights.
+6. Never attack, pull, retaliate or cast at an enemy, including when a monster attacks it.
 
-- A heal draws the monsters that fight the healed member onto the healer (`Effect.broadcastHate`). The healer will be
-  attacked at times.
-- The group's loot rule is round robin unless it is changed. A quest's drop is one of two kinds by its data: for
-  each member (3,428 of 6,090 drops), or one for the group. A drop of the second kind is given to the first member
-  that still needs it, only that member may loot it, and the server tells that member the corpse is open to it
-  (`QuestService.getQuestDrop`, `SM_LOOT_STATUS`). That is the Cleric's "turn".
-- Bots in one world take turns on one clock (`SimulationTurnTable`): a bot plays until it waits, then the bot with
-  the earliest wake plays. A healer that looks at its group every quarter second reacts within a quarter second.
+Use the Cleric's learned support skills and the existing cast, cooldown and mana-recovery
+machinery. The role and policy should be generic, with the Cleric's support skills as profile data. Only the
+Cleric gets a support table in this task. Its ordinary solo mode and the other classes retain their existing rules.
 
-## How the healer plays
+The standalone support driver stays in place. The `group-coin` controller runs its support decisions alongside
+`NaturalGroupFollowDriver`, which follows the observed `GroupLeaderId`, including leadership changes, along
+ground-checked movement samples. The leader announces stops and waits for lagging or recovering members.
+Followers make only short local approaches for NPC dialogue and entitled loot. Fighter followers assist after
+observing F1 engage the announced target, using their existing combat and recovery rules.
 
-**The mode.** A round names a bot's role: `"role": "healer"` and whom it stays with. The fight driver then runs the
-support table of the bot's class in place of its fight table. The mode is the driver's, not the Cleric's: a class has
-it when its profile has a support table, and only the Cleric gets one in this plan. No branch on a class.
+## Implemented integration
 
-**One decision at a time**, from what the client observes, each one traced with its checks like a fight decision.
-The first rule that applies is taken. At every rule the healer comes before a member: "Heal yourself is the
-priority."
+`BotWorldModel` holds group identity, leader and loot rule, plus each member's id, name, map, position,
+level, HP and online state. It now also retains MP, class, flight state, instance identity and group effect updates.
+Visible effects are available in `EffectsOf`. The bot API already provides group invitations and answers,
+movement, targeting and skill casting.
 
-1. **In danger** (HP at or below 35%), itself and then the member with the least HP: Flash of Recovery, else Healing
-   Grace, else Healing Light. For itself also the Anti-Shock scroll and the life potion, as today.
-2. **A debuff to remove**, on itself and then on a member: an effect Cleanse can remove with 3 s or more left to
-   run. A snare on the member the monsters are on and a poison come before others.
-3. **Hurt** (HP at or below 70%), itself and then a member: Healing Grace when the missing HP is at least what it
-   heals and it is ready, else Healing Light.
-4. **Several members hurt at once**: the group's heal, when it is learned and three or more members within its
-   range are at or below 70%. At level 26 this rule finds no skill and passes.
-5. **The one being attacked has no Light of Rejuvenation**: cast it, on itself when it is the one. It is instant and
-   costs 39 MP for 30 s.
-6. **Between fights**: Blessing of Guardianship on itself and on every member that lacks it; everyone to 90% HP with
-   Healing Light; its own mana by the powder (MP Recovery), Penance and the mana serum, as its rest rules have them.
-7. **A dead member**, when no one is being attacked and it is within reach: Light of Resurrection. Last, and only
-   when possible.
-8. **Nothing to do**: stay in place behind the member it follows, look again in a quarter second.
+The role uses a separate support catalog in the class profile. The support loop uses the freshest client-observed
+health: sighted packets carry HP percentages, while group packets carry exact HP. An older group update does not
+overwrite a newer sighted observation. An online member at HP 0 is dead; an offline member's zero vitals are not
+treated as a healable target. Observed effect durations age with the session clock for cleanse and HoT decisions.
 
-The numbers are the run's parameters, as the fight table's are, and GH-10 tunes them from what the proofs show.
+`NaturalGroupHealDriver.StepAsync` is used by the group controller; `RunAsync` watches continuously when used alone.
+The follow driver resolves F1 from group packets rather than roster or scheduling order. It ages moving leader
+observations; a visible stopped leader needs no movement heartbeat. Slope samples are snapped to nearby checked
+ground so a follower does not stall on an interpolated height.
+Buff coverage recognizes an equal or stronger effect in the same shipped stack. In particular, the Cleric does
+not repeatedly attempt Blessing of Guardianship over the Chanter's stronger Protectorate's Prayer.
 
-**Never combat.** In the mode the driver sends no attack and casts no skill at an enemy. It does not select a
-monster as its target. This is one guard at the place every attack and cast is sent, so it cannot be forgotten in a
-rule; a breach stops the bot. A monster that attacks the healer is not answered. The healer stays with the group,
-keeps itself alive first and heals the others with what is left. If it dies, that is an outcome, as every death is.
+The role is enforced at the **shared action-sending boundary**: no attack packet or enemy-targeted skill may be sent.
+Navigation defense, retaliation, reflexes and idle fallbacks must obey the guard. A blocked offensive
+action is traced as a mode violation. Under aggro the Cleric continues self-healing and group support; it does not switch
+to its fighting table or flee from the group.
+NPC target selection for dialogue is permitted. Attacks and enemy-targeted casts remain blocked; the support
+catalog also permits learned resurrection and self-targeted Return for group recovery.
 
-**Where it stands.** It follows one member, the one the round names, and keeps between 8 and 18 m from it with a
-line of sight: inside every heal's 23 m and outside a melee. It does not walk into a monster's aggro range to get
-there when another way exists. When the member moves on, it follows.
+### Learned support skills at level 26
 
-**Loot.** When the server opens a corpse to the healer and the corpse holds an item of a quest the healer is
-working, the healer walks to it and takes that item, by the quest-loot sweep the solo bot already has. It goes only
-when no one is at or below 70% HP, and it goes at once when the member it follows moves on, so that it is not left
-behind with the corpse. It takes quest items only, as every bot does.
-
-**The other members** fight just the same. A fighter beside a healer still drinks its potion at the HP it does
-alone, still rests after a fight and still retreats by its own rules. The healer's heals come on top of that. Against
-ordinary monsters the healer will often find nothing to do; that is expected. Its work is the fight in which the
-members' own means are not enough.
-
-## Decisions
-
-| | Question | Decision |
+| Skill | Cast / cooldown | Role |
 |---|---|---|
-| GH-Q1 | Does the healer raise a dead member (Light of Resurrection)? | **Yes, when possible, and not a priority** (the operator). It is rule 7 and the last item, GH-12. |
-| GH-Q2 | Does the healer keep Blessing of Guardianship on the members? | **Yes** (the operator): rule 6. |
-| GH-Q3 | The thresholds: danger at 35%, hurt at 70%, top up to 90% between fights, a debuff with 3 s left. | Not asked. **As written**, tuned in GH-10. |
-| GH-Q4 | The healer under attack. | **Its own healing is the priority** (the operator). It stays with the group, does not attack and does not flee. |
-| GH-Q5 | Whom it follows. | Not asked. **The member the round names; the group's leader when it names none.** |
-| GH-Q6 | Which classes get the mode now. | Not asked. **The Cleric only.** The Chanter and the Bard have heals too; their tables are a later item, by data. |
-| GH-Q7 | Are the proof rounds captured? | Not asked. **No.** They are proofs. The group world stays `ntc-group-s4` until a group leg is played. |
-| GH-Q8 | Does a fighter beside a healer change how it plays (its potion later, no rest for HP)? | **No** (the operator): "others fight just the same, healer is just there to make sure we survive thru bosses." |
-| GH-Q9 | The healer's own level and gear rules. | Not asked. **Unchanged**: the staff with the most magic boost, the kit, the shard, the cleanup. |
+| Healing Light VI (1843) | 2 s / none | Ordinary single-member heal; 23 m |
+| Light of Rejuvenation IV (3942) | Instant / 5 s | 30 s HoT, 39 MP; 23 m |
+| Healing Grace II (4204) | 3 s / 6 s | Larger single-member heal; 23 m |
+| Flash of Recovery I (3951) | Instant / 30 s | Emergency heal; 23 m |
+| Cleanse III (3937) | Instant / 0.5 s | Remove eligible debuffs; 25 m |
+| Blessing of Guardianship (1684) | Instant | Group blessing between fights; 15 m |
+| Light of Resurrection (1699) | 6 s / none | Offer resurrection to a fallen member; 15 m; 10% of maximum MP |
 
-## Standing rules
+Use the highest learned rank for each support role. At level 26, group healing means healing members one at a
+time. Healing Wind is learned at 28; adding it to the support catalog can follow when the group reaches that level.
+A whole-group heal is not a prerequisite for this mode. Stigmas and skill-book training are outside the task.
 
-- SIM only, seed 1, in the one world. A proof starts from `ntc-group-s4` and plays a round.
-- Read the Java first (`../aion-server`, branch 4.8) for every server behavior an item relies on. Java wins.
-- Generic first: the mode, the policy and the world model know no class. A class's support table is data.
-- Natural play: what the healer knows is what a client sees. No server state is read to decide.
-- No new unit tests for bot work. An item is proved by the build, the bundle and a SIM round, and its numbers are
-  read from the traces by an audit script under `scripts/sim/trace/`.
-- Solo play does not change, and neither does how a fighter plays in a group. The five starter scopes of the gate
-  stay identical after every item.
-- One commit an item on `main`, code and then evidence. Nothing is pushed.
+## Initial support rules
 
-## Checklist
+Make one decision at a time from client observations and trace its reason. Watch the group about every 250 ms
+when free to act, respecting existing cast and animation timing. These are starting defaults, not proof metrics:
 
-### GH-01 survey facts (2026-10-12)
+1. **Emergency healing, at or below 35% HP:** itself first, then the most injured member. Prefer ready Flash of
+   Recovery, otherwise a legal cast heal. Self-consumable upkeep can be connected later; this driver uses its support skills.
+2. **Other needed healing, at or below 70% HP:** itself first, then the most injured member. Prefer Healing Grace
+   when enough HP is missing to use it well; otherwise Healing Light.
+3. **Cleanse:** an eligible debuff on itself, then the most injured member with an eligible debuff.
+   Skip a debuff with less than 3 s left. Needed healing comes first.
+4. **Between fights:** maintain the group blessing, top members up toward 90% HP, and recover its own mana with
+   Penance or MP Recovery when needed and legal.
+5. **Idle HoT upkeep:** cycle through every living, reachable member, including itself, using the highest learned
+   Light of Rejuvenation rank. Skip a member whose HoT still has more than 2 s left. Respect its shared 5 s cooldown
+   and retain enough mana for an ordinary direct heal. Higher-priority support can interrupt the cycle; full-group
+   uptime is best effort, not a guarantee.
+6. **Resurrection:** after needed healing and cleansing, offer learned Light of Resurrection to an eligible fallen
+   member within range while the group is quiet. Allow time for the recipient to accept before offering again.
+7. **Otherwise:** keep watching; the group controller supplies following between support decisions.
 
-Java paths below are relative to `../aion-server/game-server/src/com/aionemu/gameserver/`, on branch `4.8`.
-The corresponding C# packet, life-stat updater, effect controller and revive paths retain these rules.
+Choose only a support skill whose target, range, line of sight, rank, cooldown and mana make it legal. Derive
+Cleanse eligibility from shipped skill data and Java's dispel rules. Record a refused cast and re-observe before
+the next decision; never fall back to attacking.
 
-| Fact | Java reference |
-|---|---|
-| A group member packet carries object/group ids, exact HP/MP and flight points, map and instance, XYZ, class, gender, level, fly state and mentor state. Offline members carry zero vitals. ENTER/UPDATE includes the visible effects; UPDATE_EFFECTS replaces the named slot mask, with caster, skill/rank, target-slot ordinal and remaining milliseconds. | `network/aion/serverpackets/SM_GROUP_MEMBER_INFO.java:28, 53` |
-| Joining or reconnecting exchanges member packets. HP/MP changes queue a MOVEMENT update on a 500 ms FIFO; movement has its own 2 s updater. Adding/removing a nonpassive effect sends MOVEMENT and an immediate UPDATE_EFFECTS for its slot. Updates go to every other group member. | `model/team/group/events/PlayerGroupEnteredEvent.java:26`; `PlayerConnectedEvent.java:34`; `PlayerGroupUpdateEvent.java:32`; `model/stats/container/PlayerLifeStats.java:38, 67`; `taskmanager/tasks/TeamStatUpdater.java:26`; `TeamMoveUpdater.java:26`; `controllers/effect/PlayerEffectController.java:70` |
-| Sighted players receive SM_ATTACK_STATUS on HP changes, with the current HP **percentage**, not exact HP. MP packet types 19–23 carry MP percentages; they must never be mistaken for deaths. The member itself receives exact SM_STATUPDATE_HP. Ordinary attacks and spell results identify attackers and targets. | `model/stats/container/CreatureLifeStats.java:152`; `PlayerLifeStats.java:93`; `network/aion/serverpackets/SM_ATTACK_STATUS.java:124`; `SM_ATTACK.java:52`; `SM_CASTSPELL_RESULT.java` |
-| Indirect effects add their hate to nearby creatures already hating the caster or recipient. A heal can therefore draw an engaged monster to the healer; the effect's hate is zeroed after broadcasting. | `skillengine/model/Effect.java:622` |
-| Dispel count is the inherited base value; power is `power + dpower * skillLevel`. Cleanse III's data gives count 100, power 30, level 1 and ALL categories in DEBUFF. Each eligible effect loses 30 resistance; only one reaching zero ends. STUN is a separate category; long-duration protected effects and already-designated effects are excluded. | `skillengine/effect/AbstractDispelEffect.java:32`; `DispelDebuffEffect.java:20`; `controllers/effect/EffectController.java:528, 604, 649`; `skillengine/model/Effect.java:154, 1057`; Java `data/static_data/skills/skill_templates.xml`, skill 3937 |
-| Default loot is ROUNDROBIN. Ordinary loot cycles through the nearby entitled members. Quest drops are processed separately: each-member drops make a personal item for every eligible member; a shared drop chooses the first eligible member in the supplied member collection, records that member as item owner and opens the corpse to it. It is not alternating quest ownership by the ordinary loot counter. | `model/team/common/legacy/LootGroupRules.java:36`; `services/drop/DropRegistrationService.java:84, 122`; `services/QuestService.java:666, 733`; `model/templates/quest/QuestDrop.java:29, 67` |
-| Opening a corpse and taking its items still requires loot rights. SM_LOOT_STATUS is corpse-level permission; SM_LOOT_ITEMLIST filters out items the player cannot view. The bot must inspect that list and take only its needed quest items. A dead corpse entering sight sends LOOT_ENABLE to an entitled player. | `services/drop/DropService.java:90, 277, 488`; `network/aion/serverpackets/SM_LOOT_ITEMLIST.java:26` |
-| Resurrection on a dead player enables its offer and sends SM_RESURRECT. Accepting is CM_REVIVE with SKILL_REVIVE id 3; the server requires the active offer and revives at 35% HP/MP with soul sickness. A normal resurrection stays at the corpse unless the positional-resurrection state is set. | `skillengine/effect/ResurrectEffect.java:27, 37`; `network/aion/serverpackets/SM_RESURRECT.java`; `network/aion/clientpackets/CM_REVIVE.java:49`; `model/gameobjects/player/ReviveType.java:22`; `services/player/PlayerReviveService.java:42` |
+## Core healer implementation checklist
 
-The three candidates, with the hard-fight choice pending the decision below:
+These are parts of **one implementation task**, not separate proof-and-commit rounds:
 
-- **Hard fight:** King Zugog (212644), level 27 HERO/MASTER, shipped at (896.833, 2169.32, 213.125),
-  about 691 m in a straight line from the fortress hub. Java's NPC template, Morheim spawn and NPC skill rows
-  name it. The port's approved retail `battle_cycle` table drives it (pattern `ND2_KnN`); the proof uses that
-  shipped behavior and the Templar's existing potion, scroll and retreat rules.
-- **Removable debuff:** ruthless worg (211302), Rabies (16819), rank 12: DEBUFF_PHYSICAL, level 1,
-  resistance 10, poison and blindness. Java `Effect.calculateTemplateDuration` uses `15100 + 350 * 12 = 19300 ms`.
-  Sources: Java `data/static_data/npc_skills/npc_skills.xml`, NPC 211302; `skills/skill_templates.xml`, skill 16819;
-  `skillengine/model/Effect.java:900`. The port ships the same rows.
-- **Shared quest drop:** Q2307 "Irresistible Soup", started at Favyr (204378). Its four ingredient drops omit
-  `drop_each_member` (Java defaults it to 0), including the worg's Meat (182204107). Neither Q2307 nor Q2430 has a
-  row in the group snapshot's `player_quests` table; Q2307 has no prerequisite and avoids Q2430's prerequisite
-  and collecting-step-8 sequence. Sources: Java `data/static_data/quest_data/quest_data.xml`, quest 2307;
-  `data/handlers/quest/morheim/_2307IrresistibleSoup.java:30`; `model/templates/quest/QuestDrop.java:29`.
+- [x] Retain the necessary group observations and freshness information.
+- [x] Add the Cleric's learned support roles and dispel eligibility to its profile data.
+- [x] Integrate the healer role and support rules into the existing driver, including idle HoT cycling.
+- [x] Maintain the group blessing and enforce the attack/enemy-cast guard at the API and SIM/LIVE send boundaries.
+- [x] Build and perform a brief grouped smoke check; record the exercised paths below.
+- [x] Group goal: formation, F1 following, group quest play, resurrection waiting and round-robin loot.
 
-### Items
+The class profile has a separate `SupportSkills` catalog, leaving its solo fight catalog unchanged. A natural round
+can select `"role": "healer"`; the bounded `"stage": "support"` watches the group without playing a quest leg.
+Use `stopAfterMinutes` to bound such a check. The smoke-only invitation/answer options reuse existing client group
+packets; they are not group-training or following rules.
 
-- [ ] **GH-01 Survey.** Read the Java for: when `SM_GROUP_MEMBER_INFO` is sent and what it carries; how HP of a
-  member in sight reaches another client sooner; `Effect.broadcastHate`; `AbstractDispelEffect` and what Cleanse's
-  count and power mean; `QuestService.getQuestDrop` and `DropService` for a group; the default loot rule; the
-  resurrection offer and its answer. Then choose three things near Morheim Ice Fortress. A hard fight: an elite or
-  named monster, or a pull of several, that takes a level-26 fighter below half its HP although it uses its own
-  potion and scroll. A monster that puts a removable debuff of 10 s or more on a player (the ruthless worg is the
-  candidate). A quest with a drop of the one-for-the-group kind that no character has done (candidates: Q2307
-  "Irresistible Soup", Q2430 "Secret Information").
-  - Proof: a facts table in this document, each row with its Java reference; the three choices named, with one
-    uncaptured round of a fighter alone in the hard fight as evidence of what it costs.
-  - 2026-10-12, code `3dd8f2b41`: the `gh-survey` round stage resumes a mustered level-26 character, walks to
-    `targetNpcId`, and makes one attempt with its existing fight table. The receipt verifies that the survey was
-    played, including a death; the trace audit separately decides whether its evidence meets the hard-fight criterion.
-    No new unit tests, fighter policy changes or healer mode were added.
-  - Two uncaptured seed-1 rounds from `ntc-group-s4`, under `run/gh/GH-01`, audited by
-    `scripts/sim/trace/group_healer_survey.py <absolute round folder>`:
+## Group-mechanics progress
 
-    | Run | Target | Lowest living HP | Deaths | Target killed | Fight time | Life potions consumed | Anti-Shock consumed / attempted |
-    |---|---|---:|---:|---|---:|---:|---:|
-    | `zugog-solo1` | King Zugog (212644), 504,427 HP | 19.86% (then 0%) | 1 | no | 13.948 s | 1 | 0 / 1 |
-    | `seku-solo1` | Seku the Youngest (213800), level 25 elite, 12,513 HP | 74.65% | 0 | yes | 35.129 s | 1 | 0 / 0 |
+- [x] Verify the shared Morheim location and bind; form the group through invitations with the Templar as leader.
+- [x] Integrate F1 following with healer support and normal fighter combat/recovery.
+- [x] Complete one new Q2318 cycle with the Templar and Cleric, including both turn-ins.
+- [x] Restore the starting world and complete the three-member cycle, adding the Gladiator.
+- [x] Restore and complete the four- and five-member cycles, adding Ranger and Sorcerer.
+- [x] Restore and complete the six-member cycle, adding Chanter.
+- [x] Implement rights-aware round-robin loot; the three-member cycle exercised nine corpse windows.
+- [x] Implement resurrection offers, recipient waiting and common-bind recovery when unavailable or the Cleric dies.
+  No natural death has exercised that path yet; no death is forced for validation.
 
-    Zugog's scroll was refused with `STR_SKILL_CAN_NOT_USE_ITEM_WHILE_IN_ABNORMAL_STATE`; the count remained 30.
-    Its Courage scroll was consumed at the start of the fight. Seku never drove the fighter below half HP.
-    Both remained level 26 and made no retreat. Both survey stages reached their end; both owned schemas were
-    dropped, and no snapshot was captured or changed.
-  - The bundle, `run/gh/GH-01/bundle.log`: server tests 4,632 passed, 16 skipped; seven checks and the three script
-    checks passed; Fast `gh01-fast` 11 scenarios passed (its simulation prerequisites: 115 passed, 96 skipped).
-    Gate `guard-starters`, parallel 5: mage 23,555, warrior 24,199, artist 23,104, engineer 24,580 and scout 27,592
-    normalized trace records, each count and digest identical to its baseline. Build servers shut down after the bundle.
-  - **Stop after two attempts, as the handoff prompt requires.** The audit interprets "although it uses its own
-    potion and scroll" as a consumed life potion and defensive Anti-Shock scroll, rather than an attempted scroll
-    or the speed scroll. Under that interpretation both audits say `passed: false`. This qualification is an
-    interpretation, not a new operator decision. The Java survey, worg and Q2307 choices are ready, but GH-01 stays
-    unticked until the operator either accepts Zugog's normal-fighter result with its recorded refusal, or authorizes
-    another hard-fight survey (a level-26 veteran elite such as Klaw Spawnguard, 212816, 28,351 HP, is untested).
-    GH-02 through GH-13 remain untouched.
-- [ ] **GH-02 What the client sees of a group.** The world model keeps a member's MP, class, flight state and
-  effects from `SM_GROUP_MEMBER_INFO`, counts HP 0 as dead, and takes the freshest HP of the group packet and what
-  it sees of a member in sight. It keeps who attacks whom for every creature in sight, not for itself alone.
-  - Depends: GH-01. Proof: the bundle; a round of two grouped bots whose traces show a member's HP, MP and a debuff
-    as the other saw them, against the member's own.
-- [ ] **GH-03 The support table's data.** The Cleric's catalog gains the roles of its support skills: the four heals
-  by kind (cast heal, great heal, instant heal, heal over time), cleanse, blessing, the group's heal and the
-  resurrection, each with every rank. A dispel catalog is built from the shipped skill data: for a dispel skill, the
-  effects it can remove (slot, category, level).
-  - Depends: GH-01. Proof: the bundle; the profile validator accepts the Cleric with the new roles; the catalog
-    lists Rabies, Lower-body Paralysis and Weaken Defense for Cleanse III and no stun.
-- [ ] **GH-04 The triage policy.** A pure policy, `NaturalGroupHealPolicy`: from the observed group it returns one
-  action and the check of every rule it passed. The eight rules above, itself before a member at each, with the
-  run's numbers.
-  - Depends: GH-02, GH-03. Proof: the bundle. It is first exercised in GH-05.
-- [ ] **GH-05 The mode.** A round's bot may be given `"role": "healer"` and `"with": "<line>"`. The fight driver
-  runs the support table: the decision loop, the follow rule, the cast on a friend, the blessing on every member,
-  and the guard that refuses every attack and every cast at an enemy. A group is formed at the stage's start by the
-  invitation and its answer, as a client does it.
-  - Depends: GH-04. Proof: the bundle; a round of the Cleric and one fighter in the fortress, grouped, with no
-    fight: the Cleric follows the fighter through a walk, both carry the blessing, and its trace holds no attack.
-- [ ] **GH-06 Through a hard fight.** The first proof in the field: the Cleric and the Templar against the hard
-  fight of GH-01, the Templar playing exactly as it does alone. The same fight is played once without the Cleric,
-  for the difference.
-  - Depends: GH-05. Proof: the two rounds, uncaptured. From the audit: no attack and no enemy cast by the Cleric;
-    every time the Templar was at or below 70% a heal began within 3 s; the Templar's lowest HP with and without the
-    healer and whether it lived; the Cleric within 23 m of it for 95% of the fight's time or more; the Cleric's own
-    lowest HP and mana.
-- [ ] **GH-07 Remove debuffs.** Against the monster with the removable debuff.
-  - Depends: GH-05. Proof: the round. Of the debuffs put on the healer or a member with 5 s or more to run, how many
-    Cleanse removed and how soon; none was cast at a debuff it cannot remove.
-- [ ] **GH-08 Loot on its turn.** Both hold the proof quest. The Cleric loots when the server opens a corpse to it.
-  - Depends: GH-05. Proof: the round. Both end with the quest's items; every item the server gave the Cleric was
-    taken by the Cleric; it took nothing else; it left for a corpse only with everyone above 70%.
-- [ ] **GH-09 Three members.** The Cleric with the Templar and the Gladiator in the hard fight.
-  - Depends: GH-06, GH-07, GH-08. Proof: the round. The same numbers for each member; the healer came first and the
-    member in most need next each time two were hurt at once.
-- [ ] **GH-10 A long session and the numbers.** An hour of game time of the three hunting ordinary monsters, with
-  the hard fight in it. The thresholds are tuned once from what GH-06 to GH-09 showed.
-  - Depends: GH-09. Proof: the round. The fighters' kills an hour beside the healer against the same hour without
-    it: the healer must not slow them. Deaths, each with its cause; the Cleric never out of mana in a fight for more
-    than one decision; how many of its heals landed on a member that its own potion was already healing.
-- [ ] **GH-11 The healer attacked.** A fight in which a monster turns on the Cleric.
-  - Depends: GH-09. Proof: a round in which it happened. The Cleric did not attack, healed itself before anyone
-    else, stayed within range of the group; what became of it.
-- [ ] **GH-12 Raise the dead, when possible** (GH-Q1). The healer casts Light of Resurrection on a dead member within
-  15 m once no one is attacked. The member has to be there to be raised: today a dead bot takes the obelisk at once.
-  So a dead member whose group has a living healer within 40 m waits 30 s for the offer and accepts it; with no
-  offer it takes the obelisk as before. That wait is the one thing this plan asks of the other classes. If the
-  server's offer and answer need more than a small change, the item is written up and left open.
-  - Depends: GH-10. Proof: a round in which a member died and was raised, and the group went on together; or the
-    write-up of what stands in the way.
-- [ ] **GH-13 Close.** This document's closing status: what the healer does, the numbers of the proofs, what was
-  found and not fixed, and what the group plan takes from here. The memory notes.
-  - Depends: every item above; GH-12 may be open.
+The rollback baseline is `ntc-group-s4-w1`, containing all eleven characters. Its SQL dump SHA-256 is
+`8d0787cf4021e71e5e314cb060bd081fea316d9fdb09cd8a0ae7c76d88cf8f97`; the initial fingerprint is recorded in
+`run/group/baseline.json`. Every attempt restores that snapshot to an owned disposable schema. No new capture
+has been made and the source snapshot is retained. The dump and manifest hashes were checked again after the runs
+and are unchanged. Every successful run's schema-cleanup record confirms its disposable database was dropped.
+Rollback does not discard code changes.
 
-## Hazards
+The stage is `"group-coin"`, with `groupLeader`, the same `groupRoster` on each bot, and `"role": "healer"` for
+the Cleric. Set `groupLoot: true` for the expanded runs. Local round files are `run/group/two.json` and
+`run/group/3.json` through `6.json`. Run with `scripts/sim/run-round.ps1 -From ntc-group-s4 -Seed 1`, and an absolute
+`-ReplayRoot` pointing to `run/group`; leave `-Capture` unset. Each member writes `group-coin-completion.json`
+only after observing one new completion count and its reward items. The controller checks the existing runtime
+problem policy before writing a verified receipt.
 
-1. **The healer is for the fights a group does not survive alone, and those are not beside the fortress.** In the
-   fights of the muster that I read, the Templar stood between 91% and 96% of its HP against monsters of level 21.
-   GH-01 has to find a fight in the open world that hurts. The real test is the group plan's first boss.
-2. **Two healers for one wound.** A fighter drinks its potion at the HP it does alone, and the healer heals the same
-   member. Some heals are wasted. That is the price of leaving the fighters as they are; GH-10 counts it.
-3. **Old news.** The server sends a member's HP in the group packet on its own schedule. A heal decided on an old
-   number comes late or is wasted. GH-02 takes the freshest of what it sees; GH-06 measures how late a heal starts.
-4. **A cast heal lands 2 to 3 s after it is decided.** A member at 35% under three monsters can die inside a
-   Healing Grace. Rule 1 takes the instant heal first for that reason, and it has a 30 s cooldown.
-5. **Aggro on the healer.** Heals draw the monsters. A fighter that holds no aggro on purpose leaves the healer hit
-   often, and the healer then spends its heals on itself, as the operator wants. The Templar's taunts are a
-   fighter's group play and belong to the next plan; GH-11 records what happens without them.
-6. **Line of sight and the follow.** A heal is refused through a wall or beyond 23 m. A healer that follows too far
-   behind loses the member at a corner; one that follows too close stands in the fight.
-7. **The loot walk.** A corpse 20 m off the path takes the healer out of range of a member that has gone on. The
-   rule goes only when everyone is above 70% and comes back at once.
-8. **Mana.** Healing Light gives 594 HP for 75 MP. A long fight of three members empties the healer. The powder and
-   Penance are for between fights; the mana serum is the one thing for inside a fight.
-9. **Turns.** A healer that looks every quarter second takes four turns a game second for an hour. If a round
-   becomes slow, the look is every half second while no one is attacked.
+| Roster size | Successful run under `run/group/coin` | All members turned in | Game duration | Deaths |
+|---|---|---|---|---|
+| 2: Templar, Cleric | `two-final2` | Yes, with reward items observed | 9 min 59 s | 0 |
+| 3: add Gladiator | `three-5` | Yes, with reward items observed | 11 min 14 s | 0 |
+| 4: add Ranger | `four-1` | Yes, with reward items observed | 10 min 58 s | 0 |
+| 5: add Sorcerer | `five-1` | Yes, with reward items observed | 10 min 26 s | 0 |
+| 6: add Chanter | `six-final` | Yes, with reward items observed | 10 min 34 s | 0 |
 
-## Not in this plan
+Iterations fixed newly observed hazards during travel, slope-height mismatches, stationary-leader following,
+NPC dialogue spacing, shared-target completion races, repeated blocked-target approaches and protection-buff
+conflicts. Failed attempts remain under the same evidence root. The final pair and final six-member runs use the
+final implementation; the intervening roster successes record the incremental expansion.
 
-- How a group pulls, who holds aggro, who waits for whom, and how fighters assist each other: the group plan.
-- Any change to how a fighter plays beside a healer (GH-Q8), beyond the wait of GH-12.
-- The Chanter's and the Bard's support tables.
-- Stigma heals, and any skill book.
-- Healing a player outside its group, and a human in the group: the far goal, after the bots can play together.
-- Recording the stale gate scopes again.
+The final six-member Cleric made **4 blessing and 119 HoT casts**, sent **zero attacks**, and every outgoing spell
+targeted its own character or a member of that roster. The final pair likewise sent no attacks. The expanded
+successes collected 18, 24, 23 and 22 loot entries respectively, using client-granted rights and client-filtered
+item lists. Each member observed two Bronze Coins (186000007) and one Bronze Coin Chest (188050866) at turn-in.
+`run/group/completed-runs.json` records the completion, targeting, source and cleanup review.
 
-## Handoff prompt
+Existing API, world-model, social/profile, movement, cast-protocol and group-packet regressions: **115 passed**.
+The required Fast run `group-mechanics-commit` also passed: **11 manifest scenarios**, with **115 tests passed**
+and 96 optional probes skipped; zero failures. Its artifacts are under `run/group-mechanics-commit`.
+No new unit tests were added. The final solution build and warning baseline passed. Build servers were shut down
+after the checks; no group SIM run remains active. The implementation and this document use the existing checkout
+on `main`; no changes were pushed.
 
+No successful roster run had a death. Resurrection and common-bind group recovery are implemented but were not
+exercised naturally. An earlier six-member iteration exercised two direct heals and mana recovery; the final
+six-member run needed only blessing and HoT upkeep. No eligible dispel or shared/unshared quest-item drop was
+exercised. Q2318 completion establishes kill credit, not quest-item sharing; those paths remain for ordinary group
+play without a new proof hunt. Initial round-robin corpse rights and collection were exercised; there was no
+mandatory leftover-item or four-minute free-for-all demonstration.
+
+To repeat from the original world with six members, use a fresh run id:
+
+```powershell
+pwsh -NoProfile -File scripts/sim/run-round.ps1 -Round run/group/6.json -Item coin -Run <fresh-run-id> -From ntc-group-s4 -Seed 1 -ReplayRoot C:/Users/ryanf/Documents/GitHub/BeyondAionSharp/run/group
 ```
-Work the GH checklist in docs/natural-group-healer.md, one item at a time, starting with GH-01.
 
-Repository: C:\Users\ryanf\Documents\GitHub\BeyondAionSharp, branch main. Nothing of the GH list is implemented.
+Use `run/group/two.json` for the original pair or `3.json` through `5.json` for intermediate rosters. The harness
+restores the immutable starting world, so quest completion and loot from the previous attempt do not carry over.
 
-READ FIRST
-- CLAUDE.md, then docs/natural-group-healer.md from top to bottom: the goal, what is there today, how the healer
-  plays, the Decisions table (the operator answered GH-Q1, Q2, Q4 and Q8 on 2026-10-12; the others stand as
-  written), the standing rules, the checklist and the hazards.
-- docs/natural-muster.md: the one world and its rules MR-a to MR-f, how a round is run, and the muster stage in
-  NaturalIshalgenJourney.cs, which is the nearest thing to copy for a new stage. A round's stages and roles are read
-  in tests/Aion.Simulation.Tests/SimulationNaturalRoundTests.cs and scripts/sim/run-round.ps1.
-- The memory notes on the one world database, the group healer plan, power shards and the bag cleanup, and no new
-  unit tests for bot work.
+## Verification and working rules
 
-WHERE THINGS STAND
-- The group is the round snapshot ntc-group-s4: eleven Asmodian second classes at level 26 in Morheim Ice Fortress,
-  one account each (111 to 121), in one world database. Every proof starts from it:
-    pwsh -NoProfile -File scripts/sim/run-round.ps1 -Round <round.json> -Item GH-<n> -Run <id> -From ntc-group-s4
-      -ReplayRoot <ABSOLUTE path to run/gh>
-  Proof rounds are not captured (GH-Q7). Pass -ReplayRoot as an absolute path: the test process runs in game-server.
-- The neutral gate guards five scopes only: -Set mage+warrior+artist+engineer+scout -Parallel 5. The other
-  seventeen are stale by the operator's word and are not recorded again.
+- Use the existing checkout on `main`; no branches, worktrees, subagents or pushes.
+- Read corresponding Java first (`../aion-server`, branch `4.8`) and preserve the repository's parity rules.
+  Make decisions from client observations, not live server state.
+- Build and use existing checks required by repository guidance for the final code change. Do not repeat a full
+  bundle for every support rule or add new unit tests for this bot work.
+- The completed core healer task used **one brief grouped SIM smoke check**, seed 1, from `ntc-group-s4`, without a
+  capture. Check legal support targeting, blessing, HoT cycling, any healing/cleansing exercised, and the absence
+  of attacks or enemy casts. Fighters may fight; the healer may not. Report unexercised paths plainly and exercise
+  them during group play. The new goal uses quest runs with progressively larger rosters as specified below.
+- No hard-fight survey, solo comparison, boss qualification, hour-long session, survival benchmark, forced death
+  or mandatory trace score is required. Deaths and refused casts are outcomes, not new qualification projects.
+- Keep the read-only monitor available when the harness supports it. Consult `scripts/sim/sim-run-marker.ps1`;
+  do not build or run other checks while a SIM run holds the outputs. Shut down build servers after a chain.
+- Keep every group character in one world. No LIVE run, operator-stack modification, snapshot overwrite,
+  generated-data edit or warning-baseline increase.
+- Leave `docs/playtest-aethertapping-plan.md`, `docs/playtest-crafting-alchemy-cooking-plan.md` and
+  `docs/playtest-ground-essencetapping-plan.md` alone.
 
-EACH ITEM
-1. Read the Java first (../aion-server, branch 4.8) for every server behavior the item relies on. Java wins.
-2. Do only that item. Generic first: the mode, the policy and the world model know no class; the Cleric's support
-   table is data. Solo play and a fighter's play in a group do not change.
-3. Prove it as the item says: the build, the bundle, and SIM rounds from ntc-group-s4 whose numbers an audit script
-   under scripts/sim/trace/ reads from the traces. No new unit tests for bot work.
-4. Before a code commit: dotnet test tests/Aion.GameServer.Tests (4,632 passed and 16 skipped today); the seven
-   checks (check-warning-baseline, check-null-loggers, check-clock-reads, check-custom-quest-drafts,
-   check_fidelity.py, test-quest-plan-compiler.py, test-retail-quest-inventory.py); the three script tests when
-   scripts/sim changed; Fast (scripts/e2e/run-fast.ps1 -Run <name>, 11 passed); and the gate on the five scopes,
-   which must stay identical. run/mr/MR-1/chain.sh runs all of it in order and is the pattern to copy.
-5. Tick the item in the document with a dated line of evidence (run ids and numbers), and commit on main: the code,
-   then the evidence. No co-author or attribution line. Never push.
+Formation, F1 following, assisting the leader's target, loot turns and group death handling belong to the
+implemented group goal. Instance progression, specialized pull/taunt coordination, other classes' support tables and
+healing players outside the group remain outside this task.
 
-PRACTICAL
-- A long job (a bundle, a round) runs in the background; wait for its notification. A foreground sleep is blocked.
-- Many source files have CRLF line ends: an exact-text edit has to allow for them. A bash heredoc halves the
-  backslashes of a Python script inside it: write such a script to a file first.
-- On Windows, stopping a background bash chain kills only its wrapper: check by process id before building.
+### Brief validation (2026-10-12)
 
-RULES THAT DO NOT BEND
-- SIM only, seed 1. No LIVE run. Do not touch the operator's aion stack beyond the throwaway aion_gs_sim_ni08_*
-  schemas the scripts make and drop.
-- One world database. No character gets a schema of its own, and no capture is made by playing one character alone.
-- Never branch, use a worktree, spawn a subagent, push, or check out an older commit. Never overwrite a snapshot;
-  a new capture gets a new name. Do not hand-edit generated data or raise the warning baseline.
-- Never build or run checks while a run holds the build outputs (scripts/sim/sim-run-marker.ps1 says). After a
-  chain, dotnet build-server shutdown.
-- Leave docs/playtest-aethertapping-plan.md, docs/playtest-crafting-alchemy-cooking-plan.md and
-  docs/playtest-ground-essencetapping-plan.md alone.
-- The healer never attacks. Its own healing comes before a member's. Other members fight just the same.
-- A death, a refused cast and a failed attempt are outcomes to record, not failures to hide.
+Solution build and warning baseline passed. Existing focused API, world-model, social-packet and profile
+regression checks: **71 passed**.
+Round `idle-hot1`, under `run/gh/healer-mode`, used the Cleric and Templar from `ntc-group-s4`, seed 1, for one game
+minute. Both stopped at their configured duration; neither fought, and no snapshot was captured.
 
-STOP AND REPORT when GH-13 is ticked, when an item cannot be proved in two attempts and needs a decision, or when a
-question comes up that the Decisions table does not answer. GH-12 may be left open with a write-up. Report what was
-done with its numbers, what is open, and what the operator must decide.
+The Cleric cast one Blessing of Guardianship and five Light of Rejuvenation IV casts, alternating HoTs between
+itself and the Templar and refreshing them near expiry. It sent **zero attacks**; all six casts targeted self or
+the grouped Templar. Both were healthy and had no eligible debuff, so urgent healing and cleansing were not exercised
+in this smoke check. Their rules are implemented; exercise them during later group play instead of adding a proof hunt.
+
+## Java references already checked
+
+Paths are relative to `../aion-server/game-server/src/com/aionemu/gameserver/`, branch `4.8`:
+
+| Fact | Reference |
+|---|---|
+| Group member packets carry exact HP/MP, flight points, position, class and effects. Effects updates replace the specified slot mask. | `network/aion/serverpackets/SM_GROUP_MEMBER_INFO.java` |
+| HP/MP updates use 500 ms; movement uses 2 s; nonpassive effect changes send immediate group effects updates. | `model/stats/container/PlayerLifeStats.java`; `taskmanager/tasks/TeamStatUpdater.java`; `TeamMoveUpdater.java`; `controllers/effect/PlayerEffectController.java` |
+| Sighted HP packets carry a percentage. SM_ATTACK_STATUS types 19–23 carry MP and must not be mistaken for HP or deaths. | `model/stats/container/CreatureLifeStats.java`; `network/aion/serverpackets/SM_ATTACK_STATUS.java`; `SM_ATTACK.java`; `SM_CASTSPELL_RESULT.java` |
+| Indirect effects add hate to nearby creatures already hating the caster or recipient; healing can draw aggro. | `skillengine/model/Effect.java:622` |
+| Cleanse III permits up to 100 eligible DEBUFF-slot effects in physical/mental/ALL categories at dispel level 1, with power 30 per effect. Higher resistance is reduced; STUN is a separate category. | `skillengine/effect/AbstractDispelEffect.java`; `DispelDebuffEffect.java`; `controllers/effect/EffectController.java:528`; Java skill data, skill 3937 |
+
+For later group mechanics, shared quest drops are assigned separately from ordinary round-robin loot
+(`services/QuestService.java:666`). Resurrection offers use SM_RESURRECT and CM_REVIVE / SKILL_REVIVE id 3
+(`skillengine/effect/ResurrectEffect.java`; `services/player/PlayerReviveService.java:42`). Neither flow gates this mode.
+
+## Earlier work retained as history
+
+Local commits `3dd8f2b41` and `d5b03687b` added the `gh-survey` diagnostic and recorded two uncaptured Templar runs
+under `run/gh/GH-01`. Zugog caused one death after a lowest living HP of 19.86%, with a consumed potion and refused
+Anti-Shock; Seku was killed with no death and a lowest HP of 74.65%. The accompanying repository checks passed.
+Both schemas were dropped and no snapshot changed. This evidence remains available; it is not an active checklist,
+does not require another survey, and does not gate healing-mode implementation.
+
+## Goal prompt
+
+```text
+Implement and iterate on basic group mechanics using the Morheim repeatable coin quest.
+
+Repository: C:\Users\ryanf\Documents\GitHub\BeyondAionSharp, existing checkout on main.
+Read CLAUDE.md, docs/natural-muster.md and docs/natural-group-healer.md.
+This replaces the old GH proof program. Reuse the implemented Cleric healer mode.
+
+STARTING WORLD AND ROLLBACK
+
+Use the one-world snapshot ntc-group-s4. Restore it into a throwaway SIM schema for every attempt.
+Keep the original snapshot immutable. All characters belong to the same world database.
+
+Verify the starting snapshot and record its identity before running. If preparation requires a new
+baseline, capture it under a fresh name before accepting the quest, retaining the original.
+Every retry and roster expansion starts from that same baseline, including character positions,
+binds, inventories and quest states. Rollback restores world state; code improvements remain.
+
+FIRST RUN: TEMPLAR AND CLERIC
+
+1. Log in Asimtemplar (account 112) and Asimnjour, the Cleric (account 111).
+2. Verify both are together at Morheim Ice Fortress and bound to the same Morheim obelisk.
+   Correct discrepancies through ordinary movement and binding interactions.
+3. Have the Templar invite the Cleric through client group packets. Accept the invitation and
+   verify both observe the group with the Templar as leader.
+4. Travel together to Nott (204360). Both accept Q2318, "[Coin] Foes of the Fortress."
+   Use the existing repeatable quest route and interactions.
+5. The Templar leads travel and does the killing using its existing combat and recovery rules.
+   The Cleric follows and continuously supports the group: self-healing first, group healing,
+   eligible dispels, blessing and idle HoT upkeep. It never attacks or casts offensive skills.
+6. Keep hunting until BOTH characters have the required quest progress. Return together;
+   each character turns in the quest and receives its own reward.
+
+F1 AND FOLLOWING
+
+F1 always means the current group leader, resolved from observed group packets.
+Do not hard-code the Templar as the permanent leader or infer leadership from bot scheduling.
+The same follower behavior must work later when F1 is a human player.
+
+Only F1 chooses the travel route and hunt destination. Followers track F1's observed movement
+and follow its traversed path with a small spacing allowance. Use existing collision and movement
+checks; do not cut through walls or run separate quest routes.
+
+Keep followers close enough for healing and quest credit. Stop movement when a cast requires it,
+then resume following. Let the bot leader pause for regrouping, recovery or a fallen member.
+If leader observations are missing or stale, stop safely and wait to reacquire F1.
+
+EXPAND AFTER SUCCESS
+
+After the two-member quest succeeds, restore the baseline and add another existing character.
+Repeat with three, four, five and finally six members. Additional classes are your choice.
+Keep the Templar as F1 for these runs and the Cleric in healer/follow mode.
+
+Other members follow F1 and assist its observed combat target using their existing class combat,
+resting, recovery and healing rules. They do not independently choose pulls or travel routes.
+Every participating member must accept, progress and turn in the quest.
+
+DEATH AND RESURRECTION
+
+A dead member waits for the living Cleric to resurrect it through normal skill and offer/answer
+packets. Prioritize keeping living members alive before resurrection.
+If the Cleric dies, use the existing bind-revive and soul-healing flow, then regroup.
+Handle an unavailable resurrection with a bounded, reported fallback rather than waiting forever.
+Do not force deaths just to demonstrate this path.
+
+LOOTING: AFTER THE FIRST TWO-MEMBER SUCCESS
+
+Add round-robin looting without delaying the initial formation/following work.
+Read the corresponding Java group, drop and quest implementations first.
+
+Respect the designated initial looter and subsequent group access as the server actually allows.
+Followers loot only when entitled, then resume following. Treat personal or shared quest drops
+separately from ordinary corpse ownership. Track each member's journal and inventory so nobody
+is left without required quest items.
+
+Q2318 uses kill objectives, so completing it does not establish shared/unshared quest-item behavior.
+Report any loot or quest-drop paths this run does not exercise; do not claim they passed or expand
+into an unrelated quest survey.
+
+WORKING RULES AND COMPLETION
+
+Keep changes small and reuse existing drivers. Make gameplay decisions from client observations.
+Read relevant Java first; fix encountered server defects under the repository's parity rules.
+
+SIM only, seed 1, one world. No LIVE changes, branches, worktrees, subagents, pushes, snapshot
+overwrites, generated-data edits or warning-baseline increases. Preserve existing local changes.
+Leave the three playtest gathering/crafting documents untouched.
+
+Keep the read-only monitor available. Never build while a SIM run holds the outputs.
+Run checks appropriate to the changes; do not add new bot unit tests or repeat broad proof bundles.
+
+Finish when the two-member and progressively expanded groups through six members complete one
+quest cycle each from the preserved baseline, with F1-led travel and the Cleric remaining support-only.
+Record concise results: roster, quest completion per member, following problems, healing/dispels,
+deaths, loot behavior and unexercised paths. Leave the baseline available for another rollback.
 ```

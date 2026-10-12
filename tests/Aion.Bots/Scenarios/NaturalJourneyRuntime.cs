@@ -53,7 +53,8 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 		var template = Data.SkillDataDh.GetSkillTemplate(skillId)
 			?? throw new InvalidDataException($"Missing client skill template {skillId}.");
 		BotWeaponMotionType weapon = WeaponMotion(world);
-		BotPosition destination = target == world.SelfObjectId ? origin : world.Objects[target].Position;
+		BotPosition destination = target == world.SelfObjectId ? origin : world.Objects.TryGetValue(target, out var known)
+			? known.Position : world.GroupMembers[target].Position;
 		static float Between(BotPosition a, BotPosition b) =>
 			MathF.Sqrt(MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2) + MathF.Pow(a.Z - b.Z, 2));
 		float distance = Between(origin, destination);
@@ -115,4 +116,5 @@ public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? R
 	bool AltgardLeg1 = false, string? AltgardLegId = null, int[]? AltgardOnlyQuests = null,
 	string? CoinGearReceiptPath = null, string? HaramelProgressPath = null, string? CapitalStage = null,
 	bool LaterCapital = false, string? AbyssArenaFirstTry = null, string? AbyssRingFirstTry = null,
-	NaturalClassLine? ClassLine = null, bool Muster = false, int? SurveyNpcId = null);
+	NaturalClassLine? ClassLine = null, bool Muster = false, int? SurveyNpcId = null, string? Role = null, bool SupportWatch = false,
+	string[]? GroupRoster = null, string? GroupLeader = null, bool GroupLoot = false);

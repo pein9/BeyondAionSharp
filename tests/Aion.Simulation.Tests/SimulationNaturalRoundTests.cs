@@ -22,15 +22,20 @@ public sealed partial class SimulationFastScenarioTests
 	/// played by a character that stands at the end of the stage before it. "muster" follows "ax" (docs/natural-muster.md).
 	/// </summary>
 	private sealed record NaturalRoundBot(string Line, double StartAfterMinutes = 0, string? StopAt = null, double? StopAfterMinutes = null,
-		int? Account = null, string? Name = null, int? ResumeCharacter = null, string? Stage = null, int? TargetNpcId = null);
+		int? Account = null, string? Name = null, int? ResumeCharacter = null, string? Stage = null, int? TargetNpcId = null,
+		string? Role = null, string? SupportInvite = null, bool AcceptSupportInvite = false,
+		string[]? GroupRoster = null, string? GroupLeader = null, bool GroupLoot = false);
 
 	/// <summary>
 	/// NR-R1a: the journey's options for a bot's stage. A run of one bot takes them from its environment
 	/// (NaturalIshalgenPriestCompletesFrozenJourneyWithoutSetup: NA_ASCENSION and the rest); a round gives them for each bot
 	/// from its round file (Survey C1, part 7). The bridge is what NA_ASCENSION=1 is there.
 	/// </summary>
-	private static NaturalJourneyOptions RoundOptions(NaturalRoundBot entry, NaturalClassLine line) => entry.Stage switch
+	private static NaturalJourneyOptions RoundOptions(NaturalRoundBot entry, NaturalClassLine line)
 	{
+		if (entry.Role is not (null or "" or "healer")) throw new InvalidDataException($"Unknown bot role '{entry.Role}'.");
+		return (entry.Stage switch
+		{
 		null or "" => new NaturalJourneyOptions(StopAt: entry.StopAt, ClassLine: line),
 		"bridge" => new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, ClassLine: line),
 		// NR-R3a: a leg, as sim-snapshot.ps1 -AltgardLeg1 -Leg <id> -LaterCapital plays it for one bot. Leg 1 starts on the
@@ -45,8 +50,14 @@ public sealed partial class SimulationFastScenarioTests
 		// GH-01: one uncaptured field encounter from the group world's muster endpoint, with the ordinary fight table.
 		"gh-survey" => new NaturalJourneyOptions(AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
 			ClassLine: line, Muster: true, SurveyNpcId: entry.TargetNpcId ?? 212644),
-		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, muster or gh-survey."),
-	};
+		"support" => new NaturalJourneyOptions(AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
+			ClassLine: line, SupportWatch: true),
+		"group-coin" => new NaturalJourneyOptions(AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
+			ClassLine: line, GroupRoster: entry.GroupRoster ?? throw new InvalidDataException("group-coin needs a roster."),
+			GroupLeader: entry.GroupLeader ?? throw new InvalidDataException("group-coin needs a leader."), GroupLoot: entry.GroupLoot),
+		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, muster, gh-survey, support or group-coin."),
+		}) with { Role = entry.Role };
+	}
 
 	/// <summary>
 	/// NR-R3a: the receipt the journey writes at a stage's end, beside its trace, once the end has been checked again
@@ -54,9 +65,9 @@ public sealed partial class SimulationFastScenarioTests
 	/// (scripts/sim/sim-snapshot.ps1), and a bot of a round has reached its stage on the same word. Null for the plain
 	/// journey and for a bot stopped on purpose, which write none.
 	/// </summary>
-	private static string? StageReceipt(NaturalRoundBot entry) => entry.StopAt is { Length: > 0 } ? null : entry.Stage switch
+	private static string? StageReceipt(NaturalRoundBot entry) => entry.Stage == "group-coin" ? "group-coin-completion.json" : entry.Role == "healer" || entry.StopAt is { Length: > 0 } ? null : entry.Stage switch
 	{
-		null or "" => null,
+		null or "" or "support" => null,
 		"bridge" => "bridge-completion.json",
 		"muster" => NaturalAbyssEntry.MusterReceipt,
 		"gh-survey" => "gh-survey-completion.json",
@@ -251,6 +262,19 @@ public sealed partial class SimulationFastScenarioTests
 				var entered = fixture.World.GetPlayer(playing.CharacterId);
 				NaturalJourneyIdentityRules.Classify(line, entered.GetPlayerClass(), entered.GetLevel(), entered.GetWorldId(), playing.IdentityAltgardLegId);
 				if (!resuming) Assert.Equal(line.Starter, entered.GetPlayerClass());
+				// Brief smoke setup through existing client group packets, separate from the support policy.
+				if (entry.Stage == "support" && entry.SupportInvite is { Length: > 0 } invited)
+				{
+					while (!playing.Api.World.Objects.Values.Any(known => known.Name == invited))
+					{ await playing.AdvanceAsync(TimeSpan.FromMilliseconds(250), enterToken); await playing.SynchronizeAsync(enterToken); }
+					await playing.SendPacketAsync(playing.Api.InviteToGroup(invited), enterToken);
+				}
+				if (entry.Stage == "support" && entry.AcceptSupportInvite)
+				{
+					while (playing.Api.World.Question?.Code != 60000)
+					{ await playing.AdvanceAsync(TimeSpan.FromMilliseconds(250), enterToken); await playing.SynchronizeAsync(enterToken); }
+					await playing.SendPacketAsync(playing.Api.Answer(1), enterToken);
+				}
 				return resuming;
 			}
 		}

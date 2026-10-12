@@ -284,6 +284,22 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		try
 		{
 			bool resuming = await runtime.EnterAsync(token);
+			if (options.GroupRoster != null)
+			{
+				await RunGroupCoinAsync(token);
+				return;
+			}
+			if (options.Role == "healer")
+			{
+				using var healer = new NaturalGroupHealDriver(session, runtime, NaturalClassProfiles.For(
+					session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass, ClassLine, runtime.Data));
+				await healer.RunAsync(token);
+				return;
+			}
+			if (options.SupportWatch)
+			{
+				while (true) { await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token); await session.SynchronizeAsync(token); }
+			}
 			if (options.CapitalStage == "first")
 				Require.True(resuming && session.Api.World.CompletedQuestIds.IsSupersetOf(new[] { 2008, 2009 }),
 					"The contained capital pass must resume the retained post-ceremony character.");

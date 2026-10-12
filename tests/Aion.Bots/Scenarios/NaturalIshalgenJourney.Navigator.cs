@@ -23,6 +23,7 @@ public sealed partial class NaturalIshalgenJourney
 	{
 		public bool AvoidHostileAggro { get; set; }
 		public bool InCombat { get; set; }
+		public Func<CancellationToken, Task>? BeforeMovementAsync { get; set; }
 		public Func<int[], BotPosition, int, CancellationToken, Task>? DefendOnAttackAsync { get; set; }
 		public string LastRouteDiagnostic { get; private set; } = "none";
 		/// <summary>Travel planner tried first for long non-combat legs (see BotTravelPlanner.PlanJourney).</summary>
@@ -306,6 +307,7 @@ public sealed partial class NaturalIshalgenJourney
 
 		public async Task MoveAsync(IReadOnlyList<BotPosition> segment, CancellationToken token)
 		{
+			if (BeforeMovementAsync != null) await BeforeMovementAsync(token);
 			// A segment planned before a revive or a teleport starts where the Cleric no longer is. Walking it would cross
 			// straight from the obelisk to the old route (the Leg 4 catch-up walked 270 m that way, back into the mosbears
 			// that had just killed it, six times). Refuse it; the caller sees no progress and plans a new route from here.
@@ -323,9 +325,18 @@ public sealed partial class NaturalIshalgenJourney
 			if (segment.Count > 0 && session.Api.OpenDialogTargetId is int dialogTarget)
 				await session.SendPacketAsync(session.Api.CloseDialog(dialogTarget), token);
 			lastMovementStart = session.CurrentPosition;
-			await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing)
+			var plan = new BotMover(session.Api.World, session.Api.Timing)
 				.CreateGroundPlan(segment, session.CurrentPosition,
-					session.Api.World.MovementSpeed ?? throw new InvalidDataException("SIM movement speed unobserved.")), token);
+					session.Api.World.MovementSpeed ?? throw new InvalidDataException("SIM movement speed unobserved."));
+			if (BeforeMovementAsync == null) await session.ExecuteMovementAsync(plan, token);
+			else foreach (var frames in plan.Frames.Chunk(4))
+			{
+				await BeforeMovementAsync(token);
+				float distance = 0;
+				var at = session.CurrentPosition;
+				foreach (var frame in frames) { distance += Distance(at, frame.Position); at = frame.Position; }
+				await session.ExecuteMovementAsync(new BotMovementPlan(frames, TimeSpan.FromTicks(frames.Sum(frame => frame.DelayBefore.Ticks)), distance), token);
+			}
 		}
 
 		public async Task SynchronizeAsync(CancellationToken token)

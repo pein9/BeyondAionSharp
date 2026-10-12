@@ -70,6 +70,7 @@ public sealed partial class NaturalIshalgenJourney
 		/// asks, and one that walks to its opponent could not reach it.</summary>
 		public Action? EnterObservedMap { get; set; }
 		public Action? AfterBindRevive { get; set; }
+		public Func<CancellationToken, Task<bool>>? WaitForGroupResurrectionAsync { get; set; }
 		/// <summary>Revives at the bound obelisk, as against revives inside an instance.</summary>
 		public int BindReviveCount => bindRevives;
 		public int InstanceReviveCount => instanceRevives;
@@ -1373,8 +1374,9 @@ public sealed partial class NaturalIshalgenJourney
 			}
 		}
 
-		private async Task ReviveAtBindAsync(CancellationToken token)
+		public async Task ReviveAtBindAsync(CancellationToken token)
 		{
+			if (WaitForGroupResurrectionAsync != null && await WaitForGroupResurrectionAsync(token)) { revives++; return; }
 			if (stopOnDeath)
 			{
 				string nearby = string.Join(',', navigator.Observe().Npcs
