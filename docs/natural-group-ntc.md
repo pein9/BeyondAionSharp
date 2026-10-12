@@ -1,7 +1,7 @@
 # Group NTC leg
 
-Status: planned 2026-10-12; N1 (pathing), N2 (group and quests) and N3 (entrance) are done: the six stand inside
-one instance of the camp with its quests. The step list at the end is worked one step at a time.
+Status: planned 2026-10-12; N1 to N4 are done: the six take the quests, go into one instance of the camp, fight
+through the lower camp and kill the Protector. The step list at the end is worked one step at a time.
 
 It follows [natural-group-healer.md](natural-group-healer.md): group formation, F1 following, the Cleric's
 healing-only role, resurrection waiting and round-robin loot are there and are reused. Gear, supplies, shards and the
@@ -36,8 +36,8 @@ pwsh -NoProfile -File scripts/sim/run-round.ps1 -Round run/ntc/<round>.json -Ite
 ```
 
 The stage is `"group-ntc"`, with the same `groupLeader`, `groupRoster`, `groupLoot` and `"role": "healer"` as
-`group-coin`, and `groupUntil` naming how far the leg is played (so far `"quests"` or `"entrance"`).
-`run/ntc/n2.json` and `n3.json` are the round files of those steps. Each member writes `group-ntc-completion.json`.
+`group-coin`, and `groupUntil` naming how far the leg is played (so far `"quests"`, `"entrance"` or `"protector"`).
+`run/ntc/n2.json` to `n4.json` are the round files of those steps. Each member writes `group-ntc-completion.json`.
 
 Code changes stay; the world does not. `run/ntc/baseline.json` holds the snapshot's hashes, checked 2026-10-12:
 dump `8d0787cf…cf8f97`, manifest `26fb3931…68ce96`, the same as `run/group/baseline.json`. They are checked again
@@ -126,7 +126,14 @@ From the spawn file; the walkable way between the points comes from the baked me
 ### Bosses
 
 All are fought by the same rules: the Templar pulls and holds, the Cleric heals, cleanses and resurrects, the
-others assist F1's target as their class does. A boss gets a rule of its own only after a run shows the group needs
+others assist F1's target as their class does.
+
+**How F1 leads inside (N4).** It walks the checked way to the next named monster eight metres at a time and looks
+sixteen ahead. A monster that struck a member is fought first, where it stands, at once. Otherwise the nearest
+monster whose aggro circle the next stretch would cross is named and killed by all. Before a fresh pull or a walk
+F1 rests and waits until every member is alive, within twelve metres and has half its mana; a monster on a member
+ends that wait. Inside the camp nobody plans a way around other monsters' circles, as a member does in the open
+field: the group fights the packs. The named monster is done when every member's journal has its kill. A boss gets a rule of its own only after a run shows the group needs
 one; if a boss leaves the Templar and that kills the group, the Templar's learned taunt comes first.
 
 | Monster | Level, rating, HP | What it does (shipped skills; AI) |
@@ -179,7 +186,19 @@ the run, how far the group got, the deaths and what stopped it.
     trail with the map.
   - The leader's "regroup at the bind" rule now holds on the bind's own map only. Inside the camp it does nothing:
     what a member does after a death in there is left for the step in which a run first shows one.
-- [ ] **N4 The lower camp and the Protector.** Together to the west end; the Protector dead, credit to all six.
+- [x] **N4 The lower camp and the Protector.** Together to the west end; the Protector dead, credit to all six.
+  - 2026-10-12, round `n4-2` (`run/ntc/ntc/n4-2`): the Protector is dead 3 min 53 s after the landing (6 min 38 s
+    after login), and all six journals count him for Q4733. Ten pulls, nine kills before him (three recruits, four
+    recondos, a doc, a picket), no death. The Templar's lowest health was 2,793 of 3,322. Round-robin loot: 32
+    entries over the six.
+  - The Cleric sent no attack. Its support decisions: 6 cleanses, the first a run has shown, 3 heals, 1 top-up, 67
+    Lights of Rejuvenation and 4 blessings; the lowest health it acted on was 65%.
+  - Round `n4-1` reached the Protector's camp, twenty metres from him, with no death, and stopped there. It showed
+    four things, all changed: a killed monster was named again four times a second until its corpse vanished, 1,200
+    times over five minutes (a killed target is now remembered and a name is spoken once); the fight would not
+    approach the Protector because other monsters' circles lay across the approach (inside the camp nobody plans
+    around them); F1 stood waiting for the Cleric's mana while a picket was on the Cleric (a monster on a member ends
+    the wait and is fought); and the dead-Cleric regroup at the bind was not yet tied to the bind's map.
 - [ ] **N5 The Guard and the Aetheric Field Guard.**
 - [ ] **N6 The gate.**
 - [ ] **N7 Inside the walls.** The Teleporter dead; every member has its four chest items.
