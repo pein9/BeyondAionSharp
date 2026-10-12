@@ -1,8 +1,9 @@
 # One world, and the muster at the Abyss entry's end
 
 Status: done, 2026-10-12. The eleven Asmodian second classes stand in one world database, the round snapshot
-`ntc-group-s2-w1`: each on an account of its own, level 26, in the best coin gear it can wear, with its surplus gear
-sold and its kit full. What is not done, and what the operator is asked, is at the end.
+`ntc-group-s3-w1`: each on an account of its own, level 26, in the best coin gear it can wear, the best power shard
+in both shard slots and switched on, its kit full, and nothing in its cube that its rules call no longer needed. What
+is not done, and what the operator is asked, is at the end.
 
 This document holds three decisions the operator made on 2026-10-12, after the all-classes plan
 (`docs/natural-all-classes-ntc.md`, D40) closed, and the work that followed from them. It outranks that plan where
@@ -24,6 +25,16 @@ Then, the same day:
    all the way down to level 10. (Do not rerun anything, just change the rules/scripts)."
 3. "I don't know why we have 11 separate world databases. I have told you at least 4 times to use the same world
    database because the huge goal is for group play!"
+
+After the first report, the same day:
+
+1. On recording the stale gate scopes again: "No we don't want to waste time on full reruns right now."
+2. "Yes, they should use the best power shard possible (again like the other consumables) and we need to activate
+   them at all times (when logging in, after death, when running out, etc). Do not rerun anything, just update our
+   rules/scripts."
+3. On the Gladiator's greatsword: "No, you said the quest reward was already better."
+4. "Extra credit: We need to trash anything no longer needed from all inventories any time we do a gear check or
+   restock supplies."
 
 ## Rules
 
@@ -47,15 +58,42 @@ the operator approved it on 2026-10-07 and is not changed.
 1. Level 26, by the fortress's repeatable coin quest, Q2318 "[Coin] Foes of the Fortress" (Nott, 204360), as often as
    it takes. The quest pays no experience; the level comes from its nine kills a turn.
 2. The best coin tier it can wear, by rule (MR-b).
-3. The bags: the leg's containers, the coin quest's chest and the Supply Scroll Bundles are opened, and the gear and
-   accessories its class rules call surplus are sold to the fortress's nearest merchant. What the leg protects is
-   kept. Nothing that is not gear is sold. The sale comes first, because a character can arrive with a full cube and
-   a container opens only into room; it is done again after the coin gear, for the pieces that gear replaced.
-4. The kit, every row at its full count.
+3. The bags: the leg's containers, the coin quest's chest and the Supply Scroll Bundles are opened, and what its
+   class rules call surplus or of no use to the class is sold to the fortress's nearest merchant. What the leg
+   protects is kept. The sale comes first, before anything is supplied or opened: a character can arrive with a full
+   cube, and the cleanup of (MR-f) would throw away what a merchant three steps off pays for. It is done again after
+   the coin gear, for the pieces that gear replaced.
+4. The kit, every row at its full count; the power shards in their slots and switched on (MR-e); the cube clean
+   (MR-f).
 5. Three free cube slots or more, a relog, the same character again, and the receipt
    `altgard-muster-completion.json`.
 
 Deaths, a soul heal and the walk back are outcomes, as in every leg.
+
+**(MR-e) The best power shard, always on.** A shard is worn like gear and used up like a consumable. The server
+gates it by its restrict row, as it does a potion, and no shard has one. So from level 10 the kit supplies the shard
+with the most damage, the Ancient Power Shard (+45 a hit): two stacks of 10,000, one for each shard slot. The right
+slot's shard is used by the main hand, the left slot's by the off hand, and a two-hand weapon uses both at every hit
+(Java `PlayerGameStats.getPowerShardDamage`), so both slots are filled for every class. Wherever the buff check runs
+(before a pull, after a rest, after a revive, after a login, before a walk) the bot puts the best shard it owns into
+both slots and switches the mode on when the server last said it was off. It reads the mode from the server's
+messages (started, ended, burnt out) and from the state its own emotions carry. The toggle ends a cast or an item
+use (Java `CM_EMOTION`), so it is sent only between actions. This server keeps the mode across a death and drops it
+at a login. Below level 10 nothing changes: play there is as it was recorded.
+
+**(MR-f) The bag cleanup.** At every gear check and every restock the bot discards what is no longer needed:
+
+- a lower tier of a kit family, once the kit's own tier is owned (the Minor, Lesser and plain potions and scrolls, the
+  veteran event scrolls, the Zeller jelly);
+- the speed scroll of the other kind: Awakening for a class that keeps Courage up, Courage for one that casts;
+- a power shard with less damage than the best one, once it is out of its slot;
+- the powder of a skill level the character has left behind;
+- what the class's inventory rules would sell: gear and accessories it has outgrown, and what it cannot use.
+
+What is worn, what a leg protects and what an open quest needs is never touched. A stack the server will not
+discard is left and not asked for again. The rule is on in the muster and in every leg written from here on. It is
+off in the legs already played, Ishalgen to the Abyss entry: their receipts count the items a leg ends with (the
+bridge's shop targets, the coin leg's loadout, Haramel's ledger), and none was replayed with it.
 
 ## The kit from level 10 (MR-c)
 
@@ -68,6 +106,7 @@ Deaths, a soul heal and the walk back are outcomes, as in every leg.
 | Awakening scroll | none at 10, Awakening at 20, Greater at 30 | Greater Awakening Scroll (164000134), 60 | a class that casts from mana |
 | Courage scroll | never supplied | Greater Courage Scroll (164000073), 60 | a class that keeps Courage up |
 | DP jelly | Zeller Aether Jelly | Cippo Aether Jelly (160002274), 8 | every class |
+| Power shard | never supplied; a Lesser stack worn and never on | Ancient Power Shard (169000011), 20,000 | every class |
 | Powder | Lesser Odella at 10, Odella at 25 | unchanged | a class that rests with the powder |
 
 The number is the full count. The powder is not a choice: it is the reagent the learned level of Herb Treatment and MP
@@ -135,7 +174,15 @@ capture is one round snapshot with every character in it.
   - The bundles of the two code commits (run/mr/MR-1 and run/mr/MR-4a, chain): the unit suite, the seven pre-commit
     checks, the three script tests and Fast pass; the starter scopes are identical.
 
-## The group, as `ntc-group-s2-w1` holds it
+- [x] **MR-5** The best power shard, in both slots and on (MR-e).
+- [x] **MR-6** The bag cleanup at every gear check and restock (MR-f).
+  - 2026-10-12, commit `346edbf27`, for both. The bundle (run/mr/MR-5, chain): `Aion.GameServer.Tests` 4,632 passed, 16
+    skipped; the seven pre-commit checks, the three script tests and Fast pass; the five starter scopes are identical.
+  - Round muster3 (run/mr/MR-5/muster3), from `ntc-group-s2`, captured as `ntc-group-s3`: all eleven played the muster
+    again, ten game minutes apart, and all reached its end. No leg was replayed. The table is under "After the shards
+    and the cleanup".
+
+## The group, as the muster left it (`ntc-group-s2-w1`)
 
 | Class | Character, account | Level | The coin quest | Coins supplied | Bought | Weapon held now | Gear sold | Containers opened | Free cube slots | Round |
 |---|---|---|---|---:|---|---|---:|---:|---:|---|
@@ -167,26 +214,61 @@ were sold and 79 Bronze Coins supplied.
   against 2000378 for the coin greatsword of level 26, so the rule does not buy it. This is as at the plan's finish.
 - **The torso is the Morheim Dark Legionary piece of Q24020 for every class.** The coin tier's torso has the same
   physical defence, and a tie is not bought.
-- A single character's record, for a run of one bot: `ntc-group-s1-<class>` for the nine of muster1 and
-  `ntc-group-s2-spirit-master` and `ntc-group-s2-bard`. The world to start the next legs from is `ntc-group-s2`.
+
+## After the shards and the cleanup (`ntc-group-s3-w1`)
+
+Round muster3 changed no level, no gear and no coin. What it did for each character:
+
+| Class | Shards worn, each slot | Mode | Stacks discarded | Items sold | Cube stacks | Free cube slots |
+|---|---|---|---:|---:|---|---:|
+| Cleric | Ancient Power Shard, 10,000 | on | 18 | 6 | 65 to 43 | 43 |
+| Templar | Ancient Power Shard, 10,000 | on | 13 | 11 | 66 to 44 | 43 |
+| Sorcerer | Ancient Power Shard, 10,000 | on | 20 | 5 | 63 to 40 | 44 |
+| Chanter | Ancient Power Shard, 10,000 | on | 18 | 5 | 63 to 42 | 44 |
+| Spirit Master | Ancient Power Shard, 10,000 | on | 20 | 6 | 67 to 43 | 44 |
+| Bard | Ancient Power Shard, 10,000 | on | 20 | 6 | 64 to 40 | 44 |
+| Gladiator | Ancient Power Shard, 10,000 | on | 11 | 5 | 55 to 41 | 44 |
+| Ranger | Ancient Power Shard, 10,000 | on | 12 | 5 | 57 to 42 | 43 |
+| Rider | Ancient Power Shard, 10,000 | on | 11 | 5 | 57 to 43 | 43 |
+| Gunner | Ancient Power Shard, 10,000 | on | 12 | 5 | 57 to 42 | 43 |
+| Assassin | Ancient Power Shard, 10,000 | on | 11 | 5 | 56 to 42 | 43 |
+
+In all 166 stacks were discarded and 64 items sold. Each character sold its Mana Potions, Recovery
+Serums, Aether Powder and enchantment stones, which no bot uses; five of them a hat they had outgrown; the Templar
+also the six pieces its coin gear had replaced. Each discarded its Lesser Power Shards, the lower tiers of its potions and scrolls, the veteran event
+scrolls, the Zeller jellies, the Lesser Odella Powder and the speed scrolls of the other kind. The server refused no
+discard.
+
+What a cube still holds beside the kit, about twenty stacks: the reward weapons the earlier legs protect (the
+ceremony weapon, the Altruist's and the Dark Legionary weapon), the Greater Raging Wind Scrolls of the ring course,
+the Stigma Support Bundle and the three manastone boxes, the Tea of Repose, Azpha, the Mercenary's Fruit Juice, the
+dyes, the event amulets and pass, the Iron Coins and a few leftovers of finished quests.
+
+**The world to start the next legs from is `ntc-group-s3`.** A single character's record, for a run of one bot, is
+`ntc-group-s3-<class>`.
 
 ## Not done, and what the operator is asked
 
-1. **Seventeen recorded gate scopes are stale and were not replayed** ("Do not rerun anything"). Every scope that
-   reaches level 10 is supplied the new kit at its first stock check from there: the Priest's and the Cleric's seven
-   (`p`, `m`, `b`, `l1`, `c`, `hm`, `ax`) and the ten of the second classes. The five starter scopes are unchanged.
-   Until they are recorded again the neutral gate guards levels 1 to 9 only. Recording them is a replay of every
-   leg twice, some hours; a Priest or Cleric scope needs `-ReRecord`, which is the operator's decision.
-2. **Power shards.** Every character wears a stack of Lesser Power Shards (level 10) in a shard slot, and no bot ever
-   switches shards on, so they do nothing. A shard is a consumable with a level (the Power Shard at 20). Switching
-   them on and supplying the best one is not done: it is new bot behavior, and it changes every fight.
-3. **The Lesser Supply Manastone Box** (three each) stays closed. It asks the player to choose one of three
+1. **Seventeen recorded gate scopes are stale and stay so.** Every scope that reaches level 10 is supplied the new
+   kit at its first stock check from there, and now turns its shards on: the Priest's and the Cleric's seven (`p`,
+   `m`, `b`, `l1`, `c`, `hm`, `ax`) and the ten of the second classes. The operator, 2026-10-12: no full reruns now.
+   Until they are recorded again the neutral gate guards levels 1 to 9 only, the five starter scopes.
+2. **The best shard is the Ancient Power Shard at every level from 10**, because no shard in the item data has a
+   restrict row. Its item level is 65. If shards are to go by item level instead (the Lesser at 10, the Power Shard
+   at 20), that is one row of the kit to a tier.
+3. **Shards and the cleanup start at level 10**, like the kit. Below it a character keeps what it has and switches
+   nothing on, so the starter scopes stay valid.
+4. **The cleanup is off in the legs already played** (MR-f). A leg played again from an earlier snapshot behaves as
+   it did; turning the rule on there means replaying that leg.
+5. **What still lies in the cubes**, listed above. The class rules call none of it surplus: most cannot be sold, the
+   weapons are protected by the Abyss-entry leg's own checks, and the quest leftovers are quest items. Say which of
+   it is to go. The Lodas Amulets raise experience gained and no bot uses them.
+6. **The Lesser Supply Manastone Box** (three each) stays closed. It asks the player to choose one of three
    manastones, and no bot sockets a manastone.
-4. **Only gear is sold.** Lower tiers of potions and scrolls, crafting materials, dyes and event items stay in the
-   cube. Each character ends with 19 or more free slots.
-5. **The Gladiator's greatsword**, above: say so if the coin greatsword is to be bought all the same.
-6. **Levels 50 and up.** The kit's bands end at 49. The Fine tiers (restrict row 50) are for the leg that gets there.
-7. **The earlier snapshots are superseded, not removed.** `ntc-ready-<class>-s1`, the round worlds they point at,
-   `ntc-group-joined-s1-w1`, `ntc-group-s1-w1` and `mr-trial1-w1` are still under run/snapshots. With the second
-   weapon in a tier's manifest, the Assassin's and the Gunner's `ntc-ready` snapshots no longer verify as an
-   Abyss-entry endpoint; their characters in the group world do.
+7. **The Gladiator keeps Altruist's Greatsword (25).** The operator, 2026-10-12: the quest reward is the better
+   weapon.
+8. **Levels 50 and up.** The kit's bands end at 49. The Fine tiers (restrict row 50) are for the leg that gets there.
+9. **The earlier snapshots are superseded, not removed.** `ntc-ready-<class>-s1`, the round worlds they point at,
+   `ntc-group-joined-s1-w1`, `ntc-group-s1-w1`, `ntc-group-s2-w1` and `mr-trial1-w1` are still under run/snapshots.
+   With the second weapon in a tier's manifest, the Assassin's and the Gunner's `ntc-ready` snapshots no longer verify
+   as an Abyss-entry endpoint; their characters in the group world do.
