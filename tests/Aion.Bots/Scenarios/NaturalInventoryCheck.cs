@@ -98,6 +98,10 @@ public static class NaturalInventoryCheck
 				if (after.GetValueOrDefault(containerId) >= before[containerId])
 				{
 					notOpened.Add(containerId);
+					// The refused use began the item's delay all the same (a full cube: the Spirit Master's muster). It is
+					// waited out here, so the next check may ask again.
+					await session.AdvanceAsync(TimeSpan.FromMilliseconds((template.GetUseLimits()?.GetDelayTime() ?? 0) + 100), token);
+					await session.SynchronizeAsync(token);
 					break;
 				}
 				var gained = after.Where(item => item.Key != containerId && item.Value > before.GetValueOrDefault(item.Key))

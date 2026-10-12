@@ -2012,6 +2012,46 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						}
 						return await ApproachCapitalNpcAsync(npcId);
 					}
+					// The bags: the gear and the accessories the class rules call surplus are sold to the fortress's nearest
+					// merchant. What the leg protects is kept, and so is everything that is not gear. It is done first, because a
+					// character can arrive with a full cube (the Spirit Master, the Bard), and a container opens only into room;
+					// and again after the coin gear, for the pieces that gear replaced.
+					async Task SellSurplusAsync(string when)
+					{
+						session.BeginStep("muster-sale", when);
+						await EquipUpgradesAsync(token);
+						await session.SynchronizeAsync(token);
+						NaturalInventoryPlan bags = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId), ClassLine)
+							.Decide(world, QuestNeededItems());
+						List<NaturalSale> sales = [.. bags.Sales.Where(sale => sale.Reason is "surplus-gear" or "surplus-accessory" && !scope.ProtectedItemIds.Contains(sale.ItemId))
+							.Select(sale => new NaturalSale(sale.ObjectId, sale.ItemId, sale.Count))];
+						session.TraceDiagnostic("muster-sale-plan", new Dictionary<string, object?>
+						{
+							["when"] = when, ["sell"] = sales.Select(sale => sale.ItemId).ToArray(), ["freeSlots"] = bags.FreeSlots,
+							["kept"] = bags.Decisions.Where(decision => decision.Action != "sell").GroupBy(decision => decision.Reason)
+								.ToDictionary(group => group.Key, group => group.Count()),
+						});
+						if (sales.Count == 0) return;
+						int merchantId = runtime.Data.SpawnsDh.GetSpawnsByWorldId(leg.Hub.MapId)
+							.Where(group => runtime.Data.TradeListDataDh.GetTradeListTemplate(group.GetNpcId()) is { } list &&
+								list.GetTradeNpcType() == Aion.GameServer.Model.Templates.Tradelist.TradeNpcType.NORMAL)
+							.SelectMany(group => group.GetSpawnTemplates().Select(spot => (Npc: group.GetNpcId(), At: new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0))))
+							.Where(spot => Distance(spot.At, hubAt) <= leg.Hub.Radius)
+							.OrderBy(spot => Distance(spot.At, session.CurrentPosition)).ThenBy(spot => spot.Npc).Select(spot => spot.Npc).First();
+						int merchant = await ApproachInFortressAsync(merchantId);
+						long before = world.Kinah;
+						NaturalVendorResult trade = await services.TradeAsync(merchant, sales, [],
+							id => runtime.Data.GoodsListDataDh.GetGoodsListById(id)?.GetItemIdList() ?? [],
+							id => runtime.Data.ItemDataDh.GetItemTemplate(id).GetPrice(), token);
+						sold.AddRange(trade.Sold);
+						saleKinah += world.Kinah - before;
+						session.TraceDiagnostic("muster-sale", new Dictionary<string, object?>
+						{
+							["when"] = when, ["merchant"] = merchantId, ["sold"] = trade.Sold.Select(sale => sale.ItemId).ToArray(),
+							["notSold"] = sales.Except(trade.Sold).Select(sale => sale.ItemId).ToArray(), ["kinah"] = world.Kinah - before,
+						});
+					}
+					await SellSurplusAsync("sell-the-surplus-gear-brought");
 					await CheckAsync("muster-start");
 
 					// 1. The level. The world keeps a completed quest in its completed list for good, so a repeatable quest is
@@ -2137,40 +2177,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							string.Join(", ", left.Slots.Where(slot => slot.Action != "keep").Select(slot => $"{slot.CoinItemId} ({slot.Action})")));
 					}
 
-					// 3. The bags: the gear and the accessories the class rules call surplus are sold to the fortress's nearest
-					// merchant. What the leg protects is kept, and so is everything that is not gear.
-					session.BeginStep("muster-sale", "sell-the-surplus-gear");
-					NaturalInventoryPlan bags = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId), ClassLine)
-						.Decide(world, QuestNeededItems());
-					List<NaturalSale> sales = [.. bags.Sales.Where(sale => sale.Reason is "surplus-gear" or "surplus-accessory" && !scope.ProtectedItemIds.Contains(sale.ItemId))
-						.Select(sale => new NaturalSale(sale.ObjectId, sale.ItemId, sale.Count))];
-					session.TraceDiagnostic("muster-sale-plan", new Dictionary<string, object?>
-					{
-						["sell"] = sales.Select(sale => sale.ItemId).ToArray(), ["freeSlots"] = bags.FreeSlots,
-						["kept"] = bags.Decisions.Where(decision => decision.Action != "sell").GroupBy(decision => decision.Reason)
-							.ToDictionary(group => group.Key, group => group.Count()),
-					});
-					if (sales.Count > 0)
-					{
-						int merchantId = runtime.Data.SpawnsDh.GetSpawnsByWorldId(leg.Hub.MapId)
-							.Where(group => runtime.Data.TradeListDataDh.GetTradeListTemplate(group.GetNpcId()) is { } list &&
-								list.GetTradeNpcType() == Aion.GameServer.Model.Templates.Tradelist.TradeNpcType.NORMAL)
-							.SelectMany(group => group.GetSpawnTemplates().Select(spot => (Npc: group.GetNpcId(), At: new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0))))
-							.Where(spot => Distance(spot.At, hubAt) <= leg.Hub.Radius)
-							.OrderBy(spot => Distance(spot.At, session.CurrentPosition)).ThenBy(spot => spot.Npc).Select(spot => spot.Npc).First();
-						int merchant = await ApproachInFortressAsync(merchantId);
-						long before = world.Kinah;
-						NaturalVendorResult trade = await services.TradeAsync(merchant, sales, [],
-							id => runtime.Data.GoodsListDataDh.GetGoodsListById(id)?.GetItemIdList() ?? [],
-							id => runtime.Data.ItemDataDh.GetItemTemplate(id).GetPrice(), token);
-						sold.AddRange(trade.Sold);
-						saleKinah = world.Kinah - before;
-						session.TraceDiagnostic("muster-sale", new Dictionary<string, object?>
-						{
-							["merchant"] = merchantId, ["sold"] = trade.Sold.Select(sale => sale.ItemId).ToArray(),
-							["notSold"] = sales.Except(trade.Sold).Select(sale => sale.ItemId).ToArray(), ["kinah"] = saleKinah,
-						});
-					}
+					// 3. The bags again: the pieces the coin gear replaced.
+					await SellSurplusAsync("sell-the-gear-replaced");
 					await CheckAsync("muster-end");
 
 					// 4. The kit, every row at its full count.
@@ -2182,6 +2190,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						Require.All(kitNow, row => Require.True(ItemCount(world, row.ItemId) >= row.TopUpTo,
 							$"The kit's {row.Family} {row.ItemId} is at {ItemCount(world, row.ItemId)} of {row.TopUpTo}."));
 					Require.True(world.Level >= minimum && !world.IsDead, $"The character is level {world.Level}, below {minimum}.");
+					// Room for what the next legs pay: the free slots a quest's rewards are kept for.
+					int freeSlots = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId), ClassLine)
+						.Decide(world, QuestNeededItems()).FreeSlots;
+					Require.True(freeSlots >= NaturalInventoryPlan.QuestFreeSlotReserve, $"The cube has {freeSlots} free slots at the muster's end.");
 
 					// 5. The end: the character as the fortress leaves it, checked again across a relog.
 					session.BeginStep("muster-endpoint", "verify-and-relog-at-the-muster-end");
@@ -2207,7 +2219,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						CoinTier = tier.Level, CoinManifest = NaturalAbyssCoinArmorSteps.Row(manifest), CoinPurchases = purchases, CoinsSupplied = coinsSuppliedNow,
 						BronzeCoinsAtStart = startCoins, BronzeCoins = coinsLeft, Opened = openedNow, NotOpened = notOpenedNow,
 						Sold = sold, SaleKinah = saleKinah, Kinah = kinah, KinahAtStart = startKinah, WornAtStart = wornAtStart, Worn = wornBefore,
-						Kit = kitBefore, StacksAtStart = stacksAtStart, Stacks = stacks, Deaths = deathsNow, GameMillis = elapsed - startedMillis,
+						Kit = kitBefore, StacksAtStart = stacksAtStart, Stacks = stacks, FreeSlots = freeSlots, Deaths = deathsNow, GameMillis = elapsed - startedMillis,
 						ElapsedMillis = elapsed, before = musterBefore, after = musterAfter,
 					}), token);
 					session.TraceDiagnostic("muster-completed", new Dictionary<string, object?>
@@ -2215,7 +2227,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						["class"] = combat.ObservedCharacter, ["startLevel"] = startLevel, ["level"] = level, ["turns"] = turns.Count,
 						["experienceGained"] = experience - startExperience, ["coinsSupplied"] = coinsSuppliedNow,
 						["bought"] = purchases.Select(purchase => purchase.ItemId).ToArray(), ["sold"] = sold.Count, ["opened"] = openedNow.Count,
-						["worn"] = wornBefore, ["kit"] = kitBefore, ["deaths"] = deathsNow, ["generation"] = musterAfter.ConnectionGeneration,
+						["worn"] = wornBefore, ["kit"] = kitBefore, ["freeSlots"] = freeSlots, ["deaths"] = deathsNow, ["generation"] = musterAfter.ConnectionGeneration,
 					});
 				}
 				if (options.Muster)

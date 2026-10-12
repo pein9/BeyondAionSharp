@@ -30,7 +30,9 @@
 #                  points at the round snapshot and the character; the dump is not copied. sim-snapshot.ps1 restores
 #                  and verifies such a capture like any other.
 # -From <name>     Each world is restored from the round snapshot <name>-w<n>. A bot whose line has a character there
-#                  resumes it, on its account and under its name; a bot whose line has none creates one.
+#                  resumes it, on its account and under its name; a bot whose line has none creates one. A character
+#                  of the restored snapshot that has no bot this round stays in the world as it was, and a capture's
+#                  record carries it over (lastPlayedIn names the snapshot it was last played in).
 #
 # NR-R17a: a world whose characters have all ended the plan keeps its place in the file with no bot ("bots": []), so the
 # worlds after it keep their numbers and their snapshots. It is not restored, played or captured.
@@ -188,6 +190,18 @@ if ($World -gt 0) {
 				[ordered]@{ seat = $_.Bot; line = $_.Line; stage = (Get-Field $_ 'Stage'); account = $_.Account; name = $_.Name; characterId = $_.CharacterId
 					outcome = $_.Outcome; level = $_.Level; completedQuests = $_.CompletedQuests; step = $_.Step; message = $_.Message }
 			})
+			# One world holds every character (docs/natural-muster.md, rule MR-a), and not every one plays every round. A
+			# character of the restored snapshot that had no bot is still in the dump, as it was: its record is carried
+			# over, with the snapshot it was last played in, so the next round finds it.
+			if ($restoredFrom) {
+				$playedIds = @($characters | ForEach-Object { [int]$_.characterId })
+				foreach ($kept in @($record.characters | Where-Object { $_.characterId -gt 0 -and [int]$_.characterId -notin $playedIds })) {
+					$carried = [ordered]@{}
+					foreach ($property in $kept.PSObject.Properties) { $carried[$property.Name] = $property.Value }
+					if (-not (Get-Field $kept 'lastPlayedIn')) { $carried.lastPlayedIn = $restoredFrom }
+					$characters += $carried
+				}
+			}
 			[ordered]@{
 				schemaVersion = 1; name = $name; source = 'natural-round'; round = $Capture; world = $World; from = $restoredFrom
 				run = "$Run-w$World"; seed = $Seed; gitSha = $BuiltSha; capturedUtc = $captured
