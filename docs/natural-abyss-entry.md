@@ -252,6 +252,11 @@ file had eleven).
 
 ## Coin armor
 
+**2026-10-12: the supplied coins have no limit, and the muster follows this leg** ([natural-muster.md](natural-muster.md)).
+The operator: "We shouldn't have a coin limit." The 44 coins this section speaks of were the approval of 2026-10-06. A
+tier's manifest now also holds the shield whenever it is better and the weapon a second time for a class that holds
+two; the Cleric's manifests below are unchanged by that.
+
 Bronze Coin is item 186000007. **Vebna 204425** sells for it at Morheim Ice Fortress.
 Skataon 204426, at (658.30, 899.82, 364.27), sells the same lists. The lists hold weapons
 (989), cloth and chain armor (991), a scale shield (993) and coin chests (2125). They hold

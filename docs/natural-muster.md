@@ -1,5 +1,9 @@
 # One world, and the muster at the Abyss entry's end
 
+Status: done, 2026-10-12. The eleven Asmodian second classes stand in one world database, the round snapshot
+`ntc-group-s2-w1`: each on an account of its own, level 26, in the best coin gear it can wear, with its surplus gear
+sold and its kit full. What is not done, and what the operator is asked, is at the end.
+
 This document holds three decisions the operator made on 2026-10-12, after the all-classes plan
 (`docs/natural-all-classes-ntc.md`, D40) closed, and the work that followed from them. It outranks that plan where
 the two differ: the plan's defaults NR-Q11 (up to eight worlds for a round) and NR-Q16 (a class's level at the finish is
@@ -45,9 +49,11 @@ the operator approved it on 2026-10-07 and is not changed.
 2. The best coin tier it can wear, by rule (MR-b).
 3. The bags: the leg's containers, the coin quest's chest and the Supply Scroll Bundles are opened, and the gear and
    accessories its class rules call surplus are sold to the fortress's nearest merchant. What the leg protects is
-   kept. Nothing that is not gear is sold.
+   kept. Nothing that is not gear is sold. The sale comes first, because a character can arrive with a full cube and
+   a container opens only into room; it is done again after the coin gear, for the pieces that gear replaced.
 4. The kit, every row at its full count.
-5. A relog, the same character again, and the receipt `altgard-muster-completion.json`.
+5. Three free cube slots or more, a relog, the same character again, and the receipt
+   `altgard-muster-completion.json`.
 
 Deaths, a soul heal and the walk back are outcomes, as in every leg.
 
@@ -106,12 +112,81 @@ capture is one round snapshot with every character in it.
 
 ## Checklist
 
-- [ ] **MR-1** No coin limit: the allowlist, the leg's contract and its checks; the shield and the second weapon in a
+- [x] **MR-1** No coin limit: the allowlist, the leg's contract and its checks; the shield and the second weapon in a
   tier's manifest.
-- [ ] **MR-2** The kit and the use rule of (MR-c); the tests that pin them.
-- [ ] **MR-3** `scripts/sim/join-world.py`, and the joined world of the eleven characters.
-- [ ] **MR-4** The muster stage, played by every character in the joined world, and the group's capture.
+  - 2026-10-12, commit `b8c3dec80`. Proof under MR-4's.
+- [x] **MR-2** The kit and the use rule of (MR-c); the tests that pin them.
+  - 2026-10-12, commit `b8c3dec80`. `Aion.GameServer.Tests`: 4,632 passed, 16 skipped. No leg was replayed for it.
+  - The gate on the scopes of levels 1 to 9 (run/mr/MR-1, guard-starters): the five starter scopes are identical. Scope
+    `p` is identical to record 35,405 of 35,463; there the Priest becomes level 10 at the ceremony and its stock check
+    supplies the new kit.
+- [x] **MR-3** `scripts/sim/join-world.py`, and the joined world of the eleven characters.
+  - 2026-10-12: `ntc-group-joined-s1-w1`, from the plan `run/mr/MR-3/join-plan.json` at commit `b8c3dec80`
+    (run/mr/MR-3/join.log). Eleven characters, 784 item rows, every source checked by its hash. The Chanter is
+    Asimchanter. `mr-trial1-w1` is the same join made before the commit, for the trial rounds.
+- [x] **MR-4** The muster stage, played by every character in the joined world, and the group's capture.
+  - 2026-10-12, round muster1 (run/mr/MR-4/muster1), from `ntc-group-joined-s1`, captured as `ntc-group-s1`: eleven bots
+    in one world, ten game minutes apart. Nine reached the muster's end. The Spirit Master and the Bard stopped: they
+    arrived with a full cube, a Supply Scroll Bundle did not open, and the next check asked for it inside its use delay.
+  - **MR-4a**, commit `8a9d9f13c`: the surplus gear is sold before a container is opened, and again after the coin gear;
+    a refused open waits its delay out; the muster's end asks for three free cube slots. A round's capture carries over
+    the characters that had no bot in it. Round muster2 (run/mr/MR-4/muster2), from `ntc-group-s1`, captured as
+    `ntc-group-s2`: the Spirit Master and the Bard reached the end; the other nine stayed in the world as they were.
+  - The bundles of the two code commits (run/mr/MR-1 and run/mr/MR-4a, chain): the unit suite, the seven pre-commit
+    checks, the three script tests and Fast pass; the starter scopes are identical.
+
+## The group, as `ntc-group-s2-w1` holds it
+
+| Class | Character, account | Level | The coin quest | Coins supplied | Bought | Weapon held now | Gear sold | Containers opened | Free cube slots | Round |
+|---|---|---|---|---:|---|---|---:|---:|---:|---|
+| Cleric | Asimnjour 1133266, 111 | 26 | not needed | 0 | nothing | Elite Rank 7 Asmodian Staff (26) | 16 | 4 | 20 | muster1 |
+| Templar | Asimtemplar 2133266, 112 | 25 to 26 | 2 turns, 126,414 XP, 26 game minutes | 41 | Gauntlets for the gloves, Shoulderplates for the shoulders, Greaves for the legs, Sabatons for the shoes, Sword for the main hand, Shield for the off hand | Elite Rank 7 Asmodian Sword (26) and Elite Rank 7 Asmodian Shield (26) | 12 | 6 | 20 | muster1 |
+| Sorcerer | Asimsorcerer 3133266, 113 | 26 | not needed | 0 | nothing | Elite Rank 7 Asmodian Spellbook (26) | 18 | 4 | 20 | muster1 |
+| Chanter | Asimchanter 4133266, 114 | 26 | not needed | 0 | nothing | Elite Rank 7 Asmodian Staff (26) | 15 | 4 | 22 | muster1 |
+| Spirit Master | Asimspirit 5133266, 115 | 26 | not needed | 0 | nothing | Elite Rank 7 Asmodian Spellbook (26) | 19 | 4 | 19 | muster2 |
+| Bard | Asimbard 6133266, 116 | 26 | not needed | 0 | nothing | Elite Rank 7 Asmodian Harp (26) | 18 | 2 | 19 | muster2 |
+| Gladiator | Asimgladiator 7133266, 117 | 26 | not needed | 0 | nothing | Altruist's Greatsword (25) | 13 | 4 | 29 | muster1 |
+| Ranger | Asimranger 8133266, 118 | 26 | not needed | 0 | nothing | Elite Rank 7 Asmodian Bow (26) | 14 | 4 | 27 | muster1 |
+| Rider | Asimrider 9133702, 119 | 26 | not needed | 0 | nothing | Elite Rank 7 Asmodian Cipher-Blade (26) | 13 | 4 | 28 | muster1 |
+| Gunner | Asimgunner 10133266, 120 | 26 | not needed | 19 | Pistol for the off hand | Elite Rank 7 Asmodian Pistol (26) in each hand | 15 | 4 | 27 | muster1 |
+| Assassin | Asimassassin 11133266, 121 | 26 | not needed | 19 | Dagger for the off hand | Elite Rank 7 Asmodian Dagger (26) in each hand | 16 | 4 | 28 | muster1 |
+
+The containers are the Supply Scroll Bundles, four a character, and for the Templar the two Bronze Coin Chests its
+turns of the coin quest paid. The Bard opened two of its bundles in muster1, before it stopped, and the other two in
+muster2. Every character is at Morheim Ice Fortress, alive, and died in no muster. No character has a Bronze Coin left. The
+kit of each is at its full count: the Major Life Potion, the Major Anti-Shock Scroll, the Greater Running Scroll, the
+Cippo Aether Jelly and the Odella Powder for all; the Major Mana Serum and the Greater Awakening Scroll for the five
+that cast from mana; the Greater Courage Scroll for the six that keep Courage up. In all 169 pieces of gear
+were sold and 79 Bronze Coins supplied.
+
+- **The Templar** was 63,822 XP short of level 26. Two turns of Q2318 gave 126,414 XP, about 61,000 to 65,000 a turn
+  from the nine kills. It then bought the four armor pieces it lacked, the sword and the shield.
+- **The Assassin and the Gunner** held the tier's weapon in the main hand and an Altruist's weapon of level 25 in the
+  other. Each bought the tier's weapon a second time.
+- **The Gladiator keeps Altruist's Greatsword (25).** Its weapon number, the one its gear rules wear by, is 2000390
+  against 2000378 for the coin greatsword of level 26, so the rule does not buy it. This is as at the plan's finish.
+- **The torso is the Morheim Dark Legionary piece of Q24020 for every class.** The coin tier's torso has the same
+  physical defence, and a tie is not bought.
+- A single character's record, for a run of one bot: `ntc-group-s1-<class>` for the nine of muster1 and
+  `ntc-group-s2-spirit-master` and `ntc-group-s2-bard`. The world to start the next legs from is `ntc-group-s2`.
 
 ## Not done, and what the operator is asked
 
-See the closing section, written when MR-4 is played.
+1. **Seventeen recorded gate scopes are stale and were not replayed** ("Do not rerun anything"). Every scope that
+   reaches level 10 is supplied the new kit at its first stock check from there: the Priest's and the Cleric's seven
+   (`p`, `m`, `b`, `l1`, `c`, `hm`, `ax`) and the ten of the second classes. The five starter scopes are unchanged.
+   Until they are recorded again the neutral gate guards levels 1 to 9 only. Recording them is a replay of every
+   leg twice, some hours; a Priest or Cleric scope needs `-ReRecord`, which is the operator's decision.
+2. **Power shards.** Every character wears a stack of Lesser Power Shards (level 10) in a shard slot, and no bot ever
+   switches shards on, so they do nothing. A shard is a consumable with a level (the Power Shard at 20). Switching
+   them on and supplying the best one is not done: it is new bot behavior, and it changes every fight.
+3. **The Lesser Supply Manastone Box** (three each) stays closed. It asks the player to choose one of three
+   manastones, and no bot sockets a manastone.
+4. **Only gear is sold.** Lower tiers of potions and scrolls, crafting materials, dyes and event items stay in the
+   cube. Each character ends with 19 or more free slots.
+5. **The Gladiator's greatsword**, above: say so if the coin greatsword is to be bought all the same.
+6. **Levels 50 and up.** The kit's bands end at 49. The Fine tiers (restrict row 50) are for the leg that gets there.
+7. **The earlier snapshots are superseded, not removed.** `ntc-ready-<class>-s1`, the round worlds they point at,
+   `ntc-group-joined-s1-w1`, `ntc-group-s1-w1` and `mr-trial1-w1` are still under run/snapshots. With the second
+   weapon in a tier's manifest, the Assassin's and the Gunner's `ntc-ready` snapshots no longer verify as an
+   Abyss-entry endpoint; their characters in the group world do.

@@ -2814,6 +2814,11 @@ Notes:
 
 ## Appendix D.2: Proposed help items (NA-20, awaiting approval)
 
+**Superseded from level 10 on, 2026-10-12.** The operator: "We need to give our characters the BEST they can use (as
+some are level limited) for consumables. This includes all the way down to level 10." The table in force is in
+[natural-muster.md](natural-muster.md), rule (MR-c): one row a family, the best tier the restrict row allows, and the
+Courage scroll for a class that keeps it up. What follows is the list as it was approved on 2026-09-28.
+
 **Status: approved 2026-09-28 (OD-13), with changes.** The approved list is
 `NaturalHelpItemAllowlist.Approved`, pinned by its test. The changes against the table below:
 - **Life Potion instead of Life Serum.** Minor, Lesser and Life Potion 162000002, 162000003

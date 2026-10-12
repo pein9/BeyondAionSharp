@@ -7,6 +7,12 @@ full gate at `0dde5c1bc` finds all twenty-two scopes identical to their baseline
 was done, what was found and not fixed, and what the operator is asked is under [Closing
 status](#closing-status-2026-10-12).
 
+**After the close (2026-10-12): [natural-muster.md](natural-muster.md).** The operator withdrew two defaults of
+this plan the same day. NR-Q11 let a round use up to eight worlds, and the finish captures were made one class to a
+dump; every character now stands in one world database, `ntc-group-s2-w1`. NR-Q16 let a class finish at the level it
+reached; every class is level 26 at the end, by the fortress's repeatable coin quest. The kit from level 10 and the
+coin limit changed with it, so the scopes named below that reach level 10 wait to be recorded again.
+
 Opened 2026-10-08, when nothing in this document was implemented. It follows the closed
 class-profile plan ([natural-class-profiles.md](natural-class-profiles.md), CP-00 to CP-69)
 and was worked by a loop, one NR item at a time, mostly without the operator present.
