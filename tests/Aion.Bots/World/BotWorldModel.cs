@@ -108,6 +108,10 @@ public sealed partial class BotWorldModel
 	public long RecoverableExperience { get; private set; }
 	public long ExperienceNeeded { get; private set; }
 	public bool IsDead { get; private set; }
+	/// <summary>The Energy of Repose and its full measure, as SM_STATUPDATE_EXP last gave them (Java curBoostExp and
+	/// maxBoostExp): a kill pays extra experience out of it.</summary>
+	public long ReposeEnergy { get; private set; }
+	public long MaxReposeEnergy { get; private set; }
 	/// <summary>The power shard mode, as the server last said it: by its messages (started, ended, burnt out) and by the
 	/// state every emotion of the character's own carries (Java SM_EMOTION, CreatureState.POWERSHARD). Off after a login:
 	/// the server does not keep it across one.</summary>
@@ -361,7 +365,7 @@ public sealed partial class BotWorldModel
 		if (SelfObjectId == objectId)
 		{
 			MovementSpeed = movementSpeed;
-			PowerShardOn = (packet.Get<ushort>("state") & PowerShardState) != 0;
+			if (GetNullableStruct<ushort>(packet.Fields, "state") is ushort state) PowerShardOn = (state & PowerShardState) != 0;
 		}
 	}
 
@@ -491,6 +495,9 @@ public sealed partial class BotWorldModel
 		CurrentExperience = packet.Get<long>("currentExp");
 		RecoverableExperience = packet.Get<long>("recoverableExp");
 		ExperienceNeeded = packet.Get<long>("maxExp");
+		// A packet built by hand for a test may leave the two out; the decoder always gives them.
+		ReposeEnergy = GetNullableStruct<long>(packet.Fields, "rep1") ?? ReposeEnergy;
+		MaxReposeEnergy = GetNullableStruct<long>(packet.Fields, "rep2") ?? MaxReposeEnergy;
 	}
 
 	private void ApplyFlightTime(DecodedBotServerPacket packet)

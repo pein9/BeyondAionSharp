@@ -1074,9 +1074,43 @@ public sealed partial class NaturalIshalgenJourney
 		}
 		private long powerShardAskedMillis = long.MinValue / 2;
 
+		/// <summary>MR-f, "use it or get rid of it" (docs/natural-muster.md): the Tea of Repose and the experience amulet
+		/// are used (<see cref="NaturalBoostItems"/>). On where the bag cleanup is on, which would otherwise discard them;
+		/// the journey sets it, and a leg that makes a fight driver of its own carries it over.</summary>
+		public bool UsesBoosts { get; set; }
+		private long boostAskedMillis = long.MinValue / 2;
+
+		private async Task UseBoostsAsync(NaturalHelpTrigger trigger, CancellationToken token)
+		{
+			BotWorldModel world = session.Api.World;
+			if (!UsesBoosts || world.Level <= NaturalHelpItemAllowlist.StarterMaxLevel || InCombat ||
+				runtime.NowMillis < boostAskedMillis + 60_000) return;
+			NaturalHelpItemObservation state = ObserveHelpItems(0, false);
+			if (state.Dead || state.Casting || state.Cutscene || state.Flying || state.Disabled) return;
+			NaturalBoostItem? boost = NaturalBoostItems.Decide(world.Level, state.ItemCounts, world.ReposeEnergy, world.MaxReposeEnergy,
+				[.. (world.VisibleEffects ?? []).Select(effect => effect.SkillId)], trigger == NaturalHelpTrigger.PrePull,
+				item => runtime.Data.ItemDataDh.GetItemTemplate(item.ItemId) is { } known && session.Api.Timing.TimeUntilItemUse(known) <= TimeSpan.Zero);
+			if (boost == null) return;
+			BotInventoryItem owned = world.Inventory.Values.Where(item => item.ItemId == boost.ItemId && item.Count > 0).OrderBy(item => item.ObjectId).First();
+			long before = ItemCount(world, boost.ItemId), reposeBefore = world.ReposeEnergy;
+			int useStart = session.PacketHistory.Count;
+			boostAskedMillis = runtime.NowMillis;
+			await session.SendPacketAsync(session.Api.UseItem(owned.ObjectId, runtime.Data.ItemDataDh.GetItemTemplate(boost.ItemId)), token);
+			await session.SynchronizeAsync(token);
+			session.TraceDiagnostic(NaturalBoostItems.Diagnostic, new Dictionary<string, object?>
+			{
+				["trigger"] = trigger.ToString(), ["itemId"] = boost.ItemId, ["family"] = boost.Family, ["before"] = before,
+				["after"] = ItemCount(world, boost.ItemId), ["reposeBefore"] = reposeBefore, ["repose"] = world.ReposeEnergy,
+				["maxRepose"] = world.MaxReposeEnergy,
+				["refused"] = session.PacketHistory.Skip(useStart).Where(packet => packet.PacketType == typeof(SM_SYSTEM_MESSAGE))
+					.Select(packet => packet.Get<object>("name")?.ToString()).FirstOrDefault(),
+			});
+		}
+
 		public async Task BuffOurselfAsync(NaturalHelpTrigger trigger, CancellationToken token, float travelMeters = 0, bool crossMap = false)
 		{
 			await KeepPowerShardsAsync(trigger, token);
+			await UseBoostsAsync(trigger, token);
 			if (trigger is NaturalHelpTrigger.PrePull or NaturalHelpTrigger.AfterRest) await MaintainBuffsAsync(token);
 			NaturalHelpItemRules help = ClassProfile.HelpItems;
 			if (!help.ScrollUpkeep(session.Api.World.Level) || InCombat) return;

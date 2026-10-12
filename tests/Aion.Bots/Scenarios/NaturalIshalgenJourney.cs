@@ -675,6 +675,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			bool cleanBags = options.Muster || altgardLegId is { } playedLeg && !LegsBeforeTheBagCleanup.Contains(playedLeg);
 			var keptByServer = new HashSet<int>();
 			var bagDiscards = new List<NaturalBagDiscard>();
+			// What the leg being played names, for the cleanup. Unset, it is what the leg protects and an open plan quest
+			// needs (QuestNeededItems); the muster, which follows legs that are over, names its own.
+			HashSet<int>? bagNeeds = null;
+			combat.UsesBoosts = cleanBags;
 			PlayerClass? gearClass = null;
 			bool bridgeShopVisited = false; // NA-16: the Altgard shop stop is done
 			var helpSupplied = new List<NaturalHelpSupplied>(); // NA-21: every approved help item supplied
@@ -732,22 +736,26 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			// any time we do a gear check or restock supplies." What that is, is NaturalBagCleanup's; this carries it out
 			// with the client's drag to the trash. The server keeps an item that is not breakable (Java CM_DELETE_ITEM);
 			// such a stack is not asked for again.
-			IReadOnlyList<NaturalBagDiscard> BagDiscardPlan()
+			NaturalBagPlan BagPlan()
 			{
 				BotWorldModel world = session.Api.World;
-				if (!cleanBags || world.Level <= NaturalHelpItemAllowlist.StarterMaxLevel) return [];
-				IReadOnlySet<int> needed = QuestNeededItems();
-				HashSet<int> keep = [.. needed, .. altgardLeg?.AbyssEntry?.ProtectedItemIds ?? []];
+				if (!cleanBags || world.Level <= NaturalHelpItemAllowlist.StarterMaxLevel) return new([], []);
+				IReadOnlySet<int> needed = (IReadOnlySet<int>?)bagNeeds ?? QuestNeededItems();
 				NaturalInventoryPlan bags = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId), ClassLine)
 					.Decide(world, needed, altgardLeg?.CoinGear, altgardLeg?.Haramel);
-				return [.. NaturalBagCleanup.Plan([.. world.Inventory.Values], world.Level, combat.ClassProfile.HelpItems, bags.Sales, keep,
-					NaturalPowerShardPolicy.Describer(runtime.Data, combat.ClassProfile.Gear.Class)).Where(discard => !keptByServer.Contains(discard.ObjectId))];
+				// The quests being worked: started or ready to hand in, and not one the class line leaves out.
+				HashSet<int> worked = [.. world.Quests.Values.Where(quest => quest.Status is 3 or 4 && !ClassLine.LeftOutQuestIds.Contains(quest.QuestId))
+					.Select(quest => quest.QuestId)];
+				NaturalBagPlan plan = NaturalBagCleanup.Plan([.. world.Inventory.Values], world.Level, combat.ClassProfile.HelpItems, bags.Decisions, needed,
+					NaturalPowerShardPolicy.Describer(runtime.Data, combat.ClassProfile.Gear.Class), NaturalQuestItemIndex.Load(runtime.RepoRoot), worked);
+				return plan with { Discards = [.. plan.Discards.Where(discard => !keptByServer.Contains(discard.ObjectId))] };
 			}
 			async Task CleanBagsAsync(string trigger, CancellationToken cleanToken)
 			{
 				BotWorldModel world = session.Api.World;
 				if (!cleanBags || world.IsDead || combat.InCombat) return;
-				IReadOnlyList<NaturalBagDiscard> plan = BagDiscardPlan();
+				NaturalBagPlan bag = BagPlan();
+				IReadOnlyList<NaturalBagDiscard> plan = bag.Discards;
 				if (plan.Count == 0) return;
 				var gone = new List<NaturalBagDiscard>();
 				foreach (NaturalBagDiscard discard in plan)
@@ -762,6 +770,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				{
 					["trigger"] = trigger, ["discarded"] = gone.Select(discard => $"{discard.ItemId}x{discard.Count}:{discard.Reason}").ToArray(),
 					["keptByServer"] = plan.Except(gone).Select(discard => discard.ItemId).ToArray(), ["stacks"] = world.Inventory.Count,
+					["kept"] = bag.Kept.GroupBy(stack => stack.Reason).ToDictionary(group => group.Key, group => group.Select(stack => stack.ItemId).ToArray()),
 				});
 			}
 			combat.MaintainInventoryAsync = MaintainInventoryAsync;
@@ -2039,7 +2048,11 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					await FallFromLoginPlaceAsync();
 					EnterFortressMap();
 					combat.AfterBindRevive = EnterFortressMap;
-					NaturalAbyssInventory rules = scope.Inventory with { Open = [.. scope.Inventory.Open, .. NaturalAbyssEntry.MusterOpen] };
+					// The legs behind the muster are over: what they protected and what the Abyss entry kept sealed is of use
+					// only if a rule uses it (MR-f). The muster itself needs its coins and the containers it is about to open.
+					NaturalAbyssInventory rules = scope.Inventory with { Open = [.. scope.Inventory.Open, .. NaturalAbyssEntry.MusterOpen], KeepSealed = [] };
+					bagNeeds = [armor.CoinItemId, .. rules.Open];
+					combat.UsesBoosts = true;
 					async Task CheckAsync(string trigger)
 					{
 						session.BeginStep("muster-inventory-check", trigger);
@@ -2061,24 +2074,27 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						}
 						return await ApproachCapitalNpcAsync(npcId);
 					}
-					// The bags: what the class rules call surplus or of no use to the class is sold to the fortress's nearest
-					// merchant: the gear and accessories it has outgrown, and since MR-f everything else those rules would sell.
-					// What the leg protects is kept. It is done first, before anything is supplied or opened: a character can
-					// arrive with a full cube (the Spirit Master, the Bard), and the cleanup of MR-f, which runs at every gear
-					// check and restock, would throw away what a merchant three steps off pays for. It is done again after the
-					// coin gear, for the pieces that gear replaced.
+					// The bags: what no rule uses (MR-f) is sold to the fortress's nearest merchant, as far as a merchant takes it:
+					// the gear and accessories the character has outgrown, the reward weapons the legs behind it protected, and
+					// what it cannot use. It is done first, before anything is supplied or opened: a character can arrive with a
+					// full cube (the Spirit Master, the Bard), and the cleanup, which runs at every gear check and restock, would
+					// throw away what a merchant three steps off pays for. It is done again after the coin gear, for the pieces
+					// that gear replaced.
 					async Task SellSurplusAsync(string when)
 					{
 						session.BeginStep("muster-sale", when);
-						NaturalInventoryPlan bags = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId), ClassLine)
-							.Decide(world, QuestNeededItems());
-						List<NaturalSale> sales = [.. bags.Sales.Where(sale => !scope.ProtectedItemIds.Contains(sale.ItemId))
-							.Select(sale => new NaturalSale(sale.ObjectId, sale.ItemId, sale.Count))];
+						// What the cleanup would discard, as far as a merchant takes it: the client knows from the item's flags.
+						NaturalIshalgenInventoryPolicy catalog = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId), ClassLine);
+						NaturalBagPlan bag = BagPlan();
+						List<NaturalSale> sales = [.. bag.Discards.Where(discard => world.Inventory.TryGetValue(discard.ObjectId, out BotInventoryItem? stack) &&
+								(stack.ItemMask & 4) != 0 && catalog.Item(discard.ItemId).Sellable)
+							.Select(discard => new NaturalSale(discard.ObjectId, discard.ItemId, discard.Count))];
 						session.TraceDiagnostic("muster-sale-plan", new Dictionary<string, object?>
 						{
-							["when"] = when, ["sell"] = sales.Select(sale => sale.ItemId).ToArray(), ["freeSlots"] = bags.FreeSlots,
-							["kept"] = bags.Decisions.Where(decision => decision.Action != "sell").GroupBy(decision => decision.Reason)
-								.ToDictionary(group => group.Key, group => group.Count()),
+							["when"] = when, ["sell"] = sales.Select(sale => sale.ItemId).ToArray(),
+							["discardLater"] = bag.Discards.Where(discard => sales.All(sale => sale.ObjectId != discard.ObjectId))
+								.Select(discard => $"{discard.ItemId}:{discard.Reason}").ToArray(),
+							["kept"] = bag.Kept.GroupBy(stack => stack.Reason).ToDictionary(group => group.Key, group => group.Select(stack => stack.ItemId).ToArray()),
 						});
 						if (sales.Count == 0) return;
 						int merchantId = runtime.Data.SpawnsDh.GetSpawnsByWorldId(leg.Hub.MapId)
@@ -2251,9 +2267,12 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						Require.True(world.PowerShardOn && NaturalPowerShardPolicy.Slots.All(slot => shardsWorn.Any(worn =>
 							worn.ItemId == shardRow.ItemId && (worn.Slot.GetValueOrDefault() & slot) != 0)),
 							$"The kit's power shard {shardRow.ItemId} is not in both slots with the mode on: [{string.Join(", ", shardsWorn.Select(worn => $"{worn.Slot}:{worn.ItemId}"))}], mode {world.PowerShardOn}.");
-					IReadOnlyList<NaturalBagDiscard> leftToDiscard = BagDiscardPlan();
+					NaturalBagPlan cube = BagPlan();
+					IReadOnlyList<NaturalBagDiscard> leftToDiscard = cube.Discards;
 					Require.True(leftToDiscard.Count == 0, "The cube still holds what the cleanup discards: " +
 						string.Join(", ", leftToDiscard.Select(discard => $"{discard.ItemId} ({discard.Reason})")));
+					// What is left in the cube, each stack with the rule that keeps it.
+					var inCube = cube.Kept.Select(stack => new { stack.ItemId, stack.Count, stack.Reason }).ToArray();
 					// Room for what the next legs pay: the free slots a quest's rewards are kept for.
 					int freeSlots = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId), ClassLine)
 						.Decide(world, QuestNeededItems()).FreeSlots;
@@ -2284,7 +2303,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						BronzeCoinsAtStart = startCoins, BronzeCoins = coinsLeft, Opened = openedNow, NotOpened = notOpenedNow,
 						Sold = sold, SaleKinah = saleKinah, Kinah = kinah, KinahAtStart = startKinah, WornAtStart = wornAtStart, Worn = wornBefore,
 						Kit = kitBefore, StacksAtStart = stacksAtStart, Stacks = stacks, FreeSlots = freeSlots, Deaths = deathsNow, GameMillis = elapsed - startedMillis,
-						PowerShards = shardsWorn, PowerShardMode = true, Discarded = bagDiscards, KeptByServer = keptByServer.Count,
+						PowerShards = shardsWorn, PowerShardMode = true, Discarded = bagDiscards, KeptByServer = keptByServer.Count, InCube = inCube,
 						ElapsedMillis = elapsed, before = musterBefore, after = musterAfter,
 					}), token);
 					session.TraceDiagnostic("muster-completed", new Dictionary<string, object?>
