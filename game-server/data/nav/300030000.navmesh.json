@@ -1,0 +1,41 @@
+{
+  "mapId": 300030000,
+  "mapName": "Nochsana Training Camp",
+  "bakerVersion": 4,
+  "settingsFingerprint": "5db8e45a00557337",
+  "settings": {
+    "cellSize": 0.3,
+    "cellHeight": 0.2,
+    "agentHeight": 1.6,
+    "agentRadius": 0.5,
+    "agentMaxClimb": 0.8,
+    "agentMaxSlope": 45,
+    "tileSizeCells": 128,
+    "regionMinSize": 8,
+    "regionMergeSize": 20,
+    "edgeMaxLength": 12,
+    "edgeMaxError": 1.3,
+    "vertsPerPoly": 6,
+    "detailSampleDistance": 6,
+    "detailSampleMaxError": 1,
+    "flagMergeVoxels": 1,
+    "swimDepth": 1.5,
+    "roadHalfWidth": 3
+  },
+  "sourceFingerprint": "1a889c3e88bbfef5",
+  "waterLevel": 16,
+  "tilesX": 27,
+  "tilesY": 27,
+  "tilesWithPolygons": 99,
+  "polygons": 4167,
+  "polygonsByArea": {
+    "ground": 4090,
+    "water": 77
+  },
+  "doors": 0,
+  "roads": 0,
+  "maskSectors": 294,
+  "modelTriangles": 32069,
+  "terrainTriangles": 522242,
+  "navMeshSha256": "3d6161c88d09a6f62585eaa84382f8c1d8be3eeaf8d079630a8c31c950b39043"
+}
