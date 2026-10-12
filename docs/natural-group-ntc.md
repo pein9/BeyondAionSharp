@@ -1,6 +1,6 @@
 # Group NTC leg
 
-Status: planned 2026-10-12; N1 (pathing) is done, nothing is played yet. The step list at the end is worked one
+Status: planned 2026-10-12; N1 (pathing) and N2 (group and quests) are done. The step list at the end is worked one
 step at a time.
 
 It follows [natural-group-healer.md](natural-group-healer.md): group formation, F1 following, the Cleric's
@@ -34,6 +34,10 @@ Every attempt restores `ntc-group-s4` into a throwaway schema and is not capture
 ```powershell
 pwsh -NoProfile -File scripts/sim/run-round.ps1 -Round run/ntc/<round>.json -Item ntc -Run <fresh id> -From ntc-group-s4 -Seed 1 -ReplayRoot C:/Users/ryanf/Documents/GitHub/BeyondAionSharp/run/ntc
 ```
+
+The stage is `"group-ntc"`, with the same `groupLeader`, `groupRoster`, `groupLoot` and `"role": "healer"` as
+`group-coin`, and `groupUntil` naming how far the leg is played (so far `"quests"`). `run/ntc/n2.json` is the round
+file of N2. Each member writes `group-ntc-completion.json`.
 
 Code changes stay; the world does not. `run/ntc/baseline.json` holds the snapshot's hashes, checked 2026-10-12:
 dump `8d0787cf…cf8f97`, manifest `26fb3931…68ce96`, the same as `run/group/baseline.json`. They are checked again
@@ -151,8 +155,21 @@ the run, how far the group got, the deaths and what stopped it.
   - No travel graph: the group goes from point to point, as on Bregirun and in the arena. The `graph` command
     also crashed on a thread race in the edge memory of NR-46a; that is flagged as a task of its own and not fixed
     here. It does not touch a journey: a bot's own routing is single-threaded.
-- [ ] **N2 Group and quests.** New stage `group-ntc` beside `group-coin`: the six log in, the Templar invites and
+- [x] **N2 Group and quests.** New stage `group-ntc` beside `group-coin`: the six log in, the Templar invites and
   leads, all six take Q4731 from Aegir, hand it in at Kelmar and take Q4733 and Q4734.
+  - 2026-10-12, round `n2-3` (`run/ntc/ntc/n2-3`): all six reached the end in 2 min 43 s of game time, no death.
+    Every journal has Q4731 complete and Q4733 and Q4734 started. Each member chose Q4731's piece of its own armor:
+    plate (Templar, Gladiator), chain (Cleric, Chanter), leather (Ranger), cloth (Sorcerer).
+  - The group stage now plays several quests: the leader names the quest and the NPC in its command, and a member's
+    report carries its whole journal. The three quest plans are in `parity-artifacts/e2e/natural-group-ntc-plans`.
+  - Rounds `n2-1` and `n2-2` stopped on the stairs between Aegir and Kelmar: all six had accepted Q4731, then the
+    Gladiator and the Sorcerer stood still and the Templar's wait for them ran out after two minutes. Two faults of
+    the follow rule, both fixed for every group stage: a follower kept asking for the same trail point it could
+    not step to (it now tries the points after it, then a checked route to where it sees F1), and a follow step
+    ended three metres along its path wherever that was, which can be the face of a stair (it now ends on a checked
+    point of the path).
+  - The coin stage runs on the same code: round `six-n2` (`run/group/coin/six-n2`), six members from `ntc-group-s4`,
+    completed its Q2318 cycle for all six in 10 min 15 s with no death.
 - [ ] **N3 Entrance.** All six gather at Vallack and stand in one instance.
 - [ ] **N4 The lower camp and the Protector.** Together to the west end; the Protector dead, credit to all six.
 - [ ] **N5 The Guard and the Aetheric Field Guard.**
