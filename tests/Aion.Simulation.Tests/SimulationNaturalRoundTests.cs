@@ -22,7 +22,7 @@ public sealed partial class SimulationFastScenarioTests
 	/// played by a character that stands at the end of the stage before it. "muster" follows "ax" (docs/natural-muster.md).
 	/// </summary>
 	private sealed record NaturalRoundBot(string Line, double StartAfterMinutes = 0, string? StopAt = null, double? StopAfterMinutes = null,
-		int? Account = null, string? Name = null, int? ResumeCharacter = null, string? Stage = null);
+		int? Account = null, string? Name = null, int? ResumeCharacter = null, string? Stage = null, int? TargetNpcId = null);
 
 	/// <summary>
 	/// NR-R1a: the journey's options for a bot's stage. A run of one bot takes them from its environment
@@ -42,7 +42,10 @@ public sealed partial class SimulationFastScenarioTests
 		// The muster (2026-10-12): a character that stands at the Abyss entry's end, in that leg's fortress.
 		"muster" => new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
 			ClassLine: line, Muster: true),
-		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax or muster."),
+		// GH-01: one uncaptured field encounter from the group world's muster endpoint, with the ordinary fight table.
+		"gh-survey" => new NaturalJourneyOptions(AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
+			ClassLine: line, Muster: true, SurveyNpcId: entry.TargetNpcId ?? 212644),
+		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, muster or gh-survey."),
 	};
 
 	/// <summary>
@@ -56,6 +59,7 @@ public sealed partial class SimulationFastScenarioTests
 		null or "" => null,
 		"bridge" => "bridge-completion.json",
 		"muster" => NaturalAbyssEntry.MusterReceipt,
+		"gh-survey" => "gh-survey-completion.json",
 		_ => $"altgard-{entry.Stage}-completion.json",
 	};
 

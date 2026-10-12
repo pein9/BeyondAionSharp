@@ -561,6 +561,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					.Append(NaturalLaterCapitalSteps.LibraryPermission).Concat(NaturalLaterCapitalSteps.FinalCity).Select(step => step.NpcId))
 				.Append(700211)
 				.Concat(new[] { 210404, 203679, 203581, 204191 }).Concat(airlines.Select(route => route.NpcId)).Distinct().ToArray();
+			if (options.SurveyNpcId is int surveyNpcId) altgardNpcs = [.. altgardNpcs.Append(surveyNpcId).Distinct()];
 			// AK-08: items an open Altgard quest still needs (its collect items, the ring carriers' rings): never worn as gear and
 			// never sold. The leg 5 smoke run wore Q2292's level 16 rings as upgrades, which its hand-in would not have found.
 			IReadOnlySet<int> QuestNeededItems() => (altgardLeg == null ? Enumerable.Empty<int>() : altgardPlans.Values
@@ -2314,6 +2315,40 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						["worn"] = wornBefore, ["kit"] = kitBefore, ["freeSlots"] = freeSlots, ["deaths"] = deathsNow, ["generation"] = musterAfter.ConnectionGeneration,
 						["powerShards"] = shardsWorn.Select(worn => $"{worn.Slot}:{worn.ItemId}x{worn.Count}").ToArray(), ["discarded"] = bagDiscards.Count,
 					});
+				}
+				if (options.SurveyNpcId is int surveyTarget)
+				{
+					Require.True(runtime.Profile.StartsWith("SIM-", StringComparison.Ordinal) && runtime.Seed == 1 && resuming &&
+						world.Level == 26 && world.MapId == leg.Hub.MapId && leg.Order.All(world.CompletedQuestIds.Contains),
+						"GH-01 surveys resume a level-26 mustered character in SIM at seed 1.");
+					session.BeginStep("gh-survey-start", "measure-the-ordinary-fighter");
+					await FallFromLoginPlaceAsync();
+					EnterObservedMap();
+					navigator.AvoidHostileAggro = true;
+					navigationDefense = combat;
+					combat.AfterBindRevive = EnterObservedMap;
+					await RestSafelyAsync(token);
+					session.TraceDiagnostic("gh-survey-start", new Dictionary<string, object?>
+					{
+						["npcId"] = surveyTarget, ["level"] = world.Level, ["hp"] = world.CurrentHp, ["maxHp"] = world.MaxHp,
+						["quest2307Completed"] = world.CompletedQuestIds.Contains(2307), ["quest2430Completed"] = world.CompletedQuestIds.Contains(2430),
+					});
+					session.BeginStep("gh-survey-approach", "walk-to-the-shipped-monster");
+					int target = await ApproachShippedSpawnAsync(surveyTarget, withinRange: 23);
+					await RestSafelyAsync(token);
+					session.BeginStep("gh-survey-fight", "ordinary-combat-one-attempt");
+					bool killed = await combat.TryKillAsync(target, token, session.CurrentPosition);
+					session.TraceDiagnostic("gh-survey-end", new Dictionary<string, object?>
+					{
+						["npcId"] = surveyTarget, ["targetObjectId"] = target, ["killed"] = killed, ["deaths"] = combat.ReviveCount,
+						["retreats"] = combat.CompletedRetreats, ["hp"] = world.CurrentHp, ["maxHp"] = world.MaxHp,
+					});
+					await File.WriteAllTextAsync(Path.Combine(folder, "gh-survey-completion.json"), System.Text.Json.JsonSerializer.Serialize(new
+					{
+						verified = true, session.CharacterId, NpcId = surveyTarget, TargetObjectId = target, Killed = killed,
+						Deaths = combat.ReviveCount, Retreats = combat.CompletedRetreats, ElapsedMillis = runtime.NowMillis,
+					}), token);
+					return;
 				}
 				if (options.Muster)
 				{

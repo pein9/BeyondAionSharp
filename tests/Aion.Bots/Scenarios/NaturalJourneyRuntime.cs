@@ -115,4 +115,4 @@ public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? R
 	bool AltgardLeg1 = false, string? AltgardLegId = null, int[]? AltgardOnlyQuests = null,
 	string? CoinGearReceiptPath = null, string? HaramelProgressPath = null, string? CapitalStage = null,
 	bool LaterCapital = false, string? AbyssArenaFirstTry = null, string? AbyssRingFirstTry = null,
-	NaturalClassLine? ClassLine = null, bool Muster = false);
+	NaturalClassLine? ClassLine = null, bool Muster = false, int? SurveyNpcId = null);
