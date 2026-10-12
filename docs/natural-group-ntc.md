@@ -1,6 +1,7 @@
 # Group NTC leg
 
-Status: planned, 2026-10-12. Nothing of it is played yet. The step list at the end is worked one step at a time.
+Status: planned 2026-10-12; N1 (pathing) is done, nothing is played yet. The step list at the end is worked one
+step at a time.
 
 It follows [natural-group-healer.md](natural-group-healer.md): group formation, F1 following, the Cleric's
 healing-only role, resurrection waiting and round-robin loot are there and are reused. Gear, supplies, shards and the
@@ -61,8 +62,9 @@ shut each other out by their start conditions, so a character holds one of a pai
 Q27000 is a legion mission and is not part of this. Until Q4732 has a handler the General is killed without a
 quest: he is the end of the run all the same. Kill credit reaches every member in range, as Q2318 showed.
 
-**The chests.** Q4734 wants four items from each member, 24 for six. The camp has 28 weapons chests, all inside
-the fortress walls behind the gate. A chest is a `quest_use_item` object: the member that uses it gets its drop
+**The chests.** Q4734 wants four items from each member, 24 for six. The camp has 28 weapons chests: 21 inside
+the fortress walls behind the gate, on three levels, and 7 on the camp's own ground along the outside of the walls
+(N1 found that from the mesh). A chest is a `quest_use_item` object: the member that uses it gets its drop
 registered to itself alone (the quest drop is not an each-member drop), and the chest dies
 (`ai/quests/QuestItemNpcAI.java`). So every member opens four chests itself, and only four are to spare: a member
 uses a chest only while it still needs an item.
@@ -84,14 +86,19 @@ uses a chest only while it still needs an item.
 
 ### Pathing
 
-No navmesh for 300030000 is checked in, only its mask (294 sectors). It is baked as Haramel's was
+The navmesh of 300030000 is baked (N1) and checked in: 4,167 polygons, no doors, no travel graph
 ([bot-navigation.md](bot-navigation.md)):
 
 ```bash
 dotnet run --project tools/Aion.NavBake -- bake  --maps 300030000
-dotnet run --project tools/Aion.NavBake -- graph --maps 300030000 --race ASMODIANS
 dotnet run --project tools/Aion.NavBake -- check --maps 300030000 --rebake
 ```
+
+The camp is one mesh island from the landing to the ground before the gate. The fortress interior is another: the
+bake splits the ground in the gateway, although every one-metre step through it passes the server's own ground
+check. The router crosses that seam on a route to an exact point (it steps off the island by itself); a route "to
+within reach of an NPC" does not cross it. So F1 first walks to a point inside the gateway, (346.4, 350, 379.1),
+and routes to monsters and chests from there.
 
 Doors are baked open. The fortress gate 256694 is not a door but a monster standing in the gateway at
 (346, 357, 378): level 27, HERO, 52,909 HP, no attack of its own. It is destroyed, which is also what Q4732 and
@@ -108,7 +115,7 @@ From the spawn file; the walkable way between the points comes from the baked me
 3. North to **the Guard** 256689 at (357, 439, 362).
 4. **The Aetheric Field Guard** 256692 at (382, 409, 377).
 5. **The gate** 256694 at (346, 357, 378).
-6. Inside the walls (y 270 to 355): the 28 chests, twenty recondos, ten runners, five pickets and two docs.
+6. Inside the walls (y 270 to 355): 21 of the chests, twenty recondos, ten runners, five pickets and two docs.
 7. **The Teleporter** 256691 at (353, 271, 392), 22 metres from the General.
 8. **The General** 256693 at (331, 269, 385). Then the rest of the chest items, then the disband.
 
@@ -135,7 +142,15 @@ off, for a minute. It is left alone unless a run shows a boss needs it.
 One step per iteration. A step is ticked when a run from `ntc-group-s4` shows it; the dated line under it names
 the run, how far the group got, the deaths and what stopped it.
 
-- [ ] **N1 Pathing.** Bake the navmesh and graph of 300030000; the regeneration check passes.
+- [x] **N1 Pathing.** Bake the navmesh of 300030000; the regeneration check passes.
+  - 2026-10-12. Baked: 4,167 polygons in 99 tiles, 263 KiB, no doors. `check --maps 300030000 --rebake` and
+    `check --maps baked` (twelve maps) say ok. Routes, by the tool's own router (`diag`, `points`; logs under
+    `run/ntc/N1`): landing to the Protector 120 points; Protector to the Guard 135; Guard to the Aetheric Field
+    Guard 50; from there to the gate 46; from the gateway to the General 47 and to the Teleporter 139. From the
+    point inside the gateway all 21 chests inside the walls are reached, and the 7 outside by going back out.
+  - No travel graph: the group goes from point to point, as on Bregirun and in the arena. The `graph` command
+    also crashed on a thread race in the edge memory of NR-46a; that is flagged as a task of its own and not fixed
+    here. It does not touch a journey: a bot's own routing is single-threaded.
 - [ ] **N2 Group and quests.** New stage `group-ntc` beside `group-coin`: the six log in, the Templar invites and
   leads, all six take Q4731 from Aegir, hand it in at Kelmar and take Q4733 and Q4734.
 - [ ] **N3 Entrance.** All six gather at Vallack and stand in one instance.
