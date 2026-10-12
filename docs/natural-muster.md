@@ -1,9 +1,9 @@
 # One world, and the muster at the Abyss entry's end
 
 Status: done, 2026-10-12. The eleven Asmodian second classes stand in one world database, the round snapshot
-`ntc-group-s3-w1`: each on an account of its own, level 26, in the best coin gear it can wear, the best power shard
-in both shard slots and switched on, its kit full, and nothing in its cube that its rules call no longer needed. What
-is not done, and what the operator is asked, is at the end.
+`ntc-group-s4-w1`: each on an account of its own, level 26, in the best coin gear it can wear, the best power shard
+in both shard slots and switched on, its kit full, and nothing in its cube that no rule uses. What is not done is at
+the end.
 
 This document holds three decisions the operator made on 2026-10-12, after the all-classes plan
 (`docs/natural-all-classes-ntc.md`, D40) closed, and the work that followed from them. It outranks that plan where
@@ -36,6 +36,12 @@ After the first report, the same day:
 4. "Extra credit: We need to trash anything no longer needed from all inventories any time we do a gear check or
    restock supplies."
 
+After the second report, the same day:
+
+1. On the Ancient Power Shard at level 10: "We want the best they can use. This just keeps it simple."
+2. On what still lay in the cubes: "We need to clean up things we don't need. We either need to use it or get rid of
+   it. (this will change when we start training crafting/gathering skills, but not now)"
+
 ## Rules
 
 **(MR-a) One world.** Every bot character lives in one world database, each on an account of its own. A run that
@@ -58,11 +64,11 @@ the operator approved it on 2026-10-07 and is not changed.
 1. Level 26, by the fortress's repeatable coin quest, Q2318 "[Coin] Foes of the Fortress" (Nott, 204360), as often as
    it takes. The quest pays no experience; the level comes from its nine kills a turn.
 2. The best coin tier it can wear, by rule (MR-b).
-3. The bags: the leg's containers, the coin quest's chest and the Supply Scroll Bundles are opened, and what its
-   class rules call surplus or of no use to the class is sold to the fortress's nearest merchant. What the leg
-   protects is kept. The sale comes first, before anything is supplied or opened: a character can arrive with a full
-   cube, and the cleanup of (MR-f) would throw away what a merchant three steps off pays for. It is done again after
-   the coin gear, for the pieces that gear replaced.
+3. The bags: the leg's containers, the coin quest's chest and the Supply Scroll Bundles are opened, and what no rule
+   uses (MR-f) is sold to the fortress's nearest merchant, as far as a merchant takes it. The legs behind the muster
+   are over, so what they protected is kept only if a rule uses it. The sale comes first, before anything is supplied
+   or opened: a character can arrive with a full cube, and the cleanup would throw away what a merchant three steps
+   off pays for. It is done again after the coin gear, for the pieces that gear replaced.
 4. The kit, every row at its full count; the power shards in their slots and switched on (MR-e); the cube clean
    (MR-f).
 5. Three free cube slots or more, a relog, the same character again, and the receipt
@@ -81,19 +87,36 @@ messages (started, ended, burnt out) and from the state its own emotions carry. 
 use (Java `CM_EMOTION`), so it is sent only between actions. This server keeps the mode across a death and drops it
 at a login. Below level 10 nothing changes: play there is as it was recorded.
 
-**(MR-f) The bag cleanup.** At every gear check and every restock the bot discards what is no longer needed:
+**(MR-f) The bag cleanup: use it or get rid of it.** At every gear check and every restock the bot goes through its
+cube. A stack stays only when a rule uses it:
 
-- a lower tier of a kit family, once the kit's own tier is owned (the Minor, Lesser and plain potions and scrolls, the
-  veteran event scrolls, the Zeller jelly);
-- the speed scroll of the other kind: Awakening for a class that keeps Courage up, Courage for one that casts;
-- a power shard with less damage than the best one, once it is out of its slot;
-- the powder of a skill level the character has left behind;
-- what the class's inventory rules would sell: gear and accessories it has outgrown, and what it cannot use.
+- the kit of the level;
+- a potion or scroll the class's policies reach for, while the kit's own tier is not owned in its place (a class
+  that is supplied no mana serum drinks the mana potions it owns);
+- the Tea of Repose and the experience amulet, which the bot now uses (below);
+- gear the gear rules will wear, now or at a later level;
+- what the leg being played names: the muster's coins and the containers it opens;
+- an item of a quest that is being worked: started or ready to hand in, and not one the class line leaves out.
 
-What is worn, what a leg protects and what an open quest needs is never touched. A stack the server will not
-discard is left and not asked for again. The rule is on in the muster and in every leg written from here on. It is
-off in the legs already played, Ishalgen to the Abyss entry: their receipts count the items a leg ends with (the
-bridge's shop targets, the coin leg's loadout, Haramel's ledger), and none was replayed with it.
+Everything else goes: sold where a merchant is at hand and takes it, discarded otherwise. That is the lower tiers
+of a kit family, the speed scroll of the other kind, a weaker power shard once it is out of its slot, the powder of a
+skill level left behind, gear and accessories the character has outgrown, the reward weapons that legs now over
+protected, the items of finished quests, and whatever no bot rule touches: the Stigma Support Bundle and the
+manastone boxes (no bot sockets either), the flight scrolls, the Iron Coins, dyes, juice, Azpha and the expiring
+Administrator's Boon. What is worn is never touched. A stack the server will not discard is left and not asked for
+again. Any of it can be supplied again on the day a rule uses it. The operator: this changes when crafting and
+gathering are trained; their materials have no use until then.
+
+Two things are used rather than thrown away, from level 10 and where the cleanup is on:
+
+- **The Tea of Repose** refills the Energy of Repose, out of which a kill pays extra experience. It is drunk when
+  no more than a twentieth of that energy is left. The bot reads the energy from the experience packet.
+- **The Lodas Amulet III** adds a fifth to hunting experience for two hours, to level 49, one use in four hours. One
+  is used before a pull when none is at work.
+
+The rule is on in the muster and in every leg written from here on. It is off in the legs already played, Ishalgen
+to the Abyss entry: their receipts count the items a leg ends with (the bridge's shop targets, the coin leg's
+loadout, Haramel's ledger), and none was replayed with it.
 
 ## The kit from level 10 (MR-c)
 
@@ -182,6 +205,15 @@ capture is one round snapshot with every character in it.
     again, ten game minutes apart, and all reached its end. No leg was replayed. The table is under "After the shards
     and the cleanup".
 
+- [x] **MR-7** Use it or get rid of it (MR-f as it now stands).
+  - 2026-10-12, commit `5cbe80a34`. The bundle (run/mr/MR-7b, chain): `Aion.GameServer.Tests` 4,632 passed, 16 skipped;
+    the seven pre-commit checks, the three script tests and Fast pass; the five starter scopes are identical.
+  - Round trial7 (run/mr/MR-5/trial7), the Templar's catch-up once more from `ntc-group-joined-s1`, not captured: the
+    shards went on at login, the amulet was used at the first pull, and the nine kills of one turn gave 72,257 XP
+    where they had given 61,491. Its Energy of Repose was at 194,729 of 436,346, so no tea was due.
+  - Round muster4 (run/mr/MR-7/muster4), from `ntc-group-s3`, captured as `ntc-group-s4`: all eleven played the muster
+    again and reached its end. The table is under "After use it or get rid of it".
+
 ## The group, as the muster left it (`ntc-group-s2-w1`)
 
 | Class | Character, account | Level | The coin quest | Coins supplied | Bought | Weapon held now | Gear sold | Containers opened | Free cube slots | Round |
@@ -244,8 +276,40 @@ ceremony weapon, the Altruist's and the Dark Legionary weapon), the Greater Ragi
 the Stigma Support Bundle and the three manastone boxes, the Tea of Repose, Azpha, the Mercenary's Fruit Juice, the
 dyes, the event amulets and pass, the Iron Coins and a few leftovers of finished quests.
 
-**The world to start the next legs from is `ntc-group-s3`.** A single character's record, for a run of one bot, is
-`ntc-group-s3-<class>`.
+`ntc-group-s3` is this state. The next round, below, cleared the cubes further.
+
+## After use it or get rid of it (`ntc-group-s4-w1`)
+
+Round muster4 changed no level, no gear, no coin and no shard. What it did for each character:
+
+| Class | Items sold | Stacks discarded | Stacks left in the cube | Free cube slots |
+|---|---:|---:|---:|---:|
+| Cleric | 6 | 12 | 9 | 54 |
+| Templar | 5 | 12 | 10 | 53 |
+| Sorcerer | 5 | 10 | 9 | 54 |
+| Chanter | 5 | 12 | 9 | 54 |
+| Spirit Master | 5 | 13 | 9 | 54 |
+| Bard | 5 | 10 | 9 | 54 |
+| Gladiator | 5 | 10 | 10 | 53 |
+| Ranger | 5 | 11 | 10 | 53 |
+| Rider | 5 | 12 | 10 | 53 |
+| Gunner | 5 | 10 | 10 | 53 |
+| Assassin | 5 | 10 | 10 | 53 |
+
+In all 56 items were sold and 122 stacks discarded; the server refused no discard. Sold: the Karmic
+ceremony weapon, the Altgard Dark Legionary weapon where one was kept, the Greater Raging Wind Scrolls, Azpha and the
+dyes. Discarded: the Altruist's weapon where it is not worn (it cannot be sold), the Stigma Support Bundle, the three
+manastone boxes, the Iron Coins, the Mercenary's Fruit Juice, the Administrator's Boon and the items of finished
+quests.
+
+What a cube holds now, 9 to 10 stacks, each one used by a rule: the kit (the Major Life Potion, the
+Major Anti-Shock Scroll, the Greater Running Scroll, the Cippo Aether Jelly, the Odella Powder, with the Major Mana
+Serum and the Greater Awakening Scroll for a class that casts and the Greater Courage Scroll for one that does not),
+the mana potions a class without a serum still drinks, the Tea of Repose and two Lodas Amulets. The Kinah is beside
+it. Every cube has 53 or 54 free slots.
+
+**The world to start the next legs from is `ntc-group-s4`.** A single character's record, for a run of one bot, is
+`ntc-group-s4-<class>`.
 
 ## Not done, and what the operator is asked
 
@@ -254,17 +318,18 @@ dyes, the event amulets and pass, the Iron Coins and a few leftovers of finished
    `m`, `b`, `l1`, `c`, `hm`, `ax`) and the ten of the second classes. The operator, 2026-10-12: no full reruns now.
    Until they are recorded again the neutral gate guards levels 1 to 9 only, the five starter scopes.
 2. **The best shard is the Ancient Power Shard at every level from 10**, because no shard in the item data has a
-   restrict row. Its item level is 65. If shards are to go by item level instead (the Lesser at 10, the Power Shard
-   at 20), that is one row of the kit to a tier.
-3. **Shards and the cleanup start at level 10**, like the kit. Below it a character keeps what it has and switches
-   nothing on, so the starter scopes stay valid.
-4. **The cleanup is off in the legs already played** (MR-f). A leg played again from an earlier snapshot behaves as
-   it did; turning the rule on there means replaying that leg.
-5. **What still lies in the cubes**, listed above. The class rules call none of it surplus: most cannot be sold, the
-   weapons are protected by the Abyss-entry leg's own checks, and the quest leftovers are quest items. Say which of
-   it is to go. The Lodas Amulets raise experience gained and no bot uses them.
-6. **The Lesser Supply Manastone Box** (three each) stays closed. It asks the player to choose one of three
-   manastones, and no bot sockets a manastone.
+   restrict row. The operator, 2026-10-12: "We want the best they can use. This just keeps it simple."
+3. **Shards, the tea, the amulet and the cleanup start at level 10**, like the kit. Below it a character keeps what
+   it has and switches nothing on, so the starter scopes stay valid.
+4. **The cleanup, the tea and the amulet are off in the legs already played** (MR-f). A leg played again from an
+   earlier snapshot behaves as it did; turning them on there means replaying that leg.
+5. **Three systems no bot uses yet, whose items were therefore thrown away**: stigmas (the Stigma Support Bundle),
+   manastones (the three boxes) and enchanting (the enchantment stones, sold in muster3). When a bot rule uses one of
+   them its items are kept, and what is gone can be supplied. The Administrator's Boon (an hour without the death
+   penalty, reusable until it expires three days after it was given) was discarded and not used: it would change
+   what a death costs, and it was about to expire.
+6. **The tea has not been drunk in a run yet.** No character's Energy of Repose was low enough in a round that
+   hunted. The rule is the amulet's, which was used, with another condition.
 7. **The Gladiator keeps Altruist's Greatsword (25).** The operator, 2026-10-12: the quest reward is the better
    weapon.
 8. **Levels 50 and up.** The kit's bands end at 49. The Fine tiers (restrict row 50) are for the leg that gets there.
