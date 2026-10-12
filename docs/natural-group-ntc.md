@@ -1,7 +1,7 @@
 # Group NTC leg
 
-Status: planned 2026-10-12; N1 (pathing) and N2 (group and quests) are done. The step list at the end is worked one
-step at a time.
+Status: planned 2026-10-12; N1 (pathing), N2 (group and quests) and N3 (entrance) are done: the six stand inside
+one instance of the camp with its quests. The step list at the end is worked one step at a time.
 
 It follows [natural-group-healer.md](natural-group-healer.md): group formation, F1 following, the Cleric's
 healing-only role, resurrection waiting and round-robin loot are there and are reused. Gear, supplies, shards and the
@@ -36,8 +36,8 @@ pwsh -NoProfile -File scripts/sim/run-round.ps1 -Round run/ntc/<round>.json -Ite
 ```
 
 The stage is `"group-ntc"`, with the same `groupLeader`, `groupRoster`, `groupLoot` and `"role": "healer"` as
-`group-coin`, and `groupUntil` naming how far the leg is played (so far `"quests"`). `run/ntc/n2.json` is the round
-file of N2. Each member writes `group-ntc-completion.json`.
+`group-coin`, and `groupUntil` naming how far the leg is played (so far `"quests"` or `"entrance"`).
+`run/ntc/n2.json` and `n3.json` are the round files of those steps. Each member writes `group-ntc-completion.json`.
 
 Code changes stay; the world does not. `run/ntc/baseline.json` holds the snapshot's hashes, checked 2026-10-12:
 dump `8d0787cf…cf8f97`, manifest `26fb3931…68ce96`, the same as `run/group/baseline.json`. They are checked again
@@ -170,7 +170,15 @@ the run, how far the group got, the deaths and what stopped it.
     point of the path).
   - The coin stage runs on the same code: round `six-n2` (`run/group/coin/six-n2`), six members from `ntc-group-s4`,
     completed its Q2318 cycle for all six in 10 min 15 s with no death.
-- [ ] **N3 Entrance.** All six gather at Vallack and stand in one instance.
+- [x] **N3 Entrance.** All six gather at Vallack and stand in one instance.
+  - 2026-10-12, round `n3-1` (`run/ntc/ntc/n3-1`), first attempt: after N2's quests the Templar waited before
+    Vallack until all six stood there, then each went through his dialog. All six stand on map 300030000 in
+    instance 2, at the landing (513, 668, 331), 2 min 44 s after login, no death.
+  - Each member tells the group its map and instance, and the Templar goes on only when all six name its own. A
+    member that changes maps rebuilds its checked movement for the map it stands on; the follow rule drops its
+    trail with the map.
+  - The leader's "regroup at the bind" rule now holds on the bind's own map only. Inside the camp it does nothing:
+    what a member does after a death in there is left for the step in which a run first shows one.
 - [ ] **N4 The lower camp and the Protector.** Together to the west end; the Protector dead, credit to all six.
 - [ ] **N5 The Guard and the Aetheric Field Guard.**
 - [ ] **N6 The gate.**
