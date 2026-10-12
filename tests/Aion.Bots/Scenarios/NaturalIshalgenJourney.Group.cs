@@ -18,8 +18,11 @@ public sealed partial class NaturalIshalgenJourney
 	private const int GroupNtcAegir = 204301, GroupNtcKelmar = 800519, GroupNtcVallack = 800510, GroupNtcMap = 300030000;
 	/// <summary>Vallack's dialog choice that sends a member into the camp (portal_template2.xml).</summary>
 	private const ushort GroupNtcEnterDialog = 10000;
-	private const int GroupNtcGate = 256694;
-	private static readonly string[] GroupNtcCheckpoints = ["quests", "entrance", "protector", "field-guard", "gate"];
+	private const int GroupNtcGate = 256694, GroupNtcChest = 700415;
+	/// <summary>A point just inside the gateway. The fortress is a navmesh island of its own (docs/bot-navigation.md):
+	/// a way to an exact point crosses the seam in the gateway, so the leader goes to this point first.</summary>
+	private static readonly BotPosition GroupNtcInside = new(346.4f, 350f, 379.1f, 0);
+	private static readonly string[] GroupNtcCheckpoints = ["quests", "entrance", "protector", "field-guard", "gate", "chests"];
 
 	/// <summary>
 	/// A group plays quests together: the leader (F1) leads and speaks the commands in group chat, the others follow, do
@@ -67,6 +70,10 @@ public sealed partial class NaturalIshalgenJourney
 		int[] arguments = [];
 		// The leader as of this member's last look at the group.
 		int? leaderSeen = null;
+		// The chest this member was last told to open, so that a turn is taken once.
+		int toldChest = 0;
+		// This member has been inside the camp: outside it again, it goes back in to its leader.
+		bool beenInside = false;
 		// Where each member says it stands: its map and the instance of it.
 		var places = new Dictionary<int, (int Map, int Instance)>();
 		int? assist = null;
@@ -160,6 +167,9 @@ public sealed partial class NaturalIshalgenJourney
 			await ObserveAsync();
 			// Finish an existing fight before recovering a dead/out-of-range group. Never begin another pull without them.
 			if (combat.InCombat && world.GroupMembers.Values.Any(member => member.Dead)) return;
+			// Inside the camp F1 gathers the group before a pull and before a walk (RegroupedAsync). In a fight it moves as
+			// the fight needs: it stood 88 seconds under the Teleporter's spells waiting for a caster 13 metres off.
+			if (combat.InCombat && world.MapId == GroupNtcMap) return;
 			bool clericDead = world.GroupMembers.Values.Any(member => member.PlayerClass == (byte)PlayerClass.CLERIC && member.Dead);
 			// The bind is a place on one map. Inside an instance nobody is at it, and recovery there is not played yet.
 			bool atBind = world.ObeliskBindPoint is { } point && point.MapId == world.MapId && Distance(session.CurrentPosition, point.Position) < 30;
@@ -391,9 +401,34 @@ public sealed partial class NaturalIshalgenJourney
 			session.BeginStep("group-enter", $"npc{portal}");
 			await NaturalCapitalSteps.PortalAsync(session, new NaturalCapitalPortal(portal, world.MapId!.Value, destination, 0, GroupNtcEnterDialog), gate.ObjectId, token);
 			EnterMap();
+			beenInside |= world.MapId == GroupNtcMap;
 			session.TraceDiagnostic("group-entered", new Dictionary<string, object?>
 			{ ["map"] = world.MapId, ["instance"] = world.InstanceId, ["position"] = session.CurrentPosition });
 			await ObserveAsync();
+		}
+
+		// A weapons chest gives its item to the member that opens it, and is gone (Java QuestItemNpcAI). A member opens
+		// one on its turn, while it still lacks an item.
+		async Task OpenChestAsync(int chest)
+		{
+			QuestRunPlan weapons = quests[2];
+			QuestRunOperation collect = tasks[weapons.Id][0];
+			if (!world.Objects.TryGetValue(chest, out var seen) || seen.IsCorpse || ItemCount(world, collect.ItemId) >= collect.Count) return;
+			if (Distance(session.CurrentPosition, seen.Position) > 3)
+			{
+				var path = geometry.FindInteractionPath(world.MapId!.Value, session.CurrentPosition, seen.Position);
+				if (path.Count == 0)
+				{
+					session.TraceDiagnostic("group-chest", new Dictionary<string, object?> { ["chest"] = chest, ["taken"] = false, ["reason"] = "no checked way to the chest" });
+					return;
+				}
+				await navigator.MoveAsync(path, token);
+			}
+			session.BeginStep("group-chest", $"q{weapons.Id}");
+			bool taken = await NaturalAltgardQuestSteps.UseObjectAsync(session, chest, collect.ItemId, token);
+			await ObserveAsync();
+			session.TraceDiagnostic("group-chest", new Dictionary<string, object?>
+			{ ["chest"] = chest, ["taken"] = taken, ["count"] = ItemCount(world, collect.ItemId), ["position"] = session.CurrentPosition });
 		}
 
 		if (!leads)
@@ -411,6 +446,14 @@ public sealed partial class NaturalIshalgenJourney
 				}
 				else leaderMissingAt = null;
 				if (world.IsDead) { await combat.RestAsync(token); continue; }
+				// Revived at the bind while the group is inside the camp: back through the portal, whatever F1 said last.
+				if (beenInside && world.MapId != GroupNtcMap && world.GroupLeaderId is int within &&
+					world.GroupMembers.TryGetValue(within, out var itsLeader) && itsLeader.Online && itsLeader.MapId == GroupNtcMap)
+				{
+					await EnterAsync(GroupNtcVallack, GroupNtcMap);
+					if (world.MapId != GroupNtcMap) await PauseAsync();
+					continue;
+				}
 				if (command == "regroup" && !returnedForRegroup) { await ReturnToBindAsync(); returnedForRegroup = true; }
 				if (command != "regroup") returnedForRegroup = false;
 				if (command is "accept" or "turn-in" && arguments is [int about, int npc] && quests.FirstOrDefault(plan => plan.Id == about) is { } asked)
@@ -419,6 +462,11 @@ public sealed partial class NaturalIshalgenJourney
 					else if (command == "turn-in" && Status(about) is 3 or 4 && OwnTasksDone(asked)) await DialogQuestAsync(asked, npc, true);
 				}
 				else if (command == "enter" && arguments is [int portal, int destination] && world.MapId != destination) await EnterAsync(portal, destination);
+				else if (command == "chest" && arguments is [int chest, int opener] && opener == session.CharacterId && chest != toldChest)
+				{
+					toldChest = chest;
+					await OpenChestAsync(chest);
+				}
 				if (healer != null) await healer.StepAsync(token);
 				else if (assist is int target && world.Objects.TryGetValue(target, out var enemy) && !enemy.IsCorpse &&
 					Distance(session.CurrentPosition, enemy.Position) <= 35 && session.PacketHistory.TakeLast(400)
@@ -451,6 +499,7 @@ public sealed partial class NaturalIshalgenJourney
 				session.TraceDiagnostic("group-ntc-step", new Dictionary<string, object?>
 				{ ["quest"] = plan.Id, ["npc"] = npc, ["done"] = finish ? "turned-in" : "accepted", ["members"] = world.GroupMembers.Count });
 			}
+			BotPosition landing = default;
 			await TogetherAtAsync(quests[0], GroupNtcAegir, false);
 			await TogetherAtAsync(quests[0], GroupNtcKelmar, true);
 			foreach (QuestRunPlan plan in quests.Skip(1)) await TogetherAtAsync(plan, GroupNtcKelmar, false);
@@ -462,6 +511,7 @@ public sealed partial class NaturalIshalgenJourney
 				await SayAsync($"command:enter:{GroupNtcVallack}:{GroupNtcMap}");
 				await EnterAsync(GroupNtcVallack, GroupNtcMap);
 				if (world.MapId != GroupNtcMap) throw new IOException("The group leader did not enter the camp.");
+				landing = session.CurrentPosition;
 				await WaitAsync(() => world.GroupMembers.Keys.All(id => places.TryGetValue(id, out var at) && at == places[session.CharacterId]),
 					"every member inside the leader's instance", 180);
 				session.TraceDiagnostic("group-ntc-step", new Dictionary<string, object?>
@@ -653,6 +703,82 @@ public sealed partial class NaturalIshalgenJourney
 				// N6: the gate is a monster in its gateway and does not fight. All strike it until it falls.
 				await AdvanceAsync("the fortress gate", Spawn(GroupNtcGate), GroupNtcGate, () => killedKinds.Contains(GroupNtcGate));
 			}
+			if (reach >= 5)
+			{
+				// N7: every member takes four items for Q4734, each from a chest it opens itself; then the Teleporter.
+				// The chests on the camp's own ground, outside the walls, come first, and then the ones inside: the
+				// fortress holds 21 chests and the six need 24 items.
+				QuestRunPlan weapons = quests[2];
+				int need = tasks[weapons.Id][0].Count;
+				BotPosition[] spots = [.. runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value).Where(group => group.GetNpcId() == GroupNtcChest)
+					.SelectMany(group => group.GetSpawnTemplates()).Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), spot.GetHeading()))];
+				var visited = new HashSet<int>();
+				int opened = 0;
+				bool AllHaveTheirs() => Everybody(entry => entry.Counts[0] >= need, weapons.Id);
+				int Has(int member) => progress.TryGetValue((member, weapons.Id), out var entry) ? entry.Counts[0] : 0;
+				async Task ChestTourAsync(string part, Func<BotPosition, bool> ofThisPart)
+				{
+					while (!AllHaveTheirs())
+					{
+						int next = Enumerable.Range(0, spots.Length).Where(index => !visited.Contains(index) && ofThisPart(spots[index]))
+							.OrderBy(index => Distance(session.CurrentPosition, spots[index])).DefaultIfEmpty(-1).First();
+						if (next < 0) return;
+						visited.Add(next);
+						BotPosition spot = spots[next];
+						if (geometry.FindJourneyPath(world.MapId!.Value, session.CurrentPosition, spot).Count == 0 &&
+							geometry.FindInteractionPath(world.MapId!.Value, session.CurrentPosition, spot).Count == 0)
+						{
+							session.TraceDiagnostic("group-chest-skipped", new Dictionary<string, object?> { ["spot"] = spot, ["reason"] = "no checked way from here" });
+							continue;
+						}
+						await AdvanceAsync($"{part} chest at {spot.X:F0}, {spot.Y:F0}, {spot.Z:F0}", spot, 0, () => Distance(session.CurrentPosition, spot) <= 4);
+						await session.SynchronizeAsync(token);
+						var chest = world.Objects.Values.Where(known => known.TemplateId == GroupNtcChest && !known.IsCorpse && Distance(known.Position, spot) <= 3)
+							.OrderBy(known => Distance(known.Position, spot)).FirstOrDefault();
+						if (chest == null) continue;
+						while (!await RegroupedAsync())
+							if (OnTheGroup(Hostiles()) is int attacker) await GroupKillAsync(attacker);
+							else if (world.IsDead) await combat.RestAsync(token);
+						// Whose turn: the member that lacks the most, the roster's order between equals.
+						int opener = world.GroupMembers.Keys.Where(member => Has(member) < need)
+							.OrderBy(member => Has(member)).ThenBy(member => Array.IndexOf(roster, world.GroupMembers[member].Name)).First();
+						int before = Has(opener);
+						session.TraceDiagnostic("group-chest-turn", new Dictionary<string, object?>
+						{ ["chest"] = chest.ObjectId, ["spot"] = spot, ["opener"] = world.GroupMembers[opener].Name, ["has"] = before });
+						opened++;
+						if (opener == session.CharacterId) await OpenChestAsync(chest.ObjectId);
+						else
+						{
+							await SayAsync($"command:chest:{chest.ObjectId}:{opener}");
+							long began = runtime.NowMillis;
+							while (Has(opener) == before && runtime.NowMillis - began < 40_000 && world.Objects.TryGetValue(chest.ObjectId, out var still) && !still.IsCorpse)
+							{
+								if (OnTheGroup(Hostiles()) is int attacker) await GroupKillAsync(attacker);
+								await PauseAsync();
+							}
+							// The member's journal follows its loot by a moment.
+							for (int wait = 0; wait < 12 && Has(opener) == before; wait++) await PauseAsync();
+						}
+					}
+				}
+				BotNavMesh? mesh = geometry.NavMesh?.NavMeshes.Get(world.MapId!.Value);
+				// The camp's island is the landing's: F1 itself stands in the gateway now, on the seam.
+				int camp = mesh?.IslandOf(landing, BotNavQuery.Default with { SnapHorizontal = 2 }) ?? -1;
+				bool Outside(BotPosition spot) => mesh != null && mesh.IslandOf(spot, BotNavQuery.Default with { SnapHorizontal = 2 }) == camp;
+				await ChestTourAsync("outer", Outside);
+				if (!AllHaveTheirs())
+				{
+					if (Distance(session.CurrentPosition, Spawn(GroupNtcGate)) > 12)
+						await AdvanceAsync("back before the gateway", Spawn(GroupNtcGate), 0, () => Distance(session.CurrentPosition, Spawn(GroupNtcGate)) <= 6);
+					await AdvanceAsync("inside the gateway", GroupNtcInside, 0, () => Distance(session.CurrentPosition, GroupNtcInside) <= 3);
+					await ChestTourAsync("inner", spot => !Outside(spot));
+				}
+				session.TraceDiagnostic("group-ntc-step", new Dictionary<string, object?>
+				{ ["done"] = "chests", ["opened"] = opened, ["visited"] = visited.Count, ["all"] = AllHaveTheirs(),
+					["has"] = world.GroupMembers.Values.ToDictionary(member => member.Name ?? member.ObjectId.ToString(), member => Has(member.ObjectId)) });
+				if (!AllHaveTheirs()) throw new IOException("The chests of the camp are used up and not every member has its four items.");
+				await HuntNamedAsync(quests[1], 3);
+			}
 			await SayAsync("command:done");
 			await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
 		}
@@ -736,6 +862,9 @@ public sealed partial class NaturalIshalgenJourney
 			if (reach >= 2 && namedKills[0] < 1) throw new InvalidDataException("The group member has no kill of the Protector in its journal.");
 			if (reach >= 3 && (namedKills[1] < 1 || namedKills[2] < 1))
 				throw new InvalidDataException("The group member lacks the Guard or the Aetheric Field Guard in its journal.");
+			// N7's: its four chest items and the Teleporter.
+			if (reach >= 5 && (namedKills[3] < 1 || Counts(quests[2])[0] < tasks[quests[2].Id][0].Count))
+				throw new InvalidDataException("The group member lacks the Teleporter or its chest items.");
 			runtime.AssertClean();
 			var reached = new { verified = true, CharacterId = session.CharacterId, name, until = options.GroupUntil,
 				leader = world.GroupLeaderId, roster, quests = quests.ToDictionary(plan => plan.Id.ToString(), plan => Status(plan.Id)),

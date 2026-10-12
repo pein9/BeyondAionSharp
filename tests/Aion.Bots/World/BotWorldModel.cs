@@ -423,7 +423,10 @@ public sealed partial class BotWorldModel
 	private void ApplyLandings(IReadOnlyList<BotCreatureLanding> landings)
 	{
 		foreach (BotCreatureLanding landing in landings)
-			if (objects.TryGetValue(landing.ObjectId, out var known) && known.Kind == BotKnownObjectKind.Npc)
+			// The fall after a lift names its status and no place: Java's CloseAerialEffect.calculate sets none, and the
+			// packet carries three zeros. A creature is not moved to the map's origin by that.
+			if (landing is { X: 0, Y: 0, Z: 0 }) continue;
+			else if (objects.TryGetValue(landing.ObjectId, out var known) && known.Kind == BotKnownObjectKind.Npc)
 				objects[landing.ObjectId] = known with
 				{
 					Position = new BotPosition(landing.X, landing.Y, landing.Z, known.Position.Heading), MoveTarget = null,

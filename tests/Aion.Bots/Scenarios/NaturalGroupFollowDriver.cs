@@ -82,6 +82,8 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 			if (path.Count == 0)
 			{
 				path = geometry.FindInteractionPath(map, session.CurrentPosition, currentLeader);
+				// A way to within reach does not cross a seam of the mesh (the camp's gateway); a way to the exact point does.
+				if (path.Count == 0) path = geometry.FindJourneyPath(map, session.CurrentPosition, currentLeader);
 				if (path.Count > 0)
 				{
 					trail.Clear();
