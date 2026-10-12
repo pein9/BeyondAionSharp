@@ -14,9 +14,13 @@ public static class BotTravelGraphBuilder
 	private const int Neighbours = 8;
 	private const float SnapRadius = 6f;
 
-	public static BotTravelGraph Build(BotNavWorld world, int mapId, BotNavMesh mesh, BotNavMeshRouter router,
+	/// <param name="newRouter">Makes a router with a geometry of its own. The links are checked on several threads,
+	/// and a geometry's edge memory (<see cref="BotNavigationGeometry.RememberEdges"/>) is for one thread at a time,
+	/// so every thread gets its own router.</param>
+	public static BotTravelGraph Build(BotNavWorld world, int mapId, BotNavMesh mesh, Func<BotNavMeshRouter> newRouter,
 		Action<string>? log = null, Race? race = null)
 	{
+		using var routers = new ThreadLocal<BotNavMeshRouter>(newRouter);
 		IReadOnlyList<BotNavSite> sites = BotNavSites.Load(world, mapId, race);
 		BotNavRoadFile? roads = BotNavRoads.Load(world.RepoRoot, mapId);
 		var candidates = new List<(BotTravelNodeKind Kind, string Name, int Template, BotPosition Position, int Priority)>();
@@ -77,7 +81,7 @@ public static class BotTravelGraphBuilder
 		Parallel.ForEach(pairs.OrderBy(p => p.Item1).ThenBy(p => p.Item2), pair =>
 		{
 			BotTravelNode a = nodes[pair.Item1], b = nodes[pair.Item2];
-			IReadOnlyList<BotPosition> route = router.FindPath(mapId, a.Position, b.Position, BotNavQuery.Default with { GroundCost = 1f });
+			IReadOnlyList<BotPosition> route = routers.Value!.FindPath(mapId, a.Position, b.Position, BotNavQuery.Default with { GroundCost = 1f });
 			if (route.Count == 0) return;
 			float length = Length(a.Position, route), straight = Horizontal(a.Position, b.Position);
 			if (length > straight * 1.6f + 30) return; // a detour: other links cover it
@@ -95,7 +99,7 @@ public static class BotTravelGraphBuilder
 			foreach (BotTravelNode target in nodes.Where(n => component[n.Id] == main)
 				.OrderBy(n => Horizontal(n.Position, orphan.Position)).Take(4))
 			{
-				IReadOnlyList<BotPosition> route = router.FindPath(mapId, orphan.Position, target.Position, BotNavQuery.Default with { GroundCost = 1f });
+				IReadOnlyList<BotPosition> route = routers.Value!.FindPath(mapId, orphan.Position, target.Position, BotNavQuery.Default with { GroundCost = 1f });
 				if (route.Count == 0) continue;
 				edgeList.Add(Annotate(Math.Min(orphan.Id, target.Id), Math.Max(orphan.Id, target.Id), route,
 					Length(orphan.Position, route), roads, hostile));

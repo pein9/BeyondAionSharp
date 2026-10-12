@@ -13,9 +13,10 @@ internal static class NavGraphCommand
 		{
 			BotNavMesh? mesh = set.Get(mapId);
 			if (mesh == null) { Console.WriteLine($"{mapId}: no navmesh"); continue; }
-			var router = new BotNavMeshRouter(set, world.Geometry(race ?? BotNavSites.RaceFor(world, mapId)));
+			Race geometryRace = race ?? BotNavSites.RaceFor(world, mapId);
 			var watch = System.Diagnostics.Stopwatch.StartNew();
-			BotTravelGraph graph = BotTravelGraphBuilder.Build(world, mapId, mesh, router, Console.WriteLine, race);
+			BotTravelGraph graph = BotTravelGraphBuilder.Build(world, mapId, mesh,
+				() => new BotNavMeshRouter(set, world.Geometry(geometryRace)), Console.WriteLine, race);
 			string path = Path.Combine(navDir, mapId + ".graph.json");
 			graph.Save(path);
 			Console.WriteLine($"{mapId}: {graph.Nodes.Count} nodes, {graph.Edges.Count} links, {graph.Exits.Count} exits " +

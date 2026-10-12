@@ -208,6 +208,11 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
     /// remembered answer is the answer a fresh trace would give there, and no route changes. Scopes nest; the outermost
     /// owns the memory.
     /// </para>
+    /// <para>
+    /// The memory belongs to the geometry and is not synchronized, and the path methods open scopes of their own. So a
+    /// geometry is for one thread at a time: code that searches on several threads gives each thread its own geometry,
+    /// as <see cref="BotTravelGraphBuilder"/> does.
+    /// </para>
     /// </summary>
     public EdgeMemory RememberEdges()
     {
