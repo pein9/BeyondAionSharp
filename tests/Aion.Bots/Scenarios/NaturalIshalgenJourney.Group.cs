@@ -18,7 +18,8 @@ public sealed partial class NaturalIshalgenJourney
 	private const int GroupNtcAegir = 204301, GroupNtcKelmar = 800519, GroupNtcVallack = 800510, GroupNtcMap = 300030000;
 	/// <summary>Vallack's dialog choice that sends a member into the camp (portal_template2.xml).</summary>
 	private const ushort GroupNtcEnterDialog = 10000;
-	private static readonly string[] GroupNtcCheckpoints = ["quests", "entrance", "protector", "field-guard"];
+	private const int GroupNtcGate = 256694;
+	private static readonly string[] GroupNtcCheckpoints = ["quests", "entrance", "protector", "field-guard", "gate"];
 
 	/// <summary>
 	/// A group plays quests together: the leader (F1) leads and speaks the commands in group chat, the others follow, do
@@ -64,6 +65,8 @@ public sealed partial class NaturalIshalgenJourney
 		int chatCursor = 0;
 		string command = "", lastReport = "", lastPlace = "";
 		int[] arguments = [];
+		// The leader as of this member's last look at the group.
+		int? leaderSeen = null;
 		// Where each member says it stands: its map and the instance of it.
 		var places = new Dictionary<int, (int Map, int Instance)>();
 		int? assist = null;
@@ -94,7 +97,10 @@ public sealed partial class NaturalIshalgenJourney
 			foreach (var packet in session.PacketHistory.Skip(chatCursor).Where(packet => packet.PacketType == typeof(SM_MESSAGE) && packet.Get<byte>("chatType") == 5))
 			{
 				int sender = packet.Get<int>("senderObjectId");
-				if (!world.GroupMembers.ContainsKey(sender)) continue;
+				// A member that was resting reads F1's words late. F1 may have left by then: it spoke as the leader this
+				// member last saw, and is heard as that.
+				bool ledWhenItSpoke = sender == world.GroupLeaderId || sender == leaderSeen;
+				if (!world.GroupMembers.ContainsKey(sender) && !ledWhenItSpoke) continue;
 				string[] words = packet.Get<string>("message").Split(':');
 				if (words.Length < 3 || words[0] != tag) continue;
 				// One line for the whole journal: quest=status=counts, a bar between quests.
@@ -110,14 +116,15 @@ public sealed partial class NaturalIshalgenJourney
 				}
 				else if (words[1] == "place" && words.Length == 4 && int.TryParse(words[2], out int map) && int.TryParse(words[3], out int instance))
 					places[sender] = (map, instance);
-				else if (sender == world.GroupLeaderId && words[1] == "command")
+				else if (ledWhenItSpoke && words[1] == "command")
 				{
 					command = words[2];
 					arguments = [.. words.Skip(3).Select(value => int.TryParse(value, out int number) ? number : 0)];
 				}
-				else if (sender == world.GroupLeaderId && words[1] == "assist" && int.TryParse(words[2], out int target)) assist = target;
+				else if (ledWhenItSpoke && words[1] == "assist" && int.TryParse(words[2], out int target)) assist = target;
 			}
 			chatCursor = session.PacketHistory.Count;
+			if (world.GroupLeaderId is int leading) leaderSeen = leading;
 			foreach (QuestRunPlan plan in quests) progress[(session.CharacterId, plan.Id)] = (Status(plan.Id), Counts(plan));
 			string report = "progress:" + string.Join('|', quests.Select(plan => $"{plan.Id}={Status(plan.Id)}={string.Join(',', Counts(plan))}"));
 			if (world.GroupId != null && report != lastReport)
@@ -465,6 +472,8 @@ public sealed partial class NaturalIshalgenJourney
 			// next stretch of the way would wake it, is killed first, by all: F1 names it and the others assist.
 			var refused = new Dictionary<int, int>();
 			var killed = new HashSet<int>();
+			// The kinds of monster the group has killed, for a target no quest of the leg counts (the gate).
+			var killedKinds = new HashSet<int>();
 			int named = 0;
 			long namedAt = 0;
 			(BotKnownObject Seen, float Reach)[] Hostiles() => [.. world.Objects.Values
@@ -509,8 +518,9 @@ public sealed partial class NaturalIshalgenJourney
 					await SayAsync($"assist:{target}");
 					named = target; namedAt = runtime.NowMillis;
 				}
+				int? template = world.Objects.GetValueOrDefault(target)?.TemplateId;
 				session.TraceDiagnostic("group-ntc-pull", new Dictionary<string, object?>
-				{ ["target"] = target, ["template"] = world.Objects.GetValueOrDefault(target)?.TemplateId, ["position"] = session.CurrentPosition });
+				{ ["target"] = target, ["template"] = template, ["position"] = session.CurrentPosition });
 				bool dead = false;
 				try
 				{
@@ -529,6 +539,7 @@ public sealed partial class NaturalIshalgenJourney
 					return;
 				}
 				killed.Add(target);
+				if (template is int kind) killedKinds.Add(kind);
 				// Whoever has the right to the corpse takes its turn; F1 does not stand long for it.
 				if (options.GroupLoot)
 					for (int wait = 0; wait < 12 && world.Objects.ContainsKey(target); wait++)
@@ -582,6 +593,8 @@ public sealed partial class NaturalIshalgenJourney
 						if (Distance(session.CurrentPosition, lair) > 3)
 						{
 							route = geometry.FindJourneyPath(world.MapId!.Value, session.CurrentPosition, lair);
+							// The gate stands in its gateway, where the mesh has a seam: the way to within reach of it will do.
+							if (route.Count == 0) route = geometry.FindInteractionPath(world.MapId!.Value, session.CurrentPosition, lair);
 							if (route.Count == 0) throw new IOException($"No checked way inside the camp from {session.CurrentPosition} to {lair}.");
 							// The stretch looked at is longer than the stretch walked, so no circle is entered unseen.
 							float ahead = 0;
@@ -595,8 +608,11 @@ public sealed partial class NaturalIshalgenJourney
 								if (ahead >= 16) break;
 							}
 						}
-						// At the lair the named monster itself is the one to fight, wherever in sight it stands.
-						else pick = hostiles.Where(hostile => hostile.Seen.TemplateId == kind).Select(hostile => (int?)hostile.Seen.ObjectId).FirstOrDefault();
+						// At the place the named monster itself is the one to fight, wherever in sight it stands, and whether or
+						// not it would come at a player by itself (the gate does not).
+						else pick = world.Objects.Values.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId == kind && kind != 0 &&
+								!known.IsCorpse && !killed.Contains(known.ObjectId))
+							.OrderBy(known => Distance(session.CurrentPosition, known.Position)).Select(known => (int?)known.ObjectId).FirstOrDefault();
 					}
 					if (pick is int target) { idle = 0; await GroupKillAsync(target); continue; }
 					if (route.Count == 0)
@@ -631,6 +647,11 @@ public sealed partial class NaturalIshalgenJourney
 				// N5: north to the Guard, then the Aetheric Field Guard.
 				await HuntNamedAsync(quests[1], 1);
 				await HuntNamedAsync(quests[1], 2);
+			}
+			if (reach >= 4)
+			{
+				// N6: the gate is a monster in its gateway and does not fight. All strike it until it falls.
+				await AdvanceAsync("the fortress gate", Spawn(GroupNtcGate), GroupNtcGate, () => killedKinds.Contains(GroupNtcGate));
 			}
 			await SayAsync("command:done");
 			await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
@@ -719,6 +740,8 @@ public sealed partial class NaturalIshalgenJourney
 			var reached = new { verified = true, CharacterId = session.CharacterId, name, until = options.GroupUntil,
 				leader = world.GroupLeaderId, roster, quests = quests.ToDictionary(plan => plan.Id.ToString(), plan => Status(plan.Id)),
 				counts = quests.ToDictionary(plan => plan.Id.ToString(), plan => Counts(plan)), lootCollected = loot.Collected,
+				// What F1 saw of a target no quest counts: the gate still standing in its gateway, or gone.
+				gateSeenStanding = world.Objects.Values.Any(known => known.TemplateId == GroupNtcGate && !known.IsCorpse),
 				elapsedMillis = runtime.NowMillis - started, map = world.MapId, instance = world.InstanceId, position = session.CurrentPosition,
 				deaths = combat.ReviveCount, rewardItems };
 			File.WriteAllText(Path.Combine(Path.GetDirectoryName(session.CombatTracePath!)!, "group-ntc-completion.json"),
