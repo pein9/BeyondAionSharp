@@ -47,6 +47,10 @@ public static class NaturalHelpItemAllowlist
 		new(162000006, "life-potion", 10, 49, 30, 10, 50, 9893, 11),
 		new(162000021, "mana-serum", 10, 49, 40, 10, 50, 9908, 11, NaturalHelpKind.Caster),
 		new(160002274, "dp-jelly", 10, 49, 8, 2, 50, 10164, 23),
+		// The operator, 2026-10-12: "they should use the best power shard possible (again like the other consumables)". No
+		// shard has a restrict row, so the best is the Ancient Power Shard. Two stacks of the 10,000 a stack holds, one for
+		// each shard slot (NaturalPowerShardPolicy); the server adds a supply to the stacks that are worn.
+		new(169000011, "power-shard", 10, 49, 20000, 15000, 65, 0, 0),
 		new(169300003, "powder", 10, 24, 200, 50, 10, 0, 0, NaturalHelpKind.Reagent),
 		new(169300004, "powder", 25, 39, 200, 50, 20, 0, 0, NaturalHelpKind.Reagent),
 	];

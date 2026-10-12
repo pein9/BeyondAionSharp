@@ -42,6 +42,14 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 	private const float ZoneMargin = 3f;
 	// AG-07: an Altgard leg walks its road toward an approach from farther than this, and leaves the last stretch to the navigator.
 	private const float FarApproachMetres = 100f, FarApproachStop = 40f;
+
+	/// <summary>
+	/// MR-f (docs/natural-muster.md): the legs played before the bag cleanup was a rule. Their receipts count the items a
+	/// leg ends with (the bridge's shop targets, the coin leg's loadout, Haramel's ledger), and none was replayed with the
+	/// cleanup, so it stays off in them. It is on in the muster and in every leg that is not named here.
+	/// </summary>
+	private static readonly HashSet<string> LegsBeforeTheBagCleanup =
+		["l1", "l2", "l3", "l4", "l5", "l6", "l7", "l8", "l9", "l10", "l11", "cg", "l12", NaturalAbyssEntry.Leg];
 	/// <summary>CP-07: the obelisks of Ishalgen's two quest hubs, Aldelle Village and the outpost (bind_points.xml calls it
 	/// Anturoon Crossing), and how near the outpost obelisk counts as standing at the outpost.</summary>
 	private const int IshalgenVillageObelisk = 700063, IshalgenOutpostObelisk = 700064;
@@ -663,6 +671,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			long lastReturnMillis = long.MinValue / 2;
 			long failedRestockKinah = -1;
 			var refusedGear = new HashSet<int>();
+			// MR-f: the bag cleanup, what the server would not let go, and what went.
+			bool cleanBags = options.Muster || altgardLegId is { } playedLeg && !LegsBeforeTheBagCleanup.Contains(playedLeg);
+			var keptByServer = new HashSet<int>();
+			var bagDiscards = new List<NaturalBagDiscard>();
 			PlayerClass? gearClass = null;
 			bool bridgeShopVisited = false; // NA-16: the Altgard shop stop is done
 			var helpSupplied = new List<NaturalHelpSupplied>(); // NA-21: every approved help item supplied
@@ -708,11 +720,49 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				// what it protects, its slot looked empty, and the first piece in the cube for that slot took its place: at
 				// Haramel's start the level-16 coin breeches came off for breeches of level 8. The leg's protection and
 				// Haramel's rule of what may be put on are for the pieces in the cube.
-				return await NaturalInventoryCheck.EquipAsync(session,
+				IReadOnlyList<NaturalGearUpgrade> wornNow = await NaturalInventoryCheck.EquipAsync(session,
 					world.Inventory.Values.Where(item => item.Details.EquippedSlot.GetValueOrDefault() != 0 ||
 						!questNeeded.Contains(item.ItemId) && (altgardLeg?.Haramel == null || altgardLeg.Haramel.CanUpgrade(
 							runtime.Data.ItemDataDh.GetItemTemplate(item.ItemId)?.GetItemGroup().ToString()))),
 					Describe, (long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF, refusedGear, gearToken, gear);
+				await CleanBagsAsync("gear-check", gearToken);
+				return wornNow;
+			}
+			// MR-f (docs/natural-muster.md; the operator, 2026-10-12): "trash anything no longer needed from all inventories
+			// any time we do a gear check or restock supplies." What that is, is NaturalBagCleanup's; this carries it out
+			// with the client's drag to the trash. The server keeps an item that is not breakable (Java CM_DELETE_ITEM);
+			// such a stack is not asked for again.
+			IReadOnlyList<NaturalBagDiscard> BagDiscardPlan()
+			{
+				BotWorldModel world = session.Api.World;
+				if (!cleanBags || world.Level <= NaturalHelpItemAllowlist.StarterMaxLevel) return [];
+				IReadOnlySet<int> needed = QuestNeededItems();
+				HashSet<int> keep = [.. needed, .. altgardLeg?.AbyssEntry?.ProtectedItemIds ?? []];
+				NaturalInventoryPlan bags = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId), ClassLine)
+					.Decide(world, needed, altgardLeg?.CoinGear, altgardLeg?.Haramel);
+				return [.. NaturalBagCleanup.Plan([.. world.Inventory.Values], world.Level, combat.ClassProfile.HelpItems, bags.Sales, keep,
+					NaturalPowerShardPolicy.Describer(runtime.Data, combat.ClassProfile.Gear.Class)).Where(discard => !keptByServer.Contains(discard.ObjectId))];
+			}
+			async Task CleanBagsAsync(string trigger, CancellationToken cleanToken)
+			{
+				BotWorldModel world = session.Api.World;
+				if (!cleanBags || world.IsDead || combat.InCombat) return;
+				IReadOnlyList<NaturalBagDiscard> plan = BagDiscardPlan();
+				if (plan.Count == 0) return;
+				var gone = new List<NaturalBagDiscard>();
+				foreach (NaturalBagDiscard discard in plan)
+				{
+					await session.SendPacketAsync(GameClientPackets.DeleteItem(discard.ObjectId), cleanToken);
+					await session.SynchronizeAsync(cleanToken);
+					if (world.Inventory.ContainsKey(discard.ObjectId)) keptByServer.Add(discard.ObjectId);
+					else gone.Add(discard);
+				}
+				bagDiscards.AddRange(gone);
+				session.TraceDiagnostic(NaturalBagCleanup.Diagnostic, new Dictionary<string, object?>
+				{
+					["trigger"] = trigger, ["discarded"] = gone.Select(discard => $"{discard.ItemId}x{discard.Count}:{discard.Reason}").ToArray(),
+					["keptByServer"] = plan.Except(gone).Select(discard => discard.ItemId).ToArray(), ["stacks"] = world.Inventory.Count,
+				});
 			}
 			combat.MaintainInventoryAsync = MaintainInventoryAsync;
 			// Every aggressive spawn spot, plus every step of a patrol's route (a walker stands anywhere on it).
@@ -1825,6 +1875,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				if (plan.Count > 0)
 					await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "help-items.json"),
 						NaturalHelpItemSupply.ProfileJson(helpSupplied), token);
+				await CleanBagsAsync($"restock-{trigger}", token);
 			}
 
 			// NR-R17b: a character that logs in above the ground falls to it, as a client does (Java CM_MOVE's FALL flag and
@@ -1988,8 +2039,6 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					await FallFromLoginPlaceAsync();
 					EnterFortressMap();
 					combat.AfterBindRevive = EnterFortressMap;
-					await TopUpHelpItemsAsync("run-start");
-					await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRelog, token);
 					NaturalAbyssInventory rules = scope.Inventory with { Open = [.. scope.Inventory.Open, .. NaturalAbyssEntry.MusterOpen] };
 					async Task CheckAsync(string trigger)
 					{
@@ -2012,18 +2061,18 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						}
 						return await ApproachCapitalNpcAsync(npcId);
 					}
-					// The bags: the gear and the accessories the class rules call surplus are sold to the fortress's nearest
-					// merchant. What the leg protects is kept, and so is everything that is not gear. It is done first, because a
-					// character can arrive with a full cube (the Spirit Master, the Bard), and a container opens only into room;
-					// and again after the coin gear, for the pieces that gear replaced.
+					// The bags: what the class rules call surplus or of no use to the class is sold to the fortress's nearest
+					// merchant: the gear and accessories it has outgrown, and since MR-f everything else those rules would sell.
+					// What the leg protects is kept. It is done first, before anything is supplied or opened: a character can
+					// arrive with a full cube (the Spirit Master, the Bard), and the cleanup of MR-f, which runs at every gear
+					// check and restock, would throw away what a merchant three steps off pays for. It is done again after the
+					// coin gear, for the pieces that gear replaced.
 					async Task SellSurplusAsync(string when)
 					{
 						session.BeginStep("muster-sale", when);
-						await EquipUpgradesAsync(token);
-						await session.SynchronizeAsync(token);
 						NaturalInventoryPlan bags = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId), ClassLine)
 							.Decide(world, QuestNeededItems());
-						List<NaturalSale> sales = [.. bags.Sales.Where(sale => sale.Reason is "surplus-gear" or "surplus-accessory" && !scope.ProtectedItemIds.Contains(sale.ItemId))
+						List<NaturalSale> sales = [.. bags.Sales.Where(sale => !scope.ProtectedItemIds.Contains(sale.ItemId))
 							.Select(sale => new NaturalSale(sale.ObjectId, sale.ItemId, sale.Count))];
 						session.TraceDiagnostic("muster-sale-plan", new Dictionary<string, object?>
 						{
@@ -2051,7 +2100,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							["notSold"] = sales.Except(trade.Sold).Select(sale => sale.ItemId).ToArray(), ["kinah"] = world.Kinah - before,
 						});
 					}
-					await SellSurplusAsync("sell-the-surplus-gear-brought");
+					await SellSurplusAsync("sell-what-is-not-needed");
+					await TopUpHelpItemsAsync("run-start");
+					await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRelog, token);
 					await CheckAsync("muster-start");
 
 					// 1. The level. The world keeps a completed quest in its completed list for good, so a repeatable quest is
@@ -2185,11 +2236,24 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					session.BeginStep("muster-stock", "fill-the-kit");
 					await TopUpHelpItemsAsync("muster", full: true);
 					await session.SynchronizeAsync(token);
+					// The shards supplied go into their slots and the mode on (MR-e); the gear check then finds the old ones.
+					await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRest, token);
+					await CheckAsync("muster-stocked");
 					NaturalHelpSupply[] kitNow = [.. combat.ClassProfile.HelpItems.Kit.Where(row => row.FromLevel <= world.Level && world.Level <= row.ToLevel)];
 					if (runtime.SupplyHelpItemAsync != null)
 						Require.All(kitNow, row => Require.True(ItemCount(world, row.ItemId) >= row.TopUpTo,
 							$"The kit's {row.Family} {row.ItemId} is at {ItemCount(world, row.ItemId)} of {row.TopUpTo}."));
 					Require.True(world.Level >= minimum && !world.IsDead, $"The character is level {world.Level}, below {minimum}.");
+					// MR-e: the kit's shard in both slots, and the mode on. MR-f: nothing left that the cleanup discards.
+					var shardsWorn = world.Inventory.Values.Where(NaturalPowerShardPolicy.Worn).OrderBy(item => item.Details.EquippedSlot)
+						.Select(item => new { Slot = item.Details.EquippedSlot, item.ItemId, item.Count }).ToArray();
+					if (runtime.SupplyHelpItemAsync != null && kitNow.FirstOrDefault(row => row.Family == "power-shard") is { } shardRow)
+						Require.True(world.PowerShardOn && NaturalPowerShardPolicy.Slots.All(slot => shardsWorn.Any(worn =>
+							worn.ItemId == shardRow.ItemId && (worn.Slot.GetValueOrDefault() & slot) != 0)),
+							$"The kit's power shard {shardRow.ItemId} is not in both slots with the mode on: [{string.Join(", ", shardsWorn.Select(worn => $"{worn.Slot}:{worn.ItemId}"))}], mode {world.PowerShardOn}.");
+					IReadOnlyList<NaturalBagDiscard> leftToDiscard = BagDiscardPlan();
+					Require.True(leftToDiscard.Count == 0, "The cube still holds what the cleanup discards: " +
+						string.Join(", ", leftToDiscard.Select(discard => $"{discard.ItemId} ({discard.Reason})")));
 					// Room for what the next legs pay: the free slots a quest's rewards are kept for.
 					int freeSlots = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId), ClassLine)
 						.Decide(world, QuestNeededItems()).FreeSlots;
@@ -2220,6 +2284,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						BronzeCoinsAtStart = startCoins, BronzeCoins = coinsLeft, Opened = openedNow, NotOpened = notOpenedNow,
 						Sold = sold, SaleKinah = saleKinah, Kinah = kinah, KinahAtStart = startKinah, WornAtStart = wornAtStart, Worn = wornBefore,
 						Kit = kitBefore, StacksAtStart = stacksAtStart, Stacks = stacks, FreeSlots = freeSlots, Deaths = deathsNow, GameMillis = elapsed - startedMillis,
+						PowerShards = shardsWorn, PowerShardMode = true, Discarded = bagDiscards, KeptByServer = keptByServer.Count,
 						ElapsedMillis = elapsed, before = musterBefore, after = musterAfter,
 					}), token);
 					session.TraceDiagnostic("muster-completed", new Dictionary<string, object?>
@@ -2228,6 +2293,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						["experienceGained"] = experience - startExperience, ["coinsSupplied"] = coinsSuppliedNow,
 						["bought"] = purchases.Select(purchase => purchase.ItemId).ToArray(), ["sold"] = sold.Count, ["opened"] = openedNow.Count,
 						["worn"] = wornBefore, ["kit"] = kitBefore, ["freeSlots"] = freeSlots, ["deaths"] = deathsNow, ["generation"] = musterAfter.ConnectionGeneration,
+						["powerShards"] = shardsWorn.Select(worn => $"{worn.Slot}:{worn.ItemId}x{worn.Count}").ToArray(), ["discarded"] = bagDiscards.Count,
 					});
 				}
 				if (options.Muster)

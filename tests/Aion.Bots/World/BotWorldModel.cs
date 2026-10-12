@@ -108,6 +108,11 @@ public sealed partial class BotWorldModel
 	public long RecoverableExperience { get; private set; }
 	public long ExperienceNeeded { get; private set; }
 	public bool IsDead { get; private set; }
+	/// <summary>The power shard mode, as the server last said it: by its messages (started, ended, burnt out) and by the
+	/// state every emotion of the character's own carries (Java SM_EMOTION, CreatureState.POWERSHARD). Off after a login:
+	/// the server does not keep it across one.</summary>
+	public bool PowerShardOn { get; private set; }
+	private const int PowerShardState = 1 << 7, PowerShardStarted = 1300491, PowerShardEnded = 1300492, PowerShardBurntOut = 1400075;
 	public BotReviveOptions? ReviveOptions { get; private set; }
 	public long Kinah => inventory.Values.Where(item => item.ItemId == KinahItemId).Sum(item => item.Count);
 	public BotCubeExpansion? CubeExpansion { get; private set; }
@@ -354,7 +359,10 @@ public sealed partial class BotWorldModel
 		if (objects.TryGetValue(objectId, out var known))
 			objects[objectId] = known with { MovementSpeed = movementSpeed };
 		if (SelfObjectId == objectId)
+		{
 			MovementSpeed = movementSpeed;
+			PowerShardOn = (packet.Get<ushort>("state") & PowerShardState) != 0;
+		}
 	}
 
 	private void ApplyNpcInfo(DecodedBotServerPacket packet)
@@ -690,6 +698,10 @@ public sealed partial class BotWorldModel
 			OwnedKiskUpdate is { } owned && KiskBindPoint?.KiskObjectId == owned.ObjectId)
 			OwnedKiskRemoval = new(owned.ObjectId, name == "STR_BINDSTONE_IS_DESTROYED",
 				OwnedKiskRemoval is { DeleteObserved: true } previous && previous.ObjectId == owned.ObjectId);
+		// STR_WEAPON_BOOST_BOOST_MODE_STARTED; STR_WEAPON_BOOST_BOOST_MODE_ENDED and STR_MSG_WEAPON_BOOST_MODE_BURN_OUT.
+		int messageId = packet.Get<int>("msgId");
+		if (messageId == PowerShardStarted) PowerShardOn = true;
+		else if (messageId is PowerShardEnded or PowerShardBurntOut) PowerShardOn = false;
 		systemMessages.Add(new BotSystemMessage(packet.Get<int>("msgId"), GetNullableString(packet.Fields, "name"),
 			packet.Get<string[]>("params"), packet.Get<string[]>("specialParams"), packet.Get<int>("senderObjectId")));
 		TrimSystemMessages();

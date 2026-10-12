@@ -34,7 +34,8 @@ public sealed class NaturalHelpItemAllowlistTests
 		// the higher item level; "can use" is the restrict row.
 		static int Required(XElement item) =>
 			((string?)item.Attribute("restrict"))?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).Max() ?? 1;
-		static string Stem(XElement item) => System.Text.RegularExpressions.Regex.Match((string)item.Attribute("cName")!, @"^(.*_)\d+a$").Groups[1].Value;
+		// The potions and scrolls end in a number and an a (remedy_hp_50a); the power shards in the number alone (battery_70).
+		static string Stem(XElement item) => System.Text.RegularExpressions.Regex.Match((string)item.Attribute("cName")!, @"^(.*_)\d+a?$").Groups[1].Value;
 		foreach (NaturalHelpSupply supply in NaturalHelpItemAllowlist.Approved.Where(row => row.Kind != NaturalHelpKind.Reagent))
 		{
 			XElement item = Item(supply.ItemId);
@@ -48,6 +49,14 @@ public sealed class NaturalHelpItemAllowlistTests
 			Assert.Equal(10, supply.FromLevel);
 			Assert.Equal(better.Select(Required).DefaultIfEmpty(50).Min() - 1, supply.ToLevel);
 		}
+		// MR-e: the shard is the one with the most damage of its tiers, and two full stacks of it, one for each slot.
+		NaturalHelpSupply shard = Assert.Single(NaturalHelpItemAllowlist.Approved, row => row.Family == "power-shard");
+		XElement[] tiers = Items.Value.Descendants("item_template").Where(other => (string?)other.Attribute("item_group") == "POWER_SHARDS" &&
+			Stem(other) == "battery_").ToArray();
+		Assert.Equal(8, tiers.Length);
+		Assert.Equal(tiers.Max(tier => (int)tier.Attribute("weapon_boost")!), (int)Item(shard.ItemId).Attribute("weapon_boost")!);
+		Assert.Equal(2 * (int)Item(shard.ItemId).Attribute("max_stack_count")!, shard.TopUpTo);
+		Assert.Equal(NaturalHelpKind.EveryClass, shard.Kind);
 		foreach (NaturalHelpSupply supply in NaturalHelpItemAllowlist.Approved.Where(s => s.Family is "awakening" or "courage" or "running" or "anti-shock" or "dp-jelly"))
 		{
 			NaturalHelpItem help = Assert.Single(NaturalHelpItemPolicy.All, item => item.ItemId == supply.ItemId);

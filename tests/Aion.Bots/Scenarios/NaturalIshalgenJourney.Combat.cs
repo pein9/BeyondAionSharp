@@ -1031,8 +1031,52 @@ public sealed partial class NaturalIshalgenJourney
 		/// <summary>NA-19: the buff-ourself check. Class buffs as before (pre-pull, after rest); then, for the Cleric and
 		/// (CP-06) for every character below level 10, the help scrolls the policy names, one at a time, each decision
 		/// traced. With nothing owned it uses nothing.</summary>
+		/// <summary>
+		/// MR-e (docs/natural-muster.md; the operator, 2026-10-12): the best owned power shard in both shard slots and the
+		/// mode on, "at all times (when logging in, after death, when running out, etc)". It is looked at wherever the buff
+		/// check is: before a pull and after a rest, a revive and a login. From level 10, as the kit is; below it play is
+		/// as it was recorded. The toggle is a client emotion, which ends a cast or an item use (Java CM_EMOTION), so it is
+		/// sent only between actions.
+		/// </summary>
+		private async Task KeepPowerShardsAsync(NaturalHelpTrigger trigger, CancellationToken token)
+		{
+			BotWorldModel world = session.Api.World;
+			if (world.Level <= NaturalHelpItemAllowlist.StarterMaxLevel || InCombat) return;
+			NaturalHelpItemObservation state = ObserveHelpItems(0, false);
+			if (state.Dead || state.Casting || state.Cutscene || state.Flying || state.Disabled) return;
+			Func<int, NaturalShardInfo?> describe = NaturalPowerShardPolicy.Describer(runtime.Data, ClassProfile.Gear.Class);
+			NaturalShardPlan plan = NaturalPowerShardPolicy.Decide(world.Inventory.Values, world.Level, world.PowerShardOn, describe);
+			foreach (NaturalShardEquip equip in plan.Equips)
+			{
+				await session.SendPacketAsync(session.Api.Equip(0, equip.Slot, equip.ObjectId), token);
+				await session.SynchronizeAsync(token);
+				BotInventoryItem? stack = world.Inventory.GetValueOrDefault(equip.ObjectId);
+				session.TraceDiagnostic(NaturalPowerShardPolicy.EquipDiagnostic, new Dictionary<string, object?>
+				{
+					["trigger"] = trigger.ToString(), ["itemId"] = equip.ItemId, ["objectId"] = equip.ObjectId, ["slot"] = equip.Slot,
+					["count"] = stack?.Count, ["worn"] = stack != null && (stack.Details.EquippedSlot.GetValueOrDefault() & equip.Slot) != 0,
+				});
+			}
+			if (plan.Equips.Count > 0)
+				plan = NaturalPowerShardPolicy.Decide(world.Inventory.Values, world.Level, world.PowerShardOn, describe);
+			// A toggle the server did not answer is not asked again at once.
+			if (!plan.TurnOn || runtime.NowMillis < powerShardAskedMillis + 60_000) return;
+			powerShardAskedMillis = runtime.NowMillis;
+			await session.SendPacketAsync(GameClientPackets.Emotion((byte)EmotionType.POWERSHARD_ON), token);
+			await session.SynchronizeAsync(token);
+			if (world.PowerShardOn) powerShardAskedMillis = long.MinValue / 2;
+			session.TraceDiagnostic(NaturalPowerShardPolicy.OnDiagnostic, new Dictionary<string, object?>
+			{
+				["trigger"] = trigger.ToString(), ["on"] = world.PowerShardOn,
+				["shards"] = world.Inventory.Values.Where(NaturalPowerShardPolicy.Worn).OrderBy(item => item.Details.EquippedSlot)
+					.Select(item => $"{item.Details.EquippedSlot}:{item.ItemId}x{item.Count}").ToArray(),
+			});
+		}
+		private long powerShardAskedMillis = long.MinValue / 2;
+
 		public async Task BuffOurselfAsync(NaturalHelpTrigger trigger, CancellationToken token, float travelMeters = 0, bool crossMap = false)
 		{
+			await KeepPowerShardsAsync(trigger, token);
 			if (trigger is NaturalHelpTrigger.PrePull or NaturalHelpTrigger.AfterRest) await MaintainBuffsAsync(token);
 			NaturalHelpItemRules help = ClassProfile.HelpItems;
 			if (!help.ScrollUpkeep(session.Api.World.Level) || InCombat) return;

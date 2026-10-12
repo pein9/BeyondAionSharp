@@ -97,7 +97,7 @@ public static class NaturalGladiatorProfile
 	// NR-Q5, NR-Q7 and NR-Q13: a two-hand weapon, the greatsword before the polearm, plate first, and the kit of a class
 	// that does not cast from mana and rests with the powder.
 	private static readonly NaturalGearRules Gear = NaturalClassGearTable.Gladiator.Rules(NaturalClassLineContract.LoadDefault(),
-		NaturalHelpItemAllowlist.Kit(caster: false, reagent: true));
+		NaturalHelpItemAllowlist.Kit(caster: false, reagent: true, striker: true));
 
 	public static NaturalClassProfile Create(StaticData data)
 	{

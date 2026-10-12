@@ -91,7 +91,7 @@ public static class NaturalRangerProfile
 	// NR-Q5, NR-Q7 and NR-Q13: a bow, leather first, and the kit of a class that does not cast from mana and rests with
 	// the powder.
 	private static readonly NaturalGearRules Gear = NaturalClassGearTable.Ranger.Rules(NaturalClassLineContract.LoadDefault(),
-		NaturalHelpItemAllowlist.Kit(caster: false, reagent: true));
+		NaturalHelpItemAllowlist.Kit(caster: false, reagent: true, striker: true));
 
 	public static NaturalClassProfile Create(StaticData data)
 	{

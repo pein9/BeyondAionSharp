@@ -22,9 +22,10 @@ public sealed class NaturalHelpItemSupplyTests
 		Assert.Equal(new Dictionary<int, long>
 		{
 			[164000134] = 60, [164000076] = 20, [164000070] = 30, [162000006] = 30, [162000021] = 40, [160002274] = 8, [169300003] = 200,
+			[169000011] = 20000,
 		}, plan);
 		// A class that keeps Courage up takes that scroll, and neither the Awakening scroll nor the mana serum.
-		Assert.Equal(new[] { 160002274, 162000006, 164000070, 164000073, 164000076, 169300003 },
+		Assert.Equal(new[] { 160002274, 162000006, 164000070, 164000073, 164000076, 169000011, 169300003 },
 			NaturalHelpItemSupply.Plan(10, Owned(), NaturalHelpItemAllowlist.Kit(caster: false, reagent: true, striker: true)).Select(topUp => topUp.ItemId).Order());
 		// Below level 10 the kit is the level 1-9 one the operator approved for every class line on 2026-10-07 (CP-05).
 		Assert.Equal(new Dictionary<int, long> { [162000006] = 30, [164000067] = 30, [164000076] = 20 },
@@ -42,9 +43,9 @@ public sealed class NaturalHelpItemSupplyTests
 	}
 
 	[Theory]
-	[InlineData(20, new[] { 164000134, 164000076, 164000070, 162000006, 162000021, 160002274, 169300003 })]
-	[InlineData(25, new[] { 164000134, 164000076, 164000070, 162000006, 162000021, 160002274, 169300004 })]
-	[InlineData(30, new[] { 164000134, 164000076, 164000070, 162000006, 162000021, 160002274, 169300004 })]
+	[InlineData(20, new[] { 164000134, 164000076, 164000070, 162000006, 162000021, 160002274, 169000011, 169300003 })]
+	[InlineData(25, new[] { 164000134, 164000076, 164000070, 162000006, 162000021, 160002274, 169000011, 169300004 })]
+	[InlineData(30, new[] { 164000134, 164000076, 164000070, 162000006, 162000021, 160002274, 169000011, 169300004 })]
 	public void EachBandSuppliesItsOwnTierAndLetsTheOldOneRunOut(int level, int[] ids)
 	{
 		// Stock of a lower tier does not stop the best tier from being supplied. Only the powder still changes with the
