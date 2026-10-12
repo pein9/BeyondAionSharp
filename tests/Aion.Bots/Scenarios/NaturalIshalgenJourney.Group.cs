@@ -18,7 +18,7 @@ public sealed partial class NaturalIshalgenJourney
 	private const int GroupNtcAegir = 204301, GroupNtcKelmar = 800519, GroupNtcVallack = 800510, GroupNtcMap = 300030000;
 	/// <summary>Vallack's dialog choice that sends a member into the camp (portal_template2.xml).</summary>
 	private const ushort GroupNtcEnterDialog = 10000;
-	private static readonly string[] GroupNtcCheckpoints = ["quests", "entrance"];
+	private static readonly string[] GroupNtcCheckpoints = ["quests", "entrance", "protector"];
 
 	/// <summary>
 	/// A group plays quests together: the leader (F1) leads and speaks the commands in group chat, the others follow, do
@@ -33,6 +33,8 @@ public sealed partial class NaturalIshalgenJourney
 		if (ntc && !GroupNtcCheckpoints.Contains(options.GroupUntil))
 			throw new InvalidDataException($"The Group NTC leg is played to one of [{string.Join(", ", GroupNtcCheckpoints)}] so far, not to '{options.GroupUntil}'.");
 		string tag = ntc ? "group-ntc" : "group-coin";
+		// How far the NTC leg is played: the place of its checkpoint in the list.
+		int reach = Array.IndexOf(GroupNtcCheckpoints, options.GroupUntil);
 		string[] roster = options.GroupRoster!;
 		string leaderName = options.GroupLeader!;
 		string name = world.Objects[session.CharacterId].Name!;
@@ -156,7 +158,8 @@ public sealed partial class NaturalIshalgenJourney
 			bool atBind = world.ObeliskBindPoint is { } point && point.MapId == world.MapId && Distance(session.CurrentPosition, point.Position) < 30;
 			bool memberAtBind = world.ObeliskBindPoint is { } common && common.MapId == world.MapId && world.GroupMembers.Values.Any(member =>
 				member.MapId == common.MapId && Distance(member.Position, common.Position) < 30 && Distance(session.CurrentPosition, member.Position) > 150);
-			if (clericDead || memberAtBind || atBind && world.GroupMembers.Values.Any(member => Distance(session.CurrentPosition, member.Position) > 150))
+			if (world.ObeliskBindPoint?.MapId == world.MapId &&
+				(clericDead || memberAtBind || atBind && world.GroupMembers.Values.Any(member => Distance(session.CurrentPosition, member.Position) > 150)))
 			{
 				await SayAsync("command:regroup");
 				if (!atBind) await ReturnToBindAsync();
@@ -182,12 +185,16 @@ public sealed partial class NaturalIshalgenJourney
 		void EnterMap()
 		{
 			geometry = runtime.CreateGeometry();
+			// In the open a member keeps out of other monsters' circles on its way to a target. Inside the camp the group
+			// fights the packs, and a way around them does not exist: nobody plans one there.
 			navigator = new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, [quest.Id], geometry),
-				geometry, runtime, stopOnDeath: false) { AvoidHostileAggro = true,
+				geometry, runtime, stopOnDeath: false) { AvoidHostileAggro = world.MapId != GroupNtcMap,
 				Planner = leads ? BotTravelPlanner.For(world.MapId!.Value, geometry, runtime.Data) : null, BeforeMovementAsync = WaitForFollowersAsync };
 			combat.EnterMap(navigator, geometry, world.MapId!.Value);
 			following.Reset();
 		}
+		combat.AfterBindRevive = EnterMap;
+		combat.AfterInstanceRevive = EnterMap;
 		combat.WaitForGroupResurrectionAsync = async ct =>
 		{
 			if (healer != null) return false;
@@ -357,8 +364,16 @@ public sealed partial class NaturalIshalgenJourney
 		// instance, the others are sent into that same one).
 		async Task EnterAsync(int portal, int destination)
 		{
-			var gate = world.Objects.Values.Where(known => known.TemplateId == portal && !known.IsCorpse && Distance(session.CurrentPosition, known.Position) <= 15)
+			BotKnownObject? Gate() => world.Objects.Values.Where(known => known.TemplateId == portal && !known.IsCorpse && Distance(session.CurrentPosition, known.Position) <= 15)
 				.OrderBy(known => Distance(session.CurrentPosition, known.Position)).FirstOrDefault();
+			var gate = Gate();
+			if (gate == null && runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value).Any(group => group.GetNpcId() == portal))
+			{
+				// Back outside after the group went in (a revive at the bind): the member walks to the portal NPC by itself.
+				await WalkAsync(Spawn(portal));
+				await session.SynchronizeAsync(token);
+				gate = Gate();
+			}
 			if (gate == null) return;
 			if (Distance(session.CurrentPosition, gate.Position) > 4)
 			{
@@ -445,6 +460,165 @@ public sealed partial class NaturalIshalgenJourney
 				session.TraceDiagnostic("group-ntc-step", new Dictionary<string, object?>
 				{ ["done"] = "entered", ["map"] = world.MapId, ["instance"] = world.InstanceId, ["members"] = world.GroupMembers.Count });
 			}
+
+			// Inside the camp F1 walks the checked way to a named monster. Whatever fights the group, or stands where the
+			// next stretch of the way would wake it, is killed first, by all: F1 names it and the others assist.
+			var refused = new Dictionary<int, int>();
+			var killed = new HashSet<int>();
+			int named = 0;
+			long namedAt = 0;
+			(BotKnownObject Seen, float Reach)[] Hostiles() => [.. world.Objects.Values
+				.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId != null && !known.IsCorpse && !killed.Contains(known.ObjectId))
+				.Select(known => (known, template: runtime.Data.NpcDataDh.GetNpcTemplate(known.TemplateId!.Value)))
+				.Where(entry => runtime.IsAggressive(entry.template) && entry.template!.GetAggroRange() > 0)
+				.Select(entry => (entry.known, entry.template!.GetAggroRange() + 2f))];
+			// The monsters that struck a member of the group a moment ago, as this client saw it.
+			int? OnTheGroup((BotKnownObject Seen, float Reach)[] hostiles)
+			{
+				HashSet<int> striking = [.. session.PacketHistory.TakeLast(300)
+					.SelectMany(packet => world.GroupMembers.Keys.Select(member => runtime.IncomingAttacker(packet, member))).OfType<int>()];
+				return hostiles.Where(hostile => striking.Contains(hostile.Seen.ObjectId))
+					.OrderBy(hostile => Distance(session.CurrentPosition, hostile.Seen.Position)).Select(hostile => (int?)hostile.Seen.ObjectId).FirstOrDefault();
+			}
+			static float FromSegment(BotPosition a, BotPosition b, BotPosition p)
+			{
+				float dx = b.X - a.X, dy = b.Y - a.Y, dz = b.Z - a.Z, length = dx * dx + dy * dy + dz * dz;
+				float t = length < .0001f ? 0 : Math.Clamp(((p.X - a.X) * dx + (p.Y - a.Y) * dy + (p.Z - a.Z) * dz) / length, 0, 1);
+				return Distance(new(a.X + dx * t, a.Y + dy * t, a.Z + dz * t, 0), p);
+			}
+			// Before F1 goes on: everyone alive, near and with mana. A monster on a member ends the wait at once.
+			async Task<bool> RegroupedAsync()
+			{
+				long began = runtime.NowMillis;
+				while (true)
+				{
+					await ObserveAsync();
+					if (world.IsDead || OnTheGroup(Hostiles()) != null) return false;
+					if (world.GroupMembers.Values.Where(member => member.ObjectId != session.CharacterId).All(member =>
+						member.Online && !member.Dead && member.MapId == world.MapId && (member.MaxMp <= 0 || member.CurrentMp * 100L / member.MaxMp >= 50) &&
+						Distance(session.CurrentPosition, world.Objects.GetValueOrDefault(member.ObjectId)?.Position ?? member.Position) <= 12)) return true;
+					if (runtime.NowMillis - began > 600_000) throw new IOException("Group wait timed out: the group to gather inside the camp.");
+					await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+				}
+			}
+			async Task GroupKillAsync(int target)
+			{
+				// The name of a target is spoken once, and again only when it has not been spoken for a while.
+				if (named != target || runtime.NowMillis - namedAt > 5000)
+				{
+					await SayAsync($"assist:{target}");
+					named = target; namedAt = runtime.NowMillis;
+				}
+				session.TraceDiagnostic("group-ntc-pull", new Dictionary<string, object?>
+				{ ["target"] = target, ["template"] = world.Objects.GetValueOrDefault(target)?.TemplateId, ["position"] = session.CurrentPosition });
+				bool dead = false;
+				try
+				{
+					dead = await combat.TryKillAsync(target, token) || GoneOrKilled(target);
+				}
+				catch (NaturalCombatApproachBlockedException blocked)
+				{
+					// A member may finish it while F1 approaches; otherwise it is left until it comes at the group.
+					dead = GoneOrKilled(target);
+					session.TraceDiagnostic("group-target-skipped", new Dictionary<string, object?> { ["target"] = target, ["deadOrGone"] = dead, ["reason"] = blocked.Message });
+				}
+				if (!dead)
+				{
+					refused[target] = refused.GetValueOrDefault(target) + 1;
+					await session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+					return;
+				}
+				killed.Add(target);
+				// Whoever has the right to the corpse takes its turn; F1 does not stand long for it.
+				if (options.GroupLoot)
+					for (int wait = 0; wait < 12 && world.Objects.ContainsKey(target); wait++)
+					{
+						await loot.StepAsync(token);
+						await PauseAsync();
+					}
+			}
+			async Task WalkStretchAsync(IReadOnlyList<BotPosition> route, float stretch)
+			{
+				float walked = 0;
+				foreach (var point in route)
+					while (Distance(session.CurrentPosition, point) > .5f)
+					{
+						var at = session.CurrentPosition;
+						float fraction = Math.Min(1, 6 / Distance(at, point));
+						BotPosition next = new(at.X + (point.X - at.X) * fraction, at.Y + (point.Y - at.Y) * fraction,
+							at.Z + (point.Z - at.Z) * fraction, point.Heading);
+						await navigator.MoveAsync([at, next], token);
+						await ObserveAsync();
+						float moved = Distance(session.CurrentPosition, at);
+						walked += moved;
+						if (world.IsDead || moved < .1f || walked >= stretch || OnTheGroup(Hostiles()) != null) return;
+					}
+			}
+			async Task HuntNamedAsync(QuestRunPlan plan, int index)
+			{
+				QuestRunOperation kill = tasks[plan.Id][index];
+				int kind = kill.Npcs!.Select(npc => npc.Id).First(id => runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value).Any(group => group.GetNpcId() == id));
+				BotPosition lair = Spawn(kind);
+				session.TraceDiagnostic("group-ntc-hunt", new Dictionary<string, object?> { ["quest"] = plan.Id, ["npc"] = kind, ["lair"] = lair });
+				int idle = 0;
+				while (!Everybody(entry => entry.Counts[index] >= kill.Count, plan.Id))
+				{
+					await ObserveAsync();
+					if (world.IsDead) { await combat.RestAsync(token); continue; }
+					if (world.MapId != GroupNtcMap)
+					{
+						await EnterAsync(GroupNtcVallack, GroupNtcMap);
+						if (world.MapId != GroupNtcMap) throw new IOException("The group leader could not go back into the camp.");
+						continue;
+					}
+					// A monster on a member is fought where it stands, at once. Nothing else is begun before the group has
+					// rested and stands together.
+					int? pick = OnTheGroup(Hostiles());
+					IReadOnlyList<BotPosition> route = [];
+					if (pick == null)
+					{
+						await combat.RestAsync(token);
+						if (!await RegroupedAsync()) continue;
+						var hostiles = Hostiles();
+						if (Distance(session.CurrentPosition, lair) > 3)
+						{
+							route = geometry.FindJourneyPath(world.MapId!.Value, session.CurrentPosition, lair);
+							if (route.Count == 0) throw new IOException($"No checked way inside the camp from {session.CurrentPosition} to {lair}.");
+							// The stretch looked at is longer than the stretch walked, so no circle is entered unseen.
+							float ahead = 0;
+							BotPosition from = session.CurrentPosition;
+							foreach (var point in route)
+							{
+								pick = hostiles.Where(hostile => refused.GetValueOrDefault(hostile.Seen.ObjectId) < 3 && FromSegment(from, point, hostile.Seen.Position) <= hostile.Reach)
+									.OrderBy(hostile => Distance(session.CurrentPosition, hostile.Seen.Position)).Select(hostile => (int?)hostile.Seen.ObjectId).FirstOrDefault();
+								if (pick != null) break;
+								ahead += Distance(from, point); from = point;
+								if (ahead >= 16) break;
+							}
+						}
+						// At the lair the named monster itself is the one to fight, wherever in sight it stands.
+						else pick = hostiles.Where(hostile => hostile.Seen.TemplateId == kind).Select(hostile => (int?)hostile.Seen.ObjectId).FirstOrDefault();
+					}
+					if (pick is int target) { idle = 0; await GroupKillAsync(target); continue; }
+					if (route.Count == 0)
+					{
+						// At the lair with nothing to fight: the named monster is not there, or a member lacks its count.
+						if (++idle > 480) throw new IOException($"Q{plan.Id}: npc {kind} was not found at its lair, and not every member has its kill.");
+						await PauseAsync();
+						continue;
+					}
+					idle = 0;
+					await WalkStretchAsync(route, 8);
+				}
+				session.TraceDiagnostic("group-ntc-step", new Dictionary<string, object?>
+				{ ["done"] = "killed", ["quest"] = plan.Id, ["npc"] = kind, ["members"] = world.GroupMembers.Count, ["kills"] = killed.Count, ["deaths"] = combat.ReviveCount });
+			}
+			if (reach >= 2)
+			{
+				// N4: west through the lower camp to the Protector.
+				await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
+				await HuntNamedAsync(quests[1], 0);
+			}
 			await SayAsync("command:done");
 			await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
 		}
@@ -523,9 +697,12 @@ public sealed partial class NaturalIshalgenJourney
 				throw new InvalidDataException($"The group member's journal is [{string.Join(", ", journal)}], not [{string.Join(", ", wanted)}].");
 			if (options.GroupUntil != "quests" && (world.MapId != GroupNtcMap || world.InstanceId == null))
 				throw new InvalidDataException($"The group member stands on map {world.MapId}, not inside the camp.");
+			// N4's: the Protector in the journal of Q4733.
+			if (reach >= 2 && Counts(quests[1])[0] < 1) throw new InvalidDataException("The group member has no kill of the Protector in its journal.");
 			runtime.AssertClean();
 			var reached = new { verified = true, CharacterId = session.CharacterId, name, until = options.GroupUntil,
 				leader = world.GroupLeaderId, roster, quests = quests.ToDictionary(plan => plan.Id.ToString(), plan => Status(plan.Id)),
+				counts = quests.ToDictionary(plan => plan.Id.ToString(), plan => Counts(plan)), lootCollected = loot.Collected,
 				elapsedMillis = runtime.NowMillis - started, map = world.MapId, instance = world.InstanceId, position = session.CurrentPosition,
 				deaths = combat.ReviveCount, rewardItems };
 			File.WriteAllText(Path.Combine(Path.GetDirectoryName(session.CombatTracePath!)!, "group-ntc-completion.json"),
