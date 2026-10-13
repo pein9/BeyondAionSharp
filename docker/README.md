@@ -41,6 +41,59 @@ docker/stop.sh
 docker compose -f docker/docker-compose.yml --env-file docker/.env up -d
 ```
 
+## Nightly restart and deploy (RestartAll)
+
+The live server restarts every night at 3 AM through the Windows scheduled task **Aion RestartAll**,
+which runs `docker\RestartAll.ps1`. Each run:
+
+1. Fast-forwards this checkout to `origin/main`, but only when it is on `main` with no modified or
+   untracked files. Docker builds from the files on disk, so uncommitted work would otherwise go live.
+2. Rebuilds only the server images whose inputs changed since they were last deployed, while the old
+   servers keep running.
+3. Refuses to deploy new code while the live database schema differs from the repo's
+   `*/sql/aion_*.sql`. Apply the migration by hand, then run it again.
+4. Backs up the three databases, restarts game, chat and login in order, and health-checks them.
+   New images that fail the check are rolled back to the previous ones.
+
+MySQL is never restarted and Docker volumes are never touched.
+
+| Where | What |
+|---|---|
+| `Documents\AionBackups\db\` | `aion-<date>.sql.gz`, one per run, kept 14 days |
+| `Documents\AionBackups\logs\` | one log per run (`-build.log` has the full build output), kept 30 days |
+| `Documents\AionBackups\deployed.json` | the commit each server image was last deployed from |
+
+Task Scheduler's "Last Run Result" is the exit code: **0** fine, **1** failed (read the log),
+**2** new code not deployed because of schema drift, **3** another run was in progress,
+**4** update skipped (not on `main`, uncommitted changes, or diverged from `origin/main`).
+
+```powershell
+# Run it now; the window stays open if something went wrong
+docker\RestartAll.bat
+# What tonight's run would do; changes nothing
+powershell -ExecutionPolicy Bypass -File docker\RestartAll.ps1 -PlanOnly
+# Back up and restart only, no git or build
+powershell -ExecutionPolicy Bypass -File docker\RestartAll.ps1 -RestartOnly
+# Rebuild all three images
+powershell -ExecutionPolicy Bypass -File docker\RestartAll.ps1 -ForceRebuild
+# (Re)create the scheduled task
+powershell -ExecutionPolicy Bypass -File docker\Register-RestartAllTask.ps1
+# Decision tests, with Docker and git mocked
+powershell -ExecutionPolicy Bypass -File docker\test-RestartAll.ps1
+```
+
+To keep the server down for maintenance, run `Disable-ScheduledTask 'Aion RestartAll'` first, or the
+next run starts it again.
+
+To restore a backup, stop the three servers, then load the dump into MySQL (it replaces all three databases):
+
+```powershell
+docker compose -f docker\docker-compose.yml stop gameserver chatserver loginserver
+docker cp $env:USERPROFILE\Documents\AionBackups\db\aion-YYYYMMDD-HHMMSS.sql.gz aion-mysql:/tmp/restore.sql.gz
+docker exec aion-mysql bash -c 'gunzip -c /tmp/restore.sql.gz | MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql -uroot && rm /tmp/restore.sql.gz'
+powershell -ExecutionPolicy Bypass -File docker\RestartAll.ps1 -RestartOnly
+```
+
 ## What `.env` controls
 
 | Setting | Meaning |

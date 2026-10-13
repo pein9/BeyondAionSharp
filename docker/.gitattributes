@@ -6,3 +6,5 @@
 .env.example text eol=lf
 Dockerfile text eol=lf
 *.yml   text eol=lf
+# Windows launchers run by cmd.exe keep CRLF.
+*.bat   text eol=crlf

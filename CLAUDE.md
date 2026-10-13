@@ -137,6 +137,13 @@ when it lives elsewhere.
 | Retail 4.8 quest completion (D32): the quests Java lacks, sources, TODO list and register | `docs/retail-quest-completion.md` — read it first when adding a quest; the one-line-per-quest work list with the maintainer's Status column is `docs/retail-quest-worklist.md` |
 | Bot navigation (navmesh, roads, travel graph; generated, do not hand-edit) | `docs/bot-navigation.md`; data in `game-server/data/nav/`; tools `tools/Aion.NavBake`, `tools/nav/` |
 | Session recording (every packet of chosen accounts, for replay) | `docs/session-recording.md`; `AION_RECORD`; reader `tools/recording/recording.py` |
+| Live server nightly restart/deploy (3 AM task "Aion RestartAll") | `docker/RestartAll.ps1`; how it works in `docker/README.md`; backups and logs in `%USERPROFILE%\Documents\AionBackups` |
+
+**The live server deploys from this checkout.** Every night at 3 AM, `docker/RestartAll.ps1` builds what
+is committed on `main` here and restarts the live Docker stack. It skips the deploy if the tree has
+uncommitted or untracked files or is not on `main`. A schema change (`*/sql/aion_*.sql`) also needs its
+migration applied to the live databases by hand: the script will not deploy new code while the live
+schema differs from those files.
 
 ## Build & test (C#)
 
@@ -177,6 +184,7 @@ pwsh -NoProfile -File scripts/live/test-run-retention.ps1       # Full child run
 pwsh -NoProfile -File scripts/live/test-attach-live.ps1         # NI-10 attach can only read the operator's world (mock Docker)
 pwsh -NoProfile -File scripts/live/test-companion-host.ps1      # CH-01 companion host only reads the operator's world and refuses one with companions off (mock Docker)
 pwsh -NoProfile -File scripts/e2e/test-full-suite.ps1            # breadth/soak selection and fail-fast orchestration
+pwsh -NoProfile -File docker/test-RestartAll.ps1                # nightly live restart/deploy decisions (mock Docker and git)
 dotnet run --project tools/Aion.NavBake -- check --maps baked # checked-in bot navmeshes match their inputs
 pwsh -NoProfile -File scripts/e2e/run-fast.ps1                 # additionally, before gameplay-change commits (Docker)
 ```

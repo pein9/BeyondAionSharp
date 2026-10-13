@@ -63,6 +63,13 @@ it when needed. Never build or run other checks while a journey batch holds the 
 | Authoritative parity backlog | `docs/Full-Parity-Backlog.md` — read before doing parity work |
 | Upstream update queue | `docs/upstream-port-log.md` and `docs/upstream-porting.md` |
 | Run / DB / setup guide | `RUNNING.md` |
+| Live server nightly restart/deploy (3 AM task "Aion RestartAll") | `docker/RestartAll.ps1`; how it works in `docker/README.md` |
+
+**The live server deploys from this checkout.** Every night at 3 AM, `docker/RestartAll.ps1` builds what
+is committed on `main` here and restarts the live Docker stack. It skips the deploy if the tree has
+uncommitted or untracked files or is not on `main`. A schema change (`*/sql/aion_*.sql`) also needs its
+migration applied to the live databases by hand: the script will not deploy new code while the live
+schema differs from those files.
 
 ## Build & test (C#)
 
