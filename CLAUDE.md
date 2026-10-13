@@ -11,14 +11,18 @@ or missing, retail wins, under a logged decision: the retail AI exception, D19, 
 
 ## Where this leads: the long-term goals
 
-Set by the maintainer on 2026-10-06. Every bot leg, snapshot and fix serves these, in order:
+Set by the maintainer on 2026-10-06 and restated on 2026-10-12: the bots have two functions, to
+play-test the whole game and to be companions for human players. Every bot leg, snapshot and
+fix serves these:
 
 1. **A server play-tested by our bots.** The bots play the game the way a player does. We
    find and fix bugs as we encounter them.
 2. **An intelligent bot that can play the whole game:** all quests, gathering, crafting and
    the rest.
-3. **Bots that can join a human group** as an extra healer or DPS. This is the far goal. It
-   is not worked on until the first two are done.
+3. **Bots that are companions for a human player,** as an extra healer or DPS. The player
+   leads; a chat command brings a bot of a class, and it follows and plays its role. Started
+   on 2026-10-12, beside the first two: the simulated runs are how each class learned its
+   fight and its gear. The plan is `docs/companion-bots.md`.
 
 A bug the bots find is fixed under the rules below: read the Java first, and let retail win
 only under a logged decision. The leg being worked now, and its checklist, is in the
@@ -129,6 +133,7 @@ when it lives elsewhere.
 | One world for every bot character, and the muster after the Abyss entry (2026-10-12): the group world `ntc-group-s4`, no coin limit, the best usable consumables and power shard from level 10 (shards always on), the bag cleanup at every gear check and restock (use it or get rid of it), level 26 by the fortress's repeatable coin quest | `docs/natural-muster.md` — read it first before any run that makes or changes a character the group uses; `scripts/sim/join-world.py`; round stage `muster` |
 | The Cleric's healing-only role and basic group mechanics (done 2026-10-12): formation with the Templar as leader, F1 following, heal and dispel without ever fighting, resurrection waiting, round-robin loot; stage `group-coin`, groups of two to six on Q2318 | `docs/natural-group-healer.md` — read it first before changing group play; it follows `docs/natural-muster.md` and starts from the group world |
 | Group NTC leg (played 2026-10-12): six in one group through Nochsana Training Camp to the General, its Morheim quests, the chests one member at a time, the disband as the way out; stage `group-ntc`, round `run/ntc/n9.json`; one step open (Q4732 under D32) | `docs/natural-group-ntc.md` — read it first before changing group play in an instance; its report has the numbers; every attempt restores `ntc-group-s4` |
+| Companion bots (planned 2026-10-12): `.companion <class>` brings a throwaway level-26 bot that follows the player, who always leads; damage classes attack the marked target, the Cleric heals; no quests, no loot; SIM only for now, with a test stand-in as the player; steps C1 to C9 | `docs/companion-bots.md` — read it first when working the C list; it follows the two group documents |
 | Retail 4.8 quest completion (D32): the quests Java lacks, sources, TODO list and register | `docs/retail-quest-completion.md` — read it first when adding a quest; the one-line-per-quest work list with the maintainer's Status column is `docs/retail-quest-worklist.md` |
 | Bot navigation (navmesh, roads, travel graph; generated, do not hand-edit) | `docs/bot-navigation.md`; data in `game-server/data/nav/`; tools `tools/Aion.NavBake`, `tools/nav/` |
 | Session recording (every packet of chosen accounts, for replay) | `docs/session-recording.md`; `AION_RECORD`; reader `tools/recording/recording.py` |
