@@ -1,8 +1,8 @@
 # Companion bots
 
-Status: planned 2026-10-12; C1 (decision and profiles), C2 (the server's part) and C3 (the SIM host and the
-stand-in) are done. A companion joins its player's group and leaves the game when it is sent away; it does not
-follow or play its role yet. The step list at the end is worked one step at a time.
+Status: planned 2026-10-12; C1 to C4 are done. A companion joins its player's group, follows it with nobody's
+words, and the Cleric keeps its support up; it leaves the game when it is sent away. A damage class does not
+fight yet. The step list at the end is worked one step at a time.
 
 It follows [natural-group-ntc.md](natural-group-ntc.md) and [natural-group-healer.md](natural-group-healer.md):
 following F1, the Cleric's healing-only role, the class fights, gear and supplies are there and are reused.
@@ -67,7 +67,7 @@ dismissed; the first version takes level 26 only.
 | Characters of all eleven classes at 26 | In `ntc-group-s4`, as played characters, not as profiles |
 | A chat command, a companion made by the server, its deletion | Built (C2): `src/Aion.GameServer/Custom/Companion`, off unless `AION_COMPANIONS=true`, with tests |
 | Reading the leader's marks | Missing in the bot; the server sends them |
-| A bot that waits for nobody's commands | Missing: the group stages are driven by a bot leader's words in chat |
+| A bot that waits for nobody's commands | Built (C4): the companion's own loop follows the leader it observes and plays its role |
 | Loot left to the player | The group is set to free for all, so the server's loot code stays as it is; a companion opens no corpse |
 | Following through a portal without being told | Half there: a follower enters on the leader's command today |
 | Where bots run | In SIM, inside the round test, which is the host (C3): it offers the accounts of its `companion` seats and plays what the server makes on them. Bot code depends on the game server, so the server cannot host it; a live host process is a later step |
@@ -157,8 +157,25 @@ One step per iteration. A step is ticked when a SIM round from `ntc-group-s4` sh
   - Found: a new group's loot rule is round robin. C6 sets it.
   - Checks: the unit suite (4,645 passed, 16 skipped), the pre-commit checks, Fast (`c3-fast`), and the Group NTC leg
     replayed once on the changed round harness (`n9-c3`). Code commit `4ce3038a1`.
-- [ ] **C4 Companion mode.** The bot follows F1 and plays its role with no commands and no quests. Shown: the
+- [x] **C4 Companion mode.** The bot follows F1 and plays its role with no commands and no quests. Shown: the
   stand-in walks the fortress and the Cleric keeps up and keeps its support going.
+  - 2026-10-12. Round `c4-4` (`run/companion/c4.json`, `companionUntil: walk`). The stand-in walks 92 m across
+    the fortress to Vallack and 90 m back, as a player walks: it waits for nobody. The Cleric is never more
+    than 20 m behind and stands beside it 2.0 s and 1.5 s after it stops. It blesses itself and the stand-in at
+    the start and casts four heals over time at the stops; the stand-in carries two of the Cleric's effects
+    (skills 1684 and 3942) at the end. No attack, no death, no quest touched.
+  - The companion's loop is its own (`NaturalIshalgenJourney.Companion.cs`): the follow driver, the Cleric's
+    heal driver, the class's fight driver for a death and for its kit. It reads no chat.
+  - What three rounds taught (`c4-1` to `c4-3`: up to 39 m behind, 6 s to come up). A companion runs exactly
+    as fast as its leader, so ground it loses is not made up until the leader stops. Two rules came of it.
+    Behind its leader, the Cleric walks first: a blessing or an idle heal over time waits until it stands within
+    6 m again, and only a hurt member (70% HP or less) is healed on the way. Left more than 12 m behind, a
+    companion is on a long leg and uses its kit's Running scroll, by the rule every class already has
+    (`BuffOurselfAsync`, the travel trigger). The same call keeps its power shards on.
+  - Not done here: the minute's wait for a resurrection and the way back through the portal (C7 and C8, where a
+    death can happen).
+  - Checks: the unit suite (4,645 passed, 16 skipped) and the pre-commit checks. Only the companion stage's own bot code
+    changed, so no gate was due. Code commit `ad3845382`.
 - [ ] **C5 Marks.** The bot reads the leader's marks. Shown: five companions kill what the stand-in marks in the
   field, and what it attacks when it marks nothing.
 - [ ] **C6 Loot is the player's.** The group is set to free for all when the first companion joins, and no
