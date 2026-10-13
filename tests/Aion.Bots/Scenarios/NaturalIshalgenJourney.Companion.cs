@@ -12,7 +12,7 @@ namespace Aion.Bots.Scenarios;
 public sealed partial class NaturalIshalgenJourney
 {
 	/// <summary>How far the stand-in plays so far (docs/companion-bots.md, the C steps).</summary>
-	private static readonly string[] CompanionCheckpoints = ["joined", "walk", "marks"];
+	private static readonly string[] CompanionCheckpoints = ["joined", "walk", "marks", "loot"];
 	/// <summary>The two marks the stand-in sets; a companion takes the lowest mark first whatever its number.</summary>
 	private const int CompanionFirstMark = 1, CompanionSecondMark = 2;
 
@@ -41,6 +41,11 @@ public sealed partial class NaturalIshalgenJourney
 		}
 		int leader = world.GroupLeaderId.Value;
 		if (leader == session.CharacterId) throw new InvalidDataException("The companion leads its group; the player always leads.");
+		// A companion takes no loot and no quest: what it carries and what its journal holds as it joins is the measure.
+		Dictionary<int, long> Carried() => world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count));
+		HashSet<int> Journal() => [.. world.Quests.Keys, .. world.CompletedQuestIds];
+		Dictionary<int, long> carriedAtStart = Carried();
+		HashSet<int> journalAtStart = Journal();
 		session.TraceDiagnostic("companion-joined", new Dictionary<string, object?>
 		{
 			["leader"] = leader, ["group"] = world.GroupId, ["members"] = world.GroupMembers.Keys.Order().ToArray(),
@@ -160,11 +165,18 @@ public sealed partial class NaturalIshalgenJourney
 		}
 		// Sent away, or the player left: the companion has nobody to follow and leaves the game. The server deletes it.
 		session.BeginStep("companion", "leave-the-game");
+		await session.SynchronizeAsync(token);
+		var gained = Carried().Where(entry => entry.Key != BotWorldModel.KinahItemId && entry.Value > carriedAtStart.GetValueOrDefault(entry.Key))
+			.ToDictionary(entry => entry.Key.ToString(), entry => entry.Value - carriedAtStart.GetValueOrDefault(entry.Key));
+		int[] newQuests = [.. Journal().Except(journalAtStart).Order()];
 		session.TraceDiagnostic("companion-leaves", new Dictionary<string, object?>
 		{
 			["group"] = world.GroupId, ["leaderNow"] = world.GroupLeaderId, ["leaderWas"] = leader, ["elapsedMillis"] = runtime.NowMillis - entered,
-			["deaths"] = combat.ReviveCount, ["fights"] = fights,
+			["deaths"] = combat.ReviveCount, ["fights"] = fights, ["itemsGained"] = gained, ["newQuests"] = newQuests,
+			["kinahGained"] = world.Kinah - carriedAtStart.GetValueOrDefault(BotWorldModel.KinahItemId),
 		});
+		if (gained.Count > 0) throw new InvalidDataException($"The companion carries loot it did not have: {string.Join(", ", gained.Select(entry => $"{entry.Key}x{entry.Value}"))}.");
+		// A journal entry that is new was written by the server (the missions of a level); the trace names it.
 		runtime.AssertClean();
 		await session.QuitAsync(token);
 	}
@@ -220,6 +232,8 @@ public sealed partial class NaturalIshalgenJourney
 
 		session.BeginStep("stand-in", "checkpoint-" + options.CompanionUntil);
 		if (world.GroupLeaderId != session.CharacterId) throw new InvalidDataException("The stand-in does not lead its group.");
+		if (world.GroupLootRules.Count == 0 || world.GroupLootRules.Any(rule => rule != 0))
+			throw new InvalidDataException($"The group's loot is [{string.Join(", ", world.GroupLootRules)}], not free for all with every quality picked up as it is.");
 		if (world.GroupMembers.Count != asked.Length + 1)
 			throw new InvalidDataException($"The group has {world.GroupMembers.Count} members, not the stand-in and its {asked.Length} companions.");
 		foreach ((BotGroupMember member, string playerClass) in world.GroupMembers.Values.Where(member => member.ObjectId != session.CharacterId)
@@ -282,6 +296,7 @@ public sealed partial class NaturalIshalgenJourney
 					Others().Any(member => member.ObjectId == effect.EffectorId)), "no support of the Cleric is on the stand-in", 60);
 		}
 		var marks = new List<object>();
+		var loots = new List<object>();
 		if (reach >= 2)
 		{
 			// C5: in the field outside the fortress, at the monsters of its repeatable coin quest. First a mark alone, which
@@ -334,6 +349,48 @@ public sealed partial class NaturalIshalgenJourney
 				await WaitAsync(() => Others().All(member => member.Online && Away(member) <= 12), "the companions did not come up before the marks", 90);
 				return found;
 			}
+			// C6: the group's loot is free for all, so every corpse is the stand-in's to open at once, the one it never
+			// struck too. It takes what is there, as a player would. Quest items are nobody's here.
+			var looter = new NaturalGroupLootDriver(session, runtime, _ => false);
+			async Task LootAsync(string test, params int[] corpses)
+			{
+				if (reach < 3) return;
+				session.BeginStep("stand-in", "loot-" + test);
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
+				await session.SynchronizeAsync(token);
+				// 0: this client may open the corpse. No entry: the corpse holds nothing.
+				var rights = corpses.Select(corpse => new { corpse, status = world.LootStatuses.TryGetValue(corpse, out byte status) ? status : -1 }).ToArray();
+				int before = looter.Collected, opened = 0;
+				// A player walks up to a corpse it wants to open.
+				foreach (var right in rights.Where(right => right.status == 0))
+				{
+					if (!world.Objects.TryGetValue(right.corpse, out var body)) continue;
+					var route = await navigator.FindRouteAsync(session.CurrentPosition, body.Position, token);
+					foreach (BotPosition point in route)
+					{
+						while (NaturalServicePolicy.Distance(session.CurrentPosition, body.Position) > 3 && NaturalServicePolicy.Distance(session.CurrentPosition, point) > .5f)
+						{
+							BotPosition at = session.CurrentPosition;
+							float fraction = Math.Min(1, 6 / NaturalServicePolicy.Distance(at, point));
+							await navigator.MoveAsync([at, new(at.X + (point.X - at.X) * fraction, at.Y + (point.Y - at.Y) * fraction,
+								at.Z + (point.Z - at.Z) * fraction, point.Heading)], token);
+							await session.SynchronizeAsync(token);
+							if (NaturalServicePolicy.Distance(session.CurrentPosition, at) < .1f) break;
+						}
+					}
+					for (int turn = 0; turn < 8 && world.LootStatuses.TryGetValue(right.corpse, out byte still) && still == 0; turn++)
+					{
+						if (await looter.StepAsync(token)) { opened++; break; }
+						await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+					}
+				}
+				var loot = new { test, rights, opened, items = looter.Collected - before, kinah = world.Kinah };
+				session.TraceDiagnostic("stand-in-loot", new Dictionary<string, object?> { ["loot"] = loot });
+				loots.Add(loot);
+				if (rights.Any(right => right.status is not (0 or -1)))
+					throw new InvalidDataException($"A corpse was not the stand-in's to open at once: {string.Join(", ", rights.Select(right => $"{right.corpse}:{right.status}"))}.");
+				if (opened < rights.Count(right => right.status == 0)) throw new InvalidDataException("The stand-in could not open a corpse it had the right to.");
+			}
 			// Which companions struck a monster since a point of the packet history, as this client saw it.
 			string[] Strikers(int target, int since) => [.. Others().Where(member => session.PacketHistory.Skip(since)
 				.Any(packet => runtime.IncomingAttacker(packet, target) == member.ObjectId)).Select(member => member.Name!)];
@@ -350,6 +407,7 @@ public sealed partial class NaturalIshalgenJourney
 			session.TraceDiagnostic("stand-in-marks", new Dictionary<string, object?> { ["result"] = one });
 			marks.Add(one);
 			await session.SendPacketAsync(session.Api.Mark(CompanionFirstMark, 0), token);
+			await LootAsync("the-mark-alone", alone.ObjectId);
 
 			session.BeginStep("stand-in", "mark-two");
 			BotKnownObject[] pair = await FindAsync(2);
@@ -373,6 +431,7 @@ public sealed partial class NaturalIshalgenJourney
 			if (lowFell > highFell) throw new InvalidDataException("The monster with the higher mark fell before the one with the lower mark.");
 			await session.SendPacketAsync(session.Api.Mark(CompanionFirstMark, 0), token);
 			await session.SendPacketAsync(session.Api.Mark(CompanionSecondMark, 0), token);
+			await LootAsync("the-two-marks", pair[1].ObjectId, pair[0].ObjectId);
 
 			session.BeginStep("stand-in", "no-mark");
 			BotKnownObject unmarked = (await FindAsync(1))[0];
@@ -388,6 +447,7 @@ public sealed partial class NaturalIshalgenJourney
 				fellAfterMillis = runtime.NowMillis - markedAt, strikers = Strikers(unmarked.ObjectId, since) };
 			session.TraceDiagnostic("stand-in-marks", new Dictionary<string, object?> { ["result"] = none });
 			marks.Add(none);
+			await LootAsync("the-stand-ins-target", unmarked.ObjectId);
 			// Every damage class struck each monster's turn; the Cleric struck none.
 			string[] fighters = [.. Others().Where(member => member.PlayerClass != PlayerClass.CLERIC.GetClassId()).Select(member => member.Name!)];
 			string[] healers = [.. Others().Where(member => member.PlayerClass == PlayerClass.CLERIC.GetClassId()).Select(member => member.Name!)];
@@ -403,7 +463,7 @@ public sealed partial class NaturalIshalgenJourney
 			.Select(effect => new { effect.SkillId, effect.EffectorId }).ToArray();
 		runtime.AssertClean();
 		var receipt = new { verified = true, CharacterId = session.CharacterId, until = options.CompanionUntil, asked, companions = joined,
-			leader = world.GroupLeaderId, group = world.GroupId, lootRules = world.GroupLootRules, list, walks, marks, support,
+			leader = world.GroupLeaderId, group = world.GroupId, lootRules = world.GroupLootRules, list, walks, marks, loots, support,
 			elapsedMillis = runtime.NowMillis - started, map = world.MapId, position = session.CurrentPosition };
 
 		session.BeginStep("stand-in", "send-them-away");
@@ -411,7 +471,7 @@ public sealed partial class NaturalIshalgenJourney
 		await WaitAsync(() => world.GroupId == null, "the group did not end after the dismissal", 60);
 		File.WriteAllText(Path.Combine(Path.GetDirectoryName(session.CombatTracePath!)!, "companion-completion.json"),
 			JsonSerializer.Serialize(new { receipt.verified, receipt.CharacterId, receipt.until, receipt.asked, receipt.companions, receipt.leader,
-				receipt.group, receipt.lootRules, receipt.list, receipt.walks, receipt.marks, receipt.support, farewell, receipt.elapsedMillis, receipt.map, receipt.position },
+				receipt.group, receipt.lootRules, receipt.list, receipt.walks, receipt.marks, receipt.loots, receipt.support, farewell, receipt.elapsedMillis, receipt.map, receipt.position },
 				new JsonSerializerOptions { WriteIndented = true }));
 		session.TraceDiagnostic("stand-in-reached", new Dictionary<string, object?> { ["receipt"] = receipt, ["farewell"] = farewell });
 	}

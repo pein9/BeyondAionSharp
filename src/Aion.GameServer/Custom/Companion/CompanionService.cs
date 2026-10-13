@@ -9,6 +9,7 @@ using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Skill;
+using Aion.GameServer.Model.Team.Common.Legacy;
 using Aion.GameServer.Model.Team.Group;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services;
@@ -254,7 +255,13 @@ public sealed class CompanionService
             if (group != null)
                 PlayerGroupService.AddPlayer(group, player);
             else
-                PlayerGroupService.CreateGroup(leader, player, Aion.GameServer.Model.Team.TeamType.GROUP, 0);
+                group = PlayerGroupService.CreateGroup(leader, player, Aion.GameServer.Model.Team.TeamType.GROUP, 0);
+            // CB-Q11: with its first companion a group's loot is free for all, and every quality is picked up as it is.
+            // A companion opens no corpse, so every corpse is the player's at once and no roll opens for a companion.
+            // The rule is set once: a player who changes it afterwards keeps what he chose.
+            int joinedId = player.GetObjectId();
+            if (!group.GetMembers().Any(member => member.GetObjectId() != joinedId && companions.ContainsKey(member.GetObjectId())))
+                PlayerGroupService.ChangeGroupRules(group, new LootGroupRules(LootRuleType.FREEFORALL, 0, 0, 0, 0, 0, 0, 0));
         }
     }
 

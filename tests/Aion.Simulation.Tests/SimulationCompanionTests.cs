@@ -4,6 +4,7 @@ using Aion.GameServer.Dao;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Team;
+using Aion.GameServer.Model.Team.Common.Legacy;
 using Aion.GameServer.Model.Team.Group;
 using Aion.GameServer.Network.Aion.ServerPackets;
 
@@ -16,7 +17,7 @@ public sealed partial class SimulationFastScenarioTests
 	/// feature is off <c>.companion</c> is no command. Switched on, it makes a level-26 character of the class from its
 	/// generated profile where the player stands, on an account a host offered, and leaves a request for that host. The
 	/// character logs in as any other and is in the player's group, which the player leads, from the moment it enters the
-	/// world (C3). One that is sent away, or whose player logs out, is deleted with its rows when it
+	/// world (C3), and the group's loot is free for all from then on (C6). One that is sent away, or whose player logs out, is deleted with its rows when it
 	/// has left the world; one that nobody came to play is deleted at once.
 	/// </summary>
 	[SkippableFact]
@@ -120,6 +121,10 @@ public sealed partial class SimulationFastScenarioTests
 				await session.SynchronizeAsync(token);
 				Assert.Equal(session.CharacterId, session.Api.World.GroupLeaderId);
 				Assert.Contains(request.CharacterId, session.Api.World.GroupMembers.Keys);
+				// C6: with its first companion the group's loot is free for all, every quality picked up as it is.
+				Assert.Equal(LootRuleType.FREEFORALL, group.GetLootGroupRules().GetLootRule());
+				Assert.Equal(0, group.GetLootGroupRules().GetAutodistributionId());
+				Assert.Equal(new[] { 0, 0, 0, 0, 0, 0, 0, 0 }, session.Api.World.GroupLootRules);
 
 				session.BeginStep("s05", "who-may-ask");
 				Assert.Equal("A companion cannot bring companions.", service.Request(companion, "cleric"));
