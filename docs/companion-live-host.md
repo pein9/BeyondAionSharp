@@ -198,6 +198,18 @@ its role, as the stand-in's companions did in SIM. NTC is the place to try it.
     advertise online game server 1` every 15 seconds while the game server was down, then logged in and waited
     again. That is the first time a seat's way back was played on a real server.
   - Not shown: I cannot log in on his account, so the character's first login is his.
+  - 2026-10-13, his first try. His words: "I am able to log in, summon the cleric, and it heals/follows great!"
+    From the server's log and the seat's trace (`run/companion-host/ch-l4-1/bots/b902.trace.jsonl`):
+    `Asimtemplar` logged on at 16:03:35 UTC and asked at 16:04:42. `ClericA` was made on seat `companion2` and was
+    in the world 0.2 s later. It played for 3 min 30 s: it followed him through the portal into Nochsana Training
+    Camp, cast 30 times (heals, ten cleanses, four blessings), never attacked, did not die, gained no item and
+    no journal entry, and got 238 kinah as the game's share of one corpse. No problem was recorded. It ended at
+    16:08:12 when his client disconnected inside the camp: the Cleric saw itself become the leader, stopped,
+    went back to character selection, and the server deleted it 0.1 s after the disconnect.
+  - Still to try before this step is ticked: a fighter and the targeting marks, and `.companion dismiss`.
+  - Seen in the trace, not a fault yet: a companion in play asks the server's time about nine times a second
+    (1,964 `CM_TIME_CHECK` in 210 s), which is how the live session waits for the server. Its trace grows by
+    about 30 MB an hour of play, and a waiting seat's by 1.2 MB an hour, twice what I wrote under L4.
 
 ## What the try will show first
 
