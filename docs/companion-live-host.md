@@ -206,7 +206,63 @@ its role, as the stand-in's companions did in SIM. NTC is the place to try it.
     no journal entry, and got 238 kinah as the game's share of one corpse. No problem was recorded. It ended at
     16:08:12 when his client disconnected inside the camp: the Cleric saw itself become the leader, stopped,
     went back to character selection, and the server deleted it 0.1 s after the disconnect.
-  - Still to try before this step is ticked: a fighter and the targeting marks, and `.companion dismiss`.
+  - Still to try after this first try: a fighter and the targeting marks, and `.companion dismiss`.
+  - 2026-10-13, his second try (run `ch-l4-1`, 18:44 to 18:46 UTC). He asked for a Gladiator and a Cleric, walked
+    the fortress, and flew down to the ice. His words: "both got stuck and did not follow because they never
+    started flying, then glitched out and looked like they were running forever and disappeared into the
+    mountain"; he dismissed them and "could not re-summon". Three faults, from the traces:
+    - **No flight.** A companion only walked. His character took off at (297, 2282, 449) and its samples were in
+      the air; the follower took each for ground it could not step onto.
+    - **A search that held the host.** With no sample it could walk to, the follower looked for a way round to
+      where its leader was, which was in the air: 14.4 s for the Cleric's first search and 7.6 s for the next.
+      The host's seats share one thread, so the Gladiator stood in the middle of a 1.2 m step for those 14 s:
+      it had sent the start of the step with its velocity and could not send the stop. His client drew it
+      running on in a straight line, 120 m and then 60 m. In SIM no game time passes while a bot thinks, so
+      no round could show this.
+    - **The seat's re-entry.** He asked for a Gladiator 4.7 s after he had sent the first one away. The seat
+      entered the world at once and failed in the bot's own timing rule (`Cannot enter world for another
+      3866 ms`: the client's ten seconds between two entries of one connection). The seat's connection was
+      closed and the server deleted the new companion.
+  - What changed, the same day:
+    - The seat waits out the re-entry delay before it enters (`WaitForReentryAsync`), in the live host and in
+      the round's seat. A companion asked for right after a dismissal can take up to ten seconds to come.
+    - **Flight following** (`NaturalIshalgenJourney.Companion.cs`). The follow driver reads the leader's FLY,
+      LAND and glide emotions and keeps its air samples apart from the ground trail. Where flight is allowed
+      (the map's FLY zones) and its player or a piece of its player's way is in sight, the companion takes
+      off, flies straight to its player while it sees it and otherwise the air samples in order, about a second
+      of flight a turn, and hovers 4 m off. When its player has landed it flies to the ground beside it and
+      lands; out of sight it plans a route that climbs, crosses and comes down. It lands where it is when its
+      flight time would not cover the way down plus ten seconds, or after six seconds with no clear way. It
+      flies by `CM_MOVE` with a height in its velocity (`BotMover.CreateFlyPlan`), as the 4.8 client does, so
+      its player sees it fly; the bots' other flight packet, `CM_MOVE_IN_AIR`, is shown to no other player
+      (Java's `CM_MOVE_IN_AIR` only updates the position).
+    - To a leader in the air no way on the ground is looked for. Every other long search of the follower runs
+      beside the play in the live host (`NaturalJourneyRuntime.SearchElsewhere`), and the host names one that
+      took two seconds or more. In SIM it runs where it did.
+    - Found by the SIM round, on the walk to the wall: the Cleric circled a stair for a minute, three steps to a
+      round, after one sample that lay on the stair's face (`l5-flight-2`). A follower that takes twelve steps
+      and comes no nearer to a sample gives it up for the next one.
+  - Shown in SIM: round `l5-flight-3` (`run/companion/flight.json`, stand-in checkpoint `flight`). The stand-in
+    walks to where he took off, flies 80 m down to where he stood on the ice, and back up. The Gladiator and the
+    Cleric take off within 0.3 s of it both times, are never more than 26 m from it, and stand within 3.5 m one
+    second after it has landed. Nobody dies. Shown live an hour later (run `ch-l5-3`): his Gladiator took off
+    after him at 19:37:08 UTC and landed beside him six seconds later, then killed three monsters he had
+    branded, one after the other (the client's default brand is mark 0). His words: "Looks like it is working
+    great!"
+  - Not covered: a companion neither fights nor heals in the air; a leader that glides is waited for and then
+    walked to; a roof it lands on may have no way down on foot.
+  - The simulation's database while his stack is up. The SIM scripts took the container named `aion-mysql`,
+    which is his world's MySQL now, and its port 3306 does not answer from Windows since the stack came up (a
+    WSL relay holds the loopback port; the game is not affected). The simulation has a container of its own
+    for this: `AION_SIM_DB_CONTAINER=aion-sim-mysql` and `AION_SIM_DB_PORT=3307` in the shell that starts a
+    run (`new-sim-db.ps1`, `sim-snapshot.ps1`, `run-round.ps1` and the test fixture read them; unset, nothing
+    changed). No SIM schema is on his world's MySQL.
+  - Checks: the unit suite (4,646 passed, 16 skipped), the pre-commit checks, both contract tests, the companion
+    server tests, the flight round again (`l5-flight-4`), the stopping round (`l5-c9`), the Group NTC leg
+    (`n9-l5`), the neutral gate on the five starter scopes (`l5-gate`), and Fast (`l5-fast-2`). Fast needs
+    `AION_BOT_DASHBOARD_PORT` set to another port while the live host holds 17880; its first run failed on
+    that port and on nothing else. Code commit `df885f1b2`.
+  - Still to try before this step is ticked: `.companion dismiss` and a re-summon right after it.
   - Seen in the trace, not a fault yet: a companion in play asks the server's time about nine times a second
     (1,964 `CM_TIME_CHECK` in 210 s), which is how the live session waits for the server. Its trace grows by
     about 30 MB an hour of play, and a waiting seat's by 1.2 MB an hour, twice what I wrote under L4.
