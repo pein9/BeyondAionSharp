@@ -47,6 +47,8 @@ public sealed class GameServerHostedService : IHostedService
 			_logger.LogInformation("Session recorder enabled: every packet of recorded sessions goes to {Directory}",
 				Environment.GetEnvironmentVariable("AION_RECORD_DIR") ?? Path.Combine(Directory.GetCurrentDirectory(), "log", "recordings"));
 		}
+		// C#-only companion bots (D41, off unless AION_COMPANIONS=true): the .companion command and its profiles.
+		Aion.GameServer.Custom.Companion.CompanionService.GetInstance().Start();
 		try
 		{
 			_logger.LogInformation("Starting game-server client listener on {EndPoint}", _options.ClientEndPoint);

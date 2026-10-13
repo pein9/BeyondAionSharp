@@ -159,6 +159,9 @@ public class PlayerLeaveWorldService
         PlayerDAO.OnlinePlayer(player, false); // marks that player was fully saved and may enter world again
 
         con.SetActivePlayer(null);
+
+        // D41, no Java counterpart: a companion that has left the world is deleted, and a player's companions end with him.
+        Aion.GameServer.Custom.Companion.CompanionService.GetInstance().OnLeftWorld(player);
     }
 
     private sealed class CaptureScope(Action<Player, bool>? previous) : IDisposable

@@ -10,7 +10,9 @@ public sealed class BotPlayerCommandPacketTests
 	[Fact]
 	public void CommandScenarioCoversEveryShippedPlayerHandler()
 	{
-		var handlers = typeof(PlayerCommand).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(PlayerCommand)) && !t.IsAbstract).ToArray();
+		// Shipped is what the command loader registers: public classes (ChatCommandsLoader.IsValidClass). D41's .companion is
+		// not public; its own service registers it, and only in a server that switched companions on.
+		var handlers = typeof(PlayerCommand).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(PlayerCommand)) && !t.IsAbstract && t.IsPublic).ToArray();
 		Assert.Equal(16, handlers.Length);
 		Assert.Equal(handlers.Select(t => t.Name.ToLowerInvariant()).Order(), PlayerCommandScenario.Aliases.Order());
 	}
