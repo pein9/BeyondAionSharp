@@ -1,9 +1,10 @@
 # Companion bots
 
-Status: planned 2026-10-12; C1 to C6 are done. A companion joins its player's group and follows it with nobody's
+Status: planned 2026-10-12; C1 to C7 are done. A companion joins its player's group and follows it with nobody's
 words. A damage class attacks what the leader marked, or what the leader attacks; the Cleric keeps its support
 up and attacks nothing. The group's loot is free for all and a companion opens no corpse. It leaves the game
-when it is sent away. The instance and the end are the steps that are left. The step list at the end is worked one step at a time.
+when it is sent away, and it goes through a portal after its leader. The way to the General and the end are the
+steps that are left. The step list at the end is worked one step at a time.
 
 It follows [natural-group-ntc.md](natural-group-ntc.md) and [natural-group-healer.md](natural-group-healer.md):
 following F1, the Cleric's healing-only role, the class fights, gear and supplies are there and are reused.
@@ -72,7 +73,7 @@ dismissed; the first version takes level 26 only.
 | Reading the leader's marks | Built (C5): the bot decodes `SM_SHOW_BRAND` and keeps the marks of its team |
 | A bot that waits for nobody's commands | Built (C4): the companion's own loop follows the leader it observes and plays its role |
 | Loot left to the player | Built (C6): the server sets the group to free for all with its first companion; a companion opens no corpse |
-| Following through a portal without being told | Half there: a follower enters on the leader's command today |
+| Following through a portal without being told | Built (C7): a companion that sees its leader on another map takes the portal NPC that leads there |
 | Where bots run | In SIM, inside the round test, which is the host (C3): it offers the accounts of its `companion` seats and plays what the server makes on them. Bot code depends on the game server, so the server cannot host it; a live host process is a later step |
 
 ## Decisions
@@ -230,8 +231,21 @@ One step per iteration. A step is ticked when a SIM round from `ntc-group-s4` sh
     all, so that is what is set.
   - Checks: the unit suite (4,645 passed, 16 skipped), the pre-commit checks, the server test and Fast (`c6-fast`). Code
     commit `dc45a4987`.
-- [ ] **C7 Into the instance.** Companions follow through Vallack when the stand-in goes in. Shown: six in one
+- [x] **C7 Into the instance.** Companions follow through Vallack when the stand-in goes in. Shown: six in one
   instance.
+  - 2026-10-13. Round `c7-2` (`run/companion/c7.json`, `companionUntil: inside`). After the field tests the
+    stand-in walks to Vallack and goes into Nochsana Training Camp. It tells nobody and waits for nobody. Three
+    seconds later all five companions stand beside it in instance 2 of map 300030000: each saw its leader on
+    another map, found Vallack (800510, dialog 10000) as the NPC of its map that leads there, and went through.
+    Sent away inside, they left the game there. No deaths.
+  - The lookup is from the shipped data (`portal_template2.xml` for the NPC and its dialog choice,
+    `portal_loc.xml` for where it leads), for any map, not for this camp alone. Round `c7-1` found no portal: the
+    server's own table (`Portal2Data`) keeps its entries to itself once loaded, as Java's does, so the bot reads
+    the file.
+  - With no portal NPC that leads to its leader's map, a companion says "I cannot reach you." once in group chat
+    and waits. That is where a leader stands who left an instance by another way; nothing plays it yet.
+  - Checks: the unit suite (4,645 passed, 16 skipped) and the pre-commit checks; only the companion stage's own
+    bot code changed. Code commit `bbadfc66a`.
 - [ ] **C8 NTC.** The stand-in leads to the General, marking as it goes. Shown: the General dead; no companion took
   a quest or loot. Deaths are outcomes.
 - [ ] **C9 The end.** Dismissal, the player's logout and leaving the group each remove the companion and its rows.
