@@ -23,6 +23,9 @@ The operator, 2026-10-12:
 - "We will have to make some profiles or configurations for these. This is why we have been running simulated runs
   so the bots will know combat skills and rotations and gear selections."
 
+On the plan, the same day: "One thing we really need: We want the bots to read 'marks', and we can set group loot
+to 'free for all' if that makes things easier."
+
 His answers the same day: it is built and tried in SIM only for now; a test-only stand-in plays the player's part
 there, because no bot leads in the product; a companion is a throwaway character, made when asked and deleted when
 dismissed; the first version takes level 26 only.
@@ -42,9 +45,10 @@ dismissed; the first version takes level 26 only.
 5. **Following.** The companion follows F1's observed movement, as in the group stages. When F1's map changes it
    takes the portal NPC that leads there. Flight and teleporters come later.
 6. **Fighting.** A damage class attacks the target the leader marked (`SM_SHOW_BRAND`, which the bot does not read
-   yet); with no mark, what the leader is attacking. The Cleric heals, cleanses and blesses, and never attacks.
-7. **Not its business.** No quests, no quest NPCs, no chests. It takes no loot and no loot turn: every corpse is
-   the player's at once.
+   yet). Reading the marks is required. Of several marked targets the lowest mark comes first; with no mark, what
+   the leader is attacking. The Cleric heals, cleanses and blesses, and never attacks.
+7. **Not its business.** No quests, no quest NPCs, no chests, no loot. The group's loot is set to free for all
+   when the first companion joins, so every corpse is the player's at once.
 8. **Words.** No command language in chat. A companion says a short plain line when the player needs to know: out
    of mana, dead, cannot reach you.
 9. **Death.** It waits a minute for a resurrection, then revives at its bind and comes back through the portal.
@@ -60,7 +64,7 @@ dismissed; the first version takes level 26 only.
 | A chat command, a companion made by the server, its deletion | Missing. It is a feature Java does not have: it needs a logged decision (D41), its own code beside the port, a switch that is off by default, and tests |
 | Reading the leader's marks | Missing in the bot; the server sends them |
 | A bot that waits for nobody's commands | Missing: the group stages are driven by a bot leader's words in chat |
-| Companions left out of loot turns | Missing; the server gives every member a turn |
+| Loot left to the player | The group is set to free for all, so the server's loot code stays as it is; a companion opens no corpse |
 | Following through a portal without being told | Half there: a follower enters on the leader's command today |
 | Where bots run | In SIM, inside the test. Bot code depends on the game server, so the server cannot host it; a live host process is a later step |
 
@@ -72,11 +76,14 @@ dismissed; the first version takes level 26 only.
 | CB-Q2 | A test-only stand-in plays the player in SIM; no bot leads in the product | operator |
 | CB-Q3 | A companion is thrown away at its end and keeps nothing | operator |
 | CB-Q4 | Level 26 only at first | operator |
+| CB-Q10 | The bots read the leader's marks: "One thing we really need" | operator |
+| CB-Q11 | Group loot is free for all with companions, rather than a change to the loot turns | operator |
 | CB-Q5 | The command is `.companion`; the feature is off unless switched on | default |
 | CB-Q6 | Asmodian companions only at first | default |
 | CB-Q7 | With no mark, a damage class attacks what the leader attacks | default |
 | CB-Q8 | The Chanter fights and keeps its own buffs, as in the group stages; only the Cleric plays support | default |
 | CB-Q9 | Experience is shared as the game shares it among group members | default |
+| CB-Q12 | Of several marked targets, the lowest mark first | default |
 
 ## Steps
 
@@ -92,8 +99,8 @@ One step per iteration. A step is ticked when a SIM round from `ntc-group-s4` sh
   stand-in walks the fortress and the Cleric keeps up and keeps its support going.
 - [ ] **C5 Marks.** The bot reads the leader's marks. Shown: five companions kill what the stand-in marks in the
   field, and what it attacks when it marks nothing.
-- [ ] **C6 Loot is the player's.** Companions are left out of loot turns. Shown: the stand-in can take every corpse
-  at once.
+- [ ] **C6 Loot is the player's.** The group is set to free for all when the first companion joins, and no
+  companion opens a corpse. Shown: the stand-in can take every corpse at once.
 - [ ] **C7 Into the instance.** Companions follow through Vallack when the stand-in goes in. Shown: six in one
   instance.
 - [ ] **C8 NTC.** The stand-in leads to the General, marking as it goes. Shown: the General dead; no companion took
