@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Aion.Bots.Movement;
 using Aion.Bots.Navigation;
 using Aion.Bots.Navigation.NavMesh;
 using Aion.Bots.Protocol;
@@ -200,6 +201,195 @@ public sealed partial class NaturalIshalgenJourney
 			{ ["npc"] = portal.Npc, ["from"] = fromMap, ["map"] = world.MapId, ["instance"] = world.InstanceId, ["position"] = session.CurrentPosition });
 			return true;
 		}
+		// Flight (docs/companion-live-host.md, L5). Its player flew down from the fortress, and a companion that only
+		// walks was left on the wall. Where flight is allowed it takes off when its player has, flies its player's way
+		// by the samples the client saw, and comes down beside its player when that one has landed. It flies as a client
+		// reports a flight (CM_MOVE with a height in its velocity), so its player sees it fly.
+		bool flying = false;
+		float flightSpeed = 0;
+		long? lastTakeoffMillis = null;
+		long noTakeoffUntil = 0, noClearWaySince = -1;
+		int flights = 0;
+		IReadOnlyList<NaturalFlyZone> flyZones = [];
+		int flyZonesMap = -1;
+		bool Flyable(BotPosition at)
+		{
+			if (flyZonesMap != world.MapId)
+			{
+				flyZonesMap = world.MapId!.Value;
+				string zones = Path.Combine(runtime.RepoRoot, $"game-server/data/static_data/zones/zones_{flyZonesMap}.xml");
+				flyZones = File.Exists(zones) ? NaturalFlyZone.Load(zones) : [];
+			}
+			return flyZones.Any(zone => !zone.Forbids && zone.Contains(at.X, at.Y, at.Z)) && !flyZones.Any(zone => zone.Forbids && zone.Contains(at.X, at.Y, at.Z));
+		}
+		static BotPosition Toward(BotPosition from, BotPosition to, float metres)
+		{
+			float whole = NaturalFlightPolicy.Distance(from, to);
+			if (whole <= metres || whole < .01f) return to;
+			float part = metres / whole;
+			return new(from.X + (to.X - from.X) * part, from.Y + (to.Y - from.Y) * part, from.Z + (to.Z - from.Z) * part, to.Heading);
+		}
+		bool ClearAir(BotPosition from, BotPosition to) => NaturalFlightProtocol.IsClear(geometry, world.MapId!.Value, from, to);
+		async Task FlyToAsync(BotPosition to)
+		{
+			if (NaturalFlightPolicy.Distance(session.CurrentPosition, to) < .2f) return;
+			await session.ExecuteMovementAsync(new BotMover(world, session.Api.Timing).CreateFlyPlan([to], session.CurrentPosition, flightSpeed), token);
+		}
+		async Task<bool> TakeOffAsync()
+		{
+			BotPosition here = session.CurrentPosition;
+			NaturalFlightDecision ready = NaturalFlightPolicy.CanTakeOff(new NaturalTakeoffObservation(true, here, false, float.MinValue,
+				runtime.NowMillis, lastTakeoffMillis, false, false, false), flyZones);
+			if (ready.Allowed && world.CurrentFlightTime <= NaturalFlightPolicy.LandingReserveFp + 5)
+				ready = new(false, $"Only {world.CurrentFlightTime} s of flight time are left.");
+			if (!ready.Allowed)
+			{
+				noTakeoffUntil = runtime.NowMillis + 3_000;
+				session.TraceDiagnostic("companion-no-takeoff", new Dictionary<string, object?> { ["position"] = here, ["reason"] = ready.Reason });
+				return false;
+			}
+			session.BeginStep("companion", "take-off");
+			lastTakeoffMillis = runtime.NowMillis;
+			await session.SendPacketAsync(session.Api.Fly(), token);
+			// The server answers a takeoff it allows at once. One it refuses it does not answer.
+			DecodedBotServerPacket? up = await session.WaitForPacketWithinAsync(typeof(SM_EMOTION), TimeSpan.FromSeconds(3), token, packet =>
+				packet.Get<int>("senderObjectId") == session.CharacterId && packet.Get<byte>("emotionType") == (byte)EmotionType.FLY);
+			if (up == null)
+			{
+				noTakeoffUntil = runtime.NowMillis + 10_000;
+				session.TraceDiagnostic("companion-no-takeoff", new Dictionary<string, object?> { ["position"] = here, ["reason"] = "The server did not answer the takeoff." });
+				return false;
+			}
+			float announced = up.Get<float>("movementSpeed");
+			flightSpeed = announced > 0 ? announced : world.MovementSpeed ?? 9;
+			flying = true;
+			flights++;
+			noClearWaySince = -1;
+			session.TraceDiagnostic("companion-took-off", new Dictionary<string, object?>
+			{ ["position"] = here, ["speed"] = flightSpeed, ["flightTime"] = world.CurrentFlightTime });
+			return true;
+		}
+		// Down to the ground under it when there is ground and the way down is clear, and then the wings are folded.
+		async Task LandAsync(string why)
+		{
+			session.BeginStep("companion", "land-" + why);
+			BotPosition here = session.CurrentPosition;
+			BotPosition? ground = geometry.StaticGroundBelow(world.MapId!.Value, here, 300);
+			if (ground is { } below && here.Z - below.Z > .5f && ClearAir(here, below with { Z = below.Z + .5f }))
+				await FlyToAsync(below with { Heading = here.Heading });
+			await session.SendPacketAsync(session.Api.Land(), token);
+			DecodedBotServerPacket? down = await session.WaitForPacketWithinAsync(typeof(SM_EMOTION), TimeSpan.FromSeconds(3), token, packet =>
+				packet.Get<int>("senderObjectId") == session.CharacterId && packet.Get<byte>("emotionType") == (byte)EmotionType.LAND);
+			flying = false;
+			following.Landed();
+			session.TraceDiagnostic("companion-landed", new Dictionary<string, object?>
+			{
+				["why"] = why, ["position"] = session.CurrentPosition, ["groundBelow"] = ground, ["answered"] = down != null,
+				["flightTime"] = world.CurrentFlightTime,
+			});
+			session.BeginStep("companion", "with-its-player");
+		}
+		// One turn in the air: about a second of flight, so that it sees what its player does next.
+		async Task FlyWithItsPlayerAsync(BotPosition playerAt)
+		{
+			BotPosition here = session.CurrentPosition;
+			float height = geometry.StaticGroundBelow(world.MapId!.Value, here, 300) is { } under ? here.Z - under.Z : 0;
+			if (NaturalFlightPolicy.MustLand(world.CurrentFlightTime, height, flightSpeed).Allowed)
+			{
+				await LandAsync("flight-time");
+				return;
+			}
+			float step = flightSpeed;
+			if (following.LeaderFlying)
+			{
+				session.BeginStep("companion", "fly-with-its-player");
+				float gap = NaturalFlightPolicy.Distance(here, playerAt);
+				BotPosition? to = null;
+				if (ClearAir(here, playerAt))
+				{
+					// In sight: straight to it, and what it flew before is behind.
+					following.AirTrail.Clear();
+					if (gap > 5) to = Toward(here, playerAt, Math.Min(gap - 4, step));
+				}
+				else
+				{
+					// Out of sight: the way its player flew, sample by sample, from the first one it can fly to.
+					while (following.AirTrail.TryPeek(out BotPosition reached) && NaturalFlightPolicy.Distance(here, reached) <= 2) following.AirTrail.Dequeue();
+					int behind = 0;
+					foreach (BotPosition sample in following.AirTrail.Take(32).ToArray())
+					{
+						if (ClearAir(here, sample))
+						{
+							for (int drop = 0; drop < behind; drop++) following.AirTrail.Dequeue();
+							to = Toward(here, sample, step);
+							break;
+						}
+						behind++;
+					}
+				}
+				if (to is { } point && Flyable(point))
+				{
+					noClearWaySince = -1;
+					await FlyToAsync(point);
+					return;
+				}
+				if (to == null && gap <= 5)
+				{
+					// Beside its player in the air: it hovers.
+					noClearWaySince = -1;
+					await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+					return;
+				}
+				// No clear way, or its player has left the air it may fly in: it waits a little, and then it goes down.
+				if (noClearWaySince < 0) noClearWaySince = runtime.NowMillis;
+				if (runtime.NowMillis - noClearWaySince > 6_000)
+				{
+					await LandAsync("no-clear-way");
+					return;
+				}
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
+				return;
+			}
+			// Its player is down: to the ground beside it.
+			session.BeginStep("companion", "fly-down-to-its-player");
+			BotPosition landing = geometry.SnapToGround(world.MapId!.Value, playerAt) ?? playerAt;
+			BotPosition over = landing with { Z = landing.Z + 1 };
+			float away = NaturalFlightPolicy.Distance(here, over);
+			if (away <= 4)
+			{
+				await LandAsync("beside-its-player");
+				return;
+			}
+			if (ClearAir(here, over) && Flyable(over))
+			{
+				await FlyToAsync(Toward(here, over, Math.Min(away - 2.5f, step)));
+				return;
+			}
+			// Not in sight: a route that climbs, crosses and comes down, each leg clear and inside the air it may fly in.
+			NaturalFlightRoute route = new([], 0, "No route was looked for.");
+			int map = world.MapId!.Value;
+			void Plan() => route = NaturalFlightProtocol.Plan(geometry, map, here, over, MathF.Max(here.Z, over.Z) + 5);
+			if (runtime.SearchElsewhere is { } elsewhere) await elsewhere(Plan);
+			else Plan();
+			float seconds = route.IsUsable ? route.Meters / flightSpeed : float.MaxValue;
+			if (!route.IsUsable || !route.Waypoints.All(Flyable) || world.CurrentFlightTime - seconds < NaturalFlightPolicy.LandingReserveFp)
+			{
+				session.TraceDiagnostic("companion-no-flight-to-its-player", new Dictionary<string, object?>
+				{ ["from"] = here, ["to"] = over, ["refusal"] = route.Refusal, ["metres"] = route.Meters, ["flightTime"] = world.CurrentFlightTime });
+				await LandAsync("no-flight-to-its-player");
+				return;
+			}
+			foreach (BotPosition waypoint in route.Waypoints)
+			{
+				while (NaturalFlightPolicy.Distance(session.CurrentPosition, waypoint) > .2f)
+				{
+					await FlyToAsync(Toward(session.CurrentPosition, waypoint, step));
+					await session.SynchronizeAsync(token);
+					if (world.IsDead) return;
+				}
+			}
+			await LandAsync("beside-its-player");
+		}
 		try
 		{
 			await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
@@ -214,10 +404,19 @@ public sealed partial class NaturalIshalgenJourney
 				for (; fallenCursor < session.PacketHistory.Count; fallenCursor++)
 					if (BotAttackStatus.CarriesHp(session.PacketHistory[fallenCursor]) && session.PacketHistory[fallenCursor].Get<byte>("hpOrMp") == 0)
 						fallen.Add(session.PacketHistory[fallenCursor].Get<int>("objectId"));
-				if (world.IsDead) { await combat.RestAsync(token); continue; }
+				if (world.IsDead) { flying = false; await combat.RestAsync(token); continue; }
+				following.Observe();
 				if (world.GroupMembers.TryGetValue(leader, out var gone) && gone.Online && gone.MapId != 0 && gone.MapId != world.MapId)
 				{
+					if (flying) await LandAsync("its-player-left-the-map");
 					if (!await ThroughPortalAsync(gone.MapId)) await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+					continue;
+				}
+				if (flying)
+				{
+					if (world.GroupMembers.TryGetValue(leader, out var inTheAir))
+						await FlyWithItsPlayerAsync(world.Objects.GetValueOrDefault(leader)?.Position ?? inTheAir.Position);
+					else await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
 					continue;
 				}
 				if (healer == null && FightTarget() is { } fight)
@@ -261,6 +460,16 @@ public sealed partial class NaturalIshalgenJourney
 					scrollAskedMillis = runtime.NowMillis;
 					await combat.BuffOurselfAsync(NaturalHelpTrigger.TravelLeg, token, NaturalHelpItemPolicy.LongTravelMeters);
 				}
+				// Its player has taken off and is away: where it stands it may fly, and its player or a piece of its player's
+				// way is in sight. Otherwise it walks on to where its player took off.
+				if (following.LeaderFlying && gap > 6 && runtime.NowMillis >= noTakeoffUntil && !combat.InCombat && f1 != null)
+				{
+					BotPosition eyes = session.CurrentPosition with { Z = session.CurrentPosition.Z + 1.5f };
+					BotPosition playerAt = world.Objects.GetValueOrDefault(leader)?.Position ?? f1.Position;
+					if (Flyable(session.CurrentPosition) && (ClearAir(eyes, playerAt) || following.AirTrail.Take(32).Any(sample => ClearAir(eyes, sample))) &&
+						await TakeOffAsync())
+						continue;
+				}
 				// Far behind, it does not stop between steps.
 				bool moved = await following.StepAsync(token);
 				if (!moved || gap <= 6) await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
@@ -280,7 +489,7 @@ public sealed partial class NaturalIshalgenJourney
 		session.TraceDiagnostic("companion-leaves", new Dictionary<string, object?>
 		{
 			["group"] = world.GroupId, ["leaderNow"] = world.GroupLeaderId, ["leaderWas"] = leader, ["elapsedMillis"] = runtime.NowMillis - entered,
-			["deaths"] = combat.ReviveCount, ["fights"] = fights, ["portals"] = portals, ["map"] = world.MapId, ["itemsGained"] = gained, ["newQuests"] = newQuests,
+			["deaths"] = combat.ReviveCount, ["fights"] = fights, ["portals"] = portals, ["flights"] = flights, ["map"] = world.MapId, ["itemsGained"] = gained, ["newQuests"] = newQuests,
 			["kinahGained"] = world.Kinah - carriedAtStart.GetValueOrDefault(BotWorldModel.KinahItemId),
 		});
 		if (gained.Count > 0) throw new InvalidDataException($"The companion carries loot it did not have: {string.Join(", ", gained.Select(entry => $"{entry.Key}x{entry.Value}"))}.");
@@ -333,8 +542,10 @@ public sealed partial class NaturalIshalgenJourney
 	{
 		BotWorldModel world = session.Api.World;
 		string[] asked = options.Companions is { Length: > 0 } wanted ? wanted : throw new InvalidDataException("The stand-in names no companion to ask for.");
-		if (!CompanionCheckpoints.Contains(options.CompanionUntil))
-			throw new InvalidDataException($"The stand-in plays to one of [{string.Join(", ", CompanionCheckpoints)}] so far, not to '{options.CompanionUntil}'.");
+		// "flight" is a test beside the others: the stand-in flies as the operator did on his first evening in game.
+		bool flightTest = options.CompanionUntil == "flight";
+		if (!flightTest && !CompanionCheckpoints.Contains(options.CompanionUntil))
+			throw new InvalidDataException($"The stand-in plays to one of [{string.Join(", ", CompanionCheckpoints)}] or to 'flight' so far, not to '{options.CompanionUntil}'.");
 		if (world.GroupId != null) throw new InvalidDataException("The stand-in starts alone.");
 		long started = runtime.NowMillis;
 
@@ -396,7 +607,7 @@ public sealed partial class NaturalIshalgenJourney
 		}
 		string[] list = await SayAsync(".companion list");
 
-		int reach = Array.IndexOf(CompanionCheckpoints, options.CompanionUntil);
+		int reach = flightTest ? 0 : Array.IndexOf(CompanionCheckpoints, options.CompanionUntil);
 		BotGroupMember[] Others() => [.. world.GroupMembers.Values.Where(member => member.ObjectId != session.CharacterId).OrderBy(member => member.ObjectId)];
 		float Away(BotGroupMember member) => NaturalServicePolicy.Distance(session.CurrentPosition,
 			world.Objects.GetValueOrDefault(member.ObjectId)?.Position ?? member.Position);
@@ -445,6 +656,71 @@ public sealed partial class NaturalIshalgenJourney
 			if (asked.Any(playerClass => CompanionService.TryParseClass(playerClass, out PlayerClass support) && support == PlayerClass.CLERIC))
 				await WaitAsync(() => (world.VisibleEffects ?? []).Any(effect => !effectsBefore.Contains(effect.SkillId) &&
 					Others().Any(member => member.ObjectId == effect.EffectorId)), "no support of the Cleric is on the stand-in", 60);
+		}
+		var flown = new List<object>();
+		if (flightTest)
+		{
+			// L5 (docs/companion-live-host.md): what the operator did in game. From the fortress wall into the air and down
+			// to the ice below it, and back up. The stand-in flies as a client reports a flight, so its companions see it.
+			var geometry = runtime.CreateGeometry();
+			var navigator = new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, null, geometry), geometry, runtime,
+				stopOnDeath: false) { AvoidHostileAggro = true, Planner = BotTravelPlanner.For(world.MapId!.Value, geometry, runtime.Data) };
+			int map = world.MapId!.Value;
+			IReadOnlyList<NaturalFlyZone> zones = NaturalFlyZone.Load(Path.Combine(runtime.RepoRoot, $"game-server/data/static_data/zones/zones_{map}.xml"));
+			bool Flyable(BotPosition at) => zones.Any(zone => !zone.Forbids && zone.Contains(at.X, at.Y, at.Z)) && !zones.Any(zone => zone.Forbids && zone.Contains(at.X, at.Y, at.Z));
+			BotPosition Ground(float x, float y, float z) => geometry.SnapToGround(map, new BotPosition(x, y, z, 0))
+				?? throw new InvalidDataException($"There is no ground at ({x}, {y}, {z}).");
+			// Where his character took off, and where it stood on the ice afterwards (run ch-l4-1).
+			BotPosition wall = Ground(296.6f, 2282.1f, 448.7f), ice = Ground(324.5f, 2242.3f, 438.5f);
+			session.BeginStep("stand-in", "walk-to-the-wall");
+			var toTheWall = await navigator.FindRouteAsync(session.CurrentPosition, wall, token);
+			if (toTheWall.Count == 0) throw new InvalidDataException($"The stand-in found no way to the wall: {navigator.LastRouteDiagnostic}");
+			foreach (BotPosition point in toTheWall)
+				while (NaturalServicePolicy.Distance(session.CurrentPosition, point) > .5f && NaturalServicePolicy.Distance(session.CurrentPosition, wall) > 1)
+				{
+					BotPosition at = session.CurrentPosition;
+					float fraction = Math.Min(1, 6 / NaturalServicePolicy.Distance(at, point));
+					await navigator.MoveAsync([at, new(at.X + (point.X - at.X) * fraction, at.Y + (point.Y - at.Y) * fraction,
+						at.Z + (point.Z - at.Z) * fraction, point.Heading)], token);
+					await session.SynchronizeAsync(token);
+					if (NaturalServicePolicy.Distance(session.CurrentPosition, at) < .1f) throw new InvalidDataException("The stand-in could not go on to the wall.");
+				}
+			await WaitAsync(() => Others().All(member => member.Online && member.MapId == world.MapId && Away(member) <= 6),
+				"the companions did not come to the wall", 60);
+			foreach ((string name, BotPosition to) in new[] { ("down-to-the-ice", ice), ("back-up-to-the-wall", wall) })
+			{
+				session.BeginStep("stand-in", "fly-" + name);
+				BotPosition takeoff = session.CurrentPosition;
+				if (!Flyable(takeoff) || !Flyable(to)) throw new InvalidDataException($"The flight {name} leaves the air a Daeva may fly in.");
+				// A takeoff is allowed ten seconds after the last one, and the flight time comes back on the ground.
+				await session.AdvanceAsync(TimeSpan.FromSeconds(12), token);
+				await WaitAsync(() => world.CurrentFlightTime >= Math.Min(world.MaxFlightTime, 45), "the stand-in's flight time did not come back", 300);
+				NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, map, takeoff with { Z = takeoff.Z + 1 }, to with { Z = to.Z + 1 }, MathF.Max(takeoff.Z, to.Z) + 12);
+				if (!route.IsUsable) throw new InvalidDataException($"The stand-in found no flight {name}: {route.Refusal}");
+				long began = runtime.NowMillis;
+				float speed = await NaturalFlightProtocol.TakeOffAsync(session, token);
+				var farthest = Others().ToDictionary(member => member.ObjectId, _ => 0f);
+				foreach (BotPosition waypoint in route.Waypoints.Append(to))
+					while (NaturalFlightPolicy.Distance(session.CurrentPosition, waypoint) > .2f)
+					{
+						BotPosition at = session.CurrentPosition;
+						float whole = NaturalFlightPolicy.Distance(at, waypoint);
+						float part = Math.Min(1, speed / whole);
+						var next = new BotPosition(at.X + (waypoint.X - at.X) * part, at.Y + (waypoint.Y - at.Y) * part, at.Z + (waypoint.Z - at.Z) * part, waypoint.Heading);
+						await session.ExecuteMovementAsync(new BotMover(world, session.Api.Timing).CreateFlyPlan([next], at, speed), token);
+						await session.SynchronizeAsync(token);
+						foreach (BotGroupMember member in Others()) farthest[member.ObjectId] = Math.Max(farthest.GetValueOrDefault(member.ObjectId), Away(member));
+						if (NaturalFlightPolicy.Distance(session.CurrentPosition, at) < .05f) throw new InvalidDataException($"The stand-in could not fly on {name}.");
+					}
+				await NaturalFlightProtocol.LandAsync(session, token);
+				long landed = runtime.NowMillis;
+				await WaitAsync(() => Others().All(member => member.Online && !member.Dead && member.MapId == world.MapId && Away(member) <= 8),
+					$"the companions did not come after the flight {name}", 120);
+				var flight = new { name, metres = route.Meters, flightMillis = landed - began, cameMillis = runtime.NowMillis - landed,
+					companions = Others().Select(member => new { member.Name, farthest = farthest.GetValueOrDefault(member.ObjectId), atTheEnd = Away(member) }).ToArray() };
+				session.TraceDiagnostic("stand-in-flight", new Dictionary<string, object?> { ["flight"] = flight });
+				flown.Add(flight);
+			}
 		}
 		var marks = new List<object>();
 		var loots = new List<object>();
@@ -869,7 +1145,7 @@ public sealed partial class NaturalIshalgenJourney
 			.Select(effect => new { effect.SkillId, effect.EffectorId }).ToArray();
 		runtime.AssertClean();
 		var receipt = new { verified = true, CharacterId = session.CharacterId, until = options.CompanionUntil, asked, companions = joined,
-			leader = world.GroupLeaderId, group = world.GroupId, lootRules = world.GroupLootRules, list, walks, marks, loots, inside, general, support,
+			leader = world.GroupLeaderId, group = world.GroupId, lootRules = world.GroupLootRules, list, walks, flown, marks, loots, inside, general, support,
 			elapsedMillis = runtime.NowMillis - started, map = world.MapId, position = session.CurrentPosition };
 
 		// C9: the end, in one of the three ways a player's companions end. Sent away, or after the player left its

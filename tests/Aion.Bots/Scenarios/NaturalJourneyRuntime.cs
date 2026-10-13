@@ -19,6 +19,14 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 	Func<CancellationToken, Task<bool>> EnterAsync, Action AssertClean, Func<object> SnapshotProblems,
 	BotActionTraceWriter Trace, LiveBotDashboardState Dashboard)
 {
+	/// <summary>
+	/// Runs a long search for a way somewhere else than on the thread the bots play on, and comes back when it is done.
+	/// Unset, the search runs where it is called: in SIM no game time passes while a bot thinks. On a real server the
+	/// clock does not wait, and every bot of a host shares one thread: a companion that looked for a way for fourteen
+	/// seconds held another in the middle of a step, and its player saw that one run on in a straight line.
+	/// </summary>
+	public Func<Action, Task>? SearchElsewhere { get; init; }
+
 	/// <summary>SIM-only benchmark preparation. Runs after ordinary login, before policy decisions.</summary>
 	public Func<CancellationToken, Task>? PrepareCourseAsync { get; init; }
 	/// <summary>NA-21: supplies one approved help item (OD-13) to the natural character: ItemService in SIM, the

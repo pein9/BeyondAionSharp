@@ -56,7 +56,7 @@ param(
 	[int]$Parallel = 8,
 	[string]$Docker = 'docker',
 	[string]$Git = 'git',
-	[string]$ContainerName = 'aion-mysql',
+	[string]$ContainerName = $(if ($env:AION_SIM_DB_CONTAINER) { $env:AION_SIM_DB_CONTAINER } else { 'aion-mysql' }),
 	[string]$RootPassword = 'aion',
 	[string]$SnapshotRoot,
 	[string]$ReplayRoot,

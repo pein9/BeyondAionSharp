@@ -1,6 +1,7 @@
 using Aion.Bots.Movement;
 using Aion.Bots.Navigation;
 using Aion.Bots.World;
+using Aion.GameServer.Model;
 using Aion.GameServer.Network.Aion.ServerPackets;
 
 namespace Aion.Bots.Scenarios;
@@ -17,12 +18,36 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 	private DateTimeOffset lastSeen;
 	private DateTimeOffset blockedUntil;
 	private bool leaderMoving;
+	private BotPosition? pursued;
+	private float pursuedBest;
+	private int pursuedSteps;
+	private readonly Queue<BotPosition> airTrail = new();
 
-	public void Reset() { trail.Clear(); lastSample = null; cursor = session.PacketHistory.Count; blockedUntil = default; }
+	/// <summary>The leader flies: it took off (the FLY emotion) and has not landed.</summary>
+	public bool LeaderFlying { get; private set; }
+	/// <summary>The leader glides: it opened its wings in a fall and has not closed them.</summary>
+	public bool LeaderGliding { get; private set; }
+	/// <summary>In the air its samples are no ground to walk, and no way round is looked for until it is down.</summary>
+	public bool LeaderAirborne => LeaderFlying || LeaderGliding;
+	/// <summary>Where the leader has been since it took off, oldest first. A follower that flies takes them from here.</summary>
+	public Queue<BotPosition> AirTrail => airTrail;
 
-	public async Task<bool> StepAsync(CancellationToken token)
+	public void Reset()
 	{
-		await session.SynchronizeAsync(token);
+		trail.Clear(); lastSample = null; cursor = session.PacketHistory.Count; blockedUntil = default;
+		airTrail.Clear(); LeaderFlying = false; LeaderGliding = false;
+	}
+
+	/// <summary>The follower came down from a flight of its own: the ground it knew is behind it, and where its leader
+	/// stands is the next sample. What it knows of its leader's flight stays.</summary>
+	public void Landed() { trail.Clear(); lastSample = null; blockedUntil = default; }
+
+	/// <summary>
+	/// Reads what the client has seen of its leader since the last look: where it walked, and whether it is in the air.
+	/// <see cref="StepAsync"/> looks by itself; a follower that is flying, and takes no step on the ground, looks here.
+	/// </summary>
+	public void Observe()
+	{
 		var world = session.Api.World;
 		if ((world.MapId, world.InstanceId) != place)
 		{
@@ -30,40 +55,93 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 			place = (world.MapId, world.InstanceId);
 			geometry = runtime.CreateGeometry();
 			trail.Clear(); lastSample = null; cursor = session.PacketHistory.Count;
+			airTrail.Clear(); LeaderFlying = false; LeaderGliding = false;
 		}
 		if (world.GroupLeaderId != leader)
 		{
 			leader = world.GroupLeaderId;
 			trail.Clear(); lastSample = null; leaderMoving = false;
+			airTrail.Clear(); LeaderFlying = false; LeaderGliding = false;
 		}
+		// The history can have been emptied since the last look (a change of map).
+		if (cursor > session.PacketHistory.Count) cursor = session.PacketHistory.Count;
 		foreach (var packet in session.PacketHistory.Skip(cursor))
+		{
+			if (leader is int flier && packet.PacketType == typeof(SM_EMOTION) && packet.Get<int>("senderObjectId") == flier)
+			{
+				switch ((EmotionType)packet.Get<byte>("emotionType"))
+				{
+					case EmotionType.FLY: LeaderFlying = true; airTrail.Clear(); break;
+					case EmotionType.START_GLIDE: LeaderGliding = true; break;
+					// Down again: where it stands now is the next ground sample.
+					case EmotionType.LAND or EmotionType.STOP_FLY: LeaderFlying = false; LeaderGliding = false; lastSample = null; break;
+					case EmotionType.STOP_GLIDE: LeaderGliding = false; lastSample = null; break;
+				}
+				continue;
+			}
 			if (leader is int id && packet.PacketType == typeof(SM_MOVE) && packet.Get<int>("objectId") == id ||
 				leader is int member && packet.PacketType == typeof(SM_GROUP_MEMBER_INFO) && packet.Get<int>("objectId") == member &&
 				packet.Get<byte>("event") is not (0 or 3 or 7))
 			{
 				if (packet.PacketType == typeof(SM_MOVE)) leaderMoving = packet.Get<byte>("movementMask") != 0;
-				Add(new(packet.Get<float>("x"), packet.Get<float>("y"), packet.Get<float>("z"), 0));
+				var sample = new BotPosition(packet.Get<float>("x"), packet.Get<float>("y"), packet.Get<float>("z"), 0);
+				if (!LeaderAirborne) Add(sample);
+				else if (LeaderFlying && packet.PacketType == typeof(SM_MOVE))
+				{
+					airTrail.Enqueue(sample);
+					while (airTrail.Count > 256) airTrail.Dequeue();
+				}
 				lastSeen = packet.ReceivedAt ?? session.Api.Timing.Now;
 			}
+		}
 		cursor = session.PacketHistory.Count;
+	}
+
+	public async Task<bool> StepAsync(CancellationToken token)
+	{
+		await session.SynchronizeAsync(token);
+		var world = session.Api.World;
+		Observe();
 		if (world.IsDead || leader is not int leaderId || leaderId == session.CharacterId ||
 			!world.GroupMembers.TryGetValue(leaderId, out var f1) || !f1.Online || f1.MapId != world.MapId)
 			return false;
 		if (f1.Dead) leaderMoving = false; // The Cleric can approach a fallen F1 to offer resurrection.
 		BotPosition currentLeader = world.Objects.GetValueOrDefault(leaderId)?.Position ?? f1.Position;
-		if (lastSample == null) { Add(currentLeader); lastSeen = session.Api.Timing.Now; }
+		if (lastSample == null && !LeaderAirborne) { Add(currentLeader); lastSeen = session.Api.Timing.Now; }
 		// A stopped player sends no movement heartbeat. Its visible, unchanged position remains usable.
 		if ((session.Api.Timing.Now - lastSeen).TotalSeconds > 5 && (leaderMoving || !world.Objects.ContainsKey(leaderId))) return false;
 		if (Distance(session.CurrentPosition, currentLeader) <= 3) { trail.Clear(); return false; }
 		// The follower stood beside its leader with nothing left to walk, and was then moved away while the leader stood
 		// still (a fear, a knockback): no sample comes from a leader that does not move. Where it stands is the sample.
-		if (trail.Count == 0) { lastSample = null; Add(currentLeader); }
+		if (trail.Count == 0)
+		{
+			// In the air its leader stands on nothing: the ground it walked before it took off is all there is to walk.
+			if (LeaderAirborne) return false;
+			lastSample = null; Add(currentLeader);
+		}
 		// Ground snapping can put the follower slightly below an interpolated leader sample on a slope.
 		// Requiring the identical Z would leave it standing forever at the same horizontal point.
 		while (trail.TryPeek(out var reached) && MathF.Abs(session.CurrentPosition.Z - reached.Z) <= 3 &&
 			MathF.Sqrt(MathF.Pow(session.CurrentPosition.X - reached.X, 2) + MathF.Pow(session.CurrentPosition.Y - reached.Y, 2)) <= .8f)
 			trail.Dequeue();
 		if (!trail.TryPeek(out var next) || session.Api.Timing.Now < blockedUntil) return false;
+		// It walks and comes no nearer to the sample it is after: the way it finds there leads round in a ring. A Cleric
+		// circled a stair of Morheim Ice Fortress for a minute after a sample that lay on the stair's face, three steps to
+		// a round, while the Gladiator before it had walked straight on. Such a sample is given up for the one after it.
+		float toNext = Distance(session.CurrentPosition, next);
+		if (pursued is { } same && Distance(same, next) < .01f)
+		{
+			if (toNext < pursuedBest - .25f) { pursuedBest = toNext; pursuedSteps = 0; }
+			else if (++pursuedSteps > 12)
+			{
+				session.TraceDiagnostic("group-follow-gave-up-sample", new Dictionary<string, object?>
+				{ ["leader"] = leaderId, ["sample"] = next, ["nearest"] = pursuedBest, ["now"] = toNext, ["samples"] = trail.Count });
+				trail.Dequeue();
+				pursued = null;
+				return false;
+			}
+		}
+		else { pursued = next; pursuedBest = toNext; pursuedSteps = 0; }
 		// A short checked connection to the next leader sample also accommodates a stopped caster.
 		int map = world.MapId!.Value;
 		var path = geometry.FindLocalPath(map, session.CurrentPosition, next);
@@ -72,28 +150,40 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 			// A sample can lie on ground this follower cannot step onto from where it stands: the edge beside the stairs F1
 			// went down. The samples after it are tried, then a checked route to where F1 is seen now.
 			BotPosition refused = next;
+			BotPosition standing = session.CurrentPosition;
+			BotPosition[] laterSamples = trail.Skip(1).Take(24).ToArray();
 			int skipped = 0;
-			foreach (BotPosition later in trail.Skip(1).Take(24).ToArray())
+			bool around = false;
+			bool airborne = LeaderAirborne;
+			void Search()
 			{
-				skipped++;
-				path = geometry.FindLocalPath(map, session.CurrentPosition, later);
-				if (path.Count == 0) continue;
-				for (int drop = 0; drop < skipped; drop++) trail.Dequeue();
-				next = later;
-				break;
-			}
-			if (path.Count == 0)
-			{
-				path = geometry.FindInteractionPath(map, session.CurrentPosition, currentLeader);
-				// A way to within reach does not cross a seam of the mesh (the camp's gateway); a way to the exact point does.
-				if (path.Count == 0) path = geometry.FindJourneyPath(map, session.CurrentPosition, currentLeader);
-				if (path.Count > 0)
+				foreach (BotPosition later in laterSamples)
 				{
-					trail.Clear();
-					foreach (BotPosition point in path) trail.Enqueue(point);
-					lastSample = path[^1];
-					next = path[0];
+					skipped++;
+					path = geometry.FindLocalPath(map, standing, later);
+					if (path.Count > 0) return;
 				}
+				skipped = 0;
+				// To a leader in the air there is no way on the ground, and looking for one is the longest search there is.
+				if (airborne) return;
+				path = geometry.FindInteractionPath(map, standing, currentLeader);
+				// A way to within reach does not cross a seam of the mesh (the camp's gateway); a way to the exact point does.
+				if (path.Count == 0) path = geometry.FindJourneyPath(map, standing, currentLeader);
+				around = path.Count > 0;
+			}
+			if (runtime.SearchElsewhere is { } elsewhere) await elsewhere(Search);
+			else Search();
+			if (around)
+			{
+				trail.Clear();
+				foreach (BotPosition point in path) trail.Enqueue(point);
+				lastSample = path[^1];
+				next = path[0];
+			}
+			else if (path.Count > 0)
+			{
+				for (int drop = 0; drop < skipped; drop++) trail.Dequeue();
+				next = laterSamples[skipped - 1];
 			}
 			session.TraceDiagnostic(path.Count == 0 ? "group-follow-blocked" : "group-follow-around", new Dictionary<string, object?>
 			{ ["leader"] = leaderId, ["refused"] = refused, ["next"] = next, ["samples"] = trail.Count });

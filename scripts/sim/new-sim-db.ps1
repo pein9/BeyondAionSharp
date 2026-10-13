@@ -4,9 +4,11 @@ param(
 	[string]$RunId = $env:AION_SIM_RUN_ID,
 	[string]$Shard = '0',
 	[string]$DatabaseName,
-	[string]$ContainerName = 'aion-mysql',
+	# The simulation's MySQL container and its port on the host. The operator's own stack has a MySQL named aion-mysql
+	# on 3306; while it is up, AION_SIM_DB_CONTAINER and AION_SIM_DB_PORT name a container of the simulation's own.
+	[string]$ContainerName = $(if ($env:AION_SIM_DB_CONTAINER) { $env:AION_SIM_DB_CONTAINER } else { 'aion-mysql' }),
 	[string]$RootPassword = 'aion',
-	[int]$HostPort = 3306,
+	[int]$HostPort = $(if ($env:AION_SIM_DB_PORT) { [int]$env:AION_SIM_DB_PORT } else { 3306 }),
 	# The docker command. sim-snapshot.ps1 passes its own, so its contract test reaches this script through a fake.
 	[string]$Docker = 'docker'
 )

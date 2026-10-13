@@ -4,6 +4,9 @@ param()
 # aion_gs_sim_ni08_* schemas, never overwrites or restores an edited snapshot, and a restore is a fresh copy.
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+# The contract is written against the default container; a shell that names another one for its runs does not change it.
+$env:AION_SIM_DB_CONTAINER = $null
+$env:AION_SIM_DB_PORT = $null
 function Assert-True([bool]$Condition, [string]$Message) { if (-not $Condition) { throw $Message } }
 function Assert-Throws([scriptblock]$Block, [string]$Like, [string]$Message) {
 	try { & $Block; throw "NOT-THROWN" }

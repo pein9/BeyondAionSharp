@@ -299,6 +299,8 @@ public sealed partial class SimulationFastScenarioTests
 					() => BotNavigationGeometry.ForServerWorld(fixture.World.GetPlayer(seat.CharacterId).GetInstanceId(), Race.ASMODIANS),
 					async enterToken =>
 					{
+						// As the live host's seat: no sooner than the client's ten seconds after its last companion left.
+						await seat.WaitForReentryAsync(enterToken);
 						await seat.EnterWorldAsync(enterToken);
 						await seat.SynchronizeAsync(enterToken);
 						return true;

@@ -317,11 +317,16 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			arguments.Add("-DatabaseName");
 			arguments.Add(databaseName);
 		}
+		// The simulation's MySQL is the container named aion-mysql on port 3306 unless these say otherwise. The operator's
+		// own stack has a MySQL of that name on that port: while it is up, the simulation has a container of its own.
+		string container = Environment.GetEnvironmentVariable("AION_SIM_DB_CONTAINER") is { Length: > 0 } named ? named : "aion-mysql";
+		int port = int.TryParse(Environment.GetEnvironmentVariable("AION_SIM_DB_PORT"), out int published) ? published : 3306;
+		arguments.AddRange(["-ContainerName", container, "-HostPort", port.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
 		ProcessResult result = await RunProcessAsync("pwsh", arguments);
 		if (result.ExitCode != 0)
 			throw new InvalidOperationException($"Simulation database {action} failed: {result.StandardError}\n{result.StandardOutput}");
 		if (action == "Drop")
-			return _database ?? new SimDatabase(databaseName!, "127.0.0.1", 3306, "root", "aion", "aion-mysql");
+			return _database ?? new SimDatabase(databaseName!, "127.0.0.1", port, "root", "aion", container);
 		return JsonSerializer.Deserialize<SimDatabase>(
 			result.StandardOutput.Trim(),
 			new JsonSerializerOptions { PropertyNameCaseInsensitive = true })

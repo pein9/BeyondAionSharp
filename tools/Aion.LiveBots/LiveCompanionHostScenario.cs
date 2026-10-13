@@ -106,12 +106,27 @@ public static partial class LiveBotRunner
 							() => assets.AnyMapGeometry(Race.ASMODIANS, (session.Api.World.ChannelInfo?.Index ?? 0) + 1),
 							async enterToken =>
 							{
+								// The client's rule: a character enters the world no sooner than ten seconds after the last one of
+								// its connection left it. A companion asked for right after one was sent away waits that out here.
+								// A seat that did not wait failed, and the player's new companion never came.
+								await session.WaitForReentryAsync(enterToken);
 								await session.EnterWorldAsync(enterToken);
 								await session.SynchronizeAsync(enterToken);
 								return true;
 							},
 							// A host plays for hours and for many companions. A problem is written down; it stops no seat.
-							() => { }, () => problems.Snapshot(), actor.Trace, options.Dashboard);
+							() => { }, () => problems.Snapshot(), actor.Trace, options.Dashboard)
+						{
+							// A long search for a way runs beside the play, and the seat goes on when it is done: on a real server
+							// the clock does not wait while one seat thinks, and the seats share this thread.
+							SearchElsewhere = async search =>
+							{
+								long began = elapsed.ElapsedMilliseconds;
+								await Task.Run(search, CancellationToken.None);
+								long took = elapsed.ElapsedMilliseconds - began;
+								if (took >= 2_000) Console.WriteLine($"Seat {account}: {name} looked for a way for {took / 1000.0:0.0} s.");
+							},
+						};
 						// The Cleric plays support, as in the group stages; every other class fights (CB-Q8).
 						await new NaturalIshalgenJourney(session, runtime, new NaturalJourneyOptions(ClassLine: line, Companion: "companion",
 							Role: playerClass == PlayerClass.CLERIC ? "healer" : null)).RunAsync(operatorStop);

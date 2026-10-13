@@ -45,7 +45,7 @@ param(
 	[int]$Seed = 1,
 	[string]$Run,
 	[string]$Docker = 'docker',
-	[string]$ContainerName = 'aion-mysql',
+	[string]$ContainerName = $(if ($env:AION_SIM_DB_CONTAINER) { $env:AION_SIM_DB_CONTAINER } else { 'aion-mysql' }),
 	[string]$RootPassword = 'aion',
 	[string]$SnapshotRoot,
 	[switch]$Bridge,

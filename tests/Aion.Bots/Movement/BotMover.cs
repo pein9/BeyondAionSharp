@@ -14,6 +14,9 @@ public enum BotMovementMode
 	Jump,
 	Fall,
 	Glide,
+	/// <summary>Free flight: the start is the keyboard start of a walk with a velocity that has a height, as the 4.8
+	/// client sends it while its character flies, so every player in sight sees the flight.</summary>
+	Fly,
 }
 
 public sealed record BotMovementFrame(TimeSpan DelayBefore, BotClientPacket Packet, BotPosition Position);
@@ -54,6 +57,11 @@ public sealed class BotMover
 
 	public BotMovementPlan CreateGlidePlan(IReadOnlyList<BotPosition> route, BotPosition start, float speed,
 		TimeSpan? updateInterval = null) => CreateMovePlan(route, BotMovementMode.Glide, updateInterval, start, speed);
+
+	/// <summary>Free flight from <paramref name="start"/> through the route at <paramref name="speed"/>, reported by
+	/// <c>CM_MOVE</c>. <see cref="CreateFlightPlan"/> is the other flight packet, which no other player is shown.</summary>
+	public BotMovementPlan CreateFlyPlan(IReadOnlyList<BotPosition> route, BotPosition start, float speed,
+		TimeSpan? updateInterval = null) => CreateMovePlan(route, BotMovementMode.Fly, updateInterval, start, speed);
 
 	public BotMovementPlan CreateFlightPlan(IReadOnlyList<BotPosition> route,
 		TimeSpan? updateInterval = null)
@@ -244,7 +252,7 @@ public sealed class BotMover
 	private static MovementPacketData StartPacket(BotPosition start, BotPosition destination, byte heading,
 		float speed, float distance, BotMovementMode mode)
 	{
-		if (mode is BotMovementMode.Ground or BotMovementMode.Jump)
+		if (mode is BotMovementMode.Ground or BotMovementMode.Jump or BotMovementMode.Fly)
 		{
 			// The recorded 4.8 client uses relative velocity for ordinary keyboard movement.
 			// Ground movement follows terrain through position samples, not a vertical velocity.
