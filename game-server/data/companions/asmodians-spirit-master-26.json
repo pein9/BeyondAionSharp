@@ -149,6 +149,12 @@
       "itemId": 123001440,
       "count": 1,
       "enchant": 0
+    },
+    {
+      "slot": 1073741824,
+      "itemId": 140001399,
+      "count": 1,
+      "enchant": 0
     }
   ],
   "inventory": [
@@ -532,8 +538,8 @@
     }
   ],
   "source": {
-    "snapshot": "ntc-group-s4-w1",
-    "dumpSha256": "8d0787cf4021e71e5e314cb060bd081fea316d9fdb09cd8a0ae7c76d88cf8f97",
+    "snapshot": "ntc-group-s5-w1",
+    "dumpSha256": "8e19e36336f79525ee695e0779d1d91212c5720287e45380a4f93bc04efbec7f",
     "character": "Asimspirit"
   }
 }

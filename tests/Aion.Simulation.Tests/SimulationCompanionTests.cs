@@ -124,7 +124,13 @@ public sealed partial class SimulationFastScenarioTests
 				Assert.Equal(profile.Inventory.Select(carried => (carried.ItemId, carried.Count)).Order(),
 					companion.GetInventory().GetItems().Select(item => (item.GetItemId(), item.GetItemCount())).Order());
 				Assert.Equal(profile.Skills.Select(skill => (skill.Id, skill.Level)).Order(),
-					companion.GetSkillList().GetAllSkills().Select(skill => (skill.GetSkillId(), skill.GetSkillLevel())).Order());
+					companion.GetSkillList().GetAllSkills().Where(skill => !skill.IsStigmaSkill()).Select(skill => (skill.GetSkillId(), skill.GetSkillLevel())).Order());
+				// Its stigma: the stone is one of the worn items above, and stays in its slot at the login only because the
+				// companion was made with the stigma quest done. The login teaches the stone's skills (Saving Grace I and II).
+				Assert.Contains(profile.Equipment, worn => worn.Slot == (long)Aion.GameServer.Model.Items.ItemSlot.STIGMA1 && worn.ItemId == 140001431);
+				Assert.Equal(Aion.GameServer.QuestEngine.Model.QuestStatus.COMPLETE, companion.GetQuestStateList().GetQuestState(2900)?.GetStatus());
+				Assert.Equal(new[] { 3924, 3925 },
+					companion.GetSkillList().GetAllSkills().Where(skill => skill.IsStigmaSkill()).Select(skill => skill.GetSkillId()).Order());
 				Assert.True(service.IsCompanion(request.CharacterId));
 				// It is in its player's group from the moment it enters the world, and the player leads.
 				PlayerGroup group = leader.GetPlayerGroup();

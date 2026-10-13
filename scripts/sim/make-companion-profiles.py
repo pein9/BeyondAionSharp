@@ -6,7 +6,7 @@ learned is its profile. The profiles are generated from the group world, where e
 gear, shards and supplies the natural runs gave it. They are generated data: change the world they come from and
 generate them again, never edit them by hand.
 
-  python scripts/sim/make-companion-profiles.py                 # write game-server/data/companions from ntc-group-s4
+  python scripts/sim/make-companion-profiles.py                 # write game-server/data/companions from ntc-group-s5
   python scripts/sim/make-companion-profiles.py --check         # the checked-in profiles against the item data, and
                                                                 # against a fresh generation when the snapshot is here
 
@@ -29,6 +29,8 @@ KINAH = 182400001
 # potion threshold ... for companions only"). The Major Mana Potion restores mana over twenty seconds and has no restrict
 # row; a companion drinks one at half its mana. The natural runs have no such rule, so the group world has no such potion.
 COMPANION_EXTRAS = {162000011: 30}
+# A companion takes no quest: what a quest gave its character of the group world, and only a quest uses, is left out.
+QUEST_GROUPS = ('QUEST', 'KEY')
 UNEQUIPPED_SLOT = 65535
 CUBE = 0
 # PlayerClass ids, which index an item's restrict row.
@@ -106,11 +108,13 @@ def item_data():
             restrict = re.search(r' restrict="([\d ]+)"', attributes)
             race = re.search(r' race="(\w+)"', attributes)
             name = re.search(r' name="([^"]*)"', attributes)
+            group = re.search(r' item_group="(\w+)"', attributes)
             items[int(match.group(1))] = {
                 'level': int(level.group(1)) if level else 0,
                 'restrict': [int(v) for v in restrict.group(1).split()] if restrict else None,
                 'race': race.group(1) if race else None,
                 'name': name.group(1) if name else '',
+                'group': group.group(1) if group else None,
             }
     return items
 
@@ -139,7 +143,7 @@ def problems_of(profile, items):
     return found
 
 
-def generate(snapshot):
+def generate(snapshot, items):
     folder = os.path.join(REPO, 'run', 'snapshots', snapshot + '-w1')
     record = json.load(io.open(os.path.join(folder, 'snapshot.json'), encoding='utf-8'))
     raw = io.open(os.path.join(folder, 'dump.sql.gz'), 'rb').read()
@@ -171,7 +175,8 @@ def generate(snapshot):
                                  for row in own if row['is_equipped']), key=lambda worn: (worn['slot'], worn['itemId'])),
             'inventory': sorted([{'itemId': row['item_id'], 'count': row['item_count']}
                                  for row in own if not row['is_equipped'] and row['item_id'] != KINAH
-                                 and row['item_id'] not in COMPANION_EXTRAS]
+                                 and row['item_id'] not in COMPANION_EXTRAS
+                                 and items.get(row['item_id'], {}).get('group') not in QUEST_GROUPS]
                                 + [{'itemId': item, 'count': count} for item, count in COMPANION_EXTRAS.items()],
                                 key=lambda carried: carried['itemId']),
             'skills': sorted(({'id': row['skill_id'], 'level': row['skill_level']} for row in skills if row['player_id'] == player['id']),
@@ -191,7 +196,7 @@ def text_of(profile):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--snapshot', default='ntc-group-s4', help='the round snapshot the profiles come from')
+    parser.add_argument('--snapshot', default='ntc-group-s5', help='the round snapshot the profiles come from')
     parser.add_argument('--out', default=os.path.join(REPO, 'game-server', 'data', 'companions'))
     parser.add_argument('--check', action='store_true', help='check the profiles that are there; write nothing')
     options = parser.parse_args()
@@ -202,7 +207,7 @@ def main():
         paths = sorted(glob.glob(os.path.join(options.out, '*.json')))
         if not paths:
             raise SystemExit('No companion profile is there to check.')
-        fresh = generate(options.snapshot) if present else None
+        fresh = generate(options.snapshot, items) if present else None
         for path in paths:
             key = os.path.splitext(os.path.basename(path))[0]
             written = io.open(path, encoding='utf-8', newline='').read().replace('\r\n', '\n')
@@ -220,7 +225,7 @@ def main():
         return 1 if failed else 0
     if not present:
         raise SystemExit('The snapshot %s is not under run/snapshots.' % options.snapshot)
-    profiles = generate(options.snapshot)
+    profiles = generate(options.snapshot, items)
     for key, profile in sorted(profiles.items()):
         for problem in problems_of(profile, items):
             print('%s: %s' % (key, problem))
