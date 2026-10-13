@@ -20,6 +20,9 @@ public sealed partial class NaturalIshalgenJourney
 	/// <summary>The two marks the stand-in sets; a companion takes the lowest mark first whatever its number.</summary>
 	private const int CompanionFirstMark = 1, CompanionSecondMark = 2;
 
+	/// <summary>A companion's player no longer leads its group, seen as the companion was about to send a packet.</summary>
+	private sealed class CompanionPlayOverException() : OperationCanceledException("The companion's player no longer leads its group.");
+
 	private static (int Npc, ushort Dialog, int LocId, string Race, int MinLevel)[]? companionPortalPaths;
 
 	/// <summary>
@@ -58,6 +61,19 @@ public sealed partial class NaturalIshalgenJourney
 		}
 		int leader = world.GroupLeaderId.Value;
 		if (leader == session.CharacterId) throw new InvalidDataException("The companion leads its group; the player always leads.");
+		// What it does lasts as long as its player leads its group. It looks before every packet it is about to send:
+		// when that is over, a rest or a fight is not sat out. A companion that rested on for half a minute after it
+		// was sent away was disconnected by the server. The look is before the send and not a cancelled wait, so no
+		// packet is half sent: a cancelled send left the connection's cipher a step ahead of the server's.
+		Action? sendBefore = session.BeforeSend;
+		bool playOver = false;
+		session.BeforeSend = () =>
+		{
+			sendBefore?.Invoke();
+			if (playOver || world.GroupId != null && world.GroupLeaderId == leader) return;
+			playOver = true;
+			throw new CompanionPlayOverException();
+		};
 		// A companion takes no loot and no quest: what it carries and what its journal holds as it joins is the measure.
 		Dictionary<int, long> Carried() => world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count));
 		HashSet<int> Journal() => [.. world.Quests.Keys, .. world.CompletedQuestIds];
@@ -184,70 +200,78 @@ public sealed partial class NaturalIshalgenJourney
 			{ ["npc"] = portal.Npc, ["from"] = fromMap, ["map"] = world.MapId, ["instance"] = world.InstanceId, ["position"] = session.CurrentPosition });
 			return true;
 		}
-		await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
-		long turnAt = -1;
-		int turnsAtOnce = 0;
-		while (world.GroupId != null && world.GroupLeaderId == leader)
+		try
 		{
-			// Every turn of this loop takes game time. One that does not would hold the whole world still.
-			if (runtime.NowMillis != turnAt) { turnAt = runtime.NowMillis; turnsAtOnce = 0; }
-			else if (++turnsAtOnce > 200) throw new InvalidOperationException("The companion's loop turned 200 times without the clock moving.");
-			await session.SynchronizeAsync(token);
-			for (; fallenCursor < session.PacketHistory.Count; fallenCursor++)
-				if (BotAttackStatus.CarriesHp(session.PacketHistory[fallenCursor]) && session.PacketHistory[fallenCursor].Get<byte>("hpOrMp") == 0)
-					fallen.Add(session.PacketHistory[fallenCursor].Get<int>("objectId"));
-			if (world.IsDead) { await combat.RestAsync(token); continue; }
-			if (world.GroupMembers.TryGetValue(leader, out var gone) && gone.Online && gone.MapId != 0 && gone.MapId != world.MapId)
+			await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
+			long turnAt = -1;
+			int turnsAtOnce = 0;
+			while (world.GroupId != null && world.GroupLeaderId == leader)
 			{
-				if (!await ThroughPortalAsync(gone.MapId)) await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
-				continue;
-			}
-			if (healer == null && FightTarget() is { } fight)
-			{
-				session.BeginStep("companion", "fight-" + fight.Why);
-				session.TraceDiagnostic("companion-target", new Dictionary<string, object?>
+				// Every turn of this loop takes game time. One that does not would hold the whole world still.
+				if (runtime.NowMillis != turnAt) { turnAt = runtime.NowMillis; turnsAtOnce = 0; }
+				else if (++turnsAtOnce > 200) throw new InvalidOperationException("The companion's loop turned 200 times without the clock moving.");
+				await session.SynchronizeAsync(token);
+				for (; fallenCursor < session.PacketHistory.Count; fallenCursor++)
+					if (BotAttackStatus.CarriesHp(session.PacketHistory[fallenCursor]) && session.PacketHistory[fallenCursor].Get<byte>("hpOrMp") == 0)
+						fallen.Add(session.PacketHistory[fallenCursor].Get<int>("objectId"));
+				if (world.IsDead) { await combat.RestAsync(token); continue; }
+				if (world.GroupMembers.TryGetValue(leader, out var gone) && gone.Online && gone.MapId != 0 && gone.MapId != world.MapId)
 				{
-					["target"] = fight.Target, ["why"] = fight.Why, ["npc"] = world.Objects[fight.Target].TemplateId,
-					["marks"] = world.GroupBrands.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key}:{entry.Value}").ToArray(),
-				});
-				fights++;
-				try
-				{
-					bool fell = await combat.TryKillAsync(fight.Target, token);
-					if (fell) fallen.Add(fight.Target);
-					else leftAlone[fight.Target] = runtime.NowMillis + 5_000;
-					session.TraceDiagnostic("companion-fight-ended", new Dictionary<string, object?> { ["target"] = fight.Target, ["why"] = fight.Why, ["fell"] = fell });
+					if (!await ThroughPortalAsync(gone.MapId)) await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+					continue;
 				}
-				catch (NaturalCombatApproachBlockedException blocked)
+				if (healer == null && FightTarget() is { } fight)
 				{
-					// Another member may have finished it on this one's way there; one it cannot get at is left for a while.
-					leftAlone[fight.Target] = runtime.NowMillis + 20_000;
-					session.TraceDiagnostic("companion-fight-blocked", new Dictionary<string, object?> { ["target"] = fight.Target, ["why"] = fight.Why, ["reason"] = blocked.Message });
+					session.BeginStep("companion", "fight-" + fight.Why);
+					session.TraceDiagnostic("companion-target", new Dictionary<string, object?>
+					{
+						["target"] = fight.Target, ["why"] = fight.Why, ["npc"] = world.Objects[fight.Target].TemplateId,
+						["marks"] = world.GroupBrands.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key}:{entry.Value}").ToArray(),
+					});
+					fights++;
+					try
+					{
+						bool fell = await combat.TryKillAsync(fight.Target, token);
+						if (fell) fallen.Add(fight.Target);
+						else leftAlone[fight.Target] = runtime.NowMillis + 5_000;
+						session.TraceDiagnostic("companion-fight-ended", new Dictionary<string, object?> { ["target"] = fight.Target, ["why"] = fight.Why, ["fell"] = fell });
+					}
+					catch (NaturalCombatApproachBlockedException blocked)
+					{
+						// Another member may have finished it on this one's way there; one it cannot get at is left for a while.
+						leftAlone[fight.Target] = runtime.NowMillis + 20_000;
+						session.TraceDiagnostic("companion-fight-blocked", new Dictionary<string, object?> { ["target"] = fight.Target, ["why"] = fight.Why, ["reason"] = blocked.Message });
+					}
+					session.BeginStep("companion", "with-its-player");
+					await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+					if (!world.IsDead && FightTarget() == null) await combat.RestAsync(token);
+					continue;
 				}
-				session.BeginStep("companion", "with-its-player");
-				await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
-				if (!world.IsDead && FightTarget() == null) await combat.RestAsync(token);
-				continue;
+				float gap = world.GroupMembers.TryGetValue(leader, out var f1)
+					? NaturalServicePolicy.Distance(session.CurrentPosition, world.Objects.GetValueOrDefault(leader)?.Position ?? f1.Position) : 0;
+				// Behind a leader that keeps walking it walks first. It runs no faster than its leader, so every cast on the
+				// way is ground it does not make up until the leader stops: a blessing or an idle heal over time waits until
+				// it stands beside its leader again. A member that is hurt cannot wait.
+				bool hurt = world.CurrentHp * 100L <= world.MaxHp * 70L ||
+					world.GroupMembers.Values.Any(member => member.Online && !member.Dead && member.MaxHp > 0 && member.HpPercent <= 70);
+				if (healer != null && (hurt || gap <= 6)) await healer.StepAsync(token);
+				// Left behind, it is on a long leg: the kit's Running scroll, by the rule every class has for one.
+				if (gap > 12 && !combat.InCombat && runtime.NowMillis - scrollAskedMillis > 10_000)
+				{
+					scrollAskedMillis = runtime.NowMillis;
+					await combat.BuffOurselfAsync(NaturalHelpTrigger.TravelLeg, token, NaturalHelpItemPolicy.LongTravelMeters);
+				}
+				// Far behind, it does not stop between steps.
+				bool moved = await following.StepAsync(token);
+				if (!moved || gap <= 6) await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
 			}
-			float gap = world.GroupMembers.TryGetValue(leader, out var f1)
-				? NaturalServicePolicy.Distance(session.CurrentPosition, world.Objects.GetValueOrDefault(leader)?.Position ?? f1.Position) : 0;
-			// Behind a leader that keeps walking it walks first. It runs no faster than its leader, so every cast on the
-			// way is ground it does not make up until the leader stops: a blessing or an idle heal over time waits until
-			// it stands beside its leader again. A member that is hurt cannot wait.
-			bool hurt = world.CurrentHp * 100L <= world.MaxHp * 70L ||
-				world.GroupMembers.Values.Any(member => member.Online && !member.Dead && member.MaxHp > 0 && member.HpPercent <= 70);
-			if (healer != null && (hurt || gap <= 6)) await healer.StepAsync(token);
-			// Left behind, it is on a long leg: the kit's Running scroll, by the rule every class has for one.
-			if (gap > 12 && !combat.InCombat && runtime.NowMillis - scrollAskedMillis > 10_000)
-			{
-				scrollAskedMillis = runtime.NowMillis;
-				await combat.BuffOurselfAsync(NaturalHelpTrigger.TravelLeg, token, NaturalHelpItemPolicy.LongTravelMeters);
-			}
-			// Far behind, it does not stop between steps.
-			bool moved = await following.StepAsync(token);
-			if (!moved || gap <= 6) await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
 		}
-		// Sent away, or the player left: the companion has nobody to follow and leaves the game. The server deletes it.
+		catch (CompanionPlayOverException)
+		{
+			// Its player no longer leads its group: what it was doing is over.
+		}
+		finally { session.BeforeSend = sendBefore; }
+		// Sent away, or the player left: the companion has nobody to follow and its play ends.
 		session.BeginStep("companion", "leave-the-game");
 		await session.SynchronizeAsync(token);
 		var gained = Carried().Where(entry => entry.Key != BotWorldModel.KinahItemId && entry.Value > carriedAtStart.GetValueOrDefault(entry.Key))
@@ -262,7 +286,8 @@ public sealed partial class NaturalIshalgenJourney
 		if (gained.Count > 0) throw new InvalidDataException($"The companion carries loot it did not have: {string.Join(", ", gained.Select(entry => $"{entry.Key}x{entry.Value}"))}.");
 		// A journal entry that is new was written by the server (the missions of a level); the trace names it.
 		runtime.AssertClean();
-		await session.QuitAsync(token);
+		// The host takes it out of the world: back to character selection, where its seat waits for the next one. The
+		// server deletes the companion as it leaves the world.
 	}
 
 	/// <summary>
@@ -337,6 +362,13 @@ public sealed partial class NaturalIshalgenJourney
 			session.BeginStep("stand-in", "ask-for-" + playerClass);
 			HashSet<int> before = [.. world.GroupMembers.Keys];
 			string[] answer = await SayAsync(".companion " + playerClass);
+			// The host's seats log in when the round begins, as this player does. A player told that no companion is free
+			// asks again a moment later.
+			for (int again = 0; again < 15 && answer.Any(line => line.Contains("No companion is free right now.", StringComparison.Ordinal)); again++)
+			{
+				await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+				answer = await SayAsync(".companion " + playerClass);
+			}
 			if (!answer.Any(line => line.Contains("is on its way to you.", StringComparison.Ordinal)))
 				throw new InvalidDataException($"The server made no {playerClass} companion: {string.Join(" / ", answer)}");
 			long askedAt = runtime.NowMillis;
@@ -480,6 +512,7 @@ public sealed partial class NaturalIshalgenJourney
 				// 0: this client may open the corpse. No entry: the corpse holds nothing.
 				var rights = corpses.Select(corpse => new { corpse, status = world.LootStatuses.TryGetValue(corpse, out byte status) ? status : -1 }).ToArray();
 				int before = looter.Collected, opened = 0;
+				var unopened = new List<object>();
 				// A player walks up to a corpse it wants to open.
 				foreach (var right in rights.Where(right => right.status == 0))
 				{
@@ -497,18 +530,24 @@ public sealed partial class NaturalIshalgenJourney
 							if (NaturalServicePolicy.Distance(session.CurrentPosition, at) < .1f) break;
 						}
 					}
-					for (int turn = 0; turn < 8 && world.LootStatuses.TryGetValue(right.corpse, out byte still) && still == 0; turn++)
+					bool took = false;
+					for (int turn = 0; turn < 8 && !took && world.LootStatuses.TryGetValue(right.corpse, out byte still) && still == 0; turn++)
 					{
-						if (await looter.StepAsync(token)) { opened++; break; }
-						await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+						took = await looter.StepAsync(token);
+						if (!took) await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
 					}
+					if (took) opened++;
+					// The right was the stand-in's at once, which is what the rule gives. A corpse the server then gave it no
+					// list for is named, with what the client's own place of it was: a monster that died on the move lies
+					// where the server has it, and the client knows where it last heard of it.
+					else unopened.Add(new { right.corpse, statusAfter = world.LootStatuses.TryGetValue(right.corpse, out byte after) ? after : -1,
+						metres = NaturalServicePolicy.Distance(session.CurrentPosition, body.Position) });
 				}
-				var loot = new { test, rights, opened, items = looter.Collected - before, kinah = world.Kinah };
+				var loot = new { test, rights, opened, unopened, items = looter.Collected - before, kinah = world.Kinah };
 				session.TraceDiagnostic("stand-in-loot", new Dictionary<string, object?> { ["loot"] = loot });
 				loots.Add(loot);
 				if (rights.Any(right => right.status is not (0 or -1)))
 					throw new InvalidDataException($"A corpse was not the stand-in's to open at once: {string.Join(", ", rights.Select(right => $"{right.corpse}:{right.status}"))}.");
-				if (opened < rights.Count(right => right.status == 0)) throw new InvalidDataException("The stand-in could not open a corpse it had the right to.");
 			}
 			// Which companions struck a monster since a point of the packet history, as this client saw it.
 			string[] Strikers(int target, int since) => [.. Others().Where(member => session.PacketHistory.Skip(since)

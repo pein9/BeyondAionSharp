@@ -40,10 +40,11 @@ public sealed record CompanionInfo(int CharacterId, string Name, PlayerClass Pla
 /// code and off unless <c>AION_COMPANIONS=true</c> or a host switches it on.
 ///
 /// A player who is alone or leads a group asks for a companion of a class. The server makes a throwaway character of
-/// that class from its generated profile, where the player stands, and leaves a request for a host. A host is the
-/// program that plays companions as ordinary clients: it offers the accounts it can log in on (its seats), takes the
-/// requests made on them, and logs in. The server never plays a character itself. A companion that leaves the world
-/// is deleted, and so is one that nobody came to play.
+/// that class from its generated profile, where the player stands, on a seat. A host is the program that plays
+/// companions as ordinary clients, with nothing but the client protocol: it logs in the accounts named as seats and
+/// leaves them at character selection, sees a companion appear in a seat's character list, and enters the world with
+/// it. The server never plays a character itself. A companion that leaves the world is deleted, and so is one that
+/// nobody came to play.
 /// </summary>
 public sealed class CompanionService
 {
@@ -162,16 +163,17 @@ public sealed class CompanionService
         enabled = false;
     }
 
-    /// <summary>A host can play a companion on this account. An account is a seat for one companion at a time.</summary>
-    public void OfferSeat(int accountId, string accountName)
+    /// <summary>A seat with no client behind it, for a test in the server's own process that wants a companion made
+    /// without playing it. A host's seats are found among the logged-in accounts (<see cref="FindSeats"/>).</summary>
+    internal void OfferSeat(int accountId, string accountName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(accountName);
         lock (gate)
             seats[accountId] = new Seat(accountId, accountName, null);
     }
 
-    /// <summary>The host no longer plays on this account. A companion on it ends.</summary>
-    public void WithdrawSeat(int accountId)
+    /// <summary>The test's seat is taken away. A companion on it ends.</summary>
+    internal void WithdrawSeat(int accountId)
     {
         lock (gate)
         {
@@ -186,8 +188,8 @@ public sealed class CompanionService
         }
     }
 
-    /// <summary>The request made on this seat that no host has taken yet, once; null when there is none.</summary>
-    public CompanionRequest? TakeRequest(int accountId)
+    /// <summary>The request made on a test's seat that was not taken yet, once; null when there is none.</summary>
+    internal CompanionRequest? TakeRequest(int accountId)
     {
         lock (gate)
         {
