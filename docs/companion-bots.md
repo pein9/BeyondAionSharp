@@ -1,6 +1,7 @@
 # Companion bots
 
-Status: planned, 2026-10-12. Nothing of it is built. The step list at the end is worked one step at a time.
+Status: planned 2026-10-12; C1 (decision and profiles) is done, nothing else is built. The step list at the end is
+worked one step at a time.
 
 It follows [natural-group-ntc.md](natural-group-ntc.md) and [natural-group-healer.md](natural-group-healer.md):
 following F1, the Cleric's healing-only role, the class fights, gear and supplies are there and are reused.
@@ -89,8 +90,17 @@ dismissed; the first version takes level 26 only.
 
 One step per iteration. A step is ticked when a SIM round from `ntc-group-s4` shows it, with a dated line under it.
 
-- [ ] **C1 Decision and profiles.** Log D41. Generate the eleven level-26 profiles from `ntc-group-s4`, with a
+- [x] **C1 Decision and profiles.** Log D41. Generate the eleven level-26 profiles from `ntc-group-s4`, with a
   check that every item exists and the class can wear it.
+  - 2026-10-12. D41 is in the decision log of [e2e-player-simulation-plan.md](e2e-player-simulation-plan.md).
+    `python scripts/sim/make-companion-profiles.py` wrote eleven files to `game-server/data/companions`, named
+    `asmodians-<class>-26.json`: the class's appearance, the 15 or 16 things it wears (its coin gear and weapon, both
+    power shard stacks), the 9 or 10 stacks in its cube (its kit), and the 72 to 99 skills it has learned. Kinah
+    is left out. A file names the snapshot and the dump's hash it came from.
+  - `--check` reads the files that are there: every item exists, and its class may wear what it wears by the
+    item's restrict row. Where the snapshot is at hand it also compares them with a fresh generation. Both pass.
+    A power shard has no restrict row, so its own level (65 for the Ancient one) is no gate, as rule MR-c found.
+  - The baseline's hashes are in `run/companion/baseline.json`.
 - [ ] **C2 The server's part.** `.companion <class>`, `dismiss` and `list`: the limits, the character made from its
   profile beside the player, its end and deletion, and a queue of requests for a host. Tested as server code.
 - [ ] **C3 SIM host and stand-in.** A stand-in types the command; the host logs in what the server made; the
