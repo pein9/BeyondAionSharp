@@ -31,7 +31,10 @@ Nochsana Training Camp (map 300030000) admits six from level 25. The roster is t
 Asimtemplar (leader, F1), Asimnjour (Cleric, `"role": "healer"`), Asimgladiator, Asimranger, Asimsorcerer and
 Asimchanter. The other five characters of the world stay logged out.
 
-Every attempt restores `ntc-group-s4` into a throwaway schema and is not captured:
+Every attempt restores the group world into a throwaway schema and is not captured. The leg was played from
+`ntc-group-s4`. Since 2026-10-13 the group world is `ntc-group-s5`, the same characters with their stigma stones
+(`docs/natural-muster.md`, MR-g); round `s5-n9` (`run/mr/MR-8/s5-n9`) played the whole leg from it. The command, as it
+was run for this document:
 
 ```powershell
 pwsh -NoProfile -File scripts/sim/run-round.ps1 -Round run/ntc/<round>.json -Item ntc -Run <fresh id> -From ntc-group-s4 -Seed 1 -ReplayRoot C:/Users/ryanf/Documents/GitHub/BeyondAionSharp/run/ntc

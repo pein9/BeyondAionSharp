@@ -1,6 +1,6 @@
 # Companion bots: the live host
 
-Status: 2026-10-13: L1 to L4 are done, and he has led five companions through Nochsana Training Camp (L5, still open for what was built after that run). His `aion` stack is up with companions on; the host keeps five seats waiting and logs in more as they are taken (run `ch-l5-5`). It follows [companion-bots.md](companion-bots.md), which is done in SIM.
+Status: 2026-10-13: L1 to L4 are done, and he has led five companions through Nochsana Training Camp (L5, still open for what was built after that run). His `aion` stack is up with companions on; the host keeps five seats waiting and logs in more as they are taken (run `ch-l5-6`), and every companion wears its class's stigma stone. It follows [companion-bots.md](companion-bots.md), which is done in SIM.
 
 ## The goal
 
@@ -354,8 +354,29 @@ its role, as the stand-in's companions did in SIM. NTC is the place to try it.
     - Live since 21:21 UTC: the game server's image built again (the new profiles and the pattern), its container
       made anew with nobody online and `AION_COMPANION_ACCOUNTS=companion*`, and the host run `ch-l5-5`: five
       seats waiting.
+  - 2026-10-13, later still, while he was away ("Figure out what stigma we should select for each class ... Update
+    profiles as needed."):
+    - **Every companion wears its class's stigma stone** (commits `e03d71120`, `ffac3e513`; the stones and the
+      rule are in `docs/natural-muster.md`, MR-g). The profiles come from `ntc-group-s5`. The damage classes cast
+      their stone's skill in the fight they already had; the Cleric casts Saving Grace on a member at half its
+      health. Shown in SIM from `ntc-group-s5`: rounds `s5-c9` and `s5-c9b-3` (`run/mr/MR-8`), all eleven classes
+      as companions to the General, ten of the eleven skills cast (the Bard was never hurt enough for its heal).
+    - **A player out of sight is away** (commit `4c5d9e435`). Round `s5-c9b`, the first with no Cleric among the
+      companions, stopped at the camp's door: the stand-in went in, and all five companions stood outside for three
+      minutes. The server tells a group where a member is when the member moves or its health changes (Java
+      `TeamMoveUpdater`, `TeamStatUpdater`), so a player that goes through a door and stands still at full health
+      is not heard of; with a Cleric the Cleric's own casts on its player had always brought the news. Now a
+      player that is in the group, not in sight, and by the group's last word within forty metres counts as away:
+      after half a minute the companion says it is stuck and is brought, into the instance too. And a player the
+      companion sees is where it is seen, whatever map the group's last word names: without that the companions,
+      once brought, were brought again every half minute until the player took a step. Shown in `s5-c9b-2`: five
+      brought 28 s after the stand-in went in. In `s5-c9b-3` and `s5-c9-3` the news came in time and all went
+      through the statue themselves.
+    - Live since 22:31 UTC: the image built again, the game server's container made anew with nobody online,
+      and the host run `ch-l5-6` on the new bot code: five seats waiting, no problem recorded.
   - Still to try before this step is ticked: the stuck rule, the supply check, the mana potion and the Zzz brand
-    in game, a re-summon right after a dismissal, and a sixth companion for a second player.
+    in game, a re-summon right after a dismissal, a sixth companion for a second player, and a companion's stigma
+    skill in a fight (the Templar's Inquisitor's Blow from 15 m and the Sorcerer's Ice Harpoon are the ones to see).
   - Seen in the trace, not a fault yet: a companion in play asks the server's time about nine times a second
     (1,964 `CM_TIME_CHECK` in 210 s), which is how the live session waits for the server. Its trace grows by
     about 30 MB an hour of play, and a waiting seat's by 1.2 MB an hour, twice what I wrote under L4.

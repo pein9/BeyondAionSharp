@@ -1,9 +1,9 @@
 # One world, and the muster at the Abyss entry's end
 
-Status: done, 2026-10-12. The eleven Asmodian second classes stand in one world database, the round snapshot
-`ntc-group-s4-w1`: each on an account of its own, level 26, in the best coin gear it can wear, the best power shard
-in both shard slots and switched on, its kit full, and nothing in its cube that no rule uses. What is not done is at
-the end.
+Status: done, 2026-10-12; the stigma added 2026-10-13. The eleven Asmodian second classes stand in one world database,
+the round snapshot `ntc-group-s5-w1`: each on an account of its own, level 26, in the best coin gear it can wear, the
+best power shard in both shard slots and switched on, its class's stigma stone in its slot, its kit full, and nothing
+in its cube that no rule uses. What is not done is at the end.
 
 This document holds three decisions the operator made on 2026-10-12, after the all-classes plan
 (`docs/natural-all-classes-ntc.md`, D40) closed, and the work that followed from them. It outranks that plan where
@@ -41,6 +41,10 @@ After the second report, the same day:
 1. On the Ancient Power Shard at level 10: "We want the best they can use. This just keeps it simple."
 2. On what still lay in the cubes: "We need to clean up things we don't need. We either need to use it or get rid of
    it. (this will change when we start training crafting/gathering skills, but not now)"
+
+On 2026-10-13, before he went away: "Figure out what stigma we should select for each class at the stigma quest (we
+are throwing away the bundle we get as the quest reward), and do the steps to socket the stigma on each class. Save
+at the appropirate 'leg', maybe after our abyss entry? Update profiles as needed."
 
 ## Rules
 
@@ -117,6 +121,43 @@ Two things are used rather than thrown away, from level 10 and where the cleanup
 The rule is on in the muster and in every leg written from here on. It is off in the legs already played, Ishalgen
 to the Abyss entry: their receipts count the items a leg ends with (the bridge's shop targets, the coin leg's
 loadout, Haramel's ledger), and none was replayed with it.
+
+**(MR-g) The stigma.** Q2900 "No Escaping Destiny" opens a character's stigma slots and pays the Stigma Support
+Bundle, which gives its opener one stone of its class, of eight or nine. One slot is open below level 30 (Java
+`StigmaService.getPossibleStigmaCount`), so a class wears one stone. It is the stone whose skill the class's fight
+table can cast as it stands: on one target or on the character itself, no charge skill, no area (a bot pulls one
+monster at a time), and with the weapon the class holds. Among those, the one that adds most to what the class does
+alone and in a group. The table is below.
+
+The muster opens the bundle for that stone and puts it in at the fortress's Stigma Master (Herner, 798382, ten metres
+from Nott). The server asks for no Stigma Master; his dialog is what opens the client's window. The price is 25,000
+Kinah at the server's service rate, 35,312 at the fortress (Java `StigmaService.notifyEquipAction`). The cleanup
+(MR-f) keeps the bundle and the stone until the stone is in its slot; a character whose bundle the cleanup threw
+away before this rule is supplied one. The skills come back at every login while the stone is worn. The legs before
+the muster are as they were played: they keep the bundle sealed.
+
+The quest data also lists a stone by class as a reward to choose. It is never given: the list is not switched on
+(`use_class_reward`), in Java as here, and no skill of the 4.8 data comes with its stones.
+
+| Class | Stone | Its skill at level 26 | In the class's table |
+|---|---|---|---|
+| Gladiator | Crippling Cut (140001304) | a weapon hit with 473 more, on a target that is thrown down; every 18 s | first, while the target is seen thrown down, which Wrathful Strike does seven times in ten |
+| Templar | Inquisitor's Blow (140001328) | a weapon hit with 438 more from 15 m; every 30 s | its pull, before Taunt, and an attack; its attack in flight |
+| Ranger | Bow of Blessing (140001363) | a fifth more attack with a bow for 60 s; every 3 min | cast on itself as Devotion is, while an attack reaches the target |
+| Assassin | Searching Strike (140001345) | a weapon hit with 720 more, likelier to be critical, and a stun of 1.5 s; every 30 s | before a chain is opened |
+| Sorcerer | Ice Harpoon (140001384) | 810 magic damage from 25 m, a cast of 2.5 s; every 6 s | before the harpoon it learns |
+| Spirit Master | Cyclone of Wrath (140001399) | 225 magic damage and 225 every 2 s for 8 s, a cast of 2 s; every 12 s | with its other damage that lasts |
+| Cleric | Saving Grace (140001431) | for 60 s, 1,917 health once its target is at half; no cast; every 2 min | at half its own health; in the healing role, on a member at half |
+| Chanter | Word of Life (140001414) | 250 health every 2 s for 10 s, for the group within 20 m; no cast; every 60 s | at 70% of its health |
+| Bard | Hymn of Rejuvenation (140001484) | 1,166 health and 145 every 2 s for 8 s; no cast; every 60 s | at 55% of its health, before the heals that have a cast |
+| Gunner | Power Grab (140001452) | 254 magic damage with two pistols, all of it back as health and half as mana; every 30 s | after its chains |
+| Rider | Drillbore (140001466) | 374 magic damage from the mech and a stun of 3 s, from 6 m; every 60 s | opens the fight at the target |
+
+What was left out and why: the Gunner's other attacks need a cannon or are a chain of their own beside its two, and
+the Rider's are charges or areas. For the Bard, Freestyle is a 15 s sleep from 25 m: it would make the Bard a second
+class for crowd control (the Zzz brand), and gives it nothing alone. For the Cleric, Sympathetic Heal is the quicker
+heal for a group and cannot be cast on the Cleric itself. A stone is changed by supplying another bundle and playing
+the muster again.
 
 ## The kit from level 10 (MR-c)
 
@@ -214,6 +255,19 @@ capture is one round snapshot with every character in it.
   - Round muster4 (run/mr/MR-7/muster4), from `ntc-group-s3`, captured as `ntc-group-s4`: all eleven played the muster
     again and reached its end. The table is under "After use it or get rid of it".
 
+- [x] **MR-8** The stigma (MR-g): a stone for each class, the muster's step, the group's capture, the companions.
+  - 2026-10-13, commit `e03d71120`. The stone of each class is in `NaturalStigma`; a class's catalog takes the
+    stone's skills as rows, and its table gives them a place. Rounds trial9 (from `ntc-group-s4`, the bundle
+    supplied) and trial10 (from `ntc-group-s3`, the character's own bundle), neither captured: all eleven put their
+    stone in. Round muster5 (run/mr/MR-8/muster5), from `ntc-group-s3`, captured as `ntc-group-s5`.
+  - The checks (run/mr/MR-8, chain1 and chain4): `Aion.GameServer.Tests` 4,646 passed, 16 skipped; the pre-commit
+    checks; the companion server tests; the five starter scopes identical; Fast passes.
+  - Commit `ffac3e513`: the companions' profiles from `ntc-group-s5`, without what only a quest uses. The server test
+    holds a made Cleric to its stone, the stigma quest and the two skills its login teaches.
+  - The rounds from `ntc-group-s5` are in the table under "After the stigma". The second companion round found a
+    fault of the companions that has nothing to do with stones, fixed in commit `4c5d9e435` and written down in
+    `docs/companion-live-host.md`: a player that went into the camp and stood still was not followed.
+
 ## The group, as the muster left it (`ntc-group-s2-w1`)
 
 | Class | Character, account | Level | The coin quest | Coins supplied | Bought | Weapon held now | Gear sold | Containers opened | Free cube slots | Round |
@@ -308,8 +362,38 @@ Serum and the Greater Awakening Scroll for a class that casts and the Greater Co
 the mana potions a class without a serum still drinks, the Tea of Repose and two Lodas Amulets. The Kinah is beside
 it. Every cube has 53 or 54 free slots.
 
-**The world to start the next legs from is `ntc-group-s4`.** A single character's record, for a run of one bot, is
-`ntc-group-s4-<class>`.
+That was the world to start the next legs from until 2026-10-13. It is `ntc-group-s5` now, below.
+
+## After the stigma (`ntc-group-s5-w1`)
+
+Round muster5 (run/mr/MR-8/muster5) changed no level, no gear, no coin and no shard. It was played from
+`ntc-group-s3`, where every cube still held the bundle Q2900 paid, and did what muster4 did before its own step. Each
+of the eleven opened its own bundle for its class's stone and had it put in at Herner for 35,312 Kinah. No bundle was
+supplied, nobody died, and every character reached the muster's end with the level, the gear, the shards, the kit
+and the free cube slots it has in `ntc-group-s4`, and with that world's Kinah less the price. The stone and both
+ranks of its skill are there again after a relog. From `ntc-group-s4`, where the bundle is gone, the muster supplies
+one and ends the same to the Kinah (round trial9).
+
+One thing differs from `ntc-group-s4`. The server gave five characters the daily quest Q49020 "[Daily] Aegir's
+Order" at this login (the Gladiator, the Ranger, the Rider, the Gunner and the Assassin, the last five to log in).
+The cleanup keeps what a quest's script gave while any quest is worked, so these five still hold the Hunter's Secret
+Remedy, the Rusty Key and the Lubricating Oil that muster4 threw away. They take no cube slot.
+
+The stones in play, in rounds from `ntc-group-s5` that were not captured. The number is how often the skill was cast:
+
+| Round | Who | Casts |
+|---|---|---|
+| `s5-n9`, the Group NTC leg, to its end | the six of that leg, the Cleric healing | Inquisitor's Blow 41, Ice Harpoon 35, Bow of Blessing 7, Crippling Cut 1, Saving Grace 1, Word of Life 0 |
+| `s5-c9`, companions to the General | a stand-in Templar leading a Cleric, a Gladiator, a Ranger, a Sorcerer and a Chanter | Inquisitor's Blow 16, Ice Harpoon 24, Bow of Blessing 4, Crippling Cut 1, Saving Grace 1, Word of Life 1 |
+| `s5-c9b-3`, companions to the General | the stand-in leading an Assassin, a Spirit Master, a Bard, a Gunner and a Rider | Searching Strike 9, Cyclone of Wrath 15, Power Grab 9, Drillbore 6, Hymn of Rejuvenation 0 |
+
+Ten of the eleven stones were cast. The Bard was never at 55% of its health, so its Hymn was not needed. The
+Gladiator's Crippling Cut came once a round: in a group its fights end before Wrathful Strike is ready a second
+time. The Chanter's Word of Life and the Cleric's Saving Grace wait for somebody to be hurt.
+
+**The world to start the next legs from is `ntc-group-s5`.** A single character's record is `ntc-group-s5-<class>`.
+The companions' profiles are generated from it (`scripts/sim/make-companion-profiles.py`): each wears its stone, and
+the server makes a companion with the stigma quest done, without which the stone would be taken out at its login.
 
 ## Not done, and what the operator is asked
 
@@ -323,9 +407,9 @@ it. Every cube has 53 or 54 free slots.
    it has and switches nothing on, so the starter scopes stay valid.
 4. **The cleanup, the tea and the amulet are off in the legs already played** (MR-f). A leg played again from an
    earlier snapshot behaves as it did; turning them on there means replaying that leg.
-5. **Three systems no bot uses yet, whose items were therefore thrown away**: stigmas (the Stigma Support Bundle),
-   manastones (the three boxes) and enchanting (the enchantment stones, sold in muster3). When a bot rule uses one of
-   them its items are kept, and what is gone can be supplied. The Administrator's Boon (an hour without the death
+5. **Two systems no bot uses yet, whose items were therefore thrown away**: manastones (the three boxes) and
+   enchanting (the enchantment stones, sold in muster3). When a bot rule uses one of them its items are kept, and
+   what is gone can be supplied. Stigmas are used since 2026-10-13 (MR-g). The Administrator's Boon (an hour without the death
    penalty, reusable until it expires three days after it was given) was discarded and not used: it would change
    what a death costs, and it was about to expire.
 6. **The tea has not been drunk in a run yet.** No character's Energy of Repose was low enough in a round that
@@ -334,6 +418,12 @@ it. Every cube has 53 or 54 free slots.
    weapon.
 8. **Levels 50 and up.** The kit's bands end at 49. The Fine tiers (restrict row 50) are for the leg that gets there.
 9. **The earlier snapshots are superseded, not removed.** `ntc-ready-<class>-s1`, the round worlds they point at,
-   `ntc-group-joined-s1-w1`, `ntc-group-s1-w1`, `ntc-group-s2-w1` and `mr-trial1-w1` are still under run/snapshots.
+   `ntc-group-joined-s1-w1`, `ntc-group-s1-w1` to `ntc-group-s4-w1` and `mr-trial1-w1` are still under run/snapshots.
    With the second weapon in a tier's manifest, the Assassin's and the Gunner's `ntc-ready` snapshots no longer verify
    as an Abyss-entry endpoint; their characters in the group world do.
+10. **One stone a class, chosen by me** (MR-g and its table). The operator asked for the choice; it is his to change.
+    The two I would ask about: the Bard's Freestyle, a sleep, in place of its heal, which would give the companions a
+    second class for crowd control; and the Gladiator, whose stone is cast once a round in a group.
+11. **The second slot opens at level 30.** The bundle gives one stone. The next one is for the leg that gets there.
+12. **The legs before the muster keep the bundle sealed**, as they were played and recorded. A class played again
+    from the start puts its stone in at the muster, from its own bundle.

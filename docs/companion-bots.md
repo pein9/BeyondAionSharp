@@ -49,6 +49,8 @@ dismissed; the first version takes level 26 only.
    requests made on them, and plays each character as an ordinary client, which joins the player's group.
 4. **The profile** is generated from the group world `ntc-group-s4`, where all eleven classes stand at 26 in the
    gear, shards and supplies the natural runs gave them: one file per class. The fight is the class's own table.
+   Since 2026-10-13 it is `ntc-group-s5`, where each class also wears its stigma stone (`docs/natural-muster.md`,
+   MR-g); a companion is made with the stigma quest done, so the stone stays in and teaches its skill at login.
 5. **Following.** The companion follows F1's observed movement, as in the group stages. When F1's map changes it
    takes the portal NPC that leads there. Flight and teleporters come later.
 6. **Fighting.** A damage class attacks the target the leader marked (`SM_SHOW_BRAND`). Of several marked targets

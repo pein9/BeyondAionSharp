@@ -113,6 +113,7 @@ catalog also permits learned resurrection and self-targeted Return for group rec
 | Light of Rejuvenation IV (3942) | Instant / 5 s | 30 s HoT, 39 MP; 23 m |
 | Healing Grace II (4204) | 3 s / 6 s | Larger single-member heal; 23 m |
 | Flash of Recovery I (3951) | Instant / 30 s | Emergency heal; 23 m |
+| Saving Grace (3924, 3925), the Cleric's stigma since 2026-10-13 | Instant / 2 min | On a member at half its health or less, before the other heals: it heals 1,917 once its target is at half (`docs/natural-muster.md`, MR-g) |
 | Cleanse III (3937) | Instant / 0.5 s | Remove eligible debuffs; 25 m |
 | Blessing of Guardianship (1684) | Instant | Group blessing between fights; 15 m |
 | Light of Resurrection (1699) | 6 s / none | Offer resurrection to a fallen member; 15 m; 10% of maximum MP |
