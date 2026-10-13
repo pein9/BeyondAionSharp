@@ -1,6 +1,6 @@
 # Companion bots: the live host
 
-Status: planned 2026-10-13; L1 (the server knows its seats), L2 (the SIM host on the seat protocol) and L3 (the live host program and its script) are done. It follows [companion-bots.md](companion-bots.md), which is done in SIM.
+Status: 2026-10-13: L1 to L4 are done. His `aion` stack is up with companions on and the host's five seats wait at character selection (run `ch-l4-1`). L5, his first try in game, is open. It follows [companion-bots.md](companion-bots.md), which is done in SIM.
 
 ## The goal
 
@@ -141,9 +141,44 @@ its role, as the stand-in's companions did in SIM. NTC is the place to try it.
     `AbyssUndeadAiTests.HalfOfTheDeathsLeaveAFear`: twenty unseeded rolls of one in two, which fall outside its
     bounds about once in 2,500 runs; the second run passed. `test-code-coverage.py` failed until the system
     matrix in `e2e-player-simulation-plan.md` named `CH-01`. Code commit `780f75a79`.
-- [ ] **L4 The stack.** `AION_COMPANIONS` and `AION_COMPANION_ACCOUNTS` in `docker/docker-compose.yml`, off by
+- [x] **L4 The stack.** `AION_COMPANIONS` and `AION_COMPANION_ACCOUNTS` in `docker/docker-compose.yml`, off by
   default, and the lines for `RUNNING.md`. Then, after telling him, the one rebuild and restart of his stack with
   both set, and the host started on it.
+  - 2026-10-13. The settings: the game server of `docker/docker-compose.yml` takes both from the environment or
+    `docker/.env` and starts as before without them; `RUNNING.md` has section 6. Commit `05078ab12`.
+  - What I found before the start, and it was not in this plan: the stack was not running. It had no login, game
+    or chat server container, and by the dates of the images and containers it had been down since the evening
+    of 2026-09-26. The container named `aion-mysql` that was up was the SIM database
+    (`scripts/sim/new-sim-db.ps1` makes one under that name when it finds none): 17 `aion_gs_sim_*` schemas and
+    nothing of his world. His world's volume `aion_aion-mysql-data` was untouched, and no SQL schema file has
+    changed since 2026-09-13. The stack's MySQL needs that name and port 3306, so the SIM container had to give
+    them up. I said so in the session before I started; nobody was online to be disconnected.
+  - What I did, once. Built the three images from `05078ab12` (`docker compose --env-file .env build`). With no
+    SIM run in progress and no connection open on it, stopped the SIM database container and renamed it
+    `aion-mysql-sim`; nothing in it was deleted. Started the stack as `docker/deploy.ps1` does
+    (`docker compose --env-file .env up -d`), with `AION_COMPANIONS=true` and
+    `AION_COMPANION_ACCOUNTS=companion1,companion2,companion3,companion4,companion5` in the shell of that one
+    command. MySQL came up healthy on `aion_aion-mysql-data`. No script wrote to a database.
+  - The game server (started 14:57:43 UTC, no restart): `Companions are on: 11 profiles of level 26 from
+    /app/game-server/data/companions; seat accounts: companion1, companion2, companion3, companion4, companion5`,
+    then `Authenticated with login server; 1 game servers registered`. No `fail` or `crit` line.
+  - The host: `scripts/live/companion-host.ps1 -Target aion -Run ch-l4-1`. It read the ports and the two settings
+    from Docker, loaded the ground, and its five seats logged in through the login server, which made the five
+    accounts at this first login. All five are at character selection and ask for their list every two seconds.
+    No problem is recorded. This is the first time the host program spoke to a server. The monitor page is at
+    http://127.0.0.1:17880/. Evidence: `run/companion-host/ch-l4-1/`.
+  - Not shown yet: no companion has been made on the live world. That takes a player's `.companion`, which is L5.
+  - To keep in mind while the stack is up:
+    - The two settings were given to that one `up`. A later `docker compose up -d` without them starts the game
+      server again with companions off. To keep them, the two lines go into `docker/.env`. I did not write
+      them there: this session may not read or write that file.
+    - The SIM scripts look for a container named `aion-mysql`, so a SIM run now uses the stack's MySQL server,
+      in `aion_gs_sim_*` schemas beside his world's. Its root password is the one they use. I start none
+      without his word.
+    - To put the SIM database back: `docker/stop.ps1`, then `docker rename aion-mysql-sim aion-mysql` and
+      `docker start aion-mysql`.
+    - A waiting seat writes about 0.6 MB of trace an hour, 3 MB for five. Fine for a trial; a host left up for
+      weeks needs a quieter wait.
 - [ ] **L5 The first try in game.** He asks for a Cleric at Morheim Ice Fortress, walks, marks a monster, goes into
   NTC, sends it away. I read the host's traces and the server's log for what a real client does differently.
 
