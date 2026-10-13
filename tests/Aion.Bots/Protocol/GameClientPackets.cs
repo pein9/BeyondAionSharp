@@ -288,6 +288,11 @@ public static partial class GameClientPackets
 	public static BotClientPacket LegionWarehouseKinah(long amount, bool deposit) =>
 		Create<CM_LEGION_WH_KINAH>(w => { w.Q(amount); w.C(deposit ? 1 : 0); });
 
+	/// <summary>Java CM_SHOW_BRAND.readImpl: D an action the server reads and does not use, D the mark's icon, D the object
+	/// the mark goes on (0 takes it off). The server takes it from a team's leader, or from a player in no team.</summary>
+	public static BotClientPacket ShowBrand(int brandId, int targetObjectId) =>
+		Create<CM_SHOW_BRAND>(w => { w.D(0); w.D(brandId); w.D(targetObjectId); });
+
 	public static BotClientPacket TeamCommand(byte command, int memberId = 0, int groupId = 0, int secondId = 0) =>
 		Create<CM_PLAYER_STATUS_INFO>(w => { w.C(command); w.D(memberId); w.D(groupId); w.D(secondId); });
 

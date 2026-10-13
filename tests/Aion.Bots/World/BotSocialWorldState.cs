@@ -23,6 +23,10 @@ public sealed partial class BotWorldModel
 	public int? GroupLeaderId { get; private set; }
 	public IReadOnlyDictionary<int, BotGroupMember> GroupMembers => groupMembers;
 	public IReadOnlyList<int> GroupLootRules { get; private set; } = [];
+	/// <summary>The marks the leader of the team has set: the mark's icon to the object it is on. A mark that was taken
+	/// off is not here. A mark stays on an object that has died; whoever reads the marks looks at the object.</summary>
+	public IReadOnlyDictionary<int, int> GroupBrands => groupBrands;
+	private readonly Dictionary<int, int> groupBrands = [];
 	public string? LegionName { get; private set; }
 	public byte LegionLevel { get; private set; }
 	public IReadOnlyDictionary<int, BotLegionMember> LegionMembers => legionMembers;
@@ -71,13 +75,23 @@ public sealed partial class BotWorldModel
 		else if (packet.PacketType == typeof(SM_GROUP_INFO))
 		{
 			int id = packet.Get<int>("groupId");
-			if (GroupId != id) groupMembers.Clear();
+			if (GroupId != id) { groupMembers.Clear(); groupBrands.Clear(); }
 			GroupId = id;
 			GroupLeaderId = packet.Get<int>("leaderId");
 			GroupLootRules = packet.Get<int[]>("lootRules");
 		}
+		else if (packet.PacketType == typeof(SM_SHOW_BRAND))
+		{
+			foreach (var brand in packet.Get<List<IReadOnlyDictionary<string, object?>>>("brands"))
+			{
+				int icon = (int)brand["iconId"]!, target = (int)brand["targetObjectId"]!;
+				if (target == 0) groupBrands.Remove(icon);
+				else groupBrands[icon] = target;
+			}
+		}
 		else if (packet.PacketType == typeof(SM_LEAVE_GROUP_MEMBER))
 		{
+			groupBrands.Clear();
 			GroupId = null; GroupLeaderId = null; groupMembers.Clear();
 			GroupLootRules = [];
 			AllianceId = null; AllianceLeaderId = null; allianceMembers.Clear(); AllianceViceCaptains = [];

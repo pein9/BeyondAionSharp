@@ -12,7 +12,9 @@ namespace Aion.Bots.Scenarios;
 public sealed partial class NaturalIshalgenJourney
 {
 	/// <summary>How far the stand-in plays so far (docs/companion-bots.md, the C steps).</summary>
-	private static readonly string[] CompanionCheckpoints = ["joined", "walk"];
+	private static readonly string[] CompanionCheckpoints = ["joined", "walk", "marks"];
+	/// <summary>The two marks the stand-in sets; a companion takes the lowest mark first whatever its number.</summary>
+	private const int CompanionFirstMark = 1, CompanionSecondMark = 2;
 
 	/// <summary>
 	/// Companion bots (docs/companion-bots.md). A companion is a character the server made for a player who asked for
@@ -65,10 +67,79 @@ public sealed partial class NaturalIshalgenJourney
 		combat.AfterBindRevive = EnterMap;
 		combat.AfterInstanceRevive = EnterMap;
 		long scrollAskedMillis = long.MinValue / 2;
+		// A monster this companion could not get at, and until when it leaves it alone.
+		var leftAlone = new Dictionary<int, long>();
+		// The monsters this client saw fall: its own kills, and every object whose health it saw reach nothing. A monster
+		// that has just fallen is not a corpse to the client yet, and a mark stays on it.
+		var fallen = new HashSet<int>();
+		int fallenCursor = session.PacketHistory.Count;
+		int fights = 0;
+		bool Fightable(int id) => !fallen.Contains(id) && world.Objects.TryGetValue(id, out var seen) && seen.Kind == BotKnownObjectKind.Npc && !seen.IsCorpse &&
+			leftAlone.GetValueOrDefault(id) <= runtime.NowMillis && NaturalServicePolicy.Distance(session.CurrentPosition, seen.Position) <= 40;
+		// What a damage class attacks. The leader's marks come first, the lowest mark before the others. With no mark on
+		// a living monster in view, it is what the leader is attacking; with neither, a monster that is attacking a
+		// member of the group.
+		(int Target, string Why)? FightTarget()
+		{
+			foreach ((int mark, int marked) in world.GroupBrands.OrderBy(entry => entry.Key))
+				if (Fightable(marked)) return (marked, "mark-" + mark);
+			int[] near = [.. world.Objects.Values.Where(known => Fightable(known.ObjectId)).Select(known => known.ObjectId)];
+			if (near.Length == 0) return null;
+			int[] members = [.. world.GroupMembers.Keys];
+			DateTimeOffset since = session.Api.Timing.Now.AddSeconds(-10);
+			int? defended = null;
+			for (int index = session.PacketHistory.Count - 1, looked = 0; index >= 0 && looked < 400; index--, looked++)
+			{
+				var packet = session.PacketHistory[index];
+				if (packet.ReceivedAt is { } at && at < since) break;
+				foreach (int candidate in near)
+					if (runtime.IncomingAttacker(packet, candidate) == leader) return (candidate, "leader");
+				if (defended != null) continue;
+				foreach (int member in members)
+					if (runtime.IncomingAttacker(packet, member) is int attacker && Array.IndexOf(near, attacker) >= 0) { defended = attacker; break; }
+			}
+			return defended is int on ? (on, "defence") : null;
+		}
+		await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
+		long turnAt = -1;
+		int turnsAtOnce = 0;
 		while (world.GroupId != null && world.GroupLeaderId == leader)
 		{
+			// Every turn of this loop takes game time. One that does not would hold the whole world still.
+			if (runtime.NowMillis != turnAt) { turnAt = runtime.NowMillis; turnsAtOnce = 0; }
+			else if (++turnsAtOnce > 200) throw new InvalidOperationException("The companion's loop turned 200 times without the clock moving.");
 			await session.SynchronizeAsync(token);
+			for (; fallenCursor < session.PacketHistory.Count; fallenCursor++)
+				if (BotAttackStatus.CarriesHp(session.PacketHistory[fallenCursor]) && session.PacketHistory[fallenCursor].Get<byte>("hpOrMp") == 0)
+					fallen.Add(session.PacketHistory[fallenCursor].Get<int>("objectId"));
 			if (world.IsDead) { await combat.RestAsync(token); continue; }
+			if (healer == null && FightTarget() is { } fight)
+			{
+				session.BeginStep("companion", "fight-" + fight.Why);
+				session.TraceDiagnostic("companion-target", new Dictionary<string, object?>
+				{
+					["target"] = fight.Target, ["why"] = fight.Why, ["npc"] = world.Objects[fight.Target].TemplateId,
+					["marks"] = world.GroupBrands.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key}:{entry.Value}").ToArray(),
+				});
+				fights++;
+				try
+				{
+					bool fell = await combat.TryKillAsync(fight.Target, token);
+					if (fell) fallen.Add(fight.Target);
+					else leftAlone[fight.Target] = runtime.NowMillis + 5_000;
+					session.TraceDiagnostic("companion-fight-ended", new Dictionary<string, object?> { ["target"] = fight.Target, ["why"] = fight.Why, ["fell"] = fell });
+				}
+				catch (NaturalCombatApproachBlockedException blocked)
+				{
+					// Another member may have finished it on this one's way there; one it cannot get at is left for a while.
+					leftAlone[fight.Target] = runtime.NowMillis + 20_000;
+					session.TraceDiagnostic("companion-fight-blocked", new Dictionary<string, object?> { ["target"] = fight.Target, ["why"] = fight.Why, ["reason"] = blocked.Message });
+				}
+				session.BeginStep("companion", "with-its-player");
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+				if (!world.IsDead && FightTarget() == null) await combat.RestAsync(token);
+				continue;
+			}
 			float gap = world.GroupMembers.TryGetValue(leader, out var f1)
 				? NaturalServicePolicy.Distance(session.CurrentPosition, world.Objects.GetValueOrDefault(leader)?.Position ?? f1.Position) : 0;
 			// Behind a leader that keeps walking it walks first. It runs no faster than its leader, so every cast on the
@@ -92,7 +163,7 @@ public sealed partial class NaturalIshalgenJourney
 		session.TraceDiagnostic("companion-leaves", new Dictionary<string, object?>
 		{
 			["group"] = world.GroupId, ["leaderNow"] = world.GroupLeaderId, ["leaderWas"] = leader, ["elapsedMillis"] = runtime.NowMillis - entered,
-			["deaths"] = combat.ReviveCount,
+			["deaths"] = combat.ReviveCount, ["fights"] = fights,
 		});
 		runtime.AssertClean();
 		await session.QuitAsync(token);
@@ -210,11 +281,129 @@ public sealed partial class NaturalIshalgenJourney
 				await WaitAsync(() => (world.VisibleEffects ?? []).Any(effect => !effectsBefore.Contains(effect.SkillId) &&
 					Others().Any(member => member.ObjectId == effect.EffectorId)), "no support of the Cleric is on the stand-in", 60);
 		}
+		var marks = new List<object>();
+		if (reach >= 2)
+		{
+			// C5: in the field outside the fortress, at the monsters of its repeatable coin quest. First a mark alone, which
+			// the stand-in does not attack. Then two marks, the higher one set first. Then no mark: the stand-in attacks.
+			var geometry = runtime.CreateGeometry();
+			var navigator = new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, null, geometry), geometry, runtime,
+				stopOnDeath: false) { AvoidHostileAggro = true, Planner = BotTravelPlanner.For(world.MapId!.Value, geometry, runtime.Data) };
+			var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry, stopOnDeath: false,
+				conservativeRangedHold: false, NaturalMauPolicyParameters.Baseline, ClassLine) { ApproachMapId = world.MapId!.Value };
+			int[] kinds = [.. QuestRunBook.Build(NaturalAltgardContract.LoadMusterPlans().Values.Single()).Operations
+				.Where(op => op.Kind == QuestRunOperationKind.Kill).SelectMany(op => op.Npcs!).Select(npc => npc.Id)
+				.Where(id => runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value).Any(group => group.GetNpcId() == id)).Distinct()];
+			BotPosition[] grounds = [.. runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value).Where(group => kinds.Contains(group.GetNpcId()))
+				.SelectMany(group => group.GetSpawnTemplates()).Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), spot.GetHeading()))
+				.OrderBy(at => NaturalServicePolicy.Distance(session.CurrentPosition, at))];
+			var used = new HashSet<int>();
+			BotKnownObject[] InView() => [.. world.Objects.Values.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId is int kind &&
+				kinds.Contains(kind) && !known.IsCorpse && !used.Contains(known.ObjectId) &&
+				NaturalServicePolicy.Distance(session.CurrentPosition, known.Position) <= 30)
+				.OrderBy(known => NaturalServicePolicy.Distance(session.CurrentPosition, known.Position))];
+			// A monster has fallen when this client saw its health reach nothing. It is no corpse to the client yet then.
+			int since = session.PacketHistory.Count;
+			bool Fell(int target) => !world.Objects.TryGetValue(target, out var seen) || seen.IsCorpse || session.PacketHistory.Skip(since)
+				.Any(packet => BotAttackStatus.CarriesHp(packet) && packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0);
+			// The stand-in walks towards the hunting ground until it has enough living monsters in view.
+			async Task<BotKnownObject[]> FindAsync(int count)
+			{
+				foreach (BotPosition ground in grounds)
+				{
+					if (InView().Length >= count) break;
+					var route = await navigator.FindRouteAsync(session.CurrentPosition, ground, token);
+					foreach (BotPosition point in route)
+					{
+						while (InView().Length < count && NaturalServicePolicy.Distance(session.CurrentPosition, point) > .5f)
+						{
+							BotPosition at = session.CurrentPosition;
+							float fraction = Math.Min(1, 6 / NaturalServicePolicy.Distance(at, point));
+							await navigator.MoveAsync([at, new(at.X + (point.X - at.X) * fraction, at.Y + (point.Y - at.Y) * fraction,
+								at.Z + (point.Z - at.Z) * fraction, point.Heading)], token);
+							await session.SynchronizeAsync(token);
+							if (NaturalServicePolicy.Distance(session.CurrentPosition, at) < .1f) break;
+						}
+						if (InView().Length >= count) break;
+					}
+				}
+				BotKnownObject[] found = [.. InView().Take(count)];
+				if (found.Length < count) throw new InvalidDataException($"The stand-in found {found.Length} of the {count} living monsters it wanted to mark.");
+				foreach (BotKnownObject monster in found) used.Add(monster.ObjectId);
+				// A player lets its group come up before a pull.
+				await WaitAsync(() => Others().All(member => member.Online && Away(member) <= 12), "the companions did not come up before the marks", 90);
+				return found;
+			}
+			// Which companions struck a monster since a point of the packet history, as this client saw it.
+			string[] Strikers(int target, int since) => [.. Others().Where(member => session.PacketHistory.Skip(since)
+				.Any(packet => runtime.IncomingAttacker(packet, target) == member.ObjectId)).Select(member => member.Name!)];
+
+			session.BeginStep("stand-in", "mark-one");
+			BotKnownObject alone = (await FindAsync(1))[0];
+			since = session.PacketHistory.Count;
+			long markedAt = runtime.NowMillis;
+			await session.SendPacketAsync(session.Api.Mark(CompanionFirstMark, alone.ObjectId), token);
+			await WaitAsync(() => Fell(alone.ObjectId), "the marked monster did not fall", 180);
+			var one = new { test = "a mark alone, not attacked by the stand-in", target = alone.ObjectId, npc = alone.TemplateId,
+				fellAfterMillis = runtime.NowMillis - markedAt, strikers = Strikers(alone.ObjectId, since),
+				seenMarks = world.GroupBrands.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key}:{entry.Value}").ToArray() };
+			session.TraceDiagnostic("stand-in-marks", new Dictionary<string, object?> { ["result"] = one });
+			marks.Add(one);
+			await session.SendPacketAsync(session.Api.Mark(CompanionFirstMark, 0), token);
+
+			session.BeginStep("stand-in", "mark-two");
+			BotKnownObject[] pair = await FindAsync(2);
+			since = session.PacketHistory.Count;
+			markedAt = runtime.NowMillis;
+			// The higher mark is set first and on the nearer monster: only the mark's number can make the other fall first.
+			await session.SendPacketAsync(session.Api.Mark(CompanionSecondMark, pair[0].ObjectId), token);
+			await session.SendPacketAsync(session.Api.Mark(CompanionFirstMark, pair[1].ObjectId), token);
+			long? lowFell = null, highFell = null;
+			await WaitAsync(() =>
+			{
+				if (lowFell == null && Fell(pair[1].ObjectId)) lowFell = runtime.NowMillis - markedAt;
+				if (highFell == null && Fell(pair[0].ObjectId)) highFell = runtime.NowMillis - markedAt;
+				return lowFell != null && highFell != null;
+			}, "the two marked monsters did not fall", 300);
+			var two = new { test = "two marks, the higher set first and on the nearer monster", low = pair[1].ObjectId, high = pair[0].ObjectId,
+				lowFellAfterMillis = lowFell, highFellAfterMillis = highFell, lowStrikers = Strikers(pair[1].ObjectId, since),
+				highStrikers = Strikers(pair[0].ObjectId, since) };
+			session.TraceDiagnostic("stand-in-marks", new Dictionary<string, object?> { ["result"] = two });
+			marks.Add(two);
+			if (lowFell > highFell) throw new InvalidDataException("The monster with the higher mark fell before the one with the lower mark.");
+			await session.SendPacketAsync(session.Api.Mark(CompanionFirstMark, 0), token);
+			await session.SendPacketAsync(session.Api.Mark(CompanionSecondMark, 0), token);
+
+			session.BeginStep("stand-in", "no-mark");
+			BotKnownObject unmarked = (await FindAsync(1))[0];
+			await session.SynchronizeAsync(token);
+			if (world.GroupBrands.Count != 0) throw new InvalidDataException("A mark is still set after the stand-in took its marks off.");
+			since = session.PacketHistory.Count;
+			markedAt = runtime.NowMillis;
+			bool fell = false;
+			try { fell = await combat.TryKillAsync(unmarked.ObjectId, token); }
+			catch (NaturalCombatApproachBlockedException) { fell = Fell(unmarked.ObjectId); }
+			await WaitAsync(() => Fell(unmarked.ObjectId), "the monster the stand-in attacked did not fall", 120);
+			var none = new { test = "no mark: the stand-in attacks", target = unmarked.ObjectId, npc = unmarked.TemplateId, standInSawItFall = fell,
+				fellAfterMillis = runtime.NowMillis - markedAt, strikers = Strikers(unmarked.ObjectId, since) };
+			session.TraceDiagnostic("stand-in-marks", new Dictionary<string, object?> { ["result"] = none });
+			marks.Add(none);
+			// Every damage class struck each monster's turn; the Cleric struck none.
+			string[] fighters = [.. Others().Where(member => member.PlayerClass != PlayerClass.CLERIC.GetClassId()).Select(member => member.Name!)];
+			string[] healers = [.. Others().Where(member => member.PlayerClass == PlayerClass.CLERIC.GetClassId()).Select(member => member.Name!)];
+			foreach ((string test, string[] strikers) in new[] { ("the mark alone", one.strikers), ("the lower mark", two.lowStrikers),
+				("the higher mark", two.highStrikers), ("the stand-in's target", none.strikers) })
+			{
+				if (strikers.Intersect(healers).Any()) throw new InvalidDataException($"The Cleric struck {test}.");
+				if (fighters.Length > 0 && !strikers.Intersect(fighters).Any()) throw new InvalidDataException($"No damage class struck {test}.");
+			}
+			await combat.RestAsync(token);
+		}
 		var support = (world.VisibleEffects ?? []).Where(effect => Others().Any(member => member.ObjectId == effect.EffectorId))
 			.Select(effect => new { effect.SkillId, effect.EffectorId }).ToArray();
 		runtime.AssertClean();
 		var receipt = new { verified = true, CharacterId = session.CharacterId, until = options.CompanionUntil, asked, companions = joined,
-			leader = world.GroupLeaderId, group = world.GroupId, lootRules = world.GroupLootRules, list, walks, support,
+			leader = world.GroupLeaderId, group = world.GroupId, lootRules = world.GroupLootRules, list, walks, marks, support,
 			elapsedMillis = runtime.NowMillis - started, map = world.MapId, position = session.CurrentPosition };
 
 		session.BeginStep("stand-in", "send-them-away");
@@ -222,7 +411,7 @@ public sealed partial class NaturalIshalgenJourney
 		await WaitAsync(() => world.GroupId == null, "the group did not end after the dismissal", 60);
 		File.WriteAllText(Path.Combine(Path.GetDirectoryName(session.CombatTracePath!)!, "companion-completion.json"),
 			JsonSerializer.Serialize(new { receipt.verified, receipt.CharacterId, receipt.until, receipt.asked, receipt.companions, receipt.leader,
-				receipt.group, receipt.lootRules, receipt.list, receipt.walks, receipt.support, farewell, receipt.elapsedMillis, receipt.map, receipt.position },
+				receipt.group, receipt.lootRules, receipt.list, receipt.walks, receipt.marks, receipt.support, farewell, receipt.elapsedMillis, receipt.map, receipt.position },
 				new JsonSerializerOptions { WriteIndented = true }));
 		session.TraceDiagnostic("stand-in-reached", new Dictionary<string, object?> { ["receipt"] = receipt, ["farewell"] = farewell });
 	}

@@ -349,6 +349,9 @@ public sealed partial class BotApi
 
 	public BotClientPacket Duel(int targetObjectId) => GameClientPackets.DuelRequest(targetObjectId);
 	public BotClientPacket LeaveGroup() => GameClientPackets.TeamCommand(6);
+
+	/// <summary>The leader's mark on a target; a target of 0 takes the mark off.</summary>
+	public BotClientPacket Mark(int brandId, int targetObjectId) => GameClientPackets.ShowBrand(brandId, targetObjectId);
 	public BotClientPacket InviteToAlliance(string playerName) => GameClientPackets.InviteToGroup(12, playerName);
 	public BotClientPacket SetAllianceLeader(int objectId) => GameClientPackets.TeamCommand(17, objectId);
 	public BotClientPacket LeaveAlliance() => GameClientPackets.TeamCommand(14);

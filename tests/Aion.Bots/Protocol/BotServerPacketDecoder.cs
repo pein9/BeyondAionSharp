@@ -53,6 +53,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_MOVE)] = DecodeMove,
 			[typeof(SM_FORCED_MOVE)] = DecodeForcedMove,
 			[typeof(SM_POSITION)] = DecodePosition,
+			[typeof(SM_SHOW_BRAND)] = DecodeShowBrand,
 			[typeof(SM_DELETE)] = DecodeDelete,
 			[typeof(SM_TELEPORT_LOC)] = DecodeTeleport,
 			[typeof(SM_DIALOG_WINDOW)] = DecodeDialog,
@@ -643,6 +644,20 @@ public sealed partial class BotServerPacketDecoder
 			("heading", r.ReadByte()));
 		if (r.Remaining != 0) throw new InvalidDataException("Position has unexpected trailing bytes.");
 		return fields;
+	}
+
+	// Java SM_SHOW_BRAND.writeImpl: H how many marks, then for each D 1, D the mark's icon and D the object it is on
+	// (0 takes the mark off). TemporaryPlayerTeam.updateBrand sends one mark to the whole team when its leader sets it;
+	// sendBrands sends a member that joins every mark of the team, and sixteen removals when the team has none.
+	private static IReadOnlyDictionary<string, object?> DecodeShowBrand(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		int count = r.ReadUInt16();
+		var brands = new List<IReadOnlyDictionary<string, object?>>(count);
+		for (int index = 0; index < count; index++)
+			brands.Add(Fields(("type", r.ReadInt32()), ("iconId", r.ReadInt32()), ("targetObjectId", r.ReadInt32())));
+		if (r.Remaining != 0) throw new InvalidDataException("Show brand has unexpected trailing bytes.");
+		return Fields(("brands", brands));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeForcedMove(ReadOnlySpan<byte> body)

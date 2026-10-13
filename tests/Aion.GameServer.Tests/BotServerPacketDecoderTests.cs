@@ -41,8 +41,9 @@ public sealed class BotServerPacketDecoderTests
 	[Fact]
 	public void DecoderInventoryContainsExpectedBotPerceptionPackets()
 	{
-		Assert.Equal(127, decoder.PacketTypes.Count);
+		Assert.Equal(128, decoder.PacketTypes.Count);
 		Assert.Contains(typeof(SM_POSITION), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_SHOW_BRAND), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_RESURRECT), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_INSTANCE_INFO), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_GAME_TIME), decoder.PacketTypes);
@@ -403,6 +404,13 @@ public sealed class BotServerPacketDecoderTests
 				var body = Convert.FromHexString(fixtureCase.GetProperty("payloadHex").GetString()!);
 				var decoded = decoder.Decode(packetType, body);
 				var comparisons = AssertPrimitiveInputs(fixtureCase.GetProperty("inputs"), decoded.Fields);
+				// A packet that is a list and nothing else: each Java case is one mark, and its inputs are that row.
+				if (packetType == typeof(SM_SHOW_BRAND))
+				{
+					var brand = Assert.Single(decoded.Get<List<IReadOnlyDictionary<string, object?>>>("brands"));
+					Assert.Equal(1, brand["type"]);
+					comparisons += AssertPrimitiveInputs(fixtureCase.GetProperty("inputs"), brand);
+				}
 				AssertCaseWithoutTopLevelPrimitive(packetType, decoded, comparisons);
 			}
 		}
