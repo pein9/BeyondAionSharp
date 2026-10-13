@@ -181,6 +181,23 @@ its role, as the stand-in's companions did in SIM. NTC is the place to try it.
       weeks needs a quieter wait.
 - [ ] **L5 The first try in game.** He asks for a Cleric at Morheim Ice Fortress, walks, marks a monster, goes into
   NTC, sends it away. I read the host's traces and the server's log for what a real client does differently.
+  - 2026-10-13. A character to lead with, on his word: "add a templar character for me, onto the 'rrfarmer'
+    account, with identical profile/gear as a bot". His two characters were in Ishalgen. It is `Asimtemplar`, a
+    copy of the bots' Templar of the group world `ntc-group-s4`, the character the Templar profile was generated
+    from: level 26, by Morheim Ice Fortress and bound there, in its gear with both power shards, its supplies,
+    772,938 kinah, and the bot's journal (188 quest rows).
+  - How. With nobody online the game server was stopped, `aion_gs` was dumped to
+    `run/companion/L5-prep/aion_gs-before-templar.sql.gz`, and the character's rows were copied from a temporary
+    schema restored from the snapshot: new rows only, player id 310000 and items 310001 to 310027, above every
+    id the world used. The eleven tables have the same columns in both schemas. Its one running effect was left
+    out, because its end is a moment of the simulated clock. The temporary schema is dropped. Then the game
+    server was started again: its ID factory reserves the ids of the database when it starts, so a character
+    put in while it runs would share ids with what it had already spawned. This was a second start of the game
+    server, for this request; companions stayed on, since the container keeps its settings.
+  - The host's seats lost their connection and came back by themselves: each failed with `Login server did not
+    advertise online game server 1` every 15 seconds while the game server was down, then logged in and waited
+    again. That is the first time a seat's way back was played on a real server.
+  - Not shown: I cannot log in on his account, so the character's first login is his.
 
 ## What the try will show first
 
