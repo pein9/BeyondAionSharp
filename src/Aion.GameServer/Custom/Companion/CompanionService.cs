@@ -234,6 +234,31 @@ public sealed class CompanionService
     }
 
     /// <summary>
+    /// A player has entered the world. A companion joins its player's group here, the way an invitation that was
+    /// accepted does (PlayerGroupInvite.AcceptRequest): the player leads a new group, or its group takes one more.
+    /// </summary>
+    public void OnEnteredWorld(Player player)
+    {
+        lock (gate)
+        {
+            if (!companions.TryGetValue(player.GetObjectId(), out Entry? entry) || entry.State == CompanionState.Ending)
+                return;
+            Player leader = Aion.GameServer.World.World.GetInstance().GetPlayer(entry.Request.LeaderId);
+            if (leader == null || !Aion.GameServer.Restrictions.PlayerRestrictions.CanInviteToGroup(leader, player))
+            {
+                // Nobody leads it, or the group cannot take it (the restriction told the player why).
+                End(entry);
+                return;
+            }
+            PlayerGroup group = leader.GetPlayerGroup();
+            if (group != null)
+                PlayerGroupService.AddPlayer(group, player);
+            else
+                PlayerGroupService.CreateGroup(leader, player, Aion.GameServer.Model.Team.TeamType.GROUP, 0);
+        }
+    }
+
+    /// <summary>
     /// A player has left the world and is saved. A companion is deleted here, whatever made it leave. When it is a
     /// player who has companions, they end: nobody leads them any more.
     /// </summary>

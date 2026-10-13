@@ -118,4 +118,7 @@ public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? R
 	bool LaterCapital = false, string? AbyssArenaFirstTry = null, string? AbyssRingFirstTry = null,
 	NaturalClassLine? ClassLine = null, bool Muster = false, int? SurveyNpcId = null, string? Role = null, bool SupportWatch = false,
 	string[]? GroupRoster = null, string? GroupLeader = null, bool GroupLoot = false,
-	string? GroupStage = null, string? GroupUntil = null);
+	string? GroupStage = null, string? GroupUntil = null,
+	// Companion bots (docs/companion-bots.md): "companion" plays a character the server made for a player; "stand-in" is
+	// the test tool that plays that player's part, asks for Companions and plays as far as CompanionUntil names.
+	string? Companion = null, string[]? Companions = null, string? CompanionUntil = null);

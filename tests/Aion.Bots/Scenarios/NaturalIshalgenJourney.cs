@@ -284,6 +284,11 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		try
 		{
 			bool resuming = await runtime.EnterAsync(token);
+			if (options.Companion != null)
+			{
+				await RunCompanionAsync(token);
+				return;
+			}
 			if (options.GroupRoster != null)
 			{
 				await RunGroupQuestAsync(token);

@@ -15,7 +15,8 @@ public sealed partial class SimulationFastScenarioTests
 	/// D41 (docs/companion-bots.md, C2): the server's part of the companion bots, which Java does not have. While the
 	/// feature is off <c>.companion</c> is no command. Switched on, it makes a level-26 character of the class from its
 	/// generated profile where the player stands, on an account a host offered, and leaves a request for that host. The
-	/// character logs in as any other. One that is sent away, or whose player logs out, is deleted with its rows when it
+	/// character logs in as any other and is in the player's group, which the player leads, from the moment it enters the
+	/// world (C3). One that is sent away, or whose player logs out, is deleted with its rows when it
 	/// has left the world; one that nobody came to play is deleted at once.
 	/// </summary>
 	[SkippableFact]
@@ -110,17 +111,28 @@ public sealed partial class SimulationFastScenarioTests
 				Assert.Equal(profile.Skills.Select(skill => (skill.Id, skill.Level)).Order(),
 					companion.GetSkillList().GetAllSkills().Select(skill => (skill.GetSkillId(), skill.GetSkillLevel())).Order());
 				Assert.True(service.IsCompanion(request.CharacterId));
+				// It is in its player's group from the moment it enters the world, and the player leads.
+				PlayerGroup group = leader.GetPlayerGroup();
+				Assert.NotNull(group);
+				Assert.Same(group, companion.GetPlayerGroup());
+				Assert.True(group.IsLeader(leader));
+				Assert.Equal(new[] { session.CharacterId, request.CharacterId }.Order(), group.GetMembers().Select(member => member.GetObjectId()).Order());
+				await session.SynchronizeAsync(token);
+				Assert.Equal(session.CharacterId, session.Api.World.GroupLeaderId);
+				Assert.Contains(request.CharacterId, session.Api.World.GroupMembers.Keys);
 
 				session.BeginStep("s05", "who-may-ask");
 				Assert.Equal("A companion cannot bring companions.", service.Request(companion, "cleric"));
-				PlayerGroupService.CreateGroup(companion, leader, TeamType.GROUP, 0);
+				PlayerGroupService.ChangeLeader(companion);
 				Assert.Equal("Only the leader of your group can bring a companion.", service.Request(leader, "templar"));
-				PlayerGroupService.RemovePlayer(leader);
-				Assert.False(leader.IsInGroup());
+				PlayerGroupService.ChangeLeader(leader);
+				Assert.True(group.IsLeader(leader));
 
 				session.BeginStep("s06", "sent-away-and-deleted-when-it-has-left");
 				Assert.Contains(await SayAsync(".companion dismiss"), message => message.Contains("ClericA leaves you.", StringComparison.Ordinal));
 				Assert.Equal(CompanionState.Ending, Assert.Single(service.Of(leader)).State);
+				Assert.False(leader.IsInGroup());
+				Assert.False(companion.IsInGroup());
 				Assert.Equal(1, Rows("players", "id", request.CharacterId));
 				await played.QuitAsync(token);
 			}

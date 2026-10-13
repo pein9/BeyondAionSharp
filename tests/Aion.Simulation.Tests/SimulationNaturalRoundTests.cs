@@ -4,6 +4,7 @@ using Aion.Bots.Navigation;
 using Aion.Bots.Scenarios;
 using Aion.Bots.Scenarios.Classes;
 using Aion.Bots.Tracing;
+using Aion.GameServer.Custom.Companion;
 using Aion.GameServer.Model;
 using Aion.GameServer.Network.Aion.ServerPackets;
 
@@ -20,11 +21,19 @@ public sealed partial class SimulationFastScenarioTests
 	/// trial, the class choice, the ceremony, the capital pass and the dispatch to the Altgard bind.
 	/// NR-R3a: "l1" to "l11", "cg", "l12" and "ax" are the Altgard legs, the coin gear, Haramel and the Abyss entry, each
 	/// played by a character that stands at the end of the stage before it. "muster" follows "ax" (docs/natural-muster.md).
+	/// Companion bots (docs/companion-bots.md): "companion-lead" is the test's stand-in for the player, which asks for
+	/// <c>Companions</c> and plays as far as <c>CompanionUntil</c>. "companion" is a seat of the host: an account with no
+	/// character and no class line (its <c>Line</c> says "companion"), which waits for the server to make a companion on
+	/// it and then plays that character.
 	/// </summary>
 	private sealed record NaturalRoundBot(string Line, double StartAfterMinutes = 0, string? StopAt = null, double? StopAfterMinutes = null,
 		int? Account = null, string? Name = null, int? ResumeCharacter = null, string? Stage = null, int? TargetNpcId = null,
 		string? Role = null, string? SupportInvite = null, bool AcceptSupportInvite = false,
-		string[]? GroupRoster = null, string? GroupLeader = null, bool GroupLoot = false, string? GroupUntil = null);
+		string[]? GroupRoster = null, string? GroupLeader = null, bool GroupLoot = false, string? GroupUntil = null,
+		string[]? Companions = null, string? CompanionUntil = null);
+
+	/// <summary>A seat of the companion host; it has no class line until the server makes its character.</summary>
+	private static bool IsCompanionSeat(NaturalRoundBot entry) => entry.Stage == "companion";
 
 	/// <summary>
 	/// NR-R1a: the journey's options for a bot's stage. A run of one bot takes them from its environment
@@ -60,7 +69,11 @@ public sealed partial class SimulationFastScenarioTests
 			ClassLine: line, GroupRoster: entry.GroupRoster ?? throw new InvalidDataException("group-ntc needs a roster."),
 			GroupLeader: entry.GroupLeader ?? throw new InvalidDataException("group-ntc needs a leader."), GroupLoot: entry.GroupLoot,
 			GroupStage: "ntc", GroupUntil: entry.GroupUntil),
-		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, muster, gh-survey, support, group-coin or group-ntc."),
+		// The stand-in for the player who leads companions: a test tool, one of the group world's own characters.
+		"companion-lead" => new NaturalJourneyOptions(AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
+			ClassLine: line, Companion: "stand-in", Companions: entry.Companions ?? throw new InvalidDataException("companion-lead names its companions."),
+			CompanionUntil: entry.CompanionUntil),
+		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, muster, gh-survey, support, group-coin, group-ntc, companion-lead or companion."),
 		}) with { Role = entry.Role };
 	}
 
@@ -71,7 +84,8 @@ public sealed partial class SimulationFastScenarioTests
 	/// journey and for a bot stopped on purpose, which write none.
 	/// </summary>
 	private static string? StageReceipt(NaturalRoundBot entry) => entry.Stage == "group-coin" ? "group-coin-completion.json"
-		: entry.Stage == "group-ntc" ? "group-ntc-completion.json" : entry.Role == "healer" || entry.StopAt is { Length: > 0 } ? null : entry.Stage switch
+		: entry.Stage == "group-ntc" ? "group-ntc-completion.json" : entry.Stage == "companion-lead" ? "companion-completion.json"
+		: IsCompanionSeat(entry) ? null : entry.Role == "healer" || entry.StopAt is { Length: > 0 } ? null : entry.Stage switch
 	{
 		null or "" or "support" => null,
 		"bridge" => "bridge-completion.json",
@@ -102,14 +116,17 @@ public sealed partial class SimulationFastScenarioTests
 		NaturalRoundFile round = JsonSerializer.Deserialize<NaturalRoundFile>(File.ReadAllText(file!), RoundJson)
 			?? throw new InvalidDataException("The round file is empty.");
 		if (round.Bots is not { Length: > 0 }) throw new InvalidDataException("The round file names no bot.");
-		NaturalClassLine[] lines = round.Bots.Select(bot => NaturalClassLine.Parse(bot.Line)).ToArray();
+		NaturalClassLine?[] lines = round.Bots.Select(bot => IsCompanionSeat(bot) ? null : NaturalClassLine.Parse(bot.Line)).ToArray();
 		// NR-R1a: a stage the round cannot play is refused before any bot begins.
-		for (int index = 0; index < round.Bots.Length; index++) _ = RoundOptions(round.Bots[index], lines[index]);
+		for (int index = 0; index < round.Bots.Length; index++)
+			if (lines[index] is { } checkedLine) _ = RoundOptions(round.Bots[index], checkedLine);
+			else if (round.Bots[index].Account == null) throw new InvalidDataException("A companion seat names the account it is played on.");
 		// Every class line plays on the one SIM account of a run alone (CP-Q19), and an account is in a world once. So a
 		// round gives each seat an account of its own. The character has its line's name unless the seat names it: the
 		// Cleric's and the Chanter's lines share a name, and a world holds a name once.
 		int[] accounts = round.Bots.Select((bot, index) => bot.Account ?? RoundAccountBase + index).ToArray();
-		string[] names = round.Bots.Select((bot, index) => string.IsNullOrWhiteSpace(bot.Name) ? lines[index].CharacterName : bot.Name!).ToArray();
+		string[] names = round.Bots.Select((bot, index) => lines[index] is not { } named ? $"companion-{accounts[index]}"
+			: string.IsNullOrWhiteSpace(bot.Name) ? named.CharacterName : bot.Name!).ToArray();
 		if (names.Distinct(StringComparer.Ordinal).Count() != names.Length)
 			throw new InvalidDataException("Two bots of this round would have the same character name; a world holds a name once.");
 		if (accounts.Distinct().Count() != accounts.Length || accounts.Any(account => account is < 1 or > 250))
@@ -135,14 +152,34 @@ public sealed partial class SimulationFastScenarioTests
 		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(45 * round.Bots.Length));
 		var turns = new SimulationTurnTable(fixture.Clock);
 		var outcomes = new NaturalRoundOutcome?[round.Bots.Length];
+		// The host of the companions (docs/companion-bots.md): this test. It offers the server the accounts of its seats;
+		// a seat sleeps until a player's request makes a character on its account, and ends when no player is left.
+		int[] seatAccounts = [.. round.Bots.Select((bot, index) => (bot, index)).Where(seat => IsCompanionSeat(seat.bot)).Select(seat => accounts[seat.index])];
+		int playersLeft = round.Bots.Count(bot => !IsCompanionSeat(bot));
+		CompanionService companions = CompanionService.GetInstance();
+		if (seatAccounts.Length > 0)
+		{
+			companions.Enable();
+			foreach (int account in seatAccounts) companions.OfferSeat(account, $"sim-player-{account}");
+		}
 		for (int index = 0; index < round.Bots.Length; index++)
 		{
 			int seat = index;
 			NaturalRoundBot entry = round.Bots[index];
-			NaturalClassLine line = lines[index];
 			string bot = $"b{index + 1:00}";
+			if (lines[index] is not { } line)
+			{
+				turns.Add(bot, TimeSpan.FromMinutes(entry.StartAfterMinutes),
+					async token => outcomes[seat] = await PlayCompanionSeatAsync(turns, bot, accounts[seat], entry, run, evidence, dashboard, () => playersLeft == 0, token),
+					entry.StopAfterMinutes is double seatStop ? TimeSpan.FromMinutes(seatStop) : null);
+				continue;
+			}
 			turns.Add(bot, TimeSpan.FromMinutes(entry.StartAfterMinutes),
-				async token => outcomes[seat] = await PlayRoundBotAsync(turns, bot, accounts[seat], names[seat], line, entry, run, evidence, dashboard, token),
+				async token =>
+				{
+					try { outcomes[seat] = await PlayRoundBotAsync(turns, bot, accounts[seat], names[seat], line, entry, run, evidence, dashboard, token); }
+					finally { playersLeft--; }
+				},
 				entry.StopAfterMinutes is double stop ? TimeSpan.FromMinutes(stop) : null);
 		}
 
@@ -154,12 +191,21 @@ public sealed partial class SimulationFastScenarioTests
 			catch (Exception fault) { done.SetException(fault); }
 		}) { IsBackground = true, Name = "natural-round" };
 		thread.Start();
-		IReadOnlyList<(string Bot, Task Played)> played = await done.Task;
+		IReadOnlyList<(string Bot, Task Played)> played;
+		try { played = await done.Task; }
+		finally
+		{
+			if (seatAccounts.Length > 0)
+			{
+				companions.Disable();
+				foreach (int account in seatAccounts) companions.WithdrawSeat(account);
+			}
+		}
 
 		for (int index = 0; index < round.Bots.Length; index++)
 		{
 			// A bot the table ended before it began (stopped on purpose, or a fault of the world) wrote no record.
-			outcomes[index] ??= new NaturalRoundOutcome($"b{index + 1:00}", lines[index].Id, "stopped", played[index].Played.Status.ToString(),
+			outcomes[index] ??= new NaturalRoundOutcome($"b{index + 1:00}", lines[index]?.Id ?? "companion", "stopped", played[index].Played.Status.ToString(),
 				played[index].Played.Exception?.GetBaseException().Message ?? "The round ended this bot before it began.", null, 0, 0,
 				fixture.Clock.NowMillis, fixture.Clock.NowMillis, accounts[index], names[index], round.Bots[index].ResumeCharacter ?? 0,
 				round.Bots[index].Stage);
@@ -185,10 +231,35 @@ public sealed partial class SimulationFastScenarioTests
 		int Level, int CompletedQuests, long StartedAtMillis, long EndedAtMillis, int Account, string Name, int CharacterId, string? Stage = null);
 
 	/// <summary>One bot of a round: the journey's own test, for a class line's fresh character, with a turn at the clock.</summary>
-	private async Task<NaturalRoundOutcome> PlayRoundBotAsync(SimulationTurnTable turns, string bot, int account, string name, NaturalClassLine line,
-		NaturalRoundBot entry, string run, string evidence, LiveBotDashboardState dashboard, CancellationToken token)
+	/// <summary>
+	/// A seat of the companion host. It waits for the server to make a companion on its account, plays that character
+	/// until it leaves the game, and waits again. It ends when no player of the round is left to ask.
+	/// </summary>
+	private async Task<NaturalRoundOutcome> PlayCompanionSeatAsync(SimulationTurnTable turns, string bot, int account, NaturalRoundBot entry,
+		string run, string evidence, LiveBotDashboardState dashboard, Func<bool> playersDone, CancellationToken token)
 	{
-		string folder = Path.Combine(evidence, line.Id);
+		long began = fixture.Clock.NowMillis;
+		NaturalRoundOutcome? last = null;
+		while (true)
+		{
+			if (CompanionService.GetInstance().TakeRequest(account) is not { } made)
+			{
+				if (playersDone())
+					return last ?? new NaturalRoundOutcome(bot, "companion", "unused", null, "No player asked for a companion on this seat.", null, 0, 0,
+						began, fixture.Clock.NowMillis, account, $"companion-{account}", 0, entry.Stage);
+				await turns.WaitAsync(bot, TimeSpan.FromSeconds(1), token);
+				continue;
+			}
+			NaturalClassLine line = NaturalClassLine.All.Single(candidate => candidate.Second == made.PlayerClass);
+			last = await PlayRoundBotAsync(turns, bot, account, made.Name, line, entry, run, evidence, dashboard, token, made);
+		}
+	}
+
+	private async Task<NaturalRoundOutcome> PlayRoundBotAsync(SimulationTurnTable turns, string bot, int account, string name, NaturalClassLine line,
+		NaturalRoundBot entry, string run, string evidence, LiveBotDashboardState dashboard, CancellationToken token, CompanionRequest? made = null)
+	{
+		// A companion has a folder of its own name: a player of its class line may be in the same round.
+		string folder = Path.Combine(evidence, made == null ? line.Id : "companion-" + made.Name.ToLowerInvariant());
 		Directory.CreateDirectory(folder);
 		string tracePath = Path.Combine(folder, $"{line.Id}.trace.jsonl");
 		long began = fixture.Clock.NowMillis;
@@ -216,7 +287,9 @@ public sealed partial class SimulationFastScenarioTests
 				SupplyHelpItemAsync = NaturalHelpItemSupply.Enabled(Environment.GetEnvironmentVariable(NaturalHelpItemSupply.Switch))
 					? SupplyHelpItemAsync : null,
 			};
-			await new NaturalIshalgenJourney(playing, runtime, RoundOptions(entry, line)).RunAsync(token);
+			// The Cleric plays support, as in the group stages; every other class fights (CB-Q8).
+			await new NaturalIshalgenJourney(playing, runtime, made == null ? RoundOptions(entry, line)
+				: new NaturalJourneyOptions(ClassLine: line, Companion: "companion", Role: made.PlayerClass == PlayerClass.CLERIC ? "healer" : null)).RunAsync(token);
 			if (StageReceipt(entry) is { } receipt)
 			{
 				string receiptPath = Path.Combine(folder, receipt);
@@ -238,6 +311,21 @@ public sealed partial class SimulationFastScenarioTests
 
 			async Task<bool> EnterAsync(CancellationToken enterToken)
 			{
+				if (made != null)
+				{
+					// The character the server made on this seat's account, logged in as any client logs a character in.
+					playing.BeginStep("companion-login", $"log-in-{made.Name}");
+					var made_list = await playing.LoginCharacterListAsync(enterToken);
+					var listed = made_list.Get<List<IReadOnlyDictionary<string, object?>>>("characters")
+						.SingleOrDefault(c => Get<int>(c, "objectId") == made.CharacterId)
+						?? throw new InvalidDataException($"The companion {made.Name} ({made.CharacterId}) is not on account {account}.");
+					if (Get<string>(listed, "name") != made.Name || Get<int>(listed, "playerClass") != (int)made.PlayerClass)
+						throw new InvalidDataException($"The character {made.CharacterId} is not the {made.PlayerClass} {made.Name} the server said it made.");
+					playing.SelectCharacter(made.CharacterId, made.Name);
+					await playing.EnterWorldAsync(enterToken);
+					await playing.SynchronizeAsync(enterToken);
+					return true;
+				}
 				string starter = line.Starter.ToString().ToLowerInvariant();
 				bool resuming = entry.ResumeCharacter is > 0;
 				playing.BeginStep(resuming ? "ni08-login-existing" : "ni07-create",

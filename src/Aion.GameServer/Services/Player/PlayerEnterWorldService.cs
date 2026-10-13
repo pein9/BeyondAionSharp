@@ -388,6 +388,9 @@ public sealed class PlayerEnterWorldService
         VeteranRewardService.GetInstance().TryReward(player);
 
         PvpMapService.GetInstance().OnLogin(player);
+
+        // D41, no Java counterpart: a companion joins the group of the player who asked for it.
+        Aion.GameServer.Custom.Companion.CompanionService.GetInstance().OnEnteredWorld(player);
     }
 
     private static void UpdateEnergyOfRepose(Player player, long secondsOffline)
