@@ -1,9 +1,9 @@
 # Companion bots
 
-Status: planned 2026-10-12; C1 to C5 are done. A companion joins its player's group and follows it with nobody's
+Status: planned 2026-10-12; C1 to C6 are done. A companion joins its player's group and follows it with nobody's
 words. A damage class attacks what the leader marked, or what the leader attacks; the Cleric keeps its support
-up and attacks nothing. It leaves the game when it is sent away. Loot, the instance and the end are the steps
-that are left. The step list at the end is worked one step at a time.
+up and attacks nothing. The group's loot is free for all and a companion opens no corpse. It leaves the game
+when it is sent away. The instance and the end are the steps that are left. The step list at the end is worked one step at a time.
 
 It follows [natural-group-ntc.md](natural-group-ntc.md) and [natural-group-healer.md](natural-group-healer.md):
 following F1, the Cleric's healing-only role, the class fights, gear and supplies are there and are reused.
@@ -71,7 +71,7 @@ dismissed; the first version takes level 26 only.
 | A chat command, a companion made by the server, its deletion | Built (C2): `src/Aion.GameServer/Custom/Companion`, off unless `AION_COMPANIONS=true`, with tests |
 | Reading the leader's marks | Built (C5): the bot decodes `SM_SHOW_BRAND` and keeps the marks of its team |
 | A bot that waits for nobody's commands | Built (C4): the companion's own loop follows the leader it observes and plays its role |
-| Loot left to the player | The group is set to free for all, so the server's loot code stays as it is; a companion opens no corpse |
+| Loot left to the player | Built (C6): the server sets the group to free for all with its first companion; a companion opens no corpse |
 | Following through a portal without being told | Half there: a follower enters on the leader's command today |
 | Where bots run | In SIM, inside the round test, which is the host (C3): it offers the accounts of its `companion` seats and plays what the server makes on them. Bot code depends on the game server, so the server cannot host it; a live host process is a later step |
 
@@ -210,8 +210,26 @@ One step per iteration. A step is ticked when a SIM round from `ntc-group-s4` sh
   - Checks: the unit suite (4,645 passed, 16 skipped), the pre-commit checks, the packet coverage check, Fast (`c5-fast`),
     the neutral gate on the five starter scopes, identical, and the Group NTC leg replayed once (`n9-c5`).
     Code commit `19d17e9f6`.
-- [ ] **C6 Loot is the player's.** The group is set to free for all when the first companion joins, and no
+- [x] **C6 Loot is the player's.** The group is set to free for all when the first companion joins, and no
   companion opens a corpse. Shown: the stand-in can take every corpse at once.
+  - 2026-10-13. Round `c6-2` (`run/companion/c6.json`, `companionUntil: loot`): the marks of C5 again, and after
+    each test the stand-in walks to the corpses and opens them. All four corpses were the stand-in's to open at
+    once, the one it never struck too; it opened all four and took the seven items in them. The loot rule it
+    sees is `[0, 0, 0, 0, 0, 0, 0, 0]`. Each of the five companions left the game with no item it did not come
+    with, no kinah and no new journal entry. No deaths.
+  - The server sets the rule when the first companion of a group has joined: free for all, and every quality
+    picked up as it is, so no roll window opens for a companion (`LootGroupRules(FREEFORALL, 0, ...)` through
+    `PlayerGroupService.ChangeGroupRules`, as a leader's own setting goes). It is set once; a player who
+    changes it afterwards keeps what he chose. The server's loot code is as it was: Java's
+    `DropRegistrationService` gives every member in range the right under this rule. The server test checks it.
+  - A companion has no code that opens a corpse. It records what it carries and what its journal holds as it
+    joins, and when it leaves the game it stops with an error if it carries an item it did not have.
+  - Round `c6-1` stopped in the stand-in: it had the right at once, but stood 30 m from the corpse and the loot
+    driver opens what is within 15 m. It walks to the corpse now, as a player does.
+  - Java has a third rule, `LEADER`, which gives the right to the leader alone. The operator named free for
+    all, so that is what is set.
+  - Checks: the unit suite (4,645 passed, 16 skipped), the pre-commit checks, the server test and Fast (`c6-fast`). Code
+    commit `dc45a4987`.
 - [ ] **C7 Into the instance.** Companions follow through Vallack when the stand-in goes in. Shown: six in one
   instance.
 - [ ] **C8 NTC.** The stand-in leads to the General, marking as it goes. Shown: the General dead; no companion took
