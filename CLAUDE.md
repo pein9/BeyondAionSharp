@@ -166,6 +166,7 @@ pwsh -NoProfile -File scripts/sim/test-code-coverage.ps1       # collector reque
 pwsh -NoProfile -File scripts/sim/test-sim-snapshot.ps1        # snapshot, Replay and neutral-gate contract (fake Docker, fake journey)
 python scripts/sim/trace/test_compare_traces.py                # trace comparer: differences, coverage counts and the baseline digest
 python scripts/sim/make-companion-profiles.py --check          # companion profiles: items exist and are wearable; identical to a fresh generation when the snapshot is here
+AION_SIM_COMPANION=1 AION_SIM_DB_INTEGRATION=1 dotnet test tests/Aion.Simulation.Tests --filter "FullyQualifiedName~Companion" # companion server tests (D41), in a process of their own (Docker)
 pwsh -NoProfile -File scripts/e2e/test-run-report.ps1            # report finalization and runner failure paths
 pwsh -NoProfile -File scripts/live/test-run-soak.ps1           # acceptance runner propagation and failure paths
 pwsh -NoProfile -File scripts/live/test-lifecycle-controller.ps1 # isolated crash ownership and saved-state gates (mock Docker)

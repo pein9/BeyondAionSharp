@@ -1,6 +1,6 @@
 # Companion bots: the live host
 
-Status: planned 2026-10-13, nothing built. It follows [companion-bots.md](companion-bots.md), which is done in SIM.
+Status: planned 2026-10-13; L1 (the server knows its seats) is done. It follows [companion-bots.md](companion-bots.md), which is done in SIM.
 
 ## The goal
 
@@ -51,9 +51,34 @@ its role, as the stand-in's companions did in SIM. NTC is the place to try it.
 
 ## Steps
 
-- [ ] **L1 The server knows its seats.** A seat is an account named in `AION_COMPANION_ACCOUNTS` that is logged in
+- [x] **L1 The server knows its seats.** A seat is an account named in `AION_COMPANION_ACCOUNTS` that is logged in
   and at character selection. A companion made on it appears in its character list. The note marks a companion;
   marked leftovers on a seat are deleted, a seat with any other character is refused. Tested as server code.
+  - 2026-10-13. `CompanionService` finds its seats among the logged-in accounts: at every request, and every ten
+    seconds with its watch. An account is a seat while its name is one of `AION_COMPANION_ACCOUNTS`, its client
+    is at character selection and its connection is open. The companion is made on the seat's own account
+    object, as `CM_CREATE_CHARACTER` puts a new character there, so the list the client asks for next has it
+    (Java's `CM_CHARACTER_LIST` sends the account as it is at that moment). A deleted companion is taken out of
+    that list again.
+  - A companion's character has the note `companion`. A seat that is found with such characters has them
+    deleted first. An account named as a seat that holds any other character is not used, with one warning in
+    the log, and its character is not touched. A seat whose client is gone ends its companion; one that nobody
+    played is deleted at once.
+  - One line outside the feature's own folder: `LoginServer.LoggedInAccounts`, a read-only view of the map Java
+    keeps to itself. No new call from ported code.
+  - SIM test `CompanionSeatIsAnAccountWaitingAtCharacterSelection` plays it with real clients: no seat, a seat
+    waiting, the Cleric appearing in its list and entered with, the seat back at character selection with an
+    empty list and waiting again, a leftover deleted at the next login, a player's account named by mistake
+    left alone, and a seat that goes away. The earlier server test still passes.
+  - The round host still takes its requests from memory; L2 moves it to this protocol.
+  - The two companion server tests now play in a process of their own: `AION_SIM_COMPANION=1` and a filter on
+    `Companion`. The tests of the Fast process share one world, one clock and one seeded random source. With the
+    new test among them, run `l1-fast` had two unrelated tests fail on fights that came out differently
+    (`AltgardMythicalMonsterBurnsTheIncenseAndInfernusComesAndGoes`,
+    `NativeObstacleRecoveryDetoursAroundUnsafeCloseInGround`). Without them the Fast process is what it was
+    before the companions, and `l1-fast-2` passes.
+  - Checks: the unit suite (4,645 passed, 16 skipped), the pre-commit checks, both server tests, Fast (`l1-fast-2`), and the
+    companion stopping round once more (`l1-c9`, the same result). Code commit `59cd345fa`.
 - [ ] **L2 The SIM host uses the seat protocol.** The round's seats log in and wait at character selection instead
   of being told in memory. Shown: the stopping round `c9` again, with the same result.
 - [ ] **L3 The live host.** A scenario in `tools/Aion.LiveBots` and `scripts/live/companion-host.ps1 -Target aion`,
