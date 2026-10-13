@@ -1,6 +1,6 @@
 # Companion bots: the live host
 
-Status: planned 2026-10-13; L1 (the server knows its seats) and L2 (the SIM host on the seat protocol) are done. It follows [companion-bots.md](companion-bots.md), which is done in SIM.
+Status: planned 2026-10-13; L1 (the server knows its seats), L2 (the SIM host on the seat protocol) and L3 (the live host program and its script) are done. It follows [companion-bots.md](companion-bots.md), which is done in SIM.
 
 ## The goal
 
@@ -106,9 +106,41 @@ its role, as the stand-in's companions did in SIM. NTC is the place to try it.
     walk to a monster that died on the move is the stand-in's weakness, not a companion's.
   - Checks: the unit suite (4,645 passed, 16 skipped), the pre-commit checks, the companion server tests, Fast (`l2-fast`),
     and the Group NTC leg replayed once on the changed round harness (`n9-l2`). Code commit `03e5fcd54`.
-- [ ] **L3 The live host.** A scenario in `tools/Aion.LiveBots` and `scripts/live/companion-host.ps1 -Target aion`,
+- [x] **L3 The live host.** A scenario in `tools/Aion.LiveBots` and `scripts/live/companion-host.ps1 -Target aion`,
   with a stop file and the monitor page, modelled on the attach runner. Its script test runs against a mock Docker,
   as the attach runner's does.
+  - 2026-10-13. The host is scenario `CH-01` of the live bot program, attach-only like NI-10
+    (`tools/Aion.LiveBots/LiveCompanionHostScenario.cs`). Each seat logs in on its account (`companion1` to
+    `companion5`), waits at character selection and asks for its character list every two seconds. A character
+    that appears is a companion: the seat enters the world with it, plays it with the code the SIM rounds play,
+    and goes back to character selection, where the server deletes it. The loop is the SIM seat's of L2, line
+    for line.
+  - What a live host needs and a SIM round does not. A seat that loses its connection, or whose play fails,
+    writes a problem and logs in again after 15 seconds. A character that is on the account when the seat logs
+    in is never played: it is a leftover, and the seat waits until the server has deleted it. All seats play
+    on one thread, as the bots of a round do. The ground is the offline geometry of every shipped map
+    (`BotNavigationAssets.AnyMapGeometry`); door and event state is not known offline.
+  - The script `scripts/live/companion-host.ps1 -Target aion` (`-Seats 1..5`, `-Stop`) reads Docker through the
+    attach controller's gate, which admits `ps`, `inspect` and `logs` only. It refuses a world whose game server
+    was not started with `AION_COMPANIONS=true` or does not name every seat in `AION_COMPANION_ACCOUNTS`, before
+    it makes a run folder. It runs a private copy of the build, shows the monitor page on port 17880, and stops
+    on Ctrl+C or the stop file: the companions go back to character selection and the seats log out. Evidence is
+    in `run/companion-host/<run>/`.
+  - Its contract test `scripts/live/test-companion-host.ps1` (mock Docker, 26 assertions): no direct Docker call
+    in the script or its controller, the seat accounts agree with the program, eight kinds of world that make no
+    companions are refused, a refused world leaves no run folder, and only reads reach Docker.
+  - Found by reading, and it would have cost a live companion: the live session sends its ping from a loop of
+    its own, and that send ran the play's look before a send. The companion's look throws once when its player
+    no longer leads; thrown in the ping loop it ended the pings and never reached the play. The ping no longer
+    runs that look. The natural Priest's attach run (NI-10) had the same fault waiting.
+  - Not shown yet: the host program has not spoken to a server. A SIM round has no sockets, and L1 to L3 do not
+    touch his stack. Its first login is L4.
+  - Checks: the unit suite (4,646 passed, 16 skipped), the pre-commit checks, the manifest's consumers
+    (`ScenarioManifestTests`, `test-full-suite.ps1`, `test-full-promotion.py`, `test-code-coverage.py`), both
+    attach contract tests, the companion server tests and Fast (`l3-fast`). The first unit run had one failure,
+    `AbyssUndeadAiTests.HalfOfTheDeathsLeaveAFear`: twenty unseeded rolls of one in two, which fall outside its
+    bounds about once in 2,500 runs; the second run passed. `test-code-coverage.py` failed until the system
+    matrix in `e2e-player-simulation-plan.md` named `CH-01`. Code commit `780f75a79`.
 - [ ] **L4 The stack.** `AION_COMPANIONS` and `AION_COMPANION_ACCOUNTS` in `docker/docker-compose.yml`, off by
   default, and the lines for `RUNNING.md`. Then, after telling him, the one rebuild and restart of his stack with
   both set, and the host started on it.
