@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Aion.Bots.Navigation;
 using Aion.Bots.Navigation.NavMesh;
+using Aion.Bots.Protocol;
+using Aion.Bots.Reflexes;
 using Aion.Bots.Scenarios.Classes;
 using Aion.Bots.World;
 using Aion.GameServer.Custom.Companion;
@@ -12,7 +14,9 @@ namespace Aion.Bots.Scenarios;
 public sealed partial class NaturalIshalgenJourney
 {
 	/// <summary>How far the stand-in plays so far (docs/companion-bots.md, the C steps).</summary>
-	private static readonly string[] CompanionCheckpoints = ["joined", "walk", "marks", "loot", "inside"];
+	private static readonly string[] CompanionCheckpoints = ["joined", "walk", "marks", "loot", "inside", "general"];
+	/// <summary>The named monsters on the stand-in's way through the camp, in the order the Group NTC leg takes them.</summary>
+	private static readonly int[] CompanionNtcNamed = [256690, 256689, 256692];
 	/// <summary>The two marks the stand-in sets; a companion takes the lowest mark first whatever its number.</summary>
 	private const int CompanionFirstMark = 1, CompanionSecondMark = 2;
 
@@ -84,6 +88,7 @@ public sealed partial class NaturalIshalgenJourney
 		}
 		combat.AfterBindRevive = EnterMap;
 		combat.AfterInstanceRevive = EnterMap;
+		combat.WaitForGroupResurrectionAsync = ct => WaitForCompanionResurrectionAsync(healer != null, following.Reset, ct);
 		long scrollAskedMillis = long.MinValue / 2;
 		// A monster this companion could not get at, and until when it leaves it alone.
 		var leftAlone = new Dictionary<int, long>();
@@ -258,6 +263,41 @@ public sealed partial class NaturalIshalgenJourney
 		// A journal entry that is new was written by the server (the missions of a level); the trace names it.
 		runtime.AssertClean();
 		await session.QuitAsync(token);
+	}
+
+	/// <summary>
+	/// A fallen member waits a minute for the group's Cleric to offer a resurrection and takes it; with no Cleric alive,
+	/// or none that offers, it revives at its bind (docs/natural-group-healer.md). The Cleric itself does not wait.
+	/// </summary>
+	private async Task<bool> WaitForCompanionResurrectionAsync(bool isTheHealer, Action risen, CancellationToken token)
+	{
+		BotWorldModel world = session.Api.World;
+		if (isTheHealer) return false;
+		long began = runtime.NowMillis;
+		int death = session.PacketHistory.Count - 1;
+		while (death >= 0 && session.PacketHistory[death].PacketType != typeof(SM_DIE)) death--;
+		session.TraceDiagnostic("companion-wait-for-resurrection", new Dictionary<string, object?> { ["position"] = session.CurrentPosition });
+		while (world.IsDead && runtime.NowMillis - began < 60_000)
+		{
+			var cleric = world.GroupMembers.Values.FirstOrDefault(member => member.PlayerClass == PlayerClass.CLERIC.GetClassId() && member.Online && !member.Dead);
+			if (cleric == null) return false;
+			var offer = session.PacketHistory.Skip(death + 1).LastOrDefault(packet => packet.PacketType == typeof(SM_RESURRECT) && packet.Get<string>("casterName") == cleric.Name);
+			if (offer != null)
+			{
+				await session.SendPacketAsync(session.Api.Revive(BotReviveType.Skill), token);
+				await session.SynchronizeAsync(token);
+				if (!world.IsDead)
+				{
+					session.TraceDiagnostic("companion-resurrected", new Dictionary<string, object?> { ["by"] = cleric.Name, ["afterMillis"] = runtime.NowMillis - began });
+					risen();
+					return true;
+				}
+			}
+			await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
+			await session.SynchronizeAsync(token);
+		}
+		session.TraceDiagnostic("companion-resurrection-fallback", new Dictionary<string, object?> { ["reason"] = "No Cleric's offer within a minute; revive at the bind." });
+		return false;
 	}
 
 	/// <summary>
@@ -538,7 +578,7 @@ public sealed partial class NaturalIshalgenJourney
 			}
 			await combat.RestAsync(token);
 		}
-		object? inside = null;
+		object? inside = null, general = null;
 		if (reach >= 4)
 		{
 			// C7: to Vallack and into Nochsana Training Camp, as a player goes in: it tells nobody and waits for nobody.
@@ -574,12 +614,223 @@ public sealed partial class NaturalIshalgenJourney
 				companions = Others().Select(member => new { member.Name, member.MapId, metres = Away(member) }).ToArray() };
 			session.TraceDiagnostic("stand-in-inside", new Dictionary<string, object?> { ["inside"] = entered });
 			inside = entered;
+
+			if (reach >= 5)
+			{
+				// C8: through the camp to the General, on the way the Group NTC leg takes without its quests and chests. The
+				// stand-in plays as a player who leads plays: it lets its group come up before a pull, puts its mark on what
+				// it pulls, fights it, and opens the corpse. It says nothing to anybody.
+				long began = runtime.NowMillis;
+				geometry = runtime.CreateGeometry();
+				NaturalJourneyNavigator Inside() => new(session, BotNavigationGraphFactory.Build(runtime.Data, null, geometry), geometry, runtime, stopOnDeath: false);
+				navigator = Inside();
+				var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry, stopOnDeath: false,
+					conservativeRangedHold: false, NaturalMauPolicyParameters.Baseline, ClassLine) { ApproachMapId = world.MapId!.Value };
+				void EnterMap()
+				{
+					geometry = runtime.CreateGeometry();
+					navigator = world.MapId == GroupNtcMap ? Inside() : new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, null, geometry),
+						geometry, runtime, stopOnDeath: false) { AvoidHostileAggro = true, Planner = BotTravelPlanner.For(world.MapId!.Value, geometry, runtime.Data) };
+					combat.EnterMap(navigator, geometry, world.MapId!.Value);
+				}
+				combat.AfterBindRevive = EnterMap;
+				combat.AfterInstanceRevive = EnterMap;
+				combat.WaitForGroupResurrectionAsync = ct => WaitForCompanionResurrectionAsync(false, () => { }, ct);
+				var looter = new NaturalGroupLootDriver(session, runtime, _ => false);
+				var refused = new Dictionary<int, int>();
+				var killed = new HashSet<int>();
+				var fallenKinds = new List<object>();
+				var killedKinds = new HashSet<int>();
+				int pulls = 0, corpsesOpened = 0, reentries = 0;
+				int generalSince = 0;
+				BotPosition Lair(int template) => runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value).Where(group => group.GetNpcId() == template)
+					.SelectMany(group => group.GetSpawnTemplates()).Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), spot.GetHeading()))
+					.OrderBy(at => NaturalServicePolicy.Distance(session.CurrentPosition, at)).First();
+				(BotKnownObject Seen, float Reach)[] Hostiles() => [.. world.Objects.Values
+					.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId != null && !known.IsCorpse && !killed.Contains(known.ObjectId))
+					.Select(known => (known, template: runtime.Data.NpcDataDh.GetNpcTemplate(known.TemplateId!.Value)))
+					.Where(entry => runtime.IsAggressive(entry.template) && entry.template!.GetAggroRange() > 0)
+					.Select(entry => (entry.known, entry.template!.GetAggroRange() + 2f))];
+				// The monsters that struck a member of the group a moment ago, as this client saw it.
+				int? OnTheGroup((BotKnownObject Seen, float Reach)[] hostiles)
+				{
+					HashSet<int> striking = [.. session.PacketHistory.TakeLast(300)
+						.SelectMany(packet => world.GroupMembers.Keys.Select(member => runtime.IncomingAttacker(packet, member))).OfType<int>()];
+					return hostiles.Where(hostile => striking.Contains(hostile.Seen.ObjectId))
+						.OrderBy(hostile => NaturalServicePolicy.Distance(session.CurrentPosition, hostile.Seen.Position)).Select(hostile => (int?)hostile.Seen.ObjectId).FirstOrDefault();
+				}
+				static float FromSegment(BotPosition a, BotPosition b, BotPosition point)
+				{
+					float dx = b.X - a.X, dy = b.Y - a.Y, dz = b.Z - a.Z, length = dx * dx + dy * dy + dz * dz;
+					float t = length < .0001f ? 0 : Math.Clamp(((point.X - a.X) * dx + (point.Y - a.Y) * dy + (point.Z - a.Z) * dz) / length, 0, 1);
+					return NaturalServicePolicy.Distance(new(a.X + dx * t, a.Y + dy * t, a.Z + dz * t, 0), point);
+				}
+				bool GoneOrKilled(int target) => !world.Objects.TryGetValue(target, out var seen) || seen.IsCorpse ||
+					session.PacketHistory.TakeLast(4000).Any(packet => BotAttackStatus.CarriesHp(packet) &&
+						packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0);
+				// Back outside after a revive at the bind: to Vallack and in again.
+				async Task BackInAsync()
+				{
+					session.BeginStep("stand-in", "back-into-the-camp");
+					EnterMap();
+					BotPosition door = Lair(GroupNtcVallack);
+					var way = await navigator.FindRouteAsync(session.CurrentPosition, door, token);
+					if (way.Count == 0) throw new InvalidDataException($"The stand-in found no way back to Vallack: {navigator.LastRouteDiagnostic}");
+					foreach (BotPosition point in way)
+						while (NaturalServicePolicy.Distance(session.CurrentPosition, point) > .5f && NaturalServicePolicy.Distance(session.CurrentPosition, door) > 4)
+						{
+							BotPosition at = session.CurrentPosition;
+							float fraction = Math.Min(1, 6 / NaturalServicePolicy.Distance(at, point));
+							await navigator.MoveAsync([at, new(at.X + (point.X - at.X) * fraction, at.Y + (point.Y - at.Y) * fraction,
+								at.Z + (point.Z - at.Z) * fraction, point.Heading)], token);
+							await session.SynchronizeAsync(token);
+							if (NaturalServicePolicy.Distance(session.CurrentPosition, at) < .1f) throw new InvalidDataException("The stand-in could not go back to Vallack.");
+						}
+					int keeper = world.Objects.Values.Where(known => known.TemplateId == GroupNtcVallack)
+						.OrderBy(known => NaturalServicePolicy.Distance(session.CurrentPosition, known.Position)).First().ObjectId;
+					await NaturalCapitalSteps.PortalAsync(session, new NaturalCapitalPortal(GroupNtcVallack, world.MapId!.Value, GroupNtcMap, 0, GroupNtcEnterDialog), keeper, token);
+					EnterMap();
+					reentries++;
+				}
+				// Before a pull and before a walk: every companion alive, near, and with half its mana. A monster on a
+				// member ends the wait at once.
+				async Task<bool> GatheredAsync()
+				{
+					long waited = runtime.NowMillis;
+					while (true)
+					{
+						await session.SynchronizeAsync(token);
+						if (world.IsDead || world.MapId != GroupNtcMap || OnTheGroup(Hostiles()) != null) return false;
+						if (Others().All(member => member.Online && !member.Dead && member.MapId == world.MapId &&
+							(member.MaxMp <= 0 || member.CurrentMp * 100L / member.MaxMp >= 50) && Away(member) <= 12)) return true;
+						if (runtime.NowMillis - waited > 600_000)
+							throw new InvalidDataException("The companions did not gather inside the camp: " + string.Join(", ", Others().Select(member =>
+								$"{member.Name} online {member.Online} dead {member.Dead} map {member.MapId} mp {member.CurrentMp}/{member.MaxMp} at {Away(member):F0} m")));
+						await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+					}
+				}
+				async Task KillAsync(int target)
+				{
+					int? template = world.Objects.GetValueOrDefault(target)?.TemplateId;
+					if (template == GroupNtcGeneral && generalSince == 0) generalSince = session.PacketHistory.Count;
+					await session.SendPacketAsync(session.Api.Mark(CompanionFirstMark, target), token);
+					pulls++;
+					session.TraceDiagnostic("stand-in-pull", new Dictionary<string, object?> { ["target"] = target, ["npc"] = template, ["position"] = session.CurrentPosition });
+					bool dead;
+					try { dead = await combat.TryKillAsync(target, token) || GoneOrKilled(target); }
+					catch (NaturalCombatApproachBlockedException blocked)
+					{
+						dead = GoneOrKilled(target);
+						session.TraceDiagnostic("stand-in-pull-blocked", new Dictionary<string, object?> { ["target"] = target, ["deadOrGone"] = dead, ["reason"] = blocked.Message });
+					}
+					if (!dead)
+					{
+						refused[target] = refused.GetValueOrDefault(target) + 1;
+						await session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+						return;
+					}
+					killed.Add(target);
+					if (template is int kind && killedKinds.Add(kind) && (CompanionNtcNamed.Contains(kind) || kind is GroupNtcGate or GroupNtcGeneral))
+						fallenKinds.Add(new { npc = kind, atMillis = runtime.NowMillis - began });
+					// The loot is free for all: the corpse is the stand-in's to open at once.
+					for (int wait = 0; wait < 6 && !world.IsDead && world.LootStatuses.TryGetValue(target, out byte right) && right == 0; wait++)
+					{
+						if (await looter.StepAsync(token)) { corpsesOpened++; break; }
+						await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+					}
+				}
+				async Task WalkStretchAsync(IReadOnlyList<BotPosition> stretchRoute, float stretch)
+				{
+					float walked = 0;
+					foreach (var point in stretchRoute)
+						while (NaturalServicePolicy.Distance(session.CurrentPosition, point) > .5f)
+						{
+							var at = session.CurrentPosition;
+							float fraction = Math.Min(1, 6 / NaturalServicePolicy.Distance(at, point));
+							await navigator.MoveAsync([at, new(at.X + (point.X - at.X) * fraction, at.Y + (point.Y - at.Y) * fraction,
+								at.Z + (point.Z - at.Z) * fraction, point.Heading)], token);
+							await session.SynchronizeAsync(token);
+							float moved = NaturalServicePolicy.Distance(session.CurrentPosition, at);
+							walked += moved;
+							if (world.IsDead || moved < .1f || walked >= stretch || OnTheGroup(Hostiles()) != null) return;
+						}
+				}
+				// To a place inside the camp, fighting what is in the way, until done says so. kind is the monster fought at the
+				// place itself, when there is one.
+				async Task AdvanceAsync(string what, BotPosition lair, int kind, Func<bool> done)
+				{
+					session.BeginStep("stand-in", "to-" + what);
+					int idle = 0;
+					while (!done())
+					{
+						await session.SynchronizeAsync(token);
+						if (world.IsDead) { await combat.RestAsync(token); continue; }
+						if (world.MapId != GroupNtcMap) { await BackInAsync(); continue; }
+						int? pick = OnTheGroup(Hostiles());
+						IReadOnlyList<BotPosition> way = [];
+						if (pick == null)
+						{
+							await combat.RestAsync(token);
+							if (!await GatheredAsync()) { await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token); continue; }
+							var hostiles = Hostiles();
+							if (NaturalServicePolicy.Distance(session.CurrentPosition, lair) > 3)
+							{
+								way = geometry.FindJourneyPath(world.MapId!.Value, session.CurrentPosition, lair);
+								// The gate stands in its gateway, where the mesh has a seam: the way to within reach of it will do.
+								if (way.Count == 0) way = geometry.FindInteractionPath(world.MapId!.Value, session.CurrentPosition, lair);
+								if (way.Count == 0) throw new InvalidDataException($"No checked way inside the camp from {session.CurrentPosition} to {lair}.");
+								// The stretch looked at is longer than the stretch walked, so no circle is entered unseen.
+								float ahead = 0;
+								BotPosition from = session.CurrentPosition;
+								foreach (var point in way)
+								{
+									pick = hostiles.Where(hostile => refused.GetValueOrDefault(hostile.Seen.ObjectId) < 3 && FromSegment(from, point, hostile.Seen.Position) <= hostile.Reach)
+										.OrderBy(hostile => NaturalServicePolicy.Distance(session.CurrentPosition, hostile.Seen.Position)).Select(hostile => (int?)hostile.Seen.ObjectId).FirstOrDefault();
+									if (pick != null) break;
+									ahead += NaturalServicePolicy.Distance(from, point); from = point;
+									if (ahead >= 16) break;
+								}
+							}
+							// At the place the named monster itself is the one to fight, wherever in sight it stands.
+							else pick = world.Objects.Values.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId == kind && kind != 0 &&
+									!known.IsCorpse && !killed.Contains(known.ObjectId))
+								.OrderBy(known => NaturalServicePolicy.Distance(session.CurrentPosition, known.Position)).Select(known => (int?)known.ObjectId).FirstOrDefault();
+						}
+						if (pick is int target) { idle = 0; await KillAsync(target); continue; }
+						if (way.Count == 0)
+						{
+							if (++idle > 480) throw new InvalidDataException($"{what}: the stand-in stands at the place, npc {kind} is not there to fight, and it is not done.");
+							await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+							continue;
+						}
+						idle = 0;
+						await WalkStretchAsync(way, 8);
+					}
+					session.TraceDiagnostic("stand-in-step", new Dictionary<string, object?>
+					{ ["done"] = what, ["npc"] = kind, ["pulls"] = pulls, ["deaths"] = combat.ReviveCount, ["atMillis"] = runtime.NowMillis - began, ["position"] = session.CurrentPosition });
+				}
+				await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
+				foreach (int named in CompanionNtcNamed)
+					await AdvanceAsync($"npc-{named}", Lair(named), named, () => killedKinds.Contains(named));
+				await AdvanceAsync("the-gate", Lair(GroupNtcGate), GroupNtcGate, () => killedKinds.Contains(GroupNtcGate));
+				await AdvanceAsync("inside-the-gateway", GroupNtcInside, 0, () => NaturalServicePolicy.Distance(session.CurrentPosition, GroupNtcInside) <= 3);
+				await AdvanceAsync("the-general", Lair(GroupNtcGeneral), GroupNtcGeneral, () => killedKinds.Contains(GroupNtcGeneral));
+				await session.SynchronizeAsync(token);
+				var toTheGeneral = new { fallen = fallenKinds, pulls, kills = killed.Count, corpsesOpened, itemsTaken = looter.Collected,
+					standInDeaths = combat.ReviveCount, reentries, elapsedMillis = runtime.NowMillis - began,
+					generalStruckBy = Others().Where(member => session.PacketHistory.Skip(generalSince).Any(packet => world.Objects.Values
+						.Where(known => known.TemplateId == GroupNtcGeneral).Any(boss => runtime.IncomingAttacker(packet, boss.ObjectId) == member.ObjectId)))
+						.Select(member => member.Name).ToArray(),
+					companions = Others().Select(member => new { member.Name, member.Online, member.Dead, member.MapId, metres = Away(member) }).ToArray() };
+				session.TraceDiagnostic("stand-in-general", new Dictionary<string, object?> { ["general"] = toTheGeneral });
+				general = toTheGeneral;
+			}
 		}
 		var support = (world.VisibleEffects ?? []).Where(effect => Others().Any(member => member.ObjectId == effect.EffectorId))
 			.Select(effect => new { effect.SkillId, effect.EffectorId }).ToArray();
 		runtime.AssertClean();
 		var receipt = new { verified = true, CharacterId = session.CharacterId, until = options.CompanionUntil, asked, companions = joined,
-			leader = world.GroupLeaderId, group = world.GroupId, lootRules = world.GroupLootRules, list, walks, marks, loots, inside, support,
+			leader = world.GroupLeaderId, group = world.GroupId, lootRules = world.GroupLootRules, list, walks, marks, loots, inside, general, support,
 			elapsedMillis = runtime.NowMillis - started, map = world.MapId, position = session.CurrentPosition };
 
 		session.BeginStep("stand-in", "send-them-away");
@@ -587,7 +838,7 @@ public sealed partial class NaturalIshalgenJourney
 		await WaitAsync(() => world.GroupId == null, "the group did not end after the dismissal", 60);
 		File.WriteAllText(Path.Combine(Path.GetDirectoryName(session.CombatTracePath!)!, "companion-completion.json"),
 			JsonSerializer.Serialize(new { receipt.verified, receipt.CharacterId, receipt.until, receipt.asked, receipt.companions, receipt.leader,
-				receipt.group, receipt.lootRules, receipt.list, receipt.walks, receipt.marks, receipt.loots, receipt.inside, receipt.support, farewell, receipt.elapsedMillis, receipt.map, receipt.position },
+				receipt.group, receipt.lootRules, receipt.list, receipt.walks, receipt.marks, receipt.loots, receipt.inside, receipt.general, receipt.support, farewell, receipt.elapsedMillis, receipt.map, receipt.position },
 				new JsonSerializerOptions { WriteIndented = true }));
 		session.TraceDiagnostic("stand-in-reached", new Dictionary<string, object?> { ["receipt"] = receipt, ["farewell"] = farewell });
 	}
