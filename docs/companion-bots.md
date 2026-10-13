@@ -1,10 +1,10 @@
 # Companion bots
 
-Status: planned 2026-10-12; C1 to C8 are done. A companion joins its player's group and follows it with nobody's
+Status: done in SIM, 2026-10-13: C1 to C9 are ticked. The report is at the end. A companion joins its player's group and follows it with nobody's
 words. A damage class attacks what the leader marked, or what the leader attacks; the Cleric keeps its support
 up and attacks nothing. The group's loot is free for all and a companion opens no corpse. It leaves the game
 when it is sent away, and it goes through a portal after its leader. Five companions went with the stand-in
-through Nochsana Training Camp to the General. The end is the step that is left. The step list at the end is worked one step at a time.
+through Nochsana Training Camp to the General, and were gone from the server after it sent them away. The step list at the end is worked one step at a time.
 
 It follows [natural-group-ntc.md](natural-group-ntc.md) and [natural-group-healer.md](natural-group-healer.md):
 following F1, the Cleric's healing-only role, the class fights, gear and supplies are there and are reused.
@@ -273,10 +273,100 @@ One step per iteration. A step is ticked when a SIM round from `ntc-group-s4` sh
     Teleporter and the chests, which are quest matters.
   - Checks: the unit suite (4,645 passed, 16 skipped) and the pre-commit checks; only the companion stage's own
     bot code changed. Code commit `1defe2616`.
-- [ ] **C9 The end.** Dismissal, the player's logout and leaving the group each remove the companion and its rows.
+- [x] **C9 The end.** Dismissal, the player's logout and leaving the group each remove the companion and its rows.
+  - 2026-10-13. Round `c9-1` (`run/companion/c9.json`): the stopping round. The stand-in brings five
+    companions, they follow it into the camp and fight what it marks to the General, and it sends them away
+    inside. The server knew no companion of the stand-in 15 s after the dismissal.
+    The host found no companion known to the server and no character on any of the five seats' accounts.
+    The numbers are in the report below.
+  - The other two ways, each with one Cleric: round `c9-leave-1`, where the stand-in leaves its group, and the
+    server knows no companion of it 1.25 s later; round `c9-logout-1`, where the stand-in logs out and the host
+    finds nothing left. In all three the companion sees that its player no longer leads its group and logs
+    out, and the server deletes it as it leaves the world.
+  - The server does not depend on that. Every ten seconds it looks at its companions (`CompanionService.Watch`):
+    one whose player is gone or no longer leads the group it is in ends; one that is still in the world 30 s
+    after it was sent away is disconnected; one that nobody logged in within two minutes is deleted. The
+    server test plays a client that logs a companion in and then does nothing: it is ended at the next look,
+    disconnected, and its rows are gone.
+  - The host checks every round with a seat when it is over, and a round with a companion left fails.
+    `round-outcome.json` has `companionSeats`. The stand-in's round field `companionEnd` is `dismiss` (the
+    default), `leave` or `logout`.
+  - Checks: the unit suite (4,645 passed, 16 skipped), the pre-commit checks, the server test, Fast (`c9-fast`), and the
+    Group NTC leg replayed once on the changed round harness (`n9-c9`). The baseline `ntc-group-s4` has the
+    hashes it had at the start. Code commit `566ea46be`.
 
 Not in this plan: a live host process and a live world, other levels, Elyos, a support table for the Chanter,
 flight and teleporters, companions that are kept.
+
+## The report
+
+2026-10-13, at the stop. Everything here is SIM, seed 1, from `ntc-group-s4`, which is unchanged.
+
+### What a companion does
+
+- `.companion <class>` makes a level-26 Asmodian of any of the eleven classes where the player stands, from the
+  class's generated profile: its gear, both power shard stacks, its kit and its skills. `.companion list` and
+  `.companion dismiss [name]` name them and send them away. The feature is off unless the server starts with
+  `AION_COMPANIONS=true`.
+- It is in the player's group as it enters the world, and the player leads. With the first companion the
+  group's loot is free for all.
+- It follows the leader it sees, with nobody's words, and goes through a portal NPC after it.
+- A damage class attacks the lowest of the leader's marks, then what the leader attacks, then a monster that is
+  attacking a member. The Cleric heals, cleanses, blesses and resurrects, and attacks nothing.
+- It takes no quest and opens no corpse. It keeps its own buffs, scrolls and shards up from its kit.
+- When its player sends it away, logs out or leaves the group, it logs out and the server deletes it. The server
+  ends one by itself that does not.
+
+### What it does not do yet
+
+- It runs in SIM only. There is no program that plays companions against a live server.
+- Level 26 and Asmodians only. No flight, no teleporter, no airship.
+- It cannot be asked for from inside an instance. A leader who leaves an instance by a way that is no portal NPC
+  is not followed out: the companion says "I cannot reach you." and waits.
+- It finishes the monster it is on before it takes the next mark.
+- Only the Cleric plays support. The Chanter fights.
+
+### The round to the General
+
+| | |
+|---|---|
+| Round | `c9-1`: 12:10 of game time, the whole way from the first `.companion` to the last companion gone |
+| The group | The stand-in (the group world's Templar) and a Cleric, a Gladiator, a Ranger, a Sorcerer and a Chanter, each made by `.companion` |
+| Into the camp | All five beside the stand-in 3 s after it went in, in its instance |
+| The way | the Protector 2:04, the Guard 3:30, the Aetheric Field Guard 4:24, the gate 6:09, the General 8:33 (time inside the camp) |
+| Deaths | None: not the stand-in, not a companion |
+| Marks followed | 36 pulls, each with the stand-in's mark on it. Each damage class fought 34 to 37 times: 20 to 25 for a mark, 1 for the stand-in's unmarked target, 11 to 13 in defence of a member. All four struck the General |
+| Healing and dispels | The Cleric: 3 heals, 4 top-ups, 21 cleanses, 116 heals over time, 4 blessings, 2 mana recoveries. 3 casts were refused by the server, all three on itself while the General's effect was on it. No attack. No resurrection was needed |
+| Loot left to the stand-in | It opened 14 corpses in the camp and 4 in the field and took 56 items. No companion carries an item it did not come with. The server gave each companion 1,023 to 1,036 kinah as its share of what the stand-in picked up |
+| Quests | No companion's journal has an entry it did not have when it joined |
+| The end | Sent away inside the camp. The server knew no companion 15 s later, and no character was left on a seat's account |
+
+### Not exercised
+
+- A death: the minute's wait for the Cleric's resurrection, the revive at the bind and the way back through the
+  portal are written and no run has played them. Nobody died in any round.
+- A boss rule (a taunt, the camp's artifact). The Teleporter and the chests, which are quest matters.
+- Six of the eleven classes as companions: the Templar, the Assassin, the Spirit Master, the Gunner, the
+  Aethertech and the Songweaver have profiles and fight tables and were not asked for in a round.
+- A mark set while a companion is in another fight. A real client as the leader.
+
+### For the operator to decide before a live world
+
+1. **The host.** Bot code cannot run inside the server, so companions need a program of their own that logs in
+   as clients. It has to be told of a request (the queue is in the server's memory today), and it needs
+   accounts that exist in the login server: how many seats, and whose.
+2. **Kinah.** The game shares looted kinah among the members near the looter under every loot rule. With five
+   companions the player keeps a sixth, and a companion's share is deleted with it. Keep that, or give the
+   player the companions' shares, which changes loot code.
+3. **Experience** is shared as the game shares it in a group (CB-Q9). Five companions take their shares.
+4. **Who may ask.** Anyone, when the feature is on. A limit for each player, a level of access, Elyos, and other
+   levels are open.
+5. **Leftovers.** A server that stops with companions alive leaves their characters in the database; nothing
+   marks a character as a companion, so nothing can clear them at the next start. An admin's reload of the
+   commands drops `.companion` until the next start.
+6. **The loot rule.** Free for all, as he said. Java also has `LEADER`, which gives every corpse to the leader
+   alone.
+7. **My defaults**, which he has not confirmed: CB-Q5 to CB-Q9 and CB-Q12 to CB-Q14 in the decision table.
 
 ## Working rules
 
