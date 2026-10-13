@@ -313,6 +313,8 @@ public sealed partial class NaturalIshalgenJourney
 		bool flying = false;
 		const float StuckAwayMetres = 10, StuckMovedMetres = 5;
 		const int StuckMillis = 30_000;
+		// Nearer than this a player that is there is seen.
+		const float OutOfSightMetres = 40;
 		const byte GroupChat = 5;
 		long stuckWindowAt = runtime.NowMillis, noRescueUntil = 0;
 		BotPosition stuckWindowFrom = session.CurrentPosition;
@@ -590,7 +592,9 @@ public sealed partial class NaturalIshalgenJourney
 						fallen.Add(session.PacketHistory[fallenCursor].Get<int>("objectId"));
 				if (world.IsDead) { flying = false; await combat.RestAsync(token); NotStuck(); continue; }
 				following.Observe();
-				if (world.GroupMembers.TryGetValue(leader, out var gone) && gone.Online && gone.MapId != 0 && gone.MapId != world.MapId)
+				// A player it sees is here, whatever the group's last word says: that word is as old as the player's last step.
+				if (world.GroupMembers.TryGetValue(leader, out var gone) && gone.Online && gone.MapId != 0 && gone.MapId != world.MapId &&
+					!world.Objects.ContainsKey(leader))
 				{
 					if (flying) await LandAsync("its-player-left-the-map");
 					if (!findsNoWay && await ThroughPortalAsync(gone.MapId)) NotStuck();
@@ -649,11 +653,16 @@ public sealed partial class NaturalIshalgenJourney
 				// it stands beside its leader again. A member that is hurt cannot wait.
 				// Oh no, I'm stuck: away from its player, and half a minute later still where it stood. A player in the air is
 				// waited for; the server puts nobody into the air.
-				if (gap <= StuckAwayMetres) NotStuck();
+				// A player that is in the group, not in sight, and by the group's last word right here is away too. The server
+				// tells a group where a member is when the member moves or its health changes (Java TeamMoveUpdater and
+				// TeamStatUpdater): one that went through a door and stands still behind it is not heard of.
+				bool outOfSight = f1 is { Online: true } && !world.Objects.ContainsKey(leader) && gap <= OutOfSightMetres;
+				if (gap <= StuckAwayMetres && !outOfSight) NotStuck();
 				else if (runtime.NowMillis - stuckWindowAt >= StuckMillis)
 				{
 					if (NaturalServicePolicy.Distance(stuckWindowFrom, session.CurrentPosition) >= StuckMovedMetres) NotStuck();
-					else if (!following.LeaderAirborne && runtime.NowMillis >= noRescueUntil && await RescueAsync("no way to its player")) continue;
+					else if (!following.LeaderAirborne && runtime.NowMillis >= noRescueUntil &&
+						await RescueAsync(outOfSight ? "its player is out of sight" : "no way to its player")) continue;
 				}
 				if (!combat.InCombat && runtime.NowMillis - stockCheckedAt >= stockCheckMillis) await StockCheckAsync();
 				// Between fights too, and for the Cleric, which is in none.
