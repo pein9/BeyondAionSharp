@@ -435,6 +435,22 @@ dotnet run --project tools/Aion.NavBake -- validate --maps 220010000 --bin run/d
 image. Green means both agree, red means walkable for the client but not on the navmesh, blue
 means navmesh where the client has no ground.
 
+### The local cache of every other map (2026-10-13)
+
+The operator asked for a navmesh for every playable map, so that a companion can walk wherever its player leads it.
+`run/nav` had one for each of the 153 maps that are not checked in, baked on 2026-09-24; `check --maps all --out run/nav`
+called 150 of them stale (`inputs changed`: the playable-area masks and the bake rules are newer). They are baked again:
+
+```bash
+dotnet run --project tools/Aion.NavBake -- bake  --maps all --out run/nav   # about 5 minutes, 314 MB
+dotnet run --project tools/Aion.NavBake -- check --maps all --out run/nav   # 155 ok
+```
+
+All 155 maps that have geometry are current. The six maps of `world_maps.xml` without a navmesh have no geometry to
+bake: Rumakiki's Conspiracy (Solo) 301150000, Asmodian Legion Housing 710020000 and the four test maps 900120000,
+900130000, 900140000 and 900150000. The cache is git-ignored and found after the checked-in folder, by SIM and by the
+live hosts alike; a clone has to bake it once.
+
 ## Bake rules and why
 
 | Setting | Value | Reason |
