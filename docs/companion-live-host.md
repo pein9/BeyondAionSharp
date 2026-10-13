@@ -1,6 +1,6 @@
 # Companion bots: the live host
 
-Status: 2026-10-13: L1 to L4 are done. His `aion` stack is up with companions on and the host's five seats wait at character selection (run `ch-l4-1`). L5, his first try in game, is open. It follows [companion-bots.md](companion-bots.md), which is done in SIM.
+Status: 2026-10-13: L1 to L4 are done, and he has led five companions through Nochsana Training Camp (L5, still open for what was built after that run). His `aion` stack is up with companions on; the host keeps five seats waiting and logs in more as they are taken (run `ch-l5-5`). It follows [companion-bots.md](companion-bots.md), which is done in SIM.
 
 ## The goal
 
@@ -315,8 +315,47 @@ its role, as the stand-in's companions did in SIM. NTC is the place to try it.
     potion is drunk only when mana is below the cheapest attack (the Chanter also below its heal), the instant
     serums first; the healing Cleric casts its own mana recovery below half and drinks none. A rule that drinks
     the potion that restores over time at a threshold is his to ask for.
-  - Still to try before this step is ticked: the stuck rule and the supply check in game, and a re-summon right
-    after a dismissal.
+  - 2026-10-13, later, on his word before he went away ("run sims needed, rebuild, restart, whatever. Iterate."):
+    - **The mana potion at a threshold, for companions only** (commit `0db9b51d3`). At or below half its mana a
+      companion drinks a Mana Potion, the one that restores over twenty seconds, when none is at work and its
+      health is at 70% or more (a Life Potion shares the delay). In a fight and between fights; the Cleric too.
+      It is an opt-in of the shared fight (`ManaPotionAtPercent`) that no natural run sets. The casters' profiles
+      carried instant serums only, so the profile generator gives every companion thirty Major Mana Potions
+      (`COMPANION_EXTRAS`). Shown in SIM (`l5-c9-mana`): the Sorcerer and the Ranger drank three each at just
+      under half their mana, the Cleric one, all at full health; the General fell, nobody died.
+    - **Crowd control** (commit `79895bb06`). "Crowd control from Sorcerers or Spirit Masters. The skills 'Tree'
+      or 'Fear', as the human leader marks them (there are marks for these in the game, 'Zzz' or something)."
+      The client's brand sheet (`Textures/ui/ui.pak`, `v5_sign.dds`) has the Zzz as its fifteenth icon, which is
+      brand 14 on the wire if the sheet is in the order of the brands; Java knows sixteen brands, 0 to 15, and
+      the sheet's first sixteen end with the Zzz and a no-entry sign. Not yet confirmed from his client. A
+      companion that has Curse of Roots (the level-26 Sorcerer: the Tree, 20 s, 30 s between two casts, 25 m)
+      casts it on the monster with the Zzz brand, and Root (20 s, 60 s between) while the curse is not ready,
+      before any fighting of its own. No companion attacks that monster: not by a mark, not as its player's
+      target, not in defence. With the brand off it is a target like any other. The level-26 Spirit Master has
+      Root and Body Root and no Fear; it joins when companions come at a level that has it. Shown in SIM
+      (`k-control-1`, `run/companion/control.json`, stand-in checkpoint `control`): a Sorcerer and a Gladiator;
+      the Zzz on one monster and a number on another. The tree stands 5.8 s after the brand (the Sorcerer walks
+      into range first), the numbered one falls, nobody strikes the tree for twelve seconds more, and after the
+      release both kill it. Not covered: a fight that outlasts the curse (the Sorcerer casts again only between
+      two fights), and an area skill of a companion that wakes the tree.
+    - **Seats as many as are asked for** (commit `5db82e9e2`). His question: "Every human player on the server
+      would need up to '5 seats'. Are we creating these with static limits and not dynamically?" They were five,
+      shared by everyone. Now the server takes seats by a pattern (`AION_COMPANION_ACCOUNTS=companion*`: the name
+      and then digits only), and the host keeps five seats waiting (`-Spare`) and logs another in whenever a
+      player takes one, up to fifty (`-MaxSeats`; a hundred at the most, the subject numbers it has). A seat that
+      has waited beyond the spare ones for five minutes logs out. A seat on its way back after a failure counts
+      as one that is coming, so a server that is down does not make the host log in all its seats. The server
+      test names its seat by a pattern. Not shown: the pool growing, which takes players asking for more
+      companions than are waiting; all seats still play on the host's one thread, and how many companions that
+      thread carries at once is not measured beyond the five of his camp run.
+    - Checks: the unit suite (4,646 passed, 16 skipped), the pre-commit checks, both contract tests, the
+      companion server tests, the rounds named above, the stopping round again (`k-c9-2`), the neutral gate
+      (`l5-gate-2`) and the Group NTC leg (`n9-l5-3`) for the fight's opt-in, and Fast (`l5-fast-4`, `k-fast`).
+    - Live since 21:21 UTC: the game server's image built again (the new profiles and the pattern), its container
+      made anew with nobody online and `AION_COMPANION_ACCOUNTS=companion*`, and the host run `ch-l5-5`: five
+      seats waiting.
+  - Still to try before this step is ticked: the stuck rule, the supply check, the mana potion and the Zzz brand
+    in game, a re-summon right after a dismissal, and a sixth companion for a second player.
   - Seen in the trace, not a fault yet: a companion in play asks the server's time about nine times a second
     (1,964 `CM_TIME_CHECK` in 210 s), which is how the live session waits for the server. Its trace grows by
     about 30 MB an hour of play, and a waiting seat's by 1.2 MB an hour, twice what I wrote under L4.
