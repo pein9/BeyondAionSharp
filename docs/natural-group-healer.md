@@ -5,6 +5,15 @@ controller, resurrection waiting and rights-aware round-robin looting are implem
 four, five and six completed one new coin-quest cycle each from the same rollback baseline. Unexercised paths
 and the validation limits are recorded below.
 
+**Update, 2026-10-12, after the Group NTC leg ([natural-group-ntc.md](natural-group-ntc.md)).** The same six played
+Nochsana Training Camp to the General on this code. Of what is listed below as unexercised, the leg showed the
+dispel (40 cleanses in its final round, `n9-3`), urgent and ordinary healing (10 heals, 17 top-ups) and mana
+recovery, with no attack sent by the Cleric in any round. Still shown by no run: a resurrection, and common-bind
+recovery inside an instance. The leg also changed code this document describes: the group stage plays several
+quests and takes its quest NPC from the leader's command; a follower goes around a trail point it cannot step to,
+ends a step on a checked point, and walks to a leader that stands still; a member hears its leader's last command
+after the leader has left.
+
 This scope replaces the old GH-01–GH-13 checklist and its copied goal prompts. Encounter qualification and the
 stop-after-two-proof-attempts rule are withdrawn. There is no pending decision on accepting the earlier solo runs.
 
