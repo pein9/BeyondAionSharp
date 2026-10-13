@@ -1,0 +1,234 @@
+#!/usr/bin/env python3
+"""Companion profiles (docs/companion-bots.md, step C1).
+
+A companion is a throwaway character the server makes for a player who asks for one. What it wears, carries and has
+learned is its profile. The profiles are generated from the group world, where every class stands at its level in the
+gear, shards and supplies the natural runs gave it. They are generated data: change the world they come from and
+generate them again, never edit them by hand.
+
+  python scripts/sim/make-companion-profiles.py                 # write game-server/data/companions from ntc-group-s4
+  python scripts/sim/make-companion-profiles.py --check         # the checked-in profiles against the item data, and
+                                                                # against a fresh generation when the snapshot is here
+
+A snapshot lives under run/snapshots, which is not checked in. Without it --check still reads every profile and checks
+its items; it says that it could not compare.
+"""
+import argparse
+import glob
+import gzip
+import hashlib
+import io
+import json
+import os
+import re
+import sys
+
+REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+KINAH = 182400001
+UNEQUIPPED_SLOT = 65535
+CUBE = 0
+# PlayerClass ids, which index an item's restrict row.
+CLASS_IDS = {'WARRIOR': 0, 'GLADIATOR': 1, 'TEMPLAR': 2, 'SCOUT': 3, 'ASSASSIN': 4, 'RANGER': 5, 'MAGE': 6, 'SORCERER': 7,
+             'SPIRIT_MASTER': 8, 'PRIEST': 9, 'CLERIC': 10, 'CHANTER': 11, 'ENGINEER': 12, 'RIDER': 13, 'GUNNER': 14,
+             'ARTIST': 15, 'BARD': 16}
+
+
+def rows(dump, table):
+    """The rows of a table in a mysqldump text, each a dict by column name."""
+    created = re.search(r'CREATE TABLE `%s` \((.*?)\n\) ENGINE' % re.escape(table), dump, re.S)
+    if not created:
+        raise SystemExit('The dump has no table %s.' % table)
+    columns = re.findall(r'^\s+`(\w+)` ', created.group(1), re.M)
+    out = []
+    for insert in re.finditer(r'INSERT INTO `%s` VALUES (.*?);\n' % re.escape(table), dump, re.S):
+        for values in tuples(insert.group(1)):
+            if len(values) != len(columns):
+                raise SystemExit('A row of %s has %d values for %d columns.' % (table, len(values), len(columns)))
+            out.append(dict(zip(columns, values)))
+    return out
+
+
+def tuples(text):
+    """The value tuples of an INSERT: numbers, NULL, and quoted strings with their escapes."""
+    at, end = 0, len(text)
+    while at < end:
+        if text[at] != '(':
+            at += 1
+            continue
+        at += 1
+        values = []
+        while True:
+            if text[at] == "'":
+                at += 1
+                value = []
+                while True:
+                    char = text[at]
+                    if char == '\\':
+                        value.append(text[at + 1])
+                        at += 2
+                    elif char == "'" and text[at + 1:at + 2] == "'":
+                        value.append("'")
+                        at += 2
+                    elif char == "'":
+                        at += 1
+                        break
+                    else:
+                        value.append(char)
+                        at += 1
+                values.append(''.join(value))
+            else:
+                stop = at
+                while text[stop] not in ',)':
+                    stop += 1
+                word = text[at:stop]
+                values.append(None if word == 'NULL' else (float(word) if any(c in word for c in '.eE') else int(word)))
+                at = stop
+            if text[at] == ',':
+                at += 1
+                continue
+            at += 1  # the closing bracket
+            break
+        yield values
+
+
+def item_data():
+    """Every item template's level and restrict row, by id."""
+    items = {}
+    for path in sorted(glob.glob(os.path.join(REPO, 'game-server/data/static_data/items/*.xml'))):
+        text = io.open(path, encoding='utf-8').read()
+        for match in re.finditer(r'<item_template id="(\d+)"([^>]*)>', text):
+            attributes = match.group(2)
+            level = re.search(r' level="(\d+)"', attributes)
+            restrict = re.search(r' restrict="([\d ]+)"', attributes)
+            race = re.search(r' race="(\w+)"', attributes)
+            name = re.search(r' name="([^"]*)"', attributes)
+            items[int(match.group(1))] = {
+                'level': int(level.group(1)) if level else 0,
+                'restrict': [int(v) for v in restrict.group(1).split()] if restrict else None,
+                'race': race.group(1) if race else None,
+                'name': name.group(1) if name else '',
+            }
+    return items
+
+
+def problems_of(profile, items):
+    """What is wrong with a profile against the item data: an item that does not exist, or one its class cannot wear."""
+    found = []
+    class_id = CLASS_IDS[profile['playerClass']]
+    for worn in profile['equipment']:
+        item = items.get(worn['itemId'])
+        if item is None:
+            found.append('worn item %d does not exist' % worn['itemId'])
+            continue
+        # The server's gate is the item's restrict row: the level each class needs, 0 for a class that cannot use it. An
+        # item without a row has no gate, whatever its own level (a power shard), as docs/natural-muster.md rule MR-c says.
+        needed = item['restrict'][class_id] if item['restrict'] else 0
+        if item['restrict'] and needed == 0:
+            found.append('%s cannot wear %d %s' % (profile['playerClass'], worn['itemId'], item['name']))
+        elif needed > profile['level']:
+            found.append('%d %s needs level %d' % (worn['itemId'], item['name'], needed))
+        if item['race'] not in (None, 'PC_ALL', profile['race']):
+            found.append('%d %s is for %s' % (worn['itemId'], item['name'], item['race']))
+    for carried in profile['inventory']:
+        if carried['itemId'] not in items:
+            found.append('carried item %d does not exist' % carried['itemId'])
+    return found
+
+
+def generate(snapshot):
+    folder = os.path.join(REPO, 'run', 'snapshots', snapshot + '-w1')
+    record = json.load(io.open(os.path.join(folder, 'snapshot.json'), encoding='utf-8'))
+    raw = io.open(os.path.join(folder, 'dump.sql.gz'), 'rb').read()
+    digest = hashlib.sha256(raw).hexdigest()
+    if digest != record['dumpSha256']:
+        raise SystemExit('The dump of %s does not have the hash its record names.' % snapshot)
+    dump = gzip.decompress(raw).decode('utf-8', errors='replace')
+    players = {row['id']: row for row in rows(dump, 'players')}
+    appearances = {row['player_id']: row for row in rows(dump, 'player_appearance')}
+    inventory = rows(dump, 'inventory')
+    skills = rows(dump, 'player_skills')
+    socketed = {row['item_unique_id'] for row in rows(dump, 'item_stones')}
+    profiles = {}
+    for character in record['characters']:
+        player = players[character['characterId']]
+        own = [row for row in inventory if row['item_owner'] == player['id'] and row['item_location'] == CUBE]
+        if any(row['item_unique_id'] in socketed for row in own):
+            raise SystemExit('%s has a socketed item; a profile does not carry stones yet.' % player['name'])
+        appearance = dict(appearances[player['id']])
+        del appearance['player_id']
+        profile = {
+            'schemaVersion': 1,
+            'race': player['race'],
+            'playerClass': player['player_class'],
+            'level': character['level'],
+            'gender': player['gender'],
+            'appearance': appearance,
+            'equipment': sorted(({'slot': row['slot'], 'itemId': row['item_id'], 'count': row['item_count'], 'enchant': row['enchant']}
+                                 for row in own if row['is_equipped']), key=lambda worn: (worn['slot'], worn['itemId'])),
+            'inventory': sorted(({'itemId': row['item_id'], 'count': row['item_count']}
+                                 for row in own if not row['is_equipped'] and row['item_id'] != KINAH),
+                                key=lambda carried: carried['itemId']),
+            'skills': sorted(({'id': row['skill_id'], 'level': row['skill_level']} for row in skills if row['player_id'] == player['id']),
+                             key=lambda skill: skill['id']),
+            'source': {'snapshot': record['name'], 'dumpSha256': digest, 'character': player['name']},
+        }
+        key = '%s-%s-%d' % (profile['race'].lower(), profile['playerClass'].lower().replace('_', '-'), profile['level'])
+        if key in profiles:
+            raise SystemExit('Two characters of %s would be the profile %s.' % (snapshot, key))
+        profiles[key] = profile
+    return profiles
+
+
+def text_of(profile):
+    return json.dumps(profile, indent=2, ensure_ascii=False) + '\n'
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--snapshot', default='ntc-group-s4', help='the round snapshot the profiles come from')
+    parser.add_argument('--out', default=os.path.join(REPO, 'game-server', 'data', 'companions'))
+    parser.add_argument('--check', action='store_true', help='check the profiles that are there; write nothing')
+    options = parser.parse_args()
+    items = item_data()
+    present = os.path.isfile(os.path.join(REPO, 'run', 'snapshots', options.snapshot + '-w1', 'dump.sql.gz'))
+    failed = False
+    if options.check:
+        paths = sorted(glob.glob(os.path.join(options.out, '*.json')))
+        if not paths:
+            raise SystemExit('No companion profile is there to check.')
+        fresh = generate(options.snapshot) if present else None
+        for path in paths:
+            key = os.path.splitext(os.path.basename(path))[0]
+            written = io.open(path, encoding='utf-8', newline='').read().replace('\r\n', '\n')
+            for problem in problems_of(json.loads(written), items):
+                print('%s: %s' % (key, problem))
+                failed = True
+            if fresh is not None and written != text_of(fresh.get(key, {})):
+                print('%s: differs from a fresh generation from %s' % (key, options.snapshot))
+                failed = True
+        if fresh is not None and set(fresh) != {os.path.splitext(os.path.basename(path))[0] for path in paths}:
+            print('The profiles that are there are not the ones %s gives.' % options.snapshot)
+            failed = True
+        print('%d companion profiles checked%s.' % (len(paths), '' if present else
+                                                   '; the snapshot is not here, so they were not compared with a fresh generation'))
+        return 1 if failed else 0
+    if not present:
+        raise SystemExit('The snapshot %s is not under run/snapshots.' % options.snapshot)
+    profiles = generate(options.snapshot)
+    for key, profile in sorted(profiles.items()):
+        for problem in problems_of(profile, items):
+            print('%s: %s' % (key, problem))
+            failed = True
+    if failed:
+        return 1
+    os.makedirs(options.out, exist_ok=True)
+    for stale in glob.glob(os.path.join(options.out, '*.json')):
+        os.remove(stale)
+    for key, profile in sorted(profiles.items()):
+        io.open(os.path.join(options.out, key + '.json'), 'w', encoding='utf-8', newline='\n').write(text_of(profile))
+        print('%s: %d worn, %d carried, %d skills' % (key, len(profile['equipment']), len(profile['inventory']), len(profile['skills'])))
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

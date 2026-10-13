@@ -1,0 +1,595 @@
+{
+  "schemaVersion": 1,
+  "race": "ASMODIANS",
+  "playerClass": "RANGER",
+  "level": 26,
+  "gender": "MALE",
+  "appearance": {
+    "face": 0,
+    "hair": 0,
+    "deco": 0,
+    "tattoo": 0,
+    "face_contour": 0,
+    "expression": 0,
+    "jaw_line": 0,
+    "skin_rgb": 0,
+    "hair_rgb": 0,
+    "lip_rgb": 0,
+    "eye_rgb": 0,
+    "face_shape": 0,
+    "forehead": 0,
+    "eye_height": 0,
+    "eye_space": 0,
+    "eye_width": 0,
+    "eye_size": 0,
+    "eye_shape": 0,
+    "eye_angle": 0,
+    "brow_height": 0,
+    "brow_angle": 0,
+    "brow_shape": 0,
+    "nose": 0,
+    "nose_bridge": 0,
+    "nose_width": 0,
+    "nose_tip": 0,
+    "cheek": 0,
+    "lip_height": 0,
+    "mouth_size": 0,
+    "lip_size": 0,
+    "smile": 0,
+    "lip_shape": 0,
+    "jaw_height": 0,
+    "chin_jut": 0,
+    "ear_shape": 0,
+    "head_size": 0,
+    "neck": 0,
+    "neck_length": 0,
+    "shoulders": 0,
+    "shoulder_size": 0,
+    "torso": 0,
+    "chest": 0,
+    "waist": 0,
+    "hips": 0,
+    "arm_thickness": 0,
+    "arm_length": 0,
+    "hand_size": 0,
+    "leg_thickness": 0,
+    "leg_length": 0,
+    "foot_size": 0,
+    "facial_rate": 0,
+    "voice": 0,
+    "height": 1
+  },
+  "equipment": [
+    {
+      "slot": 3,
+      "itemId": 101700835,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 4,
+      "itemId": 125004138,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 8,
+      "itemId": 110301819,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 16,
+      "itemId": 111301088,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 32,
+      "itemId": 114301140,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 64,
+      "itemId": 120000833,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 128,
+      "itemId": 120001520,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 256,
+      "itemId": 122000871,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 512,
+      "itemId": 122001664,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 1024,
+      "itemId": 121001394,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 2048,
+      "itemId": 112301034,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 4096,
+      "itemId": 113301106,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 8192,
+      "itemId": 169000011,
+      "count": 10000,
+      "enchant": 0
+    },
+    {
+      "slot": 16384,
+      "itemId": 169000011,
+      "count": 10000,
+      "enchant": 0
+    },
+    {
+      "slot": 65536,
+      "itemId": 123001439,
+      "count": 1,
+      "enchant": 0
+    }
+  ],
+  "inventory": [
+    {
+      "itemId": 160002274,
+      "count": 8
+    },
+    {
+      "itemId": 162000006,
+      "count": 30
+    },
+    {
+      "itemId": 162000007,
+      "count": 112
+    },
+    {
+      "itemId": 162000018,
+      "count": 2
+    },
+    {
+      "itemId": 162001057,
+      "count": 18
+    },
+    {
+      "itemId": 164000070,
+      "count": 30
+    },
+    {
+      "itemId": 164000073,
+      "count": 60
+    },
+    {
+      "itemId": 164000076,
+      "count": 20
+    },
+    {
+      "itemId": 169300004,
+      "count": 200
+    },
+    {
+      "itemId": 169620005,
+      "count": 2
+    }
+  ],
+  "skills": [
+    {
+      "id": 37,
+      "level": 1
+    },
+    {
+      "id": 40,
+      "level": 1
+    },
+    {
+      "id": 41,
+      "level": 1
+    },
+    {
+      "id": 44,
+      "level": 1
+    },
+    {
+      "id": 45,
+      "level": 1
+    },
+    {
+      "id": 48,
+      "level": 1
+    },
+    {
+      "id": 53,
+      "level": 1
+    },
+    {
+      "id": 55,
+      "level": 1
+    },
+    {
+      "id": 66,
+      "level": 1
+    },
+    {
+      "id": 103,
+      "level": 1
+    },
+    {
+      "id": 128,
+      "level": 1
+    },
+    {
+      "id": 130,
+      "level": 1
+    },
+    {
+      "id": 131,
+      "level": 1
+    },
+    {
+      "id": 138,
+      "level": 1
+    },
+    {
+      "id": 147,
+      "level": 2
+    },
+    {
+      "id": 157,
+      "level": 2
+    },
+    {
+      "id": 158,
+      "level": 2
+    },
+    {
+      "id": 162,
+      "level": 2
+    },
+    {
+      "id": 171,
+      "level": 2
+    },
+    {
+      "id": 243,
+      "level": 1
+    },
+    {
+      "id": 245,
+      "level": 1
+    },
+    {
+      "id": 246,
+      "level": 1
+    },
+    {
+      "id": 247,
+      "level": 2
+    },
+    {
+      "id": 249,
+      "level": 1
+    },
+    {
+      "id": 250,
+      "level": 2
+    },
+    {
+      "id": 251,
+      "level": 3
+    },
+    {
+      "id": 252,
+      "level": 3
+    },
+    {
+      "id": 253,
+      "level": 4
+    },
+    {
+      "id": 254,
+      "level": 4
+    },
+    {
+      "id": 302,
+      "level": 1
+    },
+    {
+      "id": 350,
+      "level": 1
+    },
+    {
+      "id": 351,
+      "level": 1
+    },
+    {
+      "id": 397,
+      "level": 1
+    },
+    {
+      "id": 784,
+      "level": 1
+    },
+    {
+      "id": 785,
+      "level": 2
+    },
+    {
+      "id": 786,
+      "level": 3
+    },
+    {
+      "id": 787,
+      "level": 4
+    },
+    {
+      "id": 796,
+      "level": 1
+    },
+    {
+      "id": 809,
+      "level": 1
+    },
+    {
+      "id": 872,
+      "level": 1
+    },
+    {
+      "id": 896,
+      "level": 1
+    },
+    {
+      "id": 897,
+      "level": 2
+    },
+    {
+      "id": 925,
+      "level": 1
+    },
+    {
+      "id": 926,
+      "level": 2
+    },
+    {
+      "id": 927,
+      "level": 3
+    },
+    {
+      "id": 939,
+      "level": 1
+    },
+    {
+      "id": 940,
+      "level": 2
+    },
+    {
+      "id": 941,
+      "level": 3
+    },
+    {
+      "id": 950,
+      "level": 1
+    },
+    {
+      "id": 951,
+      "level": 2
+    },
+    {
+      "id": 952,
+      "level": 3
+    },
+    {
+      "id": 953,
+      "level": 4
+    },
+    {
+      "id": 994,
+      "level": 1
+    },
+    {
+      "id": 995,
+      "level": 2
+    },
+    {
+      "id": 996,
+      "level": 3
+    },
+    {
+      "id": 997,
+      "level": 4
+    },
+    {
+      "id": 1010,
+      "level": 1
+    },
+    {
+      "id": 1011,
+      "level": 2
+    },
+    {
+      "id": 1012,
+      "level": 3
+    },
+    {
+      "id": 1013,
+      "level": 4
+    },
+    {
+      "id": 1037,
+      "level": 1
+    },
+    {
+      "id": 1038,
+      "level": 2
+    },
+    {
+      "id": 1039,
+      "level": 3
+    },
+    {
+      "id": 1053,
+      "level": 1
+    },
+    {
+      "id": 1066,
+      "level": 1
+    },
+    {
+      "id": 1075,
+      "level": 1
+    },
+    {
+      "id": 1076,
+      "level": 2
+    },
+    {
+      "id": 1077,
+      "level": 3
+    },
+    {
+      "id": 1090,
+      "level": 1
+    },
+    {
+      "id": 1102,
+      "level": 1
+    },
+    {
+      "id": 3182,
+      "level": 1
+    },
+    {
+      "id": 3183,
+      "level": 2
+    },
+    {
+      "id": 3184,
+      "level": 3
+    },
+    {
+      "id": 3185,
+      "level": 4
+    },
+    {
+      "id": 3186,
+      "level": 5
+    },
+    {
+      "id": 3187,
+      "level": 6
+    },
+    {
+      "id": 3195,
+      "level": 1
+    },
+    {
+      "id": 3196,
+      "level": 1
+    },
+    {
+      "id": 3197,
+      "level": 2
+    },
+    {
+      "id": 3198,
+      "level": 3
+    },
+    {
+      "id": 3199,
+      "level": 4
+    },
+    {
+      "id": 3200,
+      "level": 5
+    },
+    {
+      "id": 3209,
+      "level": 1
+    },
+    {
+      "id": 3210,
+      "level": 2
+    },
+    {
+      "id": 3211,
+      "level": 3
+    },
+    {
+      "id": 3212,
+      "level": 4
+    },
+    {
+      "id": 3213,
+      "level": 5
+    },
+    {
+      "id": 3222,
+      "level": 1
+    },
+    {
+      "id": 3223,
+      "level": 1
+    },
+    {
+      "id": 3224,
+      "level": 2
+    },
+    {
+      "id": 3225,
+      "level": 3
+    },
+    {
+      "id": 3226,
+      "level": 4
+    },
+    {
+      "id": 3235,
+      "level": 1
+    },
+    {
+      "id": 3273,
+      "level": 1
+    },
+    {
+      "id": 3274,
+      "level": 2
+    },
+    {
+      "id": 30002,
+      "level": 16
+    },
+    {
+      "id": 30003,
+      "level": 1
+    },
+    {
+      "id": 40009,
+      "level": 1
+    }
+  ],
+  "source": {
+    "snapshot": "ntc-group-s4-w1",
+    "dumpSha256": "8d0787cf4021e71e5e314cb060bd081fea316d9fdb09cd8a0ae7c76d88cf8f97",
+    "character": "Asimranger"
+  }
+}
