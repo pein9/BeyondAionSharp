@@ -93,7 +93,7 @@ public sealed partial class NaturalIshalgenJourney
 		var navigator = Navigator();
 		var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry, stopOnDeath: false,
 			conservativeRangedHold: false, NaturalMauPolicyParameters.Baseline, ClassLine) { ApproachMapId = world.MapId!.Value };
-		var following = new NaturalGroupFollowDriver(session, runtime);
+		var following = new NaturalGroupFollowDriver(session, runtime) { SkipAhead = true };
 		using var healer = options.Role == "healer" ? new NaturalGroupHealDriver(session, runtime, combat.ClassProfile) : null;
 		// The companion changed maps: checked movement and combat are bound to the map the client stands on now.
 		void EnterMap()
@@ -201,6 +201,35 @@ public sealed partial class NaturalIshalgenJourney
 			{ ["npc"] = portal.Npc, ["from"] = fromMap, ["map"] = world.MapId, ["instance"] = world.InstanceId, ["position"] = session.CurrentPosition });
 			return true;
 		}
+		// The step aside (the operator, 2026-10-13): "Our bots come to a stopping point and overlap each other ... after
+		// stopping can we have them move 1m in a random direction after hitting their last waypoint?" Once it has come
+		// up and its player stands, it takes one step of a metre in a direction of its own, on checked level ground, and
+		// stands. It follows again when its player is more than six metres off. Nothing else depends on the step: where
+		// no such ground is found it stays where it is.
+		bool settled = false;
+		var aside = new Random(HashCode.Combine(runtime.Seed, session.CharacterId));
+		async Task SettleAsync()
+		{
+			BotPosition here = session.CurrentPosition;
+			int map = world.MapId!.Value;
+			for (int attempt = 0; attempt < 4; attempt++)
+			{
+				double angle = aside.NextDouble() * Math.PI * 2;
+				if (geometry.SnapToGround(map, new BotPosition(here.X + (float)Math.Cos(angle), here.Y + (float)Math.Sin(angle), here.Z, here.Heading)) is not { } spot ||
+					MathF.Abs(spot.Z - here.Z) > .6f)
+					continue;
+				var step = geometry.FindLocalPath(map, here, spot);
+				float length = 0;
+				BotPosition at = here;
+				foreach (BotPosition point in step) { length += NaturalServicePolicy.Distance(at, point); at = point; }
+				if (step.Count == 0 || length is < .3f or > 1.6f) continue;
+				session.BeginStep("companion", "step-aside");
+				await session.ExecuteMovementAsync(new BotMover(world, session.Api.Timing).CreateGroundPlan(step, here, world.MovementSpeed!.Value), token);
+				session.TraceDiagnostic("companion-stepped-aside", new Dictionary<string, object?> { ["from"] = here, ["to"] = session.CurrentPosition });
+				session.BeginStep("companion", "with-its-player");
+				return;
+			}
+		}
 		// The emergency rule (the operator, 2026-10-13): "If the bot can't path to the leader and gets stuck for more
 		// than 30 seconds, we need to teleport them." The check is the plain one: away from its player, and after half a
 		// minute still where it stood. It says in group chat what it does, and asks the server to put it beside its
@@ -257,6 +286,8 @@ public sealed partial class NaturalIshalgenJourney
 			EnterMap();
 			NotStuck();
 			rescues++;
+			// It stands where its player stands.
+			settled = false;
 			session.TraceDiagnostic("companion-brought", new Dictionary<string, object?>
 			{ ["why"] = why, ["from"] = from, ["fromMap"] = fromMap, ["to"] = session.CurrentPosition, ["map"] = world.MapId, ["instance"] = world.InstanceId });
 			session.BeginStep("companion", "with-its-player");
@@ -357,6 +388,8 @@ public sealed partial class NaturalIshalgenJourney
 				packet.Get<int>("senderObjectId") == session.CharacterId && packet.Get<byte>("emotionType") == (byte)EmotionType.LAND);
 			flying = false;
 			following.Landed();
+			// Where it came down others come down too: it steps aside again.
+			settled = false;
 			session.TraceDiagnostic("companion-landed", new Dictionary<string, object?>
 			{
 				["why"] = why, ["position"] = session.CurrentPosition, ["groundBelow"] = ground, ["answered"] = down != null,
@@ -560,7 +593,14 @@ public sealed partial class NaturalIshalgenJourney
 						continue;
 				}
 				// Far behind, it does not stop between steps.
-				bool moved = !findsNoWay && await following.StepAsync(token);
+				// Having stepped aside it stands, until its player is more than six metres off.
+				bool moved = !findsNoWay && !(settled && gap <= 6) && await following.StepAsync(token);
+				if (moved) settled = false;
+				else if (!settled && !findsNoWay && gap <= 4 && !following.LeaderMoving && !following.LeaderAirborne && !combat.InCombat && world.MovementSpeed is > 0)
+				{
+					settled = true;
+					await SettleAsync();
+				}
 				if (!moved || gap <= 6) await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
 			}
 		}
@@ -807,7 +847,12 @@ public sealed partial class NaturalIshalgenJourney
 				long landed = runtime.NowMillis;
 				await WaitAsync(() => Others().All(member => member.Online && !member.Dead && member.MapId == world.MapId && Away(member) <= 8),
 					$"the companions did not come after the flight {name}", 120);
-				var flight = new { name, metres = route.Meters, flightMillis = landed - began, cameMillis = runtime.NowMillis - landed,
+				// They have had a moment to step aside from where they landed.
+				await session.AdvanceAsync(TimeSpan.FromSeconds(3), token);
+				await session.SynchronizeAsync(token);
+				BotPosition[] standing = [.. Others().Select(member => world.Objects.GetValueOrDefault(member.ObjectId)?.Position ?? member.Position)];
+				float apart = standing.Length < 2 ? 0 : standing.SelectMany((one, index) => standing.Skip(index + 1).Select(other => NaturalServicePolicy.Distance(one, other))).Min();
+				var flight = new { name, metres = route.Meters, flightMillis = landed - began, cameMillis = runtime.NowMillis - landed, apart,
 					companions = Others().Select(member => new { member.Name, farthest = farthest.GetValueOrDefault(member.ObjectId), atTheEnd = Away(member) }).ToArray() };
 				session.TraceDiagnostic("stand-in-flight", new Dictionary<string, object?> { ["flight"] = flight });
 				flown.Add(flight);

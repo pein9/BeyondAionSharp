@@ -19,8 +19,9 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 	private DateTimeOffset blockedUntil;
 	private bool leaderMoving;
 	private BotPosition? pursued;
-	private float pursuedBest;
+	private float pursuedBest, pursuedLast;
 	private int pursuedSteps;
+	private DateTimeOffset skipLookedAt;
 	private readonly Queue<BotPosition> airTrail = new();
 
 	/// <summary>The leader flies: it took off (the FLY emotion) and has not landed.</summary>
@@ -29,6 +30,15 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 	public bool LeaderGliding { get; private set; }
 	/// <summary>In the air its samples are no ground to walk, and no way round is looked for until it is down.</summary>
 	public bool LeaderAirborne => LeaderFlying || LeaderGliding;
+	/// <summary>The leader's client says it is moving: its last movement packet was not a stop.</summary>
+	public bool LeaderMoving => leaderMoving;
+	/// <summary>
+	/// Skip ahead (the operator, 2026-10-13: "yes, build the skip-ahead"). The follower walks its leader's trail sample by
+	/// sample, so after a fight it walked every step its leader had taken meanwhile; one was 113 m behind in the camp.
+	/// With this on, a checked way straight to where its leader stands replaces the trail when it is shorter than what is
+	/// left of the trail. A companion sets it; the group legs keep the trail as it was.
+	/// </summary>
+	public bool SkipAhead { get; set; }
 	/// <summary>Where the leader has been since it took off, oldest first. A follower that flies takes them from here.</summary>
 	public Queue<BotPosition> AirTrail => airTrail;
 
@@ -128,8 +138,39 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 		// It walks and comes no nearer to the sample it is after: the way it finds there leads round in a ring. A Cleric
 		// circled a stair of Morheim Ice Fortress for a minute after a sample that lay on the stair's face, three steps to
 		// a round, while the Gladiator before it had walked straight on. Such a sample is given up for the one after it.
+		if (SkipAhead && !LeaderAirborne && trail.Count >= 6 && (session.Api.Timing.Now - skipLookedAt).TotalSeconds >= 1)
+		{
+			skipLookedAt = session.Api.Timing.Now;
+			BotPosition here = session.CurrentPosition, at = here;
+			float left = 0;
+			foreach (BotPosition sample in trail) { left += Distance(at, sample); at = sample; }
+			float straight = Distance(here, currentLeader);
+			if (left > straight + 6)
+			{
+				IReadOnlyList<BotPosition> direct = [];
+				int mapNow = world.MapId!.Value;
+				void Look() => direct = geometry.FindLocalPath(mapNow, here, currentLeader);
+				if (runtime.SearchElsewhere is { } beside) await beside(Look);
+				else Look();
+				float length = 0;
+				at = here;
+				foreach (BotPosition point in direct) { length += Distance(at, point); at = point; }
+				// A way that is about as long as the straight line: not one that leads round half the map.
+				if (direct.Count > 0 && length <= straight * 1.5f + 5 && length < left - 5)
+				{
+					session.TraceDiagnostic("group-follow-skip-ahead", new Dictionary<string, object?>
+					{ ["leader"] = leaderId, ["trailMetres"] = left, ["directMetres"] = length, ["straightMetres"] = straight, ["samples"] = trail.Count });
+					trail.Clear();
+					foreach (BotPosition point in direct) trail.Enqueue(point);
+					lastSample = direct[^1];
+					pursued = null;
+					if (!trail.TryPeek(out next)) return false;
+				}
+			}
+		}
 		float toNext = Distance(session.CurrentPosition, next);
-		if (pursued is { } same && Distance(same, next) < .01f)
+		// A fight took the follower away from the trail: the distance to the sample leapt, and the count starts again.
+		if (pursued is { } same && Distance(same, next) < .01f && toNext <= pursuedLast + 4)
 		{
 			if (toNext < pursuedBest - .25f) { pursuedBest = toNext; pursuedSteps = 0; }
 			else if (++pursuedSteps > 12)
@@ -142,6 +183,7 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 			}
 		}
 		else { pursued = next; pursuedBest = toNext; pursuedSteps = 0; }
+		pursuedLast = toNext;
 		// A short checked connection to the next leader sample also accommodates a stopped caster.
 		int map = world.MapId!.Value;
 		var path = geometry.FindLocalPath(map, session.CurrentPosition, next);
