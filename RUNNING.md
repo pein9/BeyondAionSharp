@@ -62,3 +62,19 @@ dotnet run --project src/Aion.GameServer
 - **GameServer:** static data loads, then `Authenticated with login server; 1 game servers registered`, then steady ping/pong keep-alive.
 
 If the GameServer logs `NOT_AUTHED` or keeps retrying: missing `gameservers` seed row, or a DB port/credential mismatch.
+
+## 6. Companion bots (optional)
+
+`.companion <class>` brings a player a companion that follows and plays its role (D41, `docs/companion-bots.md`).
+It needs a game server started with companions on, and the host program beside it (`docs/companion-live-host.md`).
+
+- **Game server:** set `AION_COMPANIONS=true` and
+  `AION_COMPANION_ACCOUNTS=companion1,companion2,companion3,companion4,companion5` in its environment. The Docker
+  stack passes both through (`docker/docker-compose.yml`, off by default): put the two lines in `docker/.env`, or
+  set them in the shell that runs `docker compose up -d`. A seat account holds no character of its own; the login
+  server makes the account at its first login.
+- **Host:** `pwsh -NoProfile -File scripts/live/companion-host.ps1 -Target aion`, and the same with `-Stop` from
+  another terminal. It only reads Docker state and speaks the client protocol. It refuses a world that was started
+  without the two settings.
+- **In game** (an Asmodian, on a map the bots have ground for): `.companion cleric`, `.companion list`,
+  `.companion dismiss`.

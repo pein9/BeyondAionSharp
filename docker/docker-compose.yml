@@ -116,6 +116,10 @@ services:
       AION_RECORD: ${AION_RECORD:-false}
       AION_RECORD_ACCOUNTS: ${AION_RECORD_ACCOUNTS:-}
       AION_RECORD_DIR: /app/recordings
+      # Companion bots (docs/companion-live-host.md, D41): `.companion <class>` for players, played by the host
+      # program (scripts/live/companion-host.ps1) on the seat accounts named here. Off unless AION_COMPANIONS=true.
+      AION_COMPANIONS: ${AION_COMPANIONS:-false}
+      AION_COMPANION_ACCOUNTS: ${AION_COMPANION_ACCOUNTS:-}
     volumes:
       - ../run/recordings:/app/recordings
     ports:
