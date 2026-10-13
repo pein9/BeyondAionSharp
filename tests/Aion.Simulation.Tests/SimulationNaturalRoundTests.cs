@@ -5,6 +5,7 @@ using Aion.Bots.Scenarios;
 using Aion.Bots.Scenarios.Classes;
 using Aion.Bots.Tracing;
 using Aion.GameServer.Custom.Companion;
+using Aion.GameServer.Dao;
 using Aion.GameServer.Model;
 using Aion.GameServer.Network.Aion.ServerPackets;
 
@@ -30,7 +31,7 @@ public sealed partial class SimulationFastScenarioTests
 		int? Account = null, string? Name = null, int? ResumeCharacter = null, string? Stage = null, int? TargetNpcId = null,
 		string? Role = null, string? SupportInvite = null, bool AcceptSupportInvite = false,
 		string[]? GroupRoster = null, string? GroupLeader = null, bool GroupLoot = false, string? GroupUntil = null,
-		string[]? Companions = null, string? CompanionUntil = null);
+		string[]? Companions = null, string? CompanionUntil = null, string? CompanionEnd = null);
 
 	/// <summary>A seat of the companion host; it has no class line until the server makes its character.</summary>
 	private static bool IsCompanionSeat(NaturalRoundBot entry) => entry.Stage == "companion";
@@ -72,7 +73,7 @@ public sealed partial class SimulationFastScenarioTests
 		// The stand-in for the player who leads companions: a test tool, one of the group world's own characters.
 		"companion-lead" => new NaturalJourneyOptions(AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
 			ClassLine: line, Companion: "stand-in", Companions: entry.Companions ?? throw new InvalidDataException("companion-lead names its companions."),
-			CompanionUntil: entry.CompanionUntil),
+			CompanionUntil: entry.CompanionUntil, CompanionEnd: entry.CompanionEnd),
 		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, muster, gh-survey, support, group-coin, group-ntc, companion-lead or companion."),
 		}) with { Role = entry.Role };
 	}
@@ -192,7 +193,15 @@ public sealed partial class SimulationFastScenarioTests
 		}) { IsBackground = true, Name = "natural-round" };
 		thread.Start();
 		IReadOnlyList<(string Bot, Task Played)> played;
-		try { played = await done.Task; }
+		// C9: when the round is over the server knows no companion, and no character is left on a seat's account.
+		string[] companionsKnown = [];
+		var charactersOnSeats = new Dictionary<string, int>();
+		try
+		{
+			played = await done.Task;
+			companionsKnown = [.. companions.All().Select(companion => $"{companion.Name}:{companion.State}")];
+			foreach (int account in seatAccounts) charactersOnSeats[account.ToString()] = PlayerDAO.GetPlayerOidsOnAccount(account).Count;
+		}
 		finally
 		{
 			if (seatAccounts.Length > 0)
@@ -221,7 +230,11 @@ public sealed partial class SimulationFastScenarioTests
 		foreach (var problem in worldProblems)
 			Console.WriteLine($"Natural round {run}: a problem of the world, {problem.Kind} {problem.Level}: {problem.Message}");
 		File.WriteAllText(Path.Combine(evidence, "round-outcome.json"),
-			JsonSerializer.Serialize(new { run, seed = fixture.Seed, worldElapsedMillis = restoredAt + fixture.Clock.NowMillis, worldProblems, bots = outcomes }, RoundJson));
+			JsonSerializer.Serialize(new { run, seed = fixture.Seed, worldElapsedMillis = restoredAt + fixture.Clock.NowMillis, worldProblems, bots = outcomes,
+				companionSeats = seatAccounts.Length == 0 ? null : new { companionsKnown, charactersOnSeats } }, RoundJson));
+		if (companionsKnown.Length > 0 || charactersOnSeats.Values.Any(count => count > 0))
+			throw new InvalidDataException($"The round ended with companions left: known [{string.Join(", ", companionsKnown)}], characters on seats " +
+				string.Join(", ", charactersOnSeats.Select(seat => $"{seat.Key}:{seat.Value}")) + ".");
 	}
 
 	/// <summary>The account of a round's first seat; the next seats follow. Clear of the solo account 41 and the probe accounts.</summary>

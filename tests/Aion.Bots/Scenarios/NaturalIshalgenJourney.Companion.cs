@@ -833,13 +833,34 @@ public sealed partial class NaturalIshalgenJourney
 			leader = world.GroupLeaderId, group = world.GroupId, lootRules = world.GroupLootRules, list, walks, marks, loots, inside, general, support,
 			elapsedMillis = runtime.NowMillis - started, map = world.MapId, position = session.CurrentPosition };
 
-		session.BeginStep("stand-in", "send-them-away");
-		string[] farewell = await SayAsync(".companion dismiss");
-		await WaitAsync(() => world.GroupId == null, "the group did not end after the dismissal", 60);
+		// C9: the end, in one of the three ways a player's companions end. Sent away, or after the player left its
+		// group, the server knows no companion of this player once each has left the game. A logout is the last thing
+		// the stand-in does; what is left after it is the host's to check.
+		string end = options.CompanionEnd ?? "dismiss";
+		if (end is not ("dismiss" or "leave" or "logout")) throw new InvalidDataException($"The stand-in ends by dismiss, leave or logout, not by '{end}'.");
+		session.BeginStep("stand-in", "the-end-by-" + end);
+		string[] farewell = [], listAfter = [];
+		long endedAt = runtime.NowMillis;
+		long? goneAfterMillis = null;
+		if (end != "logout")
+		{
+			if (end == "dismiss") farewell = await SayAsync(".companion dismiss");
+			else await session.SendPacketAsync(session.Api.LeaveGroup(), token);
+			await WaitAsync(() => world.GroupId == null, "the group did not end", 60);
+			while (goneAfterMillis == null)
+			{
+				listAfter = await SayAsync(".companion list");
+				if (listAfter.Any(line => line.Contains("You have no companion.", StringComparison.Ordinal))) goneAfterMillis = runtime.NowMillis - endedAt;
+				else if (runtime.NowMillis - endedAt > 90_000) throw new InvalidDataException("The server still knows companions of the stand-in: " + string.Join(" / ", listAfter));
+				else await session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+			}
+		}
 		File.WriteAllText(Path.Combine(Path.GetDirectoryName(session.CombatTracePath!)!, "companion-completion.json"),
 			JsonSerializer.Serialize(new { receipt.verified, receipt.CharacterId, receipt.until, receipt.asked, receipt.companions, receipt.leader,
-				receipt.group, receipt.lootRules, receipt.list, receipt.walks, receipt.marks, receipt.loots, receipt.inside, receipt.general, receipt.support, farewell, receipt.elapsedMillis, receipt.map, receipt.position },
+				receipt.group, receipt.lootRules, receipt.list, receipt.walks, receipt.marks, receipt.loots, receipt.inside, receipt.general, receipt.support, end, farewell, goneAfterMillis, listAfter, receipt.elapsedMillis, receipt.map, receipt.position },
 				new JsonSerializerOptions { WriteIndented = true }));
-		session.TraceDiagnostic("stand-in-reached", new Dictionary<string, object?> { ["receipt"] = receipt, ["farewell"] = farewell });
+		session.TraceDiagnostic("stand-in-reached", new Dictionary<string, object?>
+		{ ["receipt"] = receipt, ["end"] = end, ["farewell"] = farewell, ["goneAfterMillis"] = goneAfterMillis, ["listAfter"] = listAfter });
+		if (end == "logout") await session.QuitAsync(token);
 	}
 }

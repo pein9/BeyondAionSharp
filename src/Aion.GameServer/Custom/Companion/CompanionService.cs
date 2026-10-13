@@ -51,6 +51,12 @@ public sealed class CompanionService
     public const string Alias = "companion";
     /// <summary>The one level a companion is made at (CB-Q4).</summary>
     public const int Level = 26;
+    /// <summary>How often the server looks at its companions.</summary>
+    public const int WatchSeconds = 10;
+    /// <summary>A companion that nobody has logged in this long after it was made is deleted.</summary>
+    public const int UnplayedSeconds = 120;
+    /// <summary>A companion that was sent away and is still in the world this long after is disconnected.</summary>
+    public const int LingerSeconds = 30;
 
     private const int ElyosAscension = 1006;
     private const int AsmodianAscension = 2008;
@@ -63,11 +69,16 @@ public sealed class CompanionService
     private readonly Dictionary<int, Entry> companions = new();
     private Dictionary<(Race Race, PlayerClass PlayerClass), CompanionProfile> profiles = new();
     private volatile bool enabled;
+    private bool watching;
 
     private sealed class Entry(CompanionRequest request)
     {
         public CompanionRequest Request { get; } = request;
         public CompanionState State { get; set; } = CompanionState.Requested;
+        public long MadeAtMillis { get; } = SystemClock.CurrentMillis();
+        /// <summary>It has entered the world and been put into its player's group.</summary>
+        public bool Joined { get; set; }
+        public long EndingAtMillis { get; set; }
     }
 
     private CompanionService()
@@ -112,6 +123,11 @@ public sealed class CompanionService
                 CommandsConfig.ACCESS_LEVELS ??= new Dictionary<string, sbyte>();
                 CommandsConfig.ACCESS_LEVELS.TryAdd(Alias, 0);
                 processor.RegisterCommand(new CompanionCommand());
+            }
+            if (!watching)
+            {
+                watching = true;
+                ThreadPoolManager.GetInstance().ScheduleAtFixedRate(_ => { Watch(); return ValueTask.CompletedTask; }, WatchSeconds * 1000L, WatchSeconds * 1000L);
             }
             enabled = true;
         }
@@ -259,6 +275,7 @@ public sealed class CompanionService
             // CB-Q11: with its first companion a group's loot is free for all, and every quality is picked up as it is.
             // A companion opens no corpse, so every corpse is the player's at once and no roll opens for a companion.
             // The rule is set once: a player who changes it afterwards keeps what he chose.
+            entry.Joined = true;
             int joinedId = player.GetObjectId();
             if (!group.GetMembers().Any(member => member.GetObjectId() != joinedId && companions.ContainsKey(member.GetObjectId())))
                 PlayerGroupService.ChangeGroupRules(group, new LootGroupRules(LootRuleType.FREEFORALL, 0, 0, 0, 0, 0, 0, 0));
@@ -283,6 +300,43 @@ public sealed class CompanionService
             }
             foreach (Entry entry in companions.Values.Where(companion => companion.Request.LeaderId == id).ToList())
                 End(entry);
+        }
+    }
+
+    /// <summary>
+    /// The server's own look at its companions, every <see cref="WatchSeconds"/> seconds: a companion's end does not
+    /// depend on the program that plays it. One that nobody logged in is deleted. One whose player is gone, or no
+    /// longer leads the group it is in, ends. One that was sent away and stays is disconnected, and is deleted when it
+    /// has left the world like any other.
+    /// </summary>
+    public void Watch()
+    {
+        lock (gate)
+        {
+            long now = SystemClock.CurrentMillis();
+            foreach (Entry entry in companions.Values.ToList())
+            {
+                Player companion = Aion.GameServer.World.World.GetInstance().GetPlayer(entry.Request.CharacterId);
+                if (companion == null)
+                {
+                    if (now - entry.MadeAtMillis > UnplayedSeconds * 1000L)
+                        Delete(entry);
+                    continue;
+                }
+                if (entry.State != CompanionState.Ending)
+                {
+                    Player leader = Aion.GameServer.World.World.GetInstance().GetPlayer(entry.Request.LeaderId);
+                    PlayerGroup group = companion.GetPlayerGroup();
+                    bool led = leader != null && group != null && group.IsLeader(leader);
+                    if (entry.Joined ? !led : now - entry.MadeAtMillis > UnplayedSeconds * 1000L)
+                        End(entry);
+                }
+                if (entry.State == CompanionState.Ending && now - entry.EndingAtMillis > LingerSeconds * 1000L)
+                {
+                    log.LogInformation("Companion " + entry.Request.Name + " (" + entry.Request.CharacterId + ") stayed after it was sent away and is disconnected");
+                    companion.GetClientConnection()?.Close(Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_KICK_CHARACTER());
+                }
+            }
         }
     }
 
@@ -396,6 +450,8 @@ public sealed class CompanionService
             Delete(entry);
             return;
         }
+        if (entry.State != CompanionState.Ending)
+            entry.EndingAtMillis = SystemClock.CurrentMillis();
         entry.State = CompanionState.Ending;
         if (companion != null && companion.IsInGroup())
             PlayerGroupService.RemovePlayer(companion);

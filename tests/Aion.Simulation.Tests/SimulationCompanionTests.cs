@@ -17,7 +17,9 @@ public sealed partial class SimulationFastScenarioTests
 	/// feature is off <c>.companion</c> is no command. Switched on, it makes a level-26 character of the class from its
 	/// generated profile where the player stands, on an account a host offered, and leaves a request for that host. The
 	/// character logs in as any other and is in the player's group, which the player leads, from the moment it enters the
-	/// world (C3), and the group's loot is free for all from then on (C6). One that is sent away, or whose player logs out, is deleted with its rows when it
+	/// world (C3), and the group's loot is free for all from then on (C6). The server looks at its companions every
+	/// ten seconds (C9): one whose player has left the group ends, one that stays after it was sent away is
+	/// disconnected, and one that nobody logged in is deleted in time. One that is sent away, or whose player logs out, is deleted with its rows when it
 	/// has left the world; one that nobody came to play is deleted at once.
 	/// </summary>
 	[SkippableFact]
@@ -162,8 +164,47 @@ public sealed partial class SimulationFastScenarioTests
 			AssertGone(five[2]);
 			Assert.Contains(await SayAsync(".companion dismiss nobody"), message => message.Contains("You have no companion called nobody.", StringComparison.Ordinal));
 
+			session.BeginStep("s08b", "the-server-ends-a-companion-whose-player-left-the-group");
+			// A second client logs the Templar in and then does nothing by itself: a host that hangs.
+			CompanionInfo templar = service.Of(leader).Single(companion => companion.PlayerClass == PlayerClass.TEMPLAR);
+			CompanionRequest second = service.TakeRequest(templar.AccountId) ?? throw new InvalidDataException("The Templar's request was not there to take.");
+			await using (var idle = new SimulationL0Session(fixture, policy, "b03", second.AccountId, second.Name, Race.ASMODIANS))
+			{
+				await idle.LoginCharacterListAsync(token);
+				idle.SelectCharacter(second.CharacterId, second.Name);
+				await idle.EnterWorldAsync(token);
+				await idle.SynchronizeAsync(token);
+				await session.SynchronizeAsync(token);
+				Assert.True(leader.GetPlayerGroup().IsLeader(leader));
+				Assert.Equal(CompanionState.Playing, service.Of(leader).Single(companion => companion.CharacterId == second.CharacterId).State);
+				// The player leaves its group, as a client does. Nobody leads the companion any more.
+				await session.SendPacketAsync(session.Api.LeaveGroup(), token);
+				await session.SynchronizeAsync(token);
+				Assert.False(leader.IsInGroup());
+				// The server's next look ends it,
+				await session.AdvanceAsync(TimeSpan.FromSeconds(CompanionService.WatchSeconds + 1), token);
+				Assert.Equal(CompanionState.Ending, service.Of(leader).Single(companion => companion.CharacterId == second.CharacterId).State);
+				Assert.NotNull(fixture.World.GetPlayer(second.CharacterId));
+				// and one that stays is disconnected, and deleted when it has left the world.
+				await session.AdvanceAsync(TimeSpan.FromSeconds(CompanionService.LingerSeconds + CompanionService.WatchSeconds + 12), token);
+				Assert.Null(fixture.World.GetPlayer(second.CharacterId));
+				Assert.DoesNotContain(service.All(), companion => companion.CharacterId == second.CharacterId);
+			}
+			AssertGone(second.CharacterId);
+
+			session.BeginStep("s08c", "one-nobody-logs-in-is-deleted-in-time");
+			Assert.Equal(3, service.Of(leader).Count);
+			await session.AdvanceAsync(TimeSpan.FromSeconds(CompanionService.UnplayedSeconds), token);
+			Assert.Empty(service.All());
+			foreach (int characterId in five)
+				AssertGone(characterId);
+
 			session.BeginStep("s09", "the-players-logout-ends-them");
+			Assert.Contains(await SayAsync(".companion chanter"), message => message.Contains("is on its way to you.", StringComparison.Ordinal));
+			int last = Assert.Single(service.Of(leader)).CharacterId;
+			Assert.Equal(1, Rows("players", "id", last));
 			await session.QuitAsync(token);
+			AssertGone(last);
 			Assert.Empty(service.All());
 			foreach (int characterId in five)
 				AssertGone(characterId);

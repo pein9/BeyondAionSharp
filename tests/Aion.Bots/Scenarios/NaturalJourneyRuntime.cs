@@ -121,4 +121,6 @@ public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? R
 	string? GroupStage = null, string? GroupUntil = null,
 	// Companion bots (docs/companion-bots.md): "companion" plays a character the server made for a player; "stand-in" is
 	// the test tool that plays that player's part, asks for Companions and plays as far as CompanionUntil names.
-	string? Companion = null, string[]? Companions = null, string? CompanionUntil = null);
+	string? Companion = null, string[]? Companions = null, string? CompanionUntil = null,
+	// How the stand-in ends: "dismiss" (the default), "leave" (it leaves its group) or "logout".
+	string? CompanionEnd = null);
