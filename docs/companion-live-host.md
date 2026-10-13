@@ -262,7 +262,61 @@ its role, as the stand-in's companions did in SIM. NTC is the place to try it.
     (`n9-l5`), the neutral gate on the five starter scopes (`l5-gate`), and Fast (`l5-fast-2`). Fast needs
     `AION_BOT_DASHBOARD_PORT` set to another port while the live host holds 17880; its first run failed on
     that port and on nothing else. Code commit `df885f1b2`.
-  - Still to try before this step is ticked: `.companion dismiss` and a re-summon right after it.
+  - 2026-10-13, his camp run (run `ch-l5-3`, 19:37 to 20:02 UTC): "I did a full NTC run". He led a Gladiator, a
+    Cleric, a Sorcerer, a Chanter and a Templar through Nochsana Training Camp to the General. Nobody died. The four
+    that fight took 30 to 34 targets from his brand, 5 to 7 from what he was attacking and 12 in defence of a
+    member; all four fought the three named monsters, the gate and the General. The Cleric cast 258 times and
+    never attacked. Each took off two or three times and landed beside him. No item, no journal entry; about
+    1,530 kinah each as the game's share. All five left within 0.2 s of his dismissal. No problem on the host, no
+    error line on the server. The farthest a companion was behind him: 113 m (the Gladiator, walking his trail
+    back after a fight).
+  - Two rules of his, the same evening (commit `a009f1ba7`):
+    - **Stuck.** "If the bot can't path to the leader and gets stuck for more than 30 seconds, we need to teleport
+      them ... the bot will tell us what it's doing in group chat." The check: more than 10 m from its player,
+      and half a minute later still within 5 m of where it stood. A fight, a rest, a flight and being beside its
+      player each start the half minute again. It says "I am stuck. I am teleporting to you." in group chat and
+      asks the server with `.companion come`, a word only a companion may say, for itself, at most once in 20 s.
+      The server puts it where its player stands, in its player's instance. A player in the air is waited for. A
+      player on a map the companion has no way to is reached the same way after half a minute.
+    - **Supplies.** "every 30 minutes, check its consumables supply. This is probably some global that affects all
+      bots." The half hour is one shared setting (`NaturalHelpItemPolicy.StockCheckMinutes`). A companion asks the
+      server with `.companion restock`: what it has used of the things its profile gave it is filled up to what
+      the profile gave, at most once in five minutes; kinah and what it wears are not touched. It says "I have
+      filled up my supplies." in group chat when something was filled. The natural journeys do not keep the
+      timer yet: it would change their recorded runs, and re-recording the gates is on hold. His decision.
+    - Shown in SIM: round `l5-rules-2` (`run/companion/rules.json`, stand-in checkpoint `rules`; its two seats carry
+      the test word `no-way`, which makes a companion take no step, and a stock check of two minutes). The
+      stand-in walks 60 m off; each companion says once that it is stuck and stands beside it 32 s after it
+      left; two minutes in, each has its used scrolls filled up and says so. The first round (`l5-rules-1`)
+      found that the companion did not take a teleport within one map in: that is `SM_TELEPORT_LOC` and its own
+      `SM_PLAYER_INFO`, with no `SM_PLAYER_SPAWN`, and it asked again every half minute. The server test has the
+      two words refused to a player and the supplies filled up once.
+  - Three changes to following, on his word after the camp run (commit `cab67008a`):
+    - **Skip ahead** ("yes, build the skip-ahead"). A follower walks its leader's trail sample by sample, which he
+      saw as "the bot will fight the mob, then retrace the path". A companion now takes a checked way straight to
+      where its player stands when that is shorter than what is left of the trail by more than 5 m and no longer
+      than one and a half times the straight line. The group legs keep the trail (`SkipAhead` is the
+      companion's).
+    - **The step aside** ("Our bots come to a stopping point and overlap each other ... move 1m in a random
+      direction after hitting their last waypoint"). Once it has come up and its player stands, a companion takes
+      one step of a metre in a direction of its own, on checked level ground, and stands until its player is more
+      than 6 m off. The same after a landing and after a stuck teleport. Where no such ground is found it stays.
+    - The count that gives up a sample (the stair) starts again when a fight has taken the follower away from the
+      trail. In his camp run it had also fired on the way back from a fight; all that did was skip a sample.
+    - Shown in SIM: the stopping round with all three (`l5-c9-3`): the General falls 7 min 57 s into the camp
+      (8 min 21 s before), 38 pulls, nobody dead, 48 skips ahead, 72 steps aside, nobody stuck. The flight round
+      (`l5-flight-7`): after each landing the two companions stand 2.0 m apart (0.1 m and 0.002 m before). The
+      Group NTC leg is unchanged (`n9-l5-2`).
+  - Checks: the unit suite (4,646 passed, 16 skipped), the pre-commit checks, the companion server tests, the
+    rounds above, the neutral gate and Fast (`l5-fast-3`) for the two rules; the unit suite and the warning
+    baseline again for the following.
+  - Live since 20:25 UTC the same day, on his word ("You can continue with your updates now"): the game server's image was built again and its container made anew with nobody online, companions on as before, and the host is run `ch-l5-4` with all of the above. Its five seats wait.
+  - Mana, asked by him and not changed: a class with a mana skill of its own casts it at half its mana; a mana
+    potion is drunk only when mana is below the cheapest attack (the Chanter also below its heal), the instant
+    serums first; the healing Cleric casts its own mana recovery below half and drinks none. A rule that drinks
+    the potion that restores over time at a threshold is his to ask for.
+  - Still to try before this step is ticked: the stuck rule and the supply check in game, and a re-summon right
+    after a dismissal.
   - Seen in the trace, not a fault yet: a companion in play asks the server's time about nine times a second
     (1,964 `CM_TIME_CHECK` in 210 s), which is how the live session waits for the server. Its trace grows by
     about 30 MB an hour of play, and a waiting seat's by 1.2 MB an hour, twice what I wrote under L4.
