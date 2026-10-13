@@ -12,9 +12,22 @@ namespace Aion.Bots.Scenarios;
 public sealed partial class NaturalIshalgenJourney
 {
 	/// <summary>How far the stand-in plays so far (docs/companion-bots.md, the C steps).</summary>
-	private static readonly string[] CompanionCheckpoints = ["joined", "walk", "marks", "loot"];
+	private static readonly string[] CompanionCheckpoints = ["joined", "walk", "marks", "loot", "inside"];
 	/// <summary>The two marks the stand-in sets; a companion takes the lowest mark first whatever its number.</summary>
 	private const int CompanionFirstMark = 1, CompanionSecondMark = 2;
+
+	private static (int Npc, ushort Dialog, int LocId, string Race, int MinLevel)[]? companionPortalPaths;
+
+	/// <summary>
+	/// Every dialog portal of the shipped data: the NPC, the dialog choice, where it leads, and whom it takes. The server's
+	/// own table of them (Portal2Data) keeps its entries to itself once it is loaded, as Java's does, so a bot reads the
+	/// file the way it reads the other shipped data it plans from.
+	/// </summary>
+	private static (int Npc, ushort Dialog, int LocId, string Race, int MinLevel)[] CompanionPortalPaths(string repoRoot) =>
+		companionPortalPaths ??= [.. System.Xml.Linq.XDocument.Load(Path.Combine(repoRoot, "game-server", "data", "static_data", "portals", "portal_template2.xml"))
+			.Root!.Elements("portal_dialog").SelectMany(dialog => dialog.Elements("portal_path").Select(path => (
+				Npc: (int)dialog.Attribute("npc_id")!, Dialog: checked((ushort)(int)path.Attribute("dialog")!), LocId: (int)path.Attribute("loc_id")!,
+				Race: (string?)path.Attribute("race") ?? "PC_ALL", MinLevel: (int?)path.Attribute("min_level") ?? 0)))];
 
 	/// <summary>
 	/// Companion bots (docs/companion-bots.md). A companion is a character the server made for a player who asked for
@@ -105,6 +118,67 @@ public sealed partial class NaturalIshalgenJourney
 			}
 			return defended is int on ? (on, "defence") : null;
 		}
+		// The portal NPC of this map that leads to another map, by the data the client ships with (portal_template2.xml,
+		// portal_loc.xml): the NPC, and the dialog choice that sends a player through.
+		(int Npc, ushort Dialog)? PortalTo(int destination)
+		{
+			HashSet<int> here = [.. runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value).Select(group => group.GetNpcId())];
+			foreach (var path in CompanionPortalPaths(runtime.RepoRoot))
+				if (here.Contains(path.Npc) && path.Race is "PC_ALL" or "ASMODIANS" && path.MinLevel <= world.Level &&
+					runtime.Data.PortalLocDataDh.GetPortalLoc(path.LocId)?.GetWorldId() == destination)
+					return (path.Npc, path.Dialog);
+			return null;
+		}
+		var noWay = new HashSet<int>();
+		int portals = 0;
+		// Its leader has gone to another map: the companion walks to the portal NPC that leads there and goes through.
+		async Task<bool> ThroughPortalAsync(int destination)
+		{
+			if (PortalTo(destination) is not { } portal)
+			{
+				if (noWay.Add(destination))
+				{
+					session.TraceDiagnostic("companion-no-way", new Dictionary<string, object?> { ["from"] = world.MapId, ["to"] = destination });
+					await session.SendPacketAsync(session.Api.Say("I cannot reach you.", 5), token);
+				}
+				return false;
+			}
+			session.BeginStep("companion", $"portal-npc{portal.Npc}");
+			BotKnownObject? Gate() => world.Objects.Values.Where(known => known.TemplateId == portal.Npc && !known.IsCorpse)
+				.OrderBy(known => NaturalServicePolicy.Distance(session.CurrentPosition, known.Position)).FirstOrDefault();
+			BotPosition spot = Gate()?.Position ?? runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value).Where(group => group.GetNpcId() == portal.Npc)
+				.SelectMany(group => group.GetSpawnTemplates()).Select(at => new BotPosition(at.GetX(), at.GetY(), at.GetZ(), at.GetHeading()))
+				.OrderBy(at => NaturalServicePolicy.Distance(session.CurrentPosition, at)).First();
+			if (NaturalServicePolicy.Distance(session.CurrentPosition, spot) > 4)
+			{
+				var route = await navigator.FindRouteAsync(session.CurrentPosition, spot, token);
+				foreach (BotPosition point in route)
+				{
+					while (NaturalServicePolicy.Distance(session.CurrentPosition, spot) > 4 && NaturalServicePolicy.Distance(session.CurrentPosition, point) > .5f)
+					{
+						BotPosition from = session.CurrentPosition;
+						float fraction = Math.Min(1, 6 / NaturalServicePolicy.Distance(from, point));
+						await navigator.MoveAsync([from, new(from.X + (point.X - from.X) * fraction, from.Y + (point.Y - from.Y) * fraction,
+							from.Z + (point.Z - from.Z) * fraction, point.Heading)], token);
+						await session.SynchronizeAsync(token);
+						if (world.IsDead || NaturalServicePolicy.Distance(session.CurrentPosition, from) < .1f) break;
+					}
+					if (world.IsDead) return false;
+				}
+			}
+			if (Gate() is not { } gate || NaturalServicePolicy.Distance(session.CurrentPosition, gate.Position) > 6)
+			{
+				session.TraceDiagnostic("companion-portal-not-reached", new Dictionary<string, object?> { ["npc"] = portal.Npc, ["position"] = session.CurrentPosition });
+				return false;
+			}
+			int fromMap = world.MapId!.Value;
+			await NaturalCapitalSteps.PortalAsync(session, new NaturalCapitalPortal(portal.Npc, fromMap, destination, 0, portal.Dialog), gate.ObjectId, token);
+			EnterMap();
+			portals++;
+			session.TraceDiagnostic("companion-through-portal", new Dictionary<string, object?>
+			{ ["npc"] = portal.Npc, ["from"] = fromMap, ["map"] = world.MapId, ["instance"] = world.InstanceId, ["position"] = session.CurrentPosition });
+			return true;
+		}
 		await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
 		long turnAt = -1;
 		int turnsAtOnce = 0;
@@ -118,6 +192,11 @@ public sealed partial class NaturalIshalgenJourney
 				if (BotAttackStatus.CarriesHp(session.PacketHistory[fallenCursor]) && session.PacketHistory[fallenCursor].Get<byte>("hpOrMp") == 0)
 					fallen.Add(session.PacketHistory[fallenCursor].Get<int>("objectId"));
 			if (world.IsDead) { await combat.RestAsync(token); continue; }
+			if (world.GroupMembers.TryGetValue(leader, out var gone) && gone.Online && gone.MapId != 0 && gone.MapId != world.MapId)
+			{
+				if (!await ThroughPortalAsync(gone.MapId)) await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+				continue;
+			}
 			if (healer == null && FightTarget() is { } fight)
 			{
 				session.BeginStep("companion", "fight-" + fight.Why);
@@ -172,7 +251,7 @@ public sealed partial class NaturalIshalgenJourney
 		session.TraceDiagnostic("companion-leaves", new Dictionary<string, object?>
 		{
 			["group"] = world.GroupId, ["leaderNow"] = world.GroupLeaderId, ["leaderWas"] = leader, ["elapsedMillis"] = runtime.NowMillis - entered,
-			["deaths"] = combat.ReviveCount, ["fights"] = fights, ["itemsGained"] = gained, ["newQuests"] = newQuests,
+			["deaths"] = combat.ReviveCount, ["fights"] = fights, ["portals"] = portals, ["map"] = world.MapId, ["itemsGained"] = gained, ["newQuests"] = newQuests,
 			["kinahGained"] = world.Kinah - carriedAtStart.GetValueOrDefault(BotWorldModel.KinahItemId),
 		});
 		if (gained.Count > 0) throw new InvalidDataException($"The companion carries loot it did not have: {string.Join(", ", gained.Select(entry => $"{entry.Key}x{entry.Value}"))}.");
@@ -459,11 +538,48 @@ public sealed partial class NaturalIshalgenJourney
 			}
 			await combat.RestAsync(token);
 		}
+		object? inside = null;
+		if (reach >= 4)
+		{
+			// C7: to Vallack and into Nochsana Training Camp, as a player goes in: it tells nobody and waits for nobody.
+			session.BeginStep("stand-in", "into-the-camp");
+			var geometry = runtime.CreateGeometry();
+			var navigator = new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, null, geometry), geometry, runtime,
+				stopOnDeath: false) { AvoidHostileAggro = true, Planner = BotTravelPlanner.For(world.MapId!.Value, geometry, runtime.Data) };
+			BotPosition vallack = runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value).Where(group => group.GetNpcId() == GroupNtcVallack)
+				.SelectMany(group => group.GetSpawnTemplates()).Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), spot.GetHeading())).First();
+			var route = await navigator.FindRouteAsync(session.CurrentPosition, vallack, token);
+			if (route.Count == 0) throw new InvalidDataException($"The stand-in found no way to Vallack: {navigator.LastRouteDiagnostic}");
+			foreach (BotPosition point in route)
+			{
+				while (NaturalServicePolicy.Distance(session.CurrentPosition, point) > .5f && NaturalServicePolicy.Distance(session.CurrentPosition, vallack) > 4)
+				{
+					BotPosition at = session.CurrentPosition;
+					float fraction = Math.Min(1, 6 / NaturalServicePolicy.Distance(at, point));
+					await navigator.MoveAsync([at, new(at.X + (point.X - at.X) * fraction, at.Y + (point.Y - at.Y) * fraction,
+						at.Z + (point.Z - at.Z) * fraction, point.Heading)], token);
+					await session.SynchronizeAsync(token);
+					if (NaturalServicePolicy.Distance(session.CurrentPosition, at) < .1f) throw new InvalidDataException("The stand-in could not go on to Vallack.");
+				}
+			}
+			int gate = world.Objects.Values.Where(known => known.TemplateId == GroupNtcVallack)
+				.OrderBy(known => NaturalServicePolicy.Distance(session.CurrentPosition, known.Position)).First().ObjectId;
+			long wentIn = runtime.NowMillis;
+			await NaturalCapitalSteps.PortalAsync(session, new NaturalCapitalPortal(GroupNtcVallack, world.MapId!.Value, GroupNtcMap, 0, GroupNtcEnterDialog), gate, token);
+			if (world.MapId != GroupNtcMap || world.InstanceId == null) throw new InvalidDataException("The stand-in is not inside the camp.");
+			// A companion that this client sees stands in this client's instance.
+			await WaitAsync(() => Others().All(member => member.Online && member.MapId == world.MapId && world.Objects.ContainsKey(member.ObjectId) && Away(member) <= 12),
+				"the companions did not follow the stand-in into the camp", 180);
+			var entered = new { map = world.MapId, instance = world.InstanceId, allInsideAfterMillis = runtime.NowMillis - wentIn,
+				companions = Others().Select(member => new { member.Name, member.MapId, metres = Away(member) }).ToArray() };
+			session.TraceDiagnostic("stand-in-inside", new Dictionary<string, object?> { ["inside"] = entered });
+			inside = entered;
+		}
 		var support = (world.VisibleEffects ?? []).Where(effect => Others().Any(member => member.ObjectId == effect.EffectorId))
 			.Select(effect => new { effect.SkillId, effect.EffectorId }).ToArray();
 		runtime.AssertClean();
 		var receipt = new { verified = true, CharacterId = session.CharacterId, until = options.CompanionUntil, asked, companions = joined,
-			leader = world.GroupLeaderId, group = world.GroupId, lootRules = world.GroupLootRules, list, walks, marks, loots, support,
+			leader = world.GroupLeaderId, group = world.GroupId, lootRules = world.GroupLootRules, list, walks, marks, loots, inside, support,
 			elapsedMillis = runtime.NowMillis - started, map = world.MapId, position = session.CurrentPosition };
 
 		session.BeginStep("stand-in", "send-them-away");
@@ -471,7 +587,7 @@ public sealed partial class NaturalIshalgenJourney
 		await WaitAsync(() => world.GroupId == null, "the group did not end after the dismissal", 60);
 		File.WriteAllText(Path.Combine(Path.GetDirectoryName(session.CombatTracePath!)!, "companion-completion.json"),
 			JsonSerializer.Serialize(new { receipt.verified, receipt.CharacterId, receipt.until, receipt.asked, receipt.companions, receipt.leader,
-				receipt.group, receipt.lootRules, receipt.list, receipt.walks, receipt.marks, receipt.loots, receipt.support, farewell, receipt.elapsedMillis, receipt.map, receipt.position },
+				receipt.group, receipt.lootRules, receipt.list, receipt.walks, receipt.marks, receipt.loots, receipt.inside, receipt.support, farewell, receipt.elapsedMillis, receipt.map, receipt.position },
 				new JsonSerializerOptions { WriteIndented = true }));
 		session.TraceDiagnostic("stand-in-reached", new Dictionary<string, object?> { ["receipt"] = receipt, ["farewell"] = farewell });
 	}
