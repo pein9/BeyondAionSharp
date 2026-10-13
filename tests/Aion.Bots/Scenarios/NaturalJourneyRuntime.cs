@@ -131,4 +131,7 @@ public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? R
 	// the test tool that plays that player's part, asks for Companions and plays as far as CompanionUntil names.
 	string? Companion = null, string[]? Companions = null, string? CompanionUntil = null,
 	// How the stand-in ends: "dismiss" (the default), "leave" (it leaves its group) or "logout".
-	string? CompanionEnd = null);
+	string? CompanionEnd = null,
+	// Test only. "no-way": this companion finds no way to its player, so that its stuck rule is played. And the
+	// minutes between two stock checks, where a test cannot wait half an hour.
+	string? CompanionTest = null, int? CompanionStockMinutes = null);

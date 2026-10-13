@@ -201,11 +201,86 @@ public sealed partial class NaturalIshalgenJourney
 			{ ["npc"] = portal.Npc, ["from"] = fromMap, ["map"] = world.MapId, ["instance"] = world.InstanceId, ["position"] = session.CurrentPosition });
 			return true;
 		}
+		// The emergency rule (the operator, 2026-10-13): "If the bot can't path to the leader and gets stuck for more
+		// than 30 seconds, we need to teleport them." The check is the plain one: away from its player, and after half a
+		// minute still where it stood. It says in group chat what it does, and asks the server to put it beside its
+		// player. A fight, a rest, a flight and being beside its player each start the half minute again.
+		bool flying = false;
+		const float StuckAwayMetres = 10, StuckMovedMetres = 5;
+		const int StuckMillis = 30_000;
+		const byte GroupChat = 5;
+		long stuckWindowAt = runtime.NowMillis, noRescueUntil = 0;
+		BotPosition stuckWindowFrom = session.CurrentPosition;
+		int rescues = 0, stockChecks = 0;
+		bool findsNoWay = options.CompanionTest == "no-way";
+		void NotStuck() { stuckWindowAt = runtime.NowMillis; stuckWindowFrom = session.CurrentPosition; }
+		async Task<string[]> AskServerAsync(string words)
+		{
+			int cursor = session.PacketHistory.Count;
+			await session.SendPacketAsync(session.Api.Say("." + CompanionService.Alias + " " + words), token);
+			await session.SynchronizeAsync(token);
+			return [.. session.PacketHistory.Skip(Math.Min(cursor, session.PacketHistory.Count)).Where(packet => packet.PacketType == typeof(SM_MESSAGE))
+				.Select(packet => packet.Get<string>("message"))];
+		}
+		async Task<bool> RescueAsync(string why)
+		{
+			session.BeginStep("companion", "stuck-teleport");
+			noRescueUntil = runtime.NowMillis + StuckMillis;
+			BotPosition from = session.CurrentPosition;
+			int? fromMap = world.MapId;
+			await session.SendPacketAsync(session.Api.Say("I am stuck. I am teleporting to you.", GroupChat), token);
+			int cursor = session.PacketHistory.Count;
+			await session.SendPacketAsync(session.Api.Say("." + CompanionService.Alias + " come"), token);
+			// The server answers with the teleport, or with a line that says why not.
+			// The teleport is SM_TELEPORT_LOC, which the client answers when its fade-out is over (the reflex does). On the same
+			// map the server then sends the character's own SM_PLAYER_INFO; onto another map, SM_PLAYER_SPAWN first.
+			DecodedBotServerPacket? spawn = await session.WaitForPacketWithinAsync(typeof(SM_TELEPORT_LOC), TimeSpan.FromSeconds(5), token, _ => true);
+			if (spawn == null)
+			{
+				await session.SynchronizeAsync(token);
+				session.TraceDiagnostic("companion-not-brought", new Dictionary<string, object?>
+				{
+					["why"] = why, ["position"] = from, ["map"] = fromMap,
+					["answer"] = session.PacketHistory.Skip(Math.Min(cursor, session.PacketHistory.Count)).Where(packet => packet.PacketType == typeof(SM_MESSAGE))
+						.Select(packet => packet.Get<string>("message")).ToArray(),
+				});
+				session.BeginStep("companion", "with-its-player");
+				return false;
+			}
+			// The server has taken it out of the world it saw and puts it into the one around its player.
+			world.BeginWorldReload();
+			if (spawn.Get<int>("mapId") != fromMap) await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token);
+			await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
+			session.AcceptTeleportPosition();
+			await session.SynchronizeAsync(token);
+			flying = false;
+			EnterMap();
+			NotStuck();
+			rescues++;
+			session.TraceDiagnostic("companion-brought", new Dictionary<string, object?>
+			{ ["why"] = why, ["from"] = from, ["fromMap"] = fromMap, ["to"] = session.CurrentPosition, ["map"] = world.MapId, ["instance"] = world.InstanceId });
+			session.BeginStep("companion", "with-its-player");
+			return true;
+		}
+		// The stock check by the clock (the operator, 2026-10-13): every half hour it asks the server for its supplies,
+		// and what it has used of the things its profile gave it is filled up. It says so in group chat when it was.
+		long stockCheckMillis = (options.CompanionStockMinutes ?? NaturalHelpItemPolicy.StockCheckMinutes) * 60_000L;
+		long stockCheckedAt = runtime.NowMillis;
+		async Task StockCheckAsync()
+		{
+			session.BeginStep("companion", "stock-check");
+			stockCheckedAt = runtime.NowMillis;
+			stockChecks++;
+			string[] answer = await AskServerAsync("restock");
+			bool filled = answer.Any(line => line.Contains("Your supplies are filled up", StringComparison.Ordinal));
+			session.TraceDiagnostic("companion-stock-check", new Dictionary<string, object?> { ["filled"] = filled, ["answer"] = answer });
+			if (filled) await session.SendPacketAsync(session.Api.Say("I have filled up my supplies.", GroupChat), token);
+			session.BeginStep("companion", "with-its-player");
+		}
 		// Flight (docs/companion-live-host.md, L5). Its player flew down from the fortress, and a companion that only
 		// walks was left on the wall. Where flight is allowed it takes off when its player has, flies its player's way
 		// by the samples the client saw, and comes down beside its player when that one has landed. It flies as a client
 		// reports a flight (CM_MOVE with a height in its velocity), so its player sees it fly.
-		bool flying = false;
 		float flightSpeed = 0;
 		long? lastTakeoffMillis = null;
 		long noTakeoffUntil = 0, noClearWaySince = -1;
@@ -404,16 +479,20 @@ public sealed partial class NaturalIshalgenJourney
 				for (; fallenCursor < session.PacketHistory.Count; fallenCursor++)
 					if (BotAttackStatus.CarriesHp(session.PacketHistory[fallenCursor]) && session.PacketHistory[fallenCursor].Get<byte>("hpOrMp") == 0)
 						fallen.Add(session.PacketHistory[fallenCursor].Get<int>("objectId"));
-				if (world.IsDead) { flying = false; await combat.RestAsync(token); continue; }
+				if (world.IsDead) { flying = false; await combat.RestAsync(token); NotStuck(); continue; }
 				following.Observe();
 				if (world.GroupMembers.TryGetValue(leader, out var gone) && gone.Online && gone.MapId != 0 && gone.MapId != world.MapId)
 				{
 					if (flying) await LandAsync("its-player-left-the-map");
-					if (!await ThroughPortalAsync(gone.MapId)) await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+					if (!findsNoWay && await ThroughPortalAsync(gone.MapId)) NotStuck();
+					// No portal leads there, or it did not get to the portal: after half a minute it is brought.
+					else if (runtime.NowMillis - stuckWindowAt < StuckMillis || runtime.NowMillis < noRescueUntil || !await RescueAsync("its player is on another map"))
+						await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
 					continue;
 				}
 				if (flying)
 				{
+					NotStuck();
 					if (world.GroupMembers.TryGetValue(leader, out var inTheAir))
 						await FlyWithItsPlayerAsync(world.Objects.GetValueOrDefault(leader)?.Position ?? inTheAir.Position);
 					else await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
@@ -444,6 +523,7 @@ public sealed partial class NaturalIshalgenJourney
 					session.BeginStep("companion", "with-its-player");
 					await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
 					if (!world.IsDead && FightTarget() == null) await combat.RestAsync(token);
+					NotStuck();
 					continue;
 				}
 				float gap = world.GroupMembers.TryGetValue(leader, out var f1)
@@ -451,6 +531,15 @@ public sealed partial class NaturalIshalgenJourney
 				// Behind a leader that keeps walking it walks first. It runs no faster than its leader, so every cast on the
 				// way is ground it does not make up until the leader stops: a blessing or an idle heal over time waits until
 				// it stands beside its leader again. A member that is hurt cannot wait.
+				// Oh no, I'm stuck: away from its player, and half a minute later still where it stood. A player in the air is
+				// waited for; the server puts nobody into the air.
+				if (gap <= StuckAwayMetres) NotStuck();
+				else if (runtime.NowMillis - stuckWindowAt >= StuckMillis)
+				{
+					if (NaturalServicePolicy.Distance(stuckWindowFrom, session.CurrentPosition) >= StuckMovedMetres) NotStuck();
+					else if (!following.LeaderAirborne && runtime.NowMillis >= noRescueUntil && await RescueAsync("no way to its player")) continue;
+				}
+				if (!combat.InCombat && runtime.NowMillis - stockCheckedAt >= stockCheckMillis) await StockCheckAsync();
 				bool hurt = world.CurrentHp * 100L <= world.MaxHp * 70L ||
 					world.GroupMembers.Values.Any(member => member.Online && !member.Dead && member.MaxHp > 0 && member.HpPercent <= 70);
 				if (healer != null && (hurt || gap <= 6)) await healer.StepAsync(token);
@@ -462,7 +551,7 @@ public sealed partial class NaturalIshalgenJourney
 				}
 				// Its player has taken off and is away: where it stands it may fly, and its player or a piece of its player's
 				// way is in sight. Otherwise it walks on to where its player took off.
-				if (following.LeaderFlying && gap > 6 && runtime.NowMillis >= noTakeoffUntil && !combat.InCombat && f1 != null)
+				if (!findsNoWay && following.LeaderFlying && gap > 6 && runtime.NowMillis >= noTakeoffUntil && !combat.InCombat && f1 != null)
 				{
 					BotPosition eyes = session.CurrentPosition with { Z = session.CurrentPosition.Z + 1.5f };
 					BotPosition playerAt = world.Objects.GetValueOrDefault(leader)?.Position ?? f1.Position;
@@ -471,7 +560,7 @@ public sealed partial class NaturalIshalgenJourney
 						continue;
 				}
 				// Far behind, it does not stop between steps.
-				bool moved = await following.StepAsync(token);
+				bool moved = !findsNoWay && await following.StepAsync(token);
 				if (!moved || gap <= 6) await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
 			}
 		}
@@ -489,7 +578,7 @@ public sealed partial class NaturalIshalgenJourney
 		session.TraceDiagnostic("companion-leaves", new Dictionary<string, object?>
 		{
 			["group"] = world.GroupId, ["leaderNow"] = world.GroupLeaderId, ["leaderWas"] = leader, ["elapsedMillis"] = runtime.NowMillis - entered,
-			["deaths"] = combat.ReviveCount, ["fights"] = fights, ["portals"] = portals, ["flights"] = flights, ["map"] = world.MapId, ["itemsGained"] = gained, ["newQuests"] = newQuests,
+			["deaths"] = combat.ReviveCount, ["fights"] = fights, ["portals"] = portals, ["flights"] = flights, ["rescues"] = rescues, ["stockChecks"] = stockChecks, ["map"] = world.MapId, ["itemsGained"] = gained, ["newQuests"] = newQuests,
 			["kinahGained"] = world.Kinah - carriedAtStart.GetValueOrDefault(BotWorldModel.KinahItemId),
 		});
 		if (gained.Count > 0) throw new InvalidDataException($"The companion carries loot it did not have: {string.Join(", ", gained.Select(entry => $"{entry.Key}x{entry.Value}"))}.");
@@ -544,8 +633,10 @@ public sealed partial class NaturalIshalgenJourney
 		string[] asked = options.Companions is { Length: > 0 } wanted ? wanted : throw new InvalidDataException("The stand-in names no companion to ask for.");
 		// "flight" is a test beside the others: the stand-in flies as the operator did on his first evening in game.
 		bool flightTest = options.CompanionUntil == "flight";
-		if (!flightTest && !CompanionCheckpoints.Contains(options.CompanionUntil))
-			throw new InvalidDataException($"The stand-in plays to one of [{string.Join(", ", CompanionCheckpoints)}] or to 'flight' so far, not to '{options.CompanionUntil}'.");
+		// "rules" is the test of the stuck rule and the stock check; its companions' seats carry the test words.
+		bool rulesTest = options.CompanionUntil == "rules";
+		if (!flightTest && !rulesTest && !CompanionCheckpoints.Contains(options.CompanionUntil))
+			throw new InvalidDataException($"The stand-in plays to one of [{string.Join(", ", CompanionCheckpoints)}], to 'flight' or to 'rules' so far, not to '{options.CompanionUntil}'.");
 		if (world.GroupId != null) throw new InvalidDataException("The stand-in starts alone.");
 		long started = runtime.NowMillis;
 
@@ -607,7 +698,7 @@ public sealed partial class NaturalIshalgenJourney
 		}
 		string[] list = await SayAsync(".companion list");
 
-		int reach = flightTest ? 0 : Array.IndexOf(CompanionCheckpoints, options.CompanionUntil);
+		int reach = flightTest || rulesTest ? 0 : Array.IndexOf(CompanionCheckpoints, options.CompanionUntil);
 		BotGroupMember[] Others() => [.. world.GroupMembers.Values.Where(member => member.ObjectId != session.CharacterId).OrderBy(member => member.ObjectId)];
 		float Away(BotGroupMember member) => NaturalServicePolicy.Distance(session.CurrentPosition,
 			world.Objects.GetValueOrDefault(member.ObjectId)?.Position ?? member.Position);
@@ -721,6 +812,62 @@ public sealed partial class NaturalIshalgenJourney
 				session.TraceDiagnostic("stand-in-flight", new Dictionary<string, object?> { ["flight"] = flight });
 				flown.Add(flight);
 			}
+		}
+		object? rules = null;
+		if (rulesTest)
+		{
+			// The two rules of 2026-10-13. The companions of this round find no way to their player (the test word of
+			// their seats). The stand-in walks sixty metres away and waits: each companion says in group chat that it is
+			// stuck, and is brought. Then each fills up its supplies by its clock and says so.
+			var geometry = runtime.CreateGeometry();
+			var navigator = new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, null, geometry), geometry, runtime,
+				stopOnDeath: false) { AvoidHostileAggro = true, Planner = BotTravelPlanner.For(world.MapId!.Value, geometry, runtime.Data) };
+			int heard = session.PacketHistory.Count;
+			int[] Saying(string part) => [.. session.PacketHistory.Skip(heard).Where(packet => packet.PacketType == typeof(SM_MESSAGE) &&
+				packet.Get<byte>("chatType") == 5 && packet.Get<string>("message").Contains(part, StringComparison.Ordinal))
+				.Select(packet => packet.Get<int>("senderObjectId")).Distinct()];
+			BotPosition wall = geometry.SnapToGround(world.MapId!.Value, new BotPosition(296.6f, 2282.1f, 448.7f, 0))
+				?? throw new InvalidDataException("There is no ground at the wall.");
+			session.BeginStep("stand-in", "walk-away");
+			long left = runtime.NowMillis;
+			var away = await navigator.FindRouteAsync(session.CurrentPosition, wall, token);
+			if (away.Count == 0) throw new InvalidDataException($"The stand-in found no way to the wall: {navigator.LastRouteDiagnostic}");
+			foreach (BotPosition point in away)
+				while (NaturalServicePolicy.Distance(session.CurrentPosition, point) > .5f && NaturalServicePolicy.Distance(session.CurrentPosition, wall) > 1)
+				{
+					BotPosition at = session.CurrentPosition;
+					float fraction = Math.Min(1, 6 / NaturalServicePolicy.Distance(at, point));
+					await navigator.MoveAsync([at, new(at.X + (point.X - at.X) * fraction, at.Y + (point.Y - at.Y) * fraction,
+						at.Z + (point.Z - at.Z) * fraction, point.Heading)], token);
+					await session.SynchronizeAsync(token);
+					if (NaturalServicePolicy.Distance(session.CurrentPosition, at) < .1f) throw new InvalidDataException("The stand-in could not go on to the wall.");
+				}
+			long arrived = runtime.NowMillis;
+			float[] behind = [.. Others().Select(Away)];
+			if (behind.Any(metres => metres < 30)) throw new InvalidDataException("A companion that finds no way came along.");
+			session.BeginStep("stand-in", "wait-for-the-stuck-companions");
+			await WaitAsync(() => Others().All(member => member.Online && member.MapId == world.MapId && Away(member) <= 6),
+				"the stuck companions were not brought", 120);
+			long brought = runtime.NowMillis;
+			int[] stuck = Saying("I am stuck.");
+			if (!Others().All(member => stuck.Contains(member.ObjectId)))
+				throw new InvalidDataException("A companion was brought and did not say in group chat that it was stuck.");
+			session.BeginStep("stand-in", "wait-for-the-stock-check");
+			await WaitAsync(() => Others().All(member => Saying("I have filled up my supplies.").Contains(member.ObjectId)),
+				"a companion did not fill up its supplies by its clock", 600);
+			// Brought once, it is beside its player and is not stuck again: a companion that did not take the teleport in
+			// asked for it every half minute.
+			int stuckLines = session.PacketHistory.Skip(heard).Count(packet => packet.PacketType == typeof(SM_MESSAGE) &&
+				packet.Get<byte>("chatType") == 5 && packet.Get<string>("message").Contains("I am stuck.", StringComparison.Ordinal));
+			if (stuckLines != Others().Length)
+				throw new InvalidDataException($"The companions said {stuckLines} times that they were stuck, not once each.");
+			rules = new
+			{
+				walkedAwayMillis = arrived - left, behindMetres = behind, broughtMillisAfterTheWalk = brought - arrived,
+				broughtMillisAfterLeaving = brought - left, stockCheckMillis = runtime.NowMillis - started,
+				companions = Others().Select(member => new { member.Name, atTheEnd = Away(member) }).ToArray(),
+			};
+			session.TraceDiagnostic("stand-in-rules", new Dictionary<string, object?> { ["rules"] = rules });
 		}
 		var marks = new List<object>();
 		var loots = new List<object>();
@@ -1145,7 +1292,7 @@ public sealed partial class NaturalIshalgenJourney
 			.Select(effect => new { effect.SkillId, effect.EffectorId }).ToArray();
 		runtime.AssertClean();
 		var receipt = new { verified = true, CharacterId = session.CharacterId, until = options.CompanionUntil, asked, companions = joined,
-			leader = world.GroupLeaderId, group = world.GroupId, lootRules = world.GroupLootRules, list, walks, flown, marks, loots, inside, general, support,
+			leader = world.GroupLeaderId, group = world.GroupId, lootRules = world.GroupLootRules, list, walks, flown, rules, marks, loots, inside, general, support,
 			elapsedMillis = runtime.NowMillis - started, map = world.MapId, position = session.CurrentPosition };
 
 		// C9: the end, in one of the three ways a player's companions end. Sent away, or after the player left its

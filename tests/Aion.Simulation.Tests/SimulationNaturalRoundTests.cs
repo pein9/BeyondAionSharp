@@ -31,7 +31,8 @@ public sealed partial class SimulationFastScenarioTests
 		int? Account = null, string? Name = null, int? ResumeCharacter = null, string? Stage = null, int? TargetNpcId = null,
 		string? Role = null, string? SupportInvite = null, bool AcceptSupportInvite = false,
 		string[]? GroupRoster = null, string? GroupLeader = null, bool GroupLoot = false, string? GroupUntil = null,
-		string[]? Companions = null, string? CompanionUntil = null, string? CompanionEnd = null);
+		string[]? Companions = null, string? CompanionUntil = null, string? CompanionEnd = null,
+		string? CompanionTest = null, int? CompanionStockMinutes = null);
 
 	/// <summary>A seat of the companion host; it has no class line until the server makes its character.</summary>
 	private static bool IsCompanionSeat(NaturalRoundBot entry) => entry.Stage == "companion";
@@ -307,7 +308,8 @@ public sealed partial class SimulationFastScenarioTests
 					}, policy.AssertClean, () => policy.SnapshotProblems(), trace, dashboard);
 				// The Cleric plays support, as in the group stages; every other class fights (CB-Q8).
 				await new NaturalIshalgenJourney(seat, companionRuntime, new NaturalJourneyOptions(ClassLine: line, Companion: "companion",
-					Role: playerClass == PlayerClass.CLERIC ? "healer" : null)).RunAsync(token);
+					Role: playerClass == PlayerClass.CLERIC ? "healer" : null,
+					CompanionTest: entry.CompanionTest, CompanionStockMinutes: entry.CompanionStockMinutes)).RunAsync(token);
 				level = seat.Api.World.Level;
 				seat.BeginStep("companion-seat", "back-to-character-selection");
 				await seat.ReturnToSelectionAsync(editing: false, token);

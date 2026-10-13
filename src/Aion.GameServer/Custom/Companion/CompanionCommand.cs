@@ -44,6 +44,13 @@ internal sealed class CompanionCommand : PlayerCommand
             case "dismiss":
                 SendInfo(player, service.Dismiss(player, paramsArr.Length > 1 ? paramsArr[1] : null));
                 break;
+            // The two words a companion itself says. A player who says them is told that they are not for players.
+            case "come":
+                SendInfo(player, service.BringToLeader(player));
+                break;
+            case "restock":
+                SendInfo(player, service.Restock(player));
+                break;
             default:
                 SendInfo(player, service.Request(player, Join(paramsArr, 0)));
                 break;

@@ -315,6 +315,23 @@ public sealed partial class SimulationFastScenarioTests
 			Assert.Same(leader.GetPlayerGroup(), companion.GetPlayerGroup());
 			Assert.Equal(CompanionState.Playing, Assert.Single(service.Of(leader)).State);
 
+			session.BeginStep("s03b", "the-two-words-of-a-companion");
+			// A player is refused both: they are a companion's own.
+			Assert.Contains(await SayAsync(".companion come"), message => message.Contains("Only a companion", StringComparison.Ordinal));
+			Assert.Contains(await SayAsync(".companion restock"), message => message.Contains("Only a companion", StringComparison.Ordinal));
+			Assert.Contains("Your supplies are complete.", service.Restock(companion));
+			// What it has used is given back, up to what its profile gave it, and not twice in five minutes.
+			var used = companion.GetInventory().GetItems().First(item => item.GetItemCount() > 5 && !item.IsEquipped());
+			long had = companion.GetInventory().GetItemCountByItemId(used.GetItemId());
+			Assert.Contains("a moment ago", service.Restock(companion));
+			Assert.True(companion.GetInventory().DecreaseByItemId(used.GetItemId(), 3, companion));
+			Assert.Equal(had - 3, companion.GetInventory().GetItemCountByItemId(used.GetItemId()));
+			fixture.Clock.Advance(TimeSpan.FromSeconds(CompanionService.RestockSeconds + 1));
+			Assert.Contains($"{used.GetItemId()}x3", service.Restock(companion));
+			Assert.Equal(had, companion.GetInventory().GetItemCountByItemId(used.GetItemId()));
+			await seat.SynchronizeAsync(token);
+			await session.SynchronizeAsync(token);
+
 			session.BeginStep("s04", "back-at-character-selection-the-seat-waits-again");
 			Assert.Contains(await SayAsync(".companion dismiss"), message => message.Contains("leaves you.", StringComparison.Ordinal));
 			await seat.ReturnToSelectionAsync(editing: false, token);

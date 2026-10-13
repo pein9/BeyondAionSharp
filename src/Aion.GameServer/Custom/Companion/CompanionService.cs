@@ -63,6 +63,10 @@ public sealed class CompanionService
     public const int UnplayedSeconds = 120;
     /// <summary>A companion that was sent away and is still in the world this long after is disconnected.</summary>
     public const int LingerSeconds = 30;
+    /// <summary>A companion is brought to its player no sooner than this after the last time.</summary>
+    public const int BringSeconds = 20;
+    /// <summary>A companion's supplies are filled up no sooner than this after the last time.</summary>
+    public const int RestockSeconds = 300;
 
     private const int ElyosAscension = 1006;
     private const int AsmodianAscension = 2008;
@@ -94,6 +98,8 @@ public sealed class CompanionService
         /// <summary>It has entered the world and been put into its player's group.</summary>
         public bool Joined { get; set; }
         public long EndingAtMillis { get; set; }
+        public long BroughtAtMillis { get; set; } = long.MinValue / 2;
+        public long RestockedAtMillis { get; set; } = long.MinValue / 2;
     }
 
     private CompanionService()
@@ -275,6 +281,74 @@ public sealed class CompanionService
                 End(entry);
             return string.Join(", ", chosen.Select(entry => entry.Request.Name)) + (chosen.Count == 1 ? " leaves you." : " leave you.");
         }
+    }
+
+    /// <summary>
+    /// The emergency rule (the operator, 2026-10-13): a companion that has found no way to its player for half a
+    /// minute asks to be put beside it. Only a companion can ask, and only for itself; where it is put is where its
+    /// player stands, in its player's instance. A player in the air is not followed this way: the companion would
+    /// be left hanging there.
+    /// </summary>
+    public string BringToLeader(Player companion)
+    {
+        Player leader;
+        lock (gate)
+        {
+            if (!companions.TryGetValue(companion.GetObjectId(), out Entry? entry) || entry.State != CompanionState.Playing)
+                return "Only a companion that is with its player can be brought to it.";
+            long now = SystemClock.CurrentMillis();
+            if (now - entry.BroughtAtMillis < BringSeconds * 1000L)
+                return "You were brought to your player a moment ago.";
+            leader = Aion.GameServer.World.World.GetInstance().GetPlayer(entry.Request.LeaderId);
+            if (leader == null || !leader.IsSpawned())
+                return "Your player is not in the world.";
+            if (!leader.IsDead() && (leader.IsInState(Aion.GameServer.Model.GameObjects.State.CreatureState.FLYING) || leader.IsInState(Aion.GameServer.Model.GameObjects.State.CreatureState.GLIDING)))
+                return "Your player is in the air.";
+            entry.BroughtAtMillis = now;
+        }
+        Aion.GameServer.World.WorldMapInstance where = leader.GetWorldMapInstance();
+        // Into its player's instance as a member of the group is taken in (PortalService.Transfer registers it).
+        if (leader.IsInInstance() && !where.IsRegistered(companion.GetObjectId()))
+            where.Register(companion.GetObjectId());
+        log.LogInformation("Companion {Name} ({Id}) is brought to {Leader}: map {Map}, instance {Instance}, ({X:0.0}, {Y:0.0}, {Z:0.0})",
+            companion.GetName(), companion.GetObjectId(), leader.GetName(), where.GetMapId(), where.GetInstanceId(), leader.GetX(), leader.GetY(), leader.GetZ());
+        Aion.GameServer.Services.Teleport.TeleportService.TeleportTo(companion, where, leader.GetX(), leader.GetY(), leader.GetZ(), leader.GetHeading(),
+            Aion.GameServer.Model.Animations.TeleportAnimation.FADE_OUT_BEAM);
+        return "You are brought to " + leader.GetName() + ".";
+    }
+
+    /// <summary>
+    /// The stock check (the operator, 2026-10-13): a companion asks for its supplies every half hour, and what it
+    /// carries of each thing its profile gave it is filled up to what the profile gave. Only a companion can ask, and
+    /// only for itself. Kinah and what it wears are not touched.
+    /// </summary>
+    public string Restock(Player companion)
+    {
+        CompanionProfile? profile;
+        lock (gate)
+        {
+            if (!companions.TryGetValue(companion.GetObjectId(), out Entry? entry) || entry.State != CompanionState.Playing)
+                return "Only a companion that is with its player has supplies to fill up.";
+            long now = SystemClock.CurrentMillis();
+            if (now - entry.RestockedAtMillis < RestockSeconds * 1000L)
+                return "Your supplies were filled up a moment ago.";
+            if (!profiles.TryGetValue((companion.GetRace(), entry.Request.PlayerClass), out profile))
+                return "There is no profile to fill your supplies from.";
+            entry.RestockedAtMillis = now;
+        }
+        var filled = new List<string>();
+        foreach (CompanionProfile.Carried carried in profile.Inventory)
+        {
+            long has = companion.GetInventory().GetItemCountByItemId(carried.ItemId);
+            if (has >= carried.Count)
+                continue;
+            long left = ItemService.AddItem(companion, carried.ItemId, carried.Count - has);
+            filled.Add(carried.ItemId + "x" + (carried.Count - has - left));
+        }
+        if (filled.Count == 0)
+            return "Your supplies are complete.";
+        log.LogInformation("Companion {Name} ({Id}) has its supplies filled up: {Items}", companion.GetName(), companion.GetObjectId(), string.Join(", ", filled));
+        return "Your supplies are filled up: " + string.Join(", ", filled) + ".";
     }
 
     /// <summary>

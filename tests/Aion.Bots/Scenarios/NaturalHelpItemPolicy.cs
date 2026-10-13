@@ -49,6 +49,9 @@ public static class NaturalHelpItemPolicy
 	/// <summary>Refresh a 5 min scroll when this little of it is left (the effect snapshot's time, aged).</summary>
 	public const int RefreshWindowMillis = 20_000;
 	public const float LongTravelMeters = 150;
+	/// <summary>The stock check by the clock (the operator, 2026-10-13): every bot looks at its supplies every half
+	/// hour of play, besides the checks its run has at its own moments. A companion is the first to keep it.</summary>
+	public const int StockCheckMinutes = 30;
 	public const int ShieldHpPercent = 50;
 	public const int SalvationDp = 2000;
 
