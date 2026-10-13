@@ -1,7 +1,8 @@
 # Companion bots
 
-Status: planned 2026-10-12; C1 (decision and profiles) and C2 (the server's part) are done. No bot plays a
-companion yet. The step list at the end is worked one step at a time.
+Status: planned 2026-10-12; C1 (decision and profiles), C2 (the server's part) and C3 (the SIM host and the
+stand-in) are done. A companion joins its player's group and leaves the game when it is sent away; it does not
+follow or play its role yet. The step list at the end is worked one step at a time.
 
 It follows [natural-group-ntc.md](natural-group-ntc.md) and [natural-group-healer.md](natural-group-healer.md):
 following F1, the Cleric's healing-only role, the class fights, gear and supplies are there and are reused.
@@ -69,7 +70,7 @@ dismissed; the first version takes level 26 only.
 | A bot that waits for nobody's commands | Missing: the group stages are driven by a bot leader's words in chat |
 | Loot left to the player | The group is set to free for all, so the server's loot code stays as it is; a companion opens no corpse |
 | Following through a portal without being told | Half there: a follower enters on the leader's command today |
-| Where bots run | In SIM, inside the test. Bot code depends on the game server, so the server cannot host it; a live host process is a later step |
+| Where bots run | In SIM, inside the round test, which is the host (C3): it offers the accounts of its `companion` seats and plays what the server makes on them. Bot code depends on the game server, so the server cannot host it; a live host process is a later step |
 
 ## Decisions
 
@@ -129,8 +130,33 @@ One step per iteration. A step is ticked when a SIM round from `ntc-group-s4` sh
     that stays connected is not thrown out by the server yet, and a player who leaves the group does not end
     its companions yet (C9). Left for a live world: a server that stops with companions alive leaves their
     characters behind, and an admin's reload of the commands drops `.companion` until the next start.
-- [ ] **C3 SIM host and stand-in.** A stand-in types the command; the host logs in what the server made; the
+- [x] **C3 SIM host and stand-in.** A stand-in types the command; the host logs in what the server made; the
   companion joins the stand-in's group. Shown with one Cleric.
+  - 2026-10-12. Rounds `c3-1` and `c3-2` (`run/companion/c3.json`, from `ntc-group-s4`, not captured). The
+    stand-in is the group world's Templar, stage `companion-lead`. It types `.companion cleric`; the server
+    makes ClericA; the seat on account 102 takes the request and logs the character in; a quarter of a second
+    of game time later the stand-in sees a level-26 Cleric in its group on its own map, and it leads.
+    `.companion list` names it. After `.companion dismiss` the group is gone and the companion leaves the game.
+    No deaths. Both bots reached their end; the world had no problem of its own.
+  - The server puts a companion into its player's group as it enters the world, the way an accepted invitation
+    does (`PlayerGroupInvite.AcceptRequest`): a third line of ported code, at the end of
+    `PlayerEnterWorldService.EnterWorld`. Where the game's own invitation rule refuses (the player is dead, the
+    group is full), the companion ends. The server test of C2 now checks the group as well.
+  - The host in SIM is the round test. A seat is a bot of the round with `"line": "companion"`,
+    `"stage": "companion"` and the account it is played on. The test switches companions on, offers the seats'
+    accounts, and each seat sleeps on the turn table until a request is made on its account, plays that
+    character, and waits again. It ends when no player of the round is left. A companion's folder is
+    `companion-<name>`.
+  - The stand-in's round fields are `companions` (the classes it asks for, in order) and `companionUntil` (how
+    far it plays: `joined` so far). Its receipt is `companion-completion.json`.
+  - The companion's own rule so far: in its player's group it stays; out of it, it logs out with `CM_QUIT`, and
+    the server deletes it.
+  - Found: as a companion enters the world, the server writes the campaign missions of its level into its
+    journal, as it does for any character of that level (2009, 2100, 2900 and 2945 started, 2132 ready to hand
+    in). The bot never touches them. C8 compares the journal at the end with the journal at the start.
+  - Found: a new group's loot rule is round robin. C6 sets it.
+  - Checks: the unit suite (4,645 passed, 16 skipped), the pre-commit checks, Fast (`c3-fast`), and the Group NTC leg
+    replayed once on the changed round harness (`n9-c3`). Code commit `4ce3038a1`.
 - [ ] **C4 Companion mode.** The bot follows F1 and plays its role with no commands and no quests. Shown: the
   stand-in walks the fortress and the Cleric keeps up and keeps its support going.
 - [ ] **C5 Marks.** The bot reads the leader's marks. Shown: five companions kill what the stand-in marks in the
