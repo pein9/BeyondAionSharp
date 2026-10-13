@@ -1,6 +1,6 @@
 # Companion bots: the live host
 
-Status: planned 2026-10-13; L1 (the server knows its seats) is done. It follows [companion-bots.md](companion-bots.md), which is done in SIM.
+Status: planned 2026-10-13; L1 (the server knows its seats) and L2 (the SIM host on the seat protocol) are done. It follows [companion-bots.md](companion-bots.md), which is done in SIM.
 
 ## The goal
 
@@ -79,8 +79,33 @@ its role, as the stand-in's companions did in SIM. NTC is the place to try it.
     before the companions, and `l1-fast-2` passes.
   - Checks: the unit suite (4,645 passed, 16 skipped), the pre-commit checks, both server tests, Fast (`l1-fast-2`), and the
     companion stopping round once more (`l1-c9`, the same result). Code commit `59cd345fa`.
-- [ ] **L2 The SIM host uses the seat protocol.** The round's seats log in and wait at character selection instead
+- [x] **L2 The SIM host uses the seat protocol.** The round's seats log in and wait at character selection instead
   of being told in memory. Shown: the stopping round `c9` again, with the same result.
+  - 2026-10-13. Round `l2-c9-4` (`run/companion/c9.json`, from `ntc-group-s4`): the five seats log in and wait at
+    character selection, asking for their character list once a second. Each sees its companion appear, enters
+    the world with it on the same connection, and goes back to character selection when its play ends. The
+    stand-in and its five companions reach the General 8 min 21 s into the camp after 34 pulls. Nobody died, no
+    companion gained an item or a journal entry, and nothing was left on a seat. The server knew no companion
+    4 s after the dismissal. The times differ from `c9-1` by seconds, because the seats log in before they play.
+  - The round test tells the server the names of its seats' accounts and nothing else. The in-memory seat
+    (`OfferSeat`, `TakeRequest`) is internal to the server now, for the server test that makes companions without
+    playing them.
+  - A companion's play no longer ends with a logout of its own. The host takes it back to character selection
+    (`CM_QUIT` that stays connected), where the server deletes it and the seat waits for the next one. Between
+    two companions the client's knowledge of the last one is dropped (`BotApi.BeginLoginObservation`).
+  - A seat has one folder and one trace for all it plays: `companion-seat-<account>/seat.trace.jsonl`.
+  - Found, and it would have cost a live seat: a companion that was resting when it was sent away did not notice
+    for over half a minute, and the server's watch disconnected it (`l2-c9-2`). Its play now ends the moment its
+    player no longer leads its group: it looks before every packet it is about to send. My first way, a
+    cancelled wait, was wrong: a cancelled send leaves the connection's cipher a step ahead of the server's,
+    and all five seats were refused at their next packet (`l2-c9-3`).
+  - Two changes in the stand-in, the test tool. It asks again when it is told that no companion is free: it and
+    the seats log in at the same moment of a round (`l2-c3-1`). And it names a corpse it had the right to and
+    could not open, instead of stopping: one corpse of the field tests gave it no item list though it stood
+    1.7 m from where its client had it. The right was its own at once, which is what the loot rule gives; the
+    walk to a monster that died on the move is the stand-in's weakness, not a companion's.
+  - Checks: the unit suite (4,645 passed, 16 skipped), the pre-commit checks, the companion server tests, Fast (`l2-fast`),
+    and the Group NTC leg replayed once on the changed round harness (`n9-l2`). Code commit `03e5fcd54`.
 - [ ] **L3 The live host.** A scenario in `tools/Aion.LiveBots` and `scripts/live/companion-host.ps1 -Target aion`,
   with a stop file and the monitor page, modelled on the attach runner. Its script test runs against a mock Docker,
   as the attach runner's does.
