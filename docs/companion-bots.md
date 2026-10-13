@@ -1,7 +1,7 @@
 # Companion bots
 
-Status: planned 2026-10-12; C1 (decision and profiles) is done, nothing else is built. The step list at the end is
-worked one step at a time.
+Status: planned 2026-10-12; C1 (decision and profiles) and C2 (the server's part) are done. No bot plays a
+companion yet. The step list at the end is worked one step at a time.
 
 It follows [natural-group-ntc.md](natural-group-ntc.md) and [natural-group-healer.md](natural-group-healer.md):
 following F1, the Cleric's healing-only role, the class fights, gear and supplies are there and are reused.
@@ -36,11 +36,13 @@ dismissed; the first version takes level 26 only.
 1. **The command.** The player types `.companion <class>` in chat. The emulator's player commands begin with a
    dot (`Handlers/PlayerCommands`); the 4.8 client does not send an unknown slash command. `.companion dismiss`
    sends one or all away, `.companion list` names them.
-2. **Who may ask.** A player alone or leading a group, while the group has fewer than six. Asmodian only at first:
-   the profiles are Asmodian.
+2. **Who may ask.** A player alone or leading a group, while the group has fewer than six with the companions on
+   their way counted. Not in an alliance, and not from inside an instance. Asmodian only at first: the profiles
+   are Asmodian.
 3. **What is made.** A character of that class at level 26, wearing and carrying what its profile says, standing
-   beside the player and bound where the player is bound. The server makes it. A bot then plays it as an ordinary
-   client and joins the player's group.
+   where the player stands and bound where the player is bound. The server makes it, on an account that a host
+   offered. A host is the program that plays companions: it offers the accounts it can log in on, takes the
+   requests made on them, and plays each character as an ordinary client, which joins the player's group.
 4. **The profile** is generated from the group world `ntc-group-s4`, where all eleven classes stand at 26 in the
    gear, shards and supplies the natural runs gave them: one file per class. The fight is the class's own table.
 5. **Following.** The companion follows F1's observed movement, as in the group stages. When F1's map changes it
@@ -54,7 +56,7 @@ dismissed; the first version takes level 26 only.
    of mana, dead, cannot reach you.
 9. **Death.** It waits a minute for a resurrection, then revives at its bind and comes back through the portal.
 10. **The end.** Dismissed, or when the player logs out or leaves the group: the bot logs out and the server
-    deletes the character and its account.
+    deletes the character. The account is the host's and is used for the next companion.
 
 ## What is there, and what is missing
 
@@ -62,7 +64,7 @@ dismissed; the first version takes level 26 only.
 |---|---|
 | Follow F1 from group packets; heal, cleanse, bless without attacking; class fights, rests, gear, shards, kit | Built and played (the group stages) |
 | Characters of all eleven classes at 26 | In `ntc-group-s4`, as played characters, not as profiles |
-| A chat command, a companion made by the server, its deletion | Missing. It is a feature Java does not have: it needs a logged decision (D41), its own code beside the port, a switch that is off by default, and tests |
+| A chat command, a companion made by the server, its deletion | Built (C2): `src/Aion.GameServer/Custom/Companion`, off unless `AION_COMPANIONS=true`, with tests |
 | Reading the leader's marks | Missing in the bot; the server sends them |
 | A bot that waits for nobody's commands | Missing: the group stages are driven by a bot leader's words in chat |
 | Loot left to the player | The group is set to free for all, so the server's loot code stays as it is; a companion opens no corpse |
@@ -101,8 +103,32 @@ One step per iteration. A step is ticked when a SIM round from `ntc-group-s4` sh
     item's restrict row. Where the snapshot is at hand it also compares them with a fresh generation. Both pass.
     A power shard has no restrict row, so its own level (65 for the Ancient one) is no gate, as rule MR-c found.
   - The baseline's hashes are in `run/companion/baseline.json`.
-- [ ] **C2 The server's part.** `.companion <class>`, `dismiss` and `list`: the limits, the character made from its
+- [x] **C2 The server's part.** `.companion <class>`, `dismiss` and `list`: the limits, the character made from its
   profile beside the player, its end and deletion, and a queue of requests for a host. Tested as server code.
+  - 2026-10-12. `CompanionService`, `CompanionProfile` and `CompanionCommand` in
+    `src/Aion.GameServer/Custom/Companion`. The feature is off unless the server starts with
+    `AION_COMPANIONS=true` or a host switches it on; while it is off `.companion` is no command, and the words go
+    out as chat. Two lines of ported code call it: the server's start, and the end of
+    `PlayerLeaveWorldService.LeaveWorld`. Deviation 162 in the decision log's register.
+  - The character is made the way `CM_CREATE_CHARACTER` makes one (`PlayerService.StoreNewPlayer`), with its
+    profile in place of the starter's skills and items. It gets its race's Ascension quest as complete, because
+    that is what makes a character a Daeva. Its name is the class and a letter: ClericA, TemplarA.
+  - Refused in plain words: a word that is no class, a class with no profile for the player's race, a member who
+    does not lead, an alliance, a full group, a player inside an instance, no free seat, a companion that asks.
+    `.companion spirit master`, `songweaver`, `gunslinger` and `aethertech` are understood.
+  - A companion that leaves the world is deleted with its rows, whatever made it leave. One that nobody came to
+    play is deleted at once when it is sent away. A player's logout ends its companions.
+  - Run `c2-chain`: SIM test `CompanionCommandMakesAThrowawayCharacterAndDeletesIt` plays all of it with a
+    player and a second client that logs the made Cleric in: level 26, a Daeva, its profile's 15 worn things,
+    9 carried stacks and 94 skills, the player's place and bind point; then the dismissal and the empty
+    tables. Unit tests `CompanionProfileTests` read the eleven profiles. The unit suite (4,645 passed, 16
+    skipped), the checks and Fast (`c2-fast`, 11 passed) pass. The unit test that counts the shipped player
+    commands now counts what the command loader registers, which is public classes; `.companion` is not one.
+    Code commit `cce28721c`.
+  - Left for later steps: the companion joins the group when it enters the world (C3); a dismissed companion
+    that stays connected is not thrown out by the server yet, and a player who leaves the group does not end
+    its companions yet (C9). Left for a live world: a server that stops with companions alive leaves their
+    characters behind, and an admin's reload of the commands drops `.companion` until the next start.
 - [ ] **C3 SIM host and stand-in.** A stand-in types the command; the host logs in what the server made; the
   companion joins the stand-in's group. Shown with one Cleric.
 - [ ] **C4 Companion mode.** The bot follows F1 and plays its role with no commands and no quests. Shown: the
