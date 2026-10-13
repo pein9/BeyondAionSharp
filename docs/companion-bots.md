@@ -1,10 +1,10 @@
 # Companion bots
 
-Status: planned 2026-10-12; C1 to C7 are done. A companion joins its player's group and follows it with nobody's
+Status: planned 2026-10-12; C1 to C8 are done. A companion joins its player's group and follows it with nobody's
 words. A damage class attacks what the leader marked, or what the leader attacks; the Cleric keeps its support
 up and attacks nothing. The group's loot is free for all and a companion opens no corpse. It leaves the game
-when it is sent away, and it goes through a portal after its leader. The way to the General and the end are the
-steps that are left. The step list at the end is worked one step at a time.
+when it is sent away, and it goes through a portal after its leader. Five companions went with the stand-in
+through Nochsana Training Camp to the General. The end is the step that is left. The step list at the end is worked one step at a time.
 
 It follows [natural-group-ntc.md](natural-group-ntc.md) and [natural-group-healer.md](natural-group-healer.md):
 following F1, the Cleric's healing-only role, the class fights, gear and supplies are there and are reused.
@@ -246,8 +246,33 @@ One step per iteration. A step is ticked when a SIM round from `ntc-group-s4` sh
     and waits. That is where a leader stands who left an instance by another way; nothing plays it yet.
   - Checks: the unit suite (4,645 passed, 16 skipped) and the pre-commit checks; only the companion stage's own
     bot code changed. Code commit `bbadfc66a`.
-- [ ] **C8 NTC.** The stand-in leads to the General, marking as it goes. Shown: the General dead; no companion took
+- [x] **C8 NTC.** The stand-in leads to the General, marking as it goes. Shown: the General dead; no companion took
   a quest or loot. Deaths are outcomes.
+  - 2026-10-13. Round `c8-1` (`run/companion/c8.json`, `companionUntil: general`), the first attempt: the
+    stand-in and its five companions through the camp to the General, 8 min 33 s inside, 11 min 55 s for the
+    whole round. Nobody died.
+    - The way is the Group NTC leg's without its quests and chests: the Protector (2:04), the Guard (3:30), the
+      Aetheric Field Guard (4:24), the gate (6:09), the General (8:33).
+    - The stand-in plays as a leading player plays: it lets its group come up before a pull, puts mark 1 on what
+      it pulls, fights it, and opens the corpse. 36 pulls, 30 monsters down by its count.
+    - Marks followed. The Gladiator, the Ranger, the Sorcerer and the Chanter fought 34 to 37 times each: 20 to
+      25 for a mark, once for what the stand-in attacked with no mark, 11 to 13 in defence of a member. All
+      four struck the General.
+    - The Cleric fought nothing: 116 heals over time, 21 cleanses, 3 heals, 4 top-ups, 4 blessings, 2 mana
+      recoveries, and 3 casts the server refused.
+    - Loot: the stand-in opened 14 corpses and took 49 items. No companion carries an item it did not come
+      with, and no journal has a new entry.
+  - Found: kinah is not an item of the loot rule. `DropService.requestDropItem` shares kinah among the members
+    near the looter under every rule ("Kinah is distributed to all group/alliance members nearby"), so each
+    companion was given about 1,023 kinah of what the stand-in picked up, and it goes when the companion is
+    deleted. With five companions a player keeps a sixth of the kinah. This is the game's own rule, and it is
+    the operator's to keep or change.
+  - A fallen companion waits a minute for the Cleric's resurrection and takes it, then revives at its bind and
+    comes back through the portal (C7's rule). No run has played it: nobody died.
+  - Not exercised: a death and a resurrection, the way back in, a boss rule (taunt, the artifact), the
+    Teleporter and the chests, which are quest matters.
+  - Checks: the unit suite (4,645 passed, 16 skipped) and the pre-commit checks; only the companion stage's own
+    bot code changed. Code commit `1defe2616`.
 - [ ] **C9 The end.** Dismissal, the player's logout and leaving the group each remove the companion and its rows.
 
 Not in this plan: a live host process and a live world, other levels, Elyos, a support table for the Chanter,
