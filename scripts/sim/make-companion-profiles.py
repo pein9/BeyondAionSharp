@@ -25,6 +25,10 @@ import sys
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 KINAH = 182400001
+# What a companion carries beyond what its character of the group world carries (the operator, 2026-10-13: "add the mana
+# potion threshold ... for companions only"). The Major Mana Potion restores mana over twenty seconds and has no restrict
+# row; a companion drinks one at half its mana. The natural runs have no such rule, so the group world has no such potion.
+COMPANION_EXTRAS = {162000011: 30}
 UNEQUIPPED_SLOT = 65535
 CUBE = 0
 # PlayerClass ids, which index an item's restrict row.
@@ -165,8 +169,10 @@ def generate(snapshot):
             'appearance': appearance,
             'equipment': sorted(({'slot': row['slot'], 'itemId': row['item_id'], 'count': row['item_count'], 'enchant': row['enchant']}
                                  for row in own if row['is_equipped']), key=lambda worn: (worn['slot'], worn['itemId'])),
-            'inventory': sorted(({'itemId': row['item_id'], 'count': row['item_count']}
-                                 for row in own if not row['is_equipped'] and row['item_id'] != KINAH),
+            'inventory': sorted([{'itemId': row['item_id'], 'count': row['item_count']}
+                                 for row in own if not row['is_equipped'] and row['item_id'] != KINAH
+                                 and row['item_id'] not in COMPANION_EXTRAS]
+                                + [{'itemId': item, 'count': count} for item, count in COMPANION_EXTRAS.items()],
                                 key=lambda carried: carried['itemId']),
             'skills': sorted(({'id': row['skill_id'], 'level': row['skill_level']} for row in skills if row['player_id'] == player['id']),
                              key=lambda skill: skill['id']),

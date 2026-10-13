@@ -69,6 +69,41 @@ public sealed partial class NaturalIshalgenJourney
 		/// fought in its own instance by the journey's Ishalgen fight: a class that fights from where it stands never
 		/// asks, and one that walks to its opponent could not reach it.</summary>
 		public Action? EnterObservedMap { get; set; }
+		/// <summary>
+		/// Companions only (the operator, 2026-10-13: "add the mana potion threshold ... for companions only"). At or below
+		/// this share of its mana the character drinks a Mana Potion, the one that restores over time, when it owns one,
+		/// none is at work, and its health is at 70% or more: a Life Potion shares the potion's delay, and a character
+		/// that may need one keeps the delay free. Unset, no fight does this, and the natural runs are what they were.
+		/// </summary>
+		public int? ManaPotionAtPercent { get; set; }
+		private long manaPotionNotBeforeMillis;
+
+		/// <summary>Drinks the Mana Potion when <see cref="ManaPotionAtPercent"/> asks for it now. True when one was drunk.</summary>
+		public async Task<bool> DrinkManaPotionAsync(CancellationToken token)
+		{
+			BotWorldModel world = session.Api.World;
+			if (ManaPotionAtPercent is not int at || world.IsDead || world.MaxMp <= 0 || world.MaxHp <= 0 || runtime.NowMillis < manaPotionNotBeforeMillis ||
+				world.CurrentMp * 100L > world.MaxMp * (long)at || world.CurrentHp * 100L < world.MaxHp * 70L ||
+				NaturalIshalgenPotionPolicy.HasActiveManaOverTime(world.VisibleEffects) ||
+				NaturalIshalgenPotionPolicy.SelectOwnedManaOverTime(world.Inventory.Values) is not { } potion ||
+				runtime.Data.ItemDataDh.GetItemTemplate(potion.ItemId) is not { } template ||
+				session.Api.Timing.TimeUntilItemUse(template) != TimeSpan.Zero)
+				return false;
+			long before = ItemCount(world, potion.ItemId);
+			int mp = world.CurrentMp;
+			await session.SendPacketAsync(session.Api.UseItem(potion.ObjectId, template), token);
+			await session.SynchronizeAsync(token);
+			long after = ItemCount(world, potion.ItemId);
+			// One that the server refused (a stun, a cast under way) is not asked for again at once.
+			manaPotionNotBeforeMillis = runtime.NowMillis + (after < before ? 2_000 : 5_000);
+			session.TraceDiagnostic("mana-potion-at-threshold", new Dictionary<string, object?>
+			{
+				["itemId"] = potion.ItemId, ["before"] = before, ["after"] = after, ["mp"] = mp, ["maxMp"] = world.MaxMp, ["at"] = at,
+				["hpPercent"] = world.CurrentHp * 100L / world.MaxHp,
+			});
+			return after < before;
+		}
+
 		public Action? AfterBindRevive { get; set; }
 		public Func<CancellationToken, Task<bool>>? WaitForGroupResurrectionAsync { get; set; }
 		/// <summary>Revives at the bound obelisk, as against revives inside an instance.</summary>
@@ -366,6 +401,7 @@ public sealed partial class NaturalIshalgenJourney
 						await spiritDriver.BeatAsync(target, token);
 					else await spiritDriver.AnswerOrdersAsync(token);
 				}
+				if (ManaPotionAtPercent != null) await DrinkManaPotionAsync(token);
 				DateTimeOffset now = runtime.Epoch.AddMilliseconds(runtime.NowMillis);
 				NaturalClassProfile profile = ClassProfile;
 				// A monster that hit us in the last 3 s is in melee reach whatever its lagging client position says.

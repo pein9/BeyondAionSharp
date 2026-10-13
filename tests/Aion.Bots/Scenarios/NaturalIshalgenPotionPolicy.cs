@@ -17,6 +17,13 @@ public static class NaturalIshalgenPotionPolicy
 	/// Greater since 2026-10-12, when the kit became the best usable tier), then the starter Minor Mana Potion and the
 	/// Minor and Lesser Mana Elixirs (NA-20a).</summary>
 	public static readonly int[] ManaPotionIds = [162000021, 162000020, 162000019, 162000018, 162000017, 162000007, 162000057, 162000058];
+	/// <summary>The Mana Potions, which restore mana over twenty seconds as a Life Potion restores health, best tier
+	/// first, and the effects they leave. None has a restrict row, so the Major one is the best a character of any level
+	/// drinks. A companion drinks one at a threshold (the operator, 2026-10-13); the serums above are instant and are
+	/// kept for a character that is out of mana.</summary>
+	public static readonly int[] ManaOverTimePotionIds = [162000011, 162000010, 162000009, 162000008, 162000007];
+	public static readonly int[] ManaOverTimeSkillIds = [9898, 9897, 9896, 9895, 9894];
+	public const int MajorManaPotionId = 162000011;
 	public const int SharedUseDelayId = 11;
 	public const int RestockAtOrBelow = 5;
 	public const int RestockTarget = 12;
@@ -47,6 +54,13 @@ public static class NaturalIshalgenPotionPolicy
 	public static BotInventoryItem? SelectOwnedManaPotion(IEnumerable<BotInventoryItem> inventory) =>
 		inventory.Where(item => item.Count > 0 && ManaPotionIds.Contains(item.ItemId))
 			.OrderBy(item => Array.IndexOf(ManaPotionIds, item.ItemId)).ThenBy(item => item.ObjectId).FirstOrDefault();
+
+	public static BotInventoryItem? SelectOwnedManaOverTime(IEnumerable<BotInventoryItem> inventory) =>
+		inventory.Where(item => item.Count > 0 && ManaOverTimePotionIds.Contains(item.ItemId))
+			.OrderBy(item => Array.IndexOf(ManaOverTimePotionIds, item.ItemId)).ThenBy(item => item.ObjectId).FirstOrDefault();
+
+	public static bool HasActiveManaOverTime(IReadOnlyList<BotVisibleEffect>? effects) =>
+		effects?.Any(effect => ManaOverTimeSkillIds.Contains(effect.SkillId)) == true;
 
 	public static bool HasActiveHealing(IReadOnlyList<BotVisibleEffect>? effects) =>
 		effects?.Any(effect => HealingSkillIds.Contains(effect.SkillId)) == true;

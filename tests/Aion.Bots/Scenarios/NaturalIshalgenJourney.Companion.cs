@@ -20,6 +20,8 @@ public sealed partial class NaturalIshalgenJourney
 	private static readonly int[] CompanionNtcNamed = [256690, 256689, 256692];
 	/// <summary>The two marks the stand-in sets; a companion takes the lowest mark first whatever its number.</summary>
 	private const int CompanionFirstMark = 1, CompanionSecondMark = 2;
+	/// <summary>A companion drinks its Mana Potion at or below half its mana (the operator, 2026-10-13).</summary>
+	private const int CompanionManaPotionPercent = 50;
 
 	/// <summary>A companion's player no longer leads its group, seen as the companion was about to send a packet.</summary>
 	private sealed class CompanionPlayOverException() : OperationCanceledException("The companion's player no longer leads its group.");
@@ -92,7 +94,8 @@ public sealed partial class NaturalIshalgenJourney
 		NaturalJourneyNavigator Navigator() => new(session, BotNavigationGraphFactory.Build(runtime.Data, null, geometry), geometry, runtime, stopOnDeath: false);
 		var navigator = Navigator();
 		var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry, stopOnDeath: false,
-			conservativeRangedHold: false, NaturalMauPolicyParameters.Baseline, ClassLine) { ApproachMapId = world.MapId!.Value };
+			conservativeRangedHold: false, NaturalMauPolicyParameters.Baseline, ClassLine)
+		{ ApproachMapId = world.MapId!.Value, ManaPotionAtPercent = CompanionManaPotionPercent };
 		var following = new NaturalGroupFollowDriver(session, runtime) { SkipAhead = true };
 		using var healer = options.Role == "healer" ? new NaturalGroupHealDriver(session, runtime, combat.ClassProfile) : null;
 		// The companion changed maps: checked movement and combat are bound to the map the client stands on now.
@@ -573,6 +576,8 @@ public sealed partial class NaturalIshalgenJourney
 					else if (!following.LeaderAirborne && runtime.NowMillis >= noRescueUntil && await RescueAsync("no way to its player")) continue;
 				}
 				if (!combat.InCombat && runtime.NowMillis - stockCheckedAt >= stockCheckMillis) await StockCheckAsync();
+				// Between fights too, and for the Cleric, which is in none.
+				await combat.DrinkManaPotionAsync(token);
 				bool hurt = world.CurrentHp * 100L <= world.MaxHp * 70L ||
 					world.GroupMembers.Values.Any(member => member.Online && !member.Dead && member.MaxHp > 0 && member.HpPercent <= 70);
 				if (healer != null && (hurt || gap <= 6)) await healer.StepAsync(token);
