@@ -13,6 +13,17 @@ namespace Aion.Simulation.Tests;
 public sealed partial class SimulationFastScenarioTests
 {
 	/// <summary>
+	/// The companion server tests play in a process of their own: <c>AION_SIM_COMPANION=1</c> with a filter on
+	/// "Companion". The tests of a process share one world, one clock and one seeded random source. These make and
+	/// delete characters and move the clock by minutes, and with them in the Fast process two unrelated fights
+	/// there came out differently (run l1-fast).
+	/// </summary>
+	private const string CompanionServerTestsSwitch = "AION_SIM_COMPANION";
+
+	private static void SkipUnlessCompanionServerTests() => Skip.If(Environment.GetEnvironmentVariable(CompanionServerTestsSwitch) != "1",
+		$"Set {CompanionServerTestsSwitch}=1 to play the companion server tests in a process of their own.");
+
+	/// <summary>
 	/// D41 (docs/companion-bots.md, C2): the server's part of the companion bots, which Java does not have. While the
 	/// feature is off <c>.companion</c> is no command. Switched on, it makes a level-26 character of the class from its
 	/// generated profile where the player stands, on an account a host offered, and leaves a request for that host. The
@@ -25,6 +36,7 @@ public sealed partial class SimulationFastScenarioTests
 	[SkippableFact]
 	public async Task CompanionCommandMakesAThrowawayCharacterAndDeletesIt()
 	{
+		SkipUnlessCompanionServerTests();
 		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
 		using var policy = NewPolicy("D41", includeHistory: false);
 		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(3));
@@ -214,6 +226,137 @@ public sealed partial class SimulationFastScenarioTests
 			service.Disable();
 			foreach (int seat in seats)
 				service.WithdrawSeat(seat);
+		}
+		policy.AssertClean();
+	}
+
+	private static long CompanionRows(string table, string column, int id)
+	{
+		using var connection = DatabaseFactory.GetConnection(); connection.Open();
+		using var command = connection.CreateCommand();
+		command.CommandText = $"SELECT COUNT(*) FROM {table} WHERE {column}=@id";
+		command.Parameters.AddWithValue("@id", id);
+		return Convert.ToInt64(command.ExecuteScalar());
+	}
+
+	private static void AssertCompanionGone(int characterId)
+	{
+		foreach ((string table, string column) in new[] { ("players", "id"), ("player_appearance", "player_id"), ("player_skills", "player_id"),
+			("inventory", "item_owner"), ("player_quests", "player_id"), ("player_bind_point", "player_id") })
+			Assert.True(CompanionRows(table, column, characterId) == 0, $"{table} still has rows of the deleted companion {characterId}.");
+	}
+
+	/// <summary>
+	/// D41 (docs/companion-live-host.md, L1): a seat is an account named to the server that waits at character selection.
+	/// A host needs nothing but the client protocol. The companion a player asks for appears in the seat's character list;
+	/// the seat enters the world with it, and back at character selection after its end the list is empty and the seat
+	/// waits again. A companion's character has the note that marks it. A seat that logs in with marked characters, as
+	/// after a server that stopped with companions alive, has them deleted. An account named as a seat that holds any
+	/// other character is no seat, and its character is not touched. A seat whose client goes away takes a companion
+	/// that nobody played with it.
+	/// </summary>
+	[SkippableFact]
+	public async Task CompanionSeatIsAnAccountWaitingAtCharacterSelection()
+	{
+		SkipUnlessCompanionServerTests();
+		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
+		using var policy = NewPolicy("D41-seat", includeHistory: false);
+		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(3));
+		CancellationToken token = timeout.Token;
+		CompanionService service = CompanionService.GetInstance();
+		const int leaderAccount = 110, seatAccount = 108, playerAccount = 109;
+		string seatName = $"sim-player-{seatAccount}";
+		await using var session = new SimulationL0Session(fixture, policy, "b01", leaderAccount, "Asimseatlead", Race.ASMODIANS);
+		session.BeginStep("s00", "login-create-enter");
+		await session.LoginAndAuthenticateAsync(token);
+		await session.CreateCharacterAsync(token, PlayerClass.PRIEST);
+		await session.EnterWorldAsync(token);
+		await session.SynchronizeAsync(token);
+		Player leader = fixture.World.GetPlayer(session.CharacterId);
+
+		async Task<string[]> SayAsync(string text)
+		{
+			int start = session.PacketHistory.Count;
+			await session.SendPacketAsync(session.Api.Say(text), token);
+			await session.SynchronizeAsync(token);
+			return session.PacketHistory.Skip(start).Where(packet => packet.PacketType == typeof(SM_MESSAGE))
+				.Select(packet => packet.Get<string>("message")).ToArray();
+		}
+		static List<IReadOnlyDictionary<string, object?>> Characters(Aion.Bots.Protocol.DecodedBotServerPacket list) =>
+			list.Get<List<IReadOnlyDictionary<string, object?>>>("characters");
+
+		try
+		{
+			session.BeginStep("s01", "no-seat-is-logged-in");
+			service.Enable(seatAccounts: [seatName, $"sim-player-{playerAccount}"]);
+			Assert.Empty(service.WaitingSeats());
+			Assert.Contains(await SayAsync(".companion cleric"), message => message.Contains("No companion is free right now.", StringComparison.Ordinal));
+
+			session.BeginStep("s02", "a-seat-waits-at-character-selection");
+			await using var seat = new SimulationL0Session(fixture, policy, "b02", seatAccount, "Unused", Race.ASMODIANS);
+			Assert.Empty(Characters(await seat.LoginCharacterListAsync(token)));
+			Assert.Equal([seatName], service.WaitingSeats());
+
+			session.BeginStep("s03", "the-companion-appears-in-the-seats-list");
+			Assert.Contains(await SayAsync(".companion cleric"), message => message.Contains("the cleric is on its way to you.", StringComparison.Ordinal));
+			CompanionInfo made = Assert.Single(service.Of(leader));
+			Assert.Equal((seatAccount, PlayerClass.CLERIC, CompanionState.Requested), (made.AccountId, made.PlayerClass, made.State));
+			Assert.Empty(service.WaitingSeats());
+			Assert.Equal(CompanionService.Note, PlayerDAO.LoadPlayerCommonData(made.CharacterId).GetNote());
+			var listed = Assert.Single(Characters(await seat.ReadCharacterListAsync(token)));
+			Assert.Equal((made.CharacterId, made.Name, (int)PlayerClass.CLERIC), (Get<int>(listed, "objectId"), Get<string>(listed, "name"), Get<int>(listed, "playerClass")));
+			seat.SelectCharacter(made.CharacterId, made.Name);
+			await seat.EnterWorldAsync(token);
+			await seat.SynchronizeAsync(token);
+			await session.SynchronizeAsync(token);
+			Player companion = fixture.World.GetPlayer(made.CharacterId);
+			Assert.Equal((PlayerClass.CLERIC, 26), (companion.GetPlayerClass(), (int)companion.GetLevel()));
+			Assert.True(leader.GetPlayerGroup().IsLeader(leader));
+			Assert.Same(leader.GetPlayerGroup(), companion.GetPlayerGroup());
+			Assert.Equal(CompanionState.Playing, Assert.Single(service.Of(leader)).State);
+
+			session.BeginStep("s04", "back-at-character-selection-the-seat-waits-again");
+			Assert.Contains(await SayAsync(".companion dismiss"), message => message.Contains("leaves you.", StringComparison.Ordinal));
+			await seat.ReturnToSelectionAsync(editing: false, token);
+			Assert.Empty(service.All());
+			AssertCompanionGone(made.CharacterId);
+			Assert.Empty(Characters(await seat.ReadCharacterListAsync(token)));
+			Assert.Equal([seatName], service.WaitingSeats());
+
+			session.BeginStep("s05", "what-a-stopped-server-left-is-deleted-at-the-seats-next-login");
+			Assert.Contains(await SayAsync(".companion templar"), message => message.Contains("is on its way to you.", StringComparison.Ordinal));
+			int left = Assert.Single(service.Of(leader)).CharacterId;
+			await seat.CloseSelectionAsync(token);
+			service.ForgetForTests();
+			Assert.Equal(1, CompanionRows("players", "id", left));
+			await using var again = new SimulationL0Session(fixture, policy, "b03", seatAccount, "Unused", Race.ASMODIANS);
+			Assert.Equal(left, Get<int>(Assert.Single(Characters(await again.LoginCharacterListAsync(token))), "objectId"));
+			Assert.Equal([seatName], service.WaitingSeats());
+			AssertCompanionGone(left);
+			Assert.Empty(Characters(await again.ReadCharacterListAsync(token)));
+
+			session.BeginStep("s06", "an-account-with-a-players-character-is-no-seat");
+			await using var mistaken = new SimulationL0Session(fixture, policy, "b04", playerAccount, "Asimnotaseat", Race.ASMODIANS);
+			await mistaken.LoginAndAuthenticateAsync(token);
+			await mistaken.CreateCharacterAsync(token, PlayerClass.PRIEST);
+			Assert.Equal([seatName], service.WaitingSeats());
+			Assert.Contains(await SayAsync(".companion cleric"), message => message.Contains("is on its way to you.", StringComparison.Ordinal));
+			Assert.Contains(await SayAsync(".companion templar"), message => message.Contains("No companion is free right now.", StringComparison.Ordinal));
+			Assert.Equal(1, CompanionRows("players", "id", mistaken.CharacterId));
+			Assert.Single(Characters(await mistaken.ReadCharacterListAsync(token)));
+
+			session.BeginStep("s07", "a-seat-that-goes-away-takes-its-unplayed-companion-with-it");
+			int unplayed = Assert.Single(service.Of(leader)).CharacterId;
+			await again.CloseSelectionAsync(token);
+			Assert.Empty(service.WaitingSeats());
+			Assert.Empty(service.All());
+			AssertCompanionGone(unplayed);
+			Assert.Equal(1, CompanionRows("players", "id", mistaken.CharacterId));
+		}
+		finally
+		{
+			service.Disable();
+			service.ForgetForTests();
 		}
 		policy.AssertClean();
 	}

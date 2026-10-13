@@ -11,6 +11,7 @@ using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Skill;
 using Aion.GameServer.Model.Team.Common.Legacy;
 using Aion.GameServer.Model.Team.Group;
+using Aion.GameServer.Network.Aion;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services;
 using Aion.GameServer.Services.Items;
@@ -48,6 +49,10 @@ public sealed class CompanionService
 {
     public const string Switch = "AION_COMPANIONS";
     public const string DirectoryVariable = "AION_COMPANION_DIR";
+    /// <summary>The names of the accounts that are seats, separated by commas.</summary>
+    public const string AccountsVariable = "AION_COMPANION_ACCOUNTS";
+    /// <summary>What a companion's character has for its note: how one is told from any other character.</summary>
+    public const string Note = "companion";
     public const string Alias = "companion";
     /// <summary>The one level a companion is made at (CB-Q4).</summary>
     public const int Level = 26;
@@ -65,11 +70,20 @@ public sealed class CompanionService
     private static readonly CompanionService instance = new();
 
     private readonly object gate = new();
-    private readonly Dictionary<int, string> seats = new();
+    private readonly Dictionary<int, Seat> seats = new();
+    private readonly HashSet<string> seatNames = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<int> refusedSeats = new();
     private readonly Dictionary<int, Entry> companions = new();
     private Dictionary<(Race Race, PlayerClass PlayerClass), CompanionProfile> profiles = new();
     private volatile bool enabled;
     private bool watching;
+
+    /// <summary>
+    /// An account a companion can be made on. One with a connection is a client that waits at character selection
+    /// and sees the companion appear in its character list; one without is a host inside the server's own process
+    /// that takes its requests from memory.
+    /// </summary>
+    private sealed record Seat(int AccountId, string Name, AionConnection? Connection);
 
     private sealed class Entry(CompanionRequest request)
     {
@@ -101,11 +115,15 @@ public sealed class CompanionService
         if (!bool.TryParse(setting, out bool on))
             throw new InvalidOperationException(Switch + " must be true or false.");
         if (on)
-            Enable(Environment.GetEnvironmentVariable(DirectoryVariable));
+            Enable(Environment.GetEnvironmentVariable(DirectoryVariable),
+                (Environment.GetEnvironmentVariable(AccountsVariable) ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
     }
 
-    /// <summary>Loads the profiles and registers <c>.companion</c>. A host may call it instead of setting the switch.</summary>
-    public void Enable(string? profileDirectory = null)
+    /// <summary>
+    /// Loads the profiles and registers <c>.companion</c>. A host may call it instead of setting the switch.
+    /// <paramref name="seatAccounts"/> names the accounts that are seats when they wait at character selection.
+    /// </summary>
+    public void Enable(string? profileDirectory = null, IEnumerable<string>? seatAccounts = null)
     {
         string directory = string.IsNullOrWhiteSpace(profileDirectory) ? DefaultDirectory() : profileDirectory!;
         Dictionary<(Race, PlayerClass), CompanionProfile> loaded = CompanionProfile.LoadAll(directory)
@@ -115,6 +133,9 @@ public sealed class CompanionService
         lock (gate)
         {
             profiles = loaded;
+            seatNames.Clear();
+            foreach (string seatName in seatAccounts ?? [])
+                seatNames.Add(seatName);
             ChatProcessor processor = ChatProcessor.GetInstance();
             if (!processor.IsCommandExists(PlayerCommand.PREFIX + Alias))
             {
@@ -131,7 +152,8 @@ public sealed class CompanionService
             }
             enabled = true;
         }
-        log.LogInformation("Companions are on: " + loaded.Count + " profiles of level " + Level + " from " + directory);
+        log.LogInformation("Companions are on: " + loaded.Count + " profiles of level " + Level + " from " + directory
+            + "; seat accounts: " + (seatNames.Count == 0 ? "none named" : string.Join(", ", seatNames.Order())));
     }
 
     /// <summary>The command stops answering. Companions that are there stay until they leave or are sent away.</summary>
@@ -145,7 +167,7 @@ public sealed class CompanionService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(accountName);
         lock (gate)
-            seats[accountId] = accountName;
+            seats[accountId] = new Seat(accountId, accountName, null);
     }
 
     /// <summary>The host no longer plays on this account. A companion on it ends.</summary>
@@ -211,16 +233,19 @@ public sealed class CompanionService
             string? refusal = Refusal(leader);
             if (refusal != null)
                 return refusal;
-            int accountId = seats.Keys.Order().FirstOrDefault(seat => companions.Values.All(companion => companion.Request.AccountId != seat));
-            if (accountId == 0)
+            FindSeats();
+            Seat? seat = seats.Values.OrderBy(candidate => candidate.AccountId).FirstOrDefault(candidate => Waiting(candidate)
+                && companions.Values.All(companion => companion.Request.AccountId != candidate.AccountId));
+            if (seat == null)
                 return "No companion is free right now.";
+            int accountId = seat.AccountId;
             string? name = NewName(playerClass);
             if (name == null)
                 return "No name is free for a " + Word(playerClass) + " companion.";
             CompanionRequest request;
             try
             {
-                request = Make(leader, profile, accountId, seats[accountId], name);
+                request = Make(leader, profile, seat, name);
             }
             catch (Exception e)
             {
@@ -276,6 +301,8 @@ public sealed class CompanionService
             // A companion opens no corpse, so every corpse is the player's at once and no roll opens for a companion.
             // The rule is set once: a player who changes it afterwards keeps what he chose.
             entry.Joined = true;
+            if (entry.State == CompanionState.Requested)
+                entry.State = CompanionState.Playing;
             int joinedId = player.GetObjectId();
             if (!group.GetMembers().Any(member => member.GetObjectId() != joinedId && companions.ContainsKey(member.GetObjectId())))
                 PlayerGroupService.ChangeGroupRules(group, new LootGroupRules(LootRuleType.FREEFORALL, 0, 0, 0, 0, 0, 0, 0));
@@ -313,6 +340,7 @@ public sealed class CompanionService
     {
         lock (gate)
         {
+            FindSeats();
             long now = SystemClock.CurrentMillis();
             foreach (Entry entry in companions.Values.ToList())
             {
@@ -337,6 +365,97 @@ public sealed class CompanionService
                     companion.GetClientConnection()?.Close(Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_KICK_CHARACTER());
                 }
             }
+        }
+    }
+
+    private static bool Open(AionConnection connection)
+    {
+        return !connection.IsClosed() && !connection.IsPendingClose();
+    }
+
+    /// <summary>The seat can take a companion now: its client is at character selection, or its host is in this process.</summary>
+    private static bool Waiting(Seat seat)
+    {
+        return seat.Connection == null || Open(seat.Connection) && seat.Connection.GetState() == AionConnection.State.AUTHED
+            && seat.Connection.GetActivePlayer() == null;
+    }
+
+    /// <summary>
+    /// Looks at who is logged in. An account named as a seat that waits at character selection becomes one. A seat
+    /// whose client is gone is one no longer, and a companion on it ends. Characters with the companion's note on a
+    /// new seat are what a server left behind that stopped with companions alive: they are deleted. An account that
+    /// holds any other character is no seat, so that a player's account named by mistake loses nothing.
+    /// </summary>
+    private void FindSeats()
+    {
+        IReadOnlyDictionary<int, AionConnection> loggedIn = Aion.GameServer.Network.LoginServer.LoginServer.LoggedInAccounts;
+        foreach (Seat seat in seats.Values.Where(known => known.Connection != null).ToList())
+        {
+            if (loggedIn.TryGetValue(seat.AccountId, out AionConnection? current) && ReferenceEquals(current, seat.Connection) && Open(seat.Connection!))
+                continue;
+            seats.Remove(seat.AccountId);
+            log.LogInformation("Companion seat " + seat.Name + " (account " + seat.AccountId + ") is gone");
+            foreach (Entry entry in companions.Values.Where(companion => companion.Request.AccountId == seat.AccountId).ToList())
+            {
+                if (Aion.GameServer.World.World.GetInstance().GetPlayer(entry.Request.CharacterId) == null)
+                    Delete(entry);
+                else
+                    End(entry);
+            }
+        }
+        if (seatNames.Count == 0)
+            return;
+        foreach ((int accountId, AionConnection connection) in loggedIn)
+        {
+            Aion.GameServer.Model.Account.Account account = connection.GetAccount();
+            if (account == null || seats.ContainsKey(accountId) || !seatNames.Contains(account.GetName()) || !Open(connection)
+                || connection.GetState() != AionConnection.State.AUTHED || connection.GetActivePlayer() != null)
+                continue;
+            bool others = false;
+            foreach (Aion.GameServer.Model.Account.PlayerAccountData listed in account.GetPlayerAccDataList())
+            {
+                PlayerCommonData left = listed.GetPlayerCommonData();
+                if (left.GetNote() != Note)
+                {
+                    others = true;
+                    continue;
+                }
+                account.Remove(listed);
+                account.DecrementCountOf(left.GetRace());
+                PlayerService.DeletePlayerFromDB(left.GetPlayerObjId());
+                log.LogInformation("Companion " + left.GetName() + " (" + left.GetPlayerObjId() + ") was left behind on seat " + account.GetName() + " and is deleted");
+            }
+            if (others)
+            {
+                if (refusedSeats.Add(accountId))
+                    log.LogWarning("The account " + account.GetName() + " is named as a companion seat and holds a character that is no companion: it is not used");
+                continue;
+            }
+            refusedSeats.Remove(accountId);
+            seats[accountId] = new Seat(accountId, account.GetName(), connection);
+            log.LogInformation("Companion seat " + account.GetName() + " (account " + accountId + ") is waiting at character selection");
+        }
+    }
+
+    /// <summary>The seats that could take a companion now, by account name. For a host's and a test's eyes.</summary>
+    public IReadOnlyList<string> WaitingSeats()
+    {
+        lock (gate)
+        {
+            FindSeats();
+            return seats.Values.Where(seat => Waiting(seat) && companions.Values.All(companion => companion.Request.AccountId != seat.AccountId))
+                .Select(seat => seat.Name).Order(StringComparer.Ordinal).ToArray();
+        }
+    }
+
+    /// <summary>What the service knows is dropped and nothing is deleted: a server that stopped, for a test of what it leaves.</summary>
+    internal void ForgetForTests()
+    {
+        lock (gate)
+        {
+            companions.Clear();
+            seats.Clear();
+            refusedSeats.Clear();
         }
     }
 
@@ -365,8 +484,10 @@ public sealed class CompanionService
     /// its profile in place of the starter's skills and items: its class and level, the Ascension that made it a Daeva,
     /// the leader's place and the leader's bind point.
     /// </summary>
-    private static CompanionRequest Make(Player leader, CompanionProfile profile, int accountId, string accountName, string name)
+    private static CompanionRequest Make(Player leader, CompanionProfile profile, Seat seat, string name)
     {
+        int accountId = seat.AccountId;
+        string accountName = seat.Name;
         int id = IDFactory.GetInstance().NextId();
         try
         {
@@ -382,9 +503,12 @@ public sealed class CompanionService
             common.SetY(leader.GetY());
             common.SetZ(leader.GetZ());
             common.SetHeading(leader.GetHeading());
+            common.SetNote(Note);
 
             var accountData = new Aion.GameServer.Model.Account.PlayerAccountData(common, profile.NewAppearance());
-            Aion.GameServer.Model.Account.Account account = AccountService.LoadAccount(accountId);
+            // A seat that waits at character selection has its account in its connection, and the character goes into
+            // that account as one made by CM_CREATE_CHARACTER does: its client sees it in the list it asks for next.
+            Aion.GameServer.Model.Account.Account account = seat.Connection?.GetAccount() ?? AccountService.LoadAccount(accountId);
             account.SetName(accountName);
             var companion = new Player(accountData, account);
             companion.SetPosition(Aion.GameServer.World.World.GetInstance()
@@ -424,6 +548,12 @@ public sealed class CompanionService
                 if (!PlayerBindPointDAO.InsertBindPoint(companion))
                     throw new InvalidOperationException("The character's bind point could not be written.");
             }
+            if (seat.Connection != null)
+            {
+                accountData.SetVisibleItems(companion.GetEquipment().GetEquippedForAppearance());
+                accountData.SetCreationDate(DateTimeOffset.FromUnixTimeMilliseconds(SystemClock.CurrentMillis()));
+                account.AddPlayerAccountData(accountData);
+            }
             return new CompanionRequest(accountId, accountName, id, name, profile.PlayerClass, leader.GetObjectId(), leader.GetName());
         }
         catch
@@ -460,6 +590,12 @@ public sealed class CompanionService
     private void Delete(Entry entry)
     {
         companions.Remove(entry.Request.CharacterId);
+        if (seats.TryGetValue(entry.Request.AccountId, out Seat? seat) && seat.Connection?.GetAccount() is { } account
+            && account.GetPlayerAccountData(entry.Request.CharacterId) is { } listed)
+        {
+            account.Remove(listed);
+            account.DecrementCountOf(listed.GetPlayerCommonData().GetRace());
+        }
         PlayerService.DeletePlayerFromDB(entry.Request.CharacterId);
         log.LogInformation("Companion " + entry.Request.Name + " (" + entry.Request.CharacterId + ") of " + entry.Request.LeaderName + " is deleted");
     }

@@ -77,6 +77,14 @@ public sealed class LoginServer : IAsyncDisposable, ILoginServerLink
 		_instance = this;
 	}
 
+	/// <summary>
+	/// The authenticated client connections by account id, read-only (Java keeps loggedInAccounts to itself). The
+	/// companion service (D41) finds its seats here; empty before the bridge exists.
+	/// </summary>
+	public static IReadOnlyDictionary<int, global::Aion.GameServer.Network.Aion.AionConnection> LoggedInAccounts =>
+		_instance?._loggedInAccounts ?? (IReadOnlyDictionary<int, global::Aion.GameServer.Network.Aion.AionConnection>)
+		System.Collections.Immutable.ImmutableDictionary<int, global::Aion.GameServer.Network.Aion.AionConnection>.Empty;
+
 	// Java parity: LoginServer.getInstance().
 	public static LoginServer GetInstance()
 	{
