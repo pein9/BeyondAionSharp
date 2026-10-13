@@ -20,6 +20,14 @@ public sealed partial class NaturalIshalgenJourney
 	private static readonly int[] CompanionNtcNamed = [256690, 256689, 256692];
 	/// <summary>The two marks the stand-in sets; a companion takes the lowest mark first whatever its number.</summary>
 	private const int CompanionFirstMark = 1, CompanionSecondMark = 2;
+	/// <summary>
+	/// Crowd control (the operator, 2026-10-13). The client's brand 14 is its "Zzz": the fifteenth icon of its brand sheet
+	/// (Textures/ui/ui.pak, v5_sign.dds; the first sixteen are the brands 0 to 15 that Java resets). On a monster it
+	/// says: keep this one out of the fight. A Sorcerer turns it into a tree (Curse of Roots, twenty seconds, half a
+	/// minute between two) and roots it while the curse is not ready; no companion attacks it.
+	/// </summary>
+	private const int CompanionSleepBrand = 14;
+	private const int CurseOfRootsSkill = 1417, RootSkill = 1328;
 	/// <summary>A companion drinks its Mana Potion at or below half its mana (the operator, 2026-10-13).</summary>
 	private const int CompanionManaPotionPercent = 50;
 
@@ -117,7 +125,9 @@ public sealed partial class NaturalIshalgenJourney
 		var fallen = new HashSet<int>();
 		int fallenCursor = session.PacketHistory.Count;
 		int fights = 0;
-		bool Fightable(int id) => !fallen.Contains(id) && world.Objects.TryGetValue(id, out var seen) && seen.Kind == BotKnownObjectKind.Npc && !seen.IsCorpse &&
+		// The monster its player keeps out of the fight: nobody's target, by a mark, as its player's, or in defence.
+		bool Held(int id) => world.GroupBrands.TryGetValue(CompanionSleepBrand, out int kept) && kept != 0 && kept == id;
+		bool Fightable(int id) => !Held(id) && !fallen.Contains(id) && world.Objects.TryGetValue(id, out var seen) && seen.Kind == BotKnownObjectKind.Npc && !seen.IsCorpse &&
 			leftAlone.GetValueOrDefault(id) <= runtime.NowMillis && NaturalServicePolicy.Distance(session.CurrentPosition, seen.Position) <= 40;
 		// What a damage class attacks. The leader's marks come first, the lowest mark before the others. With no mark on
 		// a living monster in view, it is what the leader is attacking; with neither, a monster that is attacking a
@@ -202,6 +212,69 @@ public sealed partial class NaturalIshalgenJourney
 			portals++;
 			session.TraceDiagnostic("companion-through-portal", new Dictionary<string, object?>
 			{ ["npc"] = portal.Npc, ["from"] = fromMap, ["map"] = world.MapId, ["instance"] = world.InstanceId, ["position"] = session.CurrentPosition });
+			return true;
+		}
+		// Crowd control: what a companion that has the curse does about the monster with the Zzz brand. It comes before
+		// its own fighting. Held is a monster under the curse or the root with more than a second and a half to go.
+		var controlReadyAt = new Dictionary<int, long>();
+		int controlled = 0;
+		bool ControlReady(int skill) => world.Skills.ContainsKey(skill) && controlReadyAt.GetValueOrDefault(skill) <= runtime.NowMillis;
+		async Task<bool> ControlAsync(BotKnownObject sleeper)
+		{
+			DateTimeOffset now = session.Api.Timing.Now;
+			if (world.EffectsOf(sleeper.ObjectId).Any(effect => effect.SkillId is CurseOfRootsSkill or RootSkill &&
+				world.RemainingEffectMillis(sleeper.ObjectId, effect, now) > 1_500))
+				return false;
+			if ((ControlReady(CurseOfRootsSkill) ? CurseOfRootsSkill : ControlReady(RootSkill) ? RootSkill : (int?)null) is not int skill) return false;
+			int map = world.MapId!.Value;
+			BotPosition here = session.CurrentPosition;
+			if (NaturalServicePolicy.Distance(here, sleeper.Position) > 23 || !geometry.HasLineOfSight(map, here, sleeper.Position))
+			{
+				// It walks to where it can cast from, a step a turn.
+				var way = geometry.FindRangedApproachPath(map, here, sleeper.Position, [], 22);
+				BotPosition? next = way.Cast<BotPosition?>().FirstOrDefault(point => NaturalServicePolicy.Distance(here, point!.Value) > .3f);
+				if (next is not { } point)
+				{
+					controlReadyAt[skill] = runtime.NowMillis + 3_000;
+					session.TraceDiagnostic("companion-crowd-control-no-way", new Dictionary<string, object?> { ["target"] = sleeper.ObjectId, ["position"] = here });
+					return false;
+				}
+				session.BeginStep("companion", "crowd-control-approach");
+				float fraction = Math.Min(1, 6 / NaturalServicePolicy.Distance(here, point));
+				await navigator.MoveAsync([here, new(here.X + (point.X - here.X) * fraction, here.Y + (point.Y - here.Y) * fraction,
+					here.Z + (point.Z - here.Z) * fraction, point.Heading)], token);
+				await session.SynchronizeAsync(token);
+				if (NaturalServicePolicy.Distance(session.CurrentPosition, here) < .1f) controlReadyAt[skill] = runtime.NowMillis + 3_000;
+				session.BeginStep("companion", "with-its-player");
+				return true;
+			}
+			session.BeginStep("companion", "crowd-control");
+			await session.SendPacketAsync(session.Api.Target(sleeper.ObjectId), token);
+			await session.SendPacketAsync(session.Api.Cast(runtime.CreateSpellCast(world, session.CurrentPosition, (ushort)skill,
+				checked((byte)world.Skills[skill].Level), sleeper.ObjectId)), token);
+			DecodedBotServerPacket start = await BotCastProtocol.WaitForStartAsync(
+				(predicate, ct) => session.WaitForPacketAsync(packet => predicate(packet) || BotCastProtocol.IsStartRejection(packet), ct),
+				session.CharacterId, (ushort)skill, token);
+			if (start.PacketType == typeof(SM_SYSTEM_MESSAGE))
+			{
+				session.Api.Timing.RecordCastCancelled();
+				controlReadyAt[skill] = runtime.NowMillis + 2_000;
+				session.TraceDiagnostic("companion-crowd-control", new Dictionary<string, object?>
+				{ ["target"] = sleeper.ObjectId, ["npc"] = sleeper.TemplateId, ["skill"] = skill, ["cast"] = false, ["refused"] = start.Get<string>("name") });
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
+				session.BeginStep("companion", "with-its-player");
+				return true;
+			}
+			await session.AdvanceAsync(TimeSpan.FromMilliseconds(start.Get<ushort>("castDuration") + 1), token);
+			DecodedBotServerPacket result = await BotCastProtocol.WaitForCompletionAsync(session.WaitForPacketAsync, session.CharacterId, (ushort)skill, token);
+			bool cast = result.PacketType == typeof(SM_CASTSPELL_RESULT);
+			controlReadyAt[skill] = runtime.NowMillis + (cast ? result.Get<int>("cooldown") * 100L : 2_000);
+			if (cast) controlled++;
+			session.TraceDiagnostic("companion-crowd-control", new Dictionary<string, object?>
+			{ ["target"] = sleeper.ObjectId, ["npc"] = sleeper.TemplateId, ["skill"] = skill, ["cast"] = cast, ["mp"] = world.CurrentMp });
+			await session.AdvanceAsync(TimeSpan.FromMilliseconds(Math.Max(BotCastProtocol.RecoveryDelay(result).TotalMilliseconds,
+				runtime.AnimationLastHitMillis(world, (ushort)skill) + 1)), token);
+			session.BeginStep("companion", "with-its-player");
 			return true;
 		}
 		// The step aside (the operator, 2026-10-13): "Our bots come to a stopping point and overlap each other ... after
@@ -534,6 +607,13 @@ public sealed partial class NaturalIshalgenJourney
 					else await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
 					continue;
 				}
+				if (world.GroupBrands.TryGetValue(CompanionSleepBrand, out int heldId) && heldId != 0 && world.Skills.ContainsKey(CurseOfRootsSkill) &&
+					world.Objects.TryGetValue(heldId, out var sleeper) && sleeper.Kind == BotKnownObjectKind.Npc && !sleeper.IsCorpse && !fallen.Contains(heldId) &&
+					NaturalServicePolicy.Distance(session.CurrentPosition, sleeper.Position) <= 45 && await ControlAsync(sleeper))
+				{
+					NotStuck();
+					continue;
+				}
 				if (healer == null && FightTarget() is { } fight)
 				{
 					session.BeginStep("companion", "fight-" + fight.Why);
@@ -623,7 +703,7 @@ public sealed partial class NaturalIshalgenJourney
 		session.TraceDiagnostic("companion-leaves", new Dictionary<string, object?>
 		{
 			["group"] = world.GroupId, ["leaderNow"] = world.GroupLeaderId, ["leaderWas"] = leader, ["elapsedMillis"] = runtime.NowMillis - entered,
-			["deaths"] = combat.ReviveCount, ["fights"] = fights, ["portals"] = portals, ["flights"] = flights, ["rescues"] = rescues, ["stockChecks"] = stockChecks, ["map"] = world.MapId, ["itemsGained"] = gained, ["newQuests"] = newQuests,
+			["deaths"] = combat.ReviveCount, ["fights"] = fights, ["portals"] = portals, ["flights"] = flights, ["rescues"] = rescues, ["stockChecks"] = stockChecks, ["controlled"] = controlled, ["map"] = world.MapId, ["itemsGained"] = gained, ["newQuests"] = newQuests,
 			["kinahGained"] = world.Kinah - carriedAtStart.GetValueOrDefault(BotWorldModel.KinahItemId),
 		});
 		if (gained.Count > 0) throw new InvalidDataException($"The companion carries loot it did not have: {string.Join(", ", gained.Select(entry => $"{entry.Key}x{entry.Value}"))}.");
@@ -680,7 +760,9 @@ public sealed partial class NaturalIshalgenJourney
 		bool flightTest = options.CompanionUntil == "flight";
 		// "rules" is the test of the stuck rule and the stock check; its companions' seats carry the test words.
 		bool rulesTest = options.CompanionUntil == "rules";
-		if (!flightTest && !rulesTest && !CompanionCheckpoints.Contains(options.CompanionUntil))
+		// "control" is the test of crowd control: one monster with the Zzz brand, one with a number.
+		bool controlTest = options.CompanionUntil == "control";
+		if (!flightTest && !rulesTest && !controlTest && !CompanionCheckpoints.Contains(options.CompanionUntil))
 			throw new InvalidDataException($"The stand-in plays to one of [{string.Join(", ", CompanionCheckpoints)}], to 'flight' or to 'rules' so far, not to '{options.CompanionUntil}'.");
 		if (world.GroupId != null) throw new InvalidDataException("The stand-in starts alone.");
 		long started = runtime.NowMillis;
@@ -743,7 +825,7 @@ public sealed partial class NaturalIshalgenJourney
 		}
 		string[] list = await SayAsync(".companion list");
 
-		int reach = flightTest || rulesTest ? 0 : Array.IndexOf(CompanionCheckpoints, options.CompanionUntil);
+		int reach = flightTest || rulesTest || controlTest ? 0 : Array.IndexOf(CompanionCheckpoints, options.CompanionUntil);
 		BotGroupMember[] Others() => [.. world.GroupMembers.Values.Where(member => member.ObjectId != session.CharacterId).OrderBy(member => member.ObjectId)];
 		float Away(BotGroupMember member) => NaturalServicePolicy.Distance(session.CurrentPosition,
 			world.Objects.GetValueOrDefault(member.ObjectId)?.Position ?? member.Position);
@@ -862,6 +944,80 @@ public sealed partial class NaturalIshalgenJourney
 				session.TraceDiagnostic("stand-in-flight", new Dictionary<string, object?> { ["flight"] = flight });
 				flown.Add(flight);
 			}
+		}
+		object? control = null;
+		if (controlTest)
+		{
+			// In the field of the fortress's coin quest: two monsters in view, the Zzz brand on the farther one and a
+			// number on the nearer. The numbered one is killed while the other is a tree and nobody strikes it. Then the
+			// stand-in takes the Zzz off and numbers it, and it is killed.
+			var geometry = runtime.CreateGeometry();
+			var navigator = new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, null, geometry), geometry, runtime,
+				stopOnDeath: false) { AvoidHostileAggro = true, Planner = BotTravelPlanner.For(world.MapId!.Value, geometry, runtime.Data) };
+			int[] kinds = [.. QuestRunBook.Build(NaturalAltgardContract.LoadMusterPlans().Values.Single()).Operations
+				.Where(op => op.Kind == QuestRunOperationKind.Kill).SelectMany(op => op.Npcs!).Select(npc => npc.Id)
+				.Where(id => runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value).Any(group => group.GetNpcId() == id)).Distinct()];
+			BotPosition[] grounds = [.. runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value).Where(group => kinds.Contains(group.GetNpcId()))
+				.SelectMany(group => group.GetSpawnTemplates()).Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), spot.GetHeading()))
+				.OrderBy(at => NaturalServicePolicy.Distance(session.CurrentPosition, at))];
+			BotKnownObject[] InView() => [.. world.Objects.Values.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId is int kind &&
+				kinds.Contains(kind) && !known.IsCorpse && NaturalServicePolicy.Distance(session.CurrentPosition, known.Position) <= 30)
+				.OrderBy(known => NaturalServicePolicy.Distance(session.CurrentPosition, known.Position))];
+			foreach (BotPosition ground in grounds)
+			{
+				if (InView().Length >= 2) break;
+				var route = await navigator.FindRouteAsync(session.CurrentPosition, ground, token);
+				foreach (BotPosition point in route)
+				{
+					while (InView().Length < 2 && NaturalServicePolicy.Distance(session.CurrentPosition, point) > .5f)
+					{
+						BotPosition at = session.CurrentPosition;
+						float fraction = Math.Min(1, 6 / NaturalServicePolicy.Distance(at, point));
+						await navigator.MoveAsync([at, new(at.X + (point.X - at.X) * fraction, at.Y + (point.Y - at.Y) * fraction,
+							at.Z + (point.Z - at.Z) * fraction, point.Heading)], token);
+						await session.SynchronizeAsync(token);
+						if (NaturalServicePolicy.Distance(session.CurrentPosition, at) < .1f) break;
+					}
+					if (InView().Length >= 2) break;
+				}
+			}
+			BotKnownObject[] pair = [.. InView().Take(2)];
+			if (pair.Length < 2) throw new InvalidDataException($"The stand-in found {pair.Length} of the two living monsters it wanted to brand.");
+			await WaitAsync(() => Others().All(member => member.Online && Away(member) <= 12), "the companions did not come up before the brands", 90);
+			BotKnownObject first = pair[0], sleeper = pair[1];
+			int since = session.PacketHistory.Count;
+			bool Fell(int target) => !world.Objects.TryGetValue(target, out var seen) || seen.IsCorpse || session.PacketHistory.Skip(since)
+				.Any(packet => BotAttackStatus.CarriesHp(packet) && packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0);
+			bool Struck(int target) => session.PacketHistory.Skip(since)
+				.Any(packet => BotAttackStatus.CarriesHp(packet) && packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") < 100);
+			bool Tree() => world.EffectsOf(sleeper.ObjectId).Any(effect => effect.SkillId == CurseOfRootsSkill);
+			session.BeginStep("stand-in", "brand-zzz-and-a-number");
+			await session.SendPacketAsync(session.Api.Mark(CompanionSleepBrand, sleeper.ObjectId), token);
+			await session.SendPacketAsync(session.Api.Mark(CompanionFirstMark, first.ObjectId), token);
+			long branded = runtime.NowMillis, treeAt = -1;
+			await WaitAsync(() =>
+			{
+				if (treeAt < 0 && Tree()) treeAt = runtime.NowMillis;
+				return Fell(first.ObjectId) && treeAt >= 0;
+			}, "the numbered monster was not killed, or the one with the Zzz brand was never a tree", 120);
+			long firstFell = runtime.NowMillis;
+			// Twelve seconds more with nothing else to fight: it is still left alone.
+			await session.AdvanceAsync(TimeSpan.FromSeconds(12), token);
+			await session.SynchronizeAsync(token);
+			if (Fell(sleeper.ObjectId) || Struck(sleeper.ObjectId))
+				throw new InvalidDataException("The monster with the Zzz brand was struck.");
+			session.BeginStep("stand-in", "release-it");
+			await session.SendPacketAsync(session.Api.Mark(CompanionSleepBrand, 0), token);
+			await session.SendPacketAsync(session.Api.Mark(CompanionFirstMark, sleeper.ObjectId), token);
+			long released = runtime.NowMillis;
+			await WaitAsync(() => Fell(sleeper.ObjectId), "the released monster was not killed", 120);
+			await session.SendPacketAsync(session.Api.Mark(CompanionFirstMark, 0), token);
+			control = new
+			{
+				first = first.TemplateId, sleeper = sleeper.TemplateId, treeMillisAfterTheBrand = treeAt - branded,
+				firstFellMillis = firstFell - branded, heldMillis = released - treeAt, releasedFellMillis = runtime.NowMillis - released,
+			};
+			session.TraceDiagnostic("stand-in-control", new Dictionary<string, object?> { ["control"] = control });
 		}
 		object? rules = null;
 		if (rulesTest)
@@ -1342,7 +1498,7 @@ public sealed partial class NaturalIshalgenJourney
 			.Select(effect => new { effect.SkillId, effect.EffectorId }).ToArray();
 		runtime.AssertClean();
 		var receipt = new { verified = true, CharacterId = session.CharacterId, until = options.CompanionUntil, asked, companions = joined,
-			leader = world.GroupLeaderId, group = world.GroupId, lootRules = world.GroupLootRules, list, walks, flown, rules, marks, loots, inside, general, support,
+			leader = world.GroupLeaderId, group = world.GroupId, lootRules = world.GroupLootRules, list, walks, flown, rules, control, marks, loots, inside, general, support,
 			elapsedMillis = runtime.NowMillis - started, map = world.MapId, position = session.CurrentPosition };
 
 		// C9: the end, in one of the three ways a player's companions end. Sent away, or after the player left its
