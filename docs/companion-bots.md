@@ -1,6 +1,7 @@
 # Companion bots
 
-Status: done in SIM, 2026-10-13: C1 to C9 are ticked. The report is at the end. A companion joins its player's group and follows it with nobody's
+Status: done in SIM, 2026-10-13: C1 to C9 are ticked. The report is at the end. The live host is planned in
+[companion-live-host.md](companion-live-host.md). A companion joins its player's group and follows it with nobody's
 words. A damage class attacks what the leader marked, or what the leader attacks; the Cleric keeps its support
 up and attacks nothing. The group's loot is free for all and a companion opens no corpse. It leaves the game
 when it is sent away, and it goes through a portal after its leader. Five companions went with the stand-in
