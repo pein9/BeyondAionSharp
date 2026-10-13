@@ -1,8 +1,9 @@
 # Companion bots
 
-Status: planned 2026-10-12; C1 to C4 are done. A companion joins its player's group, follows it with nobody's
-words, and the Cleric keeps its support up; it leaves the game when it is sent away. A damage class does not
-fight yet. The step list at the end is worked one step at a time.
+Status: planned 2026-10-12; C1 to C5 are done. A companion joins its player's group and follows it with nobody's
+words. A damage class attacks what the leader marked, or what the leader attacks; the Cleric keeps its support
+up and attacks nothing. It leaves the game when it is sent away. Loot, the instance and the end are the steps
+that are left. The step list at the end is worked one step at a time.
 
 It follows [natural-group-ntc.md](natural-group-ntc.md) and [natural-group-healer.md](natural-group-healer.md):
 following F1, the Cleric's healing-only role, the class fights, gear and supplies are there and are reused.
@@ -48,9 +49,11 @@ dismissed; the first version takes level 26 only.
    gear, shards and supplies the natural runs gave them: one file per class. The fight is the class's own table.
 5. **Following.** The companion follows F1's observed movement, as in the group stages. When F1's map changes it
    takes the portal NPC that leads there. Flight and teleporters come later.
-6. **Fighting.** A damage class attacks the target the leader marked (`SM_SHOW_BRAND`, which the bot does not read
-   yet). Reading the marks is required. Of several marked targets the lowest mark comes first; with no mark, what
-   the leader is attacking. The Cleric heals, cleanses and blesses, and never attacks.
+6. **Fighting.** A damage class attacks the target the leader marked (`SM_SHOW_BRAND`). Of several marked targets
+   the lowest mark comes first; with no mark, what the leader is attacking; with neither, a monster that is
+   attacking a member of the group. A mark alone is enough: the leader need not strike first. A companion
+   finishes the monster it is on before it takes the next one. The Cleric heals, cleanses and blesses, and never
+   attacks.
 7. **Not its business.** No quests, no quest NPCs, no chests, no loot. The group's loot is set to free for all
    when the first companion joins, so every corpse is the player's at once.
 8. **Words.** No command language in chat. A companion says a short plain line when the player needs to know: out
@@ -66,7 +69,7 @@ dismissed; the first version takes level 26 only.
 | Follow F1 from group packets; heal, cleanse, bless without attacking; class fights, rests, gear, shards, kit | Built and played (the group stages) |
 | Characters of all eleven classes at 26 | In `ntc-group-s4`, as played characters, not as profiles |
 | A chat command, a companion made by the server, its deletion | Built (C2): `src/Aion.GameServer/Custom/Companion`, off unless `AION_COMPANIONS=true`, with tests |
-| Reading the leader's marks | Missing in the bot; the server sends them |
+| Reading the leader's marks | Built (C5): the bot decodes `SM_SHOW_BRAND` and keeps the marks of its team |
 | A bot that waits for nobody's commands | Built (C4): the companion's own loop follows the leader it observes and plays its role |
 | Loot left to the player | The group is set to free for all, so the server's loot code stays as it is; a companion opens no corpse |
 | Following through a portal without being told | Half there: a follower enters on the leader's command today |
@@ -88,6 +91,8 @@ dismissed; the first version takes level 26 only.
 | CB-Q8 | The Chanter fights and keeps its own buffs, as in the group stages; only the Cleric plays support | default |
 | CB-Q9 | Experience is shared as the game shares it among group members | default |
 | CB-Q12 | Of several marked targets, the lowest mark first | default |
+| CB-Q13 | With no mark and nothing the leader attacks, a damage class fights a monster that is attacking a member of the group | default |
+| CB-Q14 | A mark alone starts the fight, and a companion finishes the monster it is on before it takes the next mark | default |
 
 ## Steps
 
@@ -176,8 +181,35 @@ One step per iteration. A step is ticked when a SIM round from `ntc-group-s4` sh
     death can happen).
   - Checks: the unit suite (4,645 passed, 16 skipped) and the pre-commit checks. Only the companion stage's own bot code
     changed, so no gate was due. Code commit `ad3845382`.
-- [ ] **C5 Marks.** The bot reads the leader's marks. Shown: five companions kill what the stand-in marks in the
+- [x] **C5 Marks.** The bot reads the leader's marks. Shown: five companions kill what the stand-in marks in the
   field, and what it attacks when it marks nothing.
+  - 2026-10-13. Rounds `c5-3` and `c5-4`, with the same figures (`run/companion/c5.json`,
+    `companionUntil: marks`): the stand-in with a Cleric, a Gladiator, a Ranger, a Sorcerer and a Chanter, at the monsters of the fortress's coin quest (npc 211298).
+    Three tests, 130 s of game time in all, no deaths.
+    - A mark alone, which the stand-in does not attack: the monster falls 3.5 s after the mark, struck by all
+      four damage classes.
+    - Two marks, the higher one set first and on the nearer monster: the monster with the lower mark falls after
+      5.75 s, the other after 10.0 s. All four struck both.
+    - No mark, and the stand-in attacks a monster: all four struck it, and it fell after 5.4 s.
+    - Each damage class fought four times: mark 1 twice, mark 2 once, the leader's target once. The Cleric
+      fought nothing: 4 blessings and 21 heals over time.
+  - Built: the decoder of `SM_SHOW_BRAND`, checked against Java's golden bytes for the packet
+    (`parity-artifacts/golden/packets/SM_SHOW_BRAND.json`; the pinned count of decoders is 128), the marks of the team in the
+    bot's world model (`GroupBrands`: taken off by a target of 0, forgotten with the group), and `CM_SHOW_BRAND`
+    for the stand-in. Java first: `CM_SHOW_BRAND`, `SM_SHOW_BRAND`, `TemporaryPlayerTeam.updateBrand` and
+    `sendBrands`; a member that joins is sent every mark of its team.
+  - Two rules the plan did not have are in the decision table as defaults: CB-Q13 (defence) and CB-Q14 (a mark
+    alone starts the fight; the monster in hand is finished first).
+  - Round `c5-1` did not end, by my mistake. A companion took the monster it had just killed as its target again:
+    a fresh kill is no corpse to the client yet, and the mark stays on it. That turn of its loop took no game
+    time, so the whole world stood still for 4 h 32 min of real time, until the round test's own limit, and its
+    trace grew to 48 GB (deleted). Now a companion remembers every monster it saw fall, every turn of its loop
+    takes game time, and a loop that turns 200 times with the clock standing still stops itself. Round `c5-2`
+    ended in the stand-in instead: it waited for a corpse, where the health packet already says the monster fell.
+  - Not shown here: a mark set while a companion is in another fight (it finishes that one first, by CB-Q14).
+  - Checks: the unit suite (4,645 passed, 16 skipped), the pre-commit checks, the packet coverage check, Fast (`c5-fast`),
+    the neutral gate on the five starter scopes, identical, and the Group NTC leg replayed once (`n9-c5`).
+    Code commit `19d17e9f6`.
 - [ ] **C6 Loot is the player's.** The group is set to free for all when the first companion joins, and no
   companion opens a corpse. Shown: the stand-in can take every corpse at once.
 - [ ] **C7 Into the instance.** Companions follow through Vallack when the stand-in goes in. Shown: six in one
