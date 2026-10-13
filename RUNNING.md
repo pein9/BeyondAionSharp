@@ -68,13 +68,14 @@ If the GameServer logs `NOT_AUTHED` or keeps retrying: missing `gameservers` see
 `.companion <class>` brings a player a companion that follows and plays its role (D41, `docs/companion-bots.md`).
 It needs a game server started with companions on, and the host program beside it (`docs/companion-live-host.md`).
 
-- **Game server:** set `AION_COMPANIONS=true` and
-  `AION_COMPANION_ACCOUNTS=companion1,companion2,companion3,companion4,companion5` in its environment. The Docker
+- **Game server:** set `AION_COMPANIONS=true` and `AION_COMPANION_ACCOUNTS=companion*` in its environment. The
+  pattern is every account named `companion` and then digits; the names can also be listed outright. The Docker
   stack passes both through (`docker/docker-compose.yml`, off by default): put the two lines in `docker/.env`, or
   set them in the shell that runs `docker compose up -d`. A seat account holds no character of its own; the login
   server makes the account at its first login.
 - **Host:** `pwsh -NoProfile -File scripts/live/companion-host.ps1 -Target aion`, and the same with `-Stop` from
   another terminal. It only reads Docker state and speaks the client protocol. It refuses a world that was started
-  without the two settings.
+  without the two settings. It keeps five seats waiting (`-Spare`) and logs in another whenever a player takes
+  one, up to fifty (`-MaxSeats`, a hundred at the most).
 - **In game** (an Asmodian, on a map the bots have ground for): `.companion cleric`, `.companion list`,
   `.companion dismiss`.

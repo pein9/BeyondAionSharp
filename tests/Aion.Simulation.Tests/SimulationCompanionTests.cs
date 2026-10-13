@@ -288,7 +288,9 @@ public sealed partial class SimulationFastScenarioTests
 		try
 		{
 			session.BeginStep("s01", "no-seat-is-logged-in");
-			service.Enable(seatAccounts: [seatName, $"sim-player-{playerAccount}"]);
+			// The seat is named by a pattern, as the live host's are ("sim-player-10*" is sim-player-10 and digits); the
+			// player's account that was named by mistake is named outright.
+			service.Enable(seatAccounts: ["sim-player-10*", $"sim-player-{playerAccount}"]);
 			Assert.Empty(service.WaitingSeats());
 			Assert.Contains(await SayAsync(".companion cleric"), message => message.Contains("No companion is free right now.", StringComparison.Ordinal));
 

@@ -3,8 +3,11 @@
 # makes a companion on one of them, and the seat enters the world with it and plays it. The world stays yours: this
 # script only reads Docker state and logs, and the host only speaks the client protocol. It never builds, starts, stops,
 # restarts or recreates a container, never writes to the database, and never uses the admin API. The world must have
-# been started with AION_COMPANIONS=true and the seat accounts in AION_COMPANION_ACCOUNTS (RUNNING.md). Stop the host
-# with Ctrl+C, or from another terminal with -Stop: its companions leave, and the server deletes them.
+# been started with AION_COMPANIONS=true and AION_COMPANION_ACCOUNTS=companion* (RUNNING.md). Stop the host with
+# Ctrl+C, or from another terminal with -Stop: its companions leave, and the server deletes them.
+#
+# The seats are as many as are asked for: the host keeps -Spare seats waiting and logs another in when a player takes
+# one, up to -MaxSeats.
 #
 #   pwsh -NoProfile -File scripts/live/companion-host.ps1 -Target aion
 #   pwsh -NoProfile -File scripts/live/companion-host.ps1 -Target aion -Stop
@@ -16,7 +19,8 @@ param(
 
 	[ValidatePattern('^[a-z0-9][a-z0-9_-]*$')]
 	[string]$Run = ('ch-' + [DateTimeOffset]::Now.ToString('yyyyMMdd-HHmmss')),
-	[ValidateRange(1, 5)][int]$Seats = 5,
+	[ValidateRange(1, 100)][int]$MaxSeats = 50,
+	[ValidateRange(1, 100)][int]$Spare = 5,
 
 	[switch]$Stop,
 
@@ -88,8 +92,8 @@ if ($already.Count -gt 0) {
 
 # Read the world before creating anything, so a refused target leaves no run behind.
 $before = Get-AttachTarget $Target
-Assert-CompanionHostTarget $before $Seats
-$seatAccounts = @(Get-CompanionSeatAccounts $Seats)
+$mostSeats = Get-CompanionSeatLimit $before $MaxSeats
+$spareSeats = [Math]::Min($Spare, $mostSeats)
 if ($LoginPort -eq 0) { $LoginPort = Get-AttachPort $before 'loginserver' '2106/tcp' }
 if ($GamePort -eq 0) { $GamePort = Get-AttachPort $before 'gameserver' '7777/tcp' }
 if ($ChatPort -eq 0) { $ChatPort = Get-AttachPort $before 'chatserver' '10241/tcp' }
@@ -110,7 +114,7 @@ $botDirectory = Join-Path $runPath 'bot'
 $gitSha = ([string](& git -C $repoRoot rev-parse HEAD)).Trim()
 Write-HostJson (Join-Path $runPath 'attach-target.json') ([ordered]@{
 	schemaVersion = 1; scenario = 'CH-01'; run = $Run; target = $Target; startedUtc = $startedAt.ToString('O'); gitSha = $gitSha
-	seatAccounts = $seatAccounts
+	seats = [ordered]@{ accounts = 'companion1, companion2, ...'; most = $mostSeats; spare = $spareSeats }
 	endpoints = [ordered]@{ host = $ServerHost; login = $LoginPort; game = $GamePort; chat = $ChatPort }
 	dashboard = $(if ($DashboardPort -eq 0) { $null } else { "http://127.0.0.1:$DashboardPort/" })
 	policy = 'Read-only attach: no Docker lifecycle, database writes or admin API; the host uses only client packets.'
@@ -132,7 +136,7 @@ try {
 	$timeZone = if ([string]::IsNullOrWhiteSpace($env:TZ)) { [TimeZoneInfo]::Local.Id } else { $env:TZ }
 	$botArguments = @(
 		(Join-Path $botDirectory 'Aion.LiveBots.dll'),
-		'--run', $Run, '--output', $runPath, '--scenario', 'CH-01', '--bots', "$Seats",
+		'--run', $Run, '--output', $runPath, '--scenario', 'CH-01', '--bots', "$mostSeats", '--companion-spare', "$spareSeats",
 		'--attach-target', $Target, '--stop-file', $stopFile,
 		'--host', $ServerHost, '--login-port', "$LoginPort", '--game-port', "$GamePort", '--chat-port', "$ChatPort",
 		'--connect-timeout-seconds', "$ConnectTimeoutSeconds", '--step-timeout-seconds', "$StepTimeoutSeconds",
@@ -145,7 +149,7 @@ try {
 	$bot = Start-Process -FilePath 'dotnet' -ArgumentList (ConvertTo-HostArgumentLine $botArguments) -WorkingDirectory $repoRoot `
 		-NoNewWindow -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
 	$null = $bot.Handle # Keeps the exit code readable after the process ends.
-	Write-Host "Companion host attached to '$Target' (login $ServerHost`:$LoginPort, game $GamePort) with seats $($seatAccounts -join ', '). Run: $runPath"
+	Write-Host "Companion host attached to '$Target' (login $ServerHost`:$LoginPort, game $GamePort) keeping $spareSeats seats waiting, $mostSeats at the most. Run: $runPath"
 	if ($DashboardPort -ne 0) { Write-Host "Live map: http://127.0.0.1:$DashboardPort/" }
 	Write-Host "In game, once a seat is waiting: .companion cleric | .companion list | .companion dismiss. Stop: Ctrl+C, or companion-host.ps1 -Target $Target -Stop"
 	$shown = @{ $stdout = 0L; $stderr = 0L }

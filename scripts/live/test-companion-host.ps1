@@ -24,11 +24,12 @@ foreach ($file in @('companion-host.ps1', 'companion-host-controller.ps1')) {
 # The seats are the accounts the host program logs in on (LiveBotRunner.CompanionSeatAccount).
 if ((Get-CompanionSeatAccounts 5) -join ',' -cne 'companion1,companion2,companion3,companion4,companion5') { throw 'Unexpected seat accounts.' }
 if ((Get-CompanionSeatAccounts 1) -join ',' -cne 'companion1') { throw 'Unexpected single seat account.' }
-$checks += 2
+if (@(Get-CompanionSeatAccounts 100)[99] -cne 'companion100') { throw 'Unexpected hundredth seat account.' }
+$checks += 3
 Expect-Refused { Get-CompanionSeatAccounts 0 } 'a host with no seat'
-Expect-Refused { Get-CompanionSeatAccounts 6 } 'a sixth seat: a group holds its player and five companions'
+Expect-Refused { Get-CompanionSeatAccounts 101 } 'more seats than the host has subject numbers for'
 $program = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '../../tools/Aion.LiveBots/LiveCompanionHostScenario.cs')
-if ($program -cnotmatch 'CompanionSeatAccount\(int seat\) => \$"companion\{seat\}";' -or $program -cnotmatch 'CompanionHostMaximumSeats = 5;') {
+if ($program -cnotmatch 'CompanionSeatAccount\(int seat\) => \$"companion\{seat\}";' -or $program -cnotmatch 'CompanionHostMaximumSeats = 100;') {
 	throw 'The host program and the script no longer agree on the seat accounts.'
 }
 $checks++
@@ -64,21 +65,23 @@ function docker {
 	}
 }
 
-# A world makes companions only when it was started with them on and knows every seat the host would use.
-$allSeats = 'AION_COMPANION_ACCOUNTS=companion1,companion2,companion3,companion4,companion5'
+# A world makes companions only when it was started with them on and takes the host's accounts for seats: all of them
+# by the pattern companion*, or as many as it names outright from companion1 on.
+$allSeats = 'AION_COMPANION_ACCOUNTS=companion*'
 foreach ($off in @(@(), @('AION_COMPANIONS=false', $allSeats), @('AION_COMPANIONS=', $allSeats), @('AION_COMPANIONS=yes', $allSeats),
 	@('AION_COMPANIONS=true'), @('AION_COMPANIONS=true', 'AION_COMPANION_ACCOUNTS='),
-	@('AION_COMPANIONS=true', 'AION_COMPANION_ACCOUNTS=companion1,companion2,companion3'),
-	@('AION_COMPANIONS=true', 'AION_COMPANION_ACCOUNTS=Companion1,companion2,companion3,companion4,companion5'))) {
+	@('AION_COMPANIONS=true', 'AION_COMPANION_ACCOUNTS=companion2,companion3'),
+	@('AION_COMPANIONS=true', 'AION_COMPANION_ACCOUNTS=Companion*'),
+	@('AION_COMPANIONS=true', 'AION_COMPANION_ACCOUNTS=Companion1,companion2'))) {
 	$gameEnvironment = $off
-	Expect-Refused { Assert-CompanionHostTarget (Get-AttachTarget 'aion') 5 } "a world started with [$($off -join ' ')]"
+	Expect-Refused { Get-CompanionSeatLimit (Get-AttachTarget 'aion') 50 } "a world started with [$($off -join ' ')]"
 }
-$gameEnvironment = @('AION_COMPANIONS=true', 'AION_COMPANION_ACCOUNTS=companion1,companion2,companion3')
-Assert-CompanionHostTarget (Get-AttachTarget 'aion') 3
-$gameEnvironment = @('AION_COMPANIONS=True', 'AION_COMPANION_ACCOUNTS= companion1 , companion2,companion3,companion4,companion5')
+$gameEnvironment = @('AION_COMPANIONS=true', 'AION_COMPANION_ACCOUNTS=companion1,companion2,companion3,companion5')
+if ((Get-CompanionSeatLimit (Get-AttachTarget 'aion') 50) -ne 3) { throw 'A world that names three seats in a row has three.' }
+$gameEnvironment = @('AION_COMPANIONS=True', 'AION_COMPANION_ACCOUNTS= companion1 , companion* ')
 $target = Get-AttachTarget 'aion'
-Assert-CompanionHostTarget $target 5
-$checks += 2
+if ((Get-CompanionSeatLimit $target 50) -ne 50 -or (Get-CompanionSeatLimit $target 7) -ne 7) { throw 'A world that names the pattern has as many seats as the host asks for.' }
+$checks += 3
 $serialized = $target | ConvertTo-Json -Depth 12
 if ($serialized -match 'secret-') { throw 'Target evidence kept a secret environment value.' }
 if ($serialized -notmatch 'AION_COMPANION_ACCOUNTS') { throw 'Target evidence lost the companion settings.' }
@@ -90,12 +93,12 @@ try {
 	$entry = Join-Path $PSScriptRoot 'companion-host.ps1'
 	$gameEnvironment = @('AION_COMPANIONS=false')
 	Expect-Refused { & $entry -Target aion -RunRoot $runRoot -Run refused -SkipBuild -DashboardPort 0 } 'a host on a world with companions off'
-	$gameEnvironment = @('AION_COMPANIONS=true', 'AION_COMPANION_ACCOUNTS=companion1')
-	Expect-Refused { & $entry -Target aion -RunRoot $runRoot -Run refused -Seats 2 -SkipBuild -DashboardPort 0 } 'a host with a seat the world does not know'
+	$gameEnvironment = @('AION_COMPANIONS=true', 'AION_COMPANION_ACCOUNTS=somebody')
+	Expect-Refused { & $entry -Target aion -RunRoot $runRoot -Run refused -MaxSeats 2 -SkipBuild -DashboardPort 0 } 'a host on a world that takes none of its accounts'
 	if (Test-Path -LiteralPath (Join-Path $runRoot 'refused')) { throw 'A refused world left a run directory behind.' }
 	$checks++
 	Expect-Refused { & $entry -Target 'Aion;rm' -RunRoot $runRoot -SkipBuild } 'an invalid project name'
-	Expect-Refused { & $entry -Target aion -RunRoot $runRoot -Seats 6 -SkipBuild } 'six seats'
+	Expect-Refused { & $entry -Target aion -RunRoot $runRoot -MaxSeats 101 -SkipBuild } 'a hundred and one seats'
 	# Nothing is attached, so a stop has nothing to do and touches nothing.
 	& $entry -Target aion -RunRoot $runRoot -Stop 6>$null | Out-Null
 	if (Test-Path -LiteralPath $runRoot) { throw 'A stop with no host attached created its run root.' }

@@ -57,13 +57,18 @@ public sealed class LiveNaturalJourneyTests
 	}
 
 	[Fact]
-	public void CompanionHostAttachesAloneWithOneToFiveSeats()
+	public void CompanionHostAttachesAloneAndKeepsSpareSeatsUpToItsMost()
 	{
 		string[] world = ["--run", "test", "--output", "run/test", "--git-sha", "test", "--scenario", "CH-01",
 			"--attach-target", "aion", "--login-port", "2106", "--game-port", "7777"];
-		Assert.Equal(1, LiveBotOptions.Parse(world).BotCount);
-		Assert.Equal(5, LiveBotOptions.Parse([.. world, "--bots", "5"]).BotCount);
-		Assert.Throws<ArgumentException>(() => LiveBotOptions.Parse([.. world, "--bots", "6"]));
+		Assert.Equal((1, 1), (LiveBotOptions.Parse(world).BotCount, LiveBotOptions.Parse(world).CompanionSpareSeats));
+		LiveBotOptions fifty = LiveBotOptions.Parse([.. world, "--bots", "50"]);
+		Assert.Equal((50, 5), (fifty.BotCount, fifty.CompanionSpareSeats));
+		Assert.Equal(8, LiveBotOptions.Parse([.. world, "--bots", "50", "--companion-spare", "8"]).CompanionSpareSeats);
+		Assert.Throws<ArgumentException>(() => LiveBotOptions.Parse([.. world, "--bots", "101"]));
+		Assert.Throws<ArgumentException>(() => LiveBotOptions.Parse([.. world, "--bots", "4", "--companion-spare", "5"]));
+		Assert.Throws<ArgumentException>(() => LiveBotOptions.Parse(["--run", "test", "--output", "run/test", "--git-sha", "test",
+			"--scenario", "connect", "--companion-spare", "2"]));
 		// The host has no world of its own: it only attaches.
 		Assert.Throws<ArgumentException>(() => LiveBotOptions.Parse(["--run", "test", "--output", "run/test", "--git-sha", "test",
 			"--scenario", "CH-01", "--bots", "5"]));

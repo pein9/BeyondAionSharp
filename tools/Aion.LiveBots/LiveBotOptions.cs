@@ -34,6 +34,9 @@ public sealed record LiveBotOptions(
 	public string? AttachTarget { get; init; }
 	/// <summary>Designated ordinary Priest account for an attached journey; slot 1 is the original retained bot.</summary>
 	public int AttachIdentitySlot { get; init; } = 1;
+	/// <summary>CH-01: the seats the companion host keeps waiting at character selection; <see cref="BotCount"/> is the
+	/// most it logs in.</summary>
+	public int CompanionSpareSeats { get; init; } = LiveBotRunner.CompanionHostSpareSeats;
 	/// <summary>The bot leaves the world and exits when this file appears (Attach only).</summary>
 	public string? StopFile { get; init; }
 	internal LiveBotDashboardState Dashboard { get; } = new();
@@ -43,7 +46,7 @@ public sealed record LiveBotOptions(
 		"[--connect-timeout-seconds 10] [--step-timeout-seconds 15] [--seed N] [--git-sha SHA] " +
 		"[--profile deterministic] [--time-zone ID] [--reentry-seconds 10] [--dashboard-port 0] [--decision-view-seconds 30] " +
 		"[--soak-seconds 7200] [--soak-activities Quest,Gather,Craft,Vendor,Trade,Group,Duel,Pvp,Relog,CrashDisconnect] " +
-		"[--attach-target LABEL --login-port N --game-port N [--identity-slot 1..9] [--stop-file PATH]] (Attach scenarios only)";
+		"[--attach-target LABEL --login-port N --game-port N [--identity-slot 1..9] [--stop-file PATH] [--companion-spare N]] (Attach scenarios only)";
 
 	public static LiveBotOptions Parse(string[] args)
 	{
@@ -115,7 +118,10 @@ public sealed record LiveBotOptions(
 		if (scenarios.Any(scenario => scenario is "NI-01" or "NI-02" or "NI-03" or "NI-04" or "NI-05" or "NI-06" or "NI-09" or "NI-10") && (scenarios.Length != 1 || bots != 1))
 			throw new ArgumentException("Natural Ishalgen scenarios must run alone with exactly one retained subject.");
 		if (scenarios.Contains("CH-01", StringComparer.Ordinal) && (scenarios.Length != 1 || bots > LiveBotRunner.CompanionHostMaximumSeats))
-			throw new ArgumentException($"CH-01, the companion host, must run alone with one to {LiveBotRunner.CompanionHostMaximumSeats} seats (--bots).");
+			throw new ArgumentException($"CH-01, the companion host, must run alone with one to {LiveBotRunner.CompanionHostMaximumSeats} seats at the most (--bots).");
+		int companionSpare = PositiveInt(values, "companion-spare", Math.Min(LiveBotRunner.CompanionHostSpareSeats, bots), LiveBotRunner.CompanionHostMaximumSeats);
+		if (values.ContainsKey("companion-spare") && (!scenarios.Contains("CH-01", StringComparer.Ordinal) || companionSpare > bots))
+			throw new ArgumentException("--companion-spare is the companion host's, and is no more than its --bots.");
 		if (scenarios.Contains("B2", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 2))
 			throw new ArgumentException("B2 must run alone with exactly two subjects (plus its director).");
 		if (scenarios.Contains("B2F", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 2 || stepSeconds < 180))
@@ -152,7 +158,7 @@ public sealed record LiveBotOptions(
 			"run", "output", "host", "login-host", "chat-host", "login-port", "game-port", "chat-port", "admin-port", "admin-token",
 			"bots", "scenario", "connect-timeout-seconds", "step-timeout-seconds", "reentry-seconds",
 			"seed", "git-sha", "profile", "time-zone", "dashboard-port", "decision-view-seconds",
-			"soak-seconds", "soak-activities", "attach-target", "identity-slot", "stop-file",
+			"soak-seconds", "soak-activities", "attach-target", "identity-slot", "stop-file", "companion-spare",
 		};
 		var unknown = values.Keys.FirstOrDefault(key => !known.Contains(key));
 		if (unknown != null)
@@ -183,6 +189,7 @@ public sealed record LiveBotOptions(
 			DecisionViewSeconds = decisionViewSeconds,
 			AttachTarget = attachTarget,
 			AttachIdentitySlot = identitySlot,
+			CompanionSpareSeats = companionSpare,
 			StopFile = values.TryGetValue("stop-file", out string? stopFile) ? Path.GetFullPath(stopFile) : null,
 		};
 	}

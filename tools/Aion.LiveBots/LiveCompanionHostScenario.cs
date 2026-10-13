@@ -10,8 +10,11 @@ namespace Aion.LiveBots;
 
 public static partial class LiveBotRunner
 {
-	/// <summary>The most seats a host has: a group holds its player and five companions.</summary>
-	public const int CompanionHostMaximumSeats = 5;
+	/// <summary>The most seats a host can be given. Its seats have subject numbers 901 to 1000 of their own.</summary>
+	public const int CompanionHostMaximumSeats = 100;
+
+	/// <summary>The seats a host keeps waiting unless it is told otherwise: one player's five companions at once.</summary>
+	public const int CompanionHostSpareSeats = 5;
 
 	/// <summary>The account a seat logs in on. The server is told the same names (AION_COMPANION_ACCOUNTS).</summary>
 	public static string CompanionSeatAccount(int seat) => $"companion{seat}";
@@ -23,6 +26,12 @@ public static partial class LiveBotRunner
 	/// companion the server made for a player (D41): the seat enters the world with it, plays it with the code the SIM
 	/// rounds play, and goes back to character selection when its play ends, where the server deletes it. A seat that
 	/// loses its connection logs in again. The host runs until the operator stops it.
+	/// <para>
+	/// The seats are as many as are asked for (the operator, 2026-10-13: "We need to be able to spawn bots as needed, not
+	/// a strict amount"). The host keeps a few seats waiting (<see cref="LiveBotOptions.CompanionSpareSeats"/>); when a
+	/// player takes one, it logs another in, up to its most (<c>--bots</c>). Seats that have waited idle beyond the spare
+	/// ones for five minutes log out again, the highest first.
+	/// </para>
 	/// </summary>
 	private static async Task<int> RunCompanionHostAsync(LiveBotOptions options, LiveBotProblemWriter problems, CancellationToken operatorStop)
 	{
@@ -35,25 +44,72 @@ public static partial class LiveBotRunner
 		var elapsed = Stopwatch.StartNew();
 		DateTimeOffset epoch = DateTimeOffset.UtcNow;
 		var played = new ConcurrentDictionary<string, int>();
+		int most = options.BotCount, spare = Math.Min(options.CompanionSpareSeats, most), peak = 0;
+		// What each seat is doing, and the seats that are to log out. Read and written on the host's one thread only.
+		var state = new Dictionary<int, string>();
+		var retire = new HashSet<int>();
+		var running = new Dictionary<int, Task>();
 		// Every seat plays on one thread, as the bots of a SIM round do: the companion code and what it shares are never
 		// run by two seats at once.
-		await Task.Run(() => CompanionHostThread.Run(() => Task.WhenAll(
-			Enumerable.Range(1, options.BotCount).Select(seat => PlayCompanionSeatAsync(seat)))), CancellationToken.None);
+		await Task.Run(() => CompanionHostThread.Run(ManageSeatsAsync), CancellationToken.None);
 		await WriteJsonAsync(options, "companion-host.json", new
 		{
-			scenario = "CH-01", attachTarget = target, elapsed = elapsed.Elapsed, seats = options.BotCount,
+			scenario = "CH-01", attachTarget = target, elapsed = elapsed.Elapsed, mostSeats = most, spareSeats = spare, seatsAtItsPeak = peak,
 			companionsPlayed = played.OrderBy(entry => entry.Key).ToDictionary(entry => entry.Key, entry => entry.Value),
 		}, CancellationToken.None);
 		Console.WriteLine($"Companion host stopped after {elapsed.Elapsed:hh\\:mm\\:ss}; companions played: {played.Values.Sum()}.");
 		return OperatorStoppedExitCode;
 
+		// The pool. A seat that is waiting, logging in, or on its way back after a failure is a seat a player can have
+		// soon; fewer of them than the spare ones, and another seat logs in, the lowest number that is free.
+		async Task ManageSeatsAsync()
+		{
+			long surplusSince = -1;
+			string shown = "";
+			while (!operatorStop.IsCancellationRequested)
+			{
+				foreach (int gone in running.Where(entry => entry.Value.IsCompleted).Select(entry => entry.Key).ToList())
+				{
+					running.Remove(gone);
+					state.Remove(gone);
+					retire.Remove(gone);
+				}
+				int free = state.Count(entry => entry.Value != "playing" && !retire.Contains(entry.Key));
+				if (free < spare && running.Count < most)
+				{
+					int seat = Enumerable.Range(1, most).First(index => !running.ContainsKey(index));
+					state[seat] = "connecting";
+					running[seat] = PlayCompanionSeatAsync(seat);
+					peak = Math.Max(peak, running.Count);
+				}
+				int[] waiting = [.. state.Where(entry => entry.Value == "waiting" && !retire.Contains(entry.Key)).Select(entry => entry.Key).Order()];
+				if (waiting.Length <= spare) surplusSince = -1;
+				else if (surplusSince < 0) surplusSince = elapsed.ElapsedMilliseconds;
+				else if (elapsed.ElapsedMilliseconds - surplusSince >= 300_000)
+				{
+					retire.Add(waiting[^1]);
+					surplusSince = elapsed.ElapsedMilliseconds;
+				}
+				string now = $"{running.Count} seats: {waiting.Length} waiting, {state.Count(entry => entry.Value == "playing")} playing";
+				if (now != shown && state.Values.All(value => value is "waiting" or "playing"))
+				{
+					Console.WriteLine($"Companion host: {now}.");
+					shown = now;
+				}
+				try { await Task.Delay(TimeSpan.FromSeconds(1), operatorStop); }
+				catch (OperationCanceledException) { break; }
+			}
+			await Task.WhenAll(running.Values);
+		}
+
 		async Task PlayCompanionSeatAsync(int seat)
 		{
 			// Subject numbers of their own, so that a seat's MAC address is no other bot's.
 			string bot = $"b{900 + seat}", account = CompanionSeatAccount(seat);
-			played[account] = 0;
+			played.TryAdd(account, 0);
 			while (!operatorStop.IsCancellationRequested)
 			{
+				state[seat] = "connecting";
 				await using var actor = new L0Actor(options, problems, 900 + seat, Race.ASMODIANS, bot: bot, account: account, characterName: "Unused");
 				LiveBotSession session = actor.Session;
 				session.EnableNaturalJourney();
@@ -81,10 +137,19 @@ public static partial class LiveBotRunner
 					}
 					Console.WriteLine($"Seat {account} is waiting at character selection.");
 					session.BeginStep("companion-seat", "wait-at-character-selection");
+					state[seat] = "waiting";
 					while (true)
 					{
 						if (Characters(list).Count == 0)
 						{
+							// One seat too many has waited long enough: it logs out, and its number is free again.
+							if (retire.Contains(seat))
+							{
+								session.FinishStep("retired");
+								await LeaveAsync(session, account);
+								Console.WriteLine($"Seat {account} was not needed and has logged out.");
+								return;
+							}
 							await Task.Delay(TimeSpan.FromSeconds(2), operatorStop);
 							list = await session.ReadCharacterListAsync(operatorStop);
 							continue;
@@ -95,6 +160,7 @@ public static partial class LiveBotRunner
 						int classId = Get<int>(made, "playerClass");
 						PlayerClass playerClass = Enum.GetValues<PlayerClass>().Single(candidate => candidate.GetClassId() == classId);
 						NaturalClassLine line = NaturalClassLine.All.Single(candidate => candidate.Second == playerClass);
+						state[seat] = "playing";
 						session.BeginStep("companion-seat", $"enter-with-{name}");
 						Console.WriteLine($"Seat {account}: {name} the {playerClass.ToString().ToLowerInvariant().Replace("_", " ")} goes to its player.");
 						// Another character on the same connection: what the client knew of the last one is dropped.
@@ -134,6 +200,7 @@ public static partial class LiveBotRunner
 						await session.ReturnToSelectionAsync(false, operatorStop);
 						played.AddOrUpdate(account, 1, (_, count) => count + 1);
 						Console.WriteLine($"Seat {account}: {name} has ended; the seat is waiting again.");
+						state[seat] = "waiting";
 						session.BeginStep("companion-seat", "wait-at-character-selection");
 						list = await session.ReadCharacterListAsync(operatorStop);
 					}
@@ -149,6 +216,7 @@ public static partial class LiveBotRunner
 					// The seat's connection is gone, or its companion's play failed. The server ends a companion whose
 					// seat is gone; the seat itself comes back.
 					session.FinishStep("failed");
+					state[seat] = "failed";
 					await problems.WriteAsync(options.Run, bot, account, session.CurrentStep, "companion-seat-failed", failure.Message, failure);
 					Console.Error.WriteLine($"Seat {account} failed at {session.CurrentStep} ({failure.GetType().Name}: {failure.Message}). It logs in again in 15 seconds.");
 					await LeaveAsync(session, account);

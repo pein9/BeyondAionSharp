@@ -77,6 +77,13 @@ public sealed class CompanionService
     private readonly object gate = new();
     private readonly Dictionary<int, Seat> seats = new();
     private readonly HashSet<string> seatNames = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>
+    /// Seats by a pattern (the operator, 2026-10-13: "We need to be able to spawn bots as needed, not a strict
+    /// amount"). A name of <c>AION_COMPANION_ACCOUNTS</c> that ends in a star names every account whose name is what
+    /// stands before the star and then digits only: <c>companion*</c> is companion1, companion2 and so on. The host
+    /// logs in as many of them as are asked for; the server need not know how many.
+    /// </summary>
+    private readonly List<string> seatPrefixes = new();
     private readonly HashSet<int> refusedSeats = new();
     private readonly Dictionary<int, Entry> companions = new();
     private Dictionary<(Race Race, PlayerClass PlayerClass), CompanionProfile> profiles = new();
@@ -141,8 +148,14 @@ public sealed class CompanionService
         {
             profiles = loaded;
             seatNames.Clear();
+            seatPrefixes.Clear();
             foreach (string seatName in seatAccounts ?? [])
-                seatNames.Add(seatName);
+            {
+                if (seatName.EndsWith('*') && seatName.Length > 1)
+                    seatPrefixes.Add(seatName[..^1]);
+                else
+                    seatNames.Add(seatName);
+            }
             ChatProcessor processor = ChatProcessor.GetInstance();
             if (!processor.IsCommandExists(PlayerCommand.PREFIX + Alias))
             {
@@ -160,7 +173,8 @@ public sealed class CompanionService
             enabled = true;
         }
         log.LogInformation("Companions are on: " + loaded.Count + " profiles of level " + Level + " from " + directory
-            + "; seat accounts: " + (seatNames.Count == 0 ? "none named" : string.Join(", ", seatNames.Order())));
+            + "; seat accounts: " + (seatNames.Count + seatPrefixes.Count == 0 ? "none named"
+                : string.Join(", ", seatNames.Order().Concat(seatPrefixes.Order().Select(prefix => prefix + "*")))));
     }
 
     /// <summary>The command stops answering. Companions that are there stay until they leave or are sent away.</summary>
@@ -462,6 +476,19 @@ public sealed class CompanionService
     /// new seat are what a server left behind that stopped with companions alive: they are deleted. An account that
     /// holds any other character is no seat, so that a player's account named by mistake loses nothing.
     /// </summary>
+    private bool IsSeatName(string name)
+    {
+        if (seatNames.Contains(name))
+            return true;
+        foreach (string prefix in seatPrefixes)
+        {
+            if (name.Length > prefix.Length && name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                && name.AsSpan(prefix.Length).IndexOfAnyExceptInRange('0', '9') < 0)
+                return true;
+        }
+        return false;
+    }
+
     private void FindSeats()
     {
         IReadOnlyDictionary<int, AionConnection> loggedIn = Aion.GameServer.Network.LoginServer.LoginServer.LoggedInAccounts;
@@ -479,12 +506,12 @@ public sealed class CompanionService
                     End(entry);
             }
         }
-        if (seatNames.Count == 0)
+        if (seatNames.Count == 0 && seatPrefixes.Count == 0)
             return;
         foreach ((int accountId, AionConnection connection) in loggedIn)
         {
             Aion.GameServer.Model.Account.Account account = connection.GetAccount();
-            if (account == null || seats.ContainsKey(accountId) || !seatNames.Contains(account.GetName()) || !Open(connection)
+            if (account == null || seats.ContainsKey(accountId) || !IsSeatName(account.GetName()) || !Open(connection)
                 || connection.GetState() != AionConnection.State.AUTHED || connection.GetActivePlayer() != null)
                 continue;
             bool others = false;
