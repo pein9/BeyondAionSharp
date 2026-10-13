@@ -88,8 +88,9 @@ public static class NaturalSpiritMasterProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-spirit-master-v1",
-		Adjacent: ["disturbance", "erosion", "spirit-erosion", "earth", "stone", "choke", "backdraft", "servant", "ice", "shock", "bolt", "blaze"],
-		AtRange: ["disturbance", "spirit-erosion", "earth", "stone", "erosion", "choke", "backdraft", "servant", "ice", "shock", "bolt", "blaze"],
+		// MR-g: Cyclone of Wrath, its stigma, with the other damage that lasts.
+		Adjacent: ["disturbance", "erosion", "spirit-erosion", "earth", "stone", "cyclone", "choke", "backdraft", "servant", "ice", "shock", "bolt", "blaze"],
+		AtRange: ["disturbance", "spirit-erosion", "earth", "stone", "erosion", "cyclone", "choke", "backdraft", "servant", "ice", "shock", "bolt", "blaze"],
 		Upkeep: [new("skin")],
 		Recovery: [new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
 		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.LastResort, ControlRole: "root",

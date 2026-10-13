@@ -88,8 +88,9 @@ public static class NaturalGunnerProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-gunner-v1",
-		Adjacent: ["success", "hot", "gunshot", "rapid", "auto", "reload", "cross", "canted", "clip", "grenade", "direct"],
-		AtRange: ["success", "grenade", "hot", "gunshot", "rapid", "auto", "reload", "cross", "canted", "clip", "direct"],
+		// MR-g: Power Grab, its stigma, after the chains.
+		Adjacent: ["success", "hot", "gunshot", "rapid", "auto", "reload", "cross", "canted", "grab", "clip", "grenade", "direct"],
+		AtRange: ["success", "grenade", "hot", "gunshot", "rapid", "auto", "reload", "cross", "canted", "grab", "clip", "direct"],
 		Upkeep: [],
 		Recovery:
 		[

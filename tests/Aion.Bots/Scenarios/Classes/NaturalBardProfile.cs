@@ -82,6 +82,8 @@ public static class NaturalBardProfile
 		[
 			new(NaturalRecoveryKind.ShieldScroll, 50),
 			new(NaturalRecoveryKind.LifePotion, 75),
+			// MR-g: Hymn of Rejuvenation, its stigma: no cast, so it comes before the heals that have one.
+			new(NaturalRecoveryKind.Skill, 55, "hymn"),
 			new(NaturalRecoveryKind.Skill, 55, "counterpoint"),
 			new(NaturalRecoveryKind.Skill, 55, "heal"),
 		],

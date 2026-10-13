@@ -72,7 +72,7 @@ public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, f
 			contract.RewardChoiceList.Any(choice => !ProtectedItemIds.Contains(choice.ItemId)) ||
 			Weapon is not { Type: "STAFF", Prefer: "magic-boost", Buy: true })
 			throw new InvalidDataException("The reward handling differs from the operator's answers AX-Q1, AX-Q4 and AX-Q5.");
-		NaturalHelpLegSupply[] approved = NaturalHelpItemAllowlist.LegApproved.Where(supply => supply.Leg == Leg).ToArray();
+		NaturalHelpLegSupply[] approved = NaturalHelpItemAllowlist.LegApproved.Where(supply => supply.Leg == Leg && !supply.MusterOnly).ToArray();
 		if (!Supplies.Select(supply => (supply.ItemId, supply.Family, supply.MaxCount, supply.Decision)).Order().SequenceEqual(
 				approved.Select(supply => (supply.ItemId, supply.Family, supply.MaxCount, supply.Decision)).Order()) ||
 			Supplies.Any(supply => !ProtectedItemIds.Contains(supply.ItemId)))

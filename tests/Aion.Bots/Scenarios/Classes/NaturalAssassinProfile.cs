@@ -88,7 +88,9 @@ public static class NaturalAssassinProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-assassin-v1",
-		Adjacent: ["devotion", "divine", "pain", "binding", "edge", "slash", "runeslash", "fang", "kick", "carve", "eye", "flurry"], AtRange: [],
+		// MR-g: Searching Strike, its stigma, before a chain is opened.
+		Adjacent: ["devotion", "divine", "pain", "binding", "searching", "edge", "slash", "runeslash", "fang", "kick", "carve", "eye", "flurry"],
+		AtRange: [],
 		Upkeep: [],
 		Recovery: [new(NaturalRecoveryKind.Skill, 70, "evasion"), new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
 		SwarmAttackers: 3, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler, HoldOpenChain: true,

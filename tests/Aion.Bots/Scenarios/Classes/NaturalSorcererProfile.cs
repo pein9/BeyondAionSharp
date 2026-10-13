@@ -82,8 +82,9 @@ public static class NaturalSorcererProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-sorcerer-v1",
-		Adjacent: ["frost", "erosion", "ice", "shock", "empyrean", "blast", "harpoon", "bolt", "blaze"],
-		AtRange: ["ice", "shock", "empyrean", "blast", "harpoon", "bolt", "blaze"],
+		// MR-g: Ice Harpoon, its stigma, beside the harpoon it learns.
+		Adjacent: ["frost", "erosion", "ice", "shock", "empyrean", "blast", "ice-harpoon", "harpoon", "bolt", "blaze"],
+		AtRange: ["ice", "shock", "empyrean", "blast", "ice-harpoon", "harpoon", "bolt", "blaze"],
 		Upkeep: [new("skin")],
 		Recovery: [new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
 		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.LastResort, ControlRole: "root",

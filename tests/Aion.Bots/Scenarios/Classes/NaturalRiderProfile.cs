@@ -95,7 +95,8 @@ public static class NaturalRiderProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-rider-v1",
-		Adjacent: ["sundering", "rocket", "bludgeon", "battery", "shock", "tether", "cinder", "whispers"],
+		// MR-g: Drillbore, its stigma, opens the fight at the target: it reaches 6 m and stuns for 3 s.
+		Adjacent: ["drill", "sundering", "rocket", "bludgeon", "battery", "shock", "tether", "cinder", "whispers"],
 		AtRange: ["cinder", "shock", "sundering", "rocket", "bludgeon", "battery", "whispers"],
 		Upkeep: [new("overdrive", DuringFight: true)],
 		Recovery:

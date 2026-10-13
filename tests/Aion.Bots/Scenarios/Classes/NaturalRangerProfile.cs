@@ -82,8 +82,9 @@ public static class NaturalRangerProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-ranger-v1",
-		Adjacent: ["mau", "devotion", "stun", "rupture", "swift", "arrow", "entangle", "deadshot"],
-		AtRange: ["mau", "devotion", "entangle", "stun", "rupture", "swift", "arrow", "deadshot"],
+		// MR-g: Bow of Blessing, its stigma, is cast as Devotion is: on itself, while an attack reaches the target.
+		Adjacent: ["mau", "devotion", "bow-blessing", "stun", "rupture", "swift", "arrow", "entangle", "deadshot"],
+		AtRange: ["mau", "devotion", "bow-blessing", "entangle", "stun", "rupture", "swift", "arrow", "deadshot"],
 		Upkeep: [],
 		Recovery: [new(NaturalRecoveryKind.Skill, 70, "evasion"), new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
 		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler, ControlRole: "sleep");

@@ -90,7 +90,9 @@ public static class NaturalTemplarProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-templar-v1",
-		Adjacent: ["chastise", "dazing", "divine", "bash", "strike", "robust", "rage", "wrath", "smash"], AtRange: ["taunt"],
+		// MR-g: Inquisitor's Blow, its stigma, is to the Templar what Cleave is to the Gladiator: the pull that hits.
+		Adjacent: ["chastise", "dazing", "divine", "bash", "strike", "robust", "rage", "wrath", "smash", "inquisitor"],
+		AtRange: ["inquisitor", "taunt"],
 		Upkeep: [],
 		Recovery:
 		[
@@ -140,7 +142,7 @@ public static class NaturalTemplarProfile
 			HelpItems = NaturalHelpItemRules.ForKinds(caster: false, reagent: true, sharedSlotFamily: "courage"),
 			Upkeep = [],
 			// NR-36: nothing it learns by level 12 hurts a target from range, so in flight it swings its weapon.
-			AirAttackRoles = [],
+			AirAttackRoles = ["inquisitor"],
 			// NR-37: every second class holds for a patrol and assesses the fight, by its own table.
 			PatrolRule = NaturalPatrolRule.HoldAndAssess,
 			Patrol = NaturalPatrolView.From(Rules, skills, PlayerClass.TEMPLAR),

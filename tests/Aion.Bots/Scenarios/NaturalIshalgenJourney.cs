@@ -2074,6 +2074,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					// only if a rule uses it (MR-f). The muster itself needs its coins and the containers it is about to open.
 					NaturalAbyssInventory rules = scope.Inventory with { Open = [.. scope.Inventory.Open, .. NaturalAbyssEntry.MusterOpen], KeepSealed = [] };
 					bagNeeds = [armor.CoinItemId, .. rules.Open];
+					// MR-g: the bundle of Q2900 and the stone taken from it are kept until the stone is in its slot.
+					if (NaturalStigma.Choices.TryGetValue(combat.ClassProfile.Class, out NaturalStigma.Choice? ownStone))
+						bagNeeds.UnionWith([NaturalStigma.BundleItemId, ownStone.StoneItemId]);
 					combat.UsesBoosts = true;
 					async Task CheckAsync(string trigger)
 					{
@@ -2270,6 +2273,85 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					await SellSurplusAsync("sell-the-gear-replaced");
 					await CheckAsync("muster-end");
 
+					// 3b. The stigma (MR-g): the class's stone out of the Stigma Support Bundle, put into the one slot a character
+					// has below level 30, at the fortress's Stigma Master. Until 2026-10-13 the cleanup threw the bundle of Q2900
+					// away, as no rule used it; a character that lost its bundle that way is supplied one.
+					Dictionary<string, object?>? stigmaRow = null;
+					if (NaturalStigma.Choices.TryGetValue(combat.ClassProfile.Class, out NaturalStigma.Choice? stigma))
+					{
+						session.BeginStep("muster-stigma", "socket-the-class-stone");
+						int[] taught = [.. NaturalStigma.Skills(runtime.Data, combat.ClassProfile.Class).Where(skill => skill.Value <= world.Level)
+							.Select(skill => skill.Key).Order()];
+						bool Socketed() => world.Inventory.Values.Any(item => item.ItemId == stigma.StoneItemId && item.Details.EquippedSlot == NaturalStigma.Slot);
+						bool bundleSupplied = false, bundleOpened = false;
+						long stigmaFee = 0;
+						int stigmaMaster = 0;
+						if (!Socketed())
+						{
+							if (ItemCount(world, stigma.StoneItemId) == 0)
+							{
+								if (ItemCount(world, NaturalStigma.BundleItemId) == 0)
+								{
+									Func<int, long, CancellationToken, Task> supply = runtime.SupplyHelpItemAsync
+										?? throw new InvalidDataException("The Stigma Support Bundle is gone and this run supplies no help items.");
+									NaturalHelpLegSupply approved = NaturalHelpItemAllowlist.LegApproved.Single(entry => entry.Leg == leg.Leg && entry.ItemId == NaturalStigma.BundleItemId);
+									NaturalHelpItemSupply.RequireApproved(NaturalStigma.BundleItemId, 1, leg.Leg, 0);
+									await supply(NaturalStigma.BundleItemId, 1, token);
+									await session.SynchronizeAsync(token);
+									Require.True(ItemCount(world, NaturalStigma.BundleItemId) == 1, "The supplied Stigma Support Bundle did not arrive.");
+									bundleSupplied = true;
+									helpSupplied.Add(new NaturalHelpSupplied("stigma", NaturalStigma.BundleItemId, approved.Family, 1, 0, 1, world.Level, runtime.NowMillis));
+									session.TraceDiagnostic("help-item-supplied", new Dictionary<string, object?>
+									{
+										["trigger"] = "stigma", ["itemId"] = NaturalStigma.BundleItemId, ["family"] = approved.Family, ["count"] = 1,
+										["before"] = 0, ["after"] = 1, ["level"] = world.Level, ["decision"] = approved.Decision,
+									});
+									await File.WriteAllTextAsync(Path.Combine(folder, "help-items.json"), NaturalHelpItemSupply.ProfileJson(helpSupplied), token);
+								}
+								// The bundle asks which stone before it is used up (Java DecomposeAction, a selectable decomposable).
+								BotInventoryItem bundle = world.Inventory.Values.First(item => item.ItemId == NaturalStigma.BundleItemId);
+								await session.SendPacketAsync(session.Api.UseItem(bundle.ObjectId, runtime.Data.ItemDataDh.GetItemTemplate(bundle.ItemId)), token);
+								DecodedBotServerPacket offered = await session.WaitForPacketAsync(typeof(SM_FIRST_SHOW_DECOMPOSABLE), token, p => p.Get<int>("objectId") == bundle.ObjectId);
+								BotDecomposableChoice pick = offered.Get<BotDecomposableChoice[]>("choices").SingleOrDefault(choice => choice.ItemId == stigma.StoneItemId)
+									?? throw new InvalidDataException($"The bundle does not offer a {combat.ClassProfile.Class} the stone {stigma.StoneItemId}.");
+								await session.SendPacketAsync(GameClientPackets.SelectDecomposable(bundle.ObjectId, pick.Index), token);
+								await session.SynchronizeAsync(token);
+								Require.True(ItemCount(world, stigma.StoneItemId) == 1 && ItemCount(world, NaturalStigma.BundleItemId) == 0,
+									$"The bundle did not give the stone {stigma.StoneItemId}.");
+								bundleOpened = true;
+							}
+							stigmaMaster = runtime.Data.SpawnsDh.GetSpawnsByWorldId(leg.Hub.MapId)
+								.Where(group => runtime.Data.NpcDataDh.GetNpcTemplate(group.GetNpcId())?.GetTitleId() == NaturalStigma.MasterTitleId)
+								.SelectMany(group => group.GetSpawnTemplates().Select(spot => (Npc: group.GetNpcId(), At: new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0))))
+								.Where(spot => Distance(spot.At, hubAt) <= leg.Hub.Radius)
+								.OrderBy(spot => Distance(spot.At, session.CurrentPosition)).ThenBy(spot => spot.Npc).Select(spot => spot.Npc).First();
+							int master = await ApproachInFortressAsync(stigmaMaster);
+							await NaturalDialogProtocol.OpenAsync(session, master, token);
+							await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, p => p.Get<int>("targetObjectId") == master);
+							await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(master,
+								checked((ushort)NaturalAscensionContract.DialogActionId("OPEN_STIGMA_WINDOW"))), token);
+							await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, p => p.Get<ushort>("dialogPageId") == 1);
+							BotInventoryItem stone = world.Inventory.Values.Single(item => item.ItemId == stigma.StoneItemId);
+							long due = world.VendorPrices?.ServicePrice(NaturalStigma.InstallationBaseFee) ?? NaturalStigma.InstallationBaseFee, before = world.Kinah;
+							Require.True(before >= due, $"The stone costs {due} Kinah to put in and the character has {before}.");
+							await session.SendPacketAsync(GameClientPackets.EquipItem(0, NaturalStigma.Slot, stone.ObjectId), token);
+							await session.SynchronizeAsync(token);
+							await session.SendPacketAsync(session.Api.CloseDialog(master), token);
+							stigmaFee = before - world.Kinah;
+							Require.True(Socketed() && taught.All(skill => world.Skills.ContainsKey(skill)) && stigmaFee == due,
+								$"The stone {stigma.StoneItemId} was not put in: socketed {Socketed()}, skills [{string.Join(", ", taught.Where(skill => world.Skills.ContainsKey(skill)))}] of " +
+								$"[{string.Join(", ", taught)}], fee {stigmaFee} of {due}.");
+						}
+						stigmaRow = new Dictionary<string, object?>
+						{
+							["class"] = combat.ObservedCharacter, ["stone"] = stigma.StoneItemId, ["role"] = stigma.Role, ["skills"] = taught, ["slot"] = NaturalStigma.Slot,
+							["bundleSupplied"] = bundleSupplied, ["bundleOpened"] = bundleOpened, ["master"] = stigmaMaster, ["fee"] = stigmaFee,
+						};
+						session.TraceDiagnostic("muster-stigma", stigmaRow);
+						await CheckAsync("muster-stigma");
+						Require.True(Socketed() && taught.All(skill => world.Skills.ContainsKey(skill)), "The gear check took the stigma out.");
+					}
+
 					// 4. The kit, every row at its full count.
 					session.BeginStep("muster-stock", "fill-the-kit");
 					await TopUpHelpItemsAsync("muster", full: true);
@@ -2310,6 +2392,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					long elapsed = runtime.NowMillis;
 					(NaturalJourneyCheckpoint musterBefore, NaturalJourneyCheckpoint musterAfter) = await RelogAtEndpointAsync();
 					BotWorldModel again = session.Api.World;
+					Require.True(stigmaRow?["skills"] is not int[] stigmaSkills || stigmaSkills.All(skill => again.Skills.ContainsKey(skill)),
+						"The stigma's skills did not come back with the relog.");
 					Require.True(again.Level == level && Worn().SequenceEqual(wornBefore) &&
 						kitBefore.All(row => ItemCount(again, row.Key) == row.Value) && ItemCount(again, armor.CoinItemId) == coinsLeft,
 						"The mustered character changed across a relog.");
@@ -2326,6 +2410,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						Sold = sold, SaleKinah = saleKinah, Kinah = kinah, KinahAtStart = startKinah, WornAtStart = wornAtStart, Worn = wornBefore,
 						Kit = kitBefore, StacksAtStart = stacksAtStart, Stacks = stacks, FreeSlots = freeSlots, Deaths = deathsNow, GameMillis = elapsed - startedMillis,
 						PowerShards = shardsWorn, PowerShardMode = true, Discarded = bagDiscards, KeptByServer = keptByServer.Count, InCube = inCube,
+						Stigma = stigmaRow,
 						ElapsedMillis = elapsed, before = musterBefore, after = musterAfter,
 					}), token);
 					session.TraceDiagnostic("muster-completed", new Dictionary<string, object?>
@@ -2335,6 +2420,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						["bought"] = purchases.Select(purchase => purchase.ItemId).ToArray(), ["sold"] = sold.Count, ["opened"] = openedNow.Count,
 						["worn"] = wornBefore, ["kit"] = kitBefore, ["freeSlots"] = freeSlots, ["deaths"] = deathsNow, ["generation"] = musterAfter.ConnectionGeneration,
 						["powerShards"] = shardsWorn.Select(worn => $"{worn.Slot}:{worn.ItemId}x{worn.Count}").ToArray(), ["discarded"] = bagDiscards.Count,
+						["stigma"] = stigmaRow?["stone"],
 					});
 				}
 				if (options.SurveyNpcId is int surveyTarget)

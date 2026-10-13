@@ -66,7 +66,8 @@ public static class NaturalGladiatorProfile
 	/// After Rupture the chain is over nine times in ten (chain_skill_prob 10); the cast's result says which. Then Body
 	/// Smash, Aerial Lockdown and Cleave. An open follow-up is always cast first, and the weapon swings whenever no
 	/// skill is ready. NR-80a: Crashing Blow is cast before anything else while the target is seen in the air, which it
-	/// is for 2 s after an Aerial Lockdown it did not resist.
+	/// is for 2 s after an Aerial Lockdown it did not resist. MR-g: so is Crippling Cut, its stigma, while the target is
+	/// seen thrown down.
 	/// <para>
 	/// It pulls as the Templar does (NR-53b). From range: Cleave from level 19, which hits and may slow the monster on
 	/// its way, and otherwise Taunt (free, 10 s); then it holds where it stands until the monster is on it. Taunt is a
@@ -79,7 +80,7 @@ public static class NaturalGladiatorProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-gladiator-v1",
-		Adjacent: ["explosion", "strike", "robust", "rage", "wrathful", "rupture", "smash", "aerial", "crashing", "cleave"],
+		Adjacent: ["explosion", "strike", "robust", "rage", "wrathful", "rupture", "smash", "aerial", "crashing", "cleave", "crippling"],
 		AtRange: ["cleave", "taunt"],
 		Upkeep: [],
 		Recovery:

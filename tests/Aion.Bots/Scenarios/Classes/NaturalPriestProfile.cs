@@ -101,6 +101,8 @@ public static class NaturalPriestProfile
 			new(NaturalRecoveryKind.ShieldScroll, 50),
 			new(NaturalRecoveryKind.Skill, 25, "salvation"),
 			new(NaturalRecoveryKind.LifePotion, 90, FromRun: NaturalRunPercent.LifePotion),
+			// MR-g: Saving Grace, its stigma, heals once its target is at half its health: no cast, so it is first.
+			new(NaturalRecoveryKind.Skill, 50, "saving-grace"),
 			new(NaturalRecoveryKind.Skill, 35, "flash-recovery", EmergencyOnly: true),
 			new(NaturalRecoveryKind.Skill, 55, "grace", HpPercentMultiple: 70, PassOverWhenCancelled: true, FinishInstead: true,
 				FromRun: NaturalRunPercent.Heal),

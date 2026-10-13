@@ -99,12 +99,14 @@ public static class NaturalHelpItemAllowlist
 	[
 		new("ax", 164000079, "flight-speed", 1, "AX-Q3"),
 		new("ax", 186000007, "bronze-coin", null, "AX-Q5 revision, no limit"),
+		new("ax", 188053787, "stigma-bundle", 1, "MR-g: Q2900's bundle, which the cleanup threw away, once more", MusterOnly: true),
 	];
 }
 
 /// <summary>One approved leg-scoped help item: at most <paramref name="MaxCount"/> over the whole leg, or as many as
-/// the leg asks for when it is null.</summary>
-public sealed record NaturalHelpLegSupply(string Leg, int ItemId, string Family, int? MaxCount, string Decision);
+/// the leg asks for when it is null. <paramref name="MusterOnly"/>: asked for by the muster that follows the leg, and no
+/// part of the leg's own contract.</summary>
+public sealed record NaturalHelpLegSupply(string Leg, int ItemId, string Family, int? MaxCount, string Decision, bool MusterOnly = false);
 
 /// <summary>One help item supplied, as the run profile (help-items.json) and the trace record it.</summary>
 public sealed record NaturalHelpSupplied(string Trigger, int ItemId, string Family, long Count, long Before, long After,

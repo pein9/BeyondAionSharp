@@ -70,6 +70,9 @@ public sealed class CompanionService
 
     private const int ElyosAscension = 1006;
     private const int AsmodianAscension = 2008;
+    /// <summary>The quests that open the stigma slots (Java StigmaService.isCompleteQuest).</summary>
+    private const int ElyosStigmaQuest = 1929;
+    private const int AsmodianStigmaQuest = 2900;
 
     private static readonly ILogger log = AionLog.For(nameof(CompanionService));
     private static readonly CompanionService instance = new();
@@ -638,6 +641,13 @@ public sealed class CompanionService
             companion.GetEquipment().SetPersistentState(IPersistable.PersistentState.UPDATE_REQUIRED);
             int ascension = profile.Race == Race.ELYOS ? ElyosAscension : AsmodianAscension;
             companion.GetQuestStateList().AddQuest(ascension, new QuestState(ascension, QuestStatus.COMPLETE));
+            // A stigma stays in its slot, and teaches its skill at every login, only for a character that has done its
+            // race's stigma quest (Java StigmaService.onPlayerLogin and getPossibleStigmaCount).
+            if (profile.Equipment.Any(worn => Aion.GameServer.Model.Items.ItemSlotExtensions.IsStigma(worn.Slot)))
+            {
+                int stigma = profile.Race == Race.ELYOS ? ElyosStigmaQuest : AsmodianStigmaQuest;
+                companion.GetQuestStateList().AddQuest(stigma, new QuestState(stigma, QuestStatus.COMPLETE));
+            }
 
             if (!PlayerService.StoreNewPlayer(companion, accountName, accountId))
                 throw new InvalidOperationException("The character's rows could not be written.");

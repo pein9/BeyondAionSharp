@@ -73,6 +73,10 @@ public static class NaturalSkillCatalog
 	/// <summary>
 	/// The class's catalog: one row for every skill the profile gives a role, in level and id order. A role for a skill the
 	/// class does not auto-learn, or for one the profile also excludes, is refused by name.
+	/// <para>
+	/// MR-g: the skills of the class's stigma stone follow, each with the role <see cref="NaturalStigma"/> gives the stone.
+	/// They are rows like any other: a character that has not put the stone in has not learned them, and casts none.
+	/// </para>
 	/// </summary>
 	/// <param name="roles">Skill id to role.</param>
 	/// <param name="excluded">Skill id to the reason it is not cast; checked here only against <paramref name="roles"/>.</param>
@@ -88,8 +92,12 @@ public static class NaturalSkillCatalog
 			if (!learned.ContainsKey(id))
 				throw new InvalidDataException($"{playerClass} does not auto-learn skill {id}; a catalog holds auto-learned skills only.");
 		}
-		return roles.OrderBy(entry => learned[entry.Key]).ThenBy(entry => entry.Key)
+		NaturalPriestSkill[] own = roles.OrderBy(entry => learned[entry.Key]).ThenBy(entry => entry.Key)
 			.Select(entry => Row(data, entry.Key, learned[entry.Key], entry.Value)).ToArray();
+		if (!NaturalStigma.Choices.TryGetValue(playerClass, out NaturalStigma.Choice? stone)) return own;
+		if (roles.Values.Contains(stone.Role)) throw new InvalidDataException($"{playerClass} role '{stone.Role}' is its stigma's.");
+		return [.. own, .. NaturalStigma.Skills(data, playerClass, race).OrderBy(entry => entry.Value).ThenBy(entry => entry.Key)
+			.Select(entry => Row(data, entry.Key, entry.Value, stone.Role))];
 	}
 
 	/// <summary>One row from the skill's template. Range is the template's first-target range, without the weapon's; see

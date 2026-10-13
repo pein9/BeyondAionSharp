@@ -91,6 +91,8 @@ public static class NaturalChanterProfile
 			new(NaturalRecoveryKind.ShieldScroll, 50),
 			new(NaturalRecoveryKind.Skill, 60, "ward"),
 			new(NaturalRecoveryKind.LifePotion, 90, FromRun: NaturalRunPercent.LifePotion),
+			// MR-g: Word of Life, its stigma: 10 s of healing without a cast, for its group as for itself.
+			new(NaturalRecoveryKind.Skill, 70, "life"),
 			new(NaturalRecoveryKind.Skill, 55, "heal", HpPercentMultiple: 70, FinishInstead: true, FromRun: NaturalRunPercent.Heal),
 		],
 		SwarmAttackers: NaturalPatrolPolicy.MaximumMembers + 1, FleeHpPercent: 30, AutoAttack: NaturalAutoAttack.Filler, ControlRole: "binding",
