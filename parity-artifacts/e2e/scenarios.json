@@ -182,6 +182,20 @@
     "resetEpoch": false
   },
   {
+    "id": "CH-01",
+    "modes": ["Attach"],
+    "tier": "Full",
+    "race": "Asmodians",
+    "map": null,
+    "channelNeeds": "None",
+    "bots": 1,
+    "virtualDuration": "00:00:00",
+    "consumes": [],
+    "requires": ["Db", "Geo"],
+    "expectedFail": null,
+    "resetEpoch": false
+  },
+  {
     "id": "S0",
     "modes": ["Sim"],
     "tier": "Fast",

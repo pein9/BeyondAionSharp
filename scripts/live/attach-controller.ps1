@@ -19,7 +19,8 @@ function Set-AttachIdentitySlot([int]$Slot) {
 Set-AttachIdentitySlot 1
 $script:AttachIdentityShell = 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot -N -B --default-character-set=utf8mb4 -e "$AION_ATTACH_SQL"'
 $script:AttachEnvironmentAllowlist = @('RESPAWN_TIME_MULTIPLIER', 'SERVER_HOST', 'GAME_CLIENT_PORT', 'CHAT_CLIENT_PORT',
-	'AION_RECORD', 'AION_RECORD_ACCOUNTS', 'AION_PACKET_TAP', 'GAMESERVER_ADMIN_API_ENABLED')
+	'AION_RECORD', 'AION_RECORD_ACCOUNTS', 'AION_PACKET_TAP', 'GAMESERVER_ADMIN_API_ENABLED',
+	'AION_COMPANIONS', 'AION_COMPANION_ACCOUNTS')
 
 function Assert-AttachDockerReadOnly([string[]]$Arguments) {
 	if ($null -eq $Arguments -or $Arguments.Count -eq 0) { throw 'Refusing an empty Docker command.' }

@@ -61,6 +61,13 @@ public sealed class BotNavigationAssets(IReadOnlyDictionary<int, GeoMap> maps, S
             : throw new InvalidOperationException($"Map {id} is outside the natural journey."),
             instanceId, IgnoreProperties.Of(race));
 
+    /// <summary>Every shipped map, for the companion host: a companion goes where its player leads it
+    /// (docs/companion-live-host.md). Door and event state is not known offline, as for every map here.</summary>
+    public BotNavigationGeometry AnyMapGeometry(Race race, int instanceId) =>
+        new(id => maps.TryGetValue(id, out GeoMap? map) ? map
+            : throw new InvalidOperationException($"Map {id} is not a shipped map."),
+            instanceId, IgnoreProperties.Of(race));
+
     /// <summary>Level-aware travel planner for a starter map's geometry, or null when its navmesh or
     /// travel graph is not available.</summary>
     public NavMesh.BotTravelPlanner? TravelPlanner(int mapId, BotNavigationGeometry geometry) =>

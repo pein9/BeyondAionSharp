@@ -108,6 +108,8 @@ public static partial class LiveBotRunner
 			return await RunNaturalIshalgenJourneyAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "NI-10" }])
 			return await RunNaturalIshalgenAttachAsync(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "CH-01" }])
+			return await RunCompanionHostAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "NI-02" }])
 			return await RunNaturalIshalgenDecisionAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "B2" }])
@@ -1339,10 +1341,13 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		playOk2 = BinaryPrimitives.ReadInt32LittleEndian(play.AsSpan(5, 4));
 	}
 
-	private async Task SendGameAsync(BotClientPacket packet, CancellationToken cancellationToken)
+	private Task SendGameAsync(BotClientPacket packet, CancellationToken cancellationToken) =>
+		SendGameAsync(packet, cancellationToken, ofThePlay: true);
+
+	private async Task SendGameAsync(BotClientPacket packet, CancellationToken cancellationToken, bool ofThePlay)
 	{
 		Api.ValidateOutgoing(packet);
-		BeforeSend?.Invoke();
+		if (ofThePlay) BeforeSend?.Invoke();
 		var activeTransport = transport ?? throw new InvalidOperationException("The game connection is not open.");
 		await sendLock.WaitAsync(cancellationToken);
 		try
@@ -1546,8 +1551,10 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 			if (delay > TimeSpan.Zero)
 				await Task.Delay(delay, cancellationToken);
 			var ping = scheduler.Poll();
+			// The ping is the connection's own packet, not a step of the play: the play's look before a send is for
+			// the play's packets. What that look throws is meant for the play, and here it would end the pings instead.
 			if (ping != null && state == AionConnection.State.IN_GAME && transport != null)
-				await SendGameAsync(ping, cancellationToken);
+				await SendGameAsync(ping, cancellationToken, ofThePlay: false);
 		}
 	}
 

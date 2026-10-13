@@ -57,6 +57,20 @@ public sealed class LiveNaturalJourneyTests
 	}
 
 	[Fact]
+	public void CompanionHostAttachesAloneWithOneToFiveSeats()
+	{
+		string[] world = ["--run", "test", "--output", "run/test", "--git-sha", "test", "--scenario", "CH-01",
+			"--attach-target", "aion", "--login-port", "2106", "--game-port", "7777"];
+		Assert.Equal(1, LiveBotOptions.Parse(world).BotCount);
+		Assert.Equal(5, LiveBotOptions.Parse([.. world, "--bots", "5"]).BotCount);
+		Assert.Throws<ArgumentException>(() => LiveBotOptions.Parse([.. world, "--bots", "6"]));
+		// The host has no world of its own: it only attaches.
+		Assert.Throws<ArgumentException>(() => LiveBotOptions.Parse(["--run", "test", "--output", "run/test", "--git-sha", "test",
+			"--scenario", "CH-01", "--bots", "5"]));
+		Assert.Equal("companion3", LiveBotRunner.CompanionSeatAccount(3));
+	}
+
+	[Fact]
 	public void CoexistenceRecordsOnlyOtherPlayersAndLaterProgress()
 	{
 		var api = new BotApi();

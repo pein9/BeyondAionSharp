@@ -30,7 +30,7 @@ public sealed record LiveBotOptions(
 	public IReadOnlyList<SoakActivity> SoakActivities { get; init; } = Enum.GetValues<SoakActivity>();
 	public int DashboardPort { get; init; }
 	public int DecisionViewSeconds { get; init; } = 30;
-	/// <summary>Label of the operator's already-running world for Attach scenarios (NI-10); null for LIVE.</summary>
+	/// <summary>Label of the operator's already-running world for Attach scenarios (NI-10, CH-01); null for LIVE.</summary>
 	public string? AttachTarget { get; init; }
 	/// <summary>Designated ordinary Priest account for an attached journey; slot 1 is the original retained bot.</summary>
 	public int AttachIdentitySlot { get; init; } = 1;
@@ -114,6 +114,8 @@ public sealed record LiveBotOptions(
 			throw new ArgumentException("O1 must run alone with one subject and at least 1050 seconds per step.");
 		if (scenarios.Any(scenario => scenario is "NI-01" or "NI-02" or "NI-03" or "NI-04" or "NI-05" or "NI-06" or "NI-09" or "NI-10") && (scenarios.Length != 1 || bots != 1))
 			throw new ArgumentException("Natural Ishalgen scenarios must run alone with exactly one retained subject.");
+		if (scenarios.Contains("CH-01", StringComparer.Ordinal) && (scenarios.Length != 1 || bots > LiveBotRunner.CompanionHostMaximumSeats))
+			throw new ArgumentException($"CH-01, the companion host, must run alone with one to {LiveBotRunner.CompanionHostMaximumSeats} seats (--bots).");
 		if (scenarios.Contains("B2", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 2))
 			throw new ArgumentException("B2 must run alone with exactly two subjects (plus its director).");
 		if (scenarios.Contains("B2F", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 2 || stepSeconds < 180))

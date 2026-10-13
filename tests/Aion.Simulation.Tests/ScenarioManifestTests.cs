@@ -46,9 +46,13 @@ public sealed class ScenarioManifestTests
 	{
 		ScenarioManifest manifest = Load();
 		Assert.Equal([ScenarioMode.Attach], manifest.Get("NI-10").Modes);
-		Assert.Equal(["NI-10"], manifest.For(ScenarioMode.Attach, ScenarioTier.Soak).Select(scenario => scenario.Id));
-		Assert.DoesNotContain(manifest.Get("NI-10"), manifest.For(ScenarioMode.Live, ScenarioTier.Soak));
-		Assert.DoesNotContain(manifest.Get("NI-10"), manifest.For(ScenarioMode.Sim, ScenarioTier.Soak));
+		Assert.Equal([ScenarioMode.Attach], manifest.Get("CH-01").Modes);
+		Assert.Equal(["NI-10", "CH-01"], manifest.For(ScenarioMode.Attach, ScenarioTier.Soak).Select(scenario => scenario.Id));
+		foreach (string attached in new[] { "NI-10", "CH-01" })
+		{
+			Assert.DoesNotContain(manifest.Get(attached), manifest.For(ScenarioMode.Live, ScenarioTier.Soak));
+			Assert.DoesNotContain(manifest.Get(attached), manifest.For(ScenarioMode.Sim, ScenarioTier.Soak));
+		}
 	}
 
 	[Theory]
