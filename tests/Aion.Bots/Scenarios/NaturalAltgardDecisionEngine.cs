@@ -100,7 +100,8 @@ public static class NaturalAltgardDecisionEngine
 	/// <param name="only">A diagnostic run limited to these quests (AM-06): the rest of the leg is left alone, and the run is
 	/// complete once these are done, wherever the bot stands.</param>
 	public static NaturalAltgardDecision Decide(NaturalAltgardContract contract, NaturalAltgardObservation state,
-		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives, int sequence, IReadOnlySet<int>? only = null)
+		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives, int sequence, IReadOnlySet<int>? only = null,
+		IReadOnlySet<int>? deferred = null)
 	{
 		if (contract.Haramel != null) return NaturalHaramelDecisionEngine.Decide(contract, state, objectives, sequence);
 		var checks = new List<NaturalDecisionCheck>();
@@ -164,7 +165,7 @@ public static class NaturalAltgardDecisionEngine
 			return Plan("town-service", null, $"The cube has {free} free slots: sell the surplus at {vendor} in {contract.Town.Key}.");
 
 		NaturalAltgardQuest[] open = contract.Order.Select(contract.Quest)
-			.Where(quest => !Done(quest.Id) && !HeldReady(quest.Id) && (only == null || only.Contains(quest.Id))).ToArray();
+			.Where(quest => !Done(quest.Id) && !HeldReady(quest.Id) && (only == null || only.Contains(quest.Id)) && !Deferred(quest)).ToArray();
 		NaturalAltgardQuest[] eligible = open.Where(Eligible).OrderByDescending(quest => offHub && Status(quest.Id) == Start &&
 			(contract.StepsFor(quest.Id).Any(step => contract.StepMap(step) == state.MapId) ||
 			 contract.InstanceTripList.Any(trip => trip.QuestId == quest.Id && trip.MapId == state.MapId))).ToArray();
@@ -381,6 +382,9 @@ public static class NaturalAltgardDecisionEngine
 		bool CollectedFirst(NaturalAltgardObjectUse use, int var) => contract.CollectionList.Any(collection =>
 			collection.QuestId == use.QuestId && collection.AtVar == var && collection.Items.Any(item => item.ItemId != use.LootItemId &&
 				state.ItemCounts.GetValueOrDefault(item.ItemId) < item.Count));
+		// M4: a quest the bot left for the group step (it made no progress on it alone for an hour), and what needs it first.
+		bool Deferred(NaturalAltgardQuest quest) => deferred is { Count: > 0 } && (deferred.Contains(quest.Id) ||
+			quest.PrerequisiteList.Any(before => deferred.Contains(before) || contract.Quests.Any(other => other.Id == before) && Deferred(contract.Quest(before))));
 		byte? Status(int questId) => state.Quests.TryGetValue(questId, out BotQuestState? quest) ? quest.Status : null;
 		int Var(int questId) => state.Quests.TryGetValue(questId, out BotQuestState? quest) ? contract.QuestVar(quest) : 0;
 		bool Eligible(NaturalAltgardQuest quest)

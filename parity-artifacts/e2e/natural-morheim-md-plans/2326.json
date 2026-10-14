@@ -1,0 +1,509 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2326,
+    "name": "Wasting the Watch",
+    "nameId": 1103526,
+    "zone": "Morheim",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 27,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2326,
+        "start_npc_ids": 204329
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204329,
+        "name": "tofa",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 629.923,
+            "y": 917.468,
+            "z": 361.0,
+            "heading": 119,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204329,
+      "name": "tofa",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 629.923,
+          "y": 917.468,
+          "z": 361.0,
+          "heading": 119,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204329,
+      "name": "tofa",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 629.923,
+          "y": 917.468,
+          "z": 361.0,
+          "heading": 119,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 4,
+      "npc_ids": 211381,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 211381,
+          "name": "watch assassin",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 582.89,
+              "y": 1076.1,
+              "z": 306.875,
+              "heading": 101,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 591.862,
+              "y": 1082.64,
+              "z": 306.875,
+              "heading": 87,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 594.9,
+              "y": 1091.3,
+              "z": 306.50623,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 614.546,
+              "y": 1291.01,
+              "z": 292.75,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 625.59,
+              "y": 1257.95,
+              "z": 291.929,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 647.588,
+              "y": 1297.8,
+              "z": 292.738,
+              "heading": 29,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 750.482,
+              "y": 1222.45,
+              "z": 289.75,
+              "heading": 4,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 757.199,
+              "y": 1083.43,
+              "z": 304.5,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 776.313,
+              "y": 1070.22,
+              "z": 308.274,
+              "heading": 109,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 4,
+      "npc_ids": 211382,
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 211382,
+          "name": "watch fighter",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 571.269,
+              "y": 1088.67,
+              "z": 306.628,
+              "heading": 96,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 584.987,
+              "y": 1112.27,
+              "z": 299.79,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 594.9,
+              "y": 1091.3,
+              "z": 306.50623,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 597.73,
+              "y": 1077.75,
+              "z": 306.875,
+              "heading": 29,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 613.456,
+              "y": 1287.38,
+              "z": 292.75,
+              "heading": 104,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 624.019,
+              "y": 1085.99,
+              "z": 306.63,
+              "heading": 3,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 625.982,
+              "y": 1286.34,
+              "z": 292.75,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 634.537,
+              "y": 1291.82,
+              "z": 292.739,
+              "heading": 61,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 641.835,
+              "y": 1265.61,
+              "z": 291.111,
+              "heading": 102,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 646.053,
+              "y": 1282.92,
+              "z": 291.611,
+              "heading": 1,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 749.61,
+              "y": 1235.57,
+              "z": 289.527,
+              "heading": 34,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 762.719,
+              "y": 1075.33,
+              "z": 304.5,
+              "heading": 20,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 772.69,
+              "y": 1083.31,
+              "z": 304.46124,
+              "heading": 12,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 778.546,
+              "y": 1097.4,
+              "z": 302.458,
+              "heading": 118,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 2,
+      "npc_ids": 212420,
+      "seq": 2,
+      "step": 0,
+      "var": 2,
+      "npcs": [
+        {
+          "id": 212420,
+          "name": "watch inspector",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 580.8,
+              "y": 1079.51,
+              "z": 306.875,
+              "heading": 26,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 585.787,
+              "y": 1088.88,
+              "z": 306.875,
+              "heading": 39,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 611.914,
+              "y": 1092.01,
+              "z": 303.872,
+              "heading": 89,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 615.067,
+              "y": 1278.82,
+              "z": 292.625,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 625.558,
+              "y": 1294.99,
+              "z": 292.625,
+              "heading": 59,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 642.721,
+              "y": 1302.3,
+              "z": 292.481,
+              "heading": 42,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 761.542,
+              "y": 1222.91,
+              "z": 289.75,
+              "heading": 1,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 764.781,
+              "y": 1088.32,
+              "z": 304.122,
+              "heading": 1,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204329,
+          "name": "tofa",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 629.923,
+              "y": 917.468,
+              "z": 361.0,
+              "heading": 119,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 374894,
+        "gold": 13770,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 188053405
+          },
+          {
+            "count": 10,
+            "item_id": 162000005
+          },
+          {
+            "count": 10,
+            "item_id": 162000010
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "IMPORTANT",
+      "id": 2326,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 27,
+      "name": "Wasting the Watch",
+      "nameId": 1103526,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 374894,
+          "gold": 13770
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 188053405
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 162000005
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 162000010
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 4,
+          "npc_ids": 211381,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 4,
+          "npc_ids": 211382,
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 2,
+          "npc_ids": 212420,
+          "seq": 2,
+          "step": 0,
+          "var": 2
+        }
+      }
+    ]
+  }
+}

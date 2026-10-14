@@ -5,7 +5,10 @@ public static class NaturalJourneyPersistence
 {
 	/// <param name="startedOnEntry">M3: quests the server started as the fresh login entered the world (Java
 	/// <c>KillInWorld.onEnterWorldEvent</c>: an invasion daily such as Q49020 on entering Morheim), left out of the active journal.</param>
-	public static void Verify(NaturalJourneyCheckpoint before, NaturalJourneyCheckpoint after, IReadOnlySet<int>? startedOnEntry = null)
+	/// <param name="stigmaOnLogin">M4: a stigma's next rank, which Java grants only as the player logs in
+	/// (<c>StigmaService.onPlayerLogin</c>; no level-up hook), left out of the skill comparison.</param>
+	public static void Verify(NaturalJourneyCheckpoint before, NaturalJourneyCheckpoint after, IReadOnlySet<int>? startedOnEntry = null,
+		IReadOnlySet<int>? stigmaOnLogin = null)
 	{
 		Require(after.ConnectionGeneration > before.ConnectionGeneration, "fresh login generation");
 		Require(before.CharacterId == after.CharacterId, "character identity");
@@ -37,7 +40,7 @@ public static class NaturalJourneyPersistence
 				haramel.EntryObservation?.EntriesUsed == resumed.EntryObservation?.EntriesUsed &&
 				haramel.Visits.SequenceEqual(resumed.Visits) && haramel.IncomingEquipment.SequenceEqual(resumed.IncomingEquipment), "Haramel receipts and budgets");
 		Require(before.Inventory.OrderBy(i => i.ObjectId).SequenceEqual(after.Inventory.OrderBy(i => i.ObjectId)), "inventory");
-		Require(Skills(before).SequenceEqual(Skills(after)), "skills");
+		Require(Skills(before).SequenceEqual(Skills(after).Where(skill => stigmaOnLogin?.Contains(skill.Item1) != true)), "skills");
 		// Synchronizing a fresh login advances observation time without replenishing the stall budget.
 		static bool SameStallBudget(NaturalJourneyProgressState? original, NaturalJourneyProgressState? resumed) =>
 			original == null ? resumed == null : resumed != null && original.Fingerprint == resumed.Fingerprint &&

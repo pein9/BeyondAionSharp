@@ -565,6 +565,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			// M2: how a leg with flight rules gets out of a place it has no road from (Morheim's ice lake): it flies to the
 			// hub. False when it cannot take off there or no flight leads to the hub.
 			Func<Task<bool>>? flyOutOfStrand = null;
+			// M4: the quests this bot left for the group step on a Morheim leg (no progress on one alone for an hour).
+			var deferredToGroup = new HashSet<int>();
 			Func<int, float, Func<int?>?, Task<int>>? haramelApproach = null;
 			Func<IReadOnlyList<int>, int>? haramelKind = null;
 			bool farApproachUnderway = false;
@@ -3427,7 +3429,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						await NaturalLaterCapitalSteps.RunMatchingStepsAsync(session, [NaturalLaterCapitalSteps.RobeBerth], PlayLaterCapitalStepAsync);
 					if (session.Api.World.Level != helpCheckedAtLevel) await TopUpHelpItemsAsync("level-up");
 					NaturalAltgardDecision next = NaturalAltgardDecisionEngine.Decide(leg,
-						NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition, session.Api.Timing.Now, FreeCubeSlots(), coinGearProgress, haramelProgress, HaramelNow()), objectives, sequence, only);
+						NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition, session.Api.Timing.Now, FreeCubeSlots(), coinGearProgress, haramelProgress, HaramelNow()), objectives, sequence, only, deferredToGroup);
 					// NR-R15c: leg 10's trip to Pandaemonium is Q2283's hand-in, and Deyla's robe is handed in on it. A line that
 					// leaves Q2283 out has no quest to take it there: it makes the trip for the robe, once its quests are done.
 					if (laterCapital != null && altgardLegId == "l10" && only == null && next.Outcome == "complete" &&
@@ -3657,6 +3659,19 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							{
 								session.TraceDiagnostic("haramel-exhausted-sources-outcome", new Dictionary<string, object?> { ["quest"] = next.QuestId, ["reason"] = source.Message });
 								await LeaveHaramelAsync();
+							}
+							catch (TimeoutException stalled) when (NaturalAltgardContract.MorheimLegs.Contains(altgardLegId!) &&
+								stalled.Message.StartsWith("Natural journey made no quest", StringComparison.Ordinal))
+							{
+								// M4: no progress on this quest alone for the watchdog's hour (the Sorcerer at Chieftain Promakis, an EXPERT): the
+								// bot leaves it, and what needs it first, for the group step (M6), and plays on.
+								deferredToGroup.Add(next.QuestId!.Value);
+								session.TraceDiagnostic($"altgard-{altgardLegId}-deferred-to-group", new Dictionary<string, object?>
+								{
+									["quest"] = next.QuestId, ["level"] = session.Api.World.Level, ["position"] = session.CurrentPosition,
+								});
+								ExcuseBoundedWait();
+								await RestSafelyAsync(token);
 							}
 							break;
 						}
@@ -5472,8 +5487,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				session.BeginStep("af-endpoint", "verify-and-relog-at-the-leg-1-endpoint");
 				await TopUpHelpItemsAsync("checkpoint");
 				BotWorldModel world = session.Api.World;
-				Require.All(leg.Endpoint.CompletedQuestIds, quest => Require.Contains(quest, world.CompletedQuestIds));
-				foreach (int id in leg.Endpoint.CompletedQuestIds)
+				// M4: what the bot left for the group step is not done here; the receipt names it.
+				int[] endpointQuests = [.. leg.Endpoint.CompletedQuestIds.Where(quest => !deferredToGroup.Contains(quest))];
+				Require.All(endpointQuests, quest => Require.Contains(quest, world.CompletedQuestIds));
+				foreach (int id in endpointQuests)
 					foreach (var item in runtime.Data.Quests.GetQuestById(id).GetQuestWorkItems()?.GetQuestWorkItem() ?? [])
 						Require.Equal(0L, ItemCount(world, item.GetItemId()));
 				// AK-08 (AK-Q2): the held hand-ins are taken, not handed in, and their objectives are met.
@@ -5509,7 +5526,16 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					invasion.invasionWorld == after.MapId).Select(quest => quest.QuestId).ToHashSet();
 				if (startedOnEntry.Count > 0)
 					session.TraceDiagnostic("relog-started-on-entry", new Dictionary<string, object?> { ["quests"] = startedOnEntry.Order().ToArray() });
-				NaturalJourneyPersistence.Verify(before, after, startedOnEntry);
+				// M4: Java grants a stigma's next rank only as the player logs in (StigmaService.onPlayerLogin; no level-up hook): the
+				// relog after level 30 gave the Assassin Searching Strike II (3447), the rank its stone has from 30.
+				var loginClass = PlayerClassExtensions.GetPlayerClassById(after.PlayerClass, true);
+				var loginRace = Enum.Parse<Aion.GameServer.Model.Race>(leg.Start.Race);
+				HashSet<int> stigmaOnLogin = after.Skills.Where(skill => loginClass is { } owner && !before.Skills.Any(old => old.SkillId == skill.SkillId) &&
+					runtime.Data.SkillTreeDataDh.GetTemplatesForSkill(skill.SkillId, owner, loginRace).Any(template => template.IsStigma()))
+					.Select(skill => (int)skill.SkillId).ToHashSet();
+				if (stigmaOnLogin.Count > 0)
+					session.TraceDiagnostic("relog-stigma-rank", new Dictionary<string, object?> { ["skills"] = stigmaOnLogin.Order().ToArray() });
+				NaturalJourneyPersistence.Verify(before, after, startedOnEntry, stigmaOnLogin);
 				VerifyDestinyEndpoint();
 				if (laterCapital != null) await laterCapital.WriteCheckpointAsync(Path.GetDirectoryName(combatTracePath)!,
 					altgardLegId!, before, after, token, distinctSegment: continuousAltgard);
@@ -5519,11 +5545,12 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					System.Text.Json.JsonSerializer.Serialize(new
 					{
 						before, after, verified = true, session.CharacterId, ElapsedMillis = runtime.NowMillis,
-						Deaths = combat.ReviveCount,
+						Deaths = combat.ReviveCount, DeferredToGroup = deferredToGroup.Order().ToArray(),
 					}), token);
 				session.TraceDiagnostic($"altgard-{altgardLegId}-complete", new Dictionary<string, object?>
 				{
-					["level"] = after.Level, ["map"] = after.MapId, ["completed"] = leg.Endpoint.CompletedQuestIds,
+					["level"] = after.Level, ["map"] = after.MapId, ["completed"] = endpointQuests,
+					["deferredToGroup"] = deferredToGroup.Order().ToArray(),
 					["deaths"] = combat.ReviveCount, ["kinah"] = session.Api.World.Kinah,
 				});
 
@@ -9261,6 +9288,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							if (altgardLegId == "l10" && plan.Id == 2282) targetIds = targetIds.Where(id => id != 210539).ToArray();
 							if (targetIds.Length == 0) throw new InvalidDataException($"Q{plan.Id} kill has no shipped target.");
 							var exhaustedKinds = new HashSet<int>();
+							int killAbsences = 0;
 							for (int kill = 0; NaturalQuestProgress.RemainingKills(plan, operation, session.Api.World) > 0; kill++)
 							{
 								// BC-06: Q2281's alternatives occupy different camps. Stay with an observed nearby
@@ -9271,6 +9299,19 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								int target;
 								try { target = await KillShippedSpawnAsync(kind,
 									objectiveDone: () => NaturalQuestProgress.RemainingKills(plan, operation, session.Api.World) == 0); }
+								// M4: a target the other bots of the world keep dead past its respawn wait (Q2331's Chieftain Promakis, one spawn) is
+								// waited for again, up to eight times, as a collection's absent source is.
+								catch (InvalidDataException absent) when (altgardLeg?.PillarFlight == null && altgardLegId is not ("l10" or "l12") &&
+									!session.Api.World.IsDead && absent.Message.StartsWith("No client-observed NPC", StringComparison.Ordinal) &&
+									++killAbsences <= Math.Max(2 * available.Length, 8))
+								{
+									session.TraceDiagnostic("template-target-absent", new Dictionary<string, object?>
+									{
+										["quest"] = plan.Id, ["target"] = kind, ["absences"] = killAbsences,
+									});
+									ExcuseBoundedWait();
+									continue;
+								}
 								catch (NaturalHaramelSourcesExhaustedException) when (altgardLegId == "l12" && available.Length > 1)
 								{
 									exhaustedKinds.Add(kind);
@@ -9301,7 +9342,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								throw new InvalidDataException($"Q{plan.Id} item {operation.ItemId} has no shipped source.");
 							// M3: a source of the turn that is not there after its respawn wait (Q2429's lone 212374 brax, which the other bots of
 							// the world kill as well, beside ten 212373s) gives the turn to the next source; twice round them all without one ends it.
-							int absences = 0;
+							// M4: a lone source is waited for again, up to eight times, as the other bots take their turns; the wait is progress.
+							int absences = 0, barren = 0;
 							for (int attempt = 0; ItemCount(session.Api.World, operation.ItemId) < operation.Count;
 								attempt++)
 							{
@@ -9314,19 +9356,30 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								}
 								int source;
 								try { source = await KillShippedSpawnAsync(sourceId, operation); }
-								catch (InvalidDataException absent) when (sourceIds.Length > 1 && altgardLeg?.PillarFlight == null && !session.Api.World.IsDead &&
-									absent.Message.StartsWith("No client-observed NPC", StringComparison.Ordinal) && ++absences <= 2 * sourceIds.Length)
+								catch (InvalidDataException absent) when (altgardLeg?.PillarFlight == null && !session.Api.World.IsDead &&
+									absent.Message.StartsWith("No client-observed NPC", StringComparison.Ordinal) && ++absences <= Math.Max(2 * sourceIds.Length, 8))
 								{
 									session.TraceDiagnostic("template-source-absent", new Dictionary<string, object?>
 									{
 										["quest"] = plan.Id, ["item"] = operation.ItemId, ["source"] = sourceId, ["absences"] = absences,
 									});
+									ExcuseBoundedWait();
 									continue;
 								}
 								absences = 0;
+								long held = ItemCount(session.Api.World, operation.ItemId);
 								// Defense and the general quest sweep may finish the collection during the kill's approach.
 								if (ItemCount(session.Api.World, operation.ItemId) < operation.Count)
 									await TryLootCorpseItemAsync(session, source, operation.ItemId, token);
+								// M4: a kill of the bot's own is the collection at work though the drop did not come (Q2320's spectres drop at 35%, with
+								// seven other bots on them): it counts as progress, and forty of them in a row without the item end it as a drop that
+								// never comes.
+								if (ItemCount(session.Api.World, operation.ItemId) > held) barren = 0;
+								else if (session.Api.World.LootStatuses.ContainsKey(source))
+								{
+									Require.True(++barren < 40, $"Q{plan.Id}: item {operation.ItemId} came from none of 40 kills of the bot's own.");
+									ExcuseBoundedWait();
+								}
 								await RestSafelyAsync(token);
 								navigator.UnavailableObjects.Add(source);
 							}

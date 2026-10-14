@@ -1,0 +1,727 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "morheim-md-desert-garrison",
+  "start": {
+    "contract": "natural-morheim-mk-contract.json",
+    "snapshot": "morheim-mk-s1",
+    "mapId": 220020000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 28,
+    "bindNpcId": 700258,
+    "completedQuestIds": [
+      24020,
+      2945,
+      2946,
+      2947,
+      2042,
+      2306,
+      2302,
+      2304,
+      2305,
+      2499,
+      2493,
+      2421,
+      2303,
+      2351,
+      2352,
+      4317,
+      4318,
+      2479,
+      2495,
+      2309,
+      2310,
+      2311,
+      2312,
+      2425,
+      2426,
+      2427,
+      2308,
+      4314,
+      2424,
+      2429,
+      4315,
+      2497,
+      2496,
+      2316,
+      2498,
+      2307,
+      2428
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": [
+      2319,
+      2356
+    ]
+  },
+  "hub": {
+    "key": "desert-garrison",
+    "mapId": 220020000,
+    "anchor": [
+      626.855,
+      907.954,
+      360.858
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "fortress",
+      "note": "Morheim Ice Fortress: Vili, the end of Q2345 and of the leg",
+      "min": [
+        140,
+        2240,
+        430
+      ],
+      "max": [
+        410,
+        2470,
+        475
+      ]
+    },
+    {
+      "key": "garrison",
+      "note": "Desert Garrison: the givers, Orashunerk, the obelisk and the flight to the fortress",
+      "min": [
+        601,
+        874,
+        345
+      ],
+      "max": [
+        683,
+        949,
+        379
+      ]
+    },
+    {
+      "key": "clodworms",
+      "note": "clodworms, stones and sheluks (Q2323)",
+      "min": [
+        141,
+        136,
+        214
+      ],
+      "max": [
+        1443,
+        1560,
+        501
+      ]
+    },
+    {
+      "key": "spectres",
+      "note": "spectral soldiers, warriors and mages (Q2320)",
+      "min": [
+        1073,
+        855,
+        234
+      ],
+      "max": [
+        1369,
+        1210,
+        396
+      ]
+    },
+    {
+      "key": "arachnas",
+      "note": "goldthorn and black arachnas (Q2327)",
+      "min": [
+        44,
+        1396,
+        338
+      ],
+      "max": [
+        372,
+        1732,
+        508
+      ]
+    },
+    {
+      "key": "arachna-eggs",
+      "note": "arachna eggs (Q2329)",
+      "min": [
+        58,
+        1443,
+        351
+      ],
+      "max": [
+        365,
+        1650,
+        404
+      ]
+    },
+    {
+      "key": "ksellids",
+      "note": "gourd and laggard ksellids (Q4301)",
+      "min": [
+        184,
+        406,
+        204
+      ],
+      "max": [
+        1489,
+        1657,
+        445
+      ]
+    },
+    {
+      "key": "snufflers",
+      "note": "saltongue snufflers and blacktail scolopens (Q4302)",
+      "min": [
+        147,
+        464,
+        210
+      ],
+      "max": [
+        1471,
+        1384,
+        451
+      ]
+    },
+    {
+      "key": "ice-claw-watch",
+      "note": "the ice claw watch: assassins, fighters, inspectors (Q2326)",
+      "min": [
+        541,
+        1040,
+        274
+      ],
+      "max": [
+        808,
+        1332,
+        323
+      ]
+    },
+    {
+      "key": "promakis",
+      "note": "Chieftain Promakis, one spawn (Q2331)",
+      "min": [
+        244,
+        1064,
+        320
+      ],
+      "max": [
+        324,
+        1144,
+        350
+      ]
+    },
+    {
+      "key": "munmuns",
+      "note": "munmun gatherers, braves and lookouts (Q2340)",
+      "min": [
+        82,
+        243,
+        414
+      ],
+      "max": [
+        1260,
+        593,
+        541
+      ]
+    },
+    {
+      "key": "ice-claws",
+      "note": "ice claw hunters, guards and pawsoldiers (Q4321)",
+      "min": [
+        50,
+        152,
+        401
+      ],
+      "max": [
+        627,
+        626,
+        499
+      ]
+    },
+    {
+      "key": "lazy-ksellids",
+      "note": "lazy ksellids and ironback snufflers (Q4322)",
+      "min": [
+        109,
+        173,
+        414
+      ],
+      "max": [
+        549,
+        454,
+        500
+      ]
+    },
+    {
+      "key": "meaty-treats",
+      "note": "the meat for Orashunerk (Q2332)",
+      "min": [
+        746,
+        1021,
+        204
+      ],
+      "max": [
+        1395,
+        1688,
+        282
+      ]
+    },
+    {
+      "key": "ginseng",
+      "note": "the dried ginseng (Q2345)",
+      "min": [
+        268,
+        327,
+        415
+      ],
+      "max": [
+        328,
+        393,
+        446
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2323,
+      "category": "QUEST",
+      "minimumLevel": 24,
+      "rewardExperience": 207300,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204335,
+      "area": "clodworms"
+    },
+    {
+      "id": 2320,
+      "category": "QUEST",
+      "minimumLevel": 25,
+      "rewardExperience": 207300,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204329,
+      "area": "spectres"
+    },
+    {
+      "id": 2327,
+      "category": "QUEST",
+      "minimumLevel": 26,
+      "rewardExperience": 248550,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204330,
+      "area": "arachnas"
+    },
+    {
+      "id": 2329,
+      "category": "QUEST",
+      "minimumLevel": 26,
+      "rewardExperience": 179400,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204332,
+      "area": "arachna-eggs"
+    },
+    {
+      "id": 4301,
+      "category": "QUEST",
+      "minimumLevel": 26,
+      "rewardExperience": 126080,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204426,
+      "area": "ksellids"
+    },
+    {
+      "id": 4302,
+      "category": "QUEST",
+      "minimumLevel": 26,
+      "rewardExperience": 126080,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204337,
+      "area": "snufflers"
+    },
+    {
+      "id": 2326,
+      "category": "IMPORTANT",
+      "minimumLevel": 27,
+      "rewardExperience": 374894,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204329,
+      "area": "ice-claw-watch"
+    },
+    {
+      "id": 2331,
+      "category": "IMPORTANT",
+      "minimumLevel": 28,
+      "rewardExperience": 413113,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204332,
+      "area": "promakis"
+    },
+    {
+      "id": 2340,
+      "category": "IMPORTANT",
+      "minimumLevel": 28,
+      "rewardExperience": 413113,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204335,
+      "area": "munmuns"
+    },
+    {
+      "id": 4321,
+      "category": "QUEST",
+      "minimumLevel": 28,
+      "rewardExperience": 233824,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204333,
+      "area": "ice-claws"
+    },
+    {
+      "id": 4322,
+      "category": "IMPORTANT",
+      "minimumLevel": 28,
+      "rewardExperience": 413113,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204332,
+      "area": "lazy-ksellids"
+    },
+    {
+      "id": 2332,
+      "category": "IMPORTANT",
+      "minimumLevel": 27,
+      "rewardExperience": 374894,
+      "prerequisite": null,
+      "handler": "morheim/_2332MeatyTreats.cs",
+      "template": null,
+      "startNpcId": 798084,
+      "area": "meaty-treats"
+    },
+    {
+      "id": 2345,
+      "category": "IMPORTANT",
+      "minimumLevel": 28,
+      "rewardExperience": 413113,
+      "prerequisite": null,
+      "handler": "morheim/_2345OrashunerkSpecialOrder.cs",
+      "template": null,
+      "startNpcId": 798084,
+      "area": "ginseng"
+    }
+  ],
+  "order": [
+    2323,
+    2320,
+    2327,
+    2329,
+    4301,
+    4302,
+    2326,
+    2331,
+    2340,
+    4321,
+    4322,
+    2332,
+    2345
+  ],
+  "steps": [
+    {
+      "key": "q2332-offer-orashunerk",
+      "questId": 2332,
+      "status": "OFFER",
+      "npcId": 798084,
+      "position": [
+        639.0,
+        914.0,
+        361.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        4762
+      ],
+      "area": "garrison"
+    },
+    {
+      "key": "q2332-v0-orashunerk",
+      "questId": 2332,
+      "var": 0,
+      "npcId": 798084,
+      "position": [
+        639.0,
+        914.0,
+        361.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        1352,
+        5
+      ],
+      "area": "garrison"
+    },
+    {
+      "key": "q2345-offer-orashunerk",
+      "questId": 2345,
+      "status": "OFFER",
+      "npcId": 798084,
+      "position": [
+        639.0,
+        914.0,
+        361.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        4762
+      ],
+      "area": "garrison"
+    },
+    {
+      "key": "q2345-v0-orashunerk",
+      "questId": 2345,
+      "var": 0,
+      "npcId": 798084,
+      "position": [
+        639.0,
+        914.0,
+        361.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "CHECK_USER_HAS_QUEST_ITEM"
+      ],
+      "pages": [
+        1011,
+        10000
+      ],
+      "area": "garrison"
+    },
+    {
+      "key": "q2345-v1-orashunerk",
+      "questId": 2345,
+      "var": 1,
+      "npcId": 798084,
+      "position": [
+        639.0,
+        914.0,
+        361.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO10"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "garrison"
+    },
+    {
+      "key": "q2345-reward-vili",
+      "questId": 2345,
+      "status": "REWARD",
+      "npcId": 204304,
+      "position": [
+        228.224,
+        2416.7,
+        454.156
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        1693,
+        5
+      ],
+      "area": "fortress"
+    }
+  ],
+  "objectUses": [
+    {
+      "key": "q2345-ginseng",
+      "questId": 2345,
+      "npcId": 700238,
+      "fromVar": 0,
+      "toVar": 1,
+      "uses": 3,
+      "lootItemId": 182204136,
+      "disappears": true,
+      "spawnCount": 9,
+      "respawnSeconds": 295,
+      "area": "ginseng"
+    }
+  ],
+  "collections": [
+    {
+      "questId": 2332,
+      "atVar": 0,
+      "items": [
+        {
+          "itemId": 182204127,
+          "count": 1,
+          "sourceNpcIds": [
+            211356,
+            211378
+          ]
+        },
+        {
+          "itemId": 182204128,
+          "count": 5,
+          "sourceNpcIds": [
+            212390,
+            212391
+          ]
+        },
+        {
+          "itemId": 182204129,
+          "count": 2,
+          "sourceNpcIds": [
+            212396,
+            212397
+          ]
+        }
+      ]
+    },
+    {
+      "questId": 2345,
+      "atVar": 0,
+      "items": [
+        {
+          "itemId": 182204136,
+          "count": 3,
+          "sourceNpcIds": [
+            700238
+          ]
+        }
+      ]
+    }
+  ],
+  "bind": {
+    "npcId": 700213,
+    "position": [
+      626.855,
+      907.954,
+      360.858
+    ],
+    "onArrival": true,
+    "price": 4353,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [
+    {
+      "id": 2328,
+      "reason": "Millennium Eka is one spawn (1800 s) whose item drops for each member of a group: played with the group quests (step M6)",
+      "leg": 0
+    },
+    {
+      "id": 2342,
+      "reason": "[Group] An Ice Claw Raid: played in a group (step M6)",
+      "leg": 0
+    },
+    {
+      "id": 2344,
+      "reason": "the ice claw flags stand in the Ice Claw village among elite monsters (levels 28 to 30): a lone Cleric died 15 times for 2 of 5 (trial t2); played with the group quests (step M6)",
+      "leg": 0
+    },
+    {
+      "id": 2343,
+      "reason": "its stone altar censer stands in the same elite village: played with the group quests (step M6)",
+      "leg": 0
+    },
+    {
+      "id": 2333,
+      "reason": "A Ribbit out of Water (its item use and its escort) is played with the campaign (leg mc)",
+      "leg": 0
+    },
+    {
+      "id": 24021,
+      "reason": "the campaign (leg mc)",
+      "leg": 0
+    },
+    {
+      "id": 24022,
+      "reason": "the campaign (leg mc)",
+      "leg": 0
+    },
+    {
+      "id": 24023,
+      "reason": "the campaign (leg mc)",
+      "leg": 0
+    }
+  ],
+  "endpoint": {
+    "mapId": 220020000,
+    "completedQuestIds": [
+      2323,
+      2320,
+      2327,
+      2329,
+      4301,
+      4302,
+      2326,
+      2331,
+      2340,
+      4321,
+      4322,
+      2332,
+      2345
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 28,
+    "snapshot": "morheim-md",
+    "anchor": [
+      228.224,
+      2416.7,
+      454.156
+    ],
+    "radius": 30,
+    "bindNpcId": 700213,
+    "heldQuestIds": []
+  }
+}

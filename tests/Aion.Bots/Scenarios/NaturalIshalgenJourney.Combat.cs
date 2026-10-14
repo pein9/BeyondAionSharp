@@ -1641,6 +1641,12 @@ public sealed partial class NaturalIshalgenJourney
 					$"MP={session.Api.World.CurrentMp}/{session.Api.World.MaxMp}, " +
 					$"position={session.CurrentPosition}; packets={string.Join(',', recent)}.", exception);
 			}
+			// M4: a skill at a target that has died is refused twice (Java Skill.isValidTarget says it, then the empty target list
+			// says it again): take the second now, or the next cast reads it as its own refusal (the Assassin's Herb Treatment in M3,
+			// the Cleric's in M4, refused while it was being cast).
+			if (started.PacketType == typeof(SM_SYSTEM_MESSAGE) && started.Get<object>("name") is "STR_SKILL_TARGET_IS_NOT_VALID")
+				await session.WaitForPacketWithinAsync(typeof(SM_SYSTEM_MESSAGE), TimeSpan.FromMilliseconds(50), token,
+					packet => packet.Get<object>("name") is "STR_SKILL_TARGET_IS_NOT_VALID");
 			if (started.PacketType == typeof(SM_SYSTEM_MESSAGE))
 			{
 				// A rejected cast never starts on the server; release the bot's local

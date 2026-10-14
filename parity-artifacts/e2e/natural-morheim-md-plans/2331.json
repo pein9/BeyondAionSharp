@@ -1,0 +1,237 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2331,
+    "name": "A Distasteful Duty",
+    "nameId": 1103531,
+    "zone": "Morheim",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 28,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2331,
+        "start_npc_ids": 204332
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204332,
+        "name": "jorund",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 636.319,
+            "y": 914.647,
+            "z": 360.52,
+            "heading": 20,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204332,
+      "name": "jorund",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 636.319,
+          "y": 914.647,
+          "z": 360.52,
+          "heading": 20,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204332,
+      "name": "jorund",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 636.319,
+          "y": 914.647,
+          "z": 360.52,
+          "heading": 20,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 1,
+      "npc_ids": 212653,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 212653,
+          "name": "chieftain promakis",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 284.957,
+              "y": 1104.83,
+              "z": 335.133,
+              "heading": 77,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204332,
+          "name": "jorund",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 636.319,
+              "y": 914.647,
+              "z": 360.52,
+              "heading": 20,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 413113,
+        "gold": 35400,
+        "rewardItems": [],
+        "selectableItems": [
+          {
+            "item_id": 113101668
+          },
+          {
+            "item_id": 113301792
+          },
+          {
+            "item_id": 113301794
+          },
+          {
+            "item_id": 113501728
+          },
+          {
+            "item_id": 113501730
+          },
+          {
+            "item_id": 113601574
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 2331,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 28,
+      "name": "A Distasteful Duty",
+      "nameId": 1103531,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 413113,
+          "gold": 35400
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 113101668
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 113301792
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 113301794
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 113501728
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 113501730
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 113601574
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 1,
+          "npc_ids": 212653,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

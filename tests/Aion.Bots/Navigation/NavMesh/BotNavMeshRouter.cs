@@ -31,6 +31,14 @@ public sealed class BotNavMeshRouter(BotNavMeshSet navMeshes, BotNavigationGeome
 	private const float RepairLimit = 12f;
 	private const int CornerSkip = 3;
 	private const float BridgeLimit = 40f;
+	// M4: the seams a route may cross, where the voxel bake split one walkable ground into two islands, each found on the
+	// map and checked: Morheim's Ice Claw plateau, 0.9 m from the main island at a narrow pass. A seam search over the whole
+	// mesh also found crossings in Nochsana Training Camp's gateway that the group's following could not take, so only the
+	// listed ones are crossed.
+	private static readonly IReadOnlyDictionary<int, (BotPosition A, BotPosition B)[]> CheckedSeams = new Dictionary<int, (BotPosition, BotPosition)[]>
+	{
+		[220020000] = [(new(770.4f, 320.1f, 515.9f, 0), new(769.8f, 319.5f, 516.1f, 0))],
+	};
 	/// <summary>Extra room around a blocked window, tried in turn: packs can close the tight corridor.</summary>
 	private static readonly float[] DetourMargins = [0, 40, 100];
 
@@ -59,6 +67,7 @@ public sealed class BotNavMeshRouter(BotNavMeshSet navMeshes, BotNavigationGeome
 		IReadOnlyList<BotPosition>? route = Route(mapId, start, destination, options);
 		if (route == null && lastOutcome is BotNavRouteOutcome.NotConnected or BotNavRouteOutcome.EndpointOffMesh)
 			route = StepOffIsland(mapId, start, destination, options, (from, _) => Route(mapId, from, destination, options))
+				?? CrossSeam(mapId, start, destination, options, from => Route(mapId, from, destination, options))
 				?? Bridge(mapId, start, destination, options);
 		if (route == null) return [];
 		if (route.Count == 0 || Distance(route[^1], destination) > 0.05f)
@@ -110,6 +119,50 @@ public sealed class BotNavMeshRouter(BotNavMeshSet navMeshes, BotNavigationGeome
 		return null;
 	}
 
+	/// <summary>
+	/// M4: two islands the voxel bake split at a narrow pass that the server's ground lets a player walk through (Morheim's
+	/// Ice Claw plateau, whose flags and censer stand 0.9 m across a seam from the main island at 770,320). Route to the
+	/// seam on this island, take the checked step across it, and route on with <paramref name="onward"/>. Null when no
+	/// listed seam (<see cref="CheckedSeams"/>) joins the two islands.
+	/// </summary>
+	private IReadOnlyList<BotPosition>? CrossSeam(int mapId, BotPosition start, BotPosition destination, BotNavQuery options,
+		Func<BotPosition, IReadOnlyList<BotPosition>?> onward)
+	{
+		BotNavRouteOutcome original = lastOutcome;
+		BotNavMesh? mesh = NavMeshes.Get(mapId);
+		if (mesh == null) return null;
+		int here = mesh.IslandOf(start, options with { SnapHorizontal = 2 });
+		int there = mesh.IslandOf(destination, options);
+		(BotPosition Near, BotPosition Far)? seam = here < 0 || there < 0 || here == there ? null : CheckedSeams.GetValueOrDefault(mapId, [])
+			.Select(listed => mesh.IslandOf(listed.A, options) == here && mesh.IslandOf(listed.B, options) == there ? (listed.A, listed.B)
+				: mesh.IslandOf(listed.B, options) == here && mesh.IslandOf(listed.A, options) == there ? (listed.B, listed.A)
+				: ((BotPosition, BotPosition)?)null)
+			.FirstOrDefault(found => found != null);
+		if (seam is not var (near, far))
+		{
+			lastOutcome = original;
+			return null;
+		}
+		IReadOnlyList<BotPosition>? toSeam = Distance(start, near) <= 0.05f ? [] : Route(mapId, start, near, options);
+		BotPosition at = toSeam is { Count: > 0 } ? toSeam[^1] : start;
+		IReadOnlyList<BotPosition> step = toSeam == null ? [] : options.Hazards.Count == 0
+			? Geometry.GridLocalPath(mapId, at, far)
+			: Geometry.GridJourneyPathAvoiding(mapId, at, far, options.Hazards);
+		IReadOnlyList<BotPosition>? rest = step.Count == 0 ? null : onward(step[^1]);
+		if (rest == null)
+		{
+			Log?.Invoke($"no checked crossing of the seam between islands {here} and {there} at {near}");
+			lastOutcome = original;
+			return null;
+		}
+		List<BotPosition> route = [.. toSeam!, .. step, .. rest];
+		if (options.Hazards.Count > 0 && !BotNavigationGeometry.AvoidsHazards(start, route, options.Hazards)) { lastOutcome = original; return null; }
+		Log?.Invoke($"crossed the seam from navmesh island {here} at {near} onto {there} at {far}");
+		lastOutcome = BotNavRouteOutcome.Routed;
+		return route;
+	}
+
+
 	/// <summary>The destination stands on a separate scrap of navmesh (a crate top, a platform, a ledge the voxel
 	/// bake split off) or off the mesh: walk to the reachable point closest to it, then let the bounded grid search
 	/// settle the last few metres. Null when that point is still too far.</summary>
@@ -149,7 +202,8 @@ public sealed class BotNavMeshRouter(BotNavMeshSet navMeshes, BotNavigationGeome
 		IReadOnlyList<BotPosition>? route = Route(mapId, start, target, options, allowPartial: true, acceptShort: true);
 		if (route == null && lastOutcome is BotNavRouteOutcome.NotConnected or BotNavRouteOutcome.EndpointOffMesh)
 			route = StepOffIsland(mapId, start, target, options,
-				(from, _) => Route(mapId, from, target, options, allowPartial: true, acceptShort: true));
+				(from, _) => Route(mapId, from, target, options, allowPartial: true, acceptShort: true))
+				?? CrossSeam(mapId, start, target, options, from => Route(mapId, from, target, options, allowPartial: true, acceptShort: true));
 		if (route == null)
 		{
 			BotNavRouteOutcome first = lastOutcome;
