@@ -2,7 +2,7 @@
 
 Status: a plan, 2026-10-13, as the operator shaped it in three messages that day. Step M1, the quest list, is done:
 [natural-morheim-quests.md](natural-morheim-quests.md). Steps M2 (Morheim Ice Fortress) and M3 (Kellan's Cabin) are
-played: the world is now `morheim-mk-s1-w1`, and the next step starts from it.
+played, and step M4's garrison quests (leg `md`): the world is now `morheim-md-s1-w1`, and the next leg starts from it.
 
 It follows [natural-muster.md](natural-muster.md), whose rules MR-a to MR-i are this leg's rules, and starts from the
 group world `ntc-group-s5`.
@@ -118,16 +118,42 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     ingredients). A bounded wait the bot cannot hurry counts as progress for the journey's one-hour watchdog.
   - The trials (t1 to t6) found these bot faults, all fixed: a template collection kept waiting on the one source of
     two that the other bots kept dead (Q2429's lone 212374 brax); a walking NPC (Spedor, on a long round) was talked
-    to where he had been; a self-heal refused in a can't-attack state (Java answers it STR_SKILL_TARGET_IS_NOT_VALID)
-    stopped the Assassin; the item hand-in took another handler's dialog window for Vivi's page; the endpoint relog
+    to where he had been; a self-heal "refused" stopped the Assassin (M4 found the cause: a skill at a target that
+    has just died is refused twice, Java `Skill.isValidTarget` and then the empty target list, and the bot read the
+    second refusal as its next cast's); the item hand-in took another handler's dialog window for Vivi's page; the endpoint relog
     counted the invasion daily the server starts on entering Morheim (Q49020) as a changed journal.
   - Found in the server, both as Java has them and left so: Q2718's handler (Reshanta) sends an empty dialog window to
     everyone who talks to Vivi without having taken it; Q2307's handler does not check the soup's four ingredients
     (Java: "INGREDIENT CHECK NEED TO SCRIPT"), so the soup can be made without them. The bots gather them anyway.
 - [ ] **M4 Desert Garrison,** 18 quests.
+  - 2026-10-14, the garrison's own quests: stage `md`, contract `parity-artifacts/e2e/natural-morheim-md-contract.json`,
+    from `morheim-mk-s1`: 13 quests (11 from their compiled plans, Q2332 and Q2345 by steps), ending at Vili in the
+    fortress with Q2345. Round `m4-md`, all eight ten game minutes apart, captured `morheim-md-s1-w1`: every bot did
+    all 13 and stood at the endpoint, level 30 (the Gladiator, the Cleric and the Assassin 31), in 4.5 to 7.3 game hours,
+    4 to 10 deaths each. The Cleric and the Assassin are recorded as stopped: the endpoint's second relog check (the
+    later-capital receipt) did not yet allow what the server gives at a login, the invasion daily Q49020 and a stigma's
+    next rank (fixed after the round; their characters are at the endpoint with every quest done).
+  - My decisions, his to change: **Q2328, Q2344 and Q2343 go to the group step M6**: Millennium Eka is one spawn
+    (1800 s) whose item drops for each member of a group; Q2344's ice claw flags and Q2343's stone altar censer stand
+    in the Ice Claw village among elite brutal ice claws (levels 28 to 30), where a lone Cleric died 15 times for 2 of
+    the 5 flags (trial t2). And: **a template quest a bot makes no progress on alone for the journey's hour is left for
+    the group step**, with what needs it (no bot needed it in the round).
+  - The trials (t1 to t4) found these bot faults, all fixed: the flags' plateau is a navmesh island the bake split
+    from the rest of Morheim 0.9 m away at a pass, so a route crosses listed seams now (a search for every seam broke
+    the group NTC replay, so only checked ones are listed: this one); eight bots on one herd of spectres (35% drops)
+    left a bot an hour without a drop, so a collection counts its own kills as progress (forty in a row without the
+    item end it); a lone named target (Chieftain Promakis) that other bots keep dead is waited for again; a skill at a
+    target that has just died is refused twice (Java `Skill.isValidTarget`, then the empty target list) and the second
+    refusal was read as the next cast's (the Assassin in M3, the Cleric here); the endpoint relog allowed neither the
+    invasion daily nor a stigma rank granted at login.
+  - Found in the server, as Java has it and left so: a stigma's next rank (the Assassin's Searching Strike II at 30)
+    comes only at the next login (Java `StigmaService.onPlayerLogin`; there is no level-up hook).
+  - Next, leg `mc`: the campaign's Q24021 and Q24022, and Q2333 (an item use and an escort). Q24023 gathers inside the
+    Sky Temple Interior, a solo instance, and waits for the leg engine to collect inside an instance.
 - [ ] **M5 Slag Bulwark and Alsig Village,** 13 quests, and the four without a giver where they fall.
 - [ ] **M6 The group quests,** 11, in groups, with Q2494 and Q2328 (one named spawn each, whose items drop for each
-  member of a group; see M3).
+  member of a group; see M3), Q2344 and Q2343 (the Ice Claw village's elites; see M4) and any quest a bot left for the
+  group.
 - [ ] **M7 Level 31 and the gear check.** Every quest of the leg done by all eight; level 31; Elite Rank 6 where it
   beats what is worn; the sale of what it replaced, the kit and the cleanup; a relog. The capture is the next group
   world.
