@@ -33,7 +33,10 @@ to 'free for all' if that makes things easier."
 
 His answers the same day: it is built and tried in SIM only for now; a test-only stand-in plays the player's part
 there, because no bot leads in the product; a companion is a throwaway character, made when asked and deleted when
-dismissed; the first version takes level 26 only.
+dismissed; the first version takes level 26 only. Level 31 came on 2026-10-14 (step M8 of
+[natural-morheim-leveling.md](natural-morheim-leveling.md)): the eight original classes have a level-31 profile from the
+world of the gear check-in at 31, `morheim-g31-s1-w1`; a companion comes at the highest level its class has that is not
+above its player's (the lowest when every one is), and `.companion <class> <level>` asks for one outright.
 
 ## How it works
 

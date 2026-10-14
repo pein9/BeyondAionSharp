@@ -184,7 +184,7 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     the Gladiator the greatsword (27). The pieces they replaced were thrown away (coin gear does not sell), the kit
     was filled, no deaths, a relog. M8, M5 and M6 start from this world; the bots pass 31 in M5 and M6, and their next
     check-in is at 36.
-- [ ] **M8 Level-31 companions.** The profiles of the eight from that world, beside the level-26 ones. The server
+- [x] **M8 Level-31 companions.** The profiles of the eight from that world, beside the level-26 ones. The server
   offers both: a companion comes at the highest level it has a profile for that is not above its player's, and
   `.companion <class> <level>` asks for one outright. A round with a level-31 stand-in and level-31 companions.
   The operator, 2026-10-14: "the cleric probably has more and better heals (a group heal?), make sure the heal
@@ -192,6 +192,30 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
   rotation (`NaturalGroupHealDriver`, its roles in the class profile) is brought up to what a level-31 Cleric has
   learned, a group heal among it, used when several members are hurt at once; the companion Cleric and the Fire
   Temple Cleric are the same driver.
+  - 2026-10-14, before M5 (decision 7): the level-31 profiles of the eight, from `morheim-g31-s1-w1`, beside the
+    level-26 ones; `scripts/sim/make-companion-profiles.py` has two sources now, the group world for every class at 26
+    and the check-in world for the original eight at 31. The server keeps every profile it finds. A companion comes at
+    the highest level its class has a profile for that is not above its player's, at the lowest when every one is, and
+    `.companion <class> <level>` asks for a level outright (`.companion cleric 31`).
+  - Every class now casts its highest rank of a skill: a rank of levels 27 to 31 takes the role of the rank before it
+    (the skill tree's `skillLearn`, in `NaturalSkillCatalog.Build`); a rank of an excluded skill stays out. Until now
+    the tables of roles ended at 26, and a character of 31 cast its rank of 26.
+  - The Cleric's heals (`NaturalGroupHealDriver`): Healing Wind (learned at 28, every member within 25 m) is cast when
+    two or more members in its reach are at 70% or less and none is at 35% or less, which a single heal answers first;
+    Light of Recovery (31, a second's cast) comes before Healing Grace and Healing Light. The companion Cleric and the
+    group Cleric are the same driver.
+  - Round `m8-t1` (from `morheim-g31-s1`, not captured): the level-31 Templar plays the player's stand-in and brings a
+    Cleric, a Gladiator, a Ranger, a Sorcerer and a Chanter, which is the Fire Temple group. All five come at level 31
+    on their 31 profiles, join, follow, fight its marks and leave with nothing they did not bring. They cast their ranks
+    of 28 to 30 (Cleave, Ice Chain, Thunderbolt Strike, Entangling Shot), and the Cleric kept every member under its
+    Light of Rejuvenation of rank 30. Nobody fell below 70% in those fights, so Healing Wind waits for Fire Temple.
+  - Checks: the unit suite, the pre-commit checks, the profile check, the companion server tests, Fast (`m8-fast`) and
+    the neutral gate passed. The Group NTC replay did not, twice (`m8-n9`, `m8-n9b`): the members reach 27 in the camp,
+    their new ranks change a fight by a little, and the Templar then retreated 80 m out of sight; its five followers
+    stood with 48 samples of its way unwalked, since a follower waited to see a leader that stood still, until its wait
+    for the group ran out. I committed the code (`088c9879e`) before I saw that the second replay had stopped as well.
+    The follower now walks the trail it has recorded to a leader out of sight (`91c5774a2`), and the replay passes with
+    it (`m8-n9c`, all six), as do the unit suite, the warning baseline and the neutral gate.
 - [ ] **M9 The report:** per class its level, quests done, deaths and time; every quest that was not played and why;
   what the bots found wrong with the server.
 - [ ] **M10 Fire Temple, as a group of six at 31.** The operator, 2026-10-14, before leaving for a while: once the list
@@ -230,7 +254,8 @@ need"; "around Fire temple is a FLY ZONE"):
 
 Mine, where he gave none; each is his to change:
 
-- How a companion's level is chosen (step M8).
+- How a companion's level is chosen (step M8): the highest level its class has a profile for that is not above its
+  player's, the lowest when every one is above it, or the level the player names.
 - His own Templar is level 26 and Fire Temple asks for 27. On his word it gets the level-31 Templar's state the way
   it got the level-26 one's.
 
