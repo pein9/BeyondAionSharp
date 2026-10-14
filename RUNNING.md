@@ -79,7 +79,8 @@ server with companions on and the service `companionhost`, which plays them.
   servers over the stack's own network, keeps five seats waiting and logs in another whenever a player takes one,
   up to fifty (`AION_COMPANION_SPARE_SEATS`, `AION_COMPANION_MAX_SEATS` in `docker/.env`). Its log is
   `docker logs aion-companionhost`; its runs, with every seat's trace, are under `run/companion-host-stack` and
-  are kept fourteen days. The nightly `docker/RestartAll.ps1` builds and starts it after the servers.
+  are kept fourteen days. The nightly `docker/RestartAll.ps1` builds and starts it after the servers. Its image
+  bakes the navmeshes of every map itself; the first build takes several minutes longer for that.
 - **Host, from the checkout:** `pwsh -NoProfile -File scripts/live/companion-host.ps1 -Target aion`, and the same
   with `-Stop` from another terminal, runs the checkout's bot code in place of the stack's host. Stop that one
   first (`docker compose -f docker/docker-compose.yml stop companionhost`); the script refuses while it runs,

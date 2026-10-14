@@ -448,8 +448,16 @@ dotnet run --project tools/Aion.NavBake -- check --maps all --out run/nav   # 15
 
 All 155 maps that have geometry are current. The six maps of `world_maps.xml` without a navmesh have no geometry to
 bake: Rumakiki's Conspiracy (Solo) 301150000, Asmodian Legion Housing 710020000 and the four test maps 900120000,
-900130000, 900140000 and 900150000. The cache is git-ignored and found after the checked-in folder, by SIM and by the
-live hosts alike; a clone has to bake it once.
+900130000, 900140000 and 900150000. The cache is git-ignored and found after the checked-in folder, by SIM and by a
+host started from the checkout; a clone has to bake it once.
+
+**The stack's companion host bakes its own** (2026-10-13, on the operator's question about the server machine, which
+only pulls and builds). Its image (`docker/companionhost/Dockerfile`, stage `navmesh`) runs the same tool over the
+repository's geometry and puts a navmesh for every map into the place the bots look, `run/nav` beside the
+checked-in folder. A build cache keeps them between builds, and `bake-navmeshes.sh` bakes only what `check` calls
+missing or stale: the first build baked 155 maps in about seven minutes, a build with every map current takes
+about half a minute. Nothing more is checked in, and no machine has to bake by hand for the host. Where a map has
+no navmesh at all a bot still walks, by the bounded grid search it had before navmeshes (`BotNavigationGeometry`).
 
 ## Bake rules and why
 

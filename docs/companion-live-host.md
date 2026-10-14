@@ -391,6 +391,10 @@ its role, as the stand-in's companions did in SIM. NTC is the place to try it.
     Shown on this machine: the image built, the service started, five seats waiting at character selection, no
     problem recorded, about 1 GB of memory. Not shown: the nightly script's real run with it, and the server
     machine, which gets it at its next pull. What the note below says was the state before this.
+  - 2026-10-13, his question: "ON the server machine, what about nav paths/meshes/whatever? We don't commit them."
+    Twelve maps' navmeshes are checked in; the other 143 were only in the checkout's `run/nav`, which no image holds,
+    so the stack's host had twelve, here as on the server machine. Its image now bakes a navmesh for every map when
+    it is built (`docs/bot-navigation.md`, "The local cache of every other map"): 155 in the running host.
   - **The nightly restart turns companions off** as things stand. `docker/RestartAll.ps1` starts the game server
     from `docker/.env` alone, and without the two settings in that file the stack resolves `AION_COMPANIONS=false`
     (read from `docker compose config`, not from the file). They were given by the shell each time the container was
