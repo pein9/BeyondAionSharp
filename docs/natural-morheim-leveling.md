@@ -203,6 +203,20 @@ The operator's, 2026-10-13:
 4. The leg ends on level 31 with the gear check, and the level-31 profiles become companions.
 5. A round is all eight bots in the one world, each starting ten game minutes after the one before.
 
+The operator's, 2026-10-14, back for a while after M4 ("every bot is level 31. That is the bookmark for our profile we
+need"; "around Fire temple is a FLY ZONE"):
+
+6. **Q2367 A Prized Possession: every bot takes the first ending.** Embla's two answers set the reward. The first
+   opens Q2370 The Bottom of the Temple (Sarinerk: wiggling wriggots and blackscale basilisks on the crater floor);
+   the second opens Q2372 Immortal Love (Paepaerunerk in Pandaemonium, poison arachnas in Altgard and sulfur worms
+   in the Abyss). A character can have only one of the two. Q2372 goes into the report: the bots have no Abyss
+   travel.
+7. **The level-31 gear check and companion profiles come first,** from `morheim-mc-s1-w1`, where every bot is exactly
+   31: step M7's check-in and step M8 are played before M5 and M6, which follow from the checked world. The bots
+   level past 31 there.
+8. **Q2477 A Dish For Dukar is played:** the leg engine learns to collect on another map (its ingredients drop only
+   from Beluslan's meek crestliches, and Lainita's step is in Pandaemonium).
+
 Mine, where he gave none; each is his to change:
 
 - How a companion's level is chosen (step M8).
