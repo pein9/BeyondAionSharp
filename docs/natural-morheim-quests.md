@@ -7,22 +7,23 @@ The classes: Gladiator, Templar, Assassin, Ranger, Sorcerer, Spirit Master, Cler
 
 | For the leg | Quests | Experience | What it means |
 |---|---:|---:|---|
-| plays | 107 | 53,780,412 | its handler is one of the server's templates; the compiled plan is what the bot follows |
-| steps | 29 | 26,914,882 | its handler is written by hand, so its steps are written for the bot too, as for the Altgard legs |
-| group | 37 | 44,844,356 | a [Group] quest: played by a group, after the hubs |
-| spy | 14 | 6,628,684 | a [Spy] quest: it goes into Elyos land through a rift, which no bot does yet |
-| gather | 23 | 5,541,726 | it asks for gathering, which waits for the gathering work |
-| blocked | 25 | 29,013,002 | it cannot be taken as the server is: no handler, or a quest before it that cannot be had |
+| plays | 58 | 12,176,199 | its handler is one of the server's templates; the compiled plan is what the bot follows |
+| steps | 17 | 5,533,572 | its handler is written by hand, so its steps are written for the bot too, as for the Altgard legs |
+| group | 11 | 2,951,749 | a [Group] quest: played by a group, after the hubs |
+| spy | 10 | 1,594,238 | a [Spy] quest: not played (the operator, 2026-10-13: "Don't do spy quests") |
+| gather | 20 | 3,114,943 | it asks for gathering, which waits for the gathering work |
+| blocked | 14 | 5,010,689 | it cannot be taken as the server is: no handler, or a quest before it that cannot be had |
 | repeat | 34 | 4,807,650 | repeatable or an event: not part of playing the zone through once |
+| later | 105 | 136,341,672 | it starts at the level the leg ends on, or above: a later leg |
 | done | 1 | 293,759 | finished by every one of the classes |
 
-**How far the zone carries a character.** The least experienced of them starts at level 26. Taking every quest it has
-the level for, by the experience of the rewards alone and none for a kill, it ends at level 33 with 99 quests played
-(level 27 after 20, level 28 after 35, level 29 after 48, level 30 after 56, level 31 after 66, level 32 after 77, level 33 after 89). 37 quests start above that level, the lowest at 34: they wait for experience from elsewhere.
+**The leg ends on level 31.** The least experienced of them starts at level 26. Taking every quest of the leg it has the
+level for, by the experience of the rewards alone and none for a kill, it ends at level 31 with 75 quests played
+(level 27 after 20, level 28 after 35, level 29 after 48, level 30 after 56, level 31 after 66). Every quest of the leg is within its reach.
 
 ## Morheim Ice Fortress
 
-10 play as they are (2,715,849 experience), 7 need steps (7,200,024), levels 20 to 38.
+8 play as they are (951,754 experience), 5 need steps (2,198,501), levels 20 to 29.
 
 | Quest | Level | Experience | Giver | What it asks | For the leg |
 |---|---:|---:|---|---|---|
@@ -34,23 +35,16 @@ the level for, by the experience of the rewards alone and none for a kill, it en
 | Q2305 The Claw of the Tayga | 22 | 166,580 | bragi | collect 1 | plays |
 | Q2499 Aion Fragment's Tower | 22 | 166,580 | bolverk | collect 10 | plays |
 | Q26905 Occupiers All Over the Place | 28 | 186,175 | aegir | kill 1 | plays |
-| Q2401 Poisoned Weapons | 34 | 806,224 | neior | collect 5 | plays |
-| Q26906 Blood-scent of Violent Death | 36 | 957,871 | aegir | kill 1 | plays |
 | Q2421 Asgeirr's Request | 20 | 50,008 | asgeirr | by its handler | steps |
 | Q2493 Bringing up Tayga | 21 | 138,125 | ipoderr | by its handler | steps |
 | Q2303 Daeva, Where's My Herb? | 22 | 166,580 | savvy daru | by its handler | steps; after Q2304, Q2305, Q2499 |
 | Q24021 Ghosts in the Desert | 27 | 805,806 | bragi | collect 10, collect 1 | steps |
 | Q24023 A Blazing Rescue | 29 | 1,037,982 | anund | collect 1, collect 1, collect 1 | steps |
-| Q24026 A Hand from Each Side | 35 | 3,504,765 | aegir | by its handler | steps |
-| Q2409 Propaganda | 38 | 1,496,758 | aegir | by its handler | steps |
-| Q2379 [Group] Anund's Worry | 39 | 2,108,696 | anund | collect 25 | group |
-| Q2380 [Group] Besting the Bodyguards | 39 | 1,476,088 | anund | collect 30 | group |
 | Q2422 [Spy] Liquor that Makes You Vanish | 19 | 120,000 | hapenill | by its handler | spy |
 | Q2430 Secret Information | 20 | 64,755 | sveinn | collect 1 | spy: follows Q2422 [Spy] Liquor that Makes You Vanish |
 | Q2492 Bolverk's Secret Request | 20 | 12,951 | bolverk |  | spy: follows Q2430 Secret Information |
 | Q2423 [Spy] There And Back Again | 21 | 113,700 | hapenill | collect 3 | spy |
 | Q26900 [Spy] Foothold in Eracus Desert | 28 | 232,718 | aegir | kill 1 | spy |
-| Q26901 [Spy] Taking the High Ground | 36 | 1,197,339 | aegir | kill 1 | spy |
 | Q2301 [Gather] Teleporter Troubles | 19 | 36,000 | orhe | gather 10 | gather |
 | Q2451 [Gather] Titanium Tribute | 19 | 100,200 | thurnberg | gather 10 | gather |
 | Q2338 [Manastone] A Decent Offer | 19 | 900 | mael | collect 1, collect 1, collect 1 | repeat |
@@ -59,6 +53,13 @@ the level for, by the experience of the rewards alone and none for a kill, it en
 | Q4337 [Manastone Bundle] Cold Case | 19 | 900 | mael | collect 10, collect 10, collect 10 | repeat |
 | Q2318 [Coin] Foes of the Fortress | 20 | 0 | nott | kill 3, kill 3, kill 3 | repeat |
 | Q80006 [Event] Heart Headband Game | 21 | 300,000 | willow | collect 10 | repeat |
+| Q2401 Poisoned Weapons | 34 | 806,224 | neior | collect 5 | later |
+| Q24026 A Hand from Each Side | 35 | 3,504,765 | aegir | by its handler | later |
+| Q26901 [Spy] Taking the High Ground | 36 | 1,197,339 | aegir | kill 1 | later |
+| Q26906 Blood-scent of Violent Death | 36 | 957,871 | aegir | kill 1 | later |
+| Q2409 Propaganda | 38 | 1,496,758 | aegir | by its handler | later |
+| Q2379 [Group] Anund's Worry | 39 | 2,108,696 | anund | collect 25 | later |
+| Q2380 [Group] Besting the Bodyguards | 39 | 1,476,088 | anund | collect 30 | later |
 | Q24020 Aegir's Orders | 21 | 293,759 | aegir | by its handler | done |
 
 ## Kellan's Cabin
@@ -150,7 +151,7 @@ the level for, by the experience of the rewards alone and none for a kill, it en
 
 ## Slag Bulwark
 
-7 play as they are (2,540,122 experience), 2 need steps (1,730,582), levels 27 to 37.
+7 play as they are (2,540,122 experience), 1 need steps (233,824), levels 27 to 29.
 
 | Quest | Level | Experience | Giver | What it asks | For the leg |
 |---|---:|---:|---|---|---|
@@ -162,7 +163,6 @@ the level for, by the experience of the rewards alone and none for a kill, it en
 | Q2359 Oculazen Irises | 29 | 476,911 | embla | collect 10 | plays |
 | Q2360 A Foul Stench | 29 | 476,911 | gangleri | kill 3, kill 7 | plays |
 | Q2367 A Prized Possession | 27 | 233,824 | embla | by its handler | steps |
-| Q2449 Extricating Chaomirk | 37 | 1,496,758 | sarinerk | by its handler | steps; after Q2448 |
 | Q2375 [Group] All Nyerk and No Play | 29 | 291,412 | padinerk | kill 5, kill 5 | group |
 | Q2376 [Group] Sarinerk's Safety | 29 | 291,412 | sarinerk | kill 6, kill 3 | group |
 | Q2377 [Group] A Curse-Breaking Clue | 29 | 340,413 | padinerk | kill 5, kill 5 | group |
@@ -170,33 +170,14 @@ the level for, by the experience of the rewards alone and none for a kill, it en
 | Q4312 [Group] Gangleri's Request | 29 | 203,989 | gangleri | kill 5, kill 5 | group |
 | Q4313 [Group] The Still Remaining Mission | 29 | 291,412 | gangleri | kill 10 | group |
 | Q2384 [Group] A Missing Bandage | 30 | 340,413 | sarinerk | collect 3, collect 3, collect 3 | group |
-| Q2371 [Group] Kalgolem Crystals | 32 | 484,471 | padinerk | collect 3, collect 1 | group |
-| Q2378 [Group] Secret of the Flame Stones | 35 | 987,102 | bulagan | collect 10 | group |
 | Q2368 A Quota of Creatures | 27 | 140,439 | utgar | kill 2, kill 2, kill 2, kill 2, kill 2 | repeat |
-
-## Halabana Outpost
-
-10 play as they are (7,996,044 experience), 0 need steps (0), levels 31 to 38.
-
-| Quest | Level | Experience | Giver | What it asks | For the leg |
-|---|---:|---:|---|---|---|
-| Q2362 The Agrint's Wish | 31 | 291,412 | magni | collect 6, collect 4 | plays |
-| Q2363 Peace at the Last | 31 | 291,412 | magni | kill 7, kill 3 | plays; after Q2362 |
-| Q2364 The Agrint's Message | 31 | 291,412 | magni |  | plays; after Q2363 |
-| Q2365 Putting out Fires | 31 | 633,457 | magni | kill 10 | plays |
-| Q2366 Destroyer Hamitemon | 31 | 806,224 | magni | kill 1 | plays; after Q2365 |
-| Q4325 Morheim's Agony | 31 | 443,420 | magni | kill 5, kill 5 | plays; after Q2365, Q2387 |
-| Q4332 Crush the Crushers | 31 | 633,457 | magni | collect 10 | plays; after Q2365 |
-| Q2402 Scolopen Poison | 36 | 1,301,093 | modgud | collect 10 | plays; after Q2401 |
-| Q2408 The Klaw Headache | 36 | 1,496,758 | modgud | kill 7, kill 3 | plays |
-| Q2419 Lepharist Ointment | 38 | 1,807,399 | malak | collect 10 | plays |
-| Q2405 [Group] Taking Back the Hot Springs | 36 | 1,301,093 | mothir | kill 3, kill 3, kill 4 | group |
-| Q2398 [Coin] Protecting Tripeed | 33 | 0 | atotas | kill 7, kill 3 | repeat |
-| Q2410 [Coin] Thinning the Ranks | 37 | 0 | modgud | kill 3, kill 3, kill 3 | repeat |
+| Q2371 [Group] Kalgolem Crystals | 32 | 484,471 | padinerk | collect 3, collect 1 | later |
+| Q2378 [Group] Secret of the Flame Stones | 35 | 987,102 | bulagan | collect 10 | later |
+| Q2449 Extricating Chaomirk | 37 | 1,496,758 | sarinerk | by its handler | later |
 
 ## Alsig Village
 
-29 play as they are (21,167,521 experience), 7 need steps (9,558,197), levels 29 to 37.
+4 play as they are (1,312,651 experience), 1 need steps (287,250), levels 29 to 30.
 
 | Quest | Level | Experience | Giver | What it asks | For the leg |
 |---|---:|---:|---|---|---|
@@ -204,108 +185,126 @@ the level for, by the experience of the rewards alone and none for a kill, it en
 | Q2381 Harvesting Tripeed | 30 | 340,413 | tekor | collect 10 | plays |
 | Q2382 Tripeed Monster | 30 | 340,413 | tekor | kill 10 | plays; after Q2381 |
 | Q2383 Combat Preparation | 30 | 340,413 | letum |  | plays |
-| Q2385 Worgs at the Door | 31 | 404,557 | raukus | kill 10 | plays |
-| Q2386 Skinning Spriggs | 31 | 404,557 | raukus | collect 10 | plays; after Q2385 |
-| Q4323 Avenging Matilda | 31 | 283,190 | contineo | kill 7, kill 3 | plays |
-| Q4324 Overworked and Underappreciated | 31 | 283,190 | raukus | kill 10 | plays |
-| Q4327 War of the Worgs | 31 | 340,413 | kamer | collect 7 | plays |
-| Q4329 The Know It All | 31 | 404,557 | adhis |  | plays |
-| Q2387 A Little Extra Cash | 32 | 484,471 | kamer | collect 3 | plays |
-| Q4330 The Death Threat | 32 | 404,557 | adhis |  | plays |
-| Q4331 Operation: Recover the Operation | 32 | 404,557 | adhis | collect 6, collect 4 | plays; after Q4330 |
-| Q2388 Stopping the Klaw Expansion | 33 | 633,457 | mirka | kill 3, kill 7 | plays |
-| Q2389 Crop Stompers | 33 | 484,471 | tekor | collect 7 | plays |
-| Q2390 The Tripeed Thief | 33 | 633,457 | mirka | kill 5 | plays |
-| Q2391 Rynoce Horn | 33 | 633,457 | kamer | collect 3 | plays; after Q2387 |
-| Q4333 From the Heart | 33 | 633,457 | dezaren | collect 10 | plays |
-| Q4334 Virago Again | 33 | 633,457 | mirka | collect 7 | plays; after Q2390 |
-| Q2395 Report to the Observatory | 34 | 806,224 | rikesh |  | plays |
-| Q2403 Stubborn by Nature | 35 | 987,102 | securis | kill 9 | plays |
-| Q2404 Impressing Letum | 36 | 1,301,093 | mirmak | kill 10 | plays |
-| Q2431 Beneficial Poison | 36 | 1,301,093 | ananta | collect 3 | plays |
-| Q2432 Chase of the Mist Mane Mau | 36 | 1,496,758 | ananta | kill 3, kill 3 | plays; after Q2452 |
-| Q2437 Father's Revenge | 36 | 1,301,093 | bubu kong | kill 5, kill 5 | plays; after Q2436 |
-| Q2438 Quieting the Karnifs | 36 | 1,301,093 | kuriuta | kill 4, kill 6 | plays |
-| Q2440 The Secret Ingredient | 36 | 1,496,758 | bubu kong | collect 7 | plays |
-| Q2452 Shoot That Poison Arrow | 36 | 1,301,093 | ananta | collect 10 | plays; after Q2431 |
-| Q4307 Suspicious Beverage | 37 | 1,496,758 | gelkugin | kill 1 | plays |
 | Q2477 A Dish For Dukar | 29 | 287,250 | balom | collect 5 | steps; after Q2476 |
-| Q2392 Beautiful Feather | 33 | 484,471 | muorinerk | collect 1, collect 1, collect 1 | steps |
-| Q24025 Crisis in Morheim | 35 | 3,504,765 | chieftain chaikata | collect 1 | steps |
-| Q2393 The Love of a Father | 36 | 1,496,758 | kamer | by its handler | steps |
-| Q2394 A Dying Wish | 36 | 1,496,758 | kamer | by its handler | steps; after Q2393 |
-| Q2435 The Blue Vine Necklace | 36 | 987,102 | ananta | by its handler | steps |
-| Q2436 Looking for BuBu Pat | 36 | 1,301,093 | bubu kong | by its handler | steps; after Q2435 |
-| Q2369 [Group] Barosunerk's Grand Plan | 35 | 987,102 | barosunerk | collect 25 | group |
-| Q2439 [Group] Never to Rise Again | 36 | 1,807,399 | kuriuta | kill 2, kill 2, kill 2, kill 2 | group |
-| Q2406 [Group] Striking the Elite | 37 | 1,807,399 | mirka | kill 3, kill 3, kill 3 | group |
-| Q2407 [Group] Blueprints for Assassination | 37 | 2,108,696 | rikesh | collect 1 | group |
-| Q2434 [Group] Revenge is Sweet | 37 | 1,496,758 | chieftain chaikata | kill 4, kill 6, kill 4, kill 6, kill 4 | group |
-| Q2463 [Group] Ananta's Plan | 37 | 1,496,758 | ananta | collect 1, collect 25 | group |
-| Q2464 [Group] A Step to Revenge | 37 | 1,496,758 | ananta | collect 1, collect 25 | group |
-| Q2471 [Group] Legendary Armor | 37 | 1,807,399 | ananta | collect 1, collect 25 | group |
-| Q4304 [Group] Ringleaders for a Ring | 37 | 1,496,758 | mirka | collect 40 | group |
-| Q4305 [Group] Burning Oaths | 37 | 1,496,758 | mirka | collect 60 | group |
-| Q4306 [Group] Reckless for a Necklace | 37 | 1,496,758 | mirka | collect 80 | group |
-| Q4308 [Group] Strange Brew | 37 | 1,807,399 | gelkugin | collect 1 | group |
-| Q4309 [Group] The Rest of the Blueprints | 37 | 2,108,696 | rikesh | collect 1 | group |
-| Q4310 [Group] Designer Naremi | 37 | 2,108,696 | rikesh | kill 1 | group |
-| Q2490 [Group] Incredulous Nuaka | 38 | 1,807,399 | chieftain chaikata | collect 1, collect 38 | group |
-| Q2491 [Group] Ungrateful Muhamurru | 38 | 2,108,696 | chieftain chaikata | collect 1, collect 50 | group |
 | Q2478 [Spy] Ingredients For Sausage | 29 | 307,800 | balom | collect 3, collect 3, collect 3 | spy |
-| Q2483 [Spy] Homecoming of the Soul | 32 | 532,950 | adhis | collect 1 | spy |
-| Q2484 [Spy] Our Man in Elysea | 37 | 1,496,758 | gelkugin | by its handler | spy |
 | Q2468 [Gather] Balom's Wages | 28 | 233,824 | karina | gather 10 | gather |
 | Q2469 [Gather] Thirteen Pieces of Ore | 28 | 291,412 | karina | gather 9, gather 1 | gather |
 | Q2472 [Gather] Cabon's Request | 30 | 291,412 | cabon | gather 10 | gather |
-| Q2473 [Gather] An Odrous Herb | 32 | 633,457 | cabon | gather 5 | gather |
-| Q2474 [Gather] A Special Friendship | 34 | 806,224 | bubu kong | gather 5, gather 1 | gather |
-| Q2475 [Gather] Hungry BuBu Kong | 36 | 987,102 | bubu kong | gather 10 | gather |
-| Q2433 Emissary to Altgard | 36 | 1,496,758 | chieftain chaikata |  | blocked: follows Q2039 Allies Among Enemies |
-| Q2486 A Strange Creature | 37 | 1,301,093 | mirka | by its handler | blocked: unreachable (unobtainable-prerequisites) |
-| Q2487 [Spy] Researching the Pretor | 37 | 1,480,050 | mirka | collect 1, collect 1 | blocked: unreachable (unobtainable-prerequisites) |
 | Q4303 Muorinerk's Offer | 37 | 1,047,731 | muorinerk | collect 30 | repeat |
+| Q2385 Worgs at the Door | 31 | 404,557 | raukus | kill 10 | later |
+| Q2386 Skinning Spriggs | 31 | 404,557 | raukus | collect 10 | later |
+| Q4323 Avenging Matilda | 31 | 283,190 | contineo | kill 7, kill 3 | later |
+| Q4324 Overworked and Underappreciated | 31 | 283,190 | raukus | kill 10 | later |
+| Q4327 War of the Worgs | 31 | 340,413 | kamer | collect 7 | later |
+| Q4329 The Know It All | 31 | 404,557 | adhis |  | later |
+| Q2387 A Little Extra Cash | 32 | 484,471 | kamer | collect 3 | later |
+| Q2473 [Gather] An Odrous Herb | 32 | 633,457 | cabon | gather 5 | later |
+| Q2483 [Spy] Homecoming of the Soul | 32 | 532,950 | adhis | collect 1 | later |
+| Q4330 The Death Threat | 32 | 404,557 | adhis |  | later |
+| Q4331 Operation: Recover the Operation | 32 | 404,557 | adhis | collect 6, collect 4 | later |
+| Q2388 Stopping the Klaw Expansion | 33 | 633,457 | mirka | kill 3, kill 7 | later |
+| Q2389 Crop Stompers | 33 | 484,471 | tekor | collect 7 | later |
+| Q2390 The Tripeed Thief | 33 | 633,457 | mirka | kill 5 | later |
+| Q2391 Rynoce Horn | 33 | 633,457 | kamer | collect 3 | later |
+| Q2392 Beautiful Feather | 33 | 484,471 | muorinerk | collect 1, collect 1, collect 1 | later |
+| Q4333 From the Heart | 33 | 633,457 | dezaren | collect 10 | later |
+| Q4334 Virago Again | 33 | 633,457 | mirka | collect 7 | later |
+| Q2395 Report to the Observatory | 34 | 806,224 | rikesh |  | later |
+| Q2474 [Gather] A Special Friendship | 34 | 806,224 | bubu kong | gather 5, gather 1 | later |
+| Q2369 [Group] Barosunerk's Grand Plan | 35 | 987,102 | barosunerk | collect 25 | later |
+| Q2403 Stubborn by Nature | 35 | 987,102 | securis | kill 9 | later |
+| Q24025 Crisis in Morheim | 35 | 3,504,765 | chieftain chaikata | collect 1 | later |
+| Q2393 The Love of a Father | 36 | 1,496,758 | kamer | by its handler | later |
+| Q2394 A Dying Wish | 36 | 1,496,758 | kamer | by its handler | later |
+| Q2404 Impressing Letum | 36 | 1,301,093 | mirmak | kill 10 | later |
+| Q2431 Beneficial Poison | 36 | 1,301,093 | ananta | collect 3 | later |
+| Q2432 Chase of the Mist Mane Mau | 36 | 1,496,758 | ananta | kill 3, kill 3 | later |
+| Q2433 Emissary to Altgard | 36 | 1,496,758 | chieftain chaikata |  | later |
+| Q2435 The Blue Vine Necklace | 36 | 987,102 | ananta | by its handler | later |
+| Q2436 Looking for BuBu Pat | 36 | 1,301,093 | bubu kong | by its handler | later |
+| Q2437 Father's Revenge | 36 | 1,301,093 | bubu kong | kill 5, kill 5 | later |
+| Q2438 Quieting the Karnifs | 36 | 1,301,093 | kuriuta | kill 4, kill 6 | later |
+| Q2439 [Group] Never to Rise Again | 36 | 1,807,399 | kuriuta | kill 2, kill 2, kill 2, kill 2 | later |
+| Q2440 The Secret Ingredient | 36 | 1,496,758 | bubu kong | collect 7 | later |
+| Q2452 Shoot That Poison Arrow | 36 | 1,301,093 | ananta | collect 10 | later |
+| Q2475 [Gather] Hungry BuBu Kong | 36 | 987,102 | bubu kong | gather 10 | later |
+| Q2406 [Group] Striking the Elite | 37 | 1,807,399 | mirka | kill 3, kill 3, kill 3 | later |
+| Q2407 [Group] Blueprints for Assassination | 37 | 2,108,696 | rikesh | collect 1 | later |
+| Q2434 [Group] Revenge is Sweet | 37 | 1,496,758 | chieftain chaikata | kill 4, kill 6, kill 4, kill 6, kill 4 | later |
+| Q2463 [Group] Ananta's Plan | 37 | 1,496,758 | ananta | collect 1, collect 25 | later |
+| Q2464 [Group] A Step to Revenge | 37 | 1,496,758 | ananta | collect 1, collect 25 | later |
+| Q2471 [Group] Legendary Armor | 37 | 1,807,399 | ananta | collect 1, collect 25 | later |
+| Q2484 [Spy] Our Man in Elysea | 37 | 1,496,758 | gelkugin | by its handler | later |
+| Q2486 A Strange Creature | 37 | 1,301,093 | mirka | by its handler | later |
+| Q2487 [Spy] Researching the Pretor | 37 | 1,480,050 | mirka | collect 1, collect 1 | later |
+| Q4304 [Group] Ringleaders for a Ring | 37 | 1,496,758 | mirka | collect 40 | later |
+| Q4305 [Group] Burning Oaths | 37 | 1,496,758 | mirka | collect 60 | later |
+| Q4306 [Group] Reckless for a Necklace | 37 | 1,496,758 | mirka | collect 80 | later |
+| Q4307 Suspicious Beverage | 37 | 1,496,758 | gelkugin | kill 1 | later |
+| Q4308 [Group] Strange Brew | 37 | 1,807,399 | gelkugin | collect 1 | later |
+| Q4309 [Group] The Rest of the Blueprints | 37 | 2,108,696 | rikesh | collect 1 | later |
+| Q4310 [Group] Designer Naremi | 37 | 2,108,696 | rikesh | kill 1 | later |
+| Q2490 [Group] Incredulous Nuaka | 38 | 1,807,399 | chieftain chaikata | collect 1, collect 38 | later |
+| Q2491 [Group] Ungrateful Muhamurru | 38 | 2,108,696 | chieftain chaikata | collect 1, collect 50 | later |
 
 ## Morheim Observatory
 
-11 play as they are (11,648,791 experience), 3 need steps (5,612,082), levels 35 to 37.
+0 play as they are (0 experience), 0 need steps (0).
 
 | Quest | Level | Experience | Giver | What it asks | For the leg |
 |---|---:|---:|---|---|---|
-| Q2400 Angreboda Returns a Favor | 35 | 987,102 | angreboda | collect 7, collect 3 | plays |
-| Q2412 Elemental Stone of Earth | 35 | 806,224 | angreboda | collect 3, collect 2, collect 1 | plays; after Q2411 |
-| Q2413 Elemental Stone of Water | 35 | 806,224 | gullveig | collect 3, collect 2, collect 1 | plays; after Q2411 |
-| Q2414 Hreidmar the Furious | 35 | 806,224 | tyr |  | plays; after Q2412, Q2413 |
-| Q2415 Trolls on the Path | 35 | 987,102 | angreboda | kill 7, kill 3 | plays |
-| Q2416 Abex on a Stick | 35 | 987,102 | gullveig | collect 2, collect 5 | plays |
-| Q2417 Abex Kebabs For The Soul | 35 | 1,301,093 | gullveig |  | plays; after Q2416 |
-| Q2418 A Gentle Reminder | 35 | 987,102 | tyr |  | plays |
-| Q4335 Nature or Nuisance | 35 | 987,102 | tyr | kill 5, kill 5 | plays |
-| Q2444 Death to the Shadow Warrior | 37 | 1,496,758 | temoji | kill 1 | plays |
-| Q2445 The Good, the Bad and the Elim | 37 | 1,496,758 | temoji |  | plays; after Q2444 |
-| Q2411 Earth Spirit? Water Spirit? | 35 | 806,224 | tyr | by its handler | steps |
-| Q24024 A Nepra Protector | 35 | 3,504,765 | tyr | by its handler | steps |
-| Q2448 Chaomirk Sends for Help | 37 | 1,301,093 | chaomirk | by its handler | steps |
-| Q2442 [Group] Taisan's Request | 37 | 1,496,758 | taisan | collect 10 | group |
-| Q2443 Taisan's Message | 37 | 1,496,758 | taisan | by its handler | group: follows Q2442 [Group] Taisan's Request |
-| Q2446 [Group] The Nunu Fertilizer | 37 | 1,496,758 | temoji | collect 10 | group |
-| Q2447 [Group] Chaomirk's Request | 37 | 1,496,758 | chaomirk | kill 3, kill 2, kill 5 | group |
-| Q2489 [Group] Missssst Mane Mayhem | 39 | 2,108,696 | kikananta | kill 1, kill 1, kill 1 | group |
+| Q2400 Angreboda Returns a Favor | 35 | 987,102 | angreboda | collect 7, collect 3 | later |
+| Q2411 Earth Spirit? Water Spirit? | 35 | 806,224 | tyr | by its handler | later |
+| Q2412 Elemental Stone of Earth | 35 | 806,224 | angreboda | collect 3, collect 2, collect 1 | later |
+| Q2413 Elemental Stone of Water | 35 | 806,224 | gullveig | collect 3, collect 2, collect 1 | later |
+| Q2414 Hreidmar the Furious | 35 | 806,224 | tyr |  | later |
+| Q2415 Trolls on the Path | 35 | 987,102 | angreboda | kill 7, kill 3 | later |
+| Q2416 Abex on a Stick | 35 | 987,102 | gullveig | collect 2, collect 5 | later |
+| Q2417 Abex Kebabs For The Soul | 35 | 1,301,093 | gullveig |  | later |
+| Q2418 A Gentle Reminder | 35 | 987,102 | tyr |  | later |
+| Q4335 Nature or Nuisance | 35 | 987,102 | tyr | kill 5, kill 5 | later |
+| Q24024 A Nepra Protector | 35 | 3,504,765 | tyr | by its handler | later |
+| Q2442 [Group] Taisan's Request | 37 | 1,496,758 | taisan | collect 10 | later |
+| Q2443 Taisan's Message | 37 | 1,496,758 | taisan | by its handler | later |
+| Q2444 Death to the Shadow Warrior | 37 | 1,496,758 | temoji | kill 1 | later |
+| Q2445 The Good, the Bad and the Elim | 37 | 1,496,758 | temoji |  | later |
+| Q2446 [Group] The Nunu Fertilizer | 37 | 1,496,758 | temoji | collect 10 | later |
+| Q2447 [Group] Chaomirk's Request | 37 | 1,496,758 | chaomirk | kill 3, kill 2, kill 5 | later |
+| Q2448 Chaomirk Sends for Help | 37 | 1,301,093 | chaomirk | by its handler | later |
+| Q2489 [Group] Missssst Mane Mayhem | 39 | 2,108,696 | kikananta | kill 1, kill 1, kill 1 | later |
+
+## Halabana Outpost
+
+0 play as they are (0 experience), 0 need steps (0).
+
+| Quest | Level | Experience | Giver | What it asks | For the leg |
+|---|---:|---:|---|---|---|
+| Q2398 [Coin] Protecting Tripeed | 33 | 0 | atotas | kill 7, kill 3 | repeat |
+| Q2410 [Coin] Thinning the Ranks | 37 | 0 | modgud | kill 3, kill 3, kill 3 | repeat |
+| Q2362 The Agrint's Wish | 31 | 291,412 | magni | collect 6, collect 4 | later |
+| Q2363 Peace at the Last | 31 | 291,412 | magni | kill 7, kill 3 | later |
+| Q2364 The Agrint's Message | 31 | 291,412 | magni |  | later |
+| Q2365 Putting out Fires | 31 | 633,457 | magni | kill 10 | later |
+| Q2366 Destroyer Hamitemon | 31 | 806,224 | magni | kill 1 | later |
+| Q4325 Morheim's Agony | 31 | 443,420 | magni | kill 5, kill 5 | later |
+| Q4332 Crush the Crushers | 31 | 633,457 | magni | collect 10 | later |
+| Q2402 Scolopen Poison | 36 | 1,301,093 | modgud | collect 10 | later |
+| Q2405 [Group] Taking Back the Hot Springs | 36 | 1,301,093 | mothir | kill 3, kill 3, kill 4 | later |
+| Q2408 The Klaw Headache | 36 | 1,496,758 | modgud | kill 7, kill 3 | later |
+| Q2419 Lepharist Ointment | 38 | 1,807,399 | malak | collect 10 | later |
 
 ## No giver on this map
 
-4 play as they are (967,095 experience), 1 need steps (117,433), levels 23 to 31.
+3 play as they are (626,682 experience), 1 need steps (117,433), levels 23 to 30.
 
 | Quest | Level | Experience | Giver | What it asks | For the leg |
 |---|---:|---:|---|---|---|
 | Q2325 An Unfinished Mystery | 23 | 134,338 |  | collect 1 | plays; after Q2324 |
 | Q2372 Immortal Love | 28 | 445,800 |  | collect 5, collect 5 | plays; after Q2367 |
 | Q23830 A Bundle to Enjoy | 30 | 46,544 |  |  | plays |
-| Q4328 A Friend in Need | 31 | 340,413 |  | collect 5 | plays |
 | Q2324 The Spirit's Notebook | 24 | 117,433 |  | by its handler | steps |
 | Q2481 [Spy] Curious Behavior | 25 | 193,350 |  | collect 6 | spy |
 | Q2321 [Spy] The Spirit's Letter | 26 | 225,900 |  | by its handler | spy |
-| Q2485 [Spy/Group] Killing Mabangtah | 37 | 1,807,399 |  | kill 1 | spy: follows Q2484 [Spy] Our Man in Elysea |
 | Q2470 [Gather] A Fragrant Tree | 30 | 340,413 |  | gather 7 | gather |
 | Q2031 Petrifying Elim | 19 | 162,527 |  | collect 1 | blocked: no handler |
 | Q2300 Morheim Commander's Call | 19 | 11,209 |  |  | blocked: no handler |
@@ -317,14 +316,6 @@ the level for, by the experience of the rewards alone and none for a kill, it en
 | Q2034 The Hand Behind the Ice Claw | 25 | 654,335 |  |  | blocked: no handler |
 | Q2035 The Three Keys | 27 | 910,252 |  | collect 1, collect 1, collect 1 | blocked: no handler |
 | Q2036 A Captive Flame | 29 | 1,425,278 |  | collect 1 | blocked: no handler |
-| Q2037 The Protector of Nepra | 31 | 2,222,468 |  |  | blocked: no handler |
-| Q2039 Allies Among Enemies | 32 | 2,929,235 |  |  | blocked: no handler |
-| Q24123 A Good Mau is Hard to Find | 32 | 416,229 |  |  | blocked: no handler |
-| Q2038 A Lost Daeva | 33 | 3,369,573 |  |  | blocked: no handler |
-| Q24122 Mystery of the Missing Daevas | 33 | 478,936 |  | collect 1 | blocked: no handler |
-| Q2040 Kikananta's Loyalty | 34 | 4,066,647 |  | collect 1 | blocked: no handler |
-| Q2041 Hold The Front Line | 34 | 4,744,566 |  |  | blocked: no handler |
-| Q2488 Pretors in Beluslan | 37 | 1,496,758 |  | by its handler | blocked: unreachable (unobtainable-prerequisites) |
 | Q2399 Leader Of The Pack | 99 | 73,000 |  |  | blocked: switched off in the quest data (level 99) |
 | Q2441 Who's the Worst? | 99 | 0 |  | collect 1, collect 1, collect 1 | blocked: switched off in the quest data (level 99) |
 | Q49020 [Daily] Aegir's Order | 20 | 50,007 |  | killinworld | repeat |
@@ -345,4 +336,14 @@ the level for, by the experience of the rewards alone and none for a kill, it en
 | Q80208 [Event] Ring Her, Maybe? | 99 | 1 |  |  | repeat |
 | Q80209 [Event] Request from the D.E.R.P. | 99 | 1 |  |  | repeat |
 | Q80211 [Event] Bling Bling Earrings | 99 | 1 |  |  | repeat |
+| Q2037 The Protector of Nepra | 31 | 2,222,468 |  |  | later |
+| Q4328 A Friend in Need | 31 | 340,413 |  | collect 5 | later |
+| Q2039 Allies Among Enemies | 32 | 2,929,235 |  |  | later |
+| Q24123 A Good Mau is Hard to Find | 32 | 416,229 |  |  | later |
+| Q2038 A Lost Daeva | 33 | 3,369,573 |  |  | later |
+| Q24122 Mystery of the Missing Daevas | 33 | 478,936 |  | collect 1 | later |
+| Q2040 Kikananta's Loyalty | 34 | 4,066,647 |  | collect 1 | later |
+| Q2041 Hold The Front Line | 34 | 4,744,566 |  |  | later |
+| Q2485 [Spy/Group] Killing Mabangtah | 37 | 1,807,399 |  | kill 1 | later |
+| Q2488 Pretors in Beluslan | 37 | 1,496,758 |  | by its handler | later |
 

@@ -52,6 +52,15 @@ The same evening, back at the keyboard:
    no more anything for Rider, Gunner, Bard."
 2. "I want a standing rule for gear 'check ins' at 31, 36, 41, 46, all based on coin gear if any is an upgrade."
 
+Later that evening, on the Morheim plan (`docs/natural-morheim-leveling.md`):
+
+1. "the bots have 2 goals, One is to play every quest in the game, to see if anything is broken (and later we will do
+   all other mechanics for crafting/gathering), and the other is for our companion bots."
+2. "we want to only do legs until level 31, then make sure we do an equipment check (level 31 best coin gear). Then
+   save a profile for level 31 to spawn a companion as (so we can look at Fire Temple). Don't do 'spy' quests. Group
+   quests we might actually need to do in a group. Remember to spawn in the same world, 10 minutes apart so we can
+   parallel training, maybe 5 at a time?"
+
 ## Rules
 
 **(MR-a) One world.** Every bot character lives in one world database, each on an account of its own. A run that
@@ -187,6 +196,13 @@ it. The leg that reaches a level plays its check-in. What the item data gives an
 | 46 | Elite Rank 3 | Platinum Coin (186000010) | Brusthonin, Pandaemonium |
 
 The next tier, Elite Rank 2 for Mithril Coins, is level 51 and outside the rule as it was given.
+
+**(MR-j) A leg, from here on.** A leg runs to the next check-in level and ends on that check-in: to 31, then to 36,
+41 and 46. It plays every quest of its zone that starts below that level, since the bots are there to play every
+quest in the game and find what is broken; experience is never the reason to leave a quest or a hub out. Group
+quests are played in a group. Spy quests are not played. Gathering quests wait for the gathering work. A quest that
+cannot be taken is written down with its reason. A round is up to five bots in the one world, ten game minutes
+apart. At a leg's end the profiles of its level are generated, so that a companion can be brought at that level.
 
 ## The kit from level 10 (MR-c)
 

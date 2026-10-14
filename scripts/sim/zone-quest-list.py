@@ -8,7 +8,7 @@ spawns and zones of the map, and the group world's snapshot for what its charact
 quests' own experience from the least experienced character on, to say what level the zone carries a character to.
 It writes Markdown to stdout.
 
-  python scripts/sim/zone-quest-list.py --zone Morheim --map 220020000 --snapshot ntc-group-s5 \
+  python scripts/sim/zone-quest-list.py --zone Morheim --map 220020000 --snapshot ntc-group-s5 --until-level 31 \
       --classes GLADIATOR,TEMPLAR,ASSASSIN,RANGER,SORCERER,SPIRIT_MASTER,CLERIC,CHANTER > docs/natural-morheim-quests.md
 """
 import argparse
@@ -34,10 +34,11 @@ LABELS = (
     ('plays', "its handler is one of the server's templates; the compiled plan is what the bot follows"),
     ('steps', 'its handler is written by hand, so its steps are written for the bot too, as for the Altgard legs'),
     ('group', 'a [Group] quest: played by a group, after the hubs'),
-    ('spy', 'a [Spy] quest: it goes into Elyos land through a rift, which no bot does yet'),
+    ('spy', 'a [Spy] quest: not played (the operator, 2026-10-13: "Don\'t do spy quests")'),
     ('gather', 'it asks for gathering, which waits for the gathering work'),
     ('blocked', 'it cannot be taken as the server is: no handler, or a quest before it that cannot be had'),
     ('repeat', 'repeatable or an event: not part of playing the zone through once'),
+    ('later', 'it starts at the level the leg ends on, or above: a later leg'),
     ('done', 'finished by every one of the classes'),
 )
 PLAYED = ('plays', 'steps')
@@ -78,6 +79,7 @@ def main():
     parser.add_argument('--zone', required=True, help='the quest zone, as quest_data.xml names it')
     parser.add_argument('--map', required=True, type=int, help='the map id of the zone')
     parser.add_argument('--snapshot', required=True, help='the round snapshot whose characters play the leg')
+    parser.add_argument('--until-level', required=True, type=int, help='the level the leg ends on: a quest that starts there or above is a later leg')
     parser.add_argument('--classes', required=True, help='the classes that play, comma separated')
     options = parser.parse_args()
     classes = options.classes.split(',')
@@ -190,6 +192,8 @@ def main():
             verdict = 'repeat'
         elif quest['level'] > 65:
             verdict, why = 'blocked', 'switched off in the quest data (level %d)' % quest['level']
+        elif quest['level'] >= options.until_level:
+            verdict = 'later'
         elif availability != 'obtainable':
             verdict = 'blocked'
             why = 'no handler' if availability == 'no_handler' else '%s (%s)' % (availability, ', '.join(reason.get('code', '') for reason in entry.get('reasons', [])))
@@ -259,11 +263,11 @@ def main():
         count, worth = total(kind)
         out.append('| %s | %d | %s | %s |' % (kind, count, format(worth, ','), meaning))
     out.append('')
-    out.append('**How far the zone carries a character.** The least experienced of them starts at level %d. Taking every quest it has' % level_at(least))
-    out.append('the level for, by the experience of the rewards alone and none for a kill, it ends at level %d with %d quests played' % (level_at(exp), len(taken)))
+    out.append('**The leg ends on level %d.** The least experienced of them starts at level %d. Taking every quest of the leg it has the' % (options.until_level, level_at(least)))
+    out.append('level for, by the experience of the rewards alone and none for a kill, it ends at level %d with %d quests played' % (level_at(exp), len(taken)))
     out.append('(%s). %s' % (
         ', '.join('level %d after %d' % mark for mark in marks),
-        'Every quest it can play is within its reach.' if not beyond else
+        'Every quest of the leg is within its reach.' if not beyond else
         '%d quests start above that level, the lowest at %d: they wait for experience from elsewhere.' % (len(beyond), min(q['level'] for q in beyond))))
     out.append('')
     order = {kind: index for index, (kind, _) in enumerate(LABELS)}
