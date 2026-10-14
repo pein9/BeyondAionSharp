@@ -80,16 +80,28 @@ public sealed class NaturalGroupHealDriver(INaturalJourneySession session, Natur
 			return false;
 		}
 
+		// M8 (the operator, 2026-10-14: "the cleric probably has more and better heals (a group heal?)"): Healing Wind heals
+		// every member within its reach at once. It is cast when two or more members there are at 70% or less and none is
+		// in the danger a single heal answers first (35% or less).
+		NaturalPriestSkill? wind = Best("group-heal");
+		if (wind != null && byNeed.All(member => member.HpPercent > 35))
+		{
+			float reach = runtime.Data.SkillDataDh.GetSkillTemplate(wind.Id)?.GetProperties()?.GetEffectiveRange() ?? 0;
+			Member[] hurt = [.. members.Where(member => member.HpPercent <= 70 && Distance(member.Position, session.CurrentPosition) <= reach)];
+			if (hurt.Length >= 2 && Ready(wind, members[0]))
+				return await CastAsync(wind, session.CharacterId, "group-heal", hurt.Min(member => member.HpPercent), token);
+		}
+
 		// Its own needed healing wins even when another member is in more danger.
 		foreach (Member member in byNeed.Where(member => member.HpPercent <= 70))
 		{
 			NaturalPriestSkill? flash = member.HpPercent <= 35 ? Best("flash-recovery") : null;
 			// MR-g: the stigma's heal acts once its target is at half its health, and has no cast.
 			NaturalPriestSkill? saving = member.HpPercent <= 50 ? Best("saving-grace") : null;
-			NaturalPriestSkill? grace = Best("grace"), light = Best("heal");
+			NaturalPriestSkill? grace = Best("grace"), light = Best("heal"), quick = Best("quick-heal");
 			int amount = grace == null ? 0 : runtime.Data.SkillDataDh.GetSkillTemplate(grace.Id)?.GetEffects()?.GetEffects().OfType<HealInstantEffect>().FirstOrDefault()?.Value ?? 0;
 			if (member.HpPercent > 35 && member.MaxHp * (100 - member.HpPercent) / 100 < amount) grace = null;
-			NaturalPriestSkill? heal = new[] { saving, flash, grace, light }.FirstOrDefault(skill => Ready(skill, member));
+			NaturalPriestSkill? heal = new[] { saving, flash, quick, grace, light }.FirstOrDefault(skill => Ready(skill, member));
 			if (heal != null) return await CastAsync(heal, member.Id, "heal", member.HpPercent, token);
 		}
 

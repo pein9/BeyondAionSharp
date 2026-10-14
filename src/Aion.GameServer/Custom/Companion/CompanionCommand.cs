@@ -11,7 +11,8 @@ internal sealed class CompanionCommand : PlayerCommand
 {
     public CompanionCommand()
         : base(CompanionService.Alias, "Brings a companion to fight or heal beside you.", """
-            <class> - Brings a level 26 companion of that class.
+            <class> [level] - Brings a companion of that class: at the level asked for, else at the highest of its levels
+              that is not above yours.
             list - Names your companions.
             dismiss [name] - Sends one companion away, or all of them.
             """)

@@ -92,12 +92,39 @@ public static class NaturalSkillCatalog
 			if (!learned.ContainsKey(id))
 				throw new InvalidDataException($"{playerClass} does not auto-learn skill {id}; a catalog holds auto-learned skills only.");
 		}
-		NaturalPriestSkill[] own = roles.OrderBy(entry => learned[entry.Key]).ThenBy(entry => entry.Key)
+		// M8 (docs/natural-morheim-leveling.md): a later rank of a skill with a role has its role. A rank row of the skill
+		// tree names the rank before it (skillLearn); the tables of roles end at the level a class was last played to, and a
+		// character above it casts its highest rank. A rank of an excluded skill stays out.
+		Dictionary<int, int?> before = RankBefore(data, playerClass, race);
+		var ranked = new Dictionary<int, string>(roles);
+		foreach (int id in learned.Keys.Where(id => !roles.ContainsKey(id) && excluded?.ContainsKey(id) != true))
+		{
+			int? previous = before.GetValueOrDefault(id);
+			for (int step = 0; previous is int rank && step < 16; step++, previous = before.GetValueOrDefault(rank))
+			{
+				if (excluded?.ContainsKey(rank) == true) break;
+				if (roles.TryGetValue(rank, out string? role)) { ranked[id] = role; break; }
+			}
+		}
+		NaturalPriestSkill[] own = ranked.OrderBy(entry => learned[entry.Key]).ThenBy(entry => entry.Key)
 			.Select(entry => Row(data, entry.Key, learned[entry.Key], entry.Value)).ToArray();
 		if (!NaturalStigma.Choices.TryGetValue(playerClass, out NaturalStigma.Choice? stone)) return own;
 		if (roles.Values.Contains(stone.Role)) throw new InvalidDataException($"{playerClass} role '{stone.Role}' is its stigma's.");
 		return [.. own, .. NaturalStigma.Skills(data, playerClass, race).OrderBy(entry => entry.Value).ThenBy(entry => entry.Key)
 			.Select(entry => Row(data, entry.Key, entry.Value, stone.Role))];
+	}
+
+	/// <summary>M8: for each auto-learned rank row of the class's lines, the rank before it (the skill tree's skillLearn).</summary>
+	private static Dictionary<int, int?> RankBefore(StaticData data, PlayerClass playerClass, Race race)
+	{
+		var before = new Dictionary<int, int?>();
+		PlayerClass starter = playerClass.GetStartingClass();
+		foreach (PlayerClass line in starter == playerClass ? [playerClass] : new[] { starter, playerClass })
+			for (int level = 1; level <= HighestLevel; level++)
+				foreach (SkillLearnTemplate row in data.SkillTreeDataDh.GetTemplatesFor(line, level, race))
+					if (row.IsAutolearn() && !row.IsStigma())
+						before.TryAdd(row.GetSkillId(), row.GetLearnSkill());
+		return before;
 	}
 
 	/// <summary>One row from the skill's template. Range is the template's first-target range, without the weapon's; see

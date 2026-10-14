@@ -14,11 +14,14 @@ public sealed class CompanionProfileTests
     {
         IReadOnlyList<CompanionProfile> profiles = CompanionProfile.LoadAll(Folder);
 
-        Assert.Equal(11, profiles.Count);
-        Assert.Equal(11, profiles.Select(profile => profile.PlayerClass).Distinct().Count());
+        // Every class at 26, and the eight original classes at 31 too (step M8 of docs/natural-morheim-leveling.md).
+        Assert.Equal(19, profiles.Count);
+        Assert.Equal(11, profiles.Where(profile => profile.Level == CompanionService.Level).Select(profile => profile.PlayerClass).Distinct().Count());
+        Assert.Equal(8, profiles.Where(profile => profile.Level == 31).Select(profile => profile.PlayerClass).Distinct().Count());
         Assert.All(profiles, profile =>
         {
-            Assert.Equal((Race.ASMODIANS, CompanionService.Level), (profile.Race, profile.Level));
+            Assert.Equal(Race.ASMODIANS, profile.Race);
+            Assert.Contains(profile.Level, new[] { CompanionService.Level, 31 });
             Assert.False(profile.PlayerClass.IsStartingClass());
             Assert.NotEmpty(profile.Equipment);
             Assert.NotEmpty(profile.Inventory);

@@ -105,7 +105,7 @@ public sealed partial class SimulationFastScenarioTests
 			Assert.Null(service.TakeRequest(seats[0]));
 			Assert.Equal((made.CharacterId, "ClericA", session.CharacterId, "Asimleader"), (request.CharacterId, request.Name, request.LeaderId, request.LeaderName));
 			CompanionProfile profile = CompanionProfile.LoadAll(Path.Combine(Aion.GameServer.TestKit.RealStaticData.RepoRoot(), "game-server", "data", "companions"))
-				.Single(candidate => candidate.Race == Race.ASMODIANS && candidate.PlayerClass == PlayerClass.CLERIC);
+				.Single(candidate => candidate.Race == Race.ASMODIANS && candidate.PlayerClass == PlayerClass.CLERIC && candidate.Level == request.Level);
 			await using (var played = new SimulationL0Session(fixture, policy, "b02", seats[0], request.Name, Race.ASMODIANS))
 			{
 				var list = await played.LoginCharacterListAsync(token);

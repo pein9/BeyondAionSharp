@@ -825,12 +825,22 @@ public sealed partial class NaturalIshalgenJourney
 			throw new InvalidDataException($"The group's loot is [{string.Join(", ", world.GroupLootRules)}], not free for all with every quality picked up as it is.");
 		if (world.GroupMembers.Count != asked.Length + 1)
 			throw new InvalidDataException($"The group has {world.GroupMembers.Count} members, not the stand-in and its {asked.Length} companions.");
+		// M8: a companion comes at the highest level its class has a profile for that is not above the stand-in's, at the
+		// lowest when every one is (CompanionService.Request).
+		int LevelFor(PlayerClass wanted)
+		{
+			int[] levels = [.. Directory.GetFiles(Path.Combine(runtime.RepoRoot, "game-server", "data", "companions"),
+					$"asmodians-{wanted.ToString().ToLowerInvariant().Replace('_', '-')}-*.json")
+				.Select(path => int.Parse(Path.GetFileNameWithoutExtension(path).Split('-')[^1], System.Globalization.CultureInfo.InvariantCulture)).Order()];
+			return levels.Where(level => level <= world.Level).DefaultIfEmpty(levels.FirstOrDefault()).Max();
+		}
 		foreach ((BotGroupMember member, string playerClass) in world.GroupMembers.Values.Where(member => member.ObjectId != session.CharacterId)
 			.OrderBy(member => member.ObjectId).Zip(asked))
 		{
 			if (!CompanionService.TryParseClass(playerClass, out PlayerClass wantedClass) || member.PlayerClass != wantedClass.GetClassId()
-				|| member.Level != 26 || member.MapId != world.MapId)
-				throw new InvalidDataException($"The companion {member.Name} is a level {member.Level} class {member.PlayerClass} on map {member.MapId}, not a level 26 {playerClass} here.");
+				|| member.Level != LevelFor(wantedClass) || member.MapId != world.MapId)
+				throw new InvalidDataException($"The companion {member.Name} is a level {member.Level} class {member.PlayerClass} on map {member.MapId}, " +
+					$"not a level {LevelFor(wantedClass)} {playerClass} here.");
 		}
 		string[] list = await SayAsync(".companion list");
 

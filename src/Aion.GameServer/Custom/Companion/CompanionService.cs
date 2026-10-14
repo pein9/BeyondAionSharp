@@ -23,7 +23,7 @@ namespace Aion.GameServer.Custom.Companion;
 
 /// <summary>What a host needs to play a companion: the account to log in on and the character to choose there.</summary>
 public sealed record CompanionRequest(int AccountId, string AccountName, int CharacterId, string Name, PlayerClass PlayerClass,
-    int LeaderId, string LeaderName);
+    int LeaderId, string LeaderName, int Level = CompanionService.Level);
 
 /// <summary>Requested: made, and no host has taken it. Playing: a host took it. Ending: sent away; its rows go when it has left the world.</summary>
 public enum CompanionState
@@ -55,7 +55,9 @@ public sealed class CompanionService
     /// <summary>What a companion's character has for its note: how one is told from any other character.</summary>
     public const string Note = "companion";
     public const string Alias = "companion";
-    /// <summary>The one level a companion is made at (CB-Q4).</summary>
+    /// <summary>The level of the first profiles (CB-Q4). Step M8 of docs/natural-morheim-leveling.md adds the level-31 ones:
+    /// a companion comes at the highest level it has a profile for that is not above its player's, at the lowest when every
+    /// one is, and <c>.companion &lt;class&gt; &lt;level&gt;</c> asks for one outright.</summary>
     public const int Level = 26;
     /// <summary>How often the server looks at its companions.</summary>
     public const int WatchSeconds = 10;
@@ -89,7 +91,8 @@ public sealed class CompanionService
     private readonly List<string> seatPrefixes = new();
     private readonly HashSet<int> refusedSeats = new();
     private readonly Dictionary<int, Entry> companions = new();
-    private Dictionary<(Race Race, PlayerClass PlayerClass), CompanionProfile> profiles = new();
+    /// <summary>Each class's profiles of a race, lowest level first.</summary>
+    private Dictionary<(Race Race, PlayerClass PlayerClass), CompanionProfile[]> profiles = new();
     private volatile bool enabled;
     private bool watching;
 
@@ -143,10 +146,11 @@ public sealed class CompanionService
     public void Enable(string? profileDirectory = null, IEnumerable<string>? seatAccounts = null)
     {
         string directory = string.IsNullOrWhiteSpace(profileDirectory) ? DefaultDirectory() : profileDirectory!;
-        Dictionary<(Race, PlayerClass), CompanionProfile> loaded = CompanionProfile.LoadAll(directory)
-            .Where(profile => profile.Level == Level).ToDictionary(profile => (profile.Race, profile.PlayerClass));
+        Dictionary<(Race, PlayerClass), CompanionProfile[]> loaded = CompanionProfile.LoadAll(directory)
+            .GroupBy(profile => (profile.Race, profile.PlayerClass))
+            .ToDictionary(group => group.Key, group => group.OrderBy(profile => profile.Level).ToArray());
         if (loaded.Count == 0)
-            throw new InvalidDataException("No level " + Level + " companion profile is at " + directory + ".");
+            throw new InvalidDataException("No companion profile is at " + directory + ".");
         lock (gate)
         {
             profiles = loaded;
@@ -175,7 +179,8 @@ public sealed class CompanionService
             }
             enabled = true;
         }
-        log.LogInformation("Companions are on: " + loaded.Count + " profiles of level " + Level + " from " + directory
+        log.LogInformation("Companions are on: " + loaded.Values.Sum(levels => levels.Length) + " profiles of levels "
+            + string.Join(", ", loaded.Values.SelectMany(levels => levels.Select(profile => profile.Level)).Distinct().Order()) + " from " + directory
             + "; seat accounts: " + (seatNames.Count + seatPrefixes.Count == 0 ? "none named"
                 : string.Join(", ", seatNames.Order().Concat(seatPrefixes.Order().Select(prefix => prefix + "*")))));
     }
@@ -245,16 +250,29 @@ public sealed class CompanionService
     }
 
     /// <summary>Makes a companion of a class for a player, or says in plain words why not. The answer is for the player.</summary>
+    /// <param name="className">The class, and after it the level asked for, if one is ("cleric 31").</param>
     public string Request(Player leader, string className)
     {
+        int? askedLevel = null;
+        string[] words = className.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (words.Length > 1 && int.TryParse(words[^1], out int level))
+        {
+            askedLevel = level;
+            className = string.Join(" ", words[..^1]);
+        }
         if (!TryParseClass(className, out PlayerClass playerClass))
             return "There is no class called " + className + ".";
         lock (gate)
         {
             if (!enabled)
                 return "Companions are switched off.";
-            if (!profiles.TryGetValue((leader.GetRace(), playerClass), out CompanionProfile? profile))
+            if (!profiles.TryGetValue((leader.GetRace(), playerClass), out CompanionProfile[]? levels))
                 return "No " + Word(playerClass) + " companion is ready for your race.";
+            CompanionProfile? profile = askedLevel is int asked ? levels.FirstOrDefault(entry => entry.Level == asked)
+                : levels.LastOrDefault(entry => entry.Level <= leader.GetLevel()) ?? levels[0];
+            if (profile == null)
+                return "No level " + askedLevel + " " + Word(playerClass) + " companion is ready; there are levels "
+                    + string.Join(", ", levels.Select(entry => entry.Level)) + ".";
             string? refusal = Refusal(leader);
             if (refusal != null)
                 return refusal;
@@ -349,7 +367,9 @@ public sealed class CompanionService
             long now = SystemClock.CurrentMillis();
             if (now - entry.RestockedAtMillis < RestockSeconds * 1000L)
                 return "Your supplies were filled up a moment ago.";
-            if (!profiles.TryGetValue((companion.GetRace(), entry.Request.PlayerClass), out profile))
+            profile = profiles.GetValueOrDefault((companion.GetRace(), entry.Request.PlayerClass))?
+                .FirstOrDefault(candidate => candidate.Level == entry.Request.Level);
+            if (profile == null)
                 return "There is no profile to fill your supplies from.";
             entry.RestockedAtMillis = now;
         }
@@ -667,7 +687,7 @@ public sealed class CompanionService
                 accountData.SetCreationDate(DateTimeOffset.FromUnixTimeMilliseconds(SystemClock.CurrentMillis()));
                 account.AddPlayerAccountData(accountData);
             }
-            return new CompanionRequest(accountId, accountName, id, name, profile.PlayerClass, leader.GetObjectId(), leader.GetName());
+            return new CompanionRequest(accountId, accountName, id, name, profile.PlayerClass, leader.GetObjectId(), leader.GetName(), profile.Level);
         }
         catch
         {

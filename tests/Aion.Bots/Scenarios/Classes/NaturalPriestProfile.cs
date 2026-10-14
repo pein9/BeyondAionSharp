@@ -35,6 +35,10 @@ public static class NaturalPriestProfile
 		[4203] = "grace", [4204] = "grace", [4037] = "spark", [3951] = "flash-recovery",
 		[253] = "herb", [254] = "mp-recovery", [3869] = "penance", [3942] = "rejuvenation", [4028] = "followup", [4064] = "wind",
 		[4086] = "wrath", [4110] = "servant", [1843] = "heal", [4017] = "smite",
+		// M8 (the operator, 2026-10-14: "a group heal?"): Healing Wind (28) heals every member within 25 m at once, and
+		// Light of Recovery (31) is a heal of one second's cast. Their later ranks, and every other rank above 26, take
+		// the role of the rank before them (NaturalSkillCatalog.Build).
+		[4195] = "group-heal", [4213] = "quick-heal",
 	};
 
 	/// <summary>NR-16: the two skills of levels 25 and 26 the Cleric does not cast, beside
@@ -202,7 +206,8 @@ public static class NaturalPriestProfile
 			Class = PlayerClass.CLERIC,
 			Skills = skills,
 			SupportSkills = NaturalSkillCatalog.Build(data, PlayerClass.CLERIC,
-				ClericRoles.Where(row => row.Value is "heal" or "grace" or "flash-recovery" or "rejuvenation" or "blessing" or "penance" or "mp-recovery" or "herb")
+				ClericRoles.Where(row => row.Value is "heal" or "grace" or "flash-recovery" or "rejuvenation" or "blessing" or "penance" or "mp-recovery" or "herb"
+					or "group-heal" or "quick-heal")
 					.Concat(new Dictionary<int, string> { [3935] = "cleanse", [3936] = "cleanse", [3937] = "cleanse",
 						[1699] = "resurrect", [243] = "return" })
 					.ToDictionary(row => row.Key, row => row.Value)),

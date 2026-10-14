@@ -6,9 +6,12 @@ learned is its profile. The profiles are generated from the group world, where e
 gear, shards and supplies the natural runs gave it. They are generated data: change the world they come from and
 generate them again, never edit them by hand.
 
-  python scripts/sim/make-companion-profiles.py                 # write game-server/data/companions from ntc-group-s5
+  python scripts/sim/make-companion-profiles.py                 # write game-server/data/companions from the SOURCES
   python scripts/sim/make-companion-profiles.py --check         # the checked-in profiles against the item data, and
-                                                                # against a fresh generation when the snapshot is here
+                                                                # against a fresh generation when the snapshots are here
+
+Step M8 of docs/natural-morheim-leveling.md adds a second level: the level-31 profiles of the eight original classes, from
+the world of the gear check-in at 31 (rule MR-h: the Rider, the Gunner and the Bard stay at 26).
 
 A snapshot lives under run/snapshots, which is not checked in. Without it --check still reads every profile and checks
 its items; it says that it could not compare.
@@ -32,6 +35,9 @@ COMPANION_EXTRAS = {162000011: 30}
 # A companion takes no quest: what a quest gave its character of the group world, and only a quest uses, is left out.
 QUEST_GROUPS = ('QUEST', 'KEY')
 UNEQUIPPED_SLOT = 65535
+# The worlds the profiles come from, each with the classes it gives (None: every character in it).
+ORIGINAL_EIGHT = ('GLADIATOR', 'TEMPLAR', 'ASSASSIN', 'RANGER', 'SORCERER', 'SPIRIT_MASTER', 'CLERIC', 'CHANTER')
+SOURCES = (('ntc-group-s5', None), ('morheim-g31-s1', ORIGINAL_EIGHT))
 CUBE = 0
 # PlayerClass ids, which index an item's restrict row.
 CLASS_IDS = {'WARRIOR': 0, 'GLADIATOR': 1, 'TEMPLAR': 2, 'SCOUT': 3, 'ASSASSIN': 4, 'RANGER': 5, 'MAGE': 6, 'SORCERER': 7,
@@ -143,7 +149,7 @@ def problems_of(profile, items):
     return found
 
 
-def generate(snapshot, items):
+def generate(snapshot, items, classes=None):
     folder = os.path.join(REPO, 'run', 'snapshots', snapshot + '-w1')
     record = json.load(io.open(os.path.join(folder, 'snapshot.json'), encoding='utf-8'))
     raw = io.open(os.path.join(folder, 'dump.sql.gz'), 'rb').read()
@@ -159,6 +165,8 @@ def generate(snapshot, items):
     profiles = {}
     for character in record['characters']:
         player = players[character['characterId']]
+        if classes is not None and player['player_class'] not in classes:
+            continue
         own = [row for row in inventory if row['item_owner'] == player['id'] and row['item_location'] == CUBE]
         if any(row['item_unique_id'] in socketed for row in own):
             raise SystemExit('%s has a socketed item; a profile does not carry stones yet.' % player['name'])
@@ -196,18 +204,29 @@ def text_of(profile):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--snapshot', default='ntc-group-s5', help='the round snapshot the profiles come from')
+    parser.add_argument('--snapshot', help='only this round snapshot, every character in it (default: the SOURCES)')
     parser.add_argument('--out', default=os.path.join(REPO, 'game-server', 'data', 'companions'))
     parser.add_argument('--check', action='store_true', help='check the profiles that are there; write nothing')
     options = parser.parse_args()
     items = item_data()
-    present = os.path.isfile(os.path.join(REPO, 'run', 'snapshots', options.snapshot + '-w1', 'dump.sql.gz'))
+    sources = ((options.snapshot, None),) if options.snapshot else SOURCES
+    named = ', '.join(snapshot for snapshot, _ in sources)
+    present = all(os.path.isfile(os.path.join(REPO, 'run', 'snapshots', snapshot + '-w1', 'dump.sql.gz')) for snapshot, _ in sources)
+
+    def generate_all():
+        profiles = {}
+        for snapshot, classes in sources:
+            for key, profile in generate(snapshot, items, classes).items():
+                if key in profiles:
+                    raise SystemExit('Two sources would give the profile %s.' % key)
+                profiles[key] = profile
+        return profiles
     failed = False
     if options.check:
         paths = sorted(glob.glob(os.path.join(options.out, '*.json')))
         if not paths:
             raise SystemExit('No companion profile is there to check.')
-        fresh = generate(options.snapshot, items) if present else None
+        fresh = generate_all() if present else None
         for path in paths:
             key = os.path.splitext(os.path.basename(path))[0]
             written = io.open(path, encoding='utf-8', newline='').read().replace('\r\n', '\n')
@@ -215,17 +234,17 @@ def main():
                 print('%s: %s' % (key, problem))
                 failed = True
             if fresh is not None and written != text_of(fresh.get(key, {})):
-                print('%s: differs from a fresh generation from %s' % (key, options.snapshot))
+                print('%s: differs from a fresh generation from %s' % (key, named))
                 failed = True
         if fresh is not None and set(fresh) != {os.path.splitext(os.path.basename(path))[0] for path in paths}:
-            print('The profiles that are there are not the ones %s gives.' % options.snapshot)
+            print('The profiles that are there are not the ones %s give.' % named)
             failed = True
         print('%d companion profiles checked%s.' % (len(paths), '' if present else
-                                                   '; the snapshot is not here, so they were not compared with a fresh generation'))
+                                                   '; the snapshots are not here, so they were not compared with a fresh generation'))
         return 1 if failed else 0
     if not present:
-        raise SystemExit('The snapshot %s is not under run/snapshots.' % options.snapshot)
-    profiles = generate(options.snapshot, items)
+        raise SystemExit('The snapshots %s are not all under run/snapshots.' % named)
+    profiles = generate_all()
     for key, profile in sorted(profiles.items()):
         for problem in problems_of(profile, items):
             print('%s: %s' % (key, problem))
