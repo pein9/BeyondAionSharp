@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2383,
+    "name": "Combat Preparation",
+    "nameId": 1103583,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 30,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 798080,
+        "id": 2383,
+        "start_npc_ids": 204354
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204354,
+        "name": "letum",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 2537.27,
+            "y": 1743.67,
+            "z": 89.0,
+            "heading": 120,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204354,
+      "name": "letum",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2537.27,
+          "y": 1743.67,
+          "z": 89.0,
+          "heading": 120,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 798080,
+      "name": "sarinerk",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1895.0,
+          "y": 1374.0,
+          "z": 146.625,
+          "heading": 80,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 798080,
+          "name": "sarinerk",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1895.0,
+              "y": 1374.0,
+              "z": 146.625,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 340413,
+        "gold": 15370,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000008
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2383,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 30,
+      "name": "Combat Preparation",
+      "nameId": 1103583,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 340413,
+          "gold": 15370
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000008
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

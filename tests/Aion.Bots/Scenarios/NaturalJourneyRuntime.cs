@@ -134,4 +134,6 @@ public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? R
 	string? CompanionEnd = null,
 	// Test only. "no-way": this companion finds no way to its player, so that its stuck rule is played. And the
 	// minutes between two stock checks, where a test cannot wait half an hour.
-	string? CompanionTest = null, int? CompanionStockMinutes = null);
+	string? CompanionTest = null, int? CompanionStockMinutes = null,
+	// MR-i (docs/natural-muster.md): with Muster, the gear check-in at this level instead of the muster's coin quest and tier.
+	int? CheckInLevel = null);

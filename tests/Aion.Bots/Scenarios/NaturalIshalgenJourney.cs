@@ -471,20 +471,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				// NR-38b: the Abyss entry's two coin tiers are the class's own: its vendor, its pieces and its weapon.
 				if (own.AbyssEntry is { } abyss)
 				{
-					NaturalAbyssCoinArmor armor = abyss.CoinArmor;
-					IReadOnlyList<int> vendors = NaturalCoinManifests.VendorsBeside(runtime.Data, NaturalAbyssEntry.Morheim, armor.VendorNpcId, armor.CoinItemId);
-					NaturalIshalgenInventoryPolicy sold = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot,
-						vendors.SelectMany(npc => NaturalCoinManifests.Sold(runtime.Data, npc)), ClassLine);
-					NaturalCoinManifest[] manifests = [.. armor.Tiers.Select(tier =>
-						NaturalCoinManifests.For(runtime.Data, vendors, armor.CoinItemId, tier.Level, rules, sold.Item))];
-					int Tab(int itemId) => runtime.Data.TradeListDataDh.GetTradeListTemplate(manifests[0].VendorNpcId).GetTradeTablist()
-						.Select(entry => entry.GetId()).First(id => runtime.Data.GoodsListDataDh.GetGoodsListById(id)?.GetItemIdList().Contains(itemId) == true);
-					NaturalCoinPiece weapon = manifests[0].Weapon ?? throw new InvalidDataException($"No coin vendor in Morheim sells the {observedClass} a weapon.");
-					ushort weaponSlot = Aion.GameServer.Model.Templates.Items.Enums.ItemGroupExtensions.GetItemSubType(
-						Enum.Parse<Aion.GameServer.Model.Templates.Items.Enums.ItemGroup>(weapon.Group)) ==
-						Aion.GameServer.Model.Templates.Items.Enums.ItemSubType.TWO_HAND ? (ushort)3 : (ushort)1;
-					NaturalAbyssCoinArmor classArmor = armor.ForClass(manifests, Tab(manifests[0].Armor[0].ItemId), Tab(weapon.ItemId), weaponSlot,
-						manifests[0].Shield is { } tierShield ? Tab(tierShield.ItemId) : 0, secondWeapon: rules.OffHand == NaturalOffHand.SecondWeapon);
+					NaturalAbyssCoinArmor classArmor = abyss.CoinArmor.ForClass(runtime.Data, NaturalAbyssEntry.Morheim, rules,
+						ids => NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, ids, ClassLine).Item, observedClass.ToString());
 					// NR-56b: the leg's level is a receipt of the accepted run, as its start facts are (NR-41). For another class
 					// it is the level the leg starts from, which is the plan's finish; a tier above it is asked only of a
 					// character that has reached it.
@@ -2042,9 +2030,20 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				{
 					session.BeginStep("muster-start", "take-up-the-character-at-the-abyss-entry-end");
 					// The shipped leg's level; a class's own copy of the leg holds the level it started the leg at (NR-56b).
-					int minimum = NaturalAltgardContract.LoadLeg(leg.Leg).AbyssEntry!.Level.Minimum;
+					// MR-i: a check-in is for a character that has reached its level; its tier is that level's Silver Coin gear,
+					// the class's own from the fortress's vendors of that coin.
+					int? checkIn = options.CheckInLevel;
+					Require.True(checkIn is not { } checkInLevel || NaturalAbyssEntry.SilverCoinCheckInLevels.Contains(checkInLevel) && world.Level >= checkInLevel,
+						$"A check-in at level {checkIn} is for a character of that level in a Silver Coin tier; this one is level {world.Level}.");
+					int minimum = checkIn ?? NaturalAltgardContract.LoadLeg(leg.Leg).AbyssEntry!.Level.Minimum;
 					QuestRunPlan coinQuest = altgardPlans.Values.Single();
-					NaturalAbyssCoinArmor armor = scope.CoinArmor;
+					NaturalAbyssCoinArmor armor = checkIn is { } tierLevel ? (scope.CoinArmor with
+					{
+						CoinItemId = NaturalAbyssEntry.SilverCoinItemId, IncomingCoins = 0, VendorNpcId = NaturalAbyssEntry.SilverCoinVendorNpcId,
+						VendorPosition = NaturalAbyssEntry.SilverCoinVendorPosition, Tiers = [new(tierLevel, "check-in", $"the level-{tierLevel} coin gear", [])],
+					}).ForClass(runtime.Data, NaturalAbyssEntry.Morheim, combat.ClassProfile.Gear,
+						ids => NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, ids, ClassLine).Item, combat.ObservedCharacter)
+						: scope.CoinArmor;
 					BotPosition hubAt = new(leg.Hub.Anchor[0], leg.Hub.Anchor[1], leg.Hub.Anchor[2], 0);
 					Require.True(world.MapId == leg.Hub.MapId && !world.IsDead && Distance(session.CurrentPosition, hubAt) <= leg.Hub.Radius,
 						"The muster starts in the fortress the Abyss entry ends in.");

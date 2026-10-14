@@ -1,0 +1,315 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "morheim-ma-alsig-village",
+  "start": {
+    "contract": "natural-morheim-ms-contract.json",
+    "snapshot": "morheim-ms-s1",
+    "mapId": 220020000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 31,
+    "bindNpcId": 700259,
+    "completedQuestIds": [
+      24020,
+      2333
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": [
+      2319
+    ]
+  },
+  "hub": {
+    "key": "alsig-village",
+    "mapId": 220020000,
+    "anchor": [
+      2384.329,
+      1750.154,
+      102.373
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "fortress",
+      "note": "Morheim Ice Fortress: Herner (Q23830) and Orhe, the teleporter to Altgard",
+      "min": [
+        140,
+        2240,
+        430
+      ],
+      "max": [
+        410,
+        2470,
+        475
+      ]
+    },
+    {
+      "key": "alsig",
+      "note": "Alsig Village: Balom, Tekor, Letum, the obelisk and the flights",
+      "min": [
+        2359,
+        1717,
+        74
+      ],
+      "max": [
+        2562,
+        1834,
+        118
+      ]
+    },
+    {
+      "key": "festering-clodworms",
+      "note": "the festering clodworms (Q2476)",
+      "min": [
+        1873,
+        1690,
+        186
+      ],
+      "max": [
+        2250,
+        2282,
+        263
+      ]
+    },
+    {
+      "key": "tripeeds",
+      "note": "the tripeed stems and tripeed monsters (Q2381, Q2382)",
+      "min": [
+        2453,
+        1661,
+        74
+      ],
+      "max": [
+        2563,
+        1805,
+        108
+      ]
+    },
+    {
+      "key": "sarinerk",
+      "note": "Sarinerk, the end of Q2383",
+      "min": [
+        1870,
+        1349,
+        131
+      ],
+      "max": [
+        1920,
+        1399,
+        161
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2476,
+      "category": "QUEST",
+      "minimumLevel": 29,
+      "rewardExperience": 291412,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204355,
+      "area": "festering-clodworms"
+    },
+    {
+      "id": 2381,
+      "category": "QUEST",
+      "minimumLevel": 30,
+      "rewardExperience": 340413,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204340,
+      "area": "tripeeds"
+    },
+    {
+      "id": 2382,
+      "category": "QUEST",
+      "minimumLevel": 30,
+      "rewardExperience": 340413,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204340,
+      "area": "tripeeds",
+      "prerequisites": [
+        2381
+      ]
+    },
+    {
+      "id": 2383,
+      "category": "QUEST",
+      "minimumLevel": 30,
+      "rewardExperience": 340413,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 204354,
+      "area": "sarinerk"
+    },
+    {
+      "id": 23830,
+      "category": "PRIMARY",
+      "minimumLevel": 30,
+      "rewardExperience": 46544,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_on_levelup",
+      "startNpcId": null,
+      "area": "fortress"
+    },
+    {
+      "id": 2319,
+      "category": "QUEST",
+      "minimumLevel": 21,
+      "rewardExperience": 90000,
+      "prerequisite": null,
+      "handler": "ReportTo template (quest_script_data/morheim.xml), handed in by its step in Altgard",
+      "template": null,
+      "startNpcId": 730037,
+      "area": null
+    }
+  ],
+  "order": [
+    2476,
+    2381,
+    2382,
+    2383,
+    23830,
+    2319
+  ],
+  "steps": [
+    {
+      "key": "q2319-v0-luimerk",
+      "questId": 2319,
+      "var": 0,
+      "npcId": 798105,
+      "position": [
+        2630.0,
+        1644.0,
+        254.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        2375,
+        5
+      ],
+      "mapId": 220030000
+    }
+  ],
+  "objectUses": [],
+  "collections": [],
+  "mapTrips": [
+    {
+      "mapId": 220030000,
+      "fromMapId": 220020000,
+      "teleporterNpcId": 204399,
+      "locationId": 9,
+      "fare": 1700,
+      "talkRange": 4
+    },
+    {
+      "mapId": 220020000,
+      "fromMapId": 220030000,
+      "teleporterNpcId": 203581,
+      "locationId": 10,
+      "fare": 1700,
+      "talkRange": 4
+    }
+  ],
+  "bind": {
+    "npcId": 700232,
+    "position": [
+      2384.329,
+      1750.154,
+      102.373
+    ],
+    "onArrival": true,
+    "price": 6095,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [
+    {
+      "id": 2477,
+      "reason": "A Dish For Dukar's five ingredients drop only from Beluslan's meek crestliches (220040000), and Lainita's step is in Pandaemonium: the leg engine collects on its hub's map only",
+      "leg": 0
+    },
+    {
+      "id": 2478,
+      "reason": "[Spy] Ingredients For Sausage: spy quests are not played",
+      "leg": 0
+    },
+    {
+      "id": 2468,
+      "reason": "[Gather] Balom's Wages: waits for the gathering work",
+      "leg": 0
+    },
+    {
+      "id": 2469,
+      "reason": "[Gather] Thirteen Pieces of Ore: waits for the gathering work",
+      "leg": 0
+    },
+    {
+      "id": 2472,
+      "reason": "[Gather] Cabon's Request: waits for the gathering work",
+      "leg": 0
+    },
+    {
+      "id": 2324,
+      "reason": "The Spirit's Notebook starts from Hermod's Notebook (182204123), which no monster, object or gatherable gives in the server's data",
+      "leg": 0
+    },
+    {
+      "id": 2325,
+      "reason": "An Unfinished Mystery needs Q2324, which cannot be started",
+      "leg": 0
+    }
+  ],
+  "endpoint": {
+    "mapId": 220020000,
+    "completedQuestIds": [
+      2476,
+      2381,
+      2382,
+      2383,
+      23830,
+      2319
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 31,
+    "snapshot": "morheim-ma",
+    "anchor": [
+      2384.329,
+      1750.154,
+      102.373
+    ],
+    "radius": 30,
+    "bindNpcId": 700232,
+    "heldQuestIds": []
+  }
+}

@@ -1,0 +1,437 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "morheim-ms-slag-bulwark",
+  "start": {
+    "contract": "natural-morheim-mc-contract.json",
+    "snapshot": "morheim-mc-s1",
+    "mapId": 220020000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 31,
+    "bindNpcId": 700213,
+    "completedQuestIds": [
+      24020,
+      2333
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": [
+      2319,
+      2356
+    ]
+  },
+  "hub": {
+    "key": "slag-bulwark",
+    "mapId": 220020000,
+    "anchor": [
+      1782.77,
+      1669.43,
+      197.937
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "slag-bulwark",
+      "note": "Slag Bulwark: Gangleri, Utgar, Embla, the obelisk and the flight to Desert Garrison",
+      "min": [
+        1747,
+        1637,
+        182
+      ],
+      "max": [
+        1809,
+        1694,
+        212
+      ]
+    },
+    {
+      "key": "spiners",
+      "note": "the obsidian spiners (Q2356), worked in Kellan's Cabin's leg",
+      "min": [
+        1180,
+        1831,
+        185
+      ],
+      "max": [
+        1591,
+        2781,
+        312
+      ]
+    },
+    {
+      "key": "barghests",
+      "note": "the lava barghests (Q2357, Q4320)",
+      "min": [
+        1344,
+        1509,
+        164
+      ],
+      "max": [
+        1915,
+        2210,
+        259
+      ]
+    },
+    {
+      "key": "obscuras",
+      "note": "the blazing obscuras (Q2358)",
+      "min": [
+        1464,
+        1610,
+        184
+      ],
+      "max": [
+        1856,
+        2221,
+        261
+      ]
+    },
+    {
+      "key": "oculazens",
+      "note": "the observing oculazens (Q2359)",
+      "min": [
+        1481,
+        1514,
+        169
+      ],
+      "max": [
+        1926,
+        2165,
+        260
+      ]
+    },
+    {
+      "key": "slimes",
+      "note": "the crawling clodworms and sulfur slimes (Q2360)",
+      "min": [
+        1503,
+        1541,
+        171
+      ],
+      "max": [
+        1875,
+        2210,
+        275
+      ]
+    },
+    {
+      "key": "magni",
+      "note": "Magni by Halabana Outpost, the end of Q2361",
+      "min": [
+        2105,
+        2265,
+        214
+      ],
+      "max": [
+        2155,
+        2315,
+        244
+      ]
+    },
+    {
+      "key": "temple",
+      "note": "Sarinerk, the end of Q2367, and the wriggots and basilisks of the temple below him (Q2370)",
+      "min": [
+        1560,
+        1050,
+        6
+      ],
+      "max": [
+        1925,
+        1443,
+        161
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2356,
+      "category": "QUEST",
+      "minimumLevel": 24,
+      "rewardExperience": 200627,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 790020,
+      "area": "spiners"
+    },
+    {
+      "id": 2357,
+      "category": "IMPORTANT",
+      "minimumLevel": 29,
+      "rewardExperience": 476911,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204338,
+      "area": "barghests"
+    },
+    {
+      "id": 2358,
+      "category": "IMPORTANT",
+      "minimumLevel": 29,
+      "rewardExperience": 476911,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204339,
+      "area": "obscuras"
+    },
+    {
+      "id": 2359,
+      "category": "IMPORTANT",
+      "minimumLevel": 29,
+      "rewardExperience": 476911,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204339,
+      "area": "oculazens"
+    },
+    {
+      "id": 2360,
+      "category": "IMPORTANT",
+      "minimumLevel": 29,
+      "rewardExperience": 476911,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204372,
+      "area": "slimes"
+    },
+    {
+      "id": 4320,
+      "category": "QUEST",
+      "minimumLevel": 27,
+      "rewardExperience": 140439,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204338,
+      "area": "barghests",
+      "prerequisites": [
+        2357
+      ]
+    },
+    {
+      "id": 2361,
+      "category": "QUEST",
+      "minimumLevel": 27,
+      "rewardExperience": 200627,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 204372,
+      "area": "magni",
+      "prerequisites": [
+        2360
+      ]
+    },
+    {
+      "id": 2370,
+      "category": "QUEST",
+      "minimumLevel": 28,
+      "rewardExperience": 291412,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 798080,
+      "area": "temple",
+      "prerequisites": [
+        2367
+      ]
+    },
+    {
+      "id": 2367,
+      "category": "QUEST",
+      "minimumLevel": 27,
+      "rewardExperience": 233824,
+      "prerequisite": null,
+      "handler": "morheim/_2367APrizedPossession.cs",
+      "template": null,
+      "startNpcId": 204339,
+      "area": "slag-bulwark"
+    }
+  ],
+  "order": [
+    2356,
+    2357,
+    2358,
+    2359,
+    2360,
+    4320,
+    2361,
+    2367,
+    2370
+  ],
+  "steps": [
+    {
+      "key": "q2367-offer-embla",
+      "questId": 2367,
+      "status": "OFFER",
+      "npcId": 204339,
+      "position": [
+        1781.201,
+        1665.247,
+        197.625
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        4762
+      ],
+      "area": "slag-bulwark"
+    },
+    {
+      "key": "q2367-v0-embla",
+      "questId": 2367,
+      "var": 0,
+      "npcId": 204339,
+      "position": [
+        1781.201,
+        1665.247,
+        197.625
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT1_1",
+        "SETPRO10"
+      ],
+      "pages": [
+        1003,
+        1012
+      ],
+      "area": "slag-bulwark"
+    },
+    {
+      "key": "q2367-reward-sarinerk",
+      "questId": 2367,
+      "status": "REWARD",
+      "npcId": 798080,
+      "position": [
+        1895.0,
+        1374.0,
+        146.625
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        1693,
+        5
+      ],
+      "area": "temple"
+    }
+  ],
+  "objectUses": [],
+  "collections": [],
+  "bind": {
+    "npcId": 700259,
+    "position": [
+      1782.77,
+      1669.43,
+      197.937
+    ],
+    "onArrival": true,
+    "price": 4353,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [
+    {
+      "id": 2372,
+      "reason": "Immortal Love opens with Q2367's second reward; its sulfur worms live in the Abyss's lower layer (400010000), 1.6 km of flight from Primum, and its arachnas in Altgard. The bots have no Abyss travel, so every bot takes Q2367's first reward, which opens Q2370",
+      "leg": 0
+    },
+    {
+      "id": 2375,
+      "reason": "[Group] All Nyerk and No Play: played in a group (step M6)",
+      "leg": 0
+    },
+    {
+      "id": 2376,
+      "reason": "[Group] Sarinerk's Safety: played in a group (step M6)",
+      "leg": 0
+    },
+    {
+      "id": 2377,
+      "reason": "[Group] A Curse-Breaking Clue: played in a group (step M6)",
+      "leg": 0
+    },
+    {
+      "id": 4311,
+      "reason": "[Group] The Snowflake Necklace: played in a group (step M6)",
+      "leg": 0
+    },
+    {
+      "id": 4312,
+      "reason": "[Group] Gangleri's Request: played in a group (step M6)",
+      "leg": 0
+    },
+    {
+      "id": 4313,
+      "reason": "[Group] The Still Remaining Mission: played in a group (step M6)",
+      "leg": 0
+    },
+    {
+      "id": 2384,
+      "reason": "[Group] A Missing Bandage: played in a group (step M6)",
+      "leg": 0
+    },
+    {
+      "id": 24023,
+      "reason": "A Blazing Rescue gathers inside the Sky Temple Interior (320050000), a solo instance: it waits for the leg engine to collect inside an instance",
+      "leg": 0
+    }
+  ],
+  "endpoint": {
+    "mapId": 220020000,
+    "completedQuestIds": [
+      2356,
+      2357,
+      2358,
+      2359,
+      2360,
+      4320,
+      2361,
+      2367,
+      2370
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 31,
+    "snapshot": "morheim-ms",
+    "anchor": [
+      1782.77,
+      1669.43,
+      197.937
+    ],
+    "radius": 30,
+    "bindNpcId": 700259,
+    "heldQuestIds": []
+  }
+}

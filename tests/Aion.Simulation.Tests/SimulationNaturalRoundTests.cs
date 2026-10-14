@@ -53,12 +53,16 @@ public sealed partial class SimulationFastScenarioTests
 		// bridge's end, which is no later-capital snapshot: AF_ALTGARD=1 and RC_CAPITAL=1 alone. Every later stage starts on
 		// a later-capital one and has NA_ASCENSION=1 as well (the script's Restore-Snapshot and Get-LegEnvironment).
 		"l1" => new NaturalJourneyOptions(StopAt: entry.StopAt, AltgardLeg1: true, LaterCapital: true, ClassLine: line),
-		// M2, M3, M4: "mf", "mk", "md" and "mc" are the Morheim legs (docs/natural-morheim-leveling.md), from the group world.
-		"l2" or "l3" or "l4" or "l5" or "l6" or "l7" or "l8" or "l9" or "l10" or "l11" or "cg" or "l12" or "ax" or "mf" or "mk" or "md" or "mc" =>
+		// M2 to M7: "mf", "mk", "md", "mc", "ms", "ma" and "mg" are the Morheim legs (docs/natural-morheim-leveling.md), from the group world.
+		"l2" or "l3" or "l4" or "l5" or "l6" or "l7" or "l8" or "l9" or "l10" or "l11" or "cg" or "l12" or "ax" or "mf" or "mk" or "md" or "mc" or "ms" or "ma" or "mg" =>
 			new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: entry.Stage, LaterCapital: true, ClassLine: line),
 		// The muster (2026-10-12): a character that stands at the Abyss entry's end, in that leg's fortress.
 		"muster" => new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
 			ClassLine: line, Muster: true),
+		// MR-i, step M7 (docs/natural-morheim-leveling.md): the gear check-in at 31, the muster's coin step in the Silver Coin
+		// tier, by a character the Morheim legs brought to the fortress at that level.
+		"check-in" => new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
+			ClassLine: line, Muster: true, CheckInLevel: 31),
 		// GH-01: one uncaptured field encounter from the group world's muster endpoint, with the ordinary fight table.
 		"gh-survey" => new NaturalJourneyOptions(AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
 			ClassLine: line, Muster: true, SurveyNpcId: entry.TargetNpcId ?? 212644),
@@ -76,7 +80,7 @@ public sealed partial class SimulationFastScenarioTests
 		"companion-lead" => new NaturalJourneyOptions(AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
 			ClassLine: line, Companion: "stand-in", Companions: entry.Companions ?? throw new InvalidDataException("companion-lead names its companions."),
 			CompanionUntil: entry.CompanionUntil, CompanionEnd: entry.CompanionEnd),
-		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, muster, gh-survey, support, group-coin, group-ntc, companion-lead or companion."),
+		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, the Morheim legs, muster, check-in, gh-survey, support, group-coin, group-ntc, companion-lead or companion."),
 		}) with { Role = entry.Role };
 	}
 
@@ -92,7 +96,7 @@ public sealed partial class SimulationFastScenarioTests
 	{
 		null or "" or "support" => null,
 		"bridge" => "bridge-completion.json",
-		"muster" => NaturalAbyssEntry.MusterReceipt,
+		"muster" or "check-in" => NaturalAbyssEntry.MusterReceipt,
 		"gh-survey" => "gh-survey-completion.json",
 		_ => $"altgard-{entry.Stage}-completion.json",
 	};

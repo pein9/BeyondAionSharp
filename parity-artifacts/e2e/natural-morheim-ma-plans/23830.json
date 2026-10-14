@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 23830,
+    "name": "A Bundle to Enjoy",
+    "nameId": 1801124,
+    "zone": "Morheim",
+    "category": "PRIMARY",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 30,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/stigma.xml",
+    "template": "report_on_levelup",
+    "templateData": {
+      "tag": "report_on_levelup",
+      "attributes": {
+        "end_npc_ids": 798382,
+        "id": 23830
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "levelUp",
+    "minimumLevel": 30
+  },
+  "startNpcs": [],
+  "endNpcs": [
+    {
+      "id": 798382,
+      "name": "herner",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 234.2143,
+          "y": 2321.895,
+          "z": 446.3162,
+          "heading": 35,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 798382,
+          "name": "herner",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 234.2143,
+              "y": 2321.895,
+              "z": 446.3162,
+              "heading": 35,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 46544,
+        "rewardItems": [
+          {
+            "item_id": 188053787
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "PRIMARY",
+      "data_driven": true,
+      "id": 23830,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 30,
+      "name": "A Bundle to Enjoy",
+      "nameId": 1801124,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 46544
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "item_id": 188053787
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

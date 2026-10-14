@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "morheim-mg-fortress",
+  "start": {
+    "contract": "natural-morheim-mc-contract.json",
+    "snapshot": "morheim-mc-s1",
+    "mapId": 220020000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 31,
+    "bindNpcId": 700213,
+    "completedQuestIds": [
+      24020,
+      2333
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": [
+      2319,
+      2356
+    ]
+  },
+  "hub": {
+    "key": "morheim-ice-fortress",
+    "mapId": 220020000,
+    "anchor": [
+      268.111,
+      2338.76,
+      444.123
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "fortress",
+      "note": "Morheim Ice Fortress: the obelisk, the coin vendors and the Stigma Master",
+      "min": [
+        140,
+        2240,
+        430
+      ],
+      "max": [
+        410,
+        2470,
+        475
+      ]
+    }
+  ],
+  "quests": [],
+  "order": [],
+  "steps": [],
+  "objectUses": [],
+  "collections": [],
+  "bind": {
+    "npcId": 700231,
+    "position": [
+      268.111,
+      2338.76,
+      444.123
+    ],
+    "onArrival": true,
+    "price": 2690,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 220020000,
+    "completedQuestIds": [],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 31,
+    "snapshot": "morheim-mg",
+    "anchor": [
+      268.111,
+      2338.76,
+      444.123
+    ],
+    "radius": 30,
+    "bindNpcId": 700231,
+    "heldQuestIds": []
+  }
+}

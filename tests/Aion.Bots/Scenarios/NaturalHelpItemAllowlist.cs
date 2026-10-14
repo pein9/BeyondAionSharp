@@ -99,6 +99,7 @@ public static class NaturalHelpItemAllowlist
 	[
 		new("ax", 164000079, "flight-speed", 1, "AX-Q3"),
 		new("ax", 186000007, "bronze-coin", null, "AX-Q5 revision, no limit"),
+		new("ax", 186000008, "silver-coin", null, "MR-i: the check-ins at 31 and 36, no limit", MusterOnly: true),
 		new("ax", 188053787, "stigma-bundle", 1, "MR-g: Q2900's bundle, which the cleanup threw away, once more", MusterOnly: true),
 	];
 }

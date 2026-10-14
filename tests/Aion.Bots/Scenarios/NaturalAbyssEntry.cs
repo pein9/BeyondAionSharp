@@ -1,4 +1,7 @@
+using Aion.Bots.Scenarios.Classes;
 using Aion.Bots.World;
+using Aion.GameServer.Dataholders;
+using Aion.GameServer.Model.Templates.Items.Enums;
 
 namespace Aion.Bots.Scenarios;
 
@@ -26,6 +29,12 @@ public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, f
 	public const int MusterMaxTurns = 12;
 
 	public const string MusterReceipt = "altgard-muster-completion.json";
+
+	/// <summary>MR-i (docs/natural-muster.md): the check-ins at 31 and 36 are the muster's coin step in the Silver Coin
+	/// tiers (Elite Rank 6 and 5), sold in the fortress by Alfhild and Gyrda, beside Nott and Vebna.</summary>
+	public const int SilverCoinItemId = 186000008, SilverCoinVendorNpcId = 804520;
+	public static readonly float[] SilverCoinVendorPosition = [228.8503f, 2322.25f, 446.3163f];
+	public static readonly int[] SilverCoinCheckInLevels = [31, 36];
 	public const int Morheim = 220020000, Pandaemonium = 120010000, Altgard = 220030000, ArenaMap = 320090000;
 
 	/// <summary>The objects the leg uses that no dialog step names: the arena's doors, its spirits and the coin vendor.</summary>
@@ -141,6 +150,23 @@ public sealed record NaturalAbyssCoinArmor(int CoinItemId, int IncomingCoins, in
 	/// <param name="shieldGoodsListId">NR-54a: the tab that holds the manifests' shield, for a class that holds one.</param>
 	/// <param name="secondWeapon">The class holds a second one-hand weapon in its off hand: the tier's weapon is asked
 	/// for there too (2026-10-12).</param>
+	/// <summary>NR-38b: these tiers as a class's own, from the coin manifests of the vendors that stand beside this one:
+	/// the vendor, the trade tabs, the pieces and the weapon. <paramref name="items"/> gives the shipped facts of the items
+	/// those vendors sell.</summary>
+	public NaturalAbyssCoinArmor ForClass(StaticData data, int mapId, NaturalGearRules rules,
+		Func<IEnumerable<int>, Func<int, NaturalItem>> items, string className)
+	{
+		IReadOnlyList<int> vendors = NaturalCoinManifests.VendorsBeside(data, mapId, VendorNpcId, CoinItemId);
+		Func<int, NaturalItem> item = items(vendors.SelectMany(npc => NaturalCoinManifests.Sold(data, npc)));
+		NaturalCoinManifest[] manifests = [.. Tiers.Select(tier => NaturalCoinManifests.For(data, vendors, CoinItemId, tier.Level, rules, item))];
+		int Tab(int itemId) => data.TradeListDataDh.GetTradeListTemplate(manifests[0].VendorNpcId).GetTradeTablist()
+			.Select(entry => entry.GetId()).First(id => data.GoodsListDataDh.GetGoodsListById(id)?.GetItemIdList().Contains(itemId) == true);
+		NaturalCoinPiece weapon = manifests[0].Weapon ?? throw new InvalidDataException($"No coin vendor in Morheim sells the {className} a weapon.");
+		ushort weaponSlot = ItemGroupExtensions.GetItemSubType(Enum.Parse<ItemGroup>(weapon.Group)) == ItemSubType.TWO_HAND ? (ushort)3 : (ushort)1;
+		return ForClass(manifests, Tab(manifests[0].Armor[0].ItemId), Tab(weapon.ItemId), weaponSlot,
+			manifests[0].Shield is { } shield ? Tab(shield.ItemId) : 0, secondWeapon: rules.OffHand == NaturalOffHand.SecondWeapon);
+	}
+
 	public NaturalAbyssCoinArmor ForClass(IReadOnlyList<NaturalCoinManifest> manifests, int armorGoodsListId, int weaponGoodsListId,
 		ushort weaponSlot, int shieldGoodsListId = 0, bool secondWeapon = false) => this with
 	{

@@ -1,0 +1,398 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2358,
+    "name": "Obscured Vision",
+    "nameId": 1103558,
+    "zone": "Morheim",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 29,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2358,
+        "start_npc_ids": 204339
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204339,
+        "name": "embla",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 1781.2015,
+            "y": 1665.2469,
+            "z": 197.625,
+            "heading": 103,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204339,
+      "name": "embla",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1781.2015,
+          "y": 1665.2469,
+          "z": 197.625,
+          "heading": 103,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204339,
+      "name": "embla",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1781.2015,
+          "y": 1665.2469,
+          "z": 197.625,
+          "heading": 103,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 9,
+      "npc_ids": "211386 211419",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 211386,
+          "name": "blazing obscura",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1501.98,
+              "y": 1940.15,
+              "z": 213.99875,
+              "heading": 22,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1514.65,
+              "y": 1682.84,
+              "z": 217.08125,
+              "heading": 22,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1531.82,
+              "y": 1757.15,
+              "z": 218.86061,
+              "heading": 101,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1552.77,
+              "y": 1948.43,
+              "z": 217.27689,
+              "heading": 110,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1555.93,
+              "y": 2085.31,
+              "z": 221.15063,
+              "heading": 115,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1594.9,
+              "y": 1863.71,
+              "z": 209.1531,
+              "heading": 85,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1630.55,
+              "y": 1748.18,
+              "z": 213.40874,
+              "heading": 7,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1684.51,
+              "y": 1792.05,
+              "z": 204.72452,
+              "heading": 68,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1689.22,
+              "y": 1648.52,
+              "z": 199.82,
+              "heading": 84,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1716.95,
+              "y": 2135.04,
+              "z": 246.30875,
+              "heading": 88,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1731.83,
+              "y": 1943.08,
+              "z": 213.81813,
+              "heading": 40,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1740.99,
+              "y": 2183.86,
+              "z": 245.732,
+              "heading": 119,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1740.99,
+              "y": 2191.29,
+              "z": 245.873,
+              "heading": 41,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1826.06,
+              "y": 1768.53,
+              "z": 201.64311,
+              "heading": 118,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 211419,
+          "name": "blazing obscura",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1494.4,
+              "y": 2015.89,
+              "z": 209.79562,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1557.12,
+              "y": 1800.88,
+              "z": 217.555,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1573.13,
+              "y": 1640.09,
+              "z": 206.125,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1583.28,
+              "y": 1987.56,
+              "z": 219.695,
+              "heading": 44,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1644.51,
+              "y": 1727.42,
+              "z": 211.60437,
+              "heading": 26,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1685.81,
+              "y": 1954.54,
+              "z": 218.81937,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1720.7,
+              "y": 1853.84,
+              "z": 216.69626,
+              "heading": 26,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1765.21,
+              "y": 2081.63,
+              "z": 245.52625,
+              "heading": 69,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1793.42,
+              "y": 1763.42,
+              "z": 203.3225,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204339,
+          "name": "embla",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1781.2015,
+              "y": 1665.2469,
+              "z": 197.625,
+              "heading": 103,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 476911,
+        "gold": 17760,
+        "rewardItems": [
+          {
+            "count": 6,
+            "item_id": 186000008
+          },
+          {
+            "count": 10,
+            "item_id": 162000005
+          },
+          {
+            "count": 10,
+            "item_id": 162000010
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "IMPORTANT",
+      "id": 2358,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 29,
+      "name": "Obscured Vision",
+      "nameId": 1103558,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 476911,
+          "gold": 17760
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 6,
+              "item_id": 186000008
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 162000005
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 162000010
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 9,
+          "npc_ids": "211386 211419",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

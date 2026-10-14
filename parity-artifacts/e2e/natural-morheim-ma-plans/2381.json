@@ -1,0 +1,415 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2381,
+    "name": "Harvesting Tripeed",
+    "nameId": 1103581,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 30,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2381,
+        "start_npc_ids": 204340
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204340,
+        "name": "tekor",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 2474.87,
+            "y": 1800.46,
+            "z": 95.656,
+            "heading": 104,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204340,
+      "name": "tekor",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2474.87,
+          "y": 1800.46,
+          "z": 95.656,
+          "heading": 104,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204340,
+      "name": "tekor",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2474.87,
+          "y": 1800.46,
+          "z": 95.656,
+          "heading": 104,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 10,
+      "item_id": 182204151,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182204151,
+          "npc_id": 700253,
+          "npc": {
+            "id": 700253,
+            "name": "tripeed stem",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 2483.19,
+                "y": 1711.47,
+                "z": 90.7012,
+                "heading": 60,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2486.7,
+                "y": 1701.34,
+                "z": 92.0123,
+                "heading": 50,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2486.87,
+                "y": 1718.94,
+                "z": 91.8567,
+                "heading": 120,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2488.7,
+                "y": 1728.62,
+                "z": 91.0486,
+                "heading": 30,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2489.82,
+                "y": 1704.89,
+                "z": 92.0856,
+                "heading": 50,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2495.22,
+                "y": 1695.84,
+                "z": 91.6442,
+                "heading": 10,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2495.99,
+                "y": 1718.59,
+                "z": 90.5428,
+                "heading": 80,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2498.15,
+                "y": 1731.36,
+                "z": 90.3437,
+                "heading": 10,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2498.89,
+                "y": 1707.74,
+                "z": 91.157,
+                "heading": 40,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2505.23,
+                "y": 1762.61,
+                "z": 90.9132,
+                "heading": 80,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2510.17,
+                "y": 1770.56,
+                "z": 91.3645,
+                "heading": 60,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2512.91,
+                "y": 1775.23,
+                "z": 92.7394,
+                "heading": 120,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2515.13,
+                "y": 1723.73,
+                "z": 89.7097,
+                "heading": 70,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2516.51,
+                "y": 1761.34,
+                "z": 90.8044,
+                "heading": 20,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2517.18,
+                "y": 1697.23,
+                "z": 93.5,
+                "heading": 40,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2519.23,
+                "y": 1716.26,
+                "z": 91.2778,
+                "heading": 110,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2519.52,
+                "y": 1773.34,
+                "z": 93.5,
+                "heading": 20,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2521.16,
+                "y": 1768.14,
+                "z": 91.4821,
+                "heading": 90,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2521.21,
+                "y": 1691.16,
+                "z": 93.5,
+                "heading": 20,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2521.89,
+                "y": 1725.52,
+                "z": 89.7965,
+                "heading": 70,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2524.56,
+                "y": 1698.28,
+                "z": 93.5,
+                "heading": 90,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2525.18,
+                "y": 1720.85,
+                "z": 90.3769,
+                "heading": 110,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2529.55,
+                "y": 1704.19,
+                "z": 93.5,
+                "heading": 10,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2530.72,
+                "y": 1718.61,
+                "z": 90.7993,
+                "heading": 100,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2532.7,
+                "y": 1692.18,
+                "z": 93.5,
+                "heading": 30,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2533.8,
+                "y": 1695.41,
+                "z": 93.5,
+                "heading": 100,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204340,
+          "name": "tekor",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2474.87,
+              "y": 1800.46,
+              "z": 95.656,
+              "heading": 104,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 340413,
+        "gold": 13600,
+        "rewardItems": [
+          {
+            "count": 30,
+            "item_id": 169300009
+          },
+          {
+            "count": 1,
+            "item_id": 186000008
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2381,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 30,
+      "name": "Harvesting Tripeed",
+      "nameId": 1103581,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 182204151
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 340413,
+          "gold": 13600
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 30,
+              "item_id": 169300009
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000008
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204151,
+          "npc_id": 700253
+        }
+      }
+    ]
+  }
+}

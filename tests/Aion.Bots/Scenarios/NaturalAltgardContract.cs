@@ -78,16 +78,21 @@ public sealed record NaturalAltgardContract(
 		// AX-03: Morheim arrival and Abyss entry, from the continuous journey's endpoint.
 		[NaturalAbyssEntry.Leg] = ("natural-abyss-entry-contract.json", null),
 		// M2 (docs/natural-morheim-leveling.md): Morheim, hub by hub, from the group world. "mf" is Morheim Ice Fortress,
-		// "mk" (M3) Kellan's Cabin, "md" (M4) Desert Garrison and "mc" (M4) the campaign's Q24021 and Q24022 with Q2333.
+		// "mk" (M3) Kellan's Cabin, "md" (M4) Desert Garrison and "mc" (M4) the campaign's Q24021 and Q24022 with Q2333,
+		// "ms" (M5) Slag Bulwark and "ma" (M5) Alsig Village with the hand-ins held for them, and "mg" (M7) the way back to
+		// the fortress, bound there, for the gear check-in at 31.
 		["mf"] = ("natural-morheim-mf-contract.json", "natural-morheim-mf-plans"),
 		["mk"] = ("natural-morheim-mk-contract.json", "natural-morheim-mk-plans"),
 		["md"] = ("natural-morheim-md-contract.json", "natural-morheim-md-plans"),
 		["mc"] = ("natural-morheim-mc-contract.json", null),
+		["ms"] = ("natural-morheim-ms-contract.json", "natural-morheim-ms-plans"),
+		["ma"] = ("natural-morheim-ma-contract.json", "natural-morheim-ma-plans"),
+		["mg"] = ("natural-morheim-mg-contract.json", null),
 	};
 
 	/// <summary>The legs of the Morheim leg to level 31 (docs/natural-morheim-leveling.md): played on Morheim by a
 	/// mustered character of level 26 or more.</summary>
-	public static readonly IReadOnlySet<string> MorheimLegs = new HashSet<string> { "mf", "mk", "md", "mc" };
+	public static readonly IReadOnlySet<string> MorheimLegs = new HashSet<string> { "mf", "mk", "md", "mc", "ms", "ma", "mg" };
 
 	/// <summary>The muster's template quest: the fortress's repeatable coin quest (docs/natural-muster.md). The plans are
 	/// apart from the Abyss entry's, which has none, so that leg's navigation graph is what it was.</summary>

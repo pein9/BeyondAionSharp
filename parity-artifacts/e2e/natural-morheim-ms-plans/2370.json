@@ -1,0 +1,443 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2370,
+    "name": "The Bottom of the Temple",
+    "nameId": 1103570,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 28,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2367,
+            "reward": 0
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2370,
+        "start_npc_ids": 798080
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 798080,
+        "name": "sarinerk",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 1895.0,
+            "y": 1374.0,
+            "z": 146.625,
+            "heading": 80,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 798080,
+      "name": "sarinerk",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1895.0,
+          "y": 1374.0,
+          "z": 146.625,
+          "heading": 80,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 798080,
+      "name": "sarinerk",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1895.0,
+          "y": 1374.0,
+          "z": 146.625,
+          "heading": 80,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 7,
+      "npc_ids": "211453 211468",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 211453,
+          "name": "wiggling wriggot",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1633.29,
+              "y": 1413.45,
+              "z": 21.604095,
+              "heading": 64,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1638.38,
+              "y": 1131.13,
+              "z": 21.604095,
+              "heading": 99,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1648.29,
+              "y": 1275.28,
+              "z": 21.604095,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1737.0,
+              "y": 1204.99,
+              "z": 25.558746,
+              "heading": 38,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1757.45,
+              "y": 1273.02,
+              "z": 21.604095,
+              "heading": 120,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1775.9,
+              "y": 1335.6,
+              "z": 21.604095,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 211468,
+          "name": "wiggling wriggot",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1620.3,
+              "y": 1080.27,
+              "z": 21.604095,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1679.6,
+              "y": 1368.06,
+              "z": 21.604095,
+              "heading": 110,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1683.53,
+              "y": 1257.4,
+              "z": 21.604095,
+              "heading": 77,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1733.17,
+              "y": 1361.59,
+              "z": 21.604095,
+              "heading": 4,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1778.5,
+              "y": 1219.43,
+              "z": 21.604095,
+              "heading": 55,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1810.57,
+              "y": 1391.35,
+              "z": 21.604095,
+              "heading": 65,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1814.29,
+              "y": 1138.31,
+              "z": 21.604095,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 3,
+      "npc_ids": "211448 211462",
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 211448,
+          "name": "blackscale basilisk",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1590.03,
+              "y": 1253.9,
+              "z": 25.9756,
+              "heading": 107,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1616.64,
+              "y": 1228.29,
+              "z": 23.125,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1629.4,
+              "y": 1200.36,
+              "z": 23.125,
+              "heading": 24,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1725.81,
+              "y": 1324.49,
+              "z": 24.1187,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1743.76,
+              "y": 1209.14,
+              "z": 26.0629,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1778.55,
+              "y": 1299.29,
+              "z": 22.375,
+              "heading": 86,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 211462,
+          "name": "blackscale basilisk",
+          "positions": [],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 798080,
+          "name": "sarinerk",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1895.0,
+              "y": 1374.0,
+              "z": 146.625,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 291412,
+        "gold": 44890,
+        "rewardItems": [],
+        "selectableItems": [
+          {
+            "count": 1,
+            "item_id": 113101097
+          },
+          {
+            "count": 1,
+            "item_id": 113301100
+          },
+          {
+            "count": 1,
+            "item_id": 113501076
+          },
+          {
+            "count": 1,
+            "item_id": 113601041
+          },
+          {
+            "count": 1,
+            "item_id": 113501594
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2370,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 28,
+      "name": "The Bottom of the Temple",
+      "nameId": 1103570,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 291412,
+          "gold": 44890
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 113101097
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 113301100
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 113501076
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 113601041
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 113501594
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 7,
+          "npc_ids": "211453 211468",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 3,
+          "npc_ids": "211448 211462",
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2367,
+              "reward": 0
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

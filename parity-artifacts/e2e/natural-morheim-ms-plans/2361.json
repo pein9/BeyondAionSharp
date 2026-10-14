@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2361,
+    "name": "Elim Fruit",
+    "nameId": 1103561,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 27,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2360
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 204363,
+        "id": 2361,
+        "start_npc_ids": 204372
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204372,
+        "name": "gangleri",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 1778.4867,
+            "y": 1662.3026,
+            "z": 197.625,
+            "heading": 10,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204372,
+      "name": "gangleri",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1778.4867,
+          "y": 1662.3026,
+          "z": 197.625,
+          "heading": 10,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204363,
+      "name": "magni",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2130.0,
+          "y": 2290.0,
+          "z": 229.0,
+          "heading": 120,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204363,
+          "name": "magni",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2130.0,
+              "y": 2290.0,
+              "z": 229.0,
+              "heading": 120,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 200627,
+        "rewardItems": [
+          {
+            "count": 15,
+            "item_id": 160000010
+          },
+          {
+            "count": 1,
+            "item_id": 186000008
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2361,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 27,
+      "name": "Elim Fruit",
+      "nameId": 1103561,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 200627
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 15,
+              "item_id": 160000010
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000008
+            }
+          }
+        ]
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2360
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "item_id": 182204144
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
