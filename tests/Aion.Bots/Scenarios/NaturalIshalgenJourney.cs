@@ -4095,8 +4095,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 											? new(QuestRunOperationKind.CollectQuestDrop, Count: wanted.Count, ItemId: wanted.ItemId) : null);
 									}
 									// M4: a source of the turn that is not there (Q24021's lone 212415 spectre, which other bots kill too) gives the turn to
-									// the next source, as a template collection does.
-									catch (InvalidDataException absent) when (sources.Length > 1 && !session.Api.World.IsDead &&
+									// the next source, as a template collection does; a lone source (Deputy Lamipedon) is waited for again, and the
+									// journey's hour leaves the quest for the group step if he never comes to this bot.
+									catch (InvalidDataException absent) when (!session.Api.World.IsDead &&
 										absent.Message.StartsWith("No client-observed NPC", StringComparison.Ordinal))
 									{
 										session.TraceDiagnostic("collect-source-absent", new Dictionary<string, object?>
