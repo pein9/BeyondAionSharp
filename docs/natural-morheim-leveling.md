@@ -2,7 +2,8 @@
 
 Status: a plan, 2026-10-13, as the operator shaped it in three messages that day. Step M1, the quest list, is done:
 [natural-morheim-quests.md](natural-morheim-quests.md). Steps M2 (Morheim Ice Fortress) and M3 (Kellan's Cabin) are
-played, and step M4's garrison quests (leg `md`): the world is now `morheim-md-s1-w1`, and the next leg starts from it.
+played, and step M4 (legs `md` and `mc`): the world is now `morheim-mc-s1-w1`, every bot is level 31, and the next leg
+starts from it.
 
 It follows [natural-muster.md](natural-muster.md), whose rules MR-a to MR-i are this leg's rules, and starts from the
 group world `ntc-group-s5`.
@@ -125,7 +126,7 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
   - Found in the server, both as Java has them and left so: Q2718's handler (Reshanta) sends an empty dialog window to
     everyone who talks to Vivi without having taken it; Q2307's handler does not check the soup's four ingredients
     (Java: "INGREDIENT CHECK NEED TO SCRIPT"), so the soup can be made without them. The bots gather them anyway.
-- [ ] **M4 Desert Garrison,** 18 quests.
+- [x] **M4 Desert Garrison,** 18 quests.
   - 2026-10-14, the garrison's own quests: stage `md`, contract `parity-artifacts/e2e/natural-morheim-md-contract.json`,
     from `morheim-mk-s1`: 13 quests (11 from their compiled plans, Q2332 and Q2345 by steps), ending at Vili in the
     fortress with Q2345. Round `m4-md`, all eight ten game minutes apart, captured `morheim-md-s1-w1`: every bot did
@@ -148,12 +149,27 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     invasion daily nor a stigma rank granted at login.
   - Found in the server, as Java has it and left so: a stigma's next rank (the Assassin's Searching Strike II at 30)
     comes only at the next login (Java `StigmaService.onPlayerLogin`; there is no level-up hook).
-  - Next, leg `mc`: the campaign's Q24021 and Q24022, and Q2333 (an item use and an escort). Q24023 gathers inside the
-    Sky Temple Interior, a solo instance, and waits for the leg engine to collect inside an instance.
+  - 2026-10-14, the campaign: stage `mc`, contract `parity-artifacts/e2e/natural-morheim-mc-contract.json`, from
+    `morheim-md-s1`: Q2333 (the Big Bucket filled at the lake, the creepy ribbit escorted to it), Q24022 (Tofa, Aprily,
+    Jorund, an abex's item, the Dead Fire and the white brow tayga it raises, Landver, Protector Karhel) and Q24021
+    (Bragi, Tofa and movie 73, the spectres' items and Deputy Lamipedon's, Tofynir, the item used in its zone), ending
+    at the garrison's obelisk. Round `m4-mc`, captured `morheim-mc-s1-w1`: **every bot is level 31**. All eight did
+    Q2333. None could kill Protector Karhel (level 35, EXPERT) alone, so every bot left Q24022 at var 6 for the group
+    step. The Ranger and the Templar did Q24021; five left it for the group, Lamipedon being one spawn the others
+    kept dead, and the Gladiator stopped at him (a lone source not waited for again; fixed after, `383b17d33`). Each
+    took 3.0 to 4.3 game hours, 2 to 8 deaths.
+  - New for the leg engine: a leg can have several item uses (one that makes an item, Q2333's bucket; one that ends
+    the quest, Q24021's); an item an item use turns into another counts as collected; a spawn trigger whose item
+    drops at its var waits for the drop (Q24022's Dead Fire); an escort can start with a talk that spawns its follower
+    in front of the player (the protocol talks to the step's NPC and follows the nearest follower), and the goal stand
+    is half the goal radius when that is nearer (Q2333's sphere is 10 m); a scripted drop list or hunt a bot cannot
+    finish alone in the journey's hour is left for the group step, as a template quest is.
+  - Left for later: Q24023 gathers inside the Sky Temple Interior (320050000, a solo instance) and waits for the leg
+    engine to collect inside an instance; its reward is Gangleri's at Slag Bulwark.
 - [ ] **M5 Slag Bulwark and Alsig Village,** 13 quests, and the four without a giver where they fall.
 - [ ] **M6 The group quests,** 11, in groups, with Q2494 and Q2328 (one named spawn each, whose items drop for each
-  member of a group; see M3), Q2344 and Q2343 (the Ice Claw village's elites; see M4) and any quest a bot left for the
-  group.
+  member of a group; see M3), Q2344 and Q2343 (the Ice Claw village's elites; see M4), Q24022 (Protector Karhel) and
+  any quest a bot left for the group (Q24021 for five of them).
 - [ ] **M7 Level 31 and the gear check.** Every quest of the leg done by all eight; level 31; Elite Rank 6 where it
   beats what is worn; the sale of what it replaced, the kit and the cleanup; a relog. The capture is the next group
   world.
