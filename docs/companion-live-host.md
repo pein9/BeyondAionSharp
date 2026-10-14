@@ -1,6 +1,6 @@
 # Companion bots: the live host
 
-Status: 2026-10-13: L1 to L4 are done, and he has led five companions through Nochsana Training Camp (L5, still open for what was built after that run). His `aion` stack is up with companions on; the host keeps five seats waiting and logs in more as they are taken (run `ch-l5-6`), and every companion wears its class's stigma stone. It follows [companion-bots.md](companion-bots.md), which is done in SIM.
+Status: 2026-10-13: L1 to L4 are done, and he has led five companions through Nochsana Training Camp (L5, still open for what was built after that run). His `aion` stack is up with companions on; the host keeps five seats waiting and logs in more as they are taken (run `ch-l5-7`), and every companion wears its class's stigma stone. It follows [companion-bots.md](companion-bots.md), which is done in SIM.
 
 ## The goal
 
@@ -374,6 +374,15 @@ its role, as the stand-in's companions did in SIM. NTC is the place to try it.
       through the statue themselves.
     - Live since 22:31 UTC: the image built again, the game server's container made anew with nobody online,
       and the host run `ch-l5-6` on the new bot code: five seats waiting, no problem recorded.
+  - 2026-10-13, on his word ("yes, give my Templar the stone"): his `Asimtemplar` has Inquisitor's Blow in its
+    stigma slot, the row the bots' Templar has (item id 310028), put in by SQL with the game server stopped, nobody
+    online and a dump of `aion_gs` taken first (`run/companion/L5-prep/aion_gs-before-stone.sql.gz`). No Kinah was
+    taken. Host run `ch-l5-7` since.
+  - **The nightly restart turns companions off** as things stand. `docker/RestartAll.ps1` starts the game server
+    from `docker/.env` alone, and without the two settings in that file the stack resolves `AION_COMPANIONS=false`
+    (read from `docker compose config`, not from the file). They were given by the shell each time the container was
+    made. His to add to `docker/.env`: `AION_COMPANIONS=true` and `AION_COMPANION_ACCOUNTS=companion*`. The host is
+    a process of the session that started it and is not started by that script.
   - Still to try before this step is ticked: the stuck rule, the supply check, the mana potion and the Zzz brand
     in game, a re-summon right after a dismissal, a sixth companion for a second player, and a companion's stigma
     skill in a fight (the Templar's Inquisitor's Blow from 15 m and the Sorcerer's Ice Harpoon are the ones to see).

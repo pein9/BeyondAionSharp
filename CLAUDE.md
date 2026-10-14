@@ -28,6 +28,11 @@ A bug the bots find is fixed under the rules below: read the Java first, and let
 only under a logged decision. The leg being worked now, and its checklist, is in the
 natural-bot documents under [Where things live](#where-things-live).
 
+Two standing rules for every leg after level 26 (the maintainer, 2026-10-13; `docs/natural-muster.md`, MR-h and
+MR-i). **The bots are the original eight classes:** Gladiator, Templar, Assassin, Ranger, Sorcerer, Spirit Master,
+Cleric and Chanter. The Rider, the Gunner and the Bard stay as they stand at level 26 and get nothing new.
+**Gear check-ins at levels 31, 36, 41 and 46:** the coin gear of the level, every piece that beats what is worn.
+
 ## Golden rule: the Java source is the spec
 
 - **Before fixing or porting anything, read the corresponding Java implementation first**

@@ -46,6 +46,12 @@ On 2026-10-13, before he went away: "Figure out what stigma we should select for
 are throwing away the bundle we get as the quest reward), and do the steps to socket the stigma on each class. Save
 at the appropirate 'leg', maybe after our abyss entry? Update profiles as needed."
 
+The same evening, back at the keyboard:
+
+1. "New directive on what classes to have available: Only the original 8. So keep what we have up to level 26, but
+   no more anything for Rider, Gunner, Bard."
+2. "I want a standing rule for gear 'check ins' at 31, 36, 41, 46, all based on coin gear if any is an upgrade."
+
 ## Rules
 
 **(MR-a) One world.** Every bot character lives in one world database, each on an account of its own. A run that
@@ -158,6 +164,29 @@ the Rider's are charges or areas. For the Bard, Freestyle is a 15 s sleep from 2
 class for crowd control (the Zzz brand), and gives it nothing alone. For the Cleric, Sympathetic Heal is the quicker
 heal for a group and cannot be cast on the Cleric itself. A stone is changed by supplying another bundle and playing
 the muster again.
+
+**(MR-h) The original eight classes from here on.** Every leg after the muster, and everything new that is built for
+a class, is for the Gladiator, the Templar, the Assassin, the Ranger, the Sorcerer, the Spirit Master, the Cleric and
+the Chanter. The Rider, the Gunner and the Bard stay as they stand at level 26: their characters in the group world,
+their fight tables, their stones and their companion profiles are kept and not taken further. A round of the next
+legs has no bot for them; a capture carries them over as they are (`lastPlayedIn`). All three classes are in the 4.8
+data; this is the operator's choice of what the bots play.
+
+**(MR-i) Gear check-ins at levels 31, 36, 41 and 46.** At each of these levels a character goes to the seller of
+that level's coin gear and takes every piece that beats what it wears, by rule (MR-b): the armor, the weapon, the
+shield or the second weapon of its class, no coin limit, the coins the manifest is short supplied, a tie not
+bought. It is the muster's coin step at four more levels, with the sale of what was replaced and the cleanup after
+it. The leg that reaches a level plays its check-in. What the item data gives an Asmodian:
+
+| Level | Gear | Coin | Sold in |
+|---:|---|---|---|
+| 21, 26 (played) | Rank 8, Elite Rank 7 | Bronze Coin (186000007) | Morheim Ice Fortress |
+| 31 | Elite Rank 6 | Silver Coin (186000008) | Morheim, Beluslan, Reshanta |
+| 36 | Elite Rank 5 | Silver Coin | the same sellers |
+| 41 | Elite Rank 4 | Gold Coin (186000009) | Beluslan, Reshanta |
+| 46 | Elite Rank 3 | Platinum Coin (186000010) | Brusthonin, Pandaemonium |
+
+The next tier, Elite Rank 2 for Mithril Coins, is level 51 and outside the rule as it was given.
 
 ## The kit from level 10 (MR-c)
 
