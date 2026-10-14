@@ -87,6 +87,15 @@ if ($serialized -match 'secret-') { throw 'Target evidence kept a secret environ
 if ($serialized -notmatch 'AION_COMPANION_ACCOUNTS') { throw 'Target evidence lost the companion settings.' }
 $checks += 2
 
+# The stack's own host and this script's would log the same seats in: the script's is refused while that one runs.
+function New-StackHostTarget([bool]$Running) {
+	return [pscustomobject]@{ project = 'aion'; services = [pscustomobject]@{ companionhost = [pscustomobject]@{ running = $Running } } }
+}
+Expect-Refused { Assert-NoStackCompanionHost (New-StackHostTarget $true) } 'a world whose stack runs its own companion host'
+Assert-NoStackCompanionHost (New-StackHostTarget $false)
+Assert-NoStackCompanionHost $target
+$checks += 2
+
 # The entry script against the mock: a refused world leaves no run behind, and nothing but reads reaches Docker.
 $runRoot = Join-Path ([IO.Path]::GetTempPath()) ('companion-host-test-' + [Guid]::NewGuid().ToString('N'))
 try {

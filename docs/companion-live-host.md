@@ -1,6 +1,6 @@
 # Companion bots: the live host
 
-Status: 2026-10-13: L1 to L4 are done, and he has led five companions through Nochsana Training Camp (L5, still open for what was built after that run). His `aion` stack is up with companions on; the host keeps five seats waiting and logs in more as they are taken (run `ch-l5-7`), and every companion wears its class's stigma stone. It follows [companion-bots.md](companion-bots.md), which is done in SIM.
+Status: 2026-10-13: L1 to L4 are done, and he has led five companions through Nochsana Training Camp (L5, still open for what was built after that run). His `aion` stack is up with companions on; the stack's own host service keeps five seats waiting and logs in more as they are taken, and every companion wears its class's stigma stone. It follows [companion-bots.md](companion-bots.md), which is done in SIM.
 
 ## The goal
 
@@ -378,6 +378,19 @@ its role, as the stand-in's companions did in SIM. NTC is the place to try it.
     stigma slot, the row the bots' Templar has (item id 310028), put in by SQL with the game server stopped, nobody
     online and a dump of `aion_gs` taken first (`run/companion/L5-prep/aion_gs-before-stone.sql.gz`). No Kinah was
     taken. Host run `ch-l5-7` since.
+  - 2026-10-13, on his word ("Please make companions on by default, update and commit any files needed. This is a dev
+    machine, but the server machine just git pulls and rebuilds nightly."): **on by default in the Docker stack.** The
+    compose file's defaults are `AION_COMPANIONS=true` and `AION_COMPANION_ACCOUNTS=companion*`, and the host is a
+    service of the stack, `companionhost` (`docker/companionhost`): the same program and scenario, run from an
+    image that holds the bot code and the data it reads, reaching the login and game servers over the stack's
+    network. It starts again by itself, takes its companions out on a stop (2 s with none in play), starts the
+    program anew when a server's container comes back at another address, and keeps its runs fourteen days under
+    `run/companion-host-stack`. `docker/RestartAll.ps1` builds and starts it after the servers' health check, only
+    from a tree the servers were deployed from; nothing about it changes that script's exit code or a rollback
+    (`docker/test-RestartAll.ps1`, 77 checks). `scripts/live/companion-host.ps1` refuses while the service runs.
+    Shown on this machine: the image built, the service started, five seats waiting at character selection, no
+    problem recorded, about 1 GB of memory. Not shown: the nightly script's real run with it, and the server
+    machine, which gets it at its next pull. What the note below says was the state before this.
   - **The nightly restart turns companions off** as things stand. `docker/RestartAll.ps1` starts the game server
     from `docker/.env` alone, and without the two settings in that file the stack resolves `AION_COMPANIONS=false`
     (read from `docker compose config`, not from the file). They were given by the shell each time the container was

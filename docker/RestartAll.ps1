@@ -20,7 +20,11 @@
       7. Stops game, chat and login (the game server saves players first) and starts them again
          in login -> chat -> game order.
       8. Health check. New images that fail it are rolled back to :previous (exit code 1).
-      9. Records the deployed commit of each rebuilt server, then prunes dangling images, build
+      9. Builds and starts the companion host (docker\companionhost), the client program that
+         plays the companions players ask for. It is no server: whatever happens to it changes
+         neither the exit code nor a rollback, and it is only built from a tree the servers
+         were deployed from.
+     10. Records the deployed commit of each rebuilt server, then prunes dangling images, build
          cache older than a week, and old backups and logs. Volumes are never touched.
 
     Exit codes, shown as "Last Run Result" in Task Scheduler:
@@ -538,6 +542,36 @@ function Test-ServersHealthy([int]$TimeoutSeconds) {
     }
 }
 
+# The companion host is the client program that plays the companions players ask for with
+# .companion (docs/companion-live-host.md). It is not one of the three servers and never decides
+# the result of a run. $Build: this run deployed, or would have deployed, the tree on disk; the
+# host's image is then built from it too, which Docker's layer cache makes a no-op when nothing
+# it is built from changed. A host that is running and unchanged is left alone: its seats log in
+# again by themselves once the servers are back.
+function Update-CompanionHost([bool]$Build, [bool]$ServersHealthy) {
+    try {
+        if (-not $ServersHealthy) {
+            Write-Log 'The servers are not healthy; the companion host is left as it is.' 'WARN'
+            return
+        }
+        if ($Build) {
+            $built = Invoke-Compose -Arguments @('build', 'companionhost') -AllowFailure -Quiet
+            if ($built.ExitCode -ne 0) {
+                Write-Log "The companion host image did not build (exit code $($built.ExitCode)); keeping the one that is there." 'WARN'
+            }
+        }
+        # --no-build: an image that is missing is never built from a tree this run did not deploy.
+        $started = Invoke-Compose -Arguments @('up', '-d', '--no-deps', '--no-build', 'companionhost') -AllowFailure -Quiet
+        if ($started.ExitCode -ne 0) {
+            Write-Log "The companion host did not start (exit code $($started.ExitCode)); players get no companions until it does." 'WARN'
+        } else {
+            Write-Log 'The companion host is up; its seats log in by themselves.'
+        }
+    } catch {
+        Write-Log "The companion host step failed: $($_.Exception.Message)" 'WARN'
+    }
+}
+
 function Remove-OldFiles([string]$Directory, [string]$Filter, [int]$Days, [int]$KeepNewest) {
     if (-not (Test-Path -LiteralPath $Directory)) { return }
     $cutoff = (Get-Date).AddDays(-$Days)
@@ -599,6 +633,8 @@ function Invoke-RestartAll {
 
         $target = $null
         $toBuild = @()
+        # Whether the tree on disk is one this run deploys from; the companion host is built from no other.
+        $deployTree = $false
         if (-not $RestartOnly) {
             # A failure here must not cost the nightly restart, so it only cancels the deploy.
             try {
@@ -607,6 +643,7 @@ function Invoke-RestartAll {
                 if ($target) {
                     Write-Log 'Choosing images to rebuild' 'STEP'
                     $toBuild = @(Get-ServersToRebuild -Target $target -State (Read-DeployState))
+                    $deployTree = $true
                 } else {
                     Set-ExitCode 4
                 }
@@ -622,18 +659,20 @@ function Invoke-RestartAll {
                             Write-Log "Not deploying $($toBuild -join ', '): apply the migration to the live databases by hand, then run RestartAll again." 'ERROR'
                         }
                         $toBuild = @()
+                        $deployTree = $false
                     }
                 }
             } catch {
                 Write-Log "Update failed: $($_.Exception.Message). Restarting on the current images." 'ERROR'
                 Set-ExitCode 1
                 $toBuild = @()
+                $deployTree = $false
             }
         }
 
         if ($PlanOnly) {
             $plan = if ($toBuild.Count -gt 0) { "rebuild $($toBuild -join ', ')" } else { 'rebuild nothing' }
-            Write-Log "Plan: back up, $plan, restart login, chat and game." 'STEP'
+            Write-Log "Plan: back up, $plan, restart login, chat and game, then the companion host." 'STEP'
             return
         }
 
@@ -673,6 +712,10 @@ function Invoke-RestartAll {
             Write-Log 'The servers are NOT healthy. See: docker compose -f docker\docker-compose.yml logs' 'ERROR'
             Set-ExitCode 1
         }
+
+        Write-Log 'Companion host' 'STEP'
+        # Servers that were to be rebuilt and are not on their new images run the tree before this one.
+        Update-CompanionHost -Build ($deployTree -and ($toBuild.Count -eq 0 -or $deployed.Count -gt 0)) -ServersHealthy $healthy
 
         if ($deployed.Count -gt 0) {
             Save-DeployState -Deployed $deployed -Commit $target

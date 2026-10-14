@@ -9,6 +9,15 @@ function Get-CompanionSeatAccounts([int]$Seats) {
 	return @(1..$Seats | ForEach-Object { "companion$_" })
 }
 
+# The Docker stack runs a host of its own, the service companionhost, on the same seat accounts. Two hosts would log
+# the same seats in against each other, so this script's host is refused while that one runs.
+function Assert-NoStackCompanionHost([object]$Target) {
+	$stack = $Target.services.PSObject.Properties['companionhost']
+	if ($null -ne $stack -and $stack.Value.running) {
+		throw "The stack of '$($Target.project)' runs its own companion host (service companionhost). Stop that one first: docker compose -f docker/docker-compose.yml stop companionhost"
+	}
+}
+
 # The game server makes a companion only when it was started with companions on, and only on an account it takes for a
 # seat. How many seats the host may log in on this world: all it asks for when the world names the pattern, else as many
 # as the world names outright from companion1 on. A host on a world that takes none would wait for ever, so it is refused

@@ -63,19 +63,26 @@ dotnet run --project src/Aion.GameServer
 
 If the GameServer logs `NOT_AUTHED` or keeps retrying: missing `gameservers` seed row, or a DB port/credential mismatch.
 
-## 6. Companion bots (optional)
+## 6. Companion bots
 
 `.companion <class>` brings a player a companion that follows and plays its role (D41, `docs/companion-bots.md`).
 It needs a game server started with companions on, and the host program beside it (`docs/companion-live-host.md`).
+**The Docker stack has both on by default** (the maintainer, 2026-10-13): `docker compose up -d` starts the game
+server with companions on and the service `companionhost`, which plays them.
 
-- **Game server:** set `AION_COMPANIONS=true` and `AION_COMPANION_ACCOUNTS=companion*` in its environment. The
-  pattern is every account named `companion` and then digits; the names can also be listed outright. The Docker
-  stack passes both through (`docker/docker-compose.yml`, off by default): put the two lines in `docker/.env`, or
-  set them in the shell that runs `docker compose up -d`. A seat account holds no character of its own; the login
-  server makes the account at its first login.
-- **Host:** `pwsh -NoProfile -File scripts/live/companion-host.ps1 -Target aion`, and the same with `-Stop` from
-  another terminal. It only reads Docker state and speaks the client protocol. It refuses a world that was started
-  without the two settings. It keeps five seats waiting (`-Spare`) and logs in another whenever a player takes
-  one, up to fifty (`-MaxSeats`, a hundred at the most).
+- **Game server:** `AION_COMPANIONS=true` and `AION_COMPANION_ACCOUNTS=companion*` in its environment. The
+  pattern is every account named `companion` and then digits; the names can also be listed outright. These are
+  the stack's defaults (`docker/docker-compose.yml`); `AION_COMPANIONS=false` in `docker/.env` turns companions
+  off, for the server and the host alike. A server started without the variables, by `dotnet run`, has them off.
+  A seat account holds no character of its own; the login server makes the account at its first login.
+- **Host, in the stack:** the service `companionhost` (`docker/companionhost`). It reaches the login and game
+  servers over the stack's own network, keeps five seats waiting and logs in another whenever a player takes one,
+  up to fifty (`AION_COMPANION_SPARE_SEATS`, `AION_COMPANION_MAX_SEATS` in `docker/.env`). Its log is
+  `docker logs aion-companionhost`; its runs, with every seat's trace, are under `run/companion-host-stack` and
+  are kept fourteen days. The nightly `docker/RestartAll.ps1` builds and starts it after the servers.
+- **Host, from the checkout:** `pwsh -NoProfile -File scripts/live/companion-host.ps1 -Target aion`, and the same
+  with `-Stop` from another terminal, runs the checkout's bot code in place of the stack's host. Stop that one
+  first (`docker compose -f docker/docker-compose.yml stop companionhost`); the script refuses while it runs,
+  because both would log the same seats in. It only reads Docker state and speaks the client protocol.
 - **In game** (an Asmodian, on a map the bots have ground for): `.companion cleric`, `.companion list`,
   `.companion dismiss`.

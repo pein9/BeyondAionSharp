@@ -116,11 +116,11 @@ services:
       AION_RECORD: ${AION_RECORD:-false}
       AION_RECORD_ACCOUNTS: ${AION_RECORD_ACCOUNTS:-}
       AION_RECORD_DIR: /app/recordings
-      # Companion bots (docs/companion-live-host.md, D41): `.companion <class>` for players, played by the host
-      # program (scripts/live/companion-host.ps1) on the seat accounts named here: companion* is companion1, companion2
-      # and so on, as many as the host logs in. Off unless AION_COMPANIONS=true.
-      AION_COMPANIONS: ${AION_COMPANIONS:-false}
-      AION_COMPANION_ACCOUNTS: ${AION_COMPANION_ACCOUNTS:-}
+      # Companion bots (docs/companion-live-host.md, D41): `.companion <class>` for players, played by the
+      # companionhost service below on the seat accounts named here: companion* is companion1, companion2 and so on,
+      # as many as the host logs in. On unless AION_COMPANIONS=false is set in .env (the maintainer, 2026-10-13).
+      AION_COMPANIONS: ${AION_COMPANIONS:-true}
+      AION_COMPANION_ACCOUNTS: "${AION_COMPANION_ACCOUNTS:-companion*}"
     volumes:
       - ../run/recordings:/app/recordings
     ports:
@@ -133,6 +133,29 @@ services:
     # wait alone is up to 5s), so allow at least the 60s host ShutdownTimeout (Program.cs ConfigureHostOptions)
     # before SIGKILL. It is a ceiling, not a fixed wait: a clean shutdown still exits in ~1-2s.
     stop_grace_period: 90s
+
+  # The companion host (docs/companion-live-host.md): the client program that plays the companions players ask for
+  # with .companion. It logs its seat accounts (companion1, companion2, ...) in over the stack's own network, keeps
+  # AION_COMPANION_SPARE_SEATS of them waiting at character selection and adds one whenever a player takes one. It
+  # speaks the client protocol only and writes to no database. Its runs (traces, problems) are in
+  # run/companion-host-stack. Do not run scripts/live/companion-host.ps1 beside it: both would log in the same seats.
+  companionhost:
+    build:
+      context: ..
+      dockerfile: docker/companionhost/Dockerfile
+    container_name: aion-companionhost
+    depends_on:
+      gameserver:
+        condition: service_started
+    environment:
+      AION_COMPANIONS: ${AION_COMPANIONS:-true}
+      AION_COMPANION_MAX_SEATS: ${AION_COMPANION_MAX_SEATS:-50}
+      AION_COMPANION_SPARE_SEATS: ${AION_COMPANION_SPARE_SEATS:-5}
+    volumes:
+      - ../run/companion-host-stack:/runs
+    restart: unless-stopped
+    # On a stop the host takes its companions out of the world before it exits (up to 90 s).
+    stop_grace_period: 100s
 
 volumes:
   aion-mysql-data:

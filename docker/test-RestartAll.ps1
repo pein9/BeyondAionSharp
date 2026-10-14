@@ -136,7 +136,11 @@ try {
     # ---- nightly runs -------------------------------------------------------------------------
     Invoke-Scenario 'up to date'
     Assert-That ($ExitCode -eq 0) "exit code $ExitCode"
-    Assert-That (-not (Test-Call 'plain build')) 'built although nothing changed'
+    Assert-That (-not (Test-Call 'plain build .*server')) 'built although nothing changed'
+    # The companion host: built from the tree the servers run from, and started after their health check.
+    Assert-That (Test-Call 'plain build companionhost$') 'companion host not built from the deployed tree'
+    Assert-That (Test-Call 'plain up -d --no-deps --no-build companionhost$') 'companion host not started'
+    Assert-That ([array]::IndexOf($calls, 'health') -lt [array]::IndexOf($calls, ($calls | Where-Object { $_ -match 'plain build companionhost' } | Select-Object -First 1))) 'companion host handled before the servers were healthy'
     Assert-That (-not (Test-Call '^git merge --ff-only')) 'merged although up to date'
     Assert-That (Test-Call '^gate h1$') 'schema gate did not run on HEAD'
     Assert-That (Test-Call '^backup$') 'no backup'
@@ -172,6 +176,7 @@ try {
     Assert-That (-not (Test-Call '^git fetch') -and -not (Test-Call '^git merge --ff-only')) 'touched git with a dirty tree'
     Assert-That (-not (Test-Call 'plain build')) 'built a dirty tree'
     Assert-That (Test-Call 'plain up -d') 'did not restart'
+    Assert-That (Test-Call 'plain up -d --no-deps --no-build companionhost$') 'companion host not started on its current image'
 
     Invoke-Scenario 'not on main' @{ Branch = 'feature/x'; Upstream = 'h2'; Changed = @('src/Aion.GameServer/A.cs') }
     Assert-That ($ExitCode -eq 4) "exit code $ExitCode"
@@ -191,7 +196,9 @@ try {
     Invoke-Scenario 'unhealthy new image' @{ Upstream = 'h2'; Changed = @('src/Aion.GameServer/A.cs'); Health = @($false, $true) }
     Assert-That ($ExitCode -eq 1) "exit code $ExitCode"
     Assert-That (Test-Call '^docker tag aion-gameserver:previous aion-gameserver:latest$') 'did not roll back'
-    Assert-That ((Get-CallCount 'plain up -d') -eq 2) 'did not restart on the rolled-back image'
+    Assert-That ((Get-CallCount 'plain up -d loginserver') -eq 2) 'did not restart on the rolled-back image'
+    Assert-That (-not (Test-Call 'plain build companionhost')) 'companion host built from a tree that was rolled back'
+    Assert-That (Test-Call 'plain up -d --no-deps --no-build companionhost$') 'companion host not started after the rollback'
     Assert-That ((Get-StateCommit 'gameserver') -eq 'h1') 'recorded a rolled-back deploy'
 
     Invoke-Scenario 'build failure' @{ Upstream = 'h2'; Changed = @('src/Aion.GameServer/A.cs'); BuildExit = 1 }
@@ -199,6 +206,7 @@ try {
     Assert-That (Test-Call '^docker tag aion-gameserver:previous aion-gameserver:latest$') 'did not restore the previous image'
     Assert-That (Test-Call 'plain up -d') 'did not restart on the current images'
     Assert-That ((Get-StateCommit 'gameserver') -eq 'h1') 'recorded a failed build'
+    Assert-That (-not (Test-Call 'plain build companionhost')) 'companion host built although the servers were not'
 
     Invoke-Scenario 'backup failure' @{ Upstream = 'h2'; Changed = @('src/Aion.GameServer/A.cs'); BackupFails = $true }
     Assert-That ($ExitCode -eq 1) "exit code $ExitCode"
@@ -207,12 +215,14 @@ try {
     Invoke-Scenario 'unhealthy without a deploy' @{ Health = @($false) }
     Assert-That ($ExitCode -eq 1) "exit code $ExitCode"
     Assert-That (-not (Test-Call 'tag .*:previous .*:latest')) 'rolled back with nothing deployed'
+    Assert-That (-not (Test-Call 'companionhost')) 'companion host touched while the servers were unhealthy'
 
     # ---- other modes ----------------------------------------------------------------------------
     Invoke-Scenario 'restart only' @{ Upstream = 'h2'; Changed = @('src/Aion.GameServer/A.cs') } -Restart
     Assert-That ($ExitCode -eq 0) "exit code $ExitCode"
     Assert-That (-not (Test-Call '^git ') -and -not (Test-Call '^gate')) 'restart-only touched git or ran the gate'
     Assert-That ((Test-Call '^backup$') -and (Test-Call 'plain up -d')) 'restart-only did not back up and restart'
+    Assert-That ((Test-Call 'plain up -d --no-deps --no-build companionhost$') -and -not (Test-Call 'plain build')) 'restart-only did not start the companion host on its current image'
 
     Invoke-Scenario 'plan only' @{ Upstream = 'h2'; Changed = @('src/Aion.GameServer/A.cs') } -Plan
     Assert-That ($ExitCode -eq 0) "exit code $ExitCode"

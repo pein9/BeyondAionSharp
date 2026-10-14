@@ -6,6 +6,10 @@
 # been started with AION_COMPANIONS=true and AION_COMPANION_ACCOUNTS=companion* (RUNNING.md). Stop the host with
 # Ctrl+C, or from another terminal with -Stop: its companions leave, and the server deletes them.
 #
+# The Docker stack has a host of its own since 2026-10-13, the service companionhost, which is the one that normally
+# runs. This script is for running the checkout's bot code against the stack: stop that service first
+# (docker compose -f docker/docker-compose.yml stop companionhost); the script refuses while it runs.
+#
 # The seats are as many as are asked for: the host keeps -Spare seats waiting and logs another in when a player takes
 # one, up to -MaxSeats.
 #
@@ -92,6 +96,7 @@ if ($already.Count -gt 0) {
 
 # Read the world before creating anything, so a refused target leaves no run behind.
 $before = Get-AttachTarget $Target
+Assert-NoStackCompanionHost $before
 $mostSeats = Get-CompanionSeatLimit $before $MaxSeats
 $spareSeats = [Math]::Min($Spare, $mostSeats)
 if ($LoginPort -eq 0) { $LoginPort = Get-AttachPort $before 'loginserver' '2106/tcp' }

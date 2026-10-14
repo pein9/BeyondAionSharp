@@ -54,6 +54,8 @@ which runs `docker\RestartAll.ps1`. Each run:
    `*/sql/aion_*.sql`. Apply the migration by hand, then run it again.
 4. Backs up the three databases, restarts game, chat and login in order, and health-checks them.
    New images that fail the check are rolled back to the previous ones.
+5. Builds and starts the companion host (below). It is no server: a problem with it is a warning in
+   the log and changes neither the exit code nor a rollback.
 
 MySQL is never restarted and Docker volumes are never touched.
 
@@ -102,6 +104,8 @@ powershell -ExecutionPolicy Bypass -File docker\RestartAll.ps1 -RestartOnly
 | `DB_PASSWORD` | Database password (stays inside Docker) |
 | `LOGIN_CLIENT_PORT` / `GAME_CLIENT_PORT` / `CHAT_CLIENT_PORT` | Ports clients connect to (2106 / 7777 / 10241) |
 | `RESPAWN_TIME_MULTIPLIER` | Mob respawn speed — `1.0` normal, `0.5` faster, `2.0` slower |
+| `AION_COMPANIONS` | Companion bots, `.companion <class>` in game. On by default; `false` turns them off |
+| `AION_COMPANION_SPARE_SEATS` / `AION_COMPANION_MAX_SEATS` | Companions kept ready to be asked for (5) and the most at once (50) |
 
 You never need to touch the `.properties` files — each server's container generates its
 own config from these values at start-up.
@@ -116,8 +120,14 @@ docker compose (docker/docker-compose.yml)
         ├─ mysql        — auto-creates aion_ls / aion_gs / aion_cs on first boot
         ├─ loginserver  — :2106 clients, :9014 game-server bridge
         ├─ gameserver   — :7777 clients  (carries the game data)
-        └─ chatserver   — :10241 clients, :9021 game-server bridge
+        ├─ chatserver   — :10241 clients, :9021 game-server bridge
+        └─ companionhost — no port: logs in as a client and plays the companions players ask for
 ```
+
+The companion host (`docker/companionhost`, `docs/companion-live-host.md`) keeps a few accounts named
+`companion1`, `companion2` and so on waiting at character selection. When a player types `.companion cleric`
+the game server makes a character on one of them and the host plays it. It writes to no database. Its log is
+`docker logs aion-companionhost`; its runs are under `run/companion-host-stack` in the checkout.
 
 See [`SETUP-GUIDE.md`](SETUP-GUIDE.md) for a step-by-step walkthrough and troubleshooting.
 
