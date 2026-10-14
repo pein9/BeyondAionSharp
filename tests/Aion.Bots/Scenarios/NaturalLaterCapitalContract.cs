@@ -70,11 +70,13 @@ public sealed record NaturalLaterCapitalContract(int SchemaVersion, string JavaR
 	}
 
 	public async Task WriteCheckpointAsync(string directory, string segment, NaturalJourneyCheckpoint before,
-		NaturalJourneyCheckpoint after, CancellationToken token, bool distinctSegment = false)
+		NaturalJourneyCheckpoint after, CancellationToken token, bool distinctSegment = false, IReadOnlySet<int>? startedOnEntry = null,
+		IReadOnlySet<int>? stigmaOnLogin = null)
 	{
 		if (segment != "bridge" && !NaturalAltgardContract.Legs.ContainsKey(segment))
 			throw new InvalidDataException("A later capital receipt needs the canonical bridge or Altgard segment selector.");
-		NaturalJourneyPersistence.Verify(before, after);
+		// M4: the endpoint's relog allows what the server gives at a login (the invasion daily, a stigma's next rank) here too.
+		NaturalJourneyPersistence.Verify(before, after, startedOnEntry, stigmaOnLogin);
 		NaturalLaterCapitalState incoming = Capture(before), retained = Capture(after);
 		string receipt = JsonSerializer.Serialize(new { schemaVersion = SchemaVersion, javaReference = JavaReference,
 				segment, characterId = after.CharacterId, verified = true, before = incoming, after = retained },

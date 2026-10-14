@@ -99,6 +99,15 @@ public static class NaturalEscortPolicy
 			return new("give-up", null, $"{state.Attempts} escort attempts are used (AC-Q2); record the escort as not done.");
 		if (state.Attackers > 0)
 			return new("hold-and-fight", null, "Attacked before the start: fight first.");
+		// M4: a follower the start talk spawns in front of the player (Q2333's creepy ribbit, Java spawnInFrontOf) is not looked
+		// for first: clear what the escort clears, then talk.
+		if (escort.FollowerSpawnedByStart)
+		{
+			if (escort.ClearAreas.Length > 0 && state.ClearAreasHaveAggressors)
+				return new("clear", null, $"Aggressive monsters stand in {string.Join(", ", escort.ClearAreas)}: clear them before the start (AC-Q3).");
+			return new("start", null, $"The talk spawns the follower and starts the follow (attempt {state.Attempts + 1} of {escort.MaxAttempts}).",
+				state.QuestStatus == null ? escort.StartStep : escort.RestartStep);
+		}
 		if (state.Follower is not { } follower)
 		{
 			// AG-07: from afar he is out of view (Q2284's follower stands 150 m from the Berth): walk to where he starts first.
@@ -156,12 +165,14 @@ public static class NaturalEscortPolicy
 		return dx * dx + dy * dy + dz * dz < range * range;
 	}
 
-	/// <summary>The goal stand: <see cref="StandFromGoal"/> m from the goal toward the follower's start.</summary>
-	public static BotPosition GoalStand(float[] goal, BotPosition followerStart)
+	/// <summary>The goal stand: <see cref="StandFromGoal"/> m from the goal toward the follower's start, or half the goal's radius
+	/// when that is nearer (M4: Q2333's sphere is 10 m, and a ribbit 2 m behind a player at 10 m stayed outside it).</summary>
+	public static BotPosition GoalStand(float[] goal, BotPosition followerStart, float goalRadius = float.MaxValue)
 	{
 		float dx = followerStart.X - goal[0], dy = followerStart.Y - goal[1];
 		float length = MathF.Max(MathF.Sqrt(dx * dx + dy * dy), 0.001f);
-		return new BotPosition(goal[0] + dx / length * StandFromGoal, goal[1] + dy / length * StandFromGoal, goal[2], 0);
+		float stand = MathF.Min(StandFromGoal, goalRadius / 2);
+		return new BotPosition(goal[0] + dx / length * stand, goal[1] + dy / length * stand, goal[2], 0);
 	}
 
 	public static float RouteLength(IReadOnlyList<BotPosition> route) =>

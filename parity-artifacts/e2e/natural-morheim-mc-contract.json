@@ -1,0 +1,1052 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "morheim-mc-campaign",
+  "start": {
+    "contract": "natural-morheim-md-contract.json",
+    "snapshot": "morheim-md-s1",
+    "mapId": 220020000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 30,
+    "bindNpcId": 700213,
+    "completedQuestIds": [
+      24020
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": [
+      24021,
+      24022,
+      2319,
+      2356
+    ]
+  },
+  "hub": {
+    "key": "desert-garrison",
+    "mapId": 220020000,
+    "anchor": [
+      626.855,
+      907.954,
+      360.858
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "fortress",
+      "note": "Morheim Ice Fortress: Bragi (Q24021) and Aegir (Q24022)",
+      "min": [
+        140,
+        2240,
+        430
+      ],
+      "max": [
+        410,
+        2470,
+        475
+      ]
+    },
+    {
+      "key": "garrison",
+      "note": "Desert Garrison: Tofa, Aprily, Jorund, Orashunerk and the obelisk",
+      "min": [
+        601,
+        882,
+        345
+      ],
+      "max": [
+        664,
+        946,
+        376
+      ]
+    },
+    {
+      "key": "spectres",
+      "note": "the spectral soldiers, warriors and mages (Q24021)",
+      "min": [
+        1073,
+        855,
+        234
+      ],
+      "max": [
+        1369,
+        1210,
+        396
+      ]
+    },
+    {
+      "key": "lamipedon",
+      "note": "Deputy Lamipedon, one spawn (Q24021)",
+      "min": [
+        1104,
+        870,
+        366
+      ],
+      "max": [
+        1184,
+        950,
+        396
+      ]
+    },
+    {
+      "key": "tofynir",
+      "note": "Tofynir and the item-use zone of Q24021",
+      "min": [
+        1067,
+        1156,
+        234
+      ],
+      "max": [
+        1147,
+        1236,
+        264
+      ]
+    },
+    {
+      "key": "q2032-zone",
+      "note": "DF2_ITEMUSEAREA_Q2032 (Q24021)",
+      "min": [
+        1005,
+        1368,
+        230
+      ],
+      "max": [
+        1065,
+        1419,
+        280
+      ]
+    },
+    {
+      "key": "watch",
+      "note": "the ice claw watch inspectors, whose drop starts Q2333",
+      "min": [
+        550,
+        1049,
+        274
+      ],
+      "max": [
+        794,
+        1332,
+        321
+      ]
+    },
+    {
+      "key": "q2333-zone",
+      "note": "DF2_ITEMUSEAREA_Q2333, where the Big Bucket is filled (Q2333)",
+      "min": [
+        595,
+        960,
+        250
+      ],
+      "max": [
+        800,
+        1262,
+        290
+      ]
+    },
+    {
+      "key": "ribbit-line",
+      "note": "the way of the creepy ribbit from Orashunerk to the lake (Q2333)",
+      "min": [
+        599,
+        874,
+        266
+      ],
+      "max": [
+        797,
+        1250,
+        376
+      ]
+    },
+    {
+      "key": "abexes",
+      "note": "the stubborn abexes (Q24022)",
+      "min": [
+        367,
+        220,
+        453
+      ],
+      "max": [
+        671,
+        486,
+        503
+      ]
+    },
+    {
+      "key": "dead-fire",
+      "note": "the Dead Fire (Q24022)",
+      "min": [
+        435,
+        170,
+        468
+      ],
+      "max": [
+        495,
+        230,
+        498
+      ]
+    },
+    {
+      "key": "landver",
+      "note": "Landver (Q24022)",
+      "min": [
+        585,
+        168,
+        503
+      ],
+      "max": [
+        645,
+        228,
+        533
+      ]
+    },
+    {
+      "key": "karhel",
+      "note": "Protector Karhel, one spawn on the Ice Claw plateau (Q24022)",
+      "min": [
+        1267,
+        214,
+        524
+      ],
+      "max": [
+        1347,
+        294,
+        554
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 24021,
+      "category": "MISSION",
+      "minimumLevel": 27,
+      "rewardExperience": 805806,
+      "prerequisite": null,
+      "handler": "morheim/_24021GhostsintheDesert.cs",
+      "template": null,
+      "startNpcId": 204302,
+      "area": "spectres"
+    },
+    {
+      "id": 2333,
+      "category": "IMPORTANT",
+      "minimumLevel": 27,
+      "rewardExperience": 374894,
+      "prerequisite": null,
+      "handler": "morheim/_2333ARibbitOutOfWater.cs",
+      "template": null,
+      "startNpcId": 798084,
+      "area": "ribbit-line"
+    },
+    {
+      "id": 24022,
+      "category": "MISSION",
+      "minimumLevel": 28,
+      "rewardExperience": 893476,
+      "prerequisite": null,
+      "handler": "morheim/_24022SneakBehindtheIceClaw.cs",
+      "template": null,
+      "startNpcId": 204329,
+      "area": "dead-fire"
+    }
+  ],
+  "order": [
+    2333,
+    24022,
+    24021
+  ],
+  "steps": [
+    {
+      "key": "q24021-v0-bragi",
+      "questId": 24021,
+      "var": 0,
+      "npcId": 204302,
+      "position": [
+        350.02,
+        2394.92,
+        451.296
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "fortress"
+    },
+    {
+      "key": "q24021-v1-tofa",
+      "questId": 24021,
+      "var": 1,
+      "npcId": 204329,
+      "position": [
+        629.923,
+        917.468,
+        361.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT2_1",
+        "SETPRO2"
+      ],
+      "pages": [
+        1352,
+        1353
+      ],
+      "movieId": 73,
+      "area": "garrison"
+    },
+    {
+      "key": "q24021-v2-tofynir",
+      "questId": 24021,
+      "var": 2,
+      "npcId": 802046,
+      "position": [
+        1107.245,
+        1196.092,
+        249.613
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "CHECK_USER_HAS_QUEST_ITEM"
+      ],
+      "pages": [
+        1693,
+        10000
+      ],
+      "area": "tofynir"
+    },
+    {
+      "key": "q24021-v3-tofynir",
+      "questId": 24021,
+      "var": 3,
+      "npcId": 802046,
+      "position": [
+        1107.245,
+        1196.092,
+        249.613
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO4"
+      ],
+      "pages": [
+        2034
+      ],
+      "receivesItemId": 182215363,
+      "area": "tofynir"
+    },
+    {
+      "key": "q24021-reward-tofa",
+      "questId": 24021,
+      "status": "REWARD",
+      "npcId": 204329,
+      "position": [
+        629.923,
+        917.468,
+        361.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_REWARD2"
+      ],
+      "pages": [
+        10002,
+        5
+      ],
+      "area": "garrison"
+    },
+    {
+      "key": "q2333-offer-orashunerk",
+      "questId": 2333,
+      "status": "OFFER",
+      "npcId": 798084,
+      "position": [
+        639.0,
+        914.0,
+        361.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        4762
+      ],
+      "area": "garrison"
+    },
+    {
+      "key": "q2333-v0-orashunerk",
+      "questId": 2333,
+      "var": 0,
+      "npcId": 798084,
+      "position": [
+        639.0,
+        914.0,
+        361.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "CHECK_USER_HAS_QUEST_ITEM"
+      ],
+      "pages": [
+        1011,
+        10000
+      ],
+      "area": "garrison"
+    },
+    {
+      "key": "q2333-v1-orashunerk",
+      "questId": 2333,
+      "var": 1,
+      "npcId": 798084,
+      "position": [
+        639.0,
+        914.0,
+        361.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO2"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "garrison"
+    },
+    {
+      "key": "q2333-reward-orashunerk",
+      "questId": 2333,
+      "status": "REWARD",
+      "npcId": 798084,
+      "position": [
+        639.0,
+        914.0,
+        361.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECTED_QUEST_REWARD5"
+      ],
+      "pages": [
+        5
+      ],
+      "area": "garrison"
+    },
+    {
+      "key": "q24022-v0-tofa",
+      "questId": 24022,
+      "var": 0,
+      "npcId": 204329,
+      "position": [
+        629.923,
+        917.468,
+        361.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "garrison"
+    },
+    {
+      "key": "q24022-v1-aprily",
+      "questId": 24022,
+      "var": 1,
+      "npcId": 204335,
+      "position": [
+        630.143,
+        921.544,
+        361.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO2"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "garrison"
+    },
+    {
+      "key": "q24022-v2-jorund",
+      "questId": 24022,
+      "var": 2,
+      "npcId": 204332,
+      "position": [
+        636.319,
+        914.647,
+        360.52
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO3"
+      ],
+      "pages": [
+        1693
+      ],
+      "receivesItemId": 182215364,
+      "area": "garrison"
+    },
+    {
+      "key": "q24022-v5-landver",
+      "questId": 24022,
+      "var": 5,
+      "npcId": 802047,
+      "position": [
+        615.406,
+        198.636,
+        518.383
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO6"
+      ],
+      "pages": [
+        2716
+      ],
+      "area": "landver"
+    },
+    {
+      "key": "q24022-v7-tofa",
+      "questId": 24022,
+      "var": 7,
+      "npcId": 204329,
+      "position": [
+        629.923,
+        917.468,
+        361.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SET_SUCCEED"
+      ],
+      "pages": [
+        3398
+      ],
+      "area": "garrison"
+    },
+    {
+      "key": "q24022-reward-aegir",
+      "questId": 24022,
+      "status": "REWARD",
+      "npcId": 204301,
+      "position": [
+        225.225,
+        2415.47,
+        454.109
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_REWARD3"
+      ],
+      "pages": [
+        10002,
+        5
+      ],
+      "area": "fortress"
+    }
+  ],
+  "collections": [
+    {
+      "questId": 24021,
+      "atVar": 2,
+      "items": [
+        {
+          "itemId": 182215361,
+          "count": 10,
+          "sourceNpcIds": [
+            212414,
+            212415,
+            212416,
+            212417,
+            212418,
+            212419
+          ]
+        },
+        {
+          "itemId": 182215362,
+          "count": 1,
+          "sourceNpcIds": [
+            212649
+          ]
+        }
+      ]
+    },
+    {
+      "questId": 24022,
+      "atVar": 3,
+      "items": [
+        {
+          "itemId": 182215365,
+          "count": 1,
+          "sourceNpcIds": [
+            212431,
+            212432
+          ]
+        }
+      ]
+    },
+    {
+      "questId": 2333,
+      "atVar": 0,
+      "items": [
+        {
+          "itemId": 182204130,
+          "count": 1,
+          "sourceNpcIds": [
+            212420
+          ]
+        }
+      ]
+    }
+  ],
+  "itemUses": [
+    {
+      "questId": 24021,
+      "itemId": 182215363,
+      "var": 4,
+      "nextVar": 4,
+      "useMillis": 3000,
+      "anywhere": false,
+      "zone": "DF2_ITEMUSEAREA_Q2032_220020000",
+      "zoneAnchor": [
+        1035.76,
+        1393.96,
+        250.0
+      ],
+      "zonePolygon": [
+        [
+          1023.38,
+          1388.48
+        ],
+        [
+          1039.9169,
+          1375.941
+        ],
+        [
+          1051.1821,
+          1373.1754
+        ],
+        [
+          1060.9952,
+          1391.3478
+        ],
+        [
+          1055.3634,
+          1399.02
+        ],
+        [
+          1049.3665,
+          1400.1104
+        ],
+        [
+          1031.1941,
+          1411.0137
+        ],
+        [
+          1020.109,
+          1414.4664
+        ],
+        [
+          1010.47766,
+          1396.8392
+        ],
+        [
+          1015.5659,
+          1389.2069
+        ]
+      ],
+      "zoneBand": [
+        230.0,
+        280.0
+      ]
+    },
+    {
+      "questId": 2333,
+      "itemId": 182204130,
+      "var": 0,
+      "nextVar": 0,
+      "useMillis": 3000,
+      "anywhere": false,
+      "producesItemId": 182204131,
+      "zone": "DF2_ITEMUSEAREA_Q2333_220020000",
+      "zoneAnchor": [
+        689.53,
+        1115.95,
+        270.0
+      ],
+      "zonePolygon": [
+        [
+          722.87,
+          1241.57
+        ],
+        [
+          730.9978,
+          1222.1741
+        ],
+        [
+          741.1498,
+          1209.1443
+        ],
+        [
+          762.03455,
+          1207.289
+        ],
+        [
+          780.7031,
+          1207.1593
+        ],
+        [
+          790.6461,
+          1191.2865
+        ],
+        [
+          795.752,
+          1172.9496
+        ],
+        [
+          786.82104,
+          1153.2922
+        ],
+        [
+          779.9883,
+          1138.4517
+        ],
+        [
+          775.31067,
+          1120.7672
+        ],
+        [
+          764.38934,
+          1113.8733
+        ],
+        [
+          752.83655,
+          1099.6417
+        ],
+        [
+          728.34155,
+          1096.1251
+        ],
+        [
+          708.86993,
+          1097.6433
+        ],
+        [
+          687.16327,
+          1074.908
+        ],
+        [
+          693.79504,
+          1064.697
+        ],
+        [
+          695.8177,
+          1055.0327
+        ],
+        [
+          711.02875,
+          1039.8708
+        ],
+        [
+          720.96716,
+          1031.5277
+        ],
+        [
+          730.11127,
+          1010.2342
+        ],
+        [
+          729.41705,
+          998.90906
+        ],
+        [
+          717.89813,
+          994.7204
+        ],
+        [
+          708.82263,
+          980.05994
+        ],
+        [
+          693.11505,
+          976.22034
+        ],
+        [
+          692.2958,
+          968.69946
+        ],
+        [
+          680.3595,
+          965.23773
+        ],
+        [
+          669.2805,
+          970.07404
+        ],
+        [
+          670.56665,
+          988.0305
+        ],
+        [
+          659.0135,
+          1000.35614
+        ],
+        [
+          666.72754,
+          1014.2471
+        ],
+        [
+          644.86707,
+          1043.5992
+        ],
+        [
+          638.2726,
+          1061.4966
+        ],
+        [
+          643.5489,
+          1064.881
+        ],
+        [
+          645.05005,
+          1070.1472
+        ],
+        [
+          644.85986,
+          1086.4565
+        ],
+        [
+          649.48395,
+          1109.767
+        ],
+        [
+          649.13495,
+          1133.171
+        ],
+        [
+          632.72815,
+          1139.9282
+        ],
+        [
+          625.48,
+          1149.7522
+        ],
+        [
+          613.1809,
+          1153.1925
+        ],
+        [
+          610.42676,
+          1163.5841
+        ],
+        [
+          600.8584,
+          1179.3396
+        ],
+        [
+          617.44464,
+          1182.8328
+        ],
+        [
+          623.3794,
+          1193.4851
+        ],
+        [
+          618.1423,
+          1209.8959
+        ],
+        [
+          628.7938,
+          1223.5125
+        ],
+        [
+          635.6053,
+          1230.1473
+        ],
+        [
+          650.3603,
+          1230.32
+        ],
+        [
+          661.0018,
+          1238.7115
+        ],
+        [
+          666.3277,
+          1251.1763
+        ],
+        [
+          692.2562,
+          1252.919
+        ],
+        [
+          717.13965,
+          1257.0332
+        ]
+      ],
+      "zoneBand": [
+        250.0,
+        290.0
+      ]
+    }
+  ],
+  "spawns": [
+    {
+      "key": "q24022-dead-fire",
+      "questId": 24022,
+      "atVar": 3,
+      "triggerNpcId": 700246,
+      "requiresItemId": 182215365,
+      "movieId": null,
+      "npcId": 204417,
+      "position": [
+        465.13,
+        200.52,
+        483.5
+      ],
+      "lifetimeSeconds": 300,
+      "triggerRespawnSeconds": 295,
+      "refillPage": 2375,
+      "refillNpcId": 204332,
+      "area": "dead-fire"
+    }
+  ],
+  "hunts": [
+    {
+      "questId": 24022,
+      "npcIds": [
+        212877
+      ],
+      "fromVar": 6,
+      "toVar": 7,
+      "area": "karhel",
+      "note": "Protector Karhel, level 35 EXPERT (Java _24022 onKillEvent 6 -> 7); a bot that cannot kill him alone leaves Q24022 for the group step"
+    }
+  ],
+  "escorts": [
+    {
+      "key": "q2333-ribbit",
+      "questId": 2333,
+      "followerNpcId": 204416,
+      "goalNpcId": 204373,
+      "goal": [
+        718.84,
+        1148.06,
+        284.0
+      ],
+      "goalRadius": 10,
+      "startStep": "q2333-v1-orashunerk",
+      "restartStep": "q2333-v1-orashunerk",
+      "followVar": 2,
+      "successVar": 2,
+      "lostVar": 1,
+      "leash": 50,
+      "checkMillis": 1000,
+      "movieId": null,
+      "followerRespawnSeconds": 295,
+      "followerRunSpeed": 6,
+      "clearAreas": [],
+      "maxAttempts": 3,
+      "area": "ribbit-line",
+      "startVar": 1,
+      "followerSpawnedByStart": true
+    }
+  ],
+  "bind": {
+    "npcId": 700213,
+    "position": [
+      626.855,
+      907.954,
+      360.858
+    ],
+    "onArrival": true,
+    "price": 4353,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [
+    {
+      "questId": 24021,
+      "action": "SELECTED_QUEST_REWARD2",
+      "itemId": 121001403,
+      "itemGroup": "NECKLACE"
+    },
+    {
+      "questId": 2333,
+      "action": "SELECTED_QUEST_REWARD5",
+      "itemId": 112501651,
+      "itemGroup": "CH_SHOULDER"
+    },
+    {
+      "questId": 24022,
+      "action": "SELECTED_QUEST_REWARD3",
+      "itemId": 125004155,
+      "itemGroup": "HEAD"
+    }
+  ],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [
+    {
+      "id": 24023,
+      "reason": "A Blazing Rescue gathers its items inside the Sky Temple Interior (320050000, a solo instance): played when the leg engine collects inside an instance",
+      "leg": 0
+    }
+  ],
+  "endpoint": {
+    "mapId": 220020000,
+    "completedQuestIds": [
+      24021,
+      2333,
+      24022
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 29,
+    "snapshot": "morheim-mc",
+    "anchor": [
+      626.855,
+      907.954,
+      360.858
+    ],
+    "radius": 30,
+    "bindNpcId": 700213,
+    "heldQuestIds": []
+  }
+}

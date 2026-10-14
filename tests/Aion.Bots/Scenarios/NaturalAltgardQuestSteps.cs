@@ -152,7 +152,9 @@ public static class NaturalAltgardQuestSteps
 			await session.SendPacketAsync(session.Api.UseItem(remedy.ObjectId, template), token);
 			await session.AdvanceAsync(TimeSpan.FromMilliseconds(use.UseMillis + 100), token);
 			await session.SynchronizeAsync(token);
-			if (State(world, use.QuestId) is (3, int next) && next == use.NextVar) return;
+			// M4: a use may end the quest (Q24021: REWARD at its var) or make an item (Q2333's) and leave the var.
+			if (State(world, use.QuestId) is (3 or 4, int next) && next == use.NextVar && (use.ProducesItemId is not int made ||
+				world.Inventory.Values.Any(item => item.ItemId == made))) return;
 			bool refusedForPlace = session.PacketHistory.Skip(Math.Min(start, session.PacketHistory.Count)).Any(packet =>
 				packet.PacketType == typeof(SM_SYSTEM_MESSAGE) && packet.Get<object>("name") is "STR_CANNOT_USE_ITEM_INVALID_LOCATION");
 			if (!refusedForPlace || attempt == 3)

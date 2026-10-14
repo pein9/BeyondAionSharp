@@ -282,12 +282,20 @@ public static class NaturalAltgardDecisionEngine
 				return Plan("leave-instance", quest.Id, $"Q{quest.Id} reset to var {var}: leave through Dimension Exit before re-entry.");
 			if (contract.InstanceTripList.Any(trip => trip.QuestId == quest.Id && var == trip.FromVar && state.MapId != trip.MapId))
 				return Plan("enter-instance", quest.Id, $"Q{quest.Id} var {var}: use its ordinary quest portal.");
-			if (contract.ItemUse is { } use && quest.Id == use.QuestId && var == use.Var)
-				return Plan("use-item", quest.Id, $"Q{quest.Id}: use item {use.ItemId} ({(use.Anywhere ? "anywhere" : $"inside {use.Zone}")}).");
+			// M4: a leg can have several item uses; one that makes an item (Q2333's) is done once that item is held, and one
+			// whose item drops first waits for the collection.
+			if (contract.ItemUseList.FirstOrDefault(use => quest.Id == use.QuestId && var == use.Var &&
+				(use.ProducesItemId is not int made || state.ItemCounts.GetValueOrDefault(made) == 0) &&
+				(contract.ItemUse == use || state.ItemCounts.GetValueOrDefault(use.ItemId) > 0)) is { } use)
+				return Plan("use-item", quest.Id, $"Q{quest.Id}: use item {use.ItemId} ({(use.Anywhere ? "anywhere" : $"inside {use.Zone}")}).",
+					$"{use.QuestId}:{use.ItemId}");
 			if (contract.AirKills is { } air && quest.Id == air.QuestId && var >= air.FromVar && var <= air.RewardVar)
 				return Plan("air-kills", quest.Id, $"Q{quest.Id}: shoot the Abyss Fungus down (var {var} of {air.RewardVar}).");
 			// AB-08: a monster the quest spawns (Q2223's Infernus), and a custom kill counter (Q2289, Q24112, Q24013).
-			if (contract.SpawnList.FirstOrDefault(spawn => spawn.QuestId == quest.Id && var == spawn.AtVar) is { } spawned)
+			// M4: a trigger whose item drops at the same var (Q24022's Dead Fire) waits for the collection.
+			if (contract.SpawnList.FirstOrDefault(spawn => spawn.QuestId == quest.Id && var == spawn.AtVar &&
+				(state.ItemCounts.GetValueOrDefault(spawn.RequiresItemId) > 0 || !contract.CollectionList.Any(collection =>
+					collection.QuestId == quest.Id && collection.AtVar == var && collection.Items.Any(item => item.ItemId == spawn.RequiresItemId)))) is { } spawned)
 				return Plan("spawn-kill", quest.Id, $"Q{quest.Id} var {var}: {spawned.Key}.", spawned.Key);
 			if (contract.HuntList.FirstOrDefault(hunt => hunt.QuestId == quest.Id && var >= hunt.FromVar && var < hunt.ToVar) is { } hunt)
 				return Plan("hunt", quest.Id, $"Q{quest.Id} var {var}: kill {string.Join("/", hunt.NpcIds)} toward var {hunt.ToVar}.");
@@ -303,8 +311,10 @@ public static class NaturalAltgardDecisionEngine
 					: $"Q{quest.Id} var {var}: use {objectUse.Key}.", objectUse.Key);
 			if (contract.ZoneStepList.FirstOrDefault(zone => zone.QuestId == quest.Id && var == zone.FromVar) is { } zoneStep)
 				return Plan("enter-zone", quest.Id, $"Q{quest.Id} var {var}: walk into {zoneStep.Zone}.");
+			// M4: an item an item use turns into another (Q2333's 182204130) is collected once that other item is held.
 			if (contract.CollectionList.FirstOrDefault(collection => collection.QuestId == quest.Id && var == collection.AtVar) is { } collect &&
-				collect.Items.Any(item => state.ItemCounts.GetValueOrDefault(item.ItemId) < item.Count))
+				collect.Items.Any(item => state.ItemCounts.GetValueOrDefault(item.ItemId) < item.Count && !contract.ItemUseList.Any(use =>
+					use.QuestId == quest.Id && use.ItemId == item.ItemId && use.ProducesItemId is int made && state.ItemCounts.GetValueOrDefault(made) > 0)))
 				return Plan("collect", quest.Id, $"Q{quest.Id} var {var}: collect " +
 					string.Join(", ", collect.Items.Select(item => $"{state.ItemCounts.GetValueOrDefault(item.ItemId)}/{item.Count} of {item.ItemId}")) + ".");
 			NaturalAltgardStep? next = contract.StepsFor(quest.Id).SingleOrDefault(step => step.ExpectedStatus == "START" && step.Var == var);

@@ -3782,7 +3782,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						}
 						case "use-item":
 						{
-							NaturalAltgardItemUse use = leg.RequiredItemUse;
+							// M4: the use the decision names (a leg can have several).
+							NaturalAltgardItemUse use = leg.ItemUseList.Single(entry => $"{entry.QuestId}:{entry.ItemId}" == next.StepKey);
 							if (!use.Anywhere && use.ZoneAnchor is { } zone)
 							{
 								int preparationRetreats = combat.CompletedRetreats, preparationRevives = combat.ReviveCount;
@@ -3897,6 +3898,18 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								{
 									["quest"] = next.QuestId, ["from"] = var, ["reason"] = exception.Message,
 								});
+							}
+							catch (TimeoutException stalled) when (NaturalAltgardContract.MorheimLegs.Contains(altgardLegId!) &&
+								stalled.Message.StartsWith("Natural journey made no quest", StringComparison.Ordinal))
+							{
+								// M4: a kill this bot cannot make alone in the watchdog's hour (Q24022's Protector Karhel, a level-35 EXPERT): the
+								// quest, and what needs it first, is left for the group step (M6).
+								deferredToGroup.Add(next.QuestId!.Value);
+								session.TraceDiagnostic($"altgard-{altgardLegId}-deferred-to-group", new Dictionary<string, object?>
+								{
+									["quest"] = next.QuestId, ["var"] = var, ["level"] = session.Api.World.Level, ["position"] = session.CurrentPosition,
+								});
+								ExcuseBoundedWait();
 							}
 							await RestSafelyAsync(token);
 							break;
@@ -4071,12 +4084,43 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 										completedSource: altgardLegId == "l10" ? CollectedCampaignSource : null);
 								}
 							}
-							for (int kill = 0; kill < 6 && ItemCount(session.Api.World, wanted.ItemId) < wanted.Count; kill++)
+							try
 							{
-								int source = await KillShippedSpawnAsync(sources[kill % sources.Length], altgardLegId == "l10"
-									? new(QuestRunOperationKind.CollectQuestDrop, Count: wanted.Count, ItemId: wanted.ItemId) : null);
-								await TryLootCorpseItemAsync(session, source, wanted.ItemId, token);
-								navigator.UnavailableObjects.Add(source);
+								for (int kill = 0; kill < 6 && ItemCount(session.Api.World, wanted.ItemId) < wanted.Count; kill++)
+								{
+									int source;
+									try
+									{
+										source = await KillShippedSpawnAsync(sources[kill % sources.Length], altgardLegId == "l10"
+											? new(QuestRunOperationKind.CollectQuestDrop, Count: wanted.Count, ItemId: wanted.ItemId) : null);
+									}
+									// M4: a source of the turn that is not there (Q24021's lone 212415 spectre, which other bots kill too) gives the turn to
+									// the next source, as a template collection does.
+									catch (InvalidDataException absent) when (sources.Length > 1 && !session.Api.World.IsDead &&
+										absent.Message.StartsWith("No client-observed NPC", StringComparison.Ordinal))
+									{
+										session.TraceDiagnostic("collect-source-absent", new Dictionary<string, object?>
+										{
+											["quest"] = next.QuestId, ["item"] = wanted.ItemId, ["source"] = sources[kill % sources.Length],
+										});
+										continue;
+									}
+									await TryLootCorpseItemAsync(session, source, wanted.ItemId, token);
+									navigator.UnavailableObjects.Add(source);
+									await RestSafelyAsync(token);
+								}
+							}
+							catch (TimeoutException stalled) when (NaturalAltgardContract.MorheimLegs.Contains(altgardLegId!) &&
+								stalled.Message.StartsWith("Natural journey made no quest", StringComparison.Ordinal))
+							{
+								// M4: a drop this bot cannot get alone in the watchdog's hour (Q24021's Deputy Lamipedon, an EXPERT in the middle of
+								// the spectres' ground): the quest, and what needs it first, is left for the group step (M6).
+								deferredToGroup.Add(next.QuestId!.Value);
+								session.TraceDiagnostic($"altgard-{altgardLegId}-deferred-to-group", new Dictionary<string, object?>
+								{
+									["quest"] = next.QuestId, ["item"] = wanted.ItemId, ["level"] = session.Api.World.Level, ["position"] = session.CurrentPosition,
+								});
+								ExcuseBoundedWait();
 								await RestSafelyAsync(token);
 							}
 							break;
@@ -5381,7 +5425,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					NaturalAltgardStep restart = leg.Steps.Single(step => step.Key == escort.RestartStep);
 					BotPosition followerStart = geometry.SnapToGround(map, new BotPosition(restart.Position[0], restart.Position[1], restart.Position[2] + 1, 0))
 						?? throw new InvalidDataException($"No ground at the {escort.Key} follower.");
-					BotPosition standPoint = NaturalEscortPolicy.GoalStand(escort.Goal, followerStart);
+					BotPosition standPoint = NaturalEscortPolicy.GoalStand(escort.Goal, followerStart, escort.GoalRadius);
 					BotPosition stand = geometry.SnapToGround(map, standPoint with { Z = standPoint.Z + 1 })
 						?? throw new InvalidDataException($"No ground at the {escort.Key} goal stand.");
 					IReadOnlyList<BotPosition> escortRoute = geometry.FindJourneyPath(map, followerStart, stand);
@@ -5538,7 +5582,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				NaturalJourneyPersistence.Verify(before, after, startedOnEntry, stigmaOnLogin);
 				VerifyDestinyEndpoint();
 				if (laterCapital != null) await laterCapital.WriteCheckpointAsync(Path.GetDirectoryName(combatTracePath)!,
-					altgardLegId!, before, after, token, distinctSegment: continuousAltgard);
+					altgardLegId!, before, after, token, distinctSegment: continuousAltgard, startedOnEntry, stigmaOnLogin);
 				VerifyCoinEndpoint();
 				VerifyHaramelEndpoint();
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, $"altgard-{altgardLegId}-completion.json"),

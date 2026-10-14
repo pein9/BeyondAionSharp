@@ -75,9 +75,11 @@ public sealed class NaturalEscortProtocol(INaturalJourneySession session, Natura
 				await NaturalMovieGate.FinishAsync(session, token);
 			NaturalMovieGate.RecordSkipped(session);
 
-			BotKnownObject? follower = world.Objects.Values.FirstOrDefault(known =>
+			// M4: the nearest of them: a follower the start talk spawns (Q2333's ribbit) has a standing twin by the lake.
+			BotKnownObject? follower = world.Objects.Values.Where(known =>
 				known.Kind == BotKnownObjectKind.Npc && known.TemplateId == escort.FollowerNpcId && !known.IsCorpse &&
-				!ended.Contains(known.ObjectId));
+				!ended.Contains(known.ObjectId)).MinBy(known => MathF.Pow(known.Position.X - session.CurrentPosition.X, 2) +
+					MathF.Pow(known.Position.Y - session.CurrentPosition.Y, 2));
 			if (follower != null)
 			{
 				followerWasSeen = true;
@@ -175,9 +177,23 @@ public sealed class NaturalEscortProtocol(INaturalJourneySession session, Natura
 					NaturalAltgardStep step = contract.Steps.Single(candidate => candidate.Key == choice.StepKey);
 					session.TraceDiagnostic("escort-start", new Dictionary<string, object?>
 					{
-						["escort"] = escort.Key, ["step"] = step.Key, ["attempt"] = attempts + 1, ["follower"] = follower!.ObjectId,
+						["escort"] = escort.Key, ["step"] = step.Key, ["attempt"] = attempts + 1, ["follower"] = follower?.ObjectId,
 					});
-					await NaturalAltgardQuestSteps.TalkAsync(session, step, follower.ObjectId, token);
+					int talker = follower?.ObjectId ?? 0;
+					if (escort.FollowerSpawnedByStart)
+					{
+						// M4: the start talk is with the step's NPC (Orashunerk), who spawns the follower in front of the player.
+						BotPosition at = new(step.Position[0], step.Position[1], step.Position[2], 0);
+						BotKnownObject? giver = GiverInView();
+						if (giver == null || Apart(session.CurrentPosition, giver.Position) > 4)
+							await WalkToAsync(giver?.Position ?? at, token);
+						giver = GiverInView() ?? throw new InvalidDataException($"{escort.Key}: {step.NpcId} is not in view for the start talk.");
+						talker = giver.ObjectId;
+						BotKnownObject? GiverInView() => session.Api.World.Objects.Values
+							.Where(known => known.TemplateId == step.NpcId && !known.IsCorpse).MinBy(known => Apart(session.CurrentPosition, known.Position));
+						static float Apart(BotPosition a, BotPosition b) => MathF.Sqrt(MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2));
+					}
+					await NaturalAltgardQuestSteps.TalkAsync(session, step, talker, token);
 					break;
 				default: // wait-for-follower, wait-at-goal
 					await session.AdvanceAsync(WaitTick, token);

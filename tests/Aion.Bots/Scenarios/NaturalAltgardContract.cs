@@ -56,7 +56,8 @@ public sealed record NaturalAltgardContract(
 	NaturalHaramel? Haramel = null,
 	NaturalAbyssEntry? AbyssEntry = null,
 	NaturalAltgardClassPath[]? ClassPaths = null,
-	NaturalAltgardItemStart[]? ItemStarts = null)
+	NaturalAltgardItemStart[]? ItemStarts = null,
+	NaturalAltgardItemUse[]? ItemUses = null)
 {
 	/// <summary>The contract file and plan directory of each leg (none when the leg has no template quests).</summary>
 	public static readonly IReadOnlyDictionary<string, (string Contract, string? Plans)> Legs = new Dictionary<string, (string, string?)>
@@ -77,15 +78,16 @@ public sealed record NaturalAltgardContract(
 		// AX-03: Morheim arrival and Abyss entry, from the continuous journey's endpoint.
 		[NaturalAbyssEntry.Leg] = ("natural-abyss-entry-contract.json", null),
 		// M2 (docs/natural-morheim-leveling.md): Morheim, hub by hub, from the group world. "mf" is Morheim Ice Fortress,
-		// "mk" (M3) Kellan's Cabin, "md" (M4) Desert Garrison.
+		// "mk" (M3) Kellan's Cabin, "md" (M4) Desert Garrison and "mc" (M4) the campaign's Q24021 and Q24022 with Q2333.
 		["mf"] = ("natural-morheim-mf-contract.json", "natural-morheim-mf-plans"),
 		["mk"] = ("natural-morheim-mk-contract.json", "natural-morheim-mk-plans"),
 		["md"] = ("natural-morheim-md-contract.json", "natural-morheim-md-plans"),
+		["mc"] = ("natural-morheim-mc-contract.json", null),
 	};
 
 	/// <summary>The legs of the Morheim leg to level 31 (docs/natural-morheim-leveling.md): played on Morheim by a
 	/// mustered character of level 26 or more.</summary>
-	public static readonly IReadOnlySet<string> MorheimLegs = new HashSet<string> { "mf", "mk", "md" };
+	public static readonly IReadOnlySet<string> MorheimLegs = new HashSet<string> { "mf", "mk", "md", "mc" };
 
 	/// <summary>The muster's template quest: the fortress's repeatable coin quest (docs/natural-muster.md). The plans are
 	/// apart from the Abyss entry's, which has none, so that leg's navigation graph is what it was.</summary>
@@ -115,6 +117,8 @@ public sealed record NaturalAltgardContract(
 	public NaturalAltgardMapTrip[] MapTripList => MapTrips ?? [];
 	public NaturalAltgardInstanceTrip[] InstanceTripList => InstanceTrips ?? [];
 	public NaturalAltgardItemStart[] ItemStartList => ItemStarts ?? [];
+	/// <summary>M4: every item use of the leg: the one of the older legs (<see cref="ItemUse"/>) and the others.</summary>
+	public NaturalAltgardItemUse[] ItemUseList => [.. ItemUse is { } one ? [one] : Array.Empty<NaturalAltgardItemUse>(), .. ItemUses ?? []];
 	public int StepMap(NaturalAltgardStep step) => step.MapId ?? Hub.MapId;
 	// SM_QUEST_LIST/SM_QUEST_ACTION reserve the high byte for flags, separate from the quest's full value.
 	public int QuestVar(BotQuestState quest) => Destiny?.QuestId == quest.QuestId ? quest.StepAndFlags & 0xFFFFFF : quest.StepAndFlags & 0x3F;
@@ -462,7 +466,7 @@ public sealed record NaturalAltgardInstanceTrip(int QuestId, int MapId, int From
 /// has stepped inside.</param>
 public sealed record NaturalAltgardItemUse(int QuestId, int ItemId, int Var, int NextVar, int UseMillis, bool Anywhere,
 	string? Zone = null, int? SpawnsNpcId = null, int SpawnCount = 0, float[]? ZoneAnchor = null, float[][]? ZonePolygon = null,
-	float[]? ZoneBand = null)
+	float[]? ZoneBand = null, int? ProducesItemId = null)
 {
 	/// <summary>Whether a point lies inside the zone, at least <paramref name="margin"/> metres from every edge.</summary>
 	public bool InZone(float x, float y, float z, float margin = 0)
@@ -583,7 +587,7 @@ public sealed record NaturalAltgardObjectUse(string Key, int QuestId, int NpcId,
 public sealed record NaturalAltgardEscort(string Key, int QuestId, int FollowerNpcId, int GoalNpcId, float[] Goal, float GoalRadius,
 	string StartStep, string RestartStep, int FollowVar, int SuccessVar, int LostVar, float Leash, int CheckMillis, int? MovieId,
 	int FollowerRespawnSeconds, float FollowerRunSpeed, string[] ClearAreas, int MaxAttempts, string Area, int? StartVar = null,
-	int? FollowerSpawnHour = null, int? FollowerDespawnHour = null);
+	int? FollowerSpawnHour = null, int? FollowerDespawnHour = null, bool FollowerSpawnedByStart = false);
 
 /// <summary>
 /// M3: a quest the player starts by using an item (Java <c>onItemUseEvent</c> sends page 4, and QUEST_ACCEPT_1 with no npc
