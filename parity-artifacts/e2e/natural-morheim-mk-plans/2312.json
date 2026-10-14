@@ -1,0 +1,728 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2312,
+    "name": "Sylphen Pollution",
+    "nameId": 1103512,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "PC_ALL"
+  },
+  "gates": {
+    "minimumLevel": 21,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2311
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2312,
+        "start_npc_ids": 730036
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 730036,
+        "name": "anoramas",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 941.916,
+            "y": 2821.55,
+            "z": 232.0,
+            "heading": 95,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 730036,
+      "name": "anoramas",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 941.916,
+          "y": 2821.55,
+          "z": 232.0,
+          "heading": 95,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 730036,
+      "name": "anoramas",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 941.916,
+          "y": 2821.55,
+          "z": 232.0,
+          "heading": 95,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 10,
+      "item_id": 182204111,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 85,
+          "item_id": 182204111,
+          "npc_id": 211314,
+          "npc": {
+            "id": 211314,
+            "name": "grove sylphen",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 409.989,
+                "y": 2939.04,
+                "z": 324.25,
+                "heading": 62,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 427.17,
+                "y": 2948.56,
+                "z": 323.069,
+                "heading": 5,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 430.47,
+                "y": 2923.21,
+                "z": 322.241,
+                "heading": 52,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 454.794,
+                "y": 2906.8,
+                "z": 322.726,
+                "heading": 24,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 462.53,
+                "y": 2937.9,
+                "z": 322.396,
+                "heading": 90,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 470.091,
+                "y": 2893.25,
+                "z": 322.5,
+                "heading": 92,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 479.504,
+                "y": 2914.53,
+                "z": 322.998,
+                "heading": 81,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 499.219,
+                "y": 2886.58,
+                "z": 321.598,
+                "heading": 67,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 543.994,
+                "y": 2848.87,
+                "z": 321.142,
+                "heading": 6,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 557.011,
+                "y": 2804.92,
+                "z": 320.953,
+                "heading": 90,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 561.552,
+                "y": 2832.39,
+                "z": 316.022,
+                "heading": 8,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 562.133,
+                "y": 2814.97,
+                "z": 319.681,
+                "heading": 54,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 568.926,
+                "y": 2866.81,
+                "z": 322.319,
+                "heading": 7,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 571.731,
+                "y": 2809.43,
+                "z": 318.284,
+                "heading": 65,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 588.005,
+                "y": 2818.83,
+                "z": 313.396,
+                "heading": 62,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 606.716,
+                "y": 2837.46,
+                "z": 310.373,
+                "heading": 80,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 608.8,
+                "y": 2820.5,
+                "z": 312.407,
+                "heading": 25,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 674.929,
+                "y": 2836.92,
+                "z": 298.452,
+                "heading": 4,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 677.522,
+                "y": 2860.65,
+                "z": 295.564,
+                "heading": 5,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 684.185,
+                "y": 2877.47,
+                "z": 291.043,
+                "heading": 57,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 799.388,
+                "y": 2869.46,
+                "z": 282.115,
+                "heading": 36,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 809.017,
+                "y": 2848.25,
+                "z": 285.362,
+                "heading": 47,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 821.155,
+                "y": 2869.79,
+                "z": 282.532,
+                "heading": 21,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 840.236,
+                "y": 2764.42,
+                "z": 249.395,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 860.333,
+                "y": 2755.21,
+                "z": 249.009,
+                "heading": 59,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 864.067,
+                "y": 2779.69,
+                "z": 244.031,
+                "heading": 90,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 876.574,
+                "y": 2788.39,
+                "z": 241.111,
+                "heading": 45,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 879.071,
+                "y": 2762.83,
+                "z": 242.702,
+                "heading": 18,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 896.148,
+                "y": 2781.34,
+                "z": 235.004,
+                "heading": 81,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 903.697,
+                "y": 2806.94,
+                "z": 233.221,
+                "heading": 85,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 924.157,
+                "y": 2893.67,
+                "z": 230.866,
+                "heading": 54,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 928.438,
+                "y": 2706.59,
+                "z": 223.277,
+                "heading": 37,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 929.638,
+                "y": 2684.32,
+                "z": 221.125,
+                "heading": 16,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 947.092,
+                "y": 2895.76,
+                "z": 230.708,
+                "heading": 75,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 959.789,
+                "y": 2800.43,
+                "z": 230.942,
+                "heading": 79,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 971.617,
+                "y": 2923.9,
+                "z": 236.885,
+                "heading": 95,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 974.398,
+                "y": 2913.95,
+                "z": 235.384,
+                "heading": 74,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 976.77,
+                "y": 2802.88,
+                "z": 228.043,
+                "heading": 88,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 984.434,
+                "y": 2913.08,
+                "z": 237.257,
+                "heading": 86,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 998.12,
+                "y": 2801.77,
+                "z": 225.832,
+                "heading": 18,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1006.09,
+                "y": 2828.6,
+                "z": 229.814,
+                "heading": 42,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1008.21,
+                "y": 2742.22,
+                "z": 217.79,
+                "heading": 26,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1025.01,
+                "y": 2478.79,
+                "z": 228.286,
+                "heading": 108,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1041.76,
+                "y": 2584.72,
+                "z": 231.439,
+                "heading": 33,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1042.19,
+                "y": 2305.22,
+                "z": 217.39,
+                "heading": 34,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1046.83,
+                "y": 2292.76,
+                "z": 216.099,
+                "heading": 79,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1048.8,
+                "y": 2558.91,
+                "z": 225.382,
+                "heading": 64,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1050.47,
+                "y": 2509.72,
+                "z": 227.875,
+                "heading": 71,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1051.66,
+                "y": 2364.87,
+                "z": 218.173,
+                "heading": 110,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1053.59,
+                "y": 2593.22,
+                "z": 233.499,
+                "heading": 63,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1054.02,
+                "y": 2542.11,
+                "z": 224.743,
+                "heading": 25,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1062.36,
+                "y": 2416.99,
+                "z": 222.021,
+                "heading": 92,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1078.6,
+                "y": 2542.07,
+                "z": 225.158,
+                "heading": 46,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1085.52,
+                "y": 2361.34,
+                "z": 216.558,
+                "heading": 89,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1087.23,
+                "y": 2347.99,
+                "z": 216.355,
+                "heading": 94,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1105.08,
+                "y": 2400.63,
+                "z": 226.443,
+                "heading": 33,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1105.2,
+                "y": 2525.06,
+                "z": 228.817,
+                "heading": 2,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1114.16,
+                "y": 2391.42,
+                "z": 226.375,
+                "heading": 55,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1123.27,
+                "y": 2491.59,
+                "z": 233.92,
+                "heading": 76,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1135.73,
+                "y": 2512.18,
+                "z": 236.969,
+                "heading": 13,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 85,
+          "item_id": 182204111,
+          "npc_id": 211320,
+          "npc": {
+            "id": 211320,
+            "name": "grove sylphen",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 730036,
+          "name": "anoramas",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 941.916,
+              "y": 2821.55,
+              "z": 232.0,
+              "heading": 95,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 70068,
+        "gold": 16700,
+        "rewardItems": [
+          {
+            "count": 3,
+            "item_id": 188050584
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {},
+    "bonus": {
+      "level": 20,
+      "type": "MEDICINE"
+    }
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2312,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 21,
+      "name": "Sylphen Pollution",
+      "nameId": 1103512,
+      "quest_zone": "Morheim",
+      "race_permitted": "PC_ALL"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 182204111
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 70068,
+          "gold": 16700
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 188050584
+            }
+          }
+        ]
+      },
+      {
+        "tag": "bonus",
+        "attributes": {
+          "level": 20,
+          "type": "MEDICINE"
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 85,
+          "item_id": 182204111,
+          "npc_id": 211314
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 85,
+          "item_id": 182204111,
+          "npc_id": 211320
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2311
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

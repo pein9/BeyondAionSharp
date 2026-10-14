@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2319,
+    "name": "Keindor's Message",
+    "nameId": 1103519,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 21,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 798105,
+        "id": 2319,
+        "start_npc_ids": 730037
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 730037,
+        "name": "keindor",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 926.076,
+            "y": 2848.92,
+            "z": 232.0,
+            "heading": 63,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 730037,
+      "name": "keindor",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 926.076,
+          "y": 2848.92,
+          "z": 232.0,
+          "heading": 63,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 798105,
+      "name": "luimerk",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2630.0,
+          "y": 1644.0,
+          "z": 254.0,
+          "heading": 111,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 798105,
+          "name": "luimerk",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2630.0,
+              "y": 1644.0,
+              "z": 254.0,
+              "heading": 111,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 90000,
+        "gold": 15880,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000007
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2319,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 21,
+      "name": "Keindor's Message",
+      "nameId": 1103519,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 90000,
+          "gold": 15880
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000007
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

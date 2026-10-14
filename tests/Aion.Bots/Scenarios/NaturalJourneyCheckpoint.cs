@@ -102,6 +102,13 @@ public sealed class NaturalJourneyProgress(TimeSpan maximumWithoutProgress, IRea
 		else if (elapsed - lastProgress >= maximumWithoutProgress)
 			throw new TimeoutException($"Natural journey made no quest, quest-item or level progress for {maximumWithoutProgress}.");
 	}
+
+	/// <summary>M3: a bounded wait for a respawn the bot cannot hurry (Q2498's worn document: one at a time, 2950 s after a use,
+	/// with the other bots of the world before it) is not a stall: it counts as progress at <paramref name="elapsed"/>.</summary>
+	public void Excuse(TimeSpan elapsed)
+	{
+		if (elapsed > lastProgress) lastProgress = elapsed;
+	}
 }
 
 public sealed record NaturalJourneyRunContext(string Run, string Profile, int Seed,

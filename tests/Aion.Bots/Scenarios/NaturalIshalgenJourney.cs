@@ -917,6 +917,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				haramelProgress?.StallBudget);
 			long journeyStart = haramelProgress is { } originalHaramel
 				? originalHaramel.ProgressClockOriginMillis(runtime.Epoch.ToUnixTimeMilliseconds()) : runtime.NowMillis;
+			// M3: a bounded wait the bot cannot hurry (a respawn, a 5% drop among other bots) counts as progress (NaturalJourneyProgress.Excuse).
+			void ExcuseBoundedWait() => progress.Excuse(TimeSpan.FromMilliseconds(runtime.NowMillis - journeyStart));
 			void EnforceCourseGameClock()
 			{
 				if (options.Course != null && runtime.NowMillis - journeyStart >= TimeSpan.FromHours(1).TotalMilliseconds)
@@ -3320,8 +3322,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				int? warlockRoadRevives = null;
 				farApproach = async (at, templateId, sourceComplete) =>
 				{
-					// AE-06/AO-04: delivery legs take hub flights; approaching the flight pad must not plan another flight.
-					if (altgardLegId is "l7" or "l8" or "l9" or "l10" or "cg" or "l12" && session.Api.World.MapId == leg.Hub.MapId && !approachingAirline)
+					// AE-06/AO-04: delivery legs take hub flights; approaching the flight pad must not plan another flight. M3: so do the
+					// Morheim legs, whose hand-ins stand at other hubs (Q2495 at the fortress, from Kellan's Cabin).
+					if ((altgardLegId is "l7" or "l8" or "l9" or "l10" or "cg" or "l12" || NaturalAltgardContract.MorheimLegs.Contains(altgardLegId!)) &&
+						session.Api.World.MapId == leg.Hub.MapId && !approachingAirline)
 					{
 						approachingAirline = true;
 						try { await FlyTowardAsync(at); }
@@ -3692,6 +3696,75 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						case "talk":
 							await PlayContractStepAsync(leg.Steps.Single(candidate => candidate.Key == next.StepKey));
 							break;
+						case "item-start":
+						{
+							// M3: a quest started by an item. The item is given by an object (Q2498's worn document, which goes and respawns)
+							// or drops from monsters: Q2316's Old Notebook is a 5% drop of the Sprigg Habitat's sparkies, so one decision hunts
+							// on until it drops: 150 tries at most, since the other bots of the world take many of the sparkies, and the hunt counts
+							// as progress while it lasts (ExcuseBoundedWait), as the respawn waits do.
+							await EnsureOnGroundAsync();
+							NaturalAltgardItemStart start = leg.ItemStartList.Single(entry => entry.QuestId == next.QuestId);
+							if (ItemCount(session.Api.World, start.ItemId) > 0)
+							{
+								await NaturalAltgardQuestSteps.StartQuestWithItemAsync(session, start.QuestId, start.ItemId,
+									runtime.Data.ItemDataDh.GetItemTemplate(start.ItemId), token);
+								break;
+							}
+							if (start.ObjectNpcId is int giver)
+							{
+								// Q2498's worn document stands at one of its five spots at a time (pool 1) and respawns 2950 s after a use, so in a
+								// world of eight the bot that comes after another waits for it, and a use another bot wins is waited for again.
+								// One decision waits at the spots, a minute at a time, for six game hours at most.
+								BotPosition near = graph.GetMap(leg.Hub.MapId)!.Waypoints.Where(waypoint => waypoint.TemplateId == giver)
+									.Select(waypoint => waypoint.Position).MinBy(position => Distance(position, session.CurrentPosition));
+								bool Visible() => session.Api.World.Objects.Values.Any(known => known.TemplateId == giver && !known.IsCorpse &&
+									!navigator.UnavailableObjects.Contains(known.ObjectId));
+								int minutes = 0, uses = 0;
+								while (ItemCount(session.Api.World, start.ItemId) == 0 && !session.Api.World.IsDead && minutes < 360)
+								{
+									if (!Visible())
+									{
+										if (Distance(session.CurrentPosition, near) > 20) await WalkRoadDefendingAsync(near, "item-start-object", within: 15);
+										await session.AdvanceAsync(TimeSpan.FromSeconds(60), token);
+										await session.SynchronizeAsync(token);
+										await DefendAgainstEngagedAsync("item-start-object-wait");
+										ExcuseBoundedWait();
+										minutes++;
+										continue;
+									}
+									try
+									{
+										int found = await ApproachShippedSpawnAsync(giver, skipBlockedTarget: true);
+										await NaturalAltgardQuestSteps.UseObjectAsync(session, found, null, token);
+										navigator.UnavailableObjects.Add(found);
+										uses++;
+									}
+									catch (InvalidDataException) when (!Visible() && !session.Api.World.IsDead) { } // another bot took it first
+								}
+								session.TraceDiagnostic($"altgard-{altgardLegId}-item-start-object", new Dictionary<string, object?>
+								{
+									["quest"] = start.QuestId, ["minutes"] = minutes, ["uses"] = uses, ["owned"] = ItemCount(session.Api.World, start.ItemId),
+								});
+								await RestSafelyAsync(token);
+								break;
+							}
+							int[] sources = start.SourceNpcIds!.Where(SpawnsOnMap).ToArray();
+							Require.True(sources.Length > 0, $"No source of item {start.ItemId} spawns here.");
+							int kills = 0;
+							for (; kills < 150 && ItemCount(session.Api.World, start.ItemId) == 0 && !session.Api.World.IsDead; kills++)
+							{
+								int source = await KillShippedSpawnAsync(sources[kills % sources.Length]);
+								await TryLootCorpseItemAsync(session, source, start.ItemId, token);
+								navigator.UnavailableObjects.Add(source);
+								await RestSafelyAsync(token);
+								ExcuseBoundedWait();
+							}
+							session.TraceDiagnostic($"altgard-{altgardLegId}-item-start-hunt", new Dictionary<string, object?>
+							{
+								["quest"] = start.QuestId, ["item"] = start.ItemId, ["kills"] = kills, ["owned"] = ItemCount(session.Api.World, start.ItemId),
+							});
+							break;
+						}
 						case "use-item":
 						{
 							NaturalAltgardItemUse use = leg.RequiredItemUse;
@@ -5428,7 +5501,15 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				if (leg.Haramel != null)
 					await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "haramel-endpoint-relog.json"),
 						System.Text.Json.JsonSerializer.Serialize(new { before, after }), token);
-				NaturalJourneyPersistence.Verify(before, after);
+				// M3: the relog enters the world, and the server starts an invasion daily then (Java KillInWorld.onEnterWorldEvent:
+				// Q49020, "[Daily] Aegir's Order", on entering Morheim on a day of its cycle). It was not in the journal before.
+				HashSet<int> startedOnEntry = after.Quests.Where(quest => quest.Status == 3 && (quest.StepAndFlags & 0x3F) == 0 &&
+					!before.Quests.Any(old => old.QuestId == quest.QuestId && old.Status is 3 or 4) &&
+					runtime.Data.XmlQuests.GetQuest(quest.QuestId) is Aion.GameServer.QuestEngine.Handlers.Models.KillInWorldData invasion &&
+					invasion.invasionWorld == after.MapId).Select(quest => quest.QuestId).ToHashSet();
+				if (startedOnEntry.Count > 0)
+					session.TraceDiagnostic("relog-started-on-entry", new Dictionary<string, object?> { ["quests"] = startedOnEntry.Order().ToArray() });
+				NaturalJourneyPersistence.Verify(before, after, startedOnEntry);
 				VerifyDestinyEndpoint();
 				if (laterCapital != null) await laterCapital.WriteCheckpointAsync(Path.GetDirectoryName(combatTracePath)!,
 					altgardLegId!, before, after, token, distinctSegment: continuousAltgard);
@@ -9218,6 +9299,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							if (altgardLegId == "l10" && plan.Id == 2277) sourceIds = sourceIds.Where(id => id == 210551).ToArray();
 							if (sourceIds.Length == 0)
 								throw new InvalidDataException($"Q{plan.Id} item {operation.ItemId} has no shipped source.");
+							// M3: a source of the turn that is not there after its respawn wait (Q2429's lone 212374 brax, which the other bots of
+							// the world kill as well, beside ten 212373s) gives the turn to the next source; twice round them all without one ends it.
+							int absences = 0;
 							for (int attempt = 0; ItemCount(session.Api.World, operation.ItemId) < operation.Count;
 								attempt++)
 							{
@@ -9228,7 +9312,18 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 										await UseAndLootQuestObjectAsync(sourceId, operation.ItemId, skipBlockedTarget: true));
 									continue;
 								}
-								int source = await KillShippedSpawnAsync(sourceId, operation);
+								int source;
+								try { source = await KillShippedSpawnAsync(sourceId, operation); }
+								catch (InvalidDataException absent) when (sourceIds.Length > 1 && altgardLeg?.PillarFlight == null && !session.Api.World.IsDead &&
+									absent.Message.StartsWith("No client-observed NPC", StringComparison.Ordinal) && ++absences <= 2 * sourceIds.Length)
+								{
+									session.TraceDiagnostic("template-source-absent", new Dictionary<string, object?>
+									{
+										["quest"] = plan.Id, ["item"] = operation.ItemId, ["source"] = sourceId, ["absences"] = absences,
+									});
+									continue;
+								}
+								absences = 0;
 								// Defense and the general quest sweep may finish the collection during the kill's approach.
 								if (ItemCount(session.Api.World, operation.ItemId) < operation.Count)
 									await TryLootCorpseItemAsync(session, source, operation.ItemId, token);
@@ -9728,6 +9823,18 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
 					await session.SynchronizeAsync(token);
 				}
+				// M3: Spedor walks a long round (a walker_id spawn) and does not stop for long: follow him to where he is now, a few
+				// times, until he is in talk range.
+				for (int chase = 0; chase < 8 && session.Api.World.Objects.TryGetValue(npc, out BotKnownObject? moving) && moving.MoveTarget != null; chase++)
+				{
+					NaturalNavigationObject? now = navigator.Observe().Npcs.FirstOrDefault(n => n.ObjectId == npc);
+					if (now == null || Distance(session.CurrentPosition, now.Position) <= 3) break;
+					session.TraceDiagnostic("dialog-follow-walker", new Dictionary<string, object?>
+					{
+						["npc"] = $"{now.TemplateId}/{npc}", ["distance"] = Distance(session.CurrentPosition, now.Position), ["chase"] = chase,
+					});
+					await NaturalIshalgenNavigator.ApproachNpcAsync(contract.MapId, now.TemplateId, now.Position, navigator, token);
+				}
 				NaturalNavigationObject? seen = navigator.Observe().Npcs.FirstOrDefault(n => n.ObjectId == npc);
 				if (seen == null) throw new InvalidDataException($"NPC {npc} is too far to talk to and no longer observed.");
 				session.TraceDiagnostic("dialog-too-far", new Dictionary<string, object?>
@@ -9928,6 +10035,11 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 
 	private static float Distance(BotPosition a, BotPosition b) => MathF.Sqrt(
 		MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2) + MathF.Pow(a.Z - b.Z, 2));
+	// M3: a dialog page of the NPC talked to. Java quest handlers can send other dialog windows on the same talk: Q2718's
+	// (Reshanta) sends SM_DIALOG_WINDOW(0, 0) to everyone who talks to Vivi, one of its four NPCs, without having taken it.
+	private static Task<DecodedBotServerPacket> NpcPageAsync(INaturalJourneySession session, int npcObjectId, CancellationToken token) =>
+		session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, packet => packet.Get<int>("targetObjectId") == npcObjectId);
+
 	private static async Task FinishStandardQuestAsync(
 		INaturalJourneySession session,
 		int npcObjectId,
@@ -9936,13 +10048,13 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		int rewardAction = DialogAction.SELECTED_QUEST_NOREWARD)
 	{
 		await NaturalDialogProtocol.OpenAsync(session, npcObjectId, token);
-		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
+		await NpcPageAsync(session, npcObjectId, token);
 		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npcObjectId, DialogAction.QUEST_SELECT, questId: questId), token);
-		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
+		await NpcPageAsync(session, npcObjectId, token);
 		if (session.Api.World.Quests[questId].Status == 3)
 		{
 			await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npcObjectId, DialogAction.SELECT_QUEST_REWARD, questId: questId), token);
-			await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
+			await NpcPageAsync(session, npcObjectId, token);
 		}
 		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npcObjectId, checked((ushort)rewardAction), questId: questId), token);
 		await WaitForQuestStatusAsync(session, questId, 5, token);
@@ -9993,12 +10105,12 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 		int rewardAction = DialogAction.SELECTED_QUEST_NOREWARD)
 	{
 		await NaturalDialogProtocol.OpenAsync(session, npcObjectId, token);
-		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
+		await NpcPageAsync(session, npcObjectId, token);
 		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npcObjectId, DialogAction.QUEST_SELECT, questId: questId), token);
-		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
+		await NpcPageAsync(session, npcObjectId, token);
 		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(
 			npcObjectId, DialogAction.CHECK_USER_HAS_QUEST_ITEM, questId: questId), token);
-		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
+		await NpcPageAsync(session, npcObjectId, token);
 		Require.Equal((byte)4, session.Api.World.Quests[questId].Status);
 		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(
 			npcObjectId, checked((ushort)rewardAction), questId: questId), token);

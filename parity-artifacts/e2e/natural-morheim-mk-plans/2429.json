@@ -1,0 +1,387 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2429,
+    "name": "Keeping Warm",
+    "nameId": 1103629,
+    "zone": "Morheim",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 22,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2303
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "end_npc_ids": 204424,
+        "id": 2429,
+        "start_npc_ids": 204378
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204378,
+        "name": "favyr",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 848.506,
+            "y": 2216.58,
+            "z": 336.625,
+            "heading": 67,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204378,
+      "name": "favyr",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 848.506,
+          "y": 2216.58,
+          "z": 336.625,
+          "heading": 67,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204424,
+      "name": "medea",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 687.084,
+          "y": 2685.43,
+          "z": 317.861,
+          "heading": 40,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182204218,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182204218,
+          "npc_id": 212373,
+          "npc": {
+            "id": 212373,
+            "name": "gray brax",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 659.329,
+                "y": 2664.37,
+                "z": 307.143,
+                "heading": 57,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 666.02,
+                "y": 2728.15,
+                "z": 284.845,
+                "heading": 98,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 723.003,
+                "y": 2750.23,
+                "z": 267.631,
+                "heading": 70,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 734.5,
+                "y": 2378.97,
+                "z": 356.687,
+                "heading": 55,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 758.867,
+                "y": 2422.07,
+                "z": 350.662,
+                "heading": 9,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 766.49,
+                "y": 2779.76,
+                "z": 256.283,
+                "heading": 51,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 767.195,
+                "y": 2317.77,
+                "z": 357.505,
+                "heading": 112,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 816.07,
+                "y": 2285.03,
+                "z": 342.96936,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 847.78,
+                "y": 2490.04,
+                "z": 307.37112,
+                "heading": 82,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "item_id": 182204218,
+          "npc_id": 212374,
+          "npc": {
+            "id": 212374,
+            "name": "gray brax",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 847.78,
+                "y": 2490.04,
+                "z": 307.59875,
+                "heading": 82,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182204219,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182204219,
+          "npc_id": 212372,
+          "npc": {
+            "id": 212372,
+            "name": "snowy crasaur",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 756.04,
+                "y": 2213.51,
+                "z": 333.808,
+                "heading": 46,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 768.411,
+                "y": 2189.2,
+                "z": 333.808,
+                "heading": 31,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 781.734,
+                "y": 2217.14,
+                "z": 333.808,
+                "heading": 67,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 815.761,
+                "y": 2218.03,
+                "z": 333.808,
+                "heading": 97,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 840.493,
+                "y": 2189.6,
+                "z": 333.808,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204424,
+          "name": "medea",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 687.084,
+              "y": 2685.43,
+              "z": 317.861,
+              "heading": 40,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 166580,
+        "gold": 12310,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 188053407
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "IMPORTANT",
+      "id": 2429,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 22,
+      "name": "Keeping Warm",
+      "nameId": 1103629,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182204218
+            }
+          },
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204219
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 166580,
+          "gold": 12310
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 188053407
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204218,
+          "npc_id": 212373
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204218,
+          "npc_id": 212374
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204219,
+          "npc_id": 212372
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2303
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

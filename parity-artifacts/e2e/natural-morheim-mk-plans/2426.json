@@ -1,0 +1,391 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2426,
+    "name": "Scouting the Lab",
+    "nameId": 1103626,
+    "zone": "Morheim",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 23,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2426,
+        "start_npc_ids": 204433
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204433,
+        "name": "kistig",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 897.908,
+            "y": 2948.14,
+            "z": 278.0,
+            "heading": 72,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204433,
+      "name": "kistig",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 897.908,
+          "y": 2948.14,
+          "z": 278.0,
+          "heading": 72,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204433,
+      "name": "kistig",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 897.908,
+          "y": 2948.14,
+          "z": 278.0,
+          "heading": 72,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 7,
+      "npc_ids": "211319 211327",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 211319,
+          "name": "mud spirit",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 659.686,
+              "y": 2893.83,
+              "z": 295.783,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 669.605,
+              "y": 2929.89,
+              "z": 292.114,
+              "heading": 70,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 683.868,
+              "y": 2958.27,
+              "z": 290.608,
+              "heading": 41,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 699.67,
+              "y": 2923.05,
+              "z": 286.0,
+              "heading": 26,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 700.662,
+              "y": 2868.08,
+              "z": 292.74,
+              "heading": 17,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 705.018,
+              "y": 2974.8,
+              "z": 290.936,
+              "heading": 117,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 706.773,
+              "y": 2887.59,
+              "z": 289.302,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 708.246,
+              "y": 2943.17,
+              "z": 287.027,
+              "heading": 89,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 730.246,
+              "y": 2946.62,
+              "z": 287.147,
+              "heading": 44,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 731.901,
+              "y": 2901.58,
+              "z": 283.748,
+              "heading": 85,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 740.11,
+              "y": 2938.44,
+              "z": 282.887,
+              "heading": 82,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 750.697,
+              "y": 2965.41,
+              "z": 286.265,
+              "heading": 41,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 772.427,
+              "y": 2900.9,
+              "z": 281.248,
+              "heading": 81,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 900.662,
+              "y": 2868.08,
+              "z": 240.147,
+              "heading": 106,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 211327,
+          "name": "mud spirit",
+          "positions": [],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 3,
+      "npc_ids": "212375 211328",
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 211328,
+          "name": "rock spirit",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 662.351,
+              "y": 2916.6,
+              "z": 295.522,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 671.792,
+              "y": 2970.5,
+              "z": 293.227,
+              "heading": 9,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 685.122,
+              "y": 2939.58,
+              "z": 288.182,
+              "heading": 89,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 717.311,
+              "y": 2960.34,
+              "z": 287.401,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 727.03,
+              "y": 2976.63,
+              "z": 289.24,
+              "heading": 2,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 762.494,
+              "y": 2983.73,
+              "z": 291.591,
+              "heading": 93,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 765.0,
+              "y": 2945.0,
+              "z": 282.25,
+              "heading": 102,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 212375,
+          "name": "rock spirit",
+          "positions": [],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204433,
+          "name": "kistig",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 897.908,
+              "y": 2948.14,
+              "z": 278.0,
+              "heading": 72,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 202051,
+        "gold": 18360,
+        "rewardItems": [
+          {
+            "count": 300,
+            "item_id": 169000005
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "IMPORTANT",
+      "id": 2426,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 23,
+      "name": "Scouting the Lab",
+      "nameId": 1103626,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 202051,
+          "gold": 18360
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 300,
+              "item_id": 169000005
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 7,
+          "npc_ids": "211319 211327",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 3,
+          "npc_ids": "212375 211328",
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      }
+    ]
+  }
+}

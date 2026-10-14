@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2424,
+    "name": "Greeting to an Alchemist",
+    "nameId": 1103624,
+    "zone": "Morheim",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 23,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2308
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 204433,
+        "id": 2424,
+        "start_npc_ids": 204424
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204424,
+        "name": "medea",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 687.084,
+            "y": 2685.43,
+            "z": 317.861,
+            "heading": 40,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204424,
+      "name": "medea",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 687.084,
+          "y": 2685.43,
+          "z": 317.861,
+          "heading": 40,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204433,
+      "name": "kistig",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 897.908,
+          "y": 2948.14,
+          "z": 278.0,
+          "heading": 72,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204433,
+          "name": "kistig",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 897.908,
+              "y": 2948.14,
+              "z": 278.0,
+              "heading": 72,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 202051,
+        "rewardItems": [
+          {
+            "count": 10,
+            "item_id": 162000005
+          },
+          {
+            "count": 10,
+            "item_id": 162000010
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "IMPORTANT",
+      "id": 2424,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 23,
+      "name": "Greeting to an Alchemist",
+      "nameId": 1103624,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 202051
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 162000005
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 162000010
+            }
+          }
+        ]
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2308
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

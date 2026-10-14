@@ -1,0 +1,417 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2425,
+    "name": "Fulfilled Promise",
+    "nameId": 1103625,
+    "zone": "Morheim",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 23,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "end_npc_ids": 730037,
+        "id": 2425,
+        "start_npc_ids": 204433
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204433,
+        "name": "kistig",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 897.908,
+            "y": 2948.14,
+            "z": 278.0,
+            "heading": 72,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204433,
+      "name": "kistig",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 897.908,
+          "y": 2948.14,
+          "z": 278.0,
+          "heading": 72,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 730037,
+      "name": "keindor",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 926.076,
+          "y": 2848.92,
+          "z": 232.0,
+          "heading": 63,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 5,
+      "item_id": 182204220,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182204220,
+          "npc_id": 212376,
+          "npc": {
+            "id": 212376,
+            "name": "grove arachna",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 588.0,
+                "y": 2897.0,
+                "z": 322.125,
+                "heading": 98,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 598.234,
+                "y": 2942.52,
+                "z": 321.529,
+                "heading": 99,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 598.68,
+                "y": 2922.81,
+                "z": 318.524,
+                "heading": 19,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 605.477,
+                "y": 2902.35,
+                "z": 318.267,
+                "heading": 46,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 621.615,
+                "y": 2912.44,
+                "z": 315.862,
+                "heading": 113,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 644.794,
+                "y": 2815.09,
+                "z": 314.767,
+                "heading": 80,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 646.255,
+                "y": 2841.17,
+                "z": 313.457,
+                "heading": 93,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 647.037,
+                "y": 2829.88,
+                "z": 315.387,
+                "heading": 76,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 657.136,
+                "y": 2812.95,
+                "z": 316.809,
+                "heading": 25,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 668.373,
+                "y": 2802.78,
+                "z": 316.25,
+                "heading": 14,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 790.122,
+                "y": 2937.75,
+                "z": 278.515,
+                "heading": 60,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 803.328,
+                "y": 2949.4,
+                "z": 278.497,
+                "heading": 36,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 806.153,
+                "y": 2804.24,
+                "z": 255.147,
+                "heading": 18,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 816.128,
+                "y": 2792.89,
+                "z": 250.643,
+                "heading": 56,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "item_id": 182204220,
+          "npc_id": 212377,
+          "npc": {
+            "id": 212377,
+            "name": "grove arachna",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "item_id": 182204220,
+          "npc_id": 212378,
+          "npc": {
+            "id": 212378,
+            "name": "stinging arachna",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 594.209,
+                "y": 2877.43,
+                "z": 319.614,
+                "heading": 20,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 622.193,
+                "y": 2892.28,
+                "z": 315.416,
+                "heading": 81,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 628.083,
+                "y": 2840.86,
+                "z": 311.247,
+                "heading": 31,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 631.544,
+                "y": 2813.36,
+                "z": 314.54,
+                "heading": 92,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 792.953,
+                "y": 2898.92,
+                "z": 279.1,
+                "heading": 48,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 823.992,
+                "y": 2901.49,
+                "z": 275.569,
+                "heading": 44,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 831.39,
+                "y": 2816.7,
+                "z": 250.115,
+                "heading": 63,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 837.103,
+                "y": 2802.13,
+                "z": 249.543,
+                "heading": 58,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 845.095,
+                "y": 2813.69,
+                "z": 248.625,
+                "heading": 97,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 730037,
+          "name": "keindor",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 926.076,
+              "y": 2848.92,
+              "z": 232.0,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 202051,
+        "gold": 15840,
+        "rewardItems": [
+          {
+            "count": 2,
+            "item_id": 188053405
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "IMPORTANT",
+      "id": 2425,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 23,
+      "name": "Fulfilled Promise",
+      "nameId": 1103625,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 182204220
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 202051,
+          "gold": 15840
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 2,
+              "item_id": 188053405
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204220,
+          "npc_id": 212376
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204220,
+          "npc_id": 212377
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204220,
+          "npc_id": 212378
+        }
+      }
+    ]
+  }
+}

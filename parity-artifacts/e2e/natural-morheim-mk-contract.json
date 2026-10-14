@@ -1,0 +1,947 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "morheim-mk-kellans-cabin",
+  "start": {
+    "contract": "natural-morheim-mf-contract.json",
+    "snapshot": "morheim-mf-s1",
+    "mapId": 220020000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 26,
+    "bindNpcId": 700231,
+    "completedQuestIds": [
+      24020,
+      2945,
+      2946,
+      2947,
+      2042,
+      2306,
+      2302,
+      2304,
+      2305,
+      2499,
+      2493,
+      2421,
+      2303
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "kellans-cabin",
+    "mapId": 220020000,
+    "anchor": [
+      1095.67,
+      2482.17,
+      240.373
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "fortress",
+      "note": "Morheim Ice Fortress: Nicoyerk, the end of Q2495 and of the leg, and the teleporter to Pandaemonium",
+      "min": [
+        140,
+        2240,
+        430
+      ],
+      "max": [
+        410,
+        2470,
+        475
+      ]
+    },
+    {
+      "key": "cabin",
+      "note": "Kellan's Cabin: Lorando, Kellan, Garurunerk, the obelisk and the flight to the fortress",
+      "min": [
+        1043,
+        2456,
+        224
+      ],
+      "max": [
+        1120,
+        2524,
+        255
+      ]
+    },
+    {
+      "key": "keindor-camp",
+      "note": "Keindor, Nabaru and Anoramas, and the fungies around them (Q2309)",
+      "min": [
+        780,
+        2512,
+        206
+      ],
+      "max": [
+        1041,
+        2950,
+        277
+      ]
+    },
+    {
+      "key": "kistig-lab",
+      "note": "Kistig's lab: the spirits (Q2426), the barrel and the box (Q2427), the grove arachnas (Q2425)",
+      "min": [
+        558,
+        2762,
+        225
+      ],
+      "max": [
+        930,
+        3013,
+        337
+      ]
+    },
+    {
+      "key": "medea",
+      "note": "Medea, the shade arachnas (Q2308, Q4314), the gray braxes (Q2429, Q4315) and the sunset sylphens (Q2311)",
+      "min": [
+        581,
+        2255,
+        241
+      ],
+      "max": [
+        910,
+        2882,
+        372
+      ]
+    },
+    {
+      "key": "grove",
+      "note": "the grove sylphens (Q2312)",
+      "min": [
+        379,
+        2262,
+        201
+      ],
+      "max": [
+        1165,
+        2978,
+        339
+      ]
+    },
+    {
+      "key": "east-grounds",
+      "note": "the nimble maekis (Q2351, Q4317), ruby keratons (Q2352, Q4318) and obsidian spiners (Q2356)",
+      "min": [
+        1138,
+        1831,
+        185
+      ],
+      "max": [
+        1591,
+        2961,
+        327
+      ]
+    },
+    {
+      "key": "pouches",
+      "note": "the luciferin pouches (Q2495), south of the cabin",
+      "min": [
+        847,
+        1714,
+        201
+      ],
+      "max": [
+        1199,
+        2657,
+        265
+      ]
+    },
+    {
+      "key": "south",
+      "note": "Vivi and Lif by the lake: the ampreh blossoms (Q2496) and the fishing tool box (Q2497)",
+      "min": [
+        898,
+        1978,
+        198
+      ],
+      "max": [
+        1194,
+        2190,
+        253
+      ]
+    },
+    {
+      "key": "sprigg-habitat",
+      "note": "the firefly sparkies and armor wing sparkles of the Sprigg Habitat, whose Old Notebook starts Q2316",
+      "min": [
+        858,
+        1683,
+        199
+      ],
+      "max": [
+        1302,
+        2263,
+        263
+      ]
+    },
+    {
+      "key": "worn-documents",
+      "note": "the worn documents (Q2498), south of the Sprigg Habitat",
+      "min": [
+        932,
+        1580,
+        202
+      ],
+      "max": [
+        1019,
+        1644,
+        232
+      ]
+    },
+    {
+      "key": "favyr",
+      "note": "Favyr, the aromatic soup and Spedor (Q2307), and the soup's ingredients south of them",
+      "min": [
+        712,
+        2117,
+        318
+      ],
+      "max": [
+        876,
+        2243,
+        353
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2351,
+      "category": "QUEST",
+      "minimumLevel": 24,
+      "rewardExperience": 155871,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204392,
+      "area": "east-grounds"
+    },
+    {
+      "id": 2352,
+      "category": "QUEST",
+      "minimumLevel": 24,
+      "rewardExperience": 155871,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204392,
+      "area": "east-grounds"
+    },
+    {
+      "id": 4317,
+      "category": "QUEST",
+      "minimumLevel": 24,
+      "rewardExperience": 109110,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204392,
+      "area": "east-grounds",
+      "prerequisites": [
+        2351
+      ]
+    },
+    {
+      "id": 4318,
+      "category": "QUEST",
+      "minimumLevel": 24,
+      "rewardExperience": 109110,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204392,
+      "area": "east-grounds",
+      "prerequisites": [
+        2352
+      ]
+    },
+    {
+      "id": 2356,
+      "category": "QUEST",
+      "minimumLevel": 24,
+      "rewardExperience": 200627,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 790020,
+      "area": "east-grounds"
+    },
+    {
+      "id": 2479,
+      "category": "QUEST",
+      "minimumLevel": 23,
+      "rewardExperience": 16099,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 204392,
+      "area": "keindor-camp"
+    },
+    {
+      "id": 2495,
+      "category": "IMPORTANT",
+      "minimumLevel": 24,
+      "rewardExperience": 230659,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 798125,
+      "area": "fortress"
+    },
+    {
+      "id": 2309,
+      "category": "IMPORTANT",
+      "minimumLevel": 23,
+      "rewardExperience": 202051,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 730037,
+      "area": "keindor-camp"
+    },
+    {
+      "id": 2310,
+      "category": "IMPORTANT",
+      "minimumLevel": 23,
+      "rewardExperience": 230659,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 730038,
+      "area": "cabin",
+      "prerequisites": [
+        2309
+      ]
+    },
+    {
+      "id": 2311,
+      "category": "QUEST",
+      "minimumLevel": 21,
+      "rewardExperience": 80494,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 730036,
+      "area": "medea"
+    },
+    {
+      "id": 2312,
+      "category": "QUEST",
+      "minimumLevel": 21,
+      "rewardExperience": 70068,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 730036,
+      "area": "grove",
+      "prerequisites": [
+        2311
+      ]
+    },
+    {
+      "id": 2319,
+      "category": "QUEST",
+      "minimumLevel": 21,
+      "rewardExperience": 90000,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 730037,
+      "area": "keindor-camp"
+    },
+    {
+      "id": 2425,
+      "category": "IMPORTANT",
+      "minimumLevel": 23,
+      "rewardExperience": 202051,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204433,
+      "area": "kistig-lab"
+    },
+    {
+      "id": 2426,
+      "category": "IMPORTANT",
+      "minimumLevel": 23,
+      "rewardExperience": 202051,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204433,
+      "area": "kistig-lab"
+    },
+    {
+      "id": 2427,
+      "category": "IMPORTANT",
+      "minimumLevel": 23,
+      "rewardExperience": 202051,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204433,
+      "area": "kistig-lab"
+    },
+    {
+      "id": 2308,
+      "category": "IMPORTANT",
+      "minimumLevel": 23,
+      "rewardExperience": 202051,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204424,
+      "area": "medea"
+    },
+    {
+      "id": 4314,
+      "category": "QUEST",
+      "minimumLevel": 20,
+      "rewardExperience": 45329,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204424,
+      "area": "medea",
+      "prerequisites": [
+        2308
+      ]
+    },
+    {
+      "id": 2424,
+      "category": "IMPORTANT",
+      "minimumLevel": 23,
+      "rewardExperience": 202051,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 204424,
+      "area": "kistig-lab",
+      "prerequisites": [
+        2308
+      ]
+    },
+    {
+      "id": 2429,
+      "category": "IMPORTANT",
+      "minimumLevel": 22,
+      "rewardExperience": 166580,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204378,
+      "area": "medea"
+    },
+    {
+      "id": 4315,
+      "category": "QUEST",
+      "minimumLevel": 20,
+      "rewardExperience": 56346,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204378,
+      "area": "medea",
+      "prerequisites": [
+        2429
+      ]
+    },
+    {
+      "id": 2497,
+      "category": "QUEST",
+      "minimumLevel": 23,
+      "rewardExperience": 100097,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204379,
+      "area": "south"
+    },
+    {
+      "id": 2496,
+      "category": "QUEST",
+      "minimumLevel": 23,
+      "rewardExperience": 100097,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204386,
+      "area": "south",
+      "prerequisites": [
+        2316
+      ]
+    },
+    {
+      "id": 2316,
+      "category": "QUEST",
+      "minimumLevel": 22,
+      "rewardExperience": 80494,
+      "prerequisite": null,
+      "handler": "morheim/_2316VivisBook.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "sprigg-habitat"
+    },
+    {
+      "id": 2498,
+      "category": "QUEST",
+      "minimumLevel": 22,
+      "rewardExperience": 134338,
+      "prerequisite": null,
+      "handler": "morheim/_2498TheSoddenScroll.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "worn-documents"
+    },
+    {
+      "id": 2307,
+      "category": "QUEST",
+      "minimumLevel": 20,
+      "rewardExperience": 64755,
+      "prerequisite": null,
+      "handler": "morheim/_2307IrresistibleSoup.cs",
+      "template": null,
+      "startNpcId": 204378,
+      "area": "favyr"
+    },
+    {
+      "id": 2428,
+      "category": "QUEST",
+      "minimumLevel": 23,
+      "rewardExperience": 128850,
+      "prerequisite": null,
+      "handler": "morheim/_2428TheAbsolutelyEssentialBook.cs",
+      "template": null,
+      "startNpcId": 204433,
+      "area": "kistig-lab",
+      "prerequisites": [
+        2427
+      ]
+    }
+  ],
+  "order": [
+    2351,
+    2352,
+    4317,
+    4318,
+    2356,
+    2479,
+    2495,
+    2309,
+    2310,
+    2311,
+    2312,
+    2319,
+    2425,
+    2426,
+    2427,
+    2308,
+    4314,
+    2424,
+    2429,
+    4315,
+    2497,
+    2496,
+    2316,
+    2498,
+    2307,
+    2428
+  ],
+  "steps": [
+    {
+      "key": "q2316-v0-vivi",
+      "questId": 2316,
+      "var": 0,
+      "npcId": 204386,
+      "position": [
+        928.301,
+        2129.86,
+        238.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        2375,
+        5
+      ],
+      "area": "south"
+    },
+    {
+      "key": "q2498-v0-garurunerk",
+      "questId": 2498,
+      "var": 0,
+      "npcId": 798125,
+      "position": [
+        1069.33,
+        2499.31,
+        239.918
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        2375,
+        5
+      ],
+      "area": "cabin"
+    },
+    {
+      "key": "q2307-offer-favyr",
+      "questId": 2307,
+      "status": "OFFER",
+      "npcId": 204378,
+      "position": [
+        848.506,
+        2216.58,
+        336.625
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        4762
+      ],
+      "area": "favyr"
+    },
+    {
+      "key": "q2307-v1-spedor",
+      "questId": 2307,
+      "var": 1,
+      "npcId": 204336,
+      "position": [
+        737.96,
+        2214.06,
+        333.808
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1011,
+        10
+      ],
+      "area": "favyr"
+    },
+    {
+      "key": "q2307-reward-favyr",
+      "questId": 2307,
+      "status": "REWARD",
+      "npcId": 204378,
+      "position": [
+        848.506,
+        2216.58,
+        336.625
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        5
+      ],
+      "area": "favyr"
+    },
+    {
+      "key": "q2428-offer-kistig",
+      "questId": 2428,
+      "status": "OFFER",
+      "npcId": 204433,
+      "position": [
+        897.908,
+        2948.14,
+        278.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "kistig-lab"
+    },
+    {
+      "key": "q2428-v0-honir",
+      "questId": 2428,
+      "var": 0,
+      "npcId": 204102,
+      "position": [
+        1179.93,
+        1511.51,
+        214.255
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1352,
+        10
+      ],
+      "mapId": 120010000
+    },
+    {
+      "key": "q2428-v1-moreinen",
+      "questId": 2428,
+      "var": 1,
+      "npcId": 204211,
+      "position": [
+        1330.38,
+        1059.8,
+        206.024
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1352,
+        10
+      ],
+      "mapId": 120010000
+    },
+    {
+      "key": "q2428-v2-kistig",
+      "questId": 2428,
+      "var": 2,
+      "npcId": 204433,
+      "position": [
+        897.908,
+        2948.14,
+        278.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_REWARD2"
+      ],
+      "pages": [
+        2375,
+        5
+      ],
+      "area": "kistig-lab"
+    }
+  ],
+  "objectUses": [
+    {
+      "key": "q2307-soup",
+      "questId": 2307,
+      "npcId": 700247,
+      "fromVar": 0,
+      "toVar": 1,
+      "uses": 1,
+      "lootItemId": null,
+      "disappears": false,
+      "area": "favyr"
+    }
+  ],
+  "collections": [
+    {
+      "questId": 2307,
+      "atVar": 0,
+      "items": [
+        {
+          "itemId": 182204105,
+          "count": 1,
+          "sourceNpcIds": [
+            211298
+          ]
+        },
+        {
+          "itemId": 182204106,
+          "count": 1,
+          "sourceNpcIds": [
+            212372
+          ]
+        },
+        {
+          "itemId": 182204107,
+          "count": 1,
+          "sourceNpcIds": [
+            211302,
+            211310
+          ]
+        },
+        {
+          "itemId": 182204108,
+          "count": 1,
+          "sourceNpcIds": [
+            211305
+          ]
+        }
+      ]
+    }
+  ],
+  "itemStarts": [
+    {
+      "questId": 2316,
+      "itemId": 182204115,
+      "area": "sprigg-habitat",
+      "sourceNpcIds": [
+        212384,
+        212385,
+        212388,
+        212389
+      ],
+      "note": "the Old Notebook: a 5% global drop of the Sprigg Habitat sparkies and sparkles (rules_map_morheim.xml)"
+    },
+    {
+      "questId": 2498,
+      "itemId": 182204232,
+      "area": "worn-documents",
+      "objectNpcId": 700302,
+      "note": "a worn document gives the sodden scroll and goes, to respawn (Java _2498TheSoddenScroll)"
+    }
+  ],
+  "mapTrips": [
+    {
+      "mapId": 120010000,
+      "fromMapId": 220020000,
+      "teleporterNpcId": 204399,
+      "locationId": 7,
+      "fare": 1500,
+      "talkRange": 4
+    },
+    {
+      "mapId": 220020000,
+      "fromMapId": 120010000,
+      "teleporterNpcId": 204191,
+      "locationId": 10,
+      "fare": 1500,
+      "talkRange": 4
+    }
+  ],
+  "bind": {
+    "npcId": 700258,
+    "position": [
+      1095.67,
+      2482.17,
+      240.373
+    ],
+    "onArrival": true,
+    "price": 3720,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [
+    {
+      "questId": 2428,
+      "action": "SELECTED_QUEST_REWARD2",
+      "itemId": 122001289,
+      "itemGroup": "RING"
+    }
+  ],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "held": [
+    {
+      "questId": 2319,
+      "endNpcId": 798105,
+      "hub": "alsig-village"
+    },
+    {
+      "questId": 2356,
+      "endNpcId": 204338,
+      "hub": "slag-bulwark"
+    }
+  ],
+  "excluded": [
+    {
+      "id": 2494,
+      "reason": "Three Treasures: Sku, Paku and Seku are one spawn each (30, 30 and 60 minutes) and their items drop for each member of a group; eight bots alone queue for hours, so it is played with the group quests (step M6)",
+      "leg": 0
+    },
+    {
+      "id": 2354,
+      "reason": "[Group] Kimssi's Wish: played in a group (step M6)",
+      "leg": 0
+    },
+    {
+      "id": 2353,
+      "reason": "[Group] Legendary Amethysts: played in a group (step M6)",
+      "leg": 0
+    },
+    {
+      "id": 2355,
+      "reason": "[Group] Seeking the Spotlight: played in a group (step M6)",
+      "leg": 0
+    }
+  ],
+  "endpoint": {
+    "mapId": 220020000,
+    "completedQuestIds": [
+      2351,
+      2352,
+      4317,
+      4318,
+      2479,
+      2495,
+      2309,
+      2310,
+      2311,
+      2312,
+      2425,
+      2426,
+      2427,
+      2308,
+      4314,
+      2424,
+      2429,
+      4315,
+      2497,
+      2496,
+      2316,
+      2498,
+      2307,
+      2428
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 26,
+    "snapshot": "morheim-mk",
+    "anchor": [
+      347.338,
+      2316.31,
+      452.216
+    ],
+    "radius": 30,
+    "bindNpcId": 700258,
+    "heldQuestIds": [
+      2319,
+      2356
+    ]
+  }
+}

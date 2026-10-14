@@ -190,6 +190,26 @@ public static class NaturalAltgardQuestSteps
 	}
 
 	/// <summary>
+	/// M3: start a quest with its item, as Java's <c>onItemUseEvent</c> has it: the use opens page 4 of the quest, and
+	/// QUEST_ACCEPT_1 to the dialog's target starts it (Q2316, Q2498; the jewelry box of Q2918 is the same).
+	/// </summary>
+	public static async Task StartQuestWithItemAsync(INaturalJourneySession session, int questId, int itemId, ItemTemplate template,
+		CancellationToken token)
+	{
+		BotInventoryItem item = session.Api.World.Inventory.Values.FirstOrDefault(owned => owned.ItemId == itemId)
+			?? throw new InvalidDataException($"Q{questId}: item {itemId} is not in the inventory.");
+		await session.SendPacketAsync(session.Api.UseItem(item.ObjectId, template), token);
+		DecodedBotServerPacket page = await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
+			packet => packet.Get<int>("questId") == questId && packet.Get<ushort>("dialogPageId") == 4);
+		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(page.Get<int>("targetObjectId"),
+			checked((ushort)NaturalAscensionContract.DialogActionId("QUEST_ACCEPT_1")), questId: questId), token);
+		await session.SynchronizeAsync(token);
+		if (State(session.Api.World, questId) is not (3, _))
+			throw new InvalidDataException($"Q{questId}: using item {itemId} did not start the quest.");
+		session.TraceDiagnostic("quest-item-start", new Dictionary<string, object?> { ["quest"] = questId, ["item"] = itemId });
+	}
+
+	/// <summary>
 	/// AC-05: a contract object use. Some objects open a dialog as they are used (Q2221's safe: page 1693, Java
 	/// <c>QuestItemNpcAI.handleUseItemFinish</c> sends it before the drop); the client answers it with the contract's close
 	/// action after the loot, as a player clicks it away. False when the use was interrupted or the loot missed.

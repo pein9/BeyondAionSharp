@@ -3,7 +3,9 @@ namespace Aion.Bots.Scenarios;
 /// <summary>Compare persisted player state with a fresh packet-derived login observation.</summary>
 public static class NaturalJourneyPersistence
 {
-	public static void Verify(NaturalJourneyCheckpoint before, NaturalJourneyCheckpoint after)
+	/// <param name="startedOnEntry">M3: quests the server started as the fresh login entered the world (Java
+	/// <c>KillInWorld.onEnterWorldEvent</c>: an invasion daily such as Q49020 on entering Morheim), left out of the active journal.</param>
+	public static void Verify(NaturalJourneyCheckpoint before, NaturalJourneyCheckpoint after, IReadOnlySet<int>? startedOnEntry = null)
 	{
 		Require(after.ConnectionGeneration > before.ConnectionGeneration, "fresh login generation");
 		Require(before.CharacterId == after.CharacterId, "character identity");
@@ -27,7 +29,7 @@ public static class NaturalJourneyPersistence
 			Require(after.CoinGearProgress != null && before.CoinGearProgress.StaffObjectId == after.CoinGearProgress.StaffObjectId &&
 				before.CoinGearProgress.Reward == after.CoinGearProgress.Reward &&
 				before.CoinGearProgress.Purchases.SequenceEqual(after.CoinGearProgress.Purchases), "coin gear receipts");
-		Require(ActiveQuests(before).SequenceEqual(ActiveQuests(after)), "active journal");
+		Require(ActiveQuests(before).SequenceEqual(ActiveQuests(after).Where(quest => startedOnEntry?.Contains(quest.Item1) != true)), "active journal");
 		if (before.HaramelProgress is { } haramel)
 			Require(after.HaramelProgress is { } resumed && haramel.CharacterId == resumed.CharacterId &&
 				haramel.StartedAtMillis == resumed.StartedAtMillis && haramel.Revives == resumed.Revives &&

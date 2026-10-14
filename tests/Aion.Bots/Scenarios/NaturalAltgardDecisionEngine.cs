@@ -243,6 +243,11 @@ public static class NaturalAltgardDecisionEngine
 				return Plan("timed", quest.Id, $"Q{quest.Id}: a timed quest ({timed.Seconds} s from {timed.StartStep}).");
 			if (status is null || status is not (Start or Reward))
 			{
+				// M3: a quest started by an item: get the item, then use it.
+				if (contract.ItemStartList.FirstOrDefault(start => start.QuestId == quest.Id) is { } itemStart)
+					return Plan("item-start", quest.Id, state.ItemCounts.GetValueOrDefault(itemStart.ItemId) > 0
+						? $"Q{quest.Id}: start it with item {itemStart.ItemId}."
+						: $"Q{quest.Id}: get item {itemStart.ItemId} on {itemStart.Area} to start it.");
 				NaturalAltgardStep? offer = contract.StepsFor(quest.Id).SingleOrDefault(step => step.ExpectedStatus == "OFFER");
 				if (offer == null) return Stop("no-offer", "blocked", $"Q{quest.Id} has no offer step.", quest.Id);
 				return Plan("talk", quest.Id, $"Q{quest.Id}: take it from its giver.", offer.Key);
@@ -287,8 +292,10 @@ public static class NaturalAltgardDecisionEngine
 				return Plan("hunt", quest.Id, $"Q{quest.Id} var {var}: kill {string.Join("/", hunt.NpcIds)} toward var {hunt.ToVar}.");
 			// AM-07: quest objects, a zone to enter, and items that drop only from a var. AB-08: an object that only loots (Q2232's
 			// beehives) is done once the collection holds enough of its item.
+			// M3: an object used with what the quest collects at the same var (Q2307's soup, from its four ingredients) waits
+			// for the collection; an object that loots the collection's item itself (Q2232's beehives) does not.
 			if (contract.ObjectUseList.FirstOrDefault(use => use.QuestId == quest.Id && var >= use.FromVar && var < use.ToVar &&
-				!LootCollected(use)) is { } objectUse)
+				!LootCollected(use) && !CollectedFirst(use, var)) is { } objectUse)
 				return Plan("use-object", quest.Id, objectUse.LootItemId is int loot
 					// AB-08: each use loots one more item at the same var, so the count is the progress the runner sees.
 					? $"Q{quest.Id} var {var}: use {objectUse.Key} ({state.ItemCounts.GetValueOrDefault(loot)} of {loot} looted)."
@@ -371,6 +378,9 @@ public static class NaturalAltgardDecisionEngine
 			: state.CompletedQuestIds.Contains(questId);
 		bool LootCollected(NaturalAltgardObjectUse use) => use.LootItemId is int loot && contract.CollectionList.Any(collection =>
 			collection.QuestId == use.QuestId && collection.Items.Any(item => item.ItemId == loot && state.ItemCounts.GetValueOrDefault(loot) >= item.Count));
+		bool CollectedFirst(NaturalAltgardObjectUse use, int var) => contract.CollectionList.Any(collection =>
+			collection.QuestId == use.QuestId && collection.AtVar == var && collection.Items.Any(item => item.ItemId != use.LootItemId &&
+				state.ItemCounts.GetValueOrDefault(item.ItemId) < item.Count));
 		byte? Status(int questId) => state.Quests.TryGetValue(questId, out BotQuestState? quest) ? quest.Status : null;
 		int Var(int questId) => state.Quests.TryGetValue(questId, out BotQuestState? quest) ? contract.QuestVar(quest) : 0;
 		bool Eligible(NaturalAltgardQuest quest)

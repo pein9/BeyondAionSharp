@@ -1,0 +1,318 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2427,
+    "name": "Recovering Research Material",
+    "nameId": 1103627,
+    "zone": "Morheim",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 23,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2427,
+        "start_npc_ids": 204433
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204433,
+        "name": "kistig",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 897.908,
+            "y": 2948.14,
+            "z": 278.0,
+            "heading": 72,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204433,
+      "name": "kistig",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 897.908,
+          "y": 2948.14,
+          "z": 278.0,
+          "heading": 72,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204433,
+      "name": "kistig",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 897.908,
+          "y": 2948.14,
+          "z": 278.0,
+          "heading": 72,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182204214,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182204214,
+          "npc_id": 700280,
+          "npc": {
+            "id": 700280,
+            "name": "old barrel",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 673.22,
+                "y": 2965.61,
+                "z": 292.14,
+                "heading": 91,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 682.94,
+                "y": 2979.08,
+                "z": 291.54,
+                "heading": 28,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 683.45,
+                "y": 2966.8,
+                "z": 290.72,
+                "heading": 33,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 686.1,
+                "y": 2959.45,
+                "z": 290.67,
+                "heading": 58,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 696.06,
+                "y": 2970.97,
+                "z": 291.75,
+                "heading": 2,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182204215,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182204215,
+          "npc_id": 700281,
+          "npc": {
+            "id": 700281,
+            "name": "wooden box",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 633.03,
+                "y": 2909.8,
+                "z": 315.28,
+                "heading": 120,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204433,
+          "name": "kistig",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 897.908,
+              "y": 2948.14,
+              "z": 278.0,
+              "heading": 72,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 202051,
+        "rewardItems": [],
+        "selectableItems": [
+          {
+            "item_id": 111101654
+          },
+          {
+            "item_id": 111301757
+          },
+          {
+            "item_id": 111301759
+          },
+          {
+            "item_id": 111501706
+          },
+          {
+            "item_id": 111501708
+          },
+          {
+            "item_id": 111601589
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 2427,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 23,
+      "name": "Recovering Research Material",
+      "nameId": 1103627,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204214
+            }
+          },
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204215
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 202051
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 111101654
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 111301757
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 111301759
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 111501706
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 111501708
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 111601589
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204214,
+          "npc_id": 700280
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204215,
+          "npc_id": 700281
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2310,
+    "name": "A Sorrowful Message",
+    "nameId": 1103510,
+    "zone": "Morheim",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 23,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2309
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 204392,
+        "id": 2310,
+        "start_npc_ids": 730038
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 730038,
+        "name": "nabaru",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 930.771,
+            "y": 2826.66,
+            "z": 232.0,
+            "heading": 65,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 730038,
+      "name": "nabaru",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 930.771,
+          "y": 2826.66,
+          "z": 232.0,
+          "heading": 65,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204392,
+      "name": "lorando",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1068.47,
+          "y": 2481.9,
+          "z": 239.375,
+          "heading": 25,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204392,
+          "name": "lorando",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1068.47,
+              "y": 2481.9,
+              "z": 239.375,
+              "heading": 25,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 230659,
+        "gold": 1940,
+        "rewardItems": [
+          {
+            "count": 10,
+            "item_id": 162000005
+          },
+          {
+            "count": 10,
+            "item_id": 162000010
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 2310,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 23,
+      "name": "A Sorrowful Message",
+      "nameId": 1103510,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 230659,
+          "gold": 1940
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 162000005
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 162000010
+            }
+          }
+        ]
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2309
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "item_id": 182204109
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1713,10 +1713,13 @@ public sealed partial class NaturalIshalgenJourney
 				}
 				if (started.Get<object>("name") is "STR_SKILL_OBSTACLE") return false;
 				if (started.Get<object>("name") is "STR_SKILL_CAN_NOT_ATTACK_WHILE_IN_ABNORMAL_STATE" or
-					"STR_SKILL_CANT_CAST_MAGIC_SKILL_WHILE_SILENCED")
+					"STR_SKILL_CANT_CAST_MAGIC_SKILL_WHILE_SILENCED" ||
+					target == session.CharacterId && started.Get<object>("name") is "STR_SKILL_TARGET_IS_NOT_VALID")
 				{
 					// Stun/knockdown or silence is an ordinary refusal. Let the clock/effects advance,
-					// then re-evaluate health, consumables and the target rather than waiting for a cast.
+					// then re-evaluate health, consumables and the target rather than waiting for a cast. M3: a skill on oneself is
+					// refused with STR_SKILL_TARGET_IS_NOT_VALID in a can't-attack state (Java Skill.canUseSkill clears the targets:
+					// the Assassin's Herb Treatment in a keraton fight), so it is the same refusal.
 					session.TraceDiagnostic("combat-cast-while-disabled", new Dictionary<string, object?>
 					{
 						["skillId"] = skill.Id,

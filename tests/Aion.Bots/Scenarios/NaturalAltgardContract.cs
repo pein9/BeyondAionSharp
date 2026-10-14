@@ -55,7 +55,8 @@ public sealed record NaturalAltgardContract(
 	NaturalCoinGear? CoinGear = null,
 	NaturalHaramel? Haramel = null,
 	NaturalAbyssEntry? AbyssEntry = null,
-	NaturalAltgardClassPath[]? ClassPaths = null)
+	NaturalAltgardClassPath[]? ClassPaths = null,
+	NaturalAltgardItemStart[]? ItemStarts = null)
 {
 	/// <summary>The contract file and plan directory of each leg (none when the leg has no template quests).</summary>
 	public static readonly IReadOnlyDictionary<string, (string Contract, string? Plans)> Legs = new Dictionary<string, (string, string?)>
@@ -75,13 +76,15 @@ public sealed record NaturalAltgardContract(
 		["l12"] = ("natural-altgard-l12-contract.json", "natural-altgard-l12-plans"),
 		// AX-03: Morheim arrival and Abyss entry, from the continuous journey's endpoint.
 		[NaturalAbyssEntry.Leg] = ("natural-abyss-entry-contract.json", null),
-		// M2 (docs/natural-morheim-leveling.md): Morheim, hub by hub, from the group world. "mf" is Morheim Ice Fortress.
+		// M2 (docs/natural-morheim-leveling.md): Morheim, hub by hub, from the group world. "mf" is Morheim Ice Fortress,
+		// "mk" (M3) Kellan's Cabin.
 		["mf"] = ("natural-morheim-mf-contract.json", "natural-morheim-mf-plans"),
+		["mk"] = ("natural-morheim-mk-contract.json", "natural-morheim-mk-plans"),
 	};
 
 	/// <summary>The legs of the Morheim leg to level 31 (docs/natural-morheim-leveling.md): played on Morheim by a
 	/// mustered character of level 26 or more.</summary>
-	public static readonly IReadOnlySet<string> MorheimLegs = new HashSet<string> { "mf" };
+	public static readonly IReadOnlySet<string> MorheimLegs = new HashSet<string> { "mf", "mk" };
 
 	/// <summary>The muster's template quest: the fortress's repeatable coin quest (docs/natural-muster.md). The plans are
 	/// apart from the Abyss entry's, which has none, so that leg's navigation graph is what it was.</summary>
@@ -110,6 +113,7 @@ public sealed record NaturalAltgardContract(
 	public NaturalAltgardHeld[] HeldList => Held ?? [];
 	public NaturalAltgardMapTrip[] MapTripList => MapTrips ?? [];
 	public NaturalAltgardInstanceTrip[] InstanceTripList => InstanceTrips ?? [];
+	public NaturalAltgardItemStart[] ItemStartList => ItemStarts ?? [];
 	public int StepMap(NaturalAltgardStep step) => step.MapId ?? Hub.MapId;
 	// SM_QUEST_LIST/SM_QUEST_ACTION reserve the high byte for flags, separate from the quest's full value.
 	public int QuestVar(BotQuestState quest) => Destiny?.QuestId == quest.QuestId ? quest.StepAndFlags & 0xFFFFFF : quest.StepAndFlags & 0x3F;
@@ -285,6 +289,11 @@ public sealed record NaturalAltgardContract(
 			throw new InvalidDataException("Natural Altgard timed spawns or held hand-ins disagree with the quests, areas or endpoint.");
 		foreach (string action in contract.TimerList.Select(timer => timer.NewChanceAction).OfType<string>())
 			NaturalAscensionContract.DialogActionId(action);
+		// M3: an item that starts a quest comes from one object, or drops from monsters.
+		if (contract.ItemStartList.Any(start => !questIds.Contains(start.QuestId) || !areas.Contains(start.Area) ||
+				(start.ObjectNpcId == null) == (start.SourceNpcIds is not { Length: > 0 }) ||
+				contract.StepsFor(start.QuestId).Any(step => step.ExpectedStatus == "OFFER")))
+			throw new InvalidDataException("Natural Altgard item starts disagree with the quests, areas or offers, or name no source.");
 		if (contract.PillarFlight is { } pillar && (contract.Flight == null || pillar.Upper.Length != 3 || pillar.Lower.Length != 3 ||
 			pillar.Upper[2] - pillar.Lower[2] < 40))
 			throw new InvalidDataException("A pillar flight needs flight rules and distinct upper/lower landings.");
@@ -359,6 +368,7 @@ public sealed record NaturalAltgardContract(
 			.Concat(AbyssEntry?.GraphNpcIds ?? [])
 			.Concat(Bind is { } bind ? [bind.NpcId] : [])
 			.Concat(CollectionList.SelectMany(collection => collection.Items.SelectMany(item => item.SourceNpcIds)))
+			.Concat(ItemStartList.SelectMany(start => (start.SourceNpcIds ?? []).Concat(start.ObjectNpcId is int giver ? [giver] : [])))
 			.Append(Start.BindNpcId).Concat(AirKills is { } air ? [air.NpcId] : [])
 			.Distinct().Order().ToArray();
 
@@ -573,6 +583,14 @@ public sealed record NaturalAltgardEscort(string Key, int QuestId, int FollowerN
 	string StartStep, string RestartStep, int FollowVar, int SuccessVar, int LostVar, float Leash, int CheckMillis, int? MovieId,
 	int FollowerRespawnSeconds, float FollowerRunSpeed, string[] ClearAreas, int MaxAttempts, string Area, int? StartVar = null,
 	int? FollowerSpawnHour = null, int? FollowerDespawnHour = null);
+
+/// <summary>
+/// M3: a quest the player starts by using an item (Java <c>onItemUseEvent</c> sends page 4, and QUEST_ACCEPT_1 with no npc
+/// starts it). The item is given by an object (<paramref name="ObjectNpcId"/>: Q2498's worn document, Java
+/// <c>QuestStartItemNpcAI</c>) or drops from monsters (<paramref name="SourceNpcIds"/>: Q2316's Old Notebook, a global drop).
+/// </summary>
+public sealed record NaturalAltgardItemStart(int QuestId, int ItemId, string Area, int? ObjectNpcId = null, int[]? SourceNpcIds = null,
+	string? Note = null);
 
 /// <summary>A quest step the server takes when the player enters a zone.</summary>
 public sealed record NaturalAltgardZoneStep(int QuestId, string Zone, int FromVar, int ToVar, float[]? Anchor = null, float Radius = 0);
