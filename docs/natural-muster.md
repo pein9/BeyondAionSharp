@@ -201,8 +201,8 @@ The next tier, Elite Rank 2 for Mithril Coins, is level 51 and outside the rule 
 41 and 46. It plays every quest of its zone that starts below that level, since the bots are there to play every
 quest in the game and find what is broken; experience is never the reason to leave a quest or a hub out. Group
 quests are played in a group. Spy quests are not played. Gathering quests wait for the gathering work. A quest that
-cannot be taken is written down with its reason. A round is up to five bots in the one world, ten game minutes
-apart. At a leg's end the profiles of its level are generated, so that a companion can be brought at that level.
+cannot be taken is written down with its reason. A round is every playing bot in the one world, each starting ten game minutes
+after the one before. At a leg's end the profiles of its level are generated, so that a companion can be brought at that level.
 
 ## The kit from level 10 (MR-c)
 

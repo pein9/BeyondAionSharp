@@ -1,7 +1,8 @@
 # Natural Morheim leg, to level 31
 
 Status: a plan, 2026-10-13, as the operator shaped it in three messages that day. Step M1, the quest list, is done:
-[natural-morheim-quests.md](natural-morheim-quests.md). Nothing is played yet.
+[natural-morheim-quests.md](natural-morheim-quests.md). Step M2, Morheim Ice Fortress, is played: the world is now
+`morheim-mf-s1-w1`, and the next step starts from it.
 
 It follows [natural-muster.md](natural-muster.md), whose rules MR-a to MR-i are this leg's rules, and starts from the
 group world `ntc-group-s5`.
@@ -29,8 +30,10 @@ check, and their level-31 profiles become companions.** Morheim's quests from 31
    Master, Cleric and Chanter (MR-h); the other three stay in the world as they are. Bind at the hub being worked,
    see its commander first, take the flight teleporter between hubs, loot every kill, check the inventory after every
    turn-in, clean the bags, keep the kit and the shards. A death is an outcome, not a failure.
-2. **Five at a time.** A round is up to five bots in the one world, each playing alone, ten game minutes apart. The
-   eight take a hub in two rounds; the second starts from the first one's capture, which carries the others over.
+2. **All eight at once.** A round is the eight bots in the one world, each playing alone, each starting ten game
+   minutes after the one before, as the muster rounds were played. The operator, 2026-10-13, after "maybe 5 at a
+   time?": "Can we do 'in parallel' all 8 classes in the world, each a delayed start? that way we can sim faster and
+   finish. (we did this before)".
 3. **Every quest of the leg, and no level goal.** A hub's quests are taken together and handed in together, as in
    Altgard. A character that reaches 31 before the last hub plays on to the leg's last quest. Nothing is hunted for
    experience; a character that has done every quest and is short of 31 gets there by its hub's repeatable coin
@@ -83,8 +86,20 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
   played and why.
   - 2026-10-13: [natural-morheim-quests.md](natural-morheim-quests.md), made by `scripts/sim/zone-quest-list.py`
     from the quest data, the compiled plans and `ntc-group-s5`. The numbers above are its.
-- [ ] **M2 Morheim Ice Fortress.** The leg's contract and stage for a Morheim hub, on the fortress's 13 quests. The
-  first rounds of five and three from `ntc-group-s5`.
+- [x] **M2 Morheim Ice Fortress.** The leg's contract and stage for a Morheim hub, on the fortress's quests. The
+  first round of the eight from `ntc-group-s5`.
+  - 2026-10-13: stage `mf`, contract `parity-artifacts/e2e/natural-morheim-mf-contract.json`: Q2302, Q2304, Q2305,
+    Q2306 and Q2499 from their compiled plans, Q2493, Q2421 and Q2303 by steps, the leg ending at Favyr where Q2303
+    and Q2306 are handed in. Round `m2-mf`, all eight ten game minutes apart, captured `morheim-mf-s1-w1` (and
+    `morheim-mf-s1-<class>`): every bot did all eight quests with no death, in 24 to 31 game minutes each (Chanter
+    24, Templar 26, Ranger 26, Sorcerer 26, Cleric 26, Gladiator 28, Assassin 30, Spirit Master 31). The Assassin
+    is 27, the rest 26. The trials found three bot faults, all fixed: Purra stands on the fortress wall, which no
+    route reaches, so the bot flies to her; a takeoff indoors under the fortress roof was refused, so the bot walks
+    to open ground first; and Bragi walks a round, so the bot waits for him to stop before it talks. A bot with no
+    route back to the hub flies there, or returns to its bind when it cannot take off (the operator: "If stuck on
+    lake, can always FLY back"); this round did not need it. No server fault was found. Left at the fortress for
+    later: Q24021 (level 27), Q26905 (28) and Q24023 (29), the campaign's next steps, and Q2330 and Q4300, which
+    are handed in at Brusthonin.
 - [ ] **M3 Kellan's Cabin,** 27 quests.
 - [ ] **M4 Desert Garrison,** 18 quests.
 - [ ] **M5 Slag Bulwark and Alsig Village,** 13 quests, and the four without a giver where they fall.
@@ -106,7 +121,7 @@ The operator's, 2026-10-13:
 2. Spy quests are not played. Gathering quests wait for the gathering work.
 3. The quests without a handler are in the list and left for D32, on a later word of his.
 4. The leg ends on level 31 with the gear check, and the level-31 profiles become companions.
-5. Rounds are up to five bots at a time, in the one world, ten game minutes apart.
+5. A round is all eight bots in the one world, each starting ten game minutes after the one before.
 
 Mine, where he gave none; each is his to change:
 
@@ -139,7 +154,7 @@ EACH ITERATION
    no attribution line. Never push.
 
 RULES THAT DO NOT BEND
-- One world for every character; a round is up to five bots, ten game minutes apart.
+- One world for every character; a round is the eight bots, each starting ten game minutes after the one before.
 - Every quest of the leg, no level goal, nothing hunted for experience. No spy quests. A death is an outcome.
 - Only the eight classes. Nothing new for the Rider, the Gunner or the Bard.
 - No branch, worktree, subagent or push. No hand-edit of generated data. The warning baseline is not raised.
