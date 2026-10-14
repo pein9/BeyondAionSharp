@@ -1,7 +1,7 @@
 # Natural Morheim leveling leg
 
-Status: a plan, 2026-10-13. Nothing is built or played. It waits for the operator's word and his answers to the five
-questions at the end.
+Status: a plan, 2026-10-13, with the operator's answers: "your defaults are fine". Nothing is built or played yet;
+the first step, M1, ends with a list for him to read.
 
 It follows [natural-muster.md](natural-muster.md), whose rules MR-a to MR-i are this leg's rules, and starts from the
 group world `ntc-group-s5`.
@@ -74,18 +74,17 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
 - [ ] **M8 The report:** per class its level, quests done, deaths and time; what was left out; what the bots found
   wrong with the server.
 
-## Questions for the operator
+## Decisions
 
-Each has the answer I would take if he gives none.
+Five questions were put to the operator with a default each. His answer, 2026-10-13: "your defaults are fine." So:
 
-1. **Alone or grouped?** Each of the eight plays alone, as in every leveling leg so far. The group legs stay for
-   instances.
+1. **Alone.** Each of the eight plays alone, as in every leveling leg so far. The group legs stay for instances.
 2. **The [Group], [Gather] and [Spy] quests** are left out. The group ones could be a group leg later; gathering
    waits for the crafting work; spying needs a rift into Elyos land.
-3. **The 11 quests without a handler** are listed in M1 and left for D32, on his word, as Q4732 was.
+3. **The 11 quests without a handler** are listed in M1 and left for D32, on a later word of his, as Q4732 was.
 4. **The campaign** (Q2031 to Q2036, Q24021 to Q24023) is played where a character alone can do it; Q2037 is level
    31 and belongs to the next leg.
-5. **Companions at level 31:** not now. The companions stay level 26 until he asks for another level.
+5. **Companions stay level 26** until he asks for another level.
 
 ## Loop prompt
 
