@@ -2,8 +2,8 @@
 
 Status: a plan, 2026-10-13, as the operator shaped it in three messages that day. Step M1, the quest list, is done:
 [natural-morheim-quests.md](natural-morheim-quests.md). Steps M2 (Morheim Ice Fortress) and M3 (Kellan's Cabin) are
-played, and step M4 (legs `md` and `mc`): the world is now `morheim-mc-s1-w1`, every bot is level 31, and the next leg
-starts from it.
+played, and step M4 (legs `md` and `mc`), where every bot reached 31 (`morheim-mc-s1-w1`). Step M7's gear check at 31
+came next, on the operator's word: the world is now `morheim-g31-s1-w1`, and M8, M5 and M6 start from it.
 
 It follows [natural-muster.md](natural-muster.md), whose rules MR-a to MR-i are this leg's rules, and starts from the
 group world `ntc-group-s5`.
@@ -170,9 +170,20 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
 - [ ] **M6 The group quests,** 11, in groups, with Q2494 and Q2328 (one named spawn each, whose items drop for each
   member of a group; see M3), Q2344 and Q2343 (the Ice Claw village's elites; see M4), Q24022 (Protector Karhel) and
   any quest a bot left for the group (Q24021 for five of them).
-- [ ] **M7 Level 31 and the gear check.** Every quest of the leg done by all eight; level 31; Elite Rank 6 where it
+- [x] **M7 Level 31 and the gear check.** Every quest of the leg done by all eight; level 31; Elite Rank 6 where it
   beats what is worn; the sale of what it replaced, the kit and the cleanup; a relog. The capture is the next group
   world.
+  - 2026-10-14, played before M5 and M6 (decision 7), from `morheim-mc-s1-w1`, where every bot is 31. Leg `mg` takes each
+    bot back to the fortress and binds it there (round `m7-mg`, captured `morheim-mg-s1-w1`). Stage `check-in` is the
+    muster's coin step at 31 (rule MR-i): each class's Elite Rank 6 pieces from the fortress's Silver Coin vendors
+    (Alfhild and Gyrda), by the coin manifests the Abyss entry's tiers use, the coins the manifest is short supplied.
+    Round `m7-g31`, captured **`morheim-g31-s1-w1`**: every bot bought what beat what it wore, and the quests of levels
+    27 to 31 had already given it better pieces for the rest. The Cleric and the Chanter took the hauberk, handguards
+    and staff (54 coins); the Sorcerer and the Spirit Master the tunic, gloves, shoes and spellbook (63); the Assassin
+    the vambrace and two daggers (63); the Ranger the vambrace and bow (36); the Templar the sword and shield (45);
+    the Gladiator the greatsword (27). The pieces they replaced were thrown away (coin gear does not sell), the kit
+    was filled, no deaths, a relog. M8, M5 and M6 start from this world; the bots pass 31 in M5 and M6, and their next
+    check-in is at 36.
 - [ ] **M8 Level-31 companions.** The profiles of the eight from that world, beside the level-26 ones. The server
   offers both: a companion comes at the highest level it has a profile for that is not above its player's, and
   `.companion <class> <level>` asks for one outright. A round with a level-31 stand-in and level-31 companions.
