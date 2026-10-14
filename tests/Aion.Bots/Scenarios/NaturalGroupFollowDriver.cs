@@ -118,8 +118,11 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 		if (f1.Dead) leaderMoving = false; // The Cleric can approach a fallen F1 to offer resurrection.
 		BotPosition currentLeader = world.Objects.GetValueOrDefault(leaderId)?.Position ?? f1.Position;
 		if (lastSample == null && !LeaderAirborne) { Add(currentLeader); lastSeen = session.Api.Timing.Now; }
-		// A stopped player sends no movement heartbeat. Its visible, unchanged position remains usable.
-		if ((session.Api.Timing.Now - lastSeen).TotalSeconds > 5 && (leaderMoving || !world.Objects.ContainsKey(leaderId))) return false;
+		// A stopped player sends no movement heartbeat. Its visible, unchanged position remains usable, and so is the trail
+		// already recorded toward a leader out of sight. M8: after a long retreat in the camp the Templar stood 80 m off, out
+		// of view, and all five followers stood with 48 samples of its way unwalked until its wait for the group ran out.
+		if ((session.Api.Timing.Now - lastSeen).TotalSeconds > 5 && (leaderMoving || !world.Objects.ContainsKey(leaderId)) &&
+			trail.Count == 0) return false;
 		if (Distance(session.CurrentPosition, currentLeader) <= 3) { trail.Clear(); return false; }
 		// The follower stood beside its leader with nothing left to walk, and was then moved away while the leader stood
 		// still (a fear, a knockback): no sample comes from a leader that does not move. Where it stands is the sample.
