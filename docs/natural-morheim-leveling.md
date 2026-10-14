@@ -167,6 +167,21 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
   - Left for later: Q24023 gathers inside the Sky Temple Interior (320050000, a solo instance) and waits for the leg
     engine to collect inside an instance; its reward is Gangleri's at Slag Bulwark.
 - [ ] **M5 Slag Bulwark and Alsig Village,** 13 quests, and the four without a giver where they fall.
+  - 2026-10-14, Slag Bulwark: stage `ms`, contract `parity-artifacts/e2e/natural-morheim-ms-contract.json`, from
+    `morheim-g31-s1`: Q2356 (held since Kellan's Cabin) to Utgar, Q2357, Q2358, Q2359, Q2360, Q4320, Q2361 (to Magni
+    by Halabana Outpost), Q2367 by its steps (the first ending, decision 6) and Q2370 in the temple's crater. Round
+    `m5-ms`, captured `morheim-ms-s1-w1`: all eight did all nine, 1.1 to 2.2 game hours, 4 deaths (the Sorcerer 3, the
+    Assassin 1); seven are level 32 and the Sorcerer 31.
+  - Sarinerk, the crater floor of Q2370, Padinerk and the Fire Temple's gate lie in Morheim's second FLY zone
+    (`FLYINGZONESHAPESUBZONE_3`, around the crater, height 20 to 220), on ground the navmesh does not join to the
+    rest: the operator, back on 2026-10-14, "around Fire temple is a FLY ZONE". The first trial walked to Sarinerk and
+    stopped. A Morheim leg now reaches such ground as a player does: it walks to the zone's ground nearest the goal,
+    flies and lands beside it, and out the same way; Sarinerk stands past the edge of his ledge's mesh, and the bot
+    lands on his own static ground. The Cleric flew 128 m from the rim to Sarinerk, 286 m down to the crater floor and
+    back up for the reward.
+  - Not played, for the report: Q2372 Immortal Love (Q2367's second ending; its sulfur worms are in the Abyss),
+    Q2324 The Spirit's Notebook and Q2325 (nothing in the server's data gives Hermod's Notebook), Q24023 (gathering
+    inside the Sky Temple Interior, a solo instance).
 - [ ] **M6 The group quests,** 11, in groups, with Q2494 and Q2328 (one named spawn each, whose items drop for each
   member of a group; see M3), Q2344 and Q2343 (the Ice Claw village's elites; see M4), Q24022 (Protector Karhel) and
   any quest a bot left for the group (Q24021 for five of them).
