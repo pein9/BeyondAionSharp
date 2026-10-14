@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2305,
+    "name": "The Claw of the Tayga",
+    "nameId": 1103505,
+    "zone": "Morheim",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 22,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2305,
+        "start_npc_ids": 204302
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204302,
+        "name": "bragi",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 350.02,
+            "y": 2394.92,
+            "z": 451.29572,
+            "heading": 69,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204302,
+      "name": "bragi",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 350.02,
+          "y": 2394.92,
+          "z": 451.29572,
+          "heading": 69,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204302,
+      "name": "bragi",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 350.02,
+          "y": 2394.92,
+          "z": 451.29572,
+          "heading": 69,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182204104,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182204104,
+          "npc_id": 212640,
+          "npc": {
+            "id": 212640,
+            "name": "iron paw kalsek",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 532.72,
+                "y": 1657.19,
+                "z": 426.2787,
+                "heading": 22,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204302,
+          "name": "bragi",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 350.02,
+              "y": 2394.92,
+              "z": 451.29572,
+              "heading": 69,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 166580,
+        "rewardItems": [
+          {
+            "count": 6,
+            "item_id": 186000007
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 2305,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 22,
+      "name": "The Claw of the Tayga",
+      "nameId": 1103505,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204104
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 166580
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 6,
+              "item_id": 186000007
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182204104,
+          "npc_id": 212640
+        }
+      }
+    ]
+  }
+}

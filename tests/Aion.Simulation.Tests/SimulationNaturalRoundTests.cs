@@ -53,7 +53,8 @@ public sealed partial class SimulationFastScenarioTests
 		// bridge's end, which is no later-capital snapshot: AF_ALTGARD=1 and RC_CAPITAL=1 alone. Every later stage starts on
 		// a later-capital one and has NA_ASCENSION=1 as well (the script's Restore-Snapshot and Get-LegEnvironment).
 		"l1" => new NaturalJourneyOptions(StopAt: entry.StopAt, AltgardLeg1: true, LaterCapital: true, ClassLine: line),
-		"l2" or "l3" or "l4" or "l5" or "l6" or "l7" or "l8" or "l9" or "l10" or "l11" or "cg" or "l12" or "ax" =>
+		// M2: "mf" is the first Morheim hub leg (docs/natural-morheim-leveling.md), from the group world.
+		"l2" or "l3" or "l4" or "l5" or "l6" or "l7" or "l8" or "l9" or "l10" or "l11" or "cg" or "l12" or "ax" or "mf" =>
 			new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: entry.Stage, LaterCapital: true, ClassLine: line),
 		// The muster (2026-10-12): a character that stands at the Abyss entry's end, in that leg's fortress.
 		"muster" => new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,

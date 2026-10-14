@@ -1,0 +1,333 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2304,
+    "name": "Active Discouragement",
+    "nameId": 1103504,
+    "zone": "Morheim",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 22,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2304,
+        "start_npc_ids": 204302
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204302,
+        "name": "bragi",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 350.02,
+            "y": 2394.92,
+            "z": 451.29572,
+            "heading": 69,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204302,
+      "name": "bragi",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 350.02,
+          "y": 2394.92,
+          "z": 451.29572,
+          "heading": 69,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204302,
+      "name": "bragi",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 350.02,
+          "y": 2394.92,
+          "z": 451.29572,
+          "heading": 69,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 10,
+      "npc_ids": "211300 211307",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 211300,
+          "name": "wailing tayga",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 456.935,
+              "y": 1897.37,
+              "z": 426.308,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 461.807,
+              "y": 1790.9,
+              "z": 418.549,
+              "heading": 21,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 472.779,
+              "y": 1756.1,
+              "z": 419.006,
+              "heading": 26,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 483.569,
+              "y": 1720.4,
+              "z": 425.95,
+              "heading": 42,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 484.253,
+              "y": 1907.61,
+              "z": 427.927,
+              "heading": 17,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 499.681,
+              "y": 1751.99,
+              "z": 422.224,
+              "heading": 97,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 511.993,
+              "y": 1784.29,
+              "z": 412.71,
+              "heading": 24,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 513.557,
+              "y": 1707.27,
+              "z": 422.83,
+              "heading": 20,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 521.609,
+              "y": 1666.74,
+              "z": 425.469,
+              "heading": 65,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 524.7,
+              "y": 1852.93,
+              "z": 419.581,
+              "heading": 104,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 530.666,
+              "y": 1760.21,
+              "z": 414.487,
+              "heading": 24,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 536.876,
+              "y": 1652.47,
+              "z": 426.863,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 544.97,
+              "y": 1877.95,
+              "z": 422.872,
+              "heading": 82,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 552.828,
+              "y": 1734.64,
+              "z": 415.202,
+              "heading": 105,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 601.054,
+              "y": 1728.68,
+              "z": 416.991,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 603.908,
+              "y": 1754.24,
+              "z": 414.685,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 642.094,
+              "y": 1821.16,
+              "z": 410.396,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 211307,
+          "name": "wailing tayga",
+          "positions": [],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204302,
+          "name": "bragi",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 350.02,
+              "y": 2394.92,
+              "z": 451.29572,
+              "heading": 69,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 166580,
+        "gold": 11780,
+        "rewardItems": [],
+        "selectableItems": [
+          {
+            "item_id": 120001528
+          },
+          {
+            "item_id": 120001529
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "IMPORTANT",
+      "id": 2304,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 22,
+      "name": "Active Discouragement",
+      "nameId": 1103504,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 166580,
+          "gold": 11780
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 120001528
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 120001529
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 10,
+          "npc_ids": "211300 211307",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

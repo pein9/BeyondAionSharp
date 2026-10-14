@@ -1,0 +1,550 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "morheim-mf-fortress",
+  "start": {
+    "contract": "natural-abyss-entry-contract.json",
+    "snapshot": "ntc-group-s5",
+    "mapId": 220020000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 26,
+    "bindNpcId": 700231,
+    "completedQuestIds": [
+      24020,
+      2945,
+      2946,
+      2947,
+      2042
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "morheim-ice-fortress",
+    "mapId": 220020000,
+    "anchor": [
+      268.111,
+      2338.76,
+      444.123
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "fortress",
+      "note": "Morheim Ice Fortress: the givers, the obelisk, the teleporter and Purra on the wall",
+      "min": [
+        140,
+        2240,
+        430
+      ],
+      "max": [
+        410,
+        2470,
+        475
+      ]
+    },
+    {
+      "key": "ice-lake",
+      "note": "ice lake plumas, frost crasaurs and ice slinks below the fortress (Q2302)",
+      "min": [
+        118,
+        2147,
+        423
+      ],
+      "max": [
+        491,
+        2557,
+        472
+      ]
+    },
+    {
+      "key": "tayga-ground",
+      "note": "wailing taygas (Q2304), south-east of the fortress",
+      "min": [
+        426,
+        1622,
+        395
+      ],
+      "max": [
+        672,
+        1937,
+        442
+      ]
+    },
+    {
+      "key": "kalsek",
+      "note": "Iron Paw Kalsek, one spawn (Q2305)",
+      "min": [
+        492,
+        1617,
+        411
+      ],
+      "max": [
+        572,
+        1697,
+        441
+      ]
+    },
+    {
+      "key": "crystals",
+      "note": "suspicious crystals (Q2499), south of the fortress",
+      "min": [
+        214,
+        1653,
+        320
+      ],
+      "max": [
+        879,
+        2210,
+        486
+      ]
+    },
+    {
+      "key": "daru-field",
+      "note": "savvy darus (Q2303), south of the fortress",
+      "min": [
+        259,
+        1790,
+        302
+      ],
+      "max": [
+        887,
+        2496,
+        502
+      ]
+    },
+    {
+      "key": "favyr",
+      "note": "Favyr, on the road to Kellan's Cabin: the end of Q2306 and Q2303, and of the leg",
+      "min": [
+        818,
+        2186,
+        321
+      ],
+      "max": [
+        878,
+        2246,
+        351
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2306,
+      "category": "QUEST",
+      "minimumLevel": 20,
+      "rewardExperience": 64755,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 204303,
+      "area": "favyr"
+    },
+    {
+      "id": 2302,
+      "category": "IMPORTANT",
+      "minimumLevel": 21,
+      "rewardExperience": 138125,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204324,
+      "area": "ice-lake"
+    },
+    {
+      "id": 2304,
+      "category": "IMPORTANT",
+      "minimumLevel": 22,
+      "rewardExperience": 166580,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204302,
+      "area": "tayga-ground"
+    },
+    {
+      "id": 2305,
+      "category": "IMPORTANT",
+      "minimumLevel": 22,
+      "rewardExperience": 166580,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204302,
+      "area": "kalsek"
+    },
+    {
+      "id": 2499,
+      "category": "IMPORTANT",
+      "minimumLevel": 22,
+      "rewardExperience": 166580,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204300,
+      "area": "crystals"
+    },
+    {
+      "id": 2493,
+      "category": "IMPORTANT",
+      "minimumLevel": 21,
+      "rewardExperience": 138125,
+      "prerequisite": null,
+      "handler": "morheim/_2493BringingUpTayga.cs",
+      "template": null,
+      "startNpcId": 204325,
+      "area": "fortress"
+    },
+    {
+      "id": 2421,
+      "category": "QUEST",
+      "minimumLevel": 20,
+      "rewardExperience": 50008,
+      "prerequisite": null,
+      "handler": "morheim/_2421AsgeirrsRequest.cs",
+      "template": null,
+      "startNpcId": 204309,
+      "area": "fortress"
+    },
+    {
+      "id": 2303,
+      "category": "IMPORTANT",
+      "minimumLevel": 22,
+      "rewardExperience": 166580,
+      "prerequisite": null,
+      "handler": "morheim/_2303DaevaWheresMyHerb.cs",
+      "template": null,
+      "startNpcId": 798082,
+      "area": "daru-field",
+      "prerequisites": [
+        2304,
+        2305,
+        2499
+      ]
+    }
+  ],
+  "order": [
+    2306,
+    2302,
+    2304,
+    2305,
+    2499,
+    2493,
+    2421,
+    2303
+  ],
+  "steps": [
+    {
+      "key": "q2493-offer-ipoderr",
+      "questId": 2493,
+      "status": "OFFER",
+      "npcId": 204325,
+      "position": [
+        334.285,
+        2361.88,
+        445.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "ASK_QUEST_ACCEPT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        4762,
+        4
+      ],
+      "area": "fortress"
+    },
+    {
+      "key": "q2493-v0-purra",
+      "questId": 2493,
+      "var": 0,
+      "npcId": 204435,
+      "position": [
+        329.114,
+        2293.8,
+        461.27
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SET_SUCCEED"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "fortress",
+      "flight": true
+    },
+    {
+      "key": "q2493-reward-ipoderr",
+      "questId": 2493,
+      "status": "REWARD",
+      "npcId": 204325,
+      "position": [
+        334.285,
+        2361.88,
+        445.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        10002,
+        5
+      ],
+      "area": "fortress"
+    },
+    {
+      "key": "q2421-offer-asgeirr",
+      "questId": 2421,
+      "status": "OFFER",
+      "npcId": 204309,
+      "position": [
+        250.452,
+        2331.4,
+        447.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "fortress"
+    },
+    {
+      "key": "q2421-v0-keruthis",
+      "questId": 2421,
+      "var": 0,
+      "npcId": 204187,
+      "position": [
+        1413.44,
+        1439.44,
+        208.1
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1352,
+        10
+      ],
+      "mapId": 120010000
+    },
+    {
+      "key": "q2421-v1-asgeirr",
+      "questId": 2421,
+      "var": 1,
+      "npcId": 204309,
+      "position": [
+        250.452,
+        2331.4,
+        447.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        2375,
+        5
+      ],
+      "area": "fortress"
+    },
+    {
+      "key": "q2303-offer-bicorunerk",
+      "questId": 2303,
+      "status": "OFFER",
+      "npcId": 798082,
+      "position": [
+        373.129,
+        2438.6,
+        452.204
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        4762
+      ],
+      "area": "fortress"
+    },
+    {
+      "key": "q2303-v0-bicorunerk",
+      "questId": 2303,
+      "var": 0,
+      "npcId": 798082,
+      "position": [
+        373.129,
+        2438.6,
+        452.204
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SETPRO10"
+      ],
+      "pages": [
+        1003,
+        1012
+      ],
+      "area": "fortress",
+      "nextVar": 11
+    },
+    {
+      "key": "q2303-reward-favyr",
+      "questId": 2303,
+      "status": "REWARD",
+      "npcId": 204378,
+      "position": [
+        848.506,
+        2216.58,
+        336.625
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        1353,
+        5
+      ],
+      "area": "favyr"
+    }
+  ],
+  "hunts": [
+    {
+      "questId": 2303,
+      "npcIds": [
+        211298,
+        211305
+      ],
+      "fromVar": 11,
+      "toVar": 16,
+      "area": "daru-field",
+      "note": "var 11 -> 15 on four kills, then a fifth kill at var 15 sets REWARD (Java _2303DaevaWheresMyHerb.onKillEvent)"
+    }
+  ],
+  "mapTrips": [
+    {
+      "mapId": 120010000,
+      "fromMapId": 220020000,
+      "teleporterNpcId": 204399,
+      "locationId": 7,
+      "fare": 1500,
+      "talkRange": 4
+    },
+    {
+      "mapId": 220020000,
+      "fromMapId": 120010000,
+      "teleporterNpcId": 204191,
+      "locationId": 10,
+      "fare": 1500,
+      "talkRange": 4
+    }
+  ],
+  "bind": {
+    "npcId": 700231,
+    "position": [
+      268.111,
+      2338.76,
+      444.123
+    ],
+    "onArrival": true,
+    "price": 2690,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [
+    {
+      "questId": 2304,
+      "action": "SELECTED_QUEST_REWARD2",
+      "itemId": 120001529,
+      "itemGroup": "EARRING"
+    }
+  ],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [
+    {
+      "id": 2330,
+      "reason": "Orders for Randet is handed in in Brusthonin: it belongs to the leg that goes there",
+      "leg": 0
+    },
+    {
+      "id": 4300,
+      "reason": "News For the Settlers is handed in in Brusthonin: it belongs to the leg that goes there",
+      "leg": 0
+    },
+    {
+      "id": 24021,
+      "reason": "starts at level 27: the fortress is visited again",
+      "leg": 0
+    },
+    {
+      "id": 26905,
+      "reason": "starts at level 28: the fortress is visited again",
+      "leg": 0
+    },
+    {
+      "id": 24023,
+      "reason": "starts at level 29: the fortress is visited again",
+      "leg": 0
+    }
+  ],
+  "endpoint": {
+    "mapId": 220020000,
+    "completedQuestIds": [
+      2306,
+      2302,
+      2304,
+      2305,
+      2499,
+      2493,
+      2421,
+      2303
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 26,
+    "snapshot": "morheim-mf",
+    "anchor": [
+      848.506,
+      2216.58,
+      336.625
+    ],
+    "radius": 30,
+    "bindNpcId": 700231,
+    "heldQuestIds": []
+  }
+}

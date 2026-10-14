@@ -36,7 +36,10 @@ public sealed class NaturalAbyssEntryContractTests
 		// No generic timer or instance trip: Java's arena and course keep their own failure vars and are tried again, not abandoned.
 		Assert.Empty(Leg.TimerList);
 		Assert.Empty(Leg.InstanceTripList);
-		Assert.Equal(["l12", "ax"], NaturalAltgardContract.Legs.Keys.TakeLast(2));
+		// The Abyss entry follows Haramel; the Morheim legs (docs/natural-morheim-leveling.md) come after it.
+		List<string> legs = [.. NaturalAltgardContract.Legs.Keys];
+		Assert.Equal(legs.IndexOf("l12") + 1, legs.IndexOf("ax"));
+		Assert.All(legs.Skip(legs.IndexOf("ax") + 1), leg => Assert.Contains(leg, NaturalAltgardContract.MorheimLegs));
 	}
 
 	[Fact]

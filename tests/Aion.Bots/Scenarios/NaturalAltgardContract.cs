@@ -75,7 +75,13 @@ public sealed record NaturalAltgardContract(
 		["l12"] = ("natural-altgard-l12-contract.json", "natural-altgard-l12-plans"),
 		// AX-03: Morheim arrival and Abyss entry, from the continuous journey's endpoint.
 		[NaturalAbyssEntry.Leg] = ("natural-abyss-entry-contract.json", null),
+		// M2 (docs/natural-morheim-leveling.md): Morheim, hub by hub, from the group world. "mf" is Morheim Ice Fortress.
+		["mf"] = ("natural-morheim-mf-contract.json", "natural-morheim-mf-plans"),
 	};
+
+	/// <summary>The legs of the Morheim leg to level 31 (docs/natural-morheim-leveling.md): played on Morheim by a
+	/// mustered character of level 26 or more.</summary>
+	public static readonly IReadOnlySet<string> MorheimLegs = new HashSet<string> { "mf" };
 
 	/// <summary>The muster's template quest: the fortress's repeatable coin quest (docs/natural-muster.md). The plans are
 	/// apart from the Abyss entry's, which has none, so that leg's navigation graph is what it was.</summary>

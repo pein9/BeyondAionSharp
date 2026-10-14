@@ -562,6 +562,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			IReadOnlyList<NaturalAirlineRoute> airlines = NaturalAirlineRoutes.Load(runtime.RepoRoot);
 			// AG-07: an Altgard leg's road walk toward a far approach (set by the leg's runner; see ApproachShippedSpawnAsync).
 			Func<BotPosition, int, Func<bool>?, Task>? farApproach = null;
+			// M2: how a leg with flight rules gets out of a place it has no road from (Morheim's ice lake): it flies to the
+			// hub. False when it cannot take off there or no flight leads to the hub.
+			Func<Task<bool>>? flyOutOfStrand = null;
 			Func<int, float, Func<int?>?, Task<int>>? haramelApproach = null;
 			Func<IReadOnlyList<int>, int>? haramelKind = null;
 			bool farApproachUnderway = false;
@@ -3259,6 +3262,18 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				float cruise = (rockTop?.Z ?? 0) + 8;
 				BotPosition Rock() => rockTop ?? throw new InvalidDataException($"{leg.Leg} has no flight landing.");
 				long? lastTakeoff = null;
+				// The operator, 2026-10-13: "If stuck on lake, can always FLY back."
+				flyOutOfStrand = leg.Flight == null ? null : async () =>
+				{
+					NaturalFlightDecision able = NaturalFlightPolicy.CanTakeOff(new NaturalTakeoffObservation(true, session.CurrentPosition, false,
+						leg.Flight.WaterLevel, runtime.NowMillis, lastTakeoff, false, false, false), zones);
+					if (!able.Allowed) return false;
+					float? height = new float?[] { null, MathF.Max(cruise, session.CurrentPosition.Z) + 25 }.FirstOrDefault(over =>
+						NaturalFlightProtocol.Plan(geometry, leg.Hub.MapId, session.CurrentPosition, ground, over ?? cruise).IsUsable, -1);
+					if (height == -1) return false;
+					await FlyToAsync(ground, height);
+					return true;
+				};
 				var haramelTravel = new NaturalHaramelTravel(session, runtime, () => geometry,
 					async (at, range) =>
 					{
@@ -4127,7 +4142,11 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				// Everything but Borender's steps and the air fight is on foot: come down from the rock first.
 				async Task EnsureOnGroundAsync()
 				{
-					if (rockTop is { } top && session.CurrentPosition.Z > top.Z - 20) await FlyToAsync(ground);
+					// M2: Leg 1's rock stands far above a flat fortress, so height alone says the bot is on it. A landing on a
+					// wall of Morheim Ice Fortress is sixteen metres above its yard: there the bot is on it when it stands at it.
+					bool onTheLanding = rockTop is { } top && (leg.AirKills != null ? session.CurrentPosition.Z > top.Z - 20
+						: Distance(session.CurrentPosition, top) <= 12 && MathF.Abs(session.CurrentPosition.Z - top.Z) <= 4);
+					if (onTheLanding) await FlyToAsync(ground);
 				}
 
 				async Task ReachPillarLevelAsync(BotPosition destination, NaturalAltgardContract? pillarLeg = null)
@@ -4995,6 +5014,14 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					}
 					else if (step.Flight)
 					{
+						// M2: a giver indoors leaves the bot under a roof. The open ground beside the hub's obelisk is where it
+						// takes off then.
+						if (leg.AirKills == null && !NaturalFlightProtocol.Plan(geometry, leg.Hub.MapId, session.CurrentPosition, Rock(), cruise).IsUsable)
+						{
+							NaturalNavigationResult open = await NaturalIshalgenNavigator.ExploreAnchorAsync(leg.Hub.MapId, -1, ground, navigator,
+								"flight-takeoff", token);
+							Require.True(open.Arrived, open.Reason);
+						}
 						await FlyToAsync(Rock());
 						npc = await session.WaitForNpcAsync(step.NpcId, token);
 					}
@@ -6036,7 +6063,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			/// <param name="withinRange">Stop this far from the observed NPC instead of at arm's reach, outside its
 			/// aggro circle, so the fight can be planned (a pull) rather than started by walking into it.</param>
 			async Task<int> ApproachShippedSpawnAsync(int templateId, bool skipBlockedTarget = false, float? withinRange = null,
-				bool returnedFromStrand = false, Func<int?>? completedSource = null, bool acceptObservedKill = false)
+				bool returnedFromStrand = false, Func<int?>? completedSource = null, bool acceptObservedKill = false, bool returnedForRoute = false)
 			{
 				if (bookCollectionUnderway && templateId == 210404 && session.Api.World.MapId != 220010000)
 					throw new NaturalBookCollectionMapChangedException();
@@ -6176,6 +6203,27 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								await session.AdvanceAsync(TimeSpan.FromSeconds(10), token);
 								await session.SynchronizeAsync(token);
 								continue;
+							}
+							// M2: still no way from where it stands (the north end of Morheim's ice lake, below the fortress, where
+							// the Gladiator waited for good): do what a player does, fly back to the hub where it may fly, else Return
+							// to the bind, and plan the walk from there. Once for an approach, and only on a leg of Morheim, whose obelisk
+							// is on the hub's map.
+							if (!returnedForRoute && altgardLegId != null && NaturalAltgardContract.MorheimLegs.Contains(altgardLegId) &&
+								!session.Api.World.IsDead && !combat.InCombat && session.Api.World.ObeliskBindPoint is { } boundAt &&
+								boundAt.MapId == session.Api.World.MapId && Distance(session.CurrentPosition, boundAt.Position) > 50)
+							{
+								BotPosition stranded = session.CurrentPosition;
+								bool flew = flyOutOfStrand != null && await flyOutOfStrand();
+								if (!flew) await UseLearnedReturnToBindAsync();
+								session.TraceDiagnostic("no-route-way-out", new Dictionary<string, object?>
+								{
+									["templateId"] = templateId, ["position"] = stranded, ["way"] = flew ? "flight-to-the-hub" : "return-to-bind",
+									["arrived"] = session.CurrentPosition,
+								});
+								await session.SynchronizeAsync(token);
+								await RestSafelyAsync(token);
+								return await ApproachShippedSpawnAsync(templateId, skipBlockedTarget, withinRange, completedSource: completedSource, acceptObservedKill: acceptObservedKill,
+									returnedForRoute: true);
 							}
 						}
 						if (skipBlockedTarget && result.TargetObjectId is int unavailableObjectId &&
@@ -9672,6 +9720,14 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			// walker): walk up to it again, as a player does when the "too far" message appears.
 			async Task ReapproachForDialogAsync(int npc)
 			{
+				// M2: a walking NPC is seen where it is going (Bragi, on his round of Morheim Ice Fortress, took up his walk
+				// after the first quest and the Templar stood at his next stop before he did). The talk was refused because he
+				// was not there yet: wait for him to stop, as a player waits for him to come.
+				for (int wait = 0; wait < 80 && session.Api.World.Objects.TryGetValue(npc, out BotKnownObject? walking) && walking.MoveTarget != null; wait++)
+				{
+					await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+					await session.SynchronizeAsync(token);
+				}
 				NaturalNavigationObject? seen = navigator.Observe().Npcs.FirstOrDefault(n => n.ObjectId == npc);
 				if (seen == null) throw new InvalidDataException($"NPC {npc} is too far to talk to and no longer observed.");
 				session.TraceDiagnostic("dialog-too-far", new Dictionary<string, object?>

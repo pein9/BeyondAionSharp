@@ -1,0 +1,651 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2302,
+    "name": "Frenai's Lost Jewelry",
+    "nameId": 1103502,
+    "zone": "Morheim",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 21,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2302,
+        "start_npc_ids": 204324
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204324,
+        "name": "frenai",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 361.131,
+            "y": 2368.02,
+            "z": 448.0,
+            "heading": 46,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204324,
+      "name": "frenai",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 361.131,
+          "y": 2368.02,
+          "z": 448.0,
+          "heading": 46,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204324,
+      "name": "frenai",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 361.131,
+          "y": 2368.02,
+          "z": 448.0,
+          "heading": 46,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182204101,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182204101,
+          "npc_id": 212364,
+          "npc": {
+            "id": 212364,
+            "name": "ice lake pluma",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 160.533,
+                "y": 2435.15,
+                "z": 439.707,
+                "heading": 8,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 165.153,
+                "y": 2465.95,
+                "z": 439.675,
+                "heading": 40,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 181.071,
+                "y": 2480.97,
+                "z": 439.308,
+                "heading": 86,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 211.41,
+                "y": 2519.36,
+                "z": 439.79,
+                "heading": 71,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 235.326,
+                "y": 2527.15,
+                "z": 439.238,
+                "heading": 79,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 247.0,
+                "y": 2504.0,
+                "z": 439.188,
+                "heading": 110,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 266.441,
+                "y": 2527.14,
+                "z": 439.624,
+                "heading": 13,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 343.993,
+                "y": 2177.38,
+                "z": 457.915,
+                "heading": 32,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 369.688,
+                "y": 2498.66,
+                "z": 440.295,
+                "heading": 8,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 460.628,
+                "y": 2349.41,
+                "z": 439.213,
+                "heading": 76,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "item_id": 182204101,
+          "npc_id": 212365,
+          "npc": {
+            "id": 212365,
+            "name": "ice lake pluma",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182204102,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182204102,
+          "npc_id": 212366,
+          "npc": {
+            "id": 212366,
+            "name": "frost crasaur",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 185.082,
+                "y": 2432.61,
+                "z": 438.51,
+                "heading": 78,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 202.237,
+                "y": 2458.22,
+                "z": 438.51,
+                "heading": 69,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 212.149,
+                "y": 2263.39,
+                "z": 438.51,
+                "heading": 17,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 249.417,
+                "y": 2268.21,
+                "z": 438.51,
+                "heading": 81,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 283.78,
+                "y": 2215.0,
+                "z": 438.51,
+                "heading": 58,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 286.0,
+                "y": 2233.0,
+                "z": 438.51,
+                "heading": 111,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 286.193,
+                "y": 2499.93,
+                "z": 438.51,
+                "heading": 59,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 314.642,
+                "y": 2507.19,
+                "z": 438.51,
+                "heading": 114,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 332.448,
+                "y": 2477.93,
+                "z": 438.51,
+                "heading": 79,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 371.371,
+                "y": 2242.8,
+                "z": 438.51,
+                "heading": 94,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 407.087,
+                "y": 2272.42,
+                "z": 438.51,
+                "heading": 104,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 410.529,
+                "y": 2391.17,
+                "z": 438.51,
+                "heading": 61,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 422.938,
+                "y": 2427.24,
+                "z": 438.51,
+                "heading": 39,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 431.177,
+                "y": 2370.0,
+                "z": 438.51,
+                "heading": 105,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "item_id": 182204102,
+          "npc_id": 212367,
+          "npc": {
+            "id": 212367,
+            "name": "frost crasaur",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "collect",
+      "count": 2,
+      "item_id": 182204103,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182204103,
+          "npc_id": 212368,
+          "npc": {
+            "id": 212368,
+            "name": "ice slink",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 148.77,
+                "y": 2338.61,
+                "z": 438.51,
+                "heading": 71,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 149.982,
+                "y": 2404.2,
+                "z": 438.51,
+                "heading": 113,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 159.478,
+                "y": 2298.95,
+                "z": 438.51,
+                "heading": 6,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 171.979,
+                "y": 2377.83,
+                "z": 438.51,
+                "heading": 73,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 199.653,
+                "y": 2283.6,
+                "z": 438.51,
+                "heading": 50,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 212.657,
+                "y": 2489.17,
+                "z": 438.51,
+                "heading": 116,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 230.608,
+                "y": 2466.0,
+                "z": 438.51,
+                "heading": 101,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 260.672,
+                "y": 2473.76,
+                "z": 438.51,
+                "heading": 78,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 319.019,
+                "y": 2239.34,
+                "z": 438.51,
+                "heading": 36,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 323.418,
+                "y": 2207.93,
+                "z": 438.51,
+                "heading": 11,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 358.436,
+                "y": 2259.83,
+                "z": 438.51,
+                "heading": 95,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 358.497,
+                "y": 2220.7,
+                "z": 438.51,
+                "heading": 90,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 361.375,
+                "y": 2477.85,
+                "z": 438.51,
+                "heading": 44,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 398.853,
+                "y": 2316.08,
+                "z": 438.51,
+                "heading": 62,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 410.439,
+                "y": 2453.58,
+                "z": 438.51,
+                "heading": 12,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 427.036,
+                "y": 2340.16,
+                "z": 438.51,
+                "heading": 106,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 433.923,
+                "y": 2310.17,
+                "z": 438.51,
+                "heading": 48,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 461.244,
+                "y": 2327.06,
+                "z": 438.51,
+                "heading": 79,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "item_id": 182204103,
+          "npc_id": 212369,
+          "npc": {
+            "id": 212369,
+            "name": "ice slink",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204324,
+          "name": "frenai",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 361.131,
+              "y": 2368.02,
+              "z": 448.0,
+              "heading": 46,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 138125,
+        "gold": 8930,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 188053405
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "IMPORTANT",
+      "id": 2302,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 21,
+      "name": "Frenai's Lost Jewelry",
+      "nameId": 1103502,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204101
+            }
+          },
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204102
+            }
+          },
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 2,
+              "item_id": 182204103
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 138125,
+          "gold": 8930
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 188053405
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204101,
+          "npc_id": 212364
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204101,
+          "npc_id": 212365
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204102,
+          "npc_id": 212366
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204102,
+          "npc_id": 212367
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204103,
+          "npc_id": 212368
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204103,
+          "npc_id": 212369
+        }
+      }
+    ]
+  }
+}
