@@ -71,20 +71,14 @@ $StatePath   = Join-Path $OpsRoot 'deployed.json'
 
 $Servers = @('loginserver', 'chatserver', 'gameserver')
 
-# What each image is built from: docker/<server>/Dockerfile copies all of src/ plus these trees.
-# A change under src/ outside the other servers' projects (Aion.Commons, build props) counts for
-# every server.
+# What each server image is built from is read from its Dockerfile (Get-ServerInputs). Each copies
+# all of src/, but publishes only its own project and what that references, so a change in another
+# server's project below does not count for it; one in Aion.Commons or a props file counts for all.
 $ServerProjects = @{
     loginserver = 'src/Aion.LoginServer/'
     chatserver  = 'src/Aion.ChatServer/'
     gameserver  = 'src/Aion.GameServer/'
 }
-$ServerInputs = @{
-    loginserver = @('login-server/config/', 'docker/loginserver/')
-    chatserver  = @('chat-server/config/', 'docker/chatserver/')
-    gameserver  = @('game-server/config/', 'game-server/data/', 'docker/gameserver/')
-}
-$SharedInputs = @('.dockerignore')
 
 # Lines each server logs once it is serving clients.
 $ReadyMarkers = @{
@@ -327,18 +321,42 @@ function Invoke-HandOver([System.Collections.IDictionary]$Parameters) {
     return $LASTEXITCODE
 }
 
-function Test-PathFeedsServer([string]$Path, [string]$Server) {
-    $ordinal = [System.StringComparison]::Ordinal
-    if ($SharedInputs -ccontains $Path) { return $true }
-    if ($Path.StartsWith($ServerProjects[$Server], $ordinal)) { return $true }
-    foreach ($prefix in $ServerInputs[$Server]) {
-        if ($Path.StartsWith($prefix, $ordinal)) { return $true }
+# The repository paths a server image is built from: the sources of its Dockerfile's COPY and ADD
+# lines (not those copied from another stage), its docker/<server>/ folder and .dockerignore. Read
+# at the commit being deployed, so a Dockerfile that starts copying something new is followed the
+# same night.
+function Get-ServerInputs([string]$Server, [string]$Commit) {
+    $inputs = @("docker/$Server/", '.dockerignore')
+    $dockerfile = (Invoke-Git -Arguments @('show', "${Commit}:docker/$Server/Dockerfile") -Quiet).Lines
+    foreach ($line in $dockerfile) {
+        if ($line -notmatch '^\s*(?:COPY|ADD)\s+(.+)$') { continue }
+        $arguments = $Matches[1].Trim()
+        if ($arguments -match '(^|\s)--from=') { continue }
+        # Both the shell form and the JSON form (["src/", "./src/"]); flags such as --chown are not paths.
+        $words = @(($arguments -replace '[\[\]",]', ' ') -split '\s+' | Where-Object { $_ -and -not $_.StartsWith('--') })
+        if ($words.Count -lt 2) { continue }
+        $inputs += @($words[0..($words.Count - 2)] | ForEach-Object { $_ -replace '^\./', '' })
     }
-    if ($Path.StartsWith('src/', $ordinal)) {
-        foreach ($other in $Servers) {
-            if ($other -ne $Server -and $Path.StartsWith($ServerProjects[$other], $ordinal)) { return $false }
+    return $inputs
+}
+
+function Test-PathFeedsServer([string]$Path, [string]$Server, [string[]]$Inputs) {
+    $ordinal = [System.StringComparison]::Ordinal
+    foreach ($other in $Servers) {
+        if ($other -ne $Server -and $Path.StartsWith($ServerProjects[$other], $ordinal)) { return $false }
+    }
+    foreach ($source in $Inputs) {
+        if ($source -eq '.' -or $source -eq '') { return $true }
+        if ($source -match '[*?\[]') {
+            # As in Docker, a wildcard stays within one path segment; a folder it matches is copied whole.
+            $depth = $source.TrimEnd('/').Split('/').Count
+            $segments = $Path.Split('/')
+            if ($segments.Count -ge $depth -and (($segments[0..($depth - 1)] -join '/') -clike $source.TrimEnd('/'))) { return $true }
+        } elseif ($source.EndsWith('/')) {
+            if ($Path.StartsWith($source, $ordinal)) { return $true }
+        } elseif ($Path -ceq $source -or $Path.StartsWith("$source/", $ordinal)) {
+            return $true
         }
-        return $true
     }
     return $false
 }
@@ -382,8 +400,9 @@ function Get-ServersToRebuild([string]$Target, [hashtable]$State) {
             $rebuild += $server
             continue
         }
+        $inputs = Get-ServerInputs $server $Target
         $changed = @((Invoke-Git -Arguments @('diff', '--name-only', $deployed, $Target) -Quiet).Lines |
-            Where-Object { $_ -and (Test-PathFeedsServer $_ $server) })
+            Where-Object { $_ -and (Test-PathFeedsServer $_ $server $inputs) })
         if ($changed.Count -gt 0) {
             Write-Log "${server}: $($changed.Count) input file(s) changed since $(Get-ShortSha $deployed); rebuilding. First few:"
             foreach ($path in ($changed | Select-Object -First 5)) { Write-Log "    $path" }
@@ -583,9 +602,21 @@ function Update-CompanionHost([bool]$Build, [bool]$ServersHealthy) {
             return
         }
         if ($Build) {
+            $buildStarted = Get-Date
             $built = Invoke-Compose -Arguments @('build', 'companionhost') -AllowFailure -Quiet
+            if ($script:BuildLogFile) {
+                Add-Content -LiteralPath $script:BuildLogFile -Value (@('', '==== companionhost ====') + $built.Lines) -Encoding UTF8
+            }
+            $minutes = [math]::Round(((Get-Date) - $buildStarted).TotalMinutes, 1)
             if ($built.ExitCode -ne 0) {
-                Write-Log "The companion host image did not build (exit code $($built.ExitCode)); keeping the one that is there." 'WARN'
+                Write-Log "The companion host image did not build (exit code $($built.ExitCode)) after $minutes min; keeping the one that is there. Last lines, full output in $($script:BuildLogFile):" 'WARN'
+                foreach ($line in ($built.Lines | Select-Object -Last 30)) { Write-Log "    $line" 'WARN' }
+            } else {
+                # bake-navmeshes.sh prints these only when its stage ran, that is when something it bakes from changed.
+                $bake = @($built.Lines | Where-Object { $_ -match 'Baking \d+ navmesh|Navmeshes in the image' } |
+                    ForEach-Object { ($_ -replace '^#\d+\s+[\d.]+\s+', '').Trim() })
+                $note = if ($bake.Count -gt 0) { " ($($bake -join '; '))" } else { '' }
+                Write-Log "Companion host image built in $minutes min$note."
             }
         }
         # --no-build: an image that is missing is never built from a tree this run did not deploy.
