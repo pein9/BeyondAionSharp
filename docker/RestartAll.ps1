@@ -9,6 +9,7 @@
       2. Fast-forwards this checkout to origin/main, but only when it is on main with no modified
          or untracked files. Docker builds from the files on disk, so uncommitted work would
          otherwise ship to the live server. If not, the update is skipped (exit code 4).
+         An update that changes this script hands the rest of the run to the new copy.
       3. Picks the server images to rebuild by diffing the paths each image is built from
          between the commit it was last deployed from and the new HEAD.
       4. Schema gate: loads the repo's schema files into a throwaway MySQL and compares them with
@@ -102,6 +103,7 @@ $SchemaCheckContainer = 'aion-schema-check'
 $script:LogFile = $null
 $script:BuildLogFile = $null
 $script:ExitCode = 0
+$script:HandOver = $false
 
 # ---------------------------------------------------------------------------------------------
 # Logging and process helpers
@@ -297,6 +299,32 @@ function Update-Checkout {
     $null = Invoke-Git -Arguments @('merge', '--ff-only', 'origin/main') -Quiet
     Write-Log "Fast-forwarded main $(Get-ShortSha $head) -> $(Get-ShortSha $upstream) ($count commits)."
     return $upstream
+}
+
+# PowerShell reads this whole script before running it, so a run whose update changes the script would go on with
+# the old copy. Such a run stops after the update and the new copy does the rest, with the same parameters.
+function Test-ScriptChanged([string]$From, [string]$To) {
+    return (Invoke-Git -Arguments @('diff', '--quiet', $From, $To, '--', 'docker/RestartAll.ps1') -AllowFailure -Quiet).ExitCode -ne 0
+}
+
+function Get-HandOverArguments([System.Collections.IDictionary]$Parameters) {
+    $arguments = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $DockerDir 'RestartAll.ps1'))
+    foreach ($name in $Parameters.Keys) {
+        $value = $Parameters[$name]
+        if ($value -is [System.Management.Automation.SwitchParameter]) {
+            if ($value.IsPresent) { $arguments += "-$name" }
+        } else {
+            $arguments += "-$name"
+            $arguments += [string]$value
+        }
+    }
+    return $arguments
+}
+
+function Invoke-HandOver([System.Collections.IDictionary]$Parameters) {
+    $arguments = Get-HandOverArguments $Parameters
+    & powershell.exe @arguments | Out-Host
+    return $LASTEXITCODE
 }
 
 function Test-PathFeedsServer([string]$Path, [string]$Server) {
@@ -604,6 +632,7 @@ function Invoke-Cleanup {
 
 function Invoke-RestartAll {
     $script:ExitCode = 0
+    $script:HandOver = $false
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
     New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
     $suffix = if ($PlanOnly) { '-plan' } else { '' }
@@ -639,7 +668,13 @@ function Invoke-RestartAll {
             # A failure here must not cost the nightly restart, so it only cancels the deploy.
             try {
                 Write-Log 'Updating the checkout' 'STEP'
+                $before = Get-GitLine @('rev-parse', 'HEAD')
                 $target = Update-Checkout
+                if ($target -and -not $PlanOnly -and $target -ne $before -and (Test-ScriptChanged $before $target)) {
+                    Write-Log 'This update changed RestartAll.ps1; the new copy does the rest of the run.' 'STEP'
+                    $script:HandOver = $true
+                    return
+                }
                 if ($target) {
                     Write-Log 'Choosing images to rebuild' 'STEP'
                     $toBuild = @(Get-ServersToRebuild -Target $target -State (Read-DeployState))
@@ -728,7 +763,8 @@ function Invoke-RestartAll {
         Write-Log "RestartAll failed: $($_.Exception.Message)" 'ERROR'
         Set-ExitCode 1
     } finally {
-        Write-Log "RestartAll finished with exit code $($script:ExitCode)." 'STEP'
+        if ($script:HandOver) { Write-Log 'Handing over; the new copy writes a log of its own.' 'STEP' }
+        else { Write-Log "RestartAll finished with exit code $($script:ExitCode)." 'STEP' }
         if ($consoleEncoding) { try { [Console]::OutputEncoding = $consoleEncoding } catch { } }
         $mutex.ReleaseMutex()
         $mutex.Dispose()
@@ -738,5 +774,7 @@ function Invoke-RestartAll {
 # Dot-sourcing (as test-RestartAll.ps1 does) only loads the functions.
 if ($MyInvocation.InvocationName -ne '.') {
     Invoke-RestartAll
+    # After the mutex is released, so the new copy can take it.
+    if ($script:HandOver) { exit (Invoke-HandOver -Parameters $PSBoundParameters) }
     exit $script:ExitCode
 }

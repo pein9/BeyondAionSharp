@@ -60,6 +60,7 @@ function Invoke-Git {
         '^rev-list --count' { $out = @('1'); break }
         '^merge --ff-only' { $script:fx.Head = $script:fx.Upstream; break }
         '^diff --name-only' { $out = @($script:fx.Changed); break }
+        '^diff --quiet .* -- docker/RestartAll\.ps1$' { if ($script:fx.ScriptChanged) { $code = 1 }; break }
     }
     if ($code -ne 0 -and -not $AllowFailure) { throw "git $line failed" }
     return [pscustomobject]@{ ExitCode = $code; Lines = $out; Text = ($out -join "`n") }
@@ -95,7 +96,7 @@ function Invoke-Scenario {
     $script:logLines = @()
     $script:fx = @{
         Branch = 'main'; Dirty = @(); History = @('h1', 'h2'); Head = 'h1'; Upstream = 'h1'; Changed = @()
-        Gate = $true; Health = @($true); HealthIndex = 0; BuildExit = 0; BackupFails = $false
+        Gate = $true; Health = @($true); HealthIndex = 0; BuildExit = 0; BackupFails = $false; ScriptChanged = $false
     }
     foreach ($key in $Fixture.Keys) { $script:fx[$key] = $Fixture[$key] }
     Remove-Item -LiteralPath $StatePath -ErrorAction SilentlyContinue
@@ -229,6 +230,29 @@ try {
     Assert-That (-not (Test-Call '^git merge --ff-only') -and -not (Test-Call 'plain (build|stop|up)') -and -not (Test-Call '^backup$')) 'plan-only changed something'
     Assert-That (Test-Call '^gate h2$') 'plan-only did not check the schema of the commit it would deploy'
     Assert-That ((Get-StateCommit 'gameserver') -eq 'h1') 'plan-only recorded a deploy'
+
+    # ---- an update that changes this script ---------------------------------------------------------
+    # The running copy was read before the update, so it stops there and the new copy does the rest.
+    Invoke-Scenario 'script changed by the update' @{ Upstream = 'h2'; Changed = @('src/Aion.GameServer/A.cs'); ScriptChanged = $true }
+    Assert-That $HandOver 'did not hand the run over to the new copy'
+    Assert-That (Test-Call '^git merge --ff-only origin/main$') 'did not update before handing over'
+    Assert-That (Test-Call '^git diff --quiet h1 h2 -- docker/RestartAll\.ps1$') 'did not compare the script across the update'
+    Assert-That (-not (Test-Call '^backup$') -and -not (Test-Call '^gate') -and -not (Test-Call 'plain (build|stop|up)')) 'the old copy went on after the update'
+    Assert-That ((Get-StateCommit 'gameserver') -eq 'h1') 'the old copy recorded a deploy'
+
+    Invoke-Scenario 'script unchanged by the update' @{ Upstream = 'h2'; Changed = @('src/Aion.GameServer/A.cs') }
+    Assert-That (-not $HandOver -and (Test-Call 'plain build gameserver$')) 'handed over although the script did not change'
+
+    Invoke-Scenario 'no update, script changed earlier' @{ ScriptChanged = $true }
+    Assert-That (-not $HandOver -and (Test-Call '^backup$')) 'handed over without an update'
+
+    Invoke-Scenario 'plan only with a changed script' @{ Upstream = 'h2'; ScriptChanged = $true } -Plan
+    Assert-That (-not $HandOver -and (Test-Call '^gate h2$')) 'plan-only handed over'
+
+    $scenario = 'hand-over arguments'
+    $handOverArgs = Get-HandOverArguments ([ordered]@{ ForceRebuild = [switch]$true; RestartOnly = [switch]$false; OpsRoot = 'D:\Ops Dir'; HealthTimeoutSeconds = 60 })
+    $expected = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $DockerDir 'RestartAll.ps1'), '-ForceRebuild', '-OpsRoot', 'D:\Ops Dir', '-HealthTimeoutSeconds', '60')
+    Assert-That (($handOverArgs -join '|') -ceq ($expected -join '|')) "hand-over arguments were: $($handOverArgs -join ' ')"
 
     Write-Host "test-RestartAll: $checks checks passed."
 } finally {
