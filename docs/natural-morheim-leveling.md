@@ -1,8 +1,8 @@
 # Natural Morheim leg, to level 31
 
 Status: a plan, 2026-10-13, as the operator shaped it in three messages that day. Step M1, the quest list, is done:
-[natural-morheim-quests.md](natural-morheim-quests.md). Step M2, Morheim Ice Fortress, is played: the world is now
-`morheim-mf-s1-w1`, and the next step starts from it.
+[natural-morheim-quests.md](natural-morheim-quests.md). Steps M2 (Morheim Ice Fortress) and M3 (Kellan's Cabin) are
+played: the world is now `morheim-mk-s1-w1`, and the next step starts from it.
 
 It follows [natural-muster.md](natural-muster.md), whose rules MR-a to MR-i are this leg's rules, and starts from the
 group world `ntc-group-s5`.
@@ -100,18 +100,56 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     lake, can always FLY back"); this round did not need it. No server fault was found. Left at the fortress for
     later: Q24021 (level 27), Q26905 (28) and Q24023 (29), the campaign's next steps, and Q2330 and Q4300, which
     are handed in at Brusthonin.
-- [ ] **M3 Kellan's Cabin,** 27 quests.
+- [x] **M3 Kellan's Cabin,** 27 quests.
+  - 2026-10-14: stage `mk`, contract `parity-artifacts/e2e/natural-morheim-mk-contract.json`, from `morheim-mf-s1`: 26 of
+    the 27, 22 from their compiled plans and Q2316, Q2498, Q2307 and Q2428 by steps; the leg binds at the cabin and
+    ends at Nicoyerk in the fortress with Q2495. Q2319 (to Luimerk) and Q2356 (to Utgar) are taken and worked here
+    and held for Alsig Village and Slag Bulwark. Round `m3-mk`, all eight ten game minutes apart, captured
+    `morheim-mk-s1-w1`: every bot did all of them with no death; the Gladiator and the Assassin are 29, the rest 28.
+    Each took 3.2 to 7.3 game hours (Cleric 3.2, Chanter 3.5, Ranger 3.9, Sorcerer 5.4, Spirit Master 5.9, Assassin
+    6.2, Templar 6.3, Gladiator 7.3), most of the spread waiting at the worn document.
+  - My decision, his to change: **Q2494 Three Treasures goes to the group step M6.** Sku, Paku and Seku are one spawn
+    each (30, 30 and 60 minutes) and their items drop for each member of a group (`drop_each_member`); eight bots
+    alone queued for hours on them (trial t3). The same holds for Q2328 at Desert Garrison (step M4).
+  - New for the leg engine: a quest started by an item (`itemStarts`): got from an object, waited for at its spots
+    (Q2498's worn document is one at a time and respawns 2950 s after a use: the bots waited 1 to 217 game minutes for
+    it, in turn), or from a drop (Q2316's Old Notebook, a 5% drop of the Sprigg Habitat's sparkies: 11 to 123 tries).
+    An object used with what the quest collects at the same var waits for the collection (Q2307's soup and its four
+    ingredients). A bounded wait the bot cannot hurry counts as progress for the journey's one-hour watchdog.
+  - The trials (t1 to t6) found these bot faults, all fixed: a template collection kept waiting on the one source of
+    two that the other bots kept dead (Q2429's lone 212374 brax); a walking NPC (Spedor, on a long round) was talked
+    to where he had been; a self-heal refused in a can't-attack state (Java answers it STR_SKILL_TARGET_IS_NOT_VALID)
+    stopped the Assassin; the item hand-in took another handler's dialog window for Vivi's page; the endpoint relog
+    counted the invasion daily the server starts on entering Morheim (Q49020) as a changed journal.
+  - Found in the server, both as Java has them and left so: Q2718's handler (Reshanta) sends an empty dialog window to
+    everyone who talks to Vivi without having taken it; Q2307's handler does not check the soup's four ingredients
+    (Java: "INGREDIENT CHECK NEED TO SCRIPT"), so the soup can be made without them. The bots gather them anyway.
 - [ ] **M4 Desert Garrison,** 18 quests.
 - [ ] **M5 Slag Bulwark and Alsig Village,** 13 quests, and the four without a giver where they fall.
-- [ ] **M6 The group quests,** 11, in groups.
+- [ ] **M6 The group quests,** 11, in groups, with Q2494 and Q2328 (one named spawn each, whose items drop for each
+  member of a group; see M3).
 - [ ] **M7 Level 31 and the gear check.** Every quest of the leg done by all eight; level 31; Elite Rank 6 where it
   beats what is worn; the sale of what it replaced, the kit and the cleanup; a relog. The capture is the next group
   world.
 - [ ] **M8 Level-31 companions.** The profiles of the eight from that world, beside the level-26 ones. The server
   offers both: a companion comes at the highest level it has a profile for that is not above its player's, and
   `.companion <class> <level>` asks for one outright. A round with a level-31 stand-in and level-31 companions.
+  The operator, 2026-10-14: "the cleric probably has more and better heals (a group heal?), make sure the heal
+  rotation/profile is updated for a level 31 cleric for these Fire Temple/companion runs." So the Cleric's heal
+  rotation (`NaturalGroupHealDriver`, its roles in the class profile) is brought up to what a level-31 Cleric has
+  learned, a group heal among it, used when several members are hurt at once; the companion Cleric and the Fire
+  Temple Cleric are the same driver.
 - [ ] **M9 The report:** per class its level, quests done, deaths and time; every quest that was not played and why;
   what the bots found wrong with the server.
+- [ ] **M10 Fire Temple, as a group of six at 31.** The operator, 2026-10-14, before leaving for a while: once the list
+  above is done, "Map out the quests for 'Fire Temple'", "Group up with a full group of 6, make sure to have a
+  cleric/templar/sorcerer plus 3 more of your choice", "minimum of level 31 each (the companion profile)", "Do Fire
+  Temple as a group. This is a more difficult instance, so it might take a few tries." His answers the same day:
+  Fire Temple quests that Java has no handler for are skipped and reported, not added under D32; every Fire Temple
+  quest is played once, repeatables included. Mine, his to change: the other three are the Chanter (a second
+  healer), the Gladiator and the Ranger; it is played in SIM from the level-31 world, with the group stages of
+  [natural-group-ntc.md](natural-group-ntc.md); a wipe is an outcome, and the group tries again. Its own plan
+  (the quests, the entry, the bosses, the steps) is written when M9 is ticked.
 
 ## Decisions
 
@@ -159,6 +197,6 @@ RULES THAT DO NOT BEND
 - Only the eight classes. Nothing new for the Rider, the Gunner or the Bard.
 - No branch, worktree, subagent or push. No hand-edit of generated data. The warning baseline is not raised.
 
-STOP when M9 is ticked, or when a step has failed three iterations running, or when a decision is needed that the
+STOP when M10 is ticked, or when a step has failed three iterations running, or when a decision is needed that the
 document does not give. On stopping, send one notification.
 ```
