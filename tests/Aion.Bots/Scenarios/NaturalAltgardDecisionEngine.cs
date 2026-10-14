@@ -113,6 +113,8 @@ public static class NaturalAltgardDecisionEngine
 				: action is "enter-instance" or "leave-instance" ? contract.InstanceTripList.Single(trip => trip.QuestId == questId).MapId
 				: action == "revive-in-place" ? state.MapId!.Value
 				: action == "use-object" ? contract.ObjectUseList.Single(use => use.Key == stepKey).MapId ?? contract.Hub.MapId
+				: action == "collect" && questId is int collecting ? contract.CollectionList.FirstOrDefault(collection =>
+					collection.QuestId == collecting && collection.AtVar == Var(collecting))?.MapId ?? contract.Hub.MapId
 				: action == "hunt" ? contract.HuntList.First(hunt => hunt.QuestId == questId &&
 					Var(questId!.Value) >= hunt.FromVar && Var(questId.Value) < hunt.ToVar).MapId ?? contract.Hub.MapId
 				: contract.Hub.MapId;

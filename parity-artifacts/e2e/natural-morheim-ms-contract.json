@@ -3,13 +3,13 @@
   "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
   "leg": "morheim-ms-slag-bulwark",
   "start": {
-    "contract": "natural-morheim-mc-contract.json",
-    "snapshot": "morheim-mc-s1",
+    "contract": "natural-morheim-mg-contract.json",
+    "snapshot": "morheim-g31-s1",
     "mapId": 220020000,
     "race": "ASMODIANS",
     "class": "CLERIC",
     "level": 31,
-    "bindNpcId": 700213,
+    "bindNpcId": 700231,
     "completedQuestIds": [
       24020,
       2333

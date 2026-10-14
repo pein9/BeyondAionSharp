@@ -75,6 +75,20 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
         return first < 0 || second < 0 || first == second;
     }
 
+    /// <summary>M5: the centres of the navmesh polygons on the island of <paramref name="onIsland"/> that
+    /// <paramref name="keep"/> accepts (a FLY zone's ground a bot can walk to, or land on). Empty without a navmesh for the
+    /// map or when the point is on none of its islands.</summary>
+    public IReadOnlyList<BotPosition> IslandGround(int mapId, BotPosition onIsland, Func<BotPosition, bool> keep)
+    {
+        BotNavMesh? mesh = NavMesh?.NavMeshes.Get(mapId);
+        if (mesh == null) return [];
+        int island = mesh.IslandOf(onIsland, BotNavQuery.Default with { SnapHorizontal = 2 });
+        if (island < 0) return [];
+        return [.. mesh.Polygons().Where(polygon => polygon.Island == island)
+            .Select(polygon => new BotPosition(polygon.Ring.Average(v => v.X), polygon.Ring.Average(v => v.Y), polygon.Ring.Average(v => v.Z), 0))
+            .Where(keep)];
+    }
+
     /// <summary>Navmesh-snapped ground near <paramref name="point"/>, or null (no navmesh or nothing near).</summary>
     public BotPosition? SnapToGround(int mapId, BotPosition point) =>
         NavMesh?.NavMeshes.Get(mapId)?.Snap(point, BotNavQuery.Default with { SnapHorizontal = 2, SnapVertical = 10 });

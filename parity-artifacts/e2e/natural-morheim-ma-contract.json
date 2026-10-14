@@ -170,6 +170,20 @@
       "template": null,
       "startNpcId": 730037,
       "area": null
+    },
+    {
+      "id": 2477,
+      "category": "QUEST",
+      "minimumLevel": 29,
+      "rewardExperience": 287250,
+      "prerequisite": null,
+      "handler": "morheim/_2477ADishForDukar.cs",
+      "template": null,
+      "startNpcId": 204355,
+      "area": "alsig",
+      "prerequisites": [
+        2476
+      ]
     }
   ],
   "order": [
@@ -177,10 +191,94 @@
     2381,
     2382,
     2383,
+    2477,
     23830,
     2319
   ],
   "steps": [
+    {
+      "key": "q2477-offer-balom",
+      "questId": 2477,
+      "status": "OFFER",
+      "npcId": 204355,
+      "position": [
+        2397.32,
+        1809.76,
+        102.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "alsig"
+    },
+    {
+      "key": "q2477-v1-balom",
+      "questId": 2477,
+      "var": 1,
+      "npcId": 204355,
+      "position": [
+        2397.32,
+        1809.76,
+        102.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "CHECK_USER_HAS_QUEST_ITEM"
+      ],
+      "pages": [
+        1352,
+        10000
+      ],
+      "area": "alsig"
+    },
+    {
+      "key": "q2477-v2-lainita",
+      "questId": 2477,
+      "var": 2,
+      "npcId": 204100,
+      "position": [
+        1167.16,
+        1540.53,
+        214.174
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SET_SUCCEED"
+      ],
+      "pages": [
+        1693
+      ],
+      "mapId": 120010000
+    },
+    {
+      "key": "q2477-reward-balom",
+      "questId": 2477,
+      "status": "REWARD",
+      "npcId": 204355,
+      "position": [
+        2397.32,
+        1809.76,
+        102.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        10002,
+        5
+      ],
+      "area": "alsig"
+    },
     {
       "key": "q2319-v0-luimerk",
       "questId": 2319,
@@ -205,8 +303,40 @@
     }
   ],
   "objectUses": [],
-  "collections": [],
+  "collections": [
+    {
+      "questId": 2477,
+      "atVar": 1,
+      "mapId": 220040000,
+      "items": [
+        {
+          "itemId": 182204196,
+          "count": 5,
+          "sourceNpcIds": [
+            213011,
+            213012
+          ]
+        }
+      ]
+    }
+  ],
   "mapTrips": [
+    {
+      "mapId": 220040000,
+      "fromMapId": 220020000,
+      "teleporterNpcId": 204399,
+      "locationId": 11,
+      "fare": 3200,
+      "talkRange": 4
+    },
+    {
+      "mapId": 120010000,
+      "fromMapId": 220020000,
+      "teleporterNpcId": 204399,
+      "locationId": 7,
+      "fare": 1500,
+      "talkRange": 4
+    },
     {
       "mapId": 220030000,
       "fromMapId": 220020000,
@@ -254,11 +384,6 @@
   },
   "excluded": [
     {
-      "id": 2477,
-      "reason": "A Dish For Dukar's five ingredients drop only from Beluslan's meek crestliches (220040000), and Lainita's step is in Pandaemonium: the leg engine collects on its hub's map only",
-      "leg": 0
-    },
-    {
       "id": 2478,
       "reason": "[Spy] Ingredients For Sausage: spy quests are not played",
       "leg": 0
@@ -296,6 +421,7 @@
       2381,
       2382,
       2383,
+      2477,
       23830,
       2319
     ],

@@ -553,6 +553,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			// M2: how a leg with flight rules gets out of a place it has no road from (Morheim's ice lake): it flies to the
 			// hub. False when it cannot take off there or no flight leads to the hub.
 			Func<Task<bool>>? flyOutOfStrand = null;
+			// M5: how a Morheim leg reaches ground it has no road to inside a FLY zone (the Fire Temple's crater): it walks into
+			// the zone, flies and lands beside the goal. False when no flight across a zone leads there.
+			Func<BotPosition, Task<bool>>? flyAcross = null;
 			// M4: the quests this bot left for the group step on a Morheim leg (no progress on one alone for an hour).
 			var deferredToGroup = new HashSet<int>();
 			Func<int, float, Func<int?>?, Task<int>>? haramelApproach = null;
@@ -3277,6 +3280,50 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					await FlyToAsync(ground, height);
 					return true;
 				};
+				// The operator, 2026-10-14: "around Fire temple is a FLY ZONE". Ground the navmesh cannot walk to from here but a
+				// FLY zone holds (Sarinerk's ledge, the crater floor, the Fire Temple's gate) is reached as a player reaches it: the
+				// zone's ground nearest the goal on foot, a flight, and a landing beside the goal; and out the same way.
+				bool crossingFlyZone = false;
+				flyAcross = leg.Flight == null || altgardLegId == null || !NaturalAltgardContract.MorheimLegs.Contains(altgardLegId) ? null : async goal =>
+				{
+					int map = leg.Hub.MapId;
+					if (crossingFlyZone || session.Api.World.MapId != map || session.Api.World.IsDead) return false;
+					// Ground the bot can walk to lies within a few metres of the goal: no flight. A goal on no island of the mesh
+					// (Sarinerk past his ledge's edge) is near no walkable ground of this one.
+					if (geometry.IslandGround(map, session.CurrentPosition, at =>
+						MathF.Abs(at.X - goal.X) <= 8 && MathF.Abs(at.Y - goal.Y) <= 8 && MathF.Abs(at.Z - goal.Z) <= 6).Count > 0) return false;
+					bool Open(NaturalFlyZone zone, BotPosition at) => zone.Contains(at.X, at.Y, at.Z + 2) &&
+						!zones.Any(other => other.Forbids && other.Contains(at.X, at.Y, at.Z + 2));
+					NaturalFlyZone? zone = zones.FirstOrDefault(entry => !entry.Forbids && Open(entry, goal))
+						?? zones.FirstOrDefault(entry => !entry.Forbids && Open(entry, session.CurrentPosition));
+					if (zone == null) return false;
+					bool Inside(BotPosition at) => Open(zone, at) && at.Z + 12 < zone.Top;
+					// The landing: the zone's ground on the goal's island nearest it, or the goal's own static ground when the
+					// navmesh has none there (Sarinerk stands past the edge of his ledge's mesh).
+					BotPosition? landing = geometry.IslandGround(map, goal, Inside).OrderBy(at => Distance(at, goal)).Cast<BotPosition?>().FirstOrDefault();
+					if (landing is not { } near || Distance(near, goal) > 6) landing = Inside(goal) ? geometry.StaticGroundAt(map, goal) ?? landing : landing;
+					if (landing is not { } land) return false;
+					// The takeoff: here inside the zone, or the zone's ground on this island nearest the landing.
+					BotPosition here = session.CurrentPosition;
+					BotPosition? takeoff = Inside(here) ? here
+						: geometry.IslandGround(map, here, Inside).OrderBy(at => Distance(at, land)).Cast<BotPosition?>().FirstOrDefault();
+					session.TraceDiagnostic("fly-zone-crossing", new Dictionary<string, object?>
+					{
+						["zone"] = zone.Name, ["goal"] = goal, ["position"] = here, ["takeoff"] = takeoff, ["landing"] = land,
+					});
+					if (takeoff is not { } off) return false;
+					crossingFlyZone = true;
+					try
+					{
+						if (Distance(here, off) > 3 && (!await WalkRoadDefendingAsync(off, "fly-zone-takeoff", within: 3) ||
+							session.Api.World.IsDead || !Inside(session.CurrentPosition))) return false;
+						float height = MathF.Min(zone.Top - 6, MathF.Max(session.CurrentPosition.Z, land.Z) + 15);
+						if (!NaturalFlightProtocol.Plan(geometry, map, session.CurrentPosition, land, height).IsUsable) return false;
+						await FlyToAsync(land, height);
+						return true;
+					}
+					finally { crossingFlyZone = false; }
+				};
 				var haramelTravel = new NaturalHaramelTravel(session, runtime, () => geometry,
 					async (at, range) =>
 					{
@@ -4387,7 +4434,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							road = navigator.FindCampaignMemoryPreferenceRoute(session.CurrentPosition, goal, token);
 							avoidRememberedDeathSpots = false;
 						}
-						if (road.Count == 0) return false;
+						if (road.Count == 0)
+							return flyAcross != null && await flyAcross(destination) && await WalkRoadDefendingAsync(destination, purpose, within, stopAt, sourceComplete);
 					}
 					// Walk the road only as far as its first point where the caller wants to stop.
 					if (stopAt != null && road.Select((point, index) => (point, index)).FirstOrDefault(entry => stopAt(entry.point)) is
@@ -6355,6 +6403,13 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								await session.AdvanceAsync(TimeSpan.FromSeconds(10), token);
 								await session.SynchronizeAsync(token);
 								continue;
+							}
+							// M5: ground inside a FLY zone that the navmesh does not join to this one (the Fire Temple's crater).
+							if (flyAcross != null && !combat.InCombat && await flyAcross(anchor.Position))
+							{
+								await session.SynchronizeAsync(token);
+								return await ApproachShippedSpawnAsync(templateId, skipBlockedTarget, withinRange, completedSource: completedSource,
+									acceptObservedKill: acceptObservedKill, returnedForRoute: returnedForRoute);
 							}
 							// M2: still no way from where it stands (the north end of Morheim's ice lake, below the fortress, where
 							// the Gladiator waited for good): do what a player does, fly back to the hub where it may fly, else Return

@@ -608,7 +608,9 @@ public sealed record NaturalAltgardZoneStep(int QuestId, string Zone, int FromVa
 public sealed record NaturalAltgardCollectedItem(int ItemId, int Count, int[] SourceNpcIds);
 
 /// <summary>Items that only drop once the quest reaches <paramref name="AtVar"/> (quest_drop collecting_step).</summary>
-public sealed record NaturalAltgardCollection(int QuestId, int AtVar, NaturalAltgardCollectedItem[] Items);
+/// <param name="MapId">M5: the map the sources live on when it is not the hub's (Q2477's meek crestliches, in Beluslan);
+/// the leg goes there by its map trips.</param>
+public sealed record NaturalAltgardCollection(int QuestId, int AtVar, NaturalAltgardCollectedItem[] Items, int? MapId = null);
 
 /// <summary>A poison a quest puts on the player, and the contract step that removes it.</summary>
 public sealed record NaturalAltgardPoison(int QuestId, int SkillId, int Damage, int TickMillis, int DurationMillis, int SpeedDown,
