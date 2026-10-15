@@ -190,6 +190,10 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     map trips (Q2477's, in Beluslan); a step far across another map walks the travel planner's road, defending on the
     way (the explorer alone replanned round the monsters toward Luimerk until its budget ran out, and Altgard's
     transporter toward him lands on Impetusium, 70 m above him with no way down).
+  - The operator asked, the same day, whether Impetusium was a fly zone. It is: Altgard's `DF1A_FZ_TOWN3_220030000`
+    (x 2401 to 2817, y 1455 to 1873, height 200 to 440) holds both the transporter's landing and Luimerk, so a bot
+    could take the transporter and fly the last 70 m down. The crossing knows only the hub map's FLY zones (Morheim's);
+    loading those of whatever map the bot stands on is left for later, since the road from the fortress works.
   - Not played, for the report: Q2372 Immortal Love (Q2367's second ending; its sulfur worms are in the Abyss),
     Q2324 The Spirit's Notebook and Q2325 (nothing in the server's data gives Hermod's Notebook), Q24023 (gathering
     inside the Sky Temple Interior, a solo instance).
