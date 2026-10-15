@@ -1323,9 +1323,10 @@ public sealed partial class NaturalIshalgenJourney
 						attackHistoryStart = session.PacketHistory.Count;
 						await session.AdvanceAsync(duration, waitToken);
 						await session.SynchronizeAsync(waitToken);
+						// M6: a member of the group is no attacker: the Cleric's skill on a resting Chanter made it turn on the Cleric.
 						int[] attackers = session.PacketHistory.Skip(attackHistoryStart)
 							.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId, session.Api.World.Summon?.ObjectId))
-							.OfType<int>().ToArray();
+							.OfType<int>().Where(attacker => !session.Api.World.GroupMembers.ContainsKey(attacker)).ToArray();
 						return new NaturalRestTick(world.IsDead || world.CurrentHp <= 0, attackers);
 					},
 					async (attackers, defendToken) =>

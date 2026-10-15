@@ -21,6 +21,9 @@ public sealed class NaturalGroupHealDriver(INaturalJourneySession session, Natur
 	private readonly HashSet<ushort> blessingIds = profile.SupportSkills.Where(skill => skill.Role == "blessing").Select(skill => skill.Id).ToHashSet();
 	private sealed record Member(int Id, double HpPercent, int MaxHp, BotPosition Position);
 
+	/// <summary>M6: in the open field a healer far behind its leader catches up before any upkeep.</summary>
+	public bool CatchUp { get; set; }
+
 	public void Dispose() => mode.Dispose();
 
 	public async Task RunAsync(CancellationToken token)
@@ -114,7 +117,11 @@ public sealed class NaturalGroupHealDriver(INaturalJourneySession session, Natur
 
 		bool quiet = (now - lastDamage).TotalSeconds >= 5;
 		Member self = members[0];
-		if (world.CurrentMp < world.MaxMp / 2 && quiet)
+		// M6: a healer far behind its leader catches up before any upkeep. Kimssi's elites caught the Cleric alone 30 to 90 m
+		// behind the group three times while it cast blessings and idle heals over time on the way.
+		bool behind = CatchUp && world.GroupLeaderId is int leading && leading != session.CharacterId &&
+			members.FirstOrDefault(member => member.Id == leading) is { } leader && Distance(leader.Position, session.CurrentPosition) > 20;
+		if (world.CurrentMp < world.MaxMp / 2 && quiet && !behind)
 		{
 			NaturalPriestSkill? recovery = self.HpPercent >= 80 ? Best("penance") : null;
 			if (!Ready(recovery, self)) recovery = Best("mp-recovery");
@@ -134,6 +141,7 @@ public sealed class NaturalGroupHealDriver(INaturalJourneySession session, Natur
 					return offered;
 				}
 			}
+			if (behind) { session.PublishDashboard("healing-only"); return false; }
 			NaturalPriestSkill? blessing = Best("blessing");
 			foreach (Member member in byNeed)
 				if (Ready(blessing, member) && !Covered(member, blessingIds))
@@ -142,6 +150,7 @@ public sealed class NaturalGroupHealDriver(INaturalJourneySession session, Natur
 			foreach (Member member in byNeed.Where(member => member.HpPercent < 90))
 				if (Ready(light, member)) return await CastAsync(light!, member.Id, "top-up", member.HpPercent, token);
 		}
+		if (behind) { session.PublishDashboard("healing-only"); return false; }
 		// Idle upkeep visits every member, not just whoever was hit last. Preserve mana for a direct heal.
 		NaturalPriestSkill? hot = Best("rejuvenation"), reserve = Best("heal");
 		if (world.GroupId != null && hot != null && world.CurrentMp >= hot.ManaCost + (reserve?.ManaCost ?? 0))

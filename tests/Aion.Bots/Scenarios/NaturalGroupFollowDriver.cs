@@ -17,6 +17,10 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 	private BotPosition? lastSample;
 	private DateTimeOffset lastSeen;
 	private DateTimeOffset blockedUntil;
+	// M6: the follower's turns in a row with no checked way to its leader, and where it and its leader stood when the long
+	// search for a way found none.
+	private int blockedTurns;
+	private (BotPosition From, BotPosition To)? noWay;
 	private bool leaderMoving;
 	private BotPosition? pursued;
 	private float pursuedBest, pursuedLast;
@@ -39,6 +43,9 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 	/// left of the trail. A companion sets it; the group legs keep the trail as it was.
 	/// </summary>
 	public bool SkipAhead { get; set; }
+	/// <summary>M6: the open field's rules (docs/natural-morheim-leveling.md): a leader sample in the air stands on the ground
+	/// below it, and a follower drops to a leader just below a ledge. The camp keeps the trail as it was.</summary>
+	public bool Field { get; set; }
 	/// <summary>Where the leader has been since it took off, oldest first. A follower that flies takes them from here.</summary>
 	public Queue<BotPosition> AirTrail => airTrail;
 
@@ -211,10 +218,14 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 				skipped = 0;
 				// To a leader in the air there is no way on the ground, and looking for one is the longest search there is.
 				if (airborne) return;
+				// M6: nor again from where it found none to where it found none: a fight left the Templar on a ledge 8 m from his
+				// group north of Kimssi, and each search for a way to it held the whole world ten seconds.
+				if (noWay is { } none && Distance(none.From, standing) <= 3 && Distance(none.To, currentLeader) <= 3) return;
 				path = geometry.FindInteractionPath(map, standing, currentLeader);
 				// A way to within reach does not cross a seam of the mesh (the camp's gateway); a way to the exact point does.
 				if (path.Count == 0) path = geometry.FindJourneyPath(map, standing, currentLeader);
 				around = path.Count > 0;
+				noWay = around ? null : (standing, currentLeader);
 			}
 			if (runtime.SearchElsewhere is { } elsewhere) await elsewhere(Search);
 			else Search();
@@ -234,10 +245,26 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 			{ ["leader"] = leaderId, ["refused"] = refused, ["next"] = next, ["samples"] = trail.Count });
 			if (path.Count == 0)
 			{
-				blockedUntil = session.Api.Timing.Now + TimeSpan.FromSeconds(2);
+				// M6: a leader a few metres down a drop the mesh does not join (a fight carried the Templar down the slope north
+				// of Kimssi, and all five followers stood at its top) is reached as a player reaches it: straight down to where
+				// it stands, when it is in sight, near and below.
+				if (++blockedTurns >= 5 && Field && !airborne && world.Objects.ContainsKey(leaderId) && Distance(session.CurrentPosition, currentLeader) <= 45 &&
+					currentLeader.Z < session.CurrentPosition.Z - 3)
+				{
+					blockedTurns = 0;
+					session.TraceDiagnostic("group-follow-drop", new Dictionary<string, object?>
+					{ ["leader"] = leaderId, ["from"] = session.CurrentPosition, ["to"] = currentLeader });
+					await session.ExecuteMovementAsync(new BotMover(world, session.Api.Timing).CreateFallPlan([currentLeader],
+						session.CurrentPosition, world.MovementSpeed!.Value), token);
+					trail.Clear(); lastSample = null;
+					return true;
+				}
+				// The searches for a way cost the most time there is: they are not asked again at once.
+				blockedUntil = session.Api.Timing.Now + TimeSpan.FromSeconds(blockedTurns > 3 ? 5 : 2);
 				return false;
 			}
 		}
+		blockedTurns = 0;
 		var segment = new List<BotPosition>();
 		BotPosition from = session.CurrentPosition;
 		float remaining = 3;
@@ -266,6 +293,10 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 		// Place those samples on the same nearby checked ground used by our movement stream.
 		if (session.Api.World.MapId is int map && geometry.SnapToGround(map, point) is { } ground && MathF.Abs(ground.Z - point.Z) <= 4)
 			point = ground;
+		// M6: a leader sample in the air (its step over a dip, east of Kellan's Cabin) stands on the static ground below it.
+		else if (Field && session.Api.World.MapId is int under && !LeaderAirborne && geometry.StaticGroundAt(under, point) is null &&
+			geometry.StaticGroundBelow(under, point, 14) is { } below)
+			point = below;
 		if (lastSample is { } previous && Distance(previous, point) < .3f) return;
 		trail.Enqueue(point); lastSample = point;
 		while (trail.Count > 512) trail.Dequeue();
