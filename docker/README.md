@@ -49,7 +49,8 @@ which runs `docker\RestartAll.ps1`. Each run:
 1. Fast-forwards this checkout to `origin/main`, but only when it is on `main` with no modified or
    untracked files. Docker builds from the files on disk, so uncommitted work would otherwise go live.
 2. Rebuilds only the server images whose inputs changed since they were last deployed, while the old
-   servers keep running.
+   servers keep running. A server's inputs are what its Dockerfile copies, read at the new commit.
+   If the update changes `RestartAll.ps1` itself, the new copy does the rest of the run.
 3. Refuses to deploy new code while the live database schema differs from the repo's
    `*/sql/aion_*.sql`. Apply the migration by hand, then run it again.
 4. Backs up the three databases, restarts game, chat and login in order, and health-checks them.

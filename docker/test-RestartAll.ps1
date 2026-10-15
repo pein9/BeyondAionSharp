@@ -61,6 +61,13 @@ function Invoke-Git {
         '^merge --ff-only' { $script:fx.Head = $script:fx.Upstream; break }
         '^diff --name-only' { $out = @($script:fx.Changed); break }
         '^diff --quiet .* -- docker/RestartAll\.ps1$' { if ($script:fx.ScriptChanged) { $code = 1 }; break }
+        # A Dockerfile at a commit: the fixture's when it has one, otherwise the checkout's own.
+        '^show \S+?:(docker/\S+/Dockerfile)$' {
+            $file = $Matches[1]
+            if ($script:fx -and $script:fx.Dockerfiles -and $script:fx.Dockerfiles.ContainsKey($file)) { $out = @($script:fx.Dockerfiles[$file] -split "`n") }
+            else { $out = @(Get-Content -LiteralPath (Join-Path $RepoRoot $file)) }
+            break
+        }
     }
     if ($code -ne 0 -and -not $AllowFailure) { throw "git $line failed" }
     return [pscustomobject]@{ ExitCode = $code; Lines = $out; Text = ($out -join "`n") }
@@ -127,12 +134,40 @@ try {
         'game-server/sql/aion_gs.sql'                  = ''
         'docs/natural-ishalgen-status.md'              = ''
         'src-other/readme.md'                          = ''
+        'Directory.Build.props'                        = ''
+        'tests/Aion.Bots/Scenarios/Companion.cs'       = ''
+        'tools/Aion.LiveBots/Program.cs'               = ''
+        'docker/companionhost/Dockerfile'              = ''
     }
     $scenario = 'path mapping'
+    $inputsOf = @{}
+    foreach ($server in $Servers) { $inputsOf[$server] = Get-ServerInputs $server 'h1' }
     foreach ($path in $feeds.Keys) {
-        $actual = (@($Servers | Where-Object { Test-PathFeedsServer $path $_ }) -join ' ')
+        $actual = (@($Servers | Where-Object { Test-PathFeedsServer $path $_ $inputsOf[$_] }) -join ' ')
         Assert-That ($actual -ceq $feeds[$path]) "$path feeds '$actual', expected '$($feeds[$path])'"
     }
+
+    # The inputs come from the Dockerfile: stage copies are not inputs, and a new COPY is followed.
+    $scenario = 'inputs from the Dockerfile'
+    $script:fx = @{ Dockerfiles = @{ 'docker/gameserver/Dockerfile' = @(
+        'FROM sdk AS build'
+        'COPY Directory.Build.props ./'
+        'COPY --chown=app src/ ./src/'
+        'COPY ["tools/Shared/", "./tools/Shared/"]'
+        'COPY game-server/data ./game-server/data/'
+        'COPY *.json ./'
+        'COPY --from=build /publish/ ./'
+        'ADD docker/gameserver/entrypoint.sh /entrypoint.sh'
+    ) -join "`n" } }
+    $gameInputs = Get-ServerInputs 'gameserver' 'h2'
+    Assert-That (-not ($gameInputs -contains '/publish/')) 'a copy from another stage was taken as an input'
+    foreach ($path in @('Directory.Build.props', 'src/Aion.Commons/A.cs', 'tools/Shared/B.cs', 'game-server/data/x.xml', 'global.json', 'docker/gameserver/entrypoint.sh')) {
+        Assert-That (Test-PathFeedsServer $path 'gameserver' $gameInputs) "$path is copied but did not count"
+    }
+    foreach ($path in @('src/Aion.LoginServer/Program.cs', 'game-server/database/x.xml', 'tools/Other/C.cs', 'docs/a.json')) {
+        Assert-That (-not (Test-PathFeedsServer $path 'gameserver' $gameInputs)) "$path is not copied but counted"
+    }
+    $script:fx = $null
 
     # ---- nightly runs -------------------------------------------------------------------------
     Invoke-Scenario 'up to date'
