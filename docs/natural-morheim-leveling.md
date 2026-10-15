@@ -3,7 +3,8 @@
 Status: a plan, 2026-10-13, as the operator shaped it in three messages that day. Step M1, the quest list, is done:
 [natural-morheim-quests.md](natural-morheim-quests.md). Steps M2 (Morheim Ice Fortress) and M3 (Kellan's Cabin) are
 played, and step M4 (legs `md` and `mc`), where every bot reached 31 (`morheim-mc-s1-w1`). Step M7's gear check at 31
-came next, on the operator's word: the world is now `morheim-g31-s1-w1`, and M8, M5 and M6 start from it.
+came next, on the operator's word (`morheim-g31-s1-w1`), then M8 and M5: the world is now `morheim-ma-s1-w1`, every
+bot at 32, and the group step M6 starts from it.
 
 It follows [natural-muster.md](natural-muster.md), whose rules MR-a to MR-i are this leg's rules, and starts from the
 group world `ntc-group-s5`.
@@ -166,7 +167,7 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     finish alone in the journey's hour is left for the group step, as a template quest is.
   - Left for later: Q24023 gathers inside the Sky Temple Interior (320050000, a solo instance) and waits for the leg
     engine to collect inside an instance; its reward is Gangleri's at Slag Bulwark.
-- [ ] **M5 Slag Bulwark and Alsig Village,** 13 quests, and the four without a giver where they fall.
+- [x] **M5 Slag Bulwark and Alsig Village,** 13 quests, and the four without a giver where they fall.
   - 2026-10-14, Slag Bulwark: stage `ms`, contract `parity-artifacts/e2e/natural-morheim-ms-contract.json`, from
     `morheim-g31-s1`: Q2356 (held since Kellan's Cabin) to Utgar, Q2357, Q2358, Q2359, Q2360, Q4320, Q2361 (to Magni
     by Halabana Outpost), Q2367 by its steps (the first ending, decision 6) and Q2370 in the temple's crater. Round
@@ -179,6 +180,16 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     flies and lands beside it, and out the same way; Sarinerk stands past the edge of his ledge's mesh, and the bot
     lands on his own static ground. The Cleric flew 128 m from the rim to Sarinerk, 286 m down to the crater floor and
     back up for the reward.
+  - 2026-10-14, Alsig Village: stage `ma`, contract `parity-artifacts/e2e/natural-morheim-ma-contract.json`, from
+    `morheim-ms-s1`: Q2476, Q2381, Q2382, Q2383 (to Sarinerk in the crater, by flight), Q2477 (decision 8: the five
+    ingredients from Beluslan's meek crestliches, Lainita in Pandaemonium, Balom's reward), Q23830 (at REWARD since
+    level 30, to Herner in the fortress) and Q2319 (held since Kellan's Cabin; Luimerk stands in Altgard, 900 m east of
+    its fortress, not in Alsig Village as M3 said). Round `m5-ma`, captured **`morheim-ma-s1-w1`**: all eight did all
+    seven, 1.2 to 2.4 game hours, no deaths, all level 32.
+  - New for the leg engine: a scripted drop list can name the map its sources live on, and the leg goes there by its
+    map trips (Q2477's, in Beluslan); a step far across another map walks the travel planner's road, defending on the
+    way (the explorer alone replanned round the monsters toward Luimerk until its budget ran out, and Altgard's
+    transporter toward him lands on Impetusium, 70 m above him with no way down).
   - Not played, for the report: Q2372 Immortal Love (Q2367's second ending; its sulfur worms are in the Abyss),
     Q2324 The Spirit's Notebook and Q2325 (nothing in the server's data gives Hermod's Notebook), Q24023 (gathering
     inside the Sky Temple Interior, a solo instance).
