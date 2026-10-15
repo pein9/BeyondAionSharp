@@ -1,0 +1,286 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2353,
+    "name": "[Group] Legendary Amethysts",
+    "nameId": 1103553,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 26,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2353,
+        "start_npc_ids": 790020
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 790020,
+        "name": "kellan",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 1084.81,
+            "y": 2486.45,
+            "z": 239.25,
+            "heading": 35,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 790020,
+      "name": "kellan",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1084.81,
+          "y": 2486.45,
+          "z": 239.25,
+          "heading": 35,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 790020,
+      "name": "kellan",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1084.81,
+          "y": 2486.45,
+          "z": 239.25,
+          "heading": 35,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182204141,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182204141,
+          "npc_id": 700254,
+          "npc": {
+            "id": 700254,
+            "name": "crystal ore",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 1565.26,
+                "y": 2879.87,
+                "z": 320.646,
+                "heading": 1,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1601.16,
+                "y": 2797.94,
+                "z": 339.789,
+                "heading": 12,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1628.73,
+                "y": 2807.9,
+                "z": 338.693,
+                "heading": 23,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1641.13,
+                "y": 2793.1,
+                "z": 338.37,
+                "heading": 34,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1647.26,
+                "y": 2921.44,
+                "z": 316.55,
+                "heading": 92,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1650.56,
+                "y": 2807.15,
+                "z": 339.4,
+                "heading": 41,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1661.31,
+                "y": 2934.65,
+                "z": 316.17,
+                "heading": 103,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1661.92,
+                "y": 2892.63,
+                "z": 316.742,
+                "heading": 74,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1706.52,
+                "y": 2896.18,
+                "z": 310.79,
+                "heading": 52,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1719.5,
+                "y": 2933.05,
+                "z": 316.01,
+                "heading": 81,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1726.71,
+                "y": 2923.61,
+                "z": 315.44,
+                "heading": 63,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 790020,
+          "name": "kellan",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1084.81,
+              "y": 2486.45,
+              "z": 239.25,
+              "heading": 35,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 180114,
+        "gold": 23880,
+        "rewardItems": [
+          {
+            "count": 8,
+            "item_id": 162000014
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2353,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 26,
+      "name": "[Group] Legendary Amethysts",
+      "nameId": 1103553,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182204141
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 180114,
+          "gold": 23880
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 8,
+              "item_id": 162000014
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182204141,
+          "npc_id": 700254
+        }
+      }
+    ]
+  }
+}

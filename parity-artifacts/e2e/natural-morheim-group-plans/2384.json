@@ -1,0 +1,499 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2384,
+    "name": "[Group] A Missing Bandage",
+    "nameId": 1103584,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 30,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2383
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "end_npc_ids": 204354,
+        "id": 2384,
+        "start_npc_ids": 798080
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 798080,
+        "name": "sarinerk",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 1895.0,
+            "y": 1374.0,
+            "z": 146.625,
+            "heading": 80,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 798080,
+      "name": "sarinerk",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1895.0,
+          "y": 1374.0,
+          "z": 146.625,
+          "heading": 80,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204354,
+      "name": "letum",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2537.27,
+          "y": 1743.67,
+          "z": 89.0,
+          "heading": 120,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182204152,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182204152,
+          "npc_id": 211449,
+          "npc": {
+            "id": 211449,
+            "name": "fire-eating barghest",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 1566.08,
+                "y": 1237.34,
+                "z": 22.9483,
+                "heading": 42,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1578.49,
+                "y": 1217.65,
+                "z": 22.9711,
+                "heading": 99,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1598.25,
+                "y": 1203.63,
+                "z": 23.3906,
+                "heading": 50,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1606.07,
+                "y": 1274.17,
+                "z": 26.7626,
+                "heading": 53,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1615.81,
+                "y": 1174.13,
+                "z": 23.706,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1641.35,
+                "y": 1230.48,
+                "z": 23.125,
+                "heading": 61,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "item_id": 182204152,
+          "npc_id": 211464,
+          "npc": {
+            "id": 211464,
+            "name": "fire-eating barghest",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182204153,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182204153,
+          "npc_id": 212691,
+          "npc": {
+            "id": 212691,
+            "name": "oblivion temptress",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 1575.11,
+                "y": 1227.0,
+                "z": 172.541,
+                "heading": 69,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1600.87,
+                "y": 1243.74,
+                "z": 172.038,
+                "heading": 76,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1620.02,
+                "y": 1204.1,
+                "z": 168.121,
+                "heading": 24,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1625.5,
+                "y": 1209.05,
+                "z": 23.125,
+                "heading": 58,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "item_id": 182204153,
+          "npc_id": 212692,
+          "npc": {
+            "id": 212692,
+            "name": "oblivion temptress",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182204154,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182204154,
+          "npc_id": 212680,
+          "npc": {
+            "id": 212680,
+            "name": "ruins caryatid",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 1644.78,
+                "y": 1171.81,
+                "z": 197.058,
+                "heading": 103,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1663.25,
+                "y": 1162.74,
+                "z": 198.86,
+                "heading": 86,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1668.58,
+                "y": 1120.48,
+                "z": 198.604,
+                "heading": 111,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1670.41,
+                "y": 1153.86,
+                "z": 144.193,
+                "heading": 78,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1671.59,
+                "y": 1168.07,
+                "z": 198.844,
+                "heading": 53,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1686.75,
+                "y": 1176.92,
+                "z": 197.94,
+                "heading": 16,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1696.47,
+                "y": 1146.82,
+                "z": 148.543,
+                "heading": 116,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1708.06,
+                "y": 1182.99,
+                "z": 145.081,
+                "heading": 75,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1708.88,
+                "y": 1153.2,
+                "z": 144.073,
+                "heading": 116,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1711.03,
+                "y": 1100.45,
+                "z": 197.123,
+                "heading": 110,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1728.9,
+                "y": 1155.87,
+                "z": 201.482,
+                "heading": 13,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1746.08,
+                "y": 1144.48,
+                "z": 194.402,
+                "heading": 100,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "item_id": 182204154,
+          "npc_id": 212681,
+          "npc": {
+            "id": 212681,
+            "name": "ruins caryatid",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204354,
+          "name": "letum",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2537.27,
+              "y": 1743.67,
+              "z": 89.0,
+              "heading": 120,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 340413,
+        "gold": 36980,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2384,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 30,
+      "name": "[Group] A Missing Bandage",
+      "nameId": 1103584,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182204152
+            }
+          },
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182204153
+            }
+          },
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182204154
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 340413,
+          "gold": 36980
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204152,
+          "npc_id": 211449
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204152,
+          "npc_id": 211464
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204153,
+          "npc_id": 212691
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204153,
+          "npc_id": 212692
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204154,
+          "npc_id": 212680
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204154,
+          "npc_id": 212681
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2383
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

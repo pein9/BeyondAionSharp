@@ -1,0 +1,316 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2344,
+    "name": "Destroying the Mau Flag",
+    "nameId": 1103544,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 27,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2344,
+        "start_npc_ids": 204329
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204329,
+        "name": "tofa",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 629.923,
+            "y": 917.468,
+            "z": 361.0,
+            "heading": 119,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204329,
+      "name": "tofa",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 629.923,
+          "y": 917.468,
+          "z": 361.0,
+          "heading": 119,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204329,
+      "name": "tofa",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 629.923,
+          "y": 917.468,
+          "z": 361.0,
+          "heading": 119,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": 700250,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 700250,
+          "name": "ice claw flag",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 816.36,
+              "y": 464.8,
+              "z": 521.0,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 883.45,
+              "y": 356.1,
+              "z": 510.0,
+              "heading": 1,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 935.84,
+              "y": 270.54,
+              "z": 510.0,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 962.24,
+              "y": 448.3,
+              "z": 509.22,
+              "heading": 62,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 970.6,
+              "y": 354.44,
+              "z": 514.47,
+              "heading": 33,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1049.25,
+              "y": 345.26,
+              "z": 514.62,
+              "heading": 2,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1060.02,
+              "y": 530.56,
+              "z": 509.38,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1076.66,
+              "y": 242.58,
+              "z": 517.25,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1086.61,
+              "y": 358.05,
+              "z": 509.38,
+              "heading": 54,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1092.08,
+              "y": 426.12,
+              "z": 509.25,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1123.19,
+              "y": 501.31,
+              "z": 509.46,
+              "heading": 89,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1170.56,
+              "y": 408.27,
+              "z": 509.41,
+              "heading": 70,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1202.74,
+              "y": 356.13,
+              "z": 509.38,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1239.97,
+              "y": 455.91,
+              "z": 515.88,
+              "heading": 84,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1336.71,
+              "y": 324.46,
+              "z": 527.12,
+              "heading": 55,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204329,
+          "name": "tofa",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 629.923,
+              "y": 917.468,
+              "z": 361.0,
+              "heading": 119,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 270300,
+        "gold": 12400,
+        "rewardItems": [
+          {
+            "count": 150,
+            "item_id": 169000007
+          },
+          {
+            "count": 1,
+            "item_id": 186000008
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2344,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 27,
+      "name": "Destroying the Mau Flag",
+      "nameId": 1103544,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 270300,
+          "gold": 12400
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 150,
+              "item_id": 169000007
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000008
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": 700250,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

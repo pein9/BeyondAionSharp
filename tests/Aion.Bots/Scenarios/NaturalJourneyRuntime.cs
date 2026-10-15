@@ -136,4 +136,7 @@ public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? R
 	// minutes between two stock checks, where a test cannot wait half an hour.
 	string? CompanionTest = null, int? CompanionStockMinutes = null,
 	// MR-i (docs/natural-muster.md): with Muster, the gear check-in at this level instead of the muster's coin quest and tier.
-	int? CheckInLevel = null);
+	int? CheckInLevel = null,
+	// M6 (docs/natural-morheim-leveling.md): the field group stage's quests, in the order played, and the obelisk the
+	// group binds at before it sets out.
+	int[]? GroupQuests = null, int? GroupBind = null);

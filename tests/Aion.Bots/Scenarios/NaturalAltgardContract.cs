@@ -80,7 +80,7 @@ public sealed record NaturalAltgardContract(
 		// M2 (docs/natural-morheim-leveling.md): Morheim, hub by hub, from the group world. "mf" is Morheim Ice Fortress,
 		// "mk" (M3) Kellan's Cabin, "md" (M4) Desert Garrison and "mc" (M4) the campaign's Q24021 and Q24022 with Q2333,
 		// "ms" (M5) Slag Bulwark and "ma" (M5) Alsig Village with the hand-ins held for them, and "mg" (M7) the way back to
-		// the fortress, bound there, for the gear check-in at 31.
+		// the fortress, bound there, for the gear check-in at 31; "mgk" (M6) the way to Kellan's Cabin for its group quests.
 		["mf"] = ("natural-morheim-mf-contract.json", "natural-morheim-mf-plans"),
 		["mk"] = ("natural-morheim-mk-contract.json", "natural-morheim-mk-plans"),
 		["md"] = ("natural-morheim-md-contract.json", "natural-morheim-md-plans"),
@@ -88,11 +88,12 @@ public sealed record NaturalAltgardContract(
 		["ms"] = ("natural-morheim-ms-contract.json", "natural-morheim-ms-plans"),
 		["ma"] = ("natural-morheim-ma-contract.json", "natural-morheim-ma-plans"),
 		["mg"] = ("natural-morheim-mg-contract.json", null),
+		["mgk"] = ("natural-morheim-mgk-contract.json", null),
 	};
 
 	/// <summary>The legs of the Morheim leg to level 31 (docs/natural-morheim-leveling.md): played on Morheim by a
 	/// mustered character of level 26 or more.</summary>
-	public static readonly IReadOnlySet<string> MorheimLegs = new HashSet<string> { "mf", "mk", "md", "mc", "ms", "ma", "mg" };
+	public static readonly IReadOnlySet<string> MorheimLegs = new HashSet<string> { "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk" };
 
 	/// <summary>The muster's template quest: the fortress's repeatable coin quest (docs/natural-muster.md). The plans are
 	/// apart from the Abyss entry's, which has none, so that leg's navigation graph is what it was.</summary>
@@ -104,6 +105,11 @@ public sealed record NaturalAltgardContract(
 	/// <summary>The quests of the Group NTC leg (docs/natural-group-ntc.md): the entry quest and Kelmar's two group
 	/// quests, given in Morheim Ice Fortress.</summary>
 	public const string GroupNtcPlans = "natural-group-ntc-plans";
+	/// <summary>M6: the compiled plans of the Morheim quests played by a group in the field (docs/natural-morheim-leveling.md).</summary>
+	public const string GroupFieldPlans = "natural-morheim-group-plans";
+
+	public static IReadOnlyDictionary<int, QuestRunPlan> LoadGroupFieldPlans() =>
+		QuestRunPlan.LoadDirectory(Path.Combine(RepoRoot(), "parity-artifacts/e2e", GroupFieldPlans)).ToDictionary(plan => plan.Id);
 
 	public static IReadOnlyDictionary<int, QuestRunPlan> LoadGroupNtcPlans() =>
 		QuestRunPlan.LoadDirectory(Path.Combine(RepoRoot(), "parity-artifacts/e2e", GroupNtcPlans)).ToDictionary(plan => plan.Id);

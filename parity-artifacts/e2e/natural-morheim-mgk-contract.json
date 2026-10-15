@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "morheim-mgk-kellans-cabin",
+  "start": {
+    "contract": "natural-morheim-ma-contract.json",
+    "snapshot": "morheim-ma-s1",
+    "mapId": 220020000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 31,
+    "bindNpcId": 700232,
+    "completedQuestIds": [
+      24020,
+      2333
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "kellans-cabin",
+    "mapId": 220020000,
+    "anchor": [
+      1095.67,
+      2482.17,
+      240.373
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "cabin",
+      "note": "Kellan's Cabin: its obelisk, where the group binds for the group quests of step M6",
+      "min": [
+        1045,
+        2430,
+        220
+      ],
+      "max": [
+        1145,
+        2530,
+        260
+      ]
+    }
+  ],
+  "quests": [],
+  "order": [],
+  "steps": [],
+  "objectUses": [],
+  "collections": [],
+  "bind": {
+    "npcId": 700258,
+    "position": [
+      1095.67,
+      2482.17,
+      240.373
+    ],
+    "onArrival": true,
+    "price": 3720,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 220020000,
+    "completedQuestIds": [],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 32,
+    "snapshot": "morheim-mgk",
+    "anchor": [
+      1095.67,
+      2482.17,
+      240.373
+    ],
+    "radius": 30,
+    "bindNpcId": 700258,
+    "heldQuestIds": []
+  }
+}

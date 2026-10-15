@@ -1,0 +1,296 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2494,
+    "name": "Three Treasures",
+    "nameId": 1103694,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "PC_ALL"
+  },
+  "gates": {
+    "minimumLevel": 24,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2494,
+        "start_npc_ids": 798125
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 798125,
+        "name": "garurunerk",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 1069.33,
+            "y": 2499.31,
+            "z": 239.918,
+            "heading": 115,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 798125,
+      "name": "garurunerk",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1069.33,
+          "y": 2499.31,
+          "z": 239.918,
+          "heading": 115,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 798125,
+      "name": "garurunerk",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1069.33,
+          "y": 2499.31,
+          "z": 239.918,
+          "heading": 115,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182204224,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204224,
+          "npc_id": 213798,
+          "npc": {
+            "id": 213798,
+            "name": "sku the eldest",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 1010.06,
+                "y": 2302.8,
+                "z": 235.45,
+                "heading": 66,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182204225,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204225,
+          "npc_id": 213799,
+          "npc": {
+            "id": 213799,
+            "name": "paku the middle",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 1002.56,
+                "y": 1879.23,
+                "z": 227.875,
+                "heading": 27,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182204226,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204226,
+          "npc_id": 213800,
+          "npc": {
+            "id": 213800,
+            "name": "seku the youngest",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 1228.36,
+                "y": 1705.8,
+                "z": 228.375,
+                "heading": 68,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 798125,
+          "name": "garurunerk",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1069.33,
+              "y": 2499.31,
+              "z": 239.918,
+              "heading": 115,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 154050,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 122000873
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2494,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 24,
+      "name": "Three Treasures",
+      "nameId": 1103694,
+      "quest_zone": "Morheim",
+      "race_permitted": "PC_ALL"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204224
+            }
+          },
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204225
+            }
+          },
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204226
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 154050
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 122000873
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204224,
+          "npc_id": 213798
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204225,
+          "npc_id": 213799
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204226,
+          "npc_id": 213800
+        }
+      }
+    ]
+  }
+}

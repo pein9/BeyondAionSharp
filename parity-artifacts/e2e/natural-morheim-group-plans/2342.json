@@ -1,0 +1,388 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2342,
+    "name": "[Group] An Ice Claw Raid",
+    "nameId": 1103542,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 28,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2342,
+        "start_npc_ids": 204333
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204333,
+        "name": "hakon",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 644.439,
+            "y": 906.648,
+            "z": 362.0,
+            "heading": 50,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204333,
+      "name": "hakon",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 644.439,
+          "y": 906.648,
+          "z": 362.0,
+          "heading": 50,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204333,
+      "name": "hakon",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 644.439,
+          "y": 906.648,
+          "z": 362.0,
+          "heading": 50,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": 211457,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 211457,
+          "name": "brutal ice claw summoner",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 994.068,
+              "y": 480.794,
+              "z": 511.893,
+              "heading": 64,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1193.73,
+              "y": 362.782,
+              "z": 509.233,
+              "heading": 12,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1207.09,
+              "y": 286.527,
+              "z": 525.375,
+              "heading": 19,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1259.94,
+              "y": 352.584,
+              "z": 509.746,
+              "heading": 115,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1266.13,
+              "y": 335.507,
+              "z": 520.865,
+              "heading": 89,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1267.23,
+              "y": 441.858,
+              "z": 515.902,
+              "heading": 51,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1291.06,
+              "y": 254.516,
+              "z": 539.538,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1319.01,
+              "y": 262.216,
+              "z": 539.253,
+              "heading": 38,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1337.77,
+              "y": 328.966,
+              "z": 527.125,
+              "heading": 4,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1348.46,
+              "y": 392.693,
+              "z": 528.766,
+              "heading": 39,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": 211460,
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 211460,
+          "name": "brutal ice claw healer",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 943.305,
+              "y": 534.743,
+              "z": 515.915,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1165.42,
+              "y": 355.571,
+              "z": 509.214,
+              "heading": 120,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1171.24,
+              "y": 402.867,
+              "z": 509.375,
+              "heading": 83,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1176.88,
+              "y": 343.768,
+              "z": 509.375,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1203.88,
+              "y": 395.354,
+              "z": 510.0,
+              "heading": 16,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1222.87,
+              "y": 254.405,
+              "z": 530.875,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1230.03,
+              "y": 461.187,
+              "z": 515.875,
+              "heading": 117,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1276.72,
+              "y": 367.737,
+              "z": 521.288,
+              "heading": 59,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1284.77,
+              "y": 290.747,
+              "z": 541.0,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1308.12,
+              "y": 367.708,
+              "z": 521.739,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1322.69,
+              "y": 239.095,
+              "z": 539.218,
+              "heading": 110,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1344.16,
+              "y": 394.826,
+              "z": 528.777,
+              "heading": 98,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204333,
+          "name": "hakon",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 644.439,
+              "y": 906.648,
+              "z": 362.0,
+              "heading": 50,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 268950,
+        "gold": 39350,
+        "rewardItems": [
+          {
+            "count": 30,
+            "item_id": 164000069
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2342,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 28,
+      "name": "[Group] An Ice Claw Raid",
+      "nameId": 1103542,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 268950,
+          "gold": 39350
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 30,
+              "item_id": 164000069
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": 211457,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": 211460,
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      }
+    ]
+  }
+}

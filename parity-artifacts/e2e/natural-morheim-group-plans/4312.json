@@ -1,0 +1,427 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 4312,
+    "name": "[Group] Gangleri's Request",
+    "nameId": 1103709,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 29,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 4312,
+        "start_npc_ids": 204372
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204372,
+        "name": "gangleri",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 1778.4867,
+            "y": 1662.3026,
+            "z": 197.625,
+            "heading": 10,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204372,
+      "name": "gangleri",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1778.4867,
+          "y": 1662.3026,
+          "z": 197.625,
+          "heading": 10,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204372,
+      "name": "gangleri",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1778.4867,
+          "y": 1662.3026,
+          "z": 197.625,
+          "heading": 10,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": "212678 212679",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 212678,
+          "name": "arkanis mugolem",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1640.44,
+              "y": 1154.6,
+              "z": 197.861,
+              "heading": 99,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1649.27,
+              "y": 1122.77,
+              "z": 198.313,
+              "heading": 114,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1669.23,
+              "y": 1185.7,
+              "z": 192.989,
+              "heading": 4,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1678.32,
+              "y": 1124.24,
+              "z": 198.02,
+              "heading": 31,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1684.88,
+              "y": 1199.08,
+              "z": 194.486,
+              "heading": 113,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1702.54,
+              "y": 1158.62,
+              "z": 198.503,
+              "heading": 29,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1704.33,
+              "y": 1146.72,
+              "z": 198.12,
+              "heading": 113,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1713.8,
+              "y": 1100.34,
+              "z": 197.018,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1716.01,
+              "y": 1136.72,
+              "z": 146.176,
+              "heading": 25,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1739.46,
+              "y": 1121.71,
+              "z": 194.258,
+              "heading": 99,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1774.15,
+              "y": 1372.52,
+              "z": 111.15,
+              "heading": 113,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1802.49,
+              "y": 1297.11,
+              "z": 104.499,
+              "heading": 25,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 212679,
+          "name": "arkanis mugolem",
+          "positions": [],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": "212680 212681",
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 212680,
+          "name": "ruins caryatid",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1644.78,
+              "y": 1171.81,
+              "z": 197.058,
+              "heading": 103,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1663.25,
+              "y": 1162.74,
+              "z": 198.86,
+              "heading": 86,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1668.58,
+              "y": 1120.48,
+              "z": 198.604,
+              "heading": 111,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1670.41,
+              "y": 1153.86,
+              "z": 144.193,
+              "heading": 78,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1671.59,
+              "y": 1168.07,
+              "z": 198.844,
+              "heading": 53,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1686.75,
+              "y": 1176.92,
+              "z": 197.94,
+              "heading": 16,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1696.47,
+              "y": 1146.82,
+              "z": 148.543,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1708.06,
+              "y": 1182.99,
+              "z": 145.081,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1708.88,
+              "y": 1153.2,
+              "z": 144.073,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1711.03,
+              "y": 1100.45,
+              "z": 197.123,
+              "heading": 110,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1728.9,
+              "y": 1155.87,
+              "z": 201.482,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1746.08,
+              "y": 1144.48,
+              "z": 194.402,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 212681,
+          "name": "ruins caryatid",
+          "positions": [],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204372,
+          "name": "gangleri",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1778.4867,
+              "y": 1662.3026,
+              "z": 197.625,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 203989,
+        "gold": 47200,
+        "rewardItems": [
+          {
+            "count": 4,
+            "item_id": 188050585
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {},
+    "bonus": {
+      "level": 30,
+      "type": "MAGICAL"
+    }
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 4312,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 29,
+      "name": "[Group] Gangleri's Request",
+      "nameId": 1103709,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 203989,
+          "gold": 47200
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 4,
+              "item_id": 188050585
+            }
+          }
+        ]
+      },
+      {
+        "tag": "bonus",
+        "attributes": {
+          "level": 30,
+          "type": "MAGICAL"
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": "212678 212679",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": "212680 212681",
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      }
+    ]
+  }
+}

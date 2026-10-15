@@ -1,0 +1,280 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2328,
+    "name": "Millennium Eka",
+    "nameId": 1103528,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 26,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2327
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2328,
+        "start_npc_ids": 204330
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204330,
+        "name": "gelundorf",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 639.298,
+            "y": 924.208,
+            "z": 361.0,
+            "heading": 25,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204330,
+      "name": "gelundorf",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 639.298,
+          "y": 924.208,
+          "z": 361.0,
+          "heading": 25,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204330,
+      "name": "gelundorf",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 639.298,
+          "y": 924.208,
+          "z": 361.0,
+          "heading": 25,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182204125,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182204125,
+          "npc_id": 212654,
+          "npc": {
+            "id": 212654,
+            "name": "millennium eka",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 30.9509,
+                "y": 1544.92,
+                "z": 373.061,
+                "heading": 44,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204330,
+          "name": "gelundorf",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 639.298,
+              "y": 924.208,
+              "z": 361.0,
+              "heading": 25,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 248550,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 120000835
+          }
+        ],
+        "selectableItems": [
+          {
+            "count": 1,
+            "item_id": 111101083
+          },
+          {
+            "count": 1,
+            "item_id": 111301082
+          },
+          {
+            "count": 1,
+            "item_id": 111501067
+          },
+          {
+            "count": 1,
+            "item_id": 111601057
+          },
+          {
+            "count": 1,
+            "item_id": 111501576
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2328,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 26,
+      "name": "Millennium Eka",
+      "nameId": 1103528,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204125
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 248550
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 111101083
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 111301082
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 111501067
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 111601057
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 111501576
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 120000835
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182204125,
+          "npc_id": 212654
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2327
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,609 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 4311,
+    "name": "[Group] The Snowflake Necklace",
+    "nameId": 1103708,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 29,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 4311,
+        "start_npc_ids": 204339
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204339,
+        "name": "embla",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 1781.2015,
+            "y": 1665.2469,
+            "z": 197.625,
+            "heading": 103,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204339,
+      "name": "embla",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1781.2015,
+          "y": 1665.2469,
+          "z": 197.625,
+          "heading": 103,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204339,
+      "name": "embla",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1781.2015,
+          "y": 1665.2469,
+          "z": 197.625,
+          "heading": 103,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182204253,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204253,
+          "npc_id": 212687,
+          "npc": {
+            "id": 212687,
+            "name": "cruel drake",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 1577.84,
+                "y": 1246.68,
+                "z": 171.692,
+                "heading": 74,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1596.67,
+                "y": 1261.25,
+                "z": 171.962,
+                "heading": 28,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1642.49,
+                "y": 1225.0,
+                "z": 168.744,
+                "heading": 97,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204253,
+          "npc_id": 212688,
+          "npc": {
+            "id": 212688,
+            "name": "cruel drake",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182204254,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204254,
+          "npc_id": 212699,
+          "npc": {
+            "id": 212699,
+            "name": "inferno obscura",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 1588.0,
+                "y": 1343.84,
+                "z": 143.278,
+                "heading": 47,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1602.13,
+                "y": 1327.32,
+                "z": 143.242,
+                "heading": 46,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1644.28,
+                "y": 1373.26,
+                "z": 142.647,
+                "heading": 65,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1658.66,
+                "y": 1359.37,
+                "z": 146.247,
+                "heading": 85,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204254,
+          "npc_id": 212700,
+          "npc": {
+            "id": 212700,
+            "name": "inferno obscura",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182204255,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204255,
+          "npc_id": 212712,
+          "npc": {
+            "id": 212712,
+            "name": "black rock kalgolem",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 1770.18,
+                "y": 1216.29,
+                "z": 87.7591,
+                "heading": 68,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1770.87,
+                "y": 1191.0,
+                "z": 87.7033,
+                "heading": 38,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1797.07,
+                "y": 1218.52,
+                "z": 90.9443,
+                "heading": 81,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1811.83,
+                "y": 1171.16,
+                "z": 88.9511,
+                "heading": 95,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1831.54,
+                "y": 1192.09,
+                "z": 88.3988,
+                "heading": 58,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204255,
+          "npc_id": 212713,
+          "npc": {
+            "id": 212713,
+            "name": "black rock kalgolem",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182204256,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204256,
+          "npc_id": 211471,
+          "npc": {
+            "id": 211471,
+            "name": "ember spirit",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 1625.14,
+                "y": 1325.52,
+                "z": 23.625,
+                "heading": 31,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1632.11,
+                "y": 1295.03,
+                "z": 21.6041,
+                "heading": 96,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1648.4,
+                "y": 1384.82,
+                "z": 21.6041,
+                "heading": 41,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1659.54,
+                "y": 1303.87,
+                "z": 21.6041,
+                "heading": 2,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1683.01,
+                "y": 1195.37,
+                "z": 21.6041,
+                "heading": 51,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1683.64,
+                "y": 1278.19,
+                "z": 21.6041,
+                "heading": 15,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1696.17,
+                "y": 1313.69,
+                "z": 26.7481,
+                "heading": 72,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1734.79,
+                "y": 1296.63,
+                "z": 24.2778,
+                "heading": 120,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1736.23,
+                "y": 1235.99,
+                "z": 24.616,
+                "heading": 19,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1737.25,
+                "y": 1270.03,
+                "z": 21.6041,
+                "heading": 40,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1738.8,
+                "y": 1348.05,
+                "z": 21.6041,
+                "heading": 60,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1747.03,
+                "y": 1319.24,
+                "z": 29.3541,
+                "heading": 55,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1773.15,
+                "y": 1199.81,
+                "z": 21.6041,
+                "heading": 103,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1798.15,
+                "y": 1140.67,
+                "z": 21.6041,
+                "heading": 102,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1825.8,
+                "y": 1303.93,
+                "z": 21.6041,
+                "heading": 59,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1829.25,
+                "y": 1426.96,
+                "z": 21.6041,
+                "heading": 64,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204256,
+          "npc_id": 211487,
+          "npc": {
+            "id": 211487,
+            "name": "ember spirit",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204339,
+          "name": "embla",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1781.2015,
+              "y": 1665.2469,
+              "z": 197.625,
+              "heading": 103,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 340413,
+        "gold": 177500,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 4311,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 29,
+      "name": "[Group] The Snowflake Necklace",
+      "nameId": 1103708,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204253
+            }
+          },
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204254
+            }
+          },
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204255
+            }
+          },
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204256
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 340413,
+          "gold": 177500
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204253,
+          "npc_id": 212687
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204253,
+          "npc_id": 212688
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204254,
+          "npc_id": 212699
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204254,
+          "npc_id": 212700
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204255,
+          "npc_id": 212712
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204255,
+          "npc_id": 212713
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204256,
+          "npc_id": 211471
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204256,
+          "npc_id": 211487
+        }
+      }
+    ]
+  }
+}

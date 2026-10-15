@@ -32,7 +32,7 @@ public sealed partial class SimulationFastScenarioTests
 		string? Role = null, string? SupportInvite = null, bool AcceptSupportInvite = false,
 		string[]? GroupRoster = null, string? GroupLeader = null, bool GroupLoot = false, string? GroupUntil = null,
 		string[]? Companions = null, string? CompanionUntil = null, string? CompanionEnd = null,
-		string? CompanionTest = null, int? CompanionStockMinutes = null);
+		string? CompanionTest = null, int? CompanionStockMinutes = null, int[]? GroupQuests = null, int? GroupBind = null);
 
 	/// <summary>A seat of the companion host; it has no class line until the server makes its character.</summary>
 	private static bool IsCompanionSeat(NaturalRoundBot entry) => entry.Stage == "companion";
@@ -54,7 +54,7 @@ public sealed partial class SimulationFastScenarioTests
 		// a later-capital one and has NA_ASCENSION=1 as well (the script's Restore-Snapshot and Get-LegEnvironment).
 		"l1" => new NaturalJourneyOptions(StopAt: entry.StopAt, AltgardLeg1: true, LaterCapital: true, ClassLine: line),
 		// M2 to M7: "mf", "mk", "md", "mc", "ms", "ma" and "mg" are the Morheim legs (docs/natural-morheim-leveling.md), from the group world.
-		"l2" or "l3" or "l4" or "l5" or "l6" or "l7" or "l8" or "l9" or "l10" or "l11" or "cg" or "l12" or "ax" or "mf" or "mk" or "md" or "mc" or "ms" or "ma" or "mg" =>
+		"l2" or "l3" or "l4" or "l5" or "l6" or "l7" or "l8" or "l9" or "l10" or "l11" or "cg" or "l12" or "ax" or "mf" or "mk" or "md" or "mc" or "ms" or "ma" or "mg" or "mgk" =>
 			new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: entry.Stage, LaterCapital: true, ClassLine: line),
 		// The muster (2026-10-12): a character that stands at the Abyss entry's end, in that leg's fortress.
 		"muster" => new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
@@ -76,11 +76,17 @@ public sealed partial class SimulationFastScenarioTests
 			ClassLine: line, GroupRoster: entry.GroupRoster ?? throw new InvalidDataException("group-ntc needs a roster."),
 			GroupLeader: entry.GroupLeader ?? throw new InvalidDataException("group-ntc needs a leader."), GroupLoot: entry.GroupLoot,
 			GroupStage: "ntc", GroupUntil: entry.GroupUntil),
+		// M6 (docs/natural-morheim-leveling.md): a group plays a list of Morheim field quests, bound at groupBind.
+		"group-field" => new NaturalJourneyOptions(AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
+			ClassLine: line, GroupRoster: entry.GroupRoster ?? throw new InvalidDataException("group-field needs a roster."),
+			GroupLeader: entry.GroupLeader ?? throw new InvalidDataException("group-field needs a leader."), GroupLoot: entry.GroupLoot,
+			GroupStage: "field", GroupQuests: entry.GroupQuests ?? throw new InvalidDataException("group-field names its quests."),
+			GroupBind: entry.GroupBind),
 		// The stand-in for the player who leads companions: a test tool, one of the group world's own characters.
 		"companion-lead" => new NaturalJourneyOptions(AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
 			ClassLine: line, Companion: "stand-in", Companions: entry.Companions ?? throw new InvalidDataException("companion-lead names its companions."),
 			CompanionUntil: entry.CompanionUntil, CompanionEnd: entry.CompanionEnd),
-		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, the Morheim legs, muster, check-in, gh-survey, support, group-coin, group-ntc, companion-lead or companion."),
+		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, the Morheim legs, muster, check-in, gh-survey, support, group-coin, group-ntc, group-field, companion-lead or companion."),
 		}) with { Role = entry.Role };
 	}
 
@@ -91,6 +97,7 @@ public sealed partial class SimulationFastScenarioTests
 	/// journey and for a bot stopped on purpose, which write none.
 	/// </summary>
 	private static string? StageReceipt(NaturalRoundBot entry) => entry.Stage == "group-coin" ? "group-coin-completion.json"
+		: entry.Stage == "group-field" ? "group-field-completion.json"
 		: entry.Stage == "group-ntc" ? "group-ntc-completion.json" : entry.Stage == "companion-lead" ? "companion-completion.json"
 		: IsCompanionSeat(entry) ? null : entry.Role == "healer" || entry.StopAt is { Length: > 0 } ? null : entry.Stage switch
 	{

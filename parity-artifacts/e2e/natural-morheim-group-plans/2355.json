@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2355,
+    "name": "[Group] Seeking the Spotlight",
+    "nameId": 1103555,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 26,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2354
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2355,
+        "start_npc_ids": 204393
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204393,
+        "name": "kimssi",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 1509.88,
+            "y": 2802.84,
+            "z": 363.545,
+            "heading": 60,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204393,
+      "name": "kimssi",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1509.88,
+          "y": 2802.84,
+          "z": 363.545,
+          "heading": 60,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204393,
+      "name": "kimssi",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1509.88,
+          "y": 2802.84,
+          "z": 363.545,
+          "heading": 60,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 1,
+      "npc_ids": 212815,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 212815,
+          "name": "servile kalbak",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1791.43,
+              "y": 2978.66,
+              "z": 301.305,
+              "heading": 7,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204393,
+          "name": "kimssi",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1509.88,
+              "y": 2802.84,
+              "z": 363.545,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 247350,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 115000774
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2355,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 26,
+      "name": "[Group] Seeking the Spotlight",
+      "nameId": 1103555,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 247350
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 115000774
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 1,
+          "npc_ids": 212815,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2354
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

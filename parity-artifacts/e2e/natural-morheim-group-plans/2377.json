@@ -1,0 +1,353 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2377,
+    "name": "[Group] A Curse-Breaking Clue",
+    "nameId": 1103577,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 29,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2376
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "end_npc_ids": 798080,
+        "id": 2377,
+        "start_npc_ids": 798079
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 798079,
+        "name": "padinerk",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 1640.0,
+            "y": 1003.0,
+            "z": 135.875,
+            "heading": 3,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 798079,
+      "name": "padinerk",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1640.0,
+          "y": 1003.0,
+          "z": 135.875,
+          "heading": 3,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 798080,
+      "name": "sarinerk",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1895.0,
+          "y": 1374.0,
+          "z": 146.625,
+          "heading": 80,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": "212710 212711",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 212710,
+          "name": "black stone kalgolem",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1780.31,
+              "y": 1178.92,
+              "z": 88.3622,
+              "heading": 62,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1783.04,
+              "y": 1235.35,
+              "z": 88.48397,
+              "heading": 61,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1786.7,
+              "y": 1173.08,
+              "z": 88.0217,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1815.0,
+              "y": 1194.0,
+              "z": 87.4726,
+              "heading": 91,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1816.28,
+              "y": 1188.17,
+              "z": 86.9388,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 212711,
+          "name": "black stone kalgolem",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1822.77,
+              "y": 1215.39,
+              "z": 90.59036,
+              "heading": 46,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": "212714 212715",
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 212714,
+          "name": "hardened kalgolem",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1779.52,
+              "y": 1206.03,
+              "z": 88.0731,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1793.06,
+              "y": 1217.94,
+              "z": 90.8401,
+              "heading": 17,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1799.71,
+              "y": 1235.53,
+              "z": 89.347,
+              "heading": 119,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1800.75,
+              "y": 1214.96,
+              "z": 91.6315,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1814.79,
+              "y": 1207.65,
+              "z": 91.3341,
+              "heading": 105,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1817.17,
+              "y": 1171.73,
+              "z": 88.9452,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 212715,
+          "name": "hardened kalgolem",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1822.77,
+              "y": 1215.39,
+              "z": 90.59036,
+              "heading": 46,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 798080,
+          "name": "sarinerk",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1895.0,
+              "y": 1374.0,
+              "z": 146.625,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 340413,
+        "gold": 44370,
+        "title": 63,
+        "rewardItems": [
+          {
+            "count": 8,
+            "item_id": 162000009
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2377,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 29,
+      "name": "[Group] A Curse-Breaking Clue",
+      "nameId": 1103577,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 340413,
+          "gold": 44370,
+          "title": 63
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 8,
+              "item_id": 162000009
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": "212710 212711",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": "212714 212715",
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2376
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
