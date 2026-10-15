@@ -5187,6 +5187,16 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						npc = await ApproachCapitalNpcAsync(step.NpcId);
 					else if (stepMap != leg.Hub.MapId && leg.Haramel == null)
 					{
+						// M5: a step far across another map (Luimerk, 900 m east of Altgard Fortress, Q2319) is reached by the
+						// travel planner's road, defending on the way. The explorer alone replanned round the monsters on the way
+						// until its budget ran out, for all eight; Altgard's transporter toward him lands on Impetusium, 70 m above
+						// him with no way down.
+						BotPosition far = new(step.Position[0], step.Position[1], step.Position[2], 0);
+						if (altgardLegId != null && NaturalAltgardContract.MorheimLegs.Contains(altgardLegId) && Distance(session.CurrentPosition, far) > 80)
+						{
+							await WalkRoadDefendingAsync(far, $"talk-road-{step.Key}", within: 12);
+							if (session.Api.World.MapId != stepMap) return;
+						}
 						NaturalNavigationResult reached = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(stepMap, step.NpcId,
 							new BotPosition(step.Position[0], step.Position[1], step.Position[2], 0), step.TalkRange, navigator, "NPC", token);
 						Require.True(reached.Arrived, $"{step.Key}: {reached.Reason}");
