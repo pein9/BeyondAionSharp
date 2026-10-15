@@ -282,6 +282,16 @@ need"; "around Fire temple is a FLY ZONE"):
 8. **Q2477 A Dish For Dukar is played:** the leg engine learns to collect on another map (its ingredients drop only
    from Beluslan's meek crestliches, and Lainita's step is in Pandaemonium).
 
+The operator's, 2026-10-14, later the same day, before going away again:
+
+9. **M6 is not timeboxed while it makes progress.**
+10. **If the group dies too much, change its make-up:** the leather-armoured classes (the Ranger, the Assassin) give
+    their seats to more Clerics or other healing support, or to Gladiators for a sturdier damage dealer.
+11. **The campaign quests (the gold ones in the journal) are caught up as far as they can be:** Q24022 at Protector
+    Karhel, Q24021 for the five that left it, Q24023 in the Sky Temple Interior, and the ones after them.
+12. **Subagents may be used** where they speed the work, without stepping on each other: one SIM round and one build
+    at a time in this checkout, and no worktrees (the operator's standing rule).
+
 Mine, where he gave none; each is his to change:
 
 - How a companion's level is chosen (step M8): the highest level its class has a profile for that is not above its
