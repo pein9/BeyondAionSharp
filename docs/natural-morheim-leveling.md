@@ -4,7 +4,7 @@ Status: a plan, 2026-10-13, as the operator shaped it in three messages that day
 [natural-morheim-quests.md](natural-morheim-quests.md). Steps M2 (Morheim Ice Fortress) and M3 (Kellan's Cabin) are
 played, and step M4 (legs `md` and `mc`), where every bot reached 31 (`morheim-mc-s1-w1`). Step M7's gear check at 31
 came next, on the operator's word (`morheim-g31-s1-w1`), then M8 and M5 (`morheim-ma-s1-w1`, every bot at 32). The
-group step M6 is under way, its cabin quests first: the world is now `morheim-gk-s2-w1`.
+group step M6 is under way, its cabin quests done: the world is now `morheim-gk-s5-w1`.
 
 It follows [natural-muster.md](natural-muster.md), whose rules MR-a to MR-i are this leg's rules, and starts from the
 group world `ntc-group-s5`.
@@ -209,6 +209,12 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     44 game minutes), but its world `morheim-gk-s3` is not to be used: the round ended seconds after the hand-in, before
     the server stored the characters, and its dump has Q2494 taken and their places of an hour before. A field member
     now leaves and comes back at its end (the legs' endpoint relog) and checks its quests are still handed in.
+    `morheim-gk-s4` (the same round after the relog, `f2ed59b24`): all six did Q2494, and the dump holds it.
+  - 2026-10-16, the Spirit Master and the Assassin: round `gk-second.json` from `morheim-gk-s4`, the Templar leading,
+    the Cleric healing, the Gladiator and the Chanter with them (their own quests done, which a field group now counts
+    from the completed list): both did Q2354, Q2353 and Q2494; captured `morheim-gk-s5`. The trials (g47 to g50) found
+    a rest that fought back at the Cleric, whose skills touched the resting Assassin, and then at a target with no
+    template (`2a833311d`). **The cabin's group quests are done by all eight, Q2355 left for later.**
   - Trials g2 to g45 found these bot faults, all fixed (`8f313eb7d`, `eebc922d3`): a route that keeps out of every
     monster's reach is shut north-east of the cabin, so the group fights its way or goes through; the leader's steps
     left the walkable mesh; gatherings waited for the leader itself, for a member offline, for members the leader had
