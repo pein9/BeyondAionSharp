@@ -216,6 +216,11 @@ public sealed partial class NaturalIshalgenJourney
 		/// <summary>NA-13: Q2008's Ataxiar trial — no exit and 1-damage NPCs, so never retreat from the swarm.</summary>
 		public bool ScriptedTrial { get; set; }
 
+		/// <summary>M6: a field group member stands with its group and its healer; a lone retreat from a pack drags the pack
+		/// through the next ones (the Templar ran 250 m through the Ice Claw village from three at full health, and the
+		/// group died there).</summary>
+		public bool HoldsGround { get; set; }
+
 		/// <summary>NR-55b: the monster of a pull the patrol rule has decided to take with its helpers: fight, or pull anyway
 		/// (OD-12). The walk to it accepts its pack whatever its size; the fight's own table still answers the swarm.</summary>
 		public int? DecidedPullTarget { get; set; }
@@ -442,7 +447,7 @@ public sealed partial class NaturalIshalgenJourney
 					HasHealedThisFight: healedThisFight, HasHotPotion: hotPotion != null,
 					HotPotionReady: hotReady,
 					HotPotionActive: NaturalIshalgenPotionPolicy.HasActiveHealing(world.VisibleEffects),
-					Cornered: cornered || ScriptedTrial, TargetAdjacent: targetAdjacent, InEmergency: inEmergency, HasBlessing: hasBlessing,
+					Cornered: cornered || ScriptedTrial || HoldsGround, TargetAdjacent: targetAdjacent, InEmergency: inEmergency, HasBlessing: hasBlessing,
 					TargetSeasoned: targetSeasoned, TargetRanged: targetRanged,
 					ConservativeRangedHold: profile.HoldsAtRange(conservativeRangedHold),
 					OpenChainCategory: tableChain.Current,

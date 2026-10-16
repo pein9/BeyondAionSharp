@@ -49,11 +49,31 @@ public sealed partial class NaturalIshalgenJourney
 		if (leads && options.Role == "healer") throw new InvalidDataException("This quest's bot leader must be a fighter.");
 		if (world.MapId != NaturalAbyssEntry.Morheim) throw new InvalidDataException("The group starts in Morheim.");
 		var geometry = runtime.CreateGeometry();
+		// M6: a campaign quest of the field list has its own handler and no plan (Q24021, Q24022). The group does its kills
+		// and collections for the members that have it, and each member's own leg does its talks: its collections come
+		// from the server's quest data, its named kill from the round.
+		IReadOnlyDictionary<int, QuestRunPlan> fieldPlans = field ? NaturalAltgardContract.LoadGroupFieldPlans() : new Dictionary<int, QuestRunPlan>();
+		QuestRunPlan Campaign(int id) => new(1, id, runtime.Data.Quests.GetQuestById(id)?.GetName() ?? throw new InvalidDataException($"Q{id} has no quest data."),
+			null, null, 0, [], "custom", new QuestRunTrigger("none", 0, 0, null, 0, []), [], [], [], false);
 		QuestRunPlan[] quests = ntc ? [.. GroupNtcQuests.Select(id => NaturalAltgardContract.LoadGroupNtcPlans()[id])]
-			: field ? [.. options.GroupQuests!.Select(id => NaturalAltgardContract.LoadGroupFieldPlans()[id])]
+			: field ? [.. options.GroupQuests!.Select(id => fieldPlans.TryGetValue(id, out var plan) ? plan : Campaign(id))]
 			: [NaturalAltgardContract.LoadMusterPlans().Values.Single()];
+		bool IsCampaign(QuestRunPlan plan) => plan.Template == "custom";
+		QuestRunOperation[] CampaignTasks(int id)
+		{
+			var data = runtime.Data.Quests.GetQuestById(id)!;
+			var drops = data.GetQuestDrop() ?? [];
+			QuestRunOperation[] collect = [.. (data.GetCollectItems()?.GetCollectItem() ?? [])
+				.Select(item => (Item: item, Sources: drops.Where(drop => drop.GetItemId() == item.GetItemId() && drop.GetNpcId() is int)
+					.Select(drop => new QuestRunSource("questDrop", drop.GetNpcId(), null, 0, [], null)).ToArray()))
+				.Where(entry => entry.Sources.Length > 0 && entry.Item.GetItemId() is int && entry.Item.GetCount() is int)
+				.Select(entry => new QuestRunOperation(QuestRunOperationKind.CollectQuestDrop, entry.Item.GetCount()!.Value, entry.Item.GetItemId()!.Value, Sources: entry.Sources))];
+			QuestRunOperation[] named = [.. (options.GroupKills ?? []).Where(kill => kill.Quest == id)
+				.Select(kill => new QuestRunOperation(QuestRunOperationKind.Kill, 1, Sequence: -1 - kill.Var, Npcs: [new QuestRunNpc(kill.Npc, null, [], false)]))];
+			return [.. named, .. collect];
+		}
 		// What a journal counts for each quest: its kills, then the items it collects.
-		var tasks = quests.ToDictionary(plan => plan.Id, plan => QuestRunBook.Build(plan).Operations.Where(op => op.Kind is
+		var tasks = quests.ToDictionary(plan => plan.Id, plan => IsCampaign(plan) ? CampaignTasks(plan.Id) : QuestRunBook.Build(plan).Operations.Where(op => op.Kind is
 			QuestRunOperationKind.Kill or QuestRunOperationKind.CollectQuestDrop or QuestRunOperationKind.UseQuestObject).ToArray());
 		// The coin stage's one quest; the NTC stage's first, whose NPCs stand on the starting map.
 		QuestRunPlan quest = quests[0];
@@ -63,7 +83,11 @@ public sealed partial class NaturalIshalgenJourney
 			Planner = leads || field ? BotTravelPlanner.For(world.MapId.Value, geometry, runtime.Data) : null };
 		var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry, stopOnDeath: false,
 			conservativeRangedHold: false, NaturalMauPolicyParameters.Baseline, ClassLine) { ApproachMapId = world.MapId.Value };
-		var following = new NaturalGroupFollowDriver(session, runtime) { Field = field };
+		// M6: in the field a follower also skips ahead (the companions' rule): a way straight to its leader replaces what is
+		// left of the trail when it is shorter. The trail of before a Return led the Sorcerer 18 m from its leader back down
+		// the hill below the garrison.
+		var following = new NaturalGroupFollowDriver(session, runtime) { Field = field, SkipAhead = field };
+		combat.HoldsGround = field;
 		int repeatBefore = Math.Max(world.Quests.GetValueOrDefault(quest.Id)?.CompleteCount ?? 0,
 			world.CompletedQuests.GetValueOrDefault(quest.Id)?.CompleteCount ?? 0);
 		long started = runtime.NowMillis;
@@ -86,6 +110,8 @@ public sealed partial class NaturalIshalgenJourney
 		var failedTargets = new Dictionary<int, int>();
 		// M6: the members this leader saw die since the group last gathered; the attackers of members this fighter failed to kill.
 		var fallenMembers = new HashSet<int>();
+		// M6: campaign quests whose monster no way reaches, left for later.
+		var campaignLeft = new HashSet<int>();
 		var protectFailures = new Dictionary<int, int>();
 		// M6: the field gatherings in a row that could not gather; where the leader last said it stands, when it last said so,
 		// and when a member that found no safe way to it looks again.
@@ -94,10 +120,17 @@ public sealed partial class NaturalIshalgenJourney
 		// M6: where this field leader last stood alive, where it fell when it stood up at the bind, and its walk back there;
 		// and whether this member stood up at the bind and has not seen its leader since.
 		BotPosition? lastAlive = null, fellAt = null;
-		bool walkingBack = false, revivedAtBind = false;
+		// walkingBack: the leader's own move must not start a gathering inside itself; safeOnly: the leader alone takes only the
+		// way out of every monster's reach (its walk back to where it fell), never the way through.
+		bool walkingBack = false, safeOnly = false, revivedAtBind = false, sayRevived = false;
 		long hereSaidAt = long.MinValue / 2, leaderHereAt = long.MinValue / 2, rejoinAgainAt = 0, plannedWayAt = 0;
 		(BotPosition From, BotPosition To)? plannedNoWay = null;
-		long backOnMeshAt = 0;
+		long backOnMeshAt = 0, leaderSeenAt = 0;
+		BotPosition? lastLeaderAt = null;
+		// M6: when this field leader last saw each member.
+		var memberSeenAt = new Dictionary<int, long>();
+		// M6: a member that has not seen its leader for a minute, or that stood up at the bind, is apart from its group.
+		bool Apart() => revivedAtBind || runtime.NowMillis - leaderSeenAt > 60_000;
 		// M6: the field targets the leader went in to through other monsters' reach, once each.
 		var targetsGoneThrough = new HashSet<int>();
 		using var healer = options.Role == "healer" ? new NaturalGroupHealDriver(session, runtime, combat.ClassProfile) { CatchUp = field } : null;
@@ -117,6 +150,12 @@ public sealed partial class NaturalIshalgenJourney
 		int[] Counts(QuestRunPlan? of = null)
 		{
 			QuestRunPlan plan = of ?? quest;
+			// A campaign quest's work is only for a member that has it; its named kill is done once the quest has passed the
+			// step that needs it (the step is in the task's sequence: -1 - var).
+			if (IsCampaign(plan))
+				return tasks[plan.Id].Select(task => Status(plan.Id) != 3 ? task.Count
+					: task.Kind == QuestRunOperationKind.Kill ? (world.Quests[plan.Id].StepAndFlags & 63) > -1 - task.Sequence ? 1 : 0
+					: (int)Math.Min(task.Count, ItemCount(world, task.ItemId))).ToArray();
 			return tasks[plan.Id].Select(task => Status(plan.Id) is 4 or 5 ? task.Count : Status(plan.Id) != 3 ? 0
 				: task.Kind != QuestRunOperationKind.Kill ? (int)Math.Min(task.Count, ItemCount(world, task.ItemId))
 				: NaturalQuestProgress.KillCount(world.Quests[plan.Id], plan.Steps.Single(step => step.Kind == "kill" && step.Sequence == task.Sequence)
@@ -159,11 +198,24 @@ public sealed partial class NaturalIshalgenJourney
 					arguments = [.. words.Skip(3).Select(value => int.TryParse(value, out int number) ? number : 0)];
 				}
 				else if (ledWhenItSpoke && words[1] == "assist" && int.TryParse(words[2], out int target)) assist = target;
+				// M6: a member that stood up at the bind says so. The leader does not see a death while it fights, and a member
+				// back on its feet at the bind is no longer dead in the group list.
+				else if (field && words[1] == "revived" && sender != session.CharacterId) fallenMembers.Add(sender);
 			}
 			chatCursor = session.PacketHistory.Count;
+			if (sayRevived && !world.IsDead) { sayRevived = false; await SayAsync("revived:1"); }
 			if (world.GroupLeaderId is int leading) leaderSeen = leading;
 			if (field && !world.IsDead) lastAlive = session.CurrentPosition;
-			if (field && world.GroupLeaderId is int chiefSeen && world.Objects.ContainsKey(chiefSeen)) revivedAtBind = false;
+			if (field && world.GroupLeaderId is int chiefSeen && world.Objects.TryGetValue(chiefSeen, out var chiefNow))
+			{
+				revivedAtBind = false;
+				leaderSeenAt = runtime.NowMillis;
+				// M6: a leader that moved more than 50 m at once took a Return: the trail it left is behind it, and the follower
+				// that walked it went back down the hill below the garrison.
+				if (!leads && lastLeaderAt is { } before && Distance(before, chiefNow.Position) > 50) following.Reset();
+				lastLeaderAt = chiefNow.Position;
+			}
+			if (field && leads) foreach (int member in world.GroupMembers.Keys.Where(world.Objects.ContainsKey)) memberSeenAt[member] = runtime.NowMillis;
 			foreach (QuestRunPlan plan in quests) progress[(session.CharacterId, plan.Id)] = (Status(plan.Id), Counts(plan));
 			// M6: in the field the leader says where it stands every twenty seconds, for a member that stood up at the bind; not on
 			// its own way back from the bind, where its group would come to meet it.
@@ -282,6 +334,9 @@ public sealed partial class NaturalIshalgenJourney
 				MathF.Abs(at.Z - session.CurrentPosition.Z) <= 12;
 			if (fellAt is { } fell && !world.IsDead)
 			{
+				// The members that stood up at the bind before it did have said so (the whole group fell in the Ice Claw village,
+				// and the Templar walked back there alone).
+				await ObserveAsync();
 				fellAt = null;
 				// Only to a group that is still out there: when it fell with its leader it stands up at the bind as well.
 				bool groupOut = others.Any(member => member.Online && !member.Dead && Seen(member) == null && !RevivedAway(member));
@@ -291,17 +346,26 @@ public sealed partial class NaturalIshalgenJourney
 					// Alone it takes only the way out of every monster's reach (it died twice fighting its way back alone); with no
 					// such way it calls its group to the bind.
 					walkingBack = true;
+					safeOnly = true;
 					bool back = false;
 					try { await WalkAsync(fell, 15); back = true; }
 					catch (IOException none) { session.TraceDiagnostic("group-field-back-to-group-failed", new Dictionary<string, object?> { ["reason"] = none.Message }); }
-					finally { walkingBack = false; }
-					if (!back && !world.IsDead && world.ObeliskBindPoint is { } bound && bound.MapId == world.MapId && Distance(session.CurrentPosition, bound.Position) < 30)
+					finally { walkingBack = false; safeOnly = false; }
+					// From wherever the way stopped it (the pass west of the garrison, after twenty minutes back and forth).
+					if (!back && !world.IsDead && world.ObeliskBindPoint is { } bound && bound.MapId == world.MapId)
 					{
 						await SayAsync("command:regroup");
+						if (Distance(session.CurrentPosition, bound.Position) >= 30)
+						{
+							walkingBack = true;
+							try { await ReturnToBindAsync(); }
+							catch (IOException) { }
+							finally { walkingBack = false; }
+						}
 						try
 						{
 							await WaitAsync(() => others.Where(member => member.Online).All(member => !member.Dead && Seen(member) is { } at && Near(at)),
-								"group recovery at the common bind", 300);
+								"group recovery at the common bind", 1500);
 						}
 						catch (IOException late) { session.TraceDiagnostic("group-field-recovery-late", new Dictionary<string, object?> { ["reason"] = late.Message }); }
 						await SayAsync("command:hunt");
@@ -311,7 +375,10 @@ public sealed partial class NaturalIshalgenJourney
 			}
 			// Waited for: every member online but one on its way back from the bind, the Cleric always. An offline member is a
 			// bot that stopped (the Ranger's stop held the leader at every wait).
-			bool Waited(BotGroupMember member) => member.Online && (!RevivedAway(member) || IsCleric(member));
+			// Nor one out of sight for a minute: it walks back on its own (the Sorcerer, wandering below the garrison, held every
+			// gathering in the Ice Claw village to its five minutes).
+			bool Waited(BotGroupMember member) => member.Online && (IsCleric(member) ||
+				!RevivedAway(member) && runtime.NowMillis - memberSeenAt.GetValueOrDefault(member.ObjectId, runtime.NowMillis) <= 60_000);
 			bool Together() => others.Where(Waited).All(member => !member.Dead && member.MapId == world.MapId && Seen(member) is { } at && Near(at) &&
 				(member.MaxMp <= 0 || member.CurrentMp * 100L / member.MaxMp >= 50));
 			if (Together()) { missedGatherings = 0; return; }
@@ -342,7 +409,10 @@ public sealed partial class NaturalIshalgenJourney
 				if (world.IsDead) { await combat.RestAsync(ct); return; }
 				foreach (BotGroupMember member in others.Where(member => member.Dead)) fallenMembers.Add(member.ObjectId);
 				bool clericAway = others.Any(member => IsCleric(member) && (member.Dead || RevivedAway(member)));
-				bool many = others.Count(RevivedAway) * 2 >= Math.Max(1, others.Count(member => member.Online));
+				// The Cleric that stood up at the bind waits there for its group (a lone walk across the map left it below the
+				// garrison): the group goes to it, as it goes to half of itself.
+				bool many = others.Count(RevivedAway) * 2 >= Math.Max(1, others.Count(member => member.Online)) ||
+					others.Any(member => IsCleric(member) && RevivedAway(member));
 				bool stuck = missedGatherings >= 1 && runtime.NowMillis - gathering > 300_000;
 				if (world.ObeliskBindPoint?.MapId == world.MapId && (many || stuck))
 				{
@@ -360,8 +430,9 @@ public sealed partial class NaturalIshalgenJourney
 					finally { walkingBack = false; }
 					try
 					{
+						// Up to twenty-five minutes: a member's Return may be cooling its twenty.
 						await WaitAsync(() => others.Where(member => member.Online).All(member => !member.Dead && Seen(member) is { } at && Near(at)),
-							"group recovery at the common bind", 300);
+							"group recovery at the common bind", 1500);
 					}
 					catch (IOException late) { session.TraceDiagnostic("group-field-recovery-late", new Dictionary<string, object?> { ["reason"] = late.Message }); }
 					await SayAsync("command:hunt");
@@ -426,6 +497,7 @@ public sealed partial class NaturalIshalgenJourney
 		{
 			if (field && leads) fellAt = lastAlive;
 			if (field) revivedAtBind = true;
+			if (field && !leads) sayRevived = true;
 			EnterMap();
 		};
 		combat.AfterInstanceRevive = EnterMap;
@@ -494,9 +566,20 @@ public sealed partial class NaturalIshalgenJourney
 		{
 			if (world.ObeliskBindPoint is { } point && point.MapId == world.MapId && Distance(session.CurrentPosition, point.Position) < 20) { following.Reset(); return; }
 			const ushort skill = 243;
+			// M6: Return still cooling from the last recovery (twenty minutes): a field member waits it out where it stands, the
+			// leader killing what strikes the group, and casts it then. The walks home it took instead failed on the slope above
+			// the garrison, 77 m from the bind, and the group went home twenty-three times in a round without getting there.
+			if (field && world.Skills.ContainsKey(skill) && session.Api.Timing.TimeUntilCast(skill) > TimeSpan.Zero)
+			{
+				long readyAt = runtime.NowMillis + (long)session.Api.Timing.TimeUntilCast(skill).TotalMilliseconds + 500;
+				session.TraceDiagnostic("group-field-return-wait", new Dictionary<string, object?> { ["position"] = session.CurrentPosition, ["waitMillis"] = readyAt - runtime.NowMillis });
+				while (runtime.NowMillis < readyAt && !world.IsDead)
+					if (!(leads && await GuardAsync())) await PauseAsync();
+				if (world.IsDead) { await combat.RestAsync(token); following.Reset(); return; }
+				await session.SynchronizeAsync(token);
+			}
 			if (!world.Skills.ContainsKey(skill) || session.Api.Timing.TimeUntilCast(skill) > TimeSpan.Zero)
 			{
-				// M6: Return is still cooling down from the last recovery: a field group's member walks to the bind instead.
 				if (!field || world.ObeliskBindPoint is not { } walkTo || walkTo.MapId != world.MapId)
 					throw new IOException("Group recovery needs Return, but it is unavailable.");
 				await WalkAsync(walkTo.Position, 10);
@@ -560,12 +643,12 @@ public sealed partial class NaturalIshalgenJourney
 			{
 				var from = session.CurrentPosition;
 				var route = await navigator.FindRouteAsync(from, destination, token);
-				if (route.Count == 0 && field && leads && !walkingBack && await ClearWayAsync("no route"))
+				if (route.Count == 0 && field && leads && !safeOnly && await ClearWayAsync("no route"))
 				{
 					attempt--;
 					continue;
 				}
-				if (route.Count == 0 && field && leads && !walkingBack && navigator.AvoidHostileAggro)
+				if (route.Count == 0 && field && leads && !safeOnly && navigator.AvoidHostileAggro)
 				{
 					navigator.AvoidHostileAggro = false;
 					session.TraceDiagnostic("group-field-through", new Dictionary<string, object?> { ["destination"] = destination, ["reason"] = navigator.LastRouteDiagnostic });
@@ -608,9 +691,13 @@ public sealed partial class NaturalIshalgenJourney
 					if (Distance(session.CurrentPosition, destination) <= within) return;
 					if (replan) break;
 				}
+				// The leader alone on the safe road gives up at the same unsafe step twice: it went back and forth for twenty
+				// minutes at the pass west of the garrison, where its group had fought through.
+				if (replan && field && leads && safeOnly && ++replans >= 2)
+					throw new IOException("The safe road is shut by a monster's reach.");
 				// M6: the same unsafe step twice (a klaw beside the way up to Kimssi; the walk gave up after three): the group
 				// fights the monster nearest the way, or takes the way through and fights what wakes.
-				if (replan && field && leads && !walkingBack && ++replans >= 2)
+				if (replan && field && leads && !safeOnly && ++replans >= 2)
 				{
 					replans = 0;
 					if (await ClearWayAsync("unsafe step")) { attempt--; continue; }
@@ -1017,7 +1104,10 @@ public sealed partial class NaturalIshalgenJourney
 				if (field && !combat.InCombat && !world.IsDead && world.GroupLeaderId is int chief && !world.Objects.ContainsKey(chief) &&
 					// Only to a place said in the last minute: one said before the leader's own death sent the Cleric across the
 					// klaw camp to where nobody stood.
-					leaderHere is { } there && runtime.NowMillis - leaderHereAt <= 60_000 && Distance(session.CurrentPosition, there) > (revivedAtBind ? 40 : 400) &&
+					// Not alone across the map: a leader more than 150 m off is waited for where the member stands (at the bind),
+					// for a lone walk of a kilometre stalled among monsters and left the Cleric and the Sorcerer below the garrison.
+					leaderHere is { } there && runtime.NowMillis - leaderHereAt <= 60_000 && Apart() &&
+					Distance(session.CurrentPosition, there) is > 40 and <= 150 &&
 					runtime.NowMillis >= rejoinAgainAt)
 				{
 					session.TraceDiagnostic("group-field-rejoin", new Dictionary<string, object?> { ["position"] = session.CurrentPosition, ["to"] = there });
@@ -1066,7 +1156,9 @@ public sealed partial class NaturalIshalgenJourney
 				}
 				// M6: a member on its way back from the bind does not walk its leader's trail through what lies on it (the
 				// Sorcerer died four times on the trail, 120 to 215 m behind): only the safe road, or it waits where it is.
-				if (!(field && revivedAtBind && world.GroupLeaderId is int away && !world.Objects.ContainsKey(away)))
+				// Nor one apart for a minute: the trail leads where its leader stood before a Return (the Sorcerer walked it off a
+				// drop, 190 m from the garrison, while the group waited for it there).
+				if (!(field && Apart() && world.GroupLeaderId is int away && !world.Objects.ContainsKey(away)))
 					await following.StepAsync(token);
 				await PauseAsync();
 			}
@@ -1425,8 +1517,8 @@ public sealed partial class NaturalIshalgenJourney
 			foreach (QuestRunPlan plan in quests)
 			{
 				if (Everybody(entry => entry.Status == 5, plan.Id)) continue;
-				int giver = plan.StartNpcs.First().Id, end = plan.EndNpcs.FirstOrDefault()?.Id ?? giver;
-				await TogetherFieldAsync(plan, giver, false);
+				int giver = IsCampaign(plan) ? 0 : plan.StartNpcs.First().Id, end = plan.EndNpcs.FirstOrDefault()?.Id ?? giver;
+				if (!IsCampaign(plan)) await TogetherFieldAsync(plan, giver, false);
 				QuestRunOperation[] work = tasks[plan.Id];
 				for (int index = 0; index < work.Length; index++)
 				{
@@ -1468,6 +1560,7 @@ public sealed partial class NaturalIshalgenJourney
 						.Where(id => runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value).Any(group => group.GetNpcId() == id))];
 					if (kinds.Length == 0) throw new InvalidDataException($"Q{plan.Id} task {index} has no source on this map.");
 					int waits = 0;
+					bool unreachable = false;
 					while (!Done())
 					{
 						await combat.RestAsync(token);
@@ -1477,11 +1570,12 @@ public sealed partial class NaturalIshalgenJourney
 							.Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), spot.GetHeading()))
 							.OrderBy(spot => Distance(session.CurrentPosition, spot))];
 						int target = LivingTarget(kinds);
+						bool cameNear = false;
 						foreach (BotPosition spot in candidates.Take(8))
 						{
 							if (target != 0) break;
 							// Once a monster comes into sight, its class combat driver owns the checked approach and pull.
-							try { await WalkAsync(spot, 60); }
+							try { await WalkAsync(spot, 60); cameNear = true; }
 							catch (IOException direct)
 							{
 								// M6: no way reaches Q2355's servile kalbak's spawn (the leader's run ended on it): the leader goes to
@@ -1491,10 +1585,20 @@ public sealed partial class NaturalIshalgenJourney
 								session.TraceDiagnostic("group-field-spawn-unreachable", new Dictionary<string, object?>
 								{ ["quest"] = plan.Id, ["spot"] = spot, ["near"] = near, ["reason"] = direct.Message });
 								if (near is not { } ground) continue;
-								try { await WalkAsync(ground, 5); }
+								try { await WalkAsync(ground, 5); cameNear = true; }
 								catch (IOException) { continue; }
 							}
 							target = LivingTarget(kinds);
+						}
+						// A campaign quest's monster that no way reaches is left, and the round goes on: Q24022's Protector Karhel
+						// stands on ground closed on every side (navmesh island 206 east of the Ice Claw village; every step onto it
+						// meets collision).
+						if (target == 0 && !cameNear && IsCampaign(plan))
+						{
+							session.TraceDiagnostic("group-field-campaign-unreachable", new Dictionary<string, object?>
+							{ ["quest"] = plan.Id, ["task"] = index, ["kinds"] = kinds, ["position"] = session.CurrentPosition });
+							unreachable = true;
+							break;
 						}
 						if (target == 0)
 						{
@@ -1550,8 +1654,11 @@ public sealed partial class NaturalIshalgenJourney
 						}
 						await PauseAsync();
 					}
+					if (unreachable) { campaignLeft.Add(plan.Id); break; }
 				}
-				await TogetherFieldAsync(plan, end, true);
+				if (!IsCampaign(plan)) await TogetherFieldAsync(plan, end, true);
+				else session.TraceDiagnostic("group-field-step", new Dictionary<string, object?>
+				{ ["quest"] = plan.Id, ["done"] = "worked", ["members"] = world.GroupMembers.Count });
 			}
 			await SayAsync("command:done");
 			await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
@@ -1659,7 +1766,8 @@ public sealed partial class NaturalIshalgenJourney
 		}
 		if (field)
 		{
-			int[] notDone = [.. quests.Where(plan => Status(plan.Id) != 5).Select(plan => plan.Id)];
+			// A campaign quest is worked here, not handed in: its giver and its end are the leg's (decision 11).
+			int[] notDone = [.. quests.Where(plan => !IsCampaign(plan) && Status(plan.Id) != 5).Select(plan => plan.Id)];
 			if (notDone.Length > 0) throw new InvalidDataException($"The group member has not handed in Q{string.Join(", Q", notDone)}.");
 			// M6: what the round did is the server's once it stores the character, which it does when the player leaves: Q2494's
 			// hand-in, seconds before its round ended, was missing from the world captured after it. The member leaves and comes
@@ -1669,11 +1777,13 @@ public sealed partial class NaturalIshalgenJourney
 			await session.ReloginExistingCharacterAsync(token);
 			await session.EnterWorldAsync(token);
 			await session.SynchronizeAsync(token);
-			int[] lost = [.. quests.Where(plan => Status(plan.Id) != 5).Select(plan => plan.Id)];
+			int[] lost = [.. quests.Where(plan => !IsCampaign(plan) && Status(plan.Id) != 5).Select(plan => plan.Id)];
 			if (lost.Length > 0) throw new InvalidDataException($"After a relog Q{string.Join(", Q", lost)} is not handed in.");
 			runtime.AssertClean();
 			var played = new { verified = true, CharacterId = session.CharacterId, name, leader = world.GroupLeaderId, roster,
-				quests = quests.Select(plan => plan.Id).ToArray(), elapsedMillis = runtime.NowMillis - started, position = session.CurrentPosition,
+				quests = quests.Select(plan => plan.Id).ToArray(),
+				campaign = quests.Where(IsCampaign).Select(plan => new { plan.Id, status = Status(plan.Id), counts = Counts(plan), left = campaignLeft.Contains(plan.Id) }).ToArray(),
+				elapsedMillis = runtime.NowMillis - started, position = session.CurrentPosition,
 				bind = world.ObeliskBindPoint, deaths = combat.ReviveCount, lootCollected = loot.Collected, rewardItems };
 			File.WriteAllText(Path.Combine(Path.GetDirectoryName(session.CombatTracePath!)!, "group-field-completion.json"),
 				JsonSerializer.Serialize(played, new JsonSerializerOptions { WriteIndented = true }));

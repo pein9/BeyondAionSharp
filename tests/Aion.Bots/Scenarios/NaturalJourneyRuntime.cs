@@ -138,5 +138,9 @@ public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? R
 	// MR-i (docs/natural-muster.md): with Muster, the gear check-in at this level instead of the muster's coin quest and tier.
 	int? CheckInLevel = null,
 	// M6 (docs/natural-morheim-leveling.md): the field group stage's quests, in the order played, and the obelisk the
-	// group binds at before it sets out.
-	int[]? GroupQuests = null, int? GroupBind = null);
+	// group binds at before it sets out. A campaign quest among them (its own handler, no plan) can name a kill its
+	// members need at a step: Q24022's Protector Karhel at var 6.
+	int[]? GroupQuests = null, int? GroupBind = null, NaturalGroupKill[]? GroupKills = null);
+
+/// <summary>M6: a named kill a campaign quest's members need while their quest stands at <paramref name="Var"/>.</summary>
+public sealed record NaturalGroupKill(int Quest, int Npc, int Var);

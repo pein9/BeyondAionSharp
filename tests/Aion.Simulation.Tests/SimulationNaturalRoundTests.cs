@@ -32,7 +32,8 @@ public sealed partial class SimulationFastScenarioTests
 		string? Role = null, string? SupportInvite = null, bool AcceptSupportInvite = false,
 		string[]? GroupRoster = null, string? GroupLeader = null, bool GroupLoot = false, string? GroupUntil = null,
 		string[]? Companions = null, string? CompanionUntil = null, string? CompanionEnd = null,
-		string? CompanionTest = null, int? CompanionStockMinutes = null, int[]? GroupQuests = null, int? GroupBind = null);
+		string? CompanionTest = null, int? CompanionStockMinutes = null, int[]? GroupQuests = null, int? GroupBind = null,
+		NaturalGroupKill[]? GroupKills = null);
 
 	/// <summary>A seat of the companion host; it has no class line until the server makes its character.</summary>
 	private static bool IsCompanionSeat(NaturalRoundBot entry) => entry.Stage == "companion";
@@ -81,7 +82,7 @@ public sealed partial class SimulationFastScenarioTests
 			ClassLine: line, GroupRoster: entry.GroupRoster ?? throw new InvalidDataException("group-field needs a roster."),
 			GroupLeader: entry.GroupLeader ?? throw new InvalidDataException("group-field needs a leader."), GroupLoot: entry.GroupLoot,
 			GroupStage: "field", GroupQuests: entry.GroupQuests ?? throw new InvalidDataException("group-field names its quests."),
-			GroupBind: entry.GroupBind),
+			GroupBind: entry.GroupBind, GroupKills: entry.GroupKills),
 		// The stand-in for the player who leads companions: a test tool, one of the group world's own characters.
 		"companion-lead" => new NaturalJourneyOptions(AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
 			ClassLine: line, Companion: "stand-in", Companions: entry.Companions ?? throw new InvalidDataException("companion-lead names its companions."),
