@@ -495,6 +495,9 @@ member of a group, and the invasion daily the server starts on entering Morheim.
 3. The three quests without a handler (decision 3), and Q24023 once the leg engine collects inside an instance.
 4. Q2355 and Q2343 in a later pass (the leg to the check-in at 36 is the natural one).
 
+The operator's answer, 2026-10-16, after reading the report: all of them are left behind ("We will leave all those
+quests behind, I think this is enough").
+
 ## Decisions
 
 The operator's, 2026-10-13:
