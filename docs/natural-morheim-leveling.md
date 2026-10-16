@@ -4,7 +4,8 @@ Status: a plan, 2026-10-13, as the operator shaped it in three messages that day
 [natural-morheim-quests.md](natural-morheim-quests.md). Steps M2 (Morheim Ice Fortress) and M3 (Kellan's Cabin) are
 played, and step M4 (legs `md` and `mc`), where every bot reached 31 (`morheim-mc-s1-w1`). Step M7's gear check at 31
 came next, on the operator's word (`morheim-g31-s1-w1`), then M8 and M5 (`morheim-ma-s1-w1`, every bot at 32). The
-group step M6 is under way, its cabin quests done: the world is now `morheim-gk-s5-w1`.
+group step M6 is under way, its cabin quests done by all eight and the garrison's by the Fire Temple six: the world is
+now `morheim-gd-s1-w1`.
 
 It follows [natural-muster.md](natural-muster.md), whose rules MR-a to MR-i are this leg's rules, and starts from the
 group world `ntc-group-s5`.
@@ -155,8 +156,8 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     Jorund, an abex's item, the Dead Fire and the white brow tayga it raises, Landver, Protector Karhel) and Q24021
     (Bragi, Tofa and movie 73, the spectres' items and Deputy Lamipedon's, Tofynir, the item used in its zone), ending
     at the garrison's obelisk. Round `m4-mc`, captured `morheim-mc-s1-w1`: **every bot is level 31**. All eight did
-    Q2333. None could kill Protector Karhel (level 35, EXPERT) alone, so every bot left Q24022 at var 6 for the group
-    step. The Ranger and the Templar did Q24021; five left it for the group, Lamipedon being one spawn the others
+    Q2333. None reached Protector Karhel (level 35, EXPERT; M6 found his ground closed on every side), so every bot left
+    Q24022 at var 6. The Ranger and the Templar did Q24021; five left it for the group, Lamipedon being one spawn the others
     kept dead, and the Gladiator stopped at him (a lone source not waited for again; fixed after, `383b17d33`). Each
     took 3.0 to 4.3 game hours, 2 to 8 deaths.
   - New for the leg engine: a leg can have several item uses (one that makes an item, Q2333's bucket; one that ends
@@ -237,6 +238,26 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     most. The ground there has holes in the baked mesh and two chokepoints (east of Kimssi and east of the cabin) that
     split the group, and the failing searches slowed the world. A higher level and better gear mean fewer deaths, and
     the holes stay until that ground is re-baked or marked.
+  - 2026-10-16, the garrison's group quests: leg `mgd` took all eight to Desert Garrison and bound them there
+    (`morheim-mgd-s1`). The Fire Temple six play Q2328, Q2344 and Q2342, then the campaign's Q24022 (Protector Karhel)
+    and Q24021 (Deputy Lamipedon's item, which drops for each member): round `run/morheim/M6/gd-six.json`, captured
+    **`morheim-gd-s1-w1`** (`11108e1ff`). All six handed in the three quests, and the four that lacked it have
+    Q24021's last item; what is left of Q24021 (Tofynir, the item used in its zone) is a lone bot's. 5.6 game hours,
+    11 deaths (the Templar and the Cleric 3 each), most in the Ice Claw village, one wipe at its east end.
+  - Trials g51 to g59 found these, all fixed (`11108e1ff`): the Templar retreated alone from three monsters at full
+    health, the solo swarm rule, and dragged them 250 m through the village, where the group died: a field member now
+    holds its ground with its healer. The leader saw no death while it fought, so after a wipe it walked back alone to
+    where it fell: a member that stands up at the bind now says so. Alone on the safe road the leader went back and
+    forth for twenty minutes at the pass west of the garrison: it gives up at the second refusal and calls its group
+    to the bind. A member whose Return was cooling tried long walks home that failed: it waits for its Return where it
+    stands. Campaign quests can be worked in a field round (decision 11): a named kill by its quest step, the items by
+    the quest's drops, worked and not handed in.
+  - Found, a boundary to record: **Protector Karhel cannot be reached.** He stands on an island of the baked navmesh
+    (island 206, 189 polygons east of the Ice Claw village, x 1250 to 1331) that the router joins to nothing; every
+    step onto it (24 along its one border with the rest, at x 1247 to 1249) meets collision the server's own check
+    meets, though the ground there rises gently (0.4 m a metre), so it is something solid, not the slope. No bot came
+    within 500 m of him in M4 either. Q24022 stays at var 6 for every bot until that ground is read again (a re-bake,
+    or the mesh behind that collision named); a field round leaves a campaign monster no way reaches and goes on.
 - [x] **M7 Level 31 and the gear check.** Every quest of the leg done by all eight; level 31; Elite Rank 6 where it
   beats what is worn; the sale of what it replaced, the kit and the cleanup; a relog. The capture is the next group
   world.
