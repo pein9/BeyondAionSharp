@@ -2038,12 +2038,16 @@ public sealed partial class NaturalIshalgenJourney
 							continue;
 						}
 						// A living target set aside after a fight that went wrong (the leader fell to Protector Karhel and the group
-						// then waited for him to come back while he stood there) is tried again, five times.
+						// then waited for him to come back while he stood there) is tried again, five times. So is one counted as
+						// fallen that is seen alive and never left sight: its kill was another's (gdk-c1). Each try may go in
+						// through the monsters around it once.
 						if (target == 0 && field && world.Objects.Values.FirstOrDefault(known => known.TemplateId is int kind && kinds.Contains(kind) &&
-							!known.IsCorpse && !fallenTargets.Contains(known.ObjectId) && navigator.UnavailableObjects.Contains(known.ObjectId) &&
+							!known.IsCorpse && navigator.UnavailableObjects.Contains(known.ObjectId) &&
 							retriedTargets.GetValueOrDefault(known.ObjectId) < 5) is { } setAside)
 						{
 							retriedTargets[setAside.ObjectId] = retriedTargets.GetValueOrDefault(setAside.ObjectId) + 1;
+							fallenTargets.Remove(setAside.ObjectId);
+							targetsGoneThrough.Remove(setAside.ObjectId);
 							navigator.UnavailableObjects.Remove(setAside.ObjectId);
 							navigator.LeftForAnother.Remove(setAside.ObjectId);
 							failedTargets.Remove(setAside.ObjectId);

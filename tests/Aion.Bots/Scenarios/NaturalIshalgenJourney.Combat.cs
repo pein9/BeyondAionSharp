@@ -385,8 +385,9 @@ public sealed partial class NaturalIshalgenJourney
 				// Kill evidence: experience, a loot window, or the target's own status at 0% HP (a grey monster
 				// pays no experience, so SM_STATUPDATE_EXP never comes; SM_DELETE follows the death status).
 				// M6: in a field group another member's kill pays experience too; it is no evidence while the target is seen
-				// alive (the Templar left Protector Karhel at 70% for a member's kill, and died to him).
-				bool othersKill = HoldsGround && world.GroupId != null && observedTargetHpPercent is > 0 &&
+				// alive (the Templar left Protector Karhel at 70% for a member's kill, and died to him), nor before the target's
+				// health was seen at all (a guard's kill on the way to him, gdk-c1).
+				bool othersKill = HoldsGround && world.GroupId != null && observedTargetHpPercent is not 0 &&
 					world.Objects.TryGetValue(target, out BotKnownObject? stillThere) && !stillThere.IsCorpse;
 				if (world.CurrentExperience > startingExperience && !othersKill || world.LootStatuses.ContainsKey(target) ||
 					observedTargetHpPercent == 0) return true;
