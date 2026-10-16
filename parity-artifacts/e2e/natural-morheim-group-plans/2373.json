@@ -1,0 +1,464 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2373,
+    "name": "[Group] An Ancient Weapon",
+    "nameId": 1103573,
+    "zone": "Fire Temple",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 30,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2373,
+        "start_npc_ids": 804606
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 804606,
+        "name": "flamyar",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 1589.04,
+            "y": 981.1067,
+            "z": 140.9096,
+            "heading": 0,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 804606,
+      "name": "flamyar",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1589.04,
+          "y": 981.1067,
+          "z": 140.9096,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 804606,
+      "name": "flamyar",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1589.04,
+          "y": 981.1067,
+          "z": 140.9096,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182204150,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182204150,
+          "npc_id": 700252,
+          "npc": {
+            "id": 700252,
+            "name": "ancient treasure chest",
+            "positions": [
+              {
+                "mapId": 320100000,
+                "x": 131.045,
+                "y": 295.222,
+                "z": 124.618,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 138.333,
+                "y": 167.274,
+                "z": 100.297,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 139.503,
+                "y": 195.859,
+                "z": 103.027,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 149.238,
+                "y": 385.993,
+                "z": 144.393,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 155.952,
+                "y": 354.62,
+                "z": 144.906,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 166.89,
+                "y": 179.998,
+                "z": 105.967,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 169.27,
+                "y": 274.887,
+                "z": 124.217,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 177.611,
+                "y": 318.258,
+                "z": 124.113,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 200.217,
+                "y": 259.113,
+                "z": 119.776,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 231.732,
+                "y": 259.664,
+                "z": 122.862,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 264.21,
+                "y": 211.523,
+                "z": 118.295,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 275.076,
+                "y": 77.96,
+                "z": 128.831,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 277.457,
+                "y": 174.99,
+                "z": 119.777,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 281.196,
+                "y": 406.806,
+                "z": 133.633,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 281.467,
+                "y": 132.784,
+                "z": 128.704,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 289.766,
+                "y": 439.357,
+                "z": 133.579,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 295.092,
+                "y": 210.761,
+                "z": 119.614,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 306.348,
+                "y": 244.583,
+                "z": 117.607,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 306.846,
+                "y": 295.637,
+                "z": 130.607,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 319.976,
+                "y": 410.755,
+                "z": 133.843,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 323.404,
+                "y": 96.8504,
+                "z": 127.178,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 346.242,
+                "y": 316.856,
+                "z": 136.502,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 353.782,
+                "y": 350.256,
+                "z": 147.411,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 370.718,
+                "y": 257.529,
+                "z": 109.678,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 371.565,
+                "y": 88.6843,
+                "z": 117.212,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 376.523,
+                "y": 293.597,
+                "z": 109.674,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 382.274,
+                "y": 75.4597,
+                "z": 117.229,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 407.877,
+                "y": 285.939,
+                "z": 110.873,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              },
+              {
+                "mapId": 320100000,
+                "x": 415.499,
+                "y": 117.921,
+                "z": 117.22,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 804606,
+          "name": "flamyar",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1589.04,
+              "y": 981.1067,
+              "z": 140.9096,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 1244918,
+        "gold": 37570,
+        "rewardItems": [
+          {
+            "count": 30,
+            "item_id": 162000050
+          },
+          {
+            "count": 40,
+            "item_id": 186000008
+          }
+        ],
+        "selectableItems": [
+          {
+            "count": 1,
+            "item_id": 122001680
+          },
+          {
+            "count": 1,
+            "item_id": 122001681
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "IMPORTANT",
+      "id": 2373,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 30,
+      "name": "[Group] An Ancient Weapon",
+      "nameId": 1103573,
+      "quest_zone": "Fire Temple",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204150
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 1244918,
+          "gold": 37570
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 122001680
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 122001681
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 30,
+              "item_id": 162000050
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 40,
+              "item_id": 186000008
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182204150,
+          "npc_id": 700252
+        }
+      }
+    ]
+  }
+}

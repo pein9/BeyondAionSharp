@@ -140,7 +140,17 @@ public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? R
 	// M6 (docs/natural-morheim-leveling.md): the field group stage's quests, in the order played, and the obelisk the
 	// group binds at before it sets out. A campaign quest among them (its own handler, no plan) can name a kill its
 	// members need at a step: Q24022's Protector Karhel at var 6.
-	int[]? GroupQuests = null, int? GroupBind = null, NaturalGroupKill[]? GroupKills = null);
+	int[]? GroupQuests = null, int? GroupBind = null, NaturalGroupKill[]? GroupKills = null,
+	// M10: the instance the field group plays its quests in, and the bosses it kills there after them.
+	NaturalGroupInstance? GroupInstance = null, NaturalGroupBoss[]? GroupBosses = null);
 
 /// <summary>M6: a named kill a campaign quest's members need while their quest stands at <paramref name="Var"/>.</summary>
 public sealed record NaturalGroupKill(int Quest, int Npc, int Var);
+
+/// <summary>M10: the instance a field group plays in: its entrance outside (a portal dialog), its map, the dialog that
+/// enters it and its exit portal inside (Fire Temple: 730047, 320100000, 10000, 730048).</summary>
+public sealed record NaturalGroupInstance(int Portal, int Map, int Dialog, int Exit);
+
+/// <summary>M10: a boss the field group kills inside its instance after its quests' work, with no quest of its own: one of
+/// <paramref name="Npcs"/> (Kromede, or the Vile Judge one time in ten) where the instance handler spawns it.</summary>
+public sealed record NaturalGroupBoss(int[] Npcs, float[] At);

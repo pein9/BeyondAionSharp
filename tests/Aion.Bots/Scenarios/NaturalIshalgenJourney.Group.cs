@@ -154,6 +154,8 @@ public sealed partial class NaturalIshalgenJourney
 		// M6: where this field leader last stood alive, where it fell when it stood up at the bind, and its walk back there;
 		// and whether this member stood up at the bind and has not seen its leader since.
 		BotPosition? lastAlive = null, fellAt = null;
+		// M10: and the maps of those two places: inside Fire Temple the leader stands up at the bind outside.
+		int? lastAliveMap = null, fellMap = null;
 		// walkingBack: the leader's own move must not start a gathering inside itself; safeOnly: the leader alone takes only the
 		// way out of every monster's reach (its walk back to where it fell), never the way through.
 		bool walkingBack = false, safeOnly = false, revivedAtBind = false, sayRevived = false, crossing = false;
@@ -247,7 +249,7 @@ public sealed partial class NaturalIshalgenJourney
 			chatCursor = session.PacketHistory.Count;
 			if (sayRevived && !world.IsDead) { sayRevived = false; await SayAsync("revived:1"); }
 			if (world.GroupLeaderId is int leading) leaderSeen = leading;
-			if (field && !world.IsDead) lastAlive = session.CurrentPosition;
+			if (field && !world.IsDead) { lastAlive = session.CurrentPosition; lastAliveMap = world.MapId; }
 			if (field && world.GroupLeaderId is int chiefSeen && world.Objects.TryGetValue(chiefSeen, out var chiefNow))
 			{
 				revivedAtBind = false;
@@ -274,7 +276,8 @@ public sealed partial class NaturalIshalgenJourney
 				session.TraceDiagnostic("group-quest-progress", new Dictionary<string, object?>
 				{ ["quest"] = quest.Id, ["status"] = Status(), ["counts"] = Counts(), ["journal"] = report });
 			}
-			if (ntc)
+			// Where each member stands, map and instance: inside the camp, and inside a field group's instance (M10).
+			if (ntc || options.GroupInstance != null)
 			{
 				places[session.CharacterId] = (world.MapId ?? 0, world.InstanceId ?? 0);
 				string place = $"place:{world.MapId ?? 0}:{world.InstanceId ?? 0}";
@@ -392,7 +395,15 @@ public sealed partial class NaturalIshalgenJourney
 					walkingBack = true;
 					safeOnly = true;
 					bool back = false;
-					try { await WalkAsync(fell, 15); back = true; }
+					try
+					{
+						// M10: it fell inside the instance and stood up at the bind outside: through the entrance first.
+						if (options.GroupInstance is { } fellInside && fellMap == fellInside.Map && world.MapId != fellInside.Map)
+							await EnterAsync(fellInside.Portal, fellInside.Map);
+						if (fellMap is int fellOn && fellOn != world.MapId) throw new IOException($"The leader fell on map {fellOn} and stands on {world.MapId}.");
+						await WalkAsync(fell, 15);
+						back = true;
+					}
 					catch (IOException none) { session.TraceDiagnostic("group-field-back-to-group-failed", new Dictionary<string, object?> { ["reason"] = none.Message }); }
 					finally { walkingBack = false; safeOnly = false; }
 					// From wherever the way stopped it (the pass west of the garrison, after twenty minutes back and forth).
@@ -534,14 +545,14 @@ public sealed partial class NaturalIshalgenJourney
 			// In the open a member keeps out of other monsters' circles on its way to a target. Inside the camp the group
 			// fights the packs, and a way around them does not exist: nobody plans one there.
 			navigator = new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, [quest.Id], geometry),
-				geometry, runtime, stopOnDeath: false) { AvoidHostileAggro = world.MapId != GroupNtcMap, RouteFromNearestMesh = field,
+				geometry, runtime, stopOnDeath: false) { AvoidHostileAggro = world.MapId != GroupNtcMap && world.MapId != options.GroupInstance?.Map, RouteFromNearestMesh = field,
 				Planner = leads || field ? BotTravelPlanner.For(world.MapId!.Value, geometry, runtime.Data) : null, BeforeMovementAsync = WaitForFollowersAsync };
 			combat.EnterMap(navigator, geometry, world.MapId!.Value);
 			following.Reset();
 		}
 		combat.AfterBindRevive = () =>
 		{
-			if (field && leads) fellAt = lastAlive;
+			if (field && leads) { fellAt = lastAlive; fellMap = lastAliveMap; }
 			if (field) revivedAtBind = true;
 			if (field && !leads) sayRevived = true;
 			EnterMap();
@@ -694,7 +705,7 @@ public sealed partial class NaturalIshalgenJourney
 				// the goal, and every member flies there on its own, as a bot alone does.
 				// A member walking on its own (to a quest NPC, after standing up at the obelisk) flies the same way: the Sorcerer,
 				// left at Slag Bulwark, never reached Padinerk to hand in Q2376.
-				catch (IOException) when (field && !crossing && (InFlyZone(destination) || InFlyZone(session.CurrentPosition)))
+				catch (IOException) when (field && !crossing && (NearFlyZone(destination) || InFlyZone(session.CurrentPosition)))
 				{
 					if (leads) await SayAsync($"command:fly:{(int)MathF.Round(destination.X)}:{(int)MathF.Round(destination.Y)}:{(int)MathF.Round(destination.Z)}");
 					if (!await CrossFlyZoneAsync(destination)) throw new IOException($"No walk nor flight reaches {destination}.");
@@ -743,6 +754,11 @@ public sealed partial class NaturalIshalgenJourney
 		}
 		bool InFlyZone(BotPosition at) => world.MapId != GroupNtcMap && FlyZones().Any(zone => !zone.Forbids && zone.Contains(at.X, at.Y, at.Z + 2)) &&
 			!FlyZones().Any(zone => zone.Forbids && zone.Contains(at.X, at.Y, at.Z + 2));
+		// M10: places a few metres off a FLY zone's edge, at its height: Fire Temple's entrance stands 7 m south of the crater
+		// zone's edge, and Flamyar 1.4 m; the group flies to the zone's ground nearest them and walks the rest.
+		IEnumerable<BotPosition> AroundFlyEdge(BotPosition at) => from radius in new[] { 4f, 8f, 12f, 16f } from step in Enumerable.Range(0, 16)
+			select new BotPosition(at.X + radius * MathF.Cos(step * MathF.PI / 8), at.Y + radius * MathF.Sin(step * MathF.PI / 8), at.Z, 0);
+		bool NearFlyZone(BotPosition at) => InFlyZone(at) || AroundFlyEdge(at).Any(InFlyZone);
 		// M6: Protector Karhel stands in his aetheric field, which only the chosen enter (the operator, 2026-10-16: "You must
 		// have <Tayga Slayer> in order to enter this area"). Its wall is collision the navmesh leaves closed; the way in is the
 		// statue of the Mau hero beside it, a portal (Java PortalAI, portal_template2: title 58, Q24022 grants it at Landver's
@@ -849,7 +865,8 @@ public sealed partial class NaturalIshalgenJourney
 			bool Open(NaturalFlyZone zone, BotPosition at) => zone.Contains(at.X, at.Y, at.Z + 2) &&
 				!zones.Any(other => other.Forbids && other.Contains(at.X, at.Y, at.Z + 2));
 			NaturalFlyZone? zone = zones.FirstOrDefault(entry => !entry.Forbids && Open(entry, goal))
-				?? zones.FirstOrDefault(entry => !entry.Forbids && Open(entry, session.CurrentPosition));
+				?? zones.FirstOrDefault(entry => !entry.Forbids && Open(entry, session.CurrentPosition))
+				?? zones.FirstOrDefault(entry => !entry.Forbids && AroundFlyEdge(goal).Any(at => Open(entry, at)));
 			if (zone == null) return false;
 			bool Inside(BotPosition at) => Open(zone, at) && at.Z + 12 < zone.Top && !OnLava(at);
 			// The landing: the zone's ground on the goal's island nearest it, or the goal's own static ground where the navmesh
@@ -1228,12 +1245,54 @@ public sealed partial class NaturalIshalgenJourney
 				await navigator.MoveAsync(path, token);
 			}
 			session.BeginStep("group-enter", $"npc{portal}");
-			await NaturalCapitalSteps.PortalAsync(session, new NaturalCapitalPortal(portal, world.MapId!.Value, destination, 0, GroupNtcEnterDialog), gate.ObjectId, token);
+			ushort dialog = options.GroupInstance is { } instanced && destination == instanced.Map ? (ushort)instanced.Dialog : GroupNtcEnterDialog;
+			await NaturalCapitalSteps.PortalAsync(session, new NaturalCapitalPortal(portal, world.MapId!.Value, destination, 0, dialog), gate.ObjectId, token);
 			EnterMap();
-			beenInside |= world.MapId == GroupNtcMap;
+			beenInside |= world.MapId == GroupNtcMap || world.MapId == options.GroupInstance?.Map;
 			session.TraceDiagnostic("group-entered", new Dictionary<string, object?>
 			{ ["map"] = world.MapId, ["instance"] = world.InstanceId, ["position"] = session.CurrentPosition });
 			await ObserveAsync();
+		}
+		// M10: out of the field group's instance by its exit portal (Java PortalAI, a use bar), which puts an Asmodian beside
+		// the entrance outside; a use a blow broke is tried again.
+		async Task ExitAsync(int exitNpc, int inside)
+		{
+			for (int tries = 0; tries < 5 && world.MapId == inside && !world.IsDead; tries++)
+			{
+				BotKnownObject? Gate() => world.Objects.Values.Where(known => known.TemplateId == exitNpc && Distance(session.CurrentPosition, known.Position) <= 15)
+					.OrderBy(known => Distance(session.CurrentPosition, known.Position)).FirstOrDefault();
+				if (Gate() == null)
+				{
+					try { await WalkAsync(Spawn(exitNpc), 3); }
+					catch (IOException far) { session.TraceDiagnostic("group-exit-unreached", new Dictionary<string, object?> { ["npc"] = exitNpc, ["reason"] = far.Message }); }
+					await session.SynchronizeAsync(token);
+				}
+				if (Gate() is not { } gate) { await PauseAsync(); continue; }
+				if (Distance(session.CurrentPosition, gate.Position) > 4)
+				{
+					var path = geometry.FindInteractionPath(inside, session.CurrentPosition, gate.Position);
+					if (path.Count > 0) await navigator.MoveAsync(path, token);
+				}
+				for (int guard = 0; guard < 12 && !world.IsDead && await GuardAsync(); guard++) { }
+				if (world.IsDead) return;
+				session.BeginStep("group-exit", $"npc{exitNpc}");
+				int start = session.PacketHistory.Count;
+				if (!await NaturalAltgardQuestSteps.UseObjectAsync(session, gate.ObjectId, null, token, reloadWorld: true))
+				{
+					session.TraceDiagnostic("group-exit-interrupted", new Dictionary<string, object?> { ["npc"] = exitNpc, ["tries"] = tries });
+					await session.SynchronizeAsync(token);
+					continue;
+				}
+				if (!session.PacketHistory.Skip(start).Any(packet => packet.PacketType == typeof(SM_PLAYER_SPAWN)))
+					await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token);
+				if (!session.PacketHistory.Skip(start).Any(packet => packet.PacketType == typeof(SM_PLAYER_INFO) && packet.Get<int>("objectId") == session.CharacterId))
+					await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
+				session.AcceptTeleportPosition();
+				await session.SynchronizeAsync(token);
+				EnterMap();
+				session.TraceDiagnostic("group-exited", new Dictionary<string, object?> { ["map"] = world.MapId, ["position"] = session.CurrentPosition });
+				await ObserveAsync();
+			}
 		}
 
 		// The end of the leg. 4.8 has no word that ends a group: it ends when its members leave until fewer than two are
@@ -1407,12 +1466,15 @@ public sealed partial class NaturalIshalgenJourney
 				}
 				else leaderMissingAt = null;
 				if (world.IsDead) { await combat.RestAsync(token); continue; }
-				// Revived at the bind while the group is inside the camp: back through the portal, whatever F1 said last.
-				if (beenInside && world.MapId != GroupNtcMap && world.GroupLeaderId is int within &&
-					world.GroupMembers.TryGetValue(within, out var itsLeader) && itsLeader.Online && itsLeader.MapId == GroupNtcMap)
+				// Revived at the bind while the group is inside the camp, or inside the field group's instance (M10): back through
+				// the portal, whatever F1 said last.
+				int? insideMap = ntc ? GroupNtcMap : options.GroupInstance?.Map;
+				int insidePortal = ntc ? GroupNtcVallack : options.GroupInstance?.Portal ?? 0;
+				if (beenInside && insideMap is int inside && world.MapId != inside && world.GroupLeaderId is int within &&
+					world.GroupMembers.TryGetValue(within, out var itsLeader) && itsLeader.Online && itsLeader.MapId == inside)
 				{
-					await EnterAsync(GroupNtcVallack, GroupNtcMap);
-					if (world.MapId != GroupNtcMap) await PauseAsync();
+					await EnterAsync(insidePortal, inside);
+					if (world.MapId != inside) await PauseAsync();
 					continue;
 				}
 				if (command == "regroup" && !returnedForRegroup)
@@ -1430,6 +1492,7 @@ public sealed partial class NaturalIshalgenJourney
 					else if (command == "turn-in" && Status(about) is 3 or 4 && OwnTasksDone(asked)) await DialogQuestAsync(asked, npc, true);
 				}
 				else if (command == "enter" && arguments is [int portal, int destination] && world.MapId != destination) await EnterAsync(portal, destination);
+				else if (field && command == "exit" && arguments is [int exitNpc, int fromMap] && world.MapId == fromMap && !world.IsDead) await ExitAsync(exitNpc, fromMap);
 				// M6: the leader went through a portal: a member on the statue's ground goes through it too.
 				else if (field && command == "portal" && arguments is [int gateNpc] && !world.IsDead && world.MapId is int gateMap &&
 					runtime.Data.SpawnsDh.GetSpawnsByWorldId(gateMap).Any(group => group.GetNpcId() == gateNpc) &&
@@ -1509,6 +1572,8 @@ public sealed partial class NaturalIshalgenJourney
 					// Not alone across the map: a leader more than 150 m off is waited for where the member stands (at the bind),
 					// for a lone walk of a kilometre stalled among monsters and left the Cleric and the Sorcerer below the garrison.
 					leaderHere is { } there && runtime.NowMillis - leaderHereAt <= 60_000 && Apart() &&
+					// M10: a place said inside the instance is not one on this map.
+					!(places.TryGetValue(chief, out var chiefPlace) && chiefPlace.Map != (world.MapId ?? 0)) &&
 					Distance(session.CurrentPosition, there) is > 40 and <= 150 &&
 					runtime.NowMillis >= rejoinAgainAt)
 				{
@@ -1933,17 +1998,53 @@ public sealed partial class NaturalIshalgenJourney
 			int LivingTarget(int[] kinds) => world.Objects.Values.Where(known => known.TemplateId is int kind && kinds.Contains(kind) && !known.IsCorpse &&
 				!navigator.UnavailableObjects.Contains(known.ObjectId) && !(field && BesideExploder(known.Position)) && !Unlootable(known.Position))
 				.OrderBy(known => Distance(session.CurrentPosition, known.Position)).FirstOrDefault()?.ObjectId ?? 0;
-			BotPosition[] exploderSpawns = field && world.MapId is int exploderMap ? [.. runtime.Data.SpawnsDh.GetSpawnsByWorldId(exploderMap)
-				.Where(group => Exploders(runtime).Contains(group.GetNpcId())).SelectMany(group => group.GetSpawnTemplates())
-				.Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0))] : [];
+			BotPosition[] exploderSpawns = [];
+			int? exploderSpawnsMap = null;
+			BotPosition[] ExploderSpawns()
+			{
+				if (exploderSpawnsMap != world.MapId && world.MapId is int exploderMap)
+				{
+					exploderSpawns = [.. runtime.Data.SpawnsDh.GetSpawnsByWorldId(exploderMap)
+						.Where(group => Exploders(runtime).Contains(group.GetNpcId())).SelectMany(group => group.GetSpawnTemplates())
+						.Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0))];
+					exploderSpawnsMap = exploderMap;
+				}
+				return exploderSpawns;
+			}
+			// M10: a group that plays in an instance takes all its quests outside first, plays them inside, kills its bosses
+			// there, and hands the quests in outside: Flamyar stands beside Fire Temple's entrance.
+			NaturalGroupInstance? instance = options.GroupInstance;
+			// The leader that stood up at the bind outside goes back in (its walk back to where it fell does so first).
+			async Task BackInsideAsync()
+			{
+				if (instance == null || world.MapId == instance.Map || world.IsDead) return;
+				session.TraceDiagnostic("group-field-back-inside", new Dictionary<string, object?> { ["position"] = session.CurrentPosition, ["map"] = world.MapId });
+				await EnterAsync(instance.Portal, instance.Map);
+				if (world.MapId != instance.Map) throw new IOException($"The group leader could not go back into map {instance.Map}.");
+			}
+			if (instance != null)
+			{
+				foreach (QuestRunPlan plan in quests.Where(plan => !IsCampaign(plan) && !Everybody(entry => entry.Status == 5, plan.Id)))
+					await TogetherFieldAsync(plan, plan.StartNpcs.First().Id, false);
+				await WalkAsync(Spawn(instance.Portal), 4);
+				await WaitForFollowersAsync(token);
+				await SayAsync($"command:enter:{instance.Portal}:{instance.Map}");
+				await EnterAsync(instance.Portal, instance.Map);
+				if (world.MapId != instance.Map) throw new IOException($"The group leader did not enter map {instance.Map}.");
+				await WaitAsync(() => world.GroupMembers.Keys.All(id => places.TryGetValue(id, out var inside) && inside == places[session.CharacterId]),
+					"every member inside the leader's instance", 600);
+				session.TraceDiagnostic("group-field-step", new Dictionary<string, object?>
+				{ ["done"] = "entered", ["map"] = world.MapId, ["instance"] = world.InstanceId, ["members"] = world.GroupMembers.Count });
+			}
 			foreach (QuestRunPlan plan in quests)
 			{
 				if (Everybody(entry => entry.Status == 5, plan.Id)) continue;
 				int giver = IsCampaign(plan) ? 0 : plan.StartNpcs.First().Id, end = plan.EndNpcs.FirstOrDefault()?.Id ?? giver;
-				if (!IsCampaign(plan)) await TogetherFieldAsync(plan, giver, false);
+				if (!IsCampaign(plan) && instance == null) await TogetherFieldAsync(plan, giver, false);
 				QuestRunOperation[] work = tasks[plan.Id];
 				for (int index = 0; index < work.Length; index++)
 				{
+					await BackInsideAsync();
 					QuestRunOperation task = work[index];
 					int at = index;
 					bool Done() => Everybody(entry => entry.Status is 4 or 5 || entry.Counts.Length > at && entry.Counts[at] >= task.Count, plan.Id);
@@ -1987,11 +2088,12 @@ public sealed partial class NaturalIshalgenJourney
 					while (!Done())
 					{
 						await combat.RestAsync(token);
+						await BackInsideAsync();
 						await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
 						BotPosition[] candidates = [.. kinds.SelectMany(kind => runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value)
 							.Where(group => group.GetNpcId() == kind).SelectMany(group => group.GetSpawnTemplates()))
 							.Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), spot.GetHeading()))
-							.OrderBy(spot => exploderSpawns.Any(shard => Distance(shard, spot) <= 15) || Unlootable(spot) ? 1 : 0)
+							.OrderBy(spot => ExploderSpawns().Any(shard => Distance(shard, spot) <= 15) || Unlootable(spot) ? 1 : 0)
 							.ThenBy(spot => Distance(session.CurrentPosition, spot))];
 						int target = LivingTarget(kinds);
 						bool cameNear = false;
@@ -2134,9 +2236,66 @@ public sealed partial class NaturalIshalgenJourney
 					}
 					if (unreachable) { campaignLeft.Add(plan.Id); break; }
 				}
-				if (!IsCampaign(plan)) await TogetherFieldAsync(plan, end, true);
+				if (!IsCampaign(plan) && instance == null) await TogetherFieldAsync(plan, end, true);
 				else session.TraceDiagnostic("group-field-step", new Dictionary<string, object?>
 				{ ["quest"] = plan.Id, ["done"] = "worked", ["members"] = world.GroupMembers.Count });
+			}
+			if (instance != null)
+			{
+				foreach (NaturalGroupBoss boss in options.GroupBosses ?? []) await KillBossAsync(boss);
+				// Out by the exit portal, the group with it, and the quests handed in outside.
+				await BackInsideAsync();
+				await WalkAsync(Spawn(instance.Exit), 4);
+				await WaitForFollowersAsync(token);
+				await SayAsync($"command:exit:{instance.Exit}:{instance.Map}");
+				await ExitAsync(instance.Exit, instance.Map);
+				if (world.MapId == instance.Map) throw new IOException($"The group leader could not leave map {instance.Map}.");
+				await WaitAsync(() => world.GroupMembers.Keys.All(id => places.TryGetValue(id, out var outside) && outside.Map == world.MapId),
+					"every member out of the instance", 600);
+				session.TraceDiagnostic("group-field-step", new Dictionary<string, object?> { ["done"] = "left", ["map"] = world.MapId, ["members"] = world.GroupMembers.Count });
+				foreach (QuestRunPlan plan in quests.Where(plan => !IsCampaign(plan) && !Everybody(entry => entry.Status == 5, plan.Id)))
+					await TogetherFieldAsync(plan, plan.EndNpcs.FirstOrDefault()?.Id ?? plan.StartNpcs.First().Id, true);
+			}
+			// M10: a boss with no quest, where the instance handler spawns it: the group walks there, fighting what stands on the
+			// way, and kills it; a fight that went wrong (a death, the leader at the bind) is tried again, five times.
+			async Task KillBossAsync(NaturalGroupBoss boss)
+			{
+				BotPosition lair = new(boss.At[0], boss.At[1], boss.At[2], 0);
+				for (int tries = 1; tries <= 5; tries++)
+				{
+					await BackInsideAsync();
+					await combat.RestAsync(token);
+					try { await WalkAsync(lair, 25); }
+					catch (IOException far) { session.TraceDiagnostic("group-field-boss-unreached", new Dictionary<string, object?> { ["npcs"] = boss.Npcs, ["reason"] = far.Message }); }
+					await WaitForFollowersAsync(token);
+					int target = world.Objects.Values.Where(known => known.TemplateId is int kind && boss.Npcs.Contains(kind) && !known.IsCorpse)
+						.OrderBy(known => Distance(session.CurrentPosition, known.Position)).FirstOrDefault()?.ObjectId ?? 0;
+					if (target == 0)
+					{
+						session.TraceDiagnostic("group-field-boss-absent", new Dictionary<string, object?> { ["npcs"] = boss.Npcs, ["position"] = session.CurrentPosition, ["tries"] = tries });
+						if (Distance(session.CurrentPosition, lair) <= 40) return;
+						continue;
+					}
+					await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
+					await SayAsync($"assist:{target}");
+					session.TraceDiagnostic("group-field-boss", new Dictionary<string, object?> { ["target"] = target, ["template"] = world.Objects.GetValueOrDefault(target)?.TemplateId, ["tries"] = tries });
+					bool fell = false;
+					bool keptOut = navigator.AvoidHostileAggro;
+					navigator.AvoidHostileAggro = false;
+					try { fell = await combat.TryKillAsync(target, token) || GoneOrKilled(target); }
+					catch (NaturalCombatApproachBlockedException blocked)
+					{
+						session.TraceDiagnostic("group-field-boss-blocked", new Dictionary<string, object?> { ["target"] = target, ["reason"] = blocked.Message });
+					}
+					finally { navigator.AvoidHostileAggro = keptOut; }
+					if (fell)
+					{
+						session.TraceDiagnostic("group-field-boss-killed", new Dictionary<string, object?> { ["target"] = target, ["tries"] = tries });
+						if (options.GroupLoot) for (int wait = 0; wait < 60 && world.Objects.ContainsKey(target); wait++) { await loot.StepAsync(token); await PauseAsync(); }
+						return;
+					}
+				}
+				session.TraceDiagnostic("group-field-boss-left", new Dictionary<string, object?> { ["npcs"] = boss.Npcs });
 			}
 			await SayAsync("command:done");
 			await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);

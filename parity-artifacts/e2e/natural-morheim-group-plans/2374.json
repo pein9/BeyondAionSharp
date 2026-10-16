@@ -1,0 +1,448 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2374,
+    "name": "[Group] Re-sanctifying the Temple",
+    "nameId": 1103574,
+    "zone": "Fire Temple",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 30,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 15,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2374,
+        "start_npc_ids": 804606
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 804606,
+        "name": "flamyar",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 1589.04,
+            "y": 981.1067,
+            "z": 140.9096,
+            "heading": 0,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 804606,
+      "name": "flamyar",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1589.04,
+          "y": 981.1067,
+          "z": 140.9096,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 804606,
+      "name": "flamyar",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 1589.04,
+          "y": 981.1067,
+          "z": 140.9096,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": "212788 212801",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 212788,
+          "name": "lurker gargoyle",
+          "positions": [
+            {
+              "mapId": 320100000,
+              "x": 204.01,
+              "y": 178.68,
+              "z": 109.13182,
+              "heading": 106,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 207.175,
+              "y": 174.391,
+              "z": 109.686,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 263.598,
+              "y": 195.171,
+              "z": 118.995,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 269.551,
+              "y": 216.292,
+              "z": 118.716,
+              "heading": 83,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 272.402,
+              "y": 240.127,
+              "z": 120.101,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 285.55,
+              "y": 212.27,
+              "z": 119.63933,
+              "heading": 35,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 302.72,
+              "y": 182.95,
+              "z": 118.07573,
+              "heading": 66,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 313.43,
+              "y": 225.04,
+              "z": 119.2945,
+              "heading": 110,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 212801,
+          "name": "lurker gargoyle",
+          "positions": [
+            {
+              "mapId": 320100000,
+              "x": 277.39,
+              "y": 89.26,
+              "z": 129.13657,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 281.09,
+              "y": 167.423,
+              "z": 119.073,
+              "heading": 15,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 303.092,
+              "y": 234.224,
+              "z": 118.525,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 321.475,
+              "y": 115.138,
+              "z": 126.542,
+              "heading": 70,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 356.15,
+              "y": 250.0,
+              "z": 114.953156,
+              "heading": 91,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 363.03,
+              "y": 245.02,
+              "z": 115.41982,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 369.71,
+              "y": 287.14,
+              "z": 109.95304,
+              "heading": 68,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 382.73,
+              "y": 199.15,
+              "z": 114.39791,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 3,
+      "npc_ids": "212802 212803",
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 212802,
+          "name": "aetheric mugolem",
+          "positions": [
+            {
+              "mapId": 320100000,
+              "x": 286.364,
+              "y": 202.152,
+              "z": 118.999,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 212803,
+          "name": "aetheric mugolem",
+          "positions": [
+            {
+              "mapId": 320100000,
+              "x": 348.146,
+              "y": 227.699,
+              "z": 116.829,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 366.923,
+              "y": 252.417,
+              "z": 116.738,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            }
+          ],
+          "handlerSpawned": true
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 2,
+      "npc_ids": 212794,
+      "seq": 2,
+      "step": 0,
+      "var": 2,
+      "npcs": [
+        {
+          "id": 212794,
+          "name": "kalgolem of magic",
+          "positions": [
+            {
+              "mapId": 320100000,
+              "x": 125.592,
+              "y": 271.662,
+              "z": 123.599,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 148.389,
+              "y": 318.703,
+              "z": 122.658,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 165.968,
+              "y": 319.829,
+              "z": 122.593,
+              "heading": 83,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            },
+            {
+              "mapId": 320100000,
+              "x": 173.182,
+              "y": 279.216,
+              "z": 124.497,
+              "heading": 50,
+              "source": "game-server/data/static_data/spawns/Instances/320100000_Fire_Temple.xml"
+            }
+          ],
+          "handlerSpawned": true
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 804606,
+          "name": "flamyar",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1589.04,
+              "y": 981.1067,
+              "z": 140.9096,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 1244918,
+        "gold": 34270,
+        "rewardItems": [
+          {
+            "count": 2,
+            "item_id": 186000008
+          },
+          {
+            "count": 2,
+            "item_id": 188053405
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "IMPORTANT",
+      "id": 2374,
+      "max_repeat_count": 15,
+      "minlevel_permitted": 30,
+      "name": "[Group] Re-sanctifying the Temple",
+      "nameId": 1103574,
+      "quest_zone": "Fire Temple",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 1244918,
+          "gold": 34270
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 2,
+              "item_id": 186000008
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 2,
+              "item_id": 188053405
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": "212788 212801",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 3,
+          "npc_ids": "212802 212803",
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 2,
+          "npc_ids": 212794,
+          "seq": 2,
+          "step": 0,
+          "var": 2
+        }
+      }
+    ]
+  }
+}

@@ -89,8 +89,19 @@ public static class NaturalCapitalSteps
 	{
 		if (session.Api.World.MapId != portal.MapId || session.Api.World.Objects[npc].TemplateId != portal.NpcId)
 			throw new InvalidDataException("Capital statue is on the wrong map or has the wrong identity.");
+		int opened = session.PacketHistory.Count;
 		await NaturalDialogProtocol.OpenAsync(session, npc, token);
-		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, p => p.Get<int>("targetObjectId") == npc);
+		await session.SynchronizeAsync(token);
+		// M10: Fire Temple's entrance (ai portal_dialog) runs a use bar before its dialog opens; the clock is moved past it, as
+		// a player waits it out (a wait for the dialog alone held the SIM world's clock still).
+		if (session.PacketHistory.Skip(opened).LastOrDefault(packet => packet.PacketType == typeof(SM_USE_OBJECT) &&
+				packet.Get<int>("targetObjectId") == npc && packet.Get<byte>("actionType") != 2) is { } bar)
+		{
+			await session.AdvanceAsync(TimeSpan.FromMilliseconds(Math.Max(bar.Get<int>("durationMs"), 1) + 1), token);
+			await session.SynchronizeAsync(token);
+		}
+		if (!session.PacketHistory.Skip(opened).Any(packet => packet.PacketType == typeof(SM_DIALOG_WINDOW) && packet.Get<int>("targetObjectId") == npc))
+			await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, p => p.Get<int>("targetObjectId") == npc);
 		session.Api.World.BeginWorldReload();
 		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npc, portal.Action), token);
 		await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token);
