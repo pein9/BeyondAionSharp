@@ -357,8 +357,9 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     for the group ran out. I committed the code (`088c9879e`) before I saw that the second replay had stopped as well.
     The follower now walks the trail it has recorded to a leader out of sight (`91c5774a2`), and the replay passes with
     it (`m8-n9c`, all six), as do the unit suite, the warning baseline and the neutral gate.
-- [ ] **M9 The report:** per class its level, quests done, deaths and time; every quest that was not played and why;
+- [x] **M9 The report:** per class its level, quests done, deaths and time; every quest that was not played and why;
   what the bots found wrong with the server.
+  - 2026-10-16, written from the 22 captured worlds from `ntc-group-s5` to `morheim-mc-s3-w1`: [The report](#the-report).
 - [ ] **M10 Fire Temple, as a group of six at 31.** The operator, 2026-10-14, before leaving for a while: once the list
   above is done, "Map out the quests for 'Fire Temple'", "Group up with a full group of 6, make sure to have a
   cleric/templar/sorcerer plus 3 more of your choice", "minimum of level 31 each (the companion profile)", "Do Fire
@@ -368,6 +369,87 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
   healer), the Gladiator and the Ranger; it is played in SIM from the level-31 world, with the group stages of
   [natural-group-ntc.md](natural-group-ntc.md); a wipe is an outcome, and the group tries again. Its own plan
   (the quests, the entry, the bosses, the steps) is written when M9 is ticked.
+
+## The report
+
+From `ntc-group-s5` (2026-10-13, all eight at level 26) to `morheim-mc-s3-w1` (2026-10-16): 21 captured Morheim rounds,
+seed 1, one world. A bot's time is its own span in each round, game time; its deaths are its round receipts', which
+agree with its trace in every row. The rounds that stopped or were not used (`morheim-gk-s3`, `morheim-gd-s2`,
+`morheim-gdk-s1`, `morheim-mc-s2`) are not counted.
+
+**Per class.**
+
+| Class | Level | Quests done | Rounds | Deaths | Game hours | Of which in groups: deaths, hours |
+|---|---:|---:|---:|---:|---:|---|
+| Gladiator | 34 | 258 | 22 | 18 | 48.3 | 10, 30.1 |
+| Templar | 34 | 259 | 22 | 27 | 46.9 | 14, 29.9 |
+| Assassin | 34 | 258 | 16 | 30 | 30.5 | 6, 12.4 |
+| Ranger | 34 | 256 | 19 | 18 | 30.0 | 7, 17.7 |
+| Sorcerer | 34 | 258 | 19 | 24 | 33.7 | 5, 17.7 |
+| Spirit Master | 34 | 258 | 16 | 17 | 31.7 | 4, 12.4 |
+| Cleric | 34 | 258 | 22 | 43 | 45.2 | 18, 30.1 |
+| Chanter | 35 | 258 | 22 | 22 | 45.1 | 6, 30.1 |
+| **All eight** | | | 158 | 199 | 311.4 | 70, 180.5 |
+
+Quests done counts every zone. Each bot did 77 quests in this leg (the Ranger and the Templar came in with two fewer
+and one more), and all eight have the same 78 of Morheim's list, Q24020 from before included. The six of the Fire
+Temple group played every group round; the Spirit Master and the Assassin played the cabin's, the garrison's and the
+crater's in a second group with four of them. The Cleric died most, 25 times alone and 18 in groups, where it is the
+one the monsters go for; the Assassin's 24 deaths alone are the leather class's, as decision 10 expected.
+
+**Every Morheim quest not played, and why.** The list has 270; 78 are done by all eight. Of the 192 others:
+
+- 105 start at level 31 or above (`later`): the next legs'.
+- 34 are repeatable (`repeat`): rule 3 plays a repeatable only to reach a leg's level, and every bot passed 31 on
+  its quests.
+- 20 ask for gathering and 10 are spy quests: decision 2.
+- 14 cannot be taken as the server is (`blocked`, see [The ground](#the-ground)): seven are the pre-4.8 campaign, three
+  have no handler (Q4338, Q24120, Q24240) and wait for D32 on the operator's word (decision 3), two wait on a quest
+  that cannot be had, two are switched off.
+- 9 are the leg's own:
+  - Q2330 Orders for Randet and Q4300 News For the Settlers: handed in at Brusthonin, another map (M2).
+  - Q26905 Occupiers All Over the Place (Aegir, level 28): left at the fortress in M2 and taken up by no later step;
+    the report found it. Its target is the territory boss of Musphel Outpost beside Slag Bulwark (base 2220): the wise
+    lepharist captain while the Lepharists hold the base, as they did through M6, or the Morheim guerilla while the
+    Elyos do. Its kill gives the base to the Asmodians, and the next boss that counts comes only once an assault or a
+    random turn (Java `Base.scheduleAssault`) gives it back, 10 to 20 minutes after it changes hands at the soonest.
+    My decision, his to change: **it is left for a pass of its own**, a group of six for the first kill and the
+    other two after the base turns.
+  - Q2324 The Spirit's Notebook and Q2325 An Unfinished Mystery: Q2324 starts from Hermod's Notebook (182204123),
+    and nothing gives it: neither this server's data nor Java's has a drop or a reward of it (M5).
+  - Q2372 Immortal Love: Q2367's second ending; every bot took the first (decision 6).
+  - Q24023 A Blazing Rescue: its items are gathered inside the Sky Temple Interior, a solo instance, which the leg
+    engine does not collect in yet (M4). All eight hold it.
+  - Q2343 Ancient Ginseng: its start item drops at 3% from the Ruthless Tayga, a hunt of some 260 kills (M6).
+  - Q2355 [Group] Seeking the Spotlight: the servile kalbak lies past the klaw camp, for a higher pass (M6, with the
+    operator's agreement). Six hold it; the Spirit Master and the Assassin have not taken it.
+
+**What the bots found wrong with the server.** Nothing in this leg needed a server change. Found, and left as Java
+has them:
+
+1. Q2324's start item has no source in the data (above), in Java's as in ours.
+2. Q2307's handler does not check the soup's four ingredients (Java: "INGREDIENT CHECK NEED TO SCRIPT"), so the
+   soup can be made without them (M3).
+3. Q2718's handler, a Reshanta quest, sends an empty dialog window to everyone who talks to Vivi without having taken
+   it (M3).
+4. A stigma's next rank comes only at the next login (Java `StigmaService.onPlayerLogin`; there is no level-up hook)
+   (M4).
+5. Three refusals without a word, which the bots had to learn to read: a skill at a target that has just died is
+   refused twice (`Skill.isValidTarget`, then the empty target list); a chain skill whose chain has closed is refused
+   with no message (`ChainCondition`); and a group invitation that meets a pending question (the Soul Healer's) is
+   dropped and never sent again (M4, M6).
+
+The rest of what the leg met is the game as the data has it: Karhel's field opened by a titled portal (the operator
+looked it up), the crater's lava floor and its exploding flame shards, the named spawns whose items drop for each
+member of a group, and the invasion daily the server starts on entering Morheim.
+
+**What the operator must decide.**
+
+1. Q26905: the pass at Musphel Outpost above, or leave it.
+2. Q2324 and Q2325: whether 4.8 retail gave Hermod's Notebook, and from what; a data correction would be a logged
+   decision like D26 to D31.
+3. The three quests without a handler (decision 3), and Q24023 once the leg engine collects inside an instance.
+4. Q2355 and Q2343 in a later pass (the leg to the check-in at 36 is the natural one).
 
 ## Decisions
 
