@@ -3253,7 +3253,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				int haramelKillHistoryStart = session.PacketHistory.Count;
 				int haramelEntryHistoryStart = haramelKillHistoryStart;
 				IReadOnlyDictionary<int, NaturalTemplateObjective> objectives = NaturalTemplateObjective.From(altgardPlans);
+				// A quest the leg was written holding that has been handed in since is no longer the leg's to keep: the campaign's
+				// rest in M6 started from a world where Q2319 and Q2356, held at the leg's own start, were done in M5.
 				var preservedQuests = (leg.Start.StartedQuestIds ?? []).Concat(leg.Start.LockedQuestIds).Except(leg.Order)
+					.Where(id => !session.Api.World.CompletedQuestIds.Contains(id))
 					.ToDictionary(id => id, id => session.Api.World.Quests.TryGetValue(id, out BotQuestState? state)
 						? (state.Status, state.StepAndFlags) : throw new InvalidDataException($"Incoming Q{id} is missing."));
 				IReadOnlyList<NaturalFlyZone> zones = NaturalFlyZone.Load(Path.Combine(runtime.RepoRoot,
