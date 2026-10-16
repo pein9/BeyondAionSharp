@@ -4,8 +4,8 @@ Status: a plan, 2026-10-13, as the operator shaped it in three messages that day
 [natural-morheim-quests.md](natural-morheim-quests.md). Steps M2 (Morheim Ice Fortress) and M3 (Kellan's Cabin) are
 played, and step M4 (legs `md` and `mc`), where every bot reached 31 (`morheim-mc-s1-w1`). Step M7's gear check at 31
 came next, on the operator's word (`morheim-g31-s1-w1`), then M8 and M5 (`morheim-ma-s1-w1`, every bot at 32). The
-group step M6 is under way, its cabin, garrison and crater quests done by all eight: the world is now
-`morheim-gs-s2-w1`.
+group step M6 is done: the cabin's, the garrison's and the crater's group quests and the campaign up to Q24023,
+by all eight (Q2355 and Q2343 left). The world is now `morheim-mc-s3-w1`.
 
 It follows [natural-muster.md](natural-muster.md), whose rules MR-a to MR-i are this leg's rules, and starts from the
 group world `ntc-group-s5`.
@@ -198,7 +198,7 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
   - Not played, for the report: Q2372 Immortal Love (Q2367's second ending; its sulfur worms are in the Abyss),
     Q2324 The Spirit's Notebook and Q2325 (nothing in the server's data gives Hermod's Notebook), Q24023 (gathering
     inside the Sky Temple Interior, a solo instance).
-- [ ] **M6 The group quests,** 11, in groups, with Q2494 and Q2328 (one named spawn each, whose items drop for each
+- [x] **M6 The group quests,** 11, in groups, with Q2494 and Q2328 (one named spawn each, whose items drop for each
   member of a group; see M3), Q2344 and Q2343 (the Ice Claw village's elites; see M4), Q24022 (Protector Karhel) and
   any quest a bot left for the group (Q24021 for five of them).
   - 2026-10-15, the cabin's group quests: stage `group-field`, from `morheim-mgk-s1` (leg `mgk`, all eight bound at
@@ -294,6 +294,20 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     step at a time. The leader no longer gathers on its way to a takeoff, and a walk ends when a wait inside it moved
     the walker more than 30 m (`98cda3508`). Round `gs-c3` then captured **`morheim-gs-s2-w1`**: both handed in all
     seven, in 2.3 game hours, with 1 death (the Gladiator). **The crater's group quests are done by all eight.**
+  - 2026-10-16, the campaign caught up as far as it goes (decision 11). Leg `mgd` took all eight back to the garrison
+    from Slag Bulwark (`morheim-mgd-s2`). The Fire Temple six then went into Karhel's field again for the Sorcerer and
+    the Ranger (round `gd-karhel.json`), captured **`morheim-gdk-s2-w1`** (`3721d036e`): both killed Protector Karhel,
+    on the group's second way in, in 1.1 game hours with 5 deaths (the guards beside the portal's landing wake with the
+    first pull, stun the Cleric and kill it). The first captured round (`gdk-c1`; its world `morheim-gdk-s1` is not to
+    be used) found two faults, both fixed (`3721d036e`): the leader counted a guard's kill by a member as Karhel's
+    death before it had seen his health, then waited a quarter of an hour at his spawn while he stood there.
+  - The same day, the campaign's rest, each bot alone: stage `mc` (round `run/morheim/M6/mc-rest.json`, all eight ten
+    game minutes apart) from `morheim-gdk-s2`, captured **`morheim-mc-s3-w1`** (`aa5c4d5cc`). Every bot handed in
+    Q24022 to Aegir, and the six that held it Q24021 to Tofa, in 4 to 10 game minutes each, with no death. The first
+    round (`mc-c2`; its world `morheim-mc-s2` is not to be used) stopped every bot at its start: the `mc` contract holds
+    Q2319 and Q2356 as started, and both were handed in during M5. A leg no longer keeps a quest it was written holding
+    that has been handed in since (`aa5c4d5cc`). Left: Q24023, gathered inside the Sky Temple Interior (a solo
+    instance), as in M4. **The campaign is caught up to Q24023 by all eight.**
   - My decision, his to change: **Q2343 Ancient Ginseng is left.** Its start item (182204134) drops at 3% from the
     Ruthless Tayga (`rules_map_morheim.xml`, a named quest-start rule), some 33 kills a bot and 260 for the eight: a
     hunt, not a quest step. It goes into the report.
