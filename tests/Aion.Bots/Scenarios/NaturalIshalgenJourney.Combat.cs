@@ -1238,7 +1238,7 @@ public sealed partial class NaturalIshalgenJourney
 						await session.SynchronizeAsync(token);
 						int[] hitBy = session.PacketHistory.Skip(castStart)
 							.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId, session.Api.World.Summon?.ObjectId))
-							.OfType<int>().Distinct().ToArray();
+							.OfType<int>().Where(RestFoe).Distinct().ToArray();
 						if (hitBy.Length > 0)
 						{
 							// The hit cancelled the cast: never cast or sit under attack, fight first.
@@ -1323,10 +1323,9 @@ public sealed partial class NaturalIshalgenJourney
 						attackHistoryStart = session.PacketHistory.Count;
 						await session.AdvanceAsync(duration, waitToken);
 						await session.SynchronizeAsync(waitToken);
-						// M6: a member of the group is no attacker: the Cleric's skill on a resting Chanter made it turn on the Cleric.
 						int[] attackers = session.PacketHistory.Skip(attackHistoryStart)
 							.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId, session.Api.World.Summon?.ObjectId))
-							.OfType<int>().Where(attacker => !session.Api.World.GroupMembers.ContainsKey(attacker)).ToArray();
+							.OfType<int>().Where(RestFoe).ToArray();
 						return new NaturalRestTick(world.IsDead || world.CurrentHp <= 0, attackers);
 					},
 					async (attackers, defendToken) =>
@@ -1347,6 +1346,12 @@ public sealed partial class NaturalIshalgenJourney
 		}
 
 		/// <summary>Fight the attackers that interrupted a sit or a powder cast (NA-18 shares it with the sit).</summary>
+		/// <summary>M6: what a rest fights back: a monster the bot knows, never a member of its group (the Cleric's skill on a
+		/// resting Chanter, and on a resting Assassin, made them turn on the Cleric; the Assassin then struck at nothing with a
+		/// template).</summary>
+		private bool RestFoe(int attacker) => !session.Api.World.GroupMembers.ContainsKey(attacker) &&
+			session.Api.World.Objects.TryGetValue(attacker, out BotKnownObject? known) && known.Kind == BotKnownObjectKind.Npc && known.TemplateId != null;
+
 		private async Task DefendDuringRestAsync(IReadOnlyList<int> attackers, int attackHistoryStart, CancellationToken defendToken)
 		{
 			BotWorldModel world = session.Api.World;
