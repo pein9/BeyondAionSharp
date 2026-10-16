@@ -4,7 +4,8 @@ Status: a plan, 2026-10-13, as the operator shaped it in three messages that day
 [natural-morheim-quests.md](natural-morheim-quests.md). Steps M2 (Morheim Ice Fortress) and M3 (Kellan's Cabin) are
 played, and step M4 (legs `md` and `mc`), where every bot reached 31 (`morheim-mc-s1-w1`). Step M7's gear check at 31
 came next, on the operator's word (`morheim-g31-s1-w1`), then M8 and M5 (`morheim-ma-s1-w1`, every bot at 32). The
-group step M6 is under way, its cabin and garrison quests done by all eight: the world is now `morheim-gd-s3-w1`.
+group step M6 is under way, its cabin, garrison and crater quests done by all eight: the world is now
+`morheim-gs-s2-w1`.
 
 It follows [natural-muster.md](natural-muster.md), whose rules MR-a to MR-i are this leg's rules, and starts from the
 group world `ntc-group-s5`.
@@ -273,6 +274,29 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
   - Left: the Sorcerer and the Ranger killed Karhel only in a trial (g76, five of the six credited); in the world they are
     at var 6, for a short group round of their own. The rest of Q24022 (Tofa, Aegir) and of Q24021 (Tofynir, the item
     used in its zone) is a lone bot's.
+  - 2026-10-16, the crater's group quests south of Slag Bulwark: leg `mgs` took all eight to Slag Bulwark and bound them
+    there (`morheim-mgs-s1`). The Fire Temple six play Q4311, Q4312, Q4313, Q2375, Q2376, Q2377 and Q2384: round
+    `run/morheim/M6/gs-six.json`, captured **`morheim-gs-s1-w1`** (`ab2516e7b`). All six handed in all seven, in 2.8
+    game hours, with 2 deaths (the Gladiator, the Cleric).
+  - Trials g77 to g94 found these, all fixed (`ab2516e7b`). The crater is a fly zone whose ledges only a flight joins: a
+    member that lands sends a stop where it stands (the others saw it where it took off, 189 m below, and the leader
+    waited five minutes at every landing for a group beside it); a member waits for the flight time its flight costs,
+    not a full bar; a crossing that is blocked climbs higher, up to the zone's ceiling, and a climb shut by rock steps
+    out first; a refused takeoff ends at the server's refusal instead of the watchdog, and is not planned again for a
+    minute. On the operator's question, the crater floor is lava (`material_templates.xml`: Lava Singe, 150 fire damage
+    every three seconds): landings and takeoffs keep off it, and a member out of a fight steps off it. The flame shards
+    blow themselves up (an NPC skill named Explosion; all six died at once): an ember spirit beside one is not pulled,
+    and its spawn is hunted last. A corpse whose drop could not be reached goes last while a drop is collected.
+  - 2026-10-16, the Spirit Master and the Assassin: round `gs-second.json` from `morheim-gs-s1`, the Templar leading,
+    the Cleric healing, the Gladiator and the Chanter with them. The first captured round (`gs-c2`) was stopped after
+    three game hours with nothing done: the leader stopped to gather its group on its way to a takeoff while the five
+    flew on, and after each Return that its waiting called for, the rest of its walk sent it back into the crater, one
+    step at a time. The leader no longer gathers on its way to a takeoff, and a walk ends when a wait inside it moved
+    the walker more than 30 m (`98cda3508`). Round `gs-c3` then captured **`morheim-gs-s2-w1`**: both handed in all
+    seven, in 2.3 game hours, with 1 death (the Gladiator). **The crater's group quests are done by all eight.**
+  - My decision, his to change: **Q2343 Ancient Ginseng is left.** Its start item (182204134) drops at 3% from the
+    Ruthless Tayga (`rules_map_morheim.xml`, a named quest-start rule), some 33 kills a bot and 260 for the eight: a
+    hunt, not a quest step. It goes into the report.
 - [x] **M7 Level 31 and the gear check.** Every quest of the leg done by all eight; level 31; Elite Rank 6 where it
   beats what is worn; the sale of what it replaced, the kit and the cleanup; a relog. The capture is the next group
   world.
