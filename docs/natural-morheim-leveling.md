@@ -4,7 +4,7 @@ Status: a plan, 2026-10-13, as the operator shaped it in three messages that day
 [natural-morheim-quests.md](natural-morheim-quests.md). Steps M2 (Morheim Ice Fortress) and M3 (Kellan's Cabin) are
 played, and step M4 (legs `md` and `mc`), where every bot reached 31 (`morheim-mc-s1-w1`). Step M7's gear check at 31
 came next, on the operator's word (`morheim-g31-s1-w1`), then M8 and M5 (`morheim-ma-s1-w1`, every bot at 32). The
-group step M6 is under way, its cabin quests first: the world is now `morheim-gk-s2-w1`.
+group step M6 is under way, its cabin quests first: the world is now `morheim-gk-s3-w1`.
 
 It follows [natural-muster.md](natural-muster.md), whose rules MR-a to MR-i are this leg's rules, and starts from the
 group world `ntc-group-s5`.
@@ -205,7 +205,8 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     Chanter, the Gladiator, the Ranger) play Q2354, Q2355, Q2353 and Q2494 from their compiled plans, accepted together
     and handed in together. Captured so far: `morheim-gk-s1` (round `run/morheim/M6/gk-six.json`; all six did Q2354,
     the run stopped at Q2355) and `morheim-gk-s2` (round `gk-six-s2.json`, Q2353 played first: all six did it; the
-    round's four game hours ran out with Q2494 taken). Q2494 and Q2355 follow from `morheim-gk-s2`.
+    round's four game hours ran out with Q2494 taken) and `morheim-gk-s3` (round `gk-six-2494.json`: all six did
+    Q2494, no death, 44 game minutes).
   - Trials g2 to g45 found these bot faults, all fixed (`8f313eb7d`, `eebc922d3`): a route that keeps out of every
     monster's reach is shut north-east of the cabin, so the group fights its way or goes through; the leader's steps
     left the walkable mesh; gatherings waited for the leader itself, for a member offline, for members the leader had
@@ -220,6 +221,14 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     guards it, and a member uses the ore near its leader once nothing strikes it. The servile kalbak fell to the group
     once (trial g37, every member credited); the klaw camp's packs (elites of 25 to 28 and Queen Taran, a hero) wiped
     the group on most pushes toward it, so the cabin round plays it last.
+  - My decision, his to change (the operator agreed the same evening: "we might need to come back here to these when
+    we are better geared and leveled"): **Q2355 waits for a later, higher pass** (the leg to the check-in at 36 is the
+    natural one). What stands in the way: the only way to the kalbak (a lone level-28 elite, an hour between spawns,
+    south-east of Kimssi) crosses the klaw camp, some twenty elites of 25 to 28 that come back within minutes and Queen
+    Taran (a hero of 28), and every fight there pulls more of them; the Cleric and the Sorcerer (about 1,900 HP) died
+    most. The ground there has holes in the baked mesh and two chokepoints (east of Kimssi and east of the cabin) that
+    split the group, and the failing searches slowed the world. A higher level and better gear mean fewer deaths, and
+    the holes stay until that ground is re-baked or marked.
 - [x] **M7 Level 31 and the gear check.** Every quest of the leg done by all eight; level 31; Elite Rank 6 where it
   beats what is worn; the sale of what it replaced, the kit and the cleanup; a relog. The capture is the next group
   world.
