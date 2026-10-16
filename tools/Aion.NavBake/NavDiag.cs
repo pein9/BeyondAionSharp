@@ -265,7 +265,12 @@ internal static class NavDiag
 				float hit = map.GetZ(v[0], v[1], z, bottom, 1, false);
 				if (float.IsNaN(hit)) break;
 				float flat = map.GetZ(v[0], v[1], hit + 0.05f, hit - 0.05f, 1, true);
-				any.Add($"{hit:F2}{(float.IsNaN(flat) ? "(steep)" : "")}");
+				// NAV_MATERIAL=1: the mesh material under each surface (material_templates.xml gives some a skill: lava).
+				string material = "";
+				if (Environment.GetEnvironmentVariable("NAV_MATERIAL") == "1" && map.GetCollisions(v[0], v[1], hit + 1, v[0], v[1], hit - 1, 1,
+					CollisionIntention.DEFAULT_COLLISIONS.GetId(), IgnoreProperties.ASMODIANS).GetClosestCollision()?.GetGeometry() is { } ground)
+					material = $"[m{ground.GetMaterialId()} {ground.GetName()}]";
+				any.Add($"{hit:F2}{(float.IsNaN(flat) ? "(steep)" : "")}{material}");
 				z = hit - 0.3f;
 			}
 			Console.WriteLine($"{v[0]},{v[1]}: {string.Join("  ", any)}");

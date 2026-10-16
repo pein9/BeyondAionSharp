@@ -99,6 +99,12 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
         NavMesh?.NavMeshes.Get(mapId)?.Snap(point, BotNavQuery.Default with { SnapHorizontal = horizontal, SnapVertical = 10 });
 
     /// <summary>Actual static ground within the ordinary ±2 m height window (not a navmesh height).</summary>
+    /// <summary>M6: the mesh material of the ground under <paramref name="point"/> (material_templates.xml gives some a skill:
+    /// the crater floor south of Slag Bulwark is lava, Lava Singe every three seconds), or null where no mesh lies just below.</summary>
+    public int? GroundMaterial(int mapId, BotPosition point) =>
+        maps(mapId).GetCollisions(point.X, point.Y, point.Z + 1, point.X, point.Y, point.Z - 1.5f, instanceId,
+            CollisionIntention.DEFAULT_COLLISIONS.GetId(), ignoreProperties).GetClosestCollision()?.GetGeometry()?.GetMaterialId();
+
     public BotPosition? StaticGroundAt(int mapId, BotPosition point)
     {
         float z = maps(mapId).GetZ(point.X, point.Y, point.Z + HeightWindow, point.Z - HeightWindow, instanceId, true);

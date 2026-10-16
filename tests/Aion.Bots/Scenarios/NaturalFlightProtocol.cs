@@ -43,22 +43,32 @@ public static class NaturalFlightProtocol
 		NaturalFlightRoute direct = Check(geometry, mapId, start, [start with { Z = cruise }, end with { Z = cruise }, end]);
 		if (direct.IsUsable) return direct;
 		bool startIsLow = start.Z <= end.Z;
-		BotPosition low = startIsLow ? start : end;
-		NaturalFlightRoute? best = null;
-		for (float dx = -ColumnReach; dx <= ColumnReach; dx += ColumnSpacing)
-			for (float dy = -ColumnReach; dy <= ColumnReach; dy += ColumnSpacing)
-				foreach (float height in LowHeights)
-				{
-					var column = new BotPosition(low.X + dx, low.Y + dy, low.Z + height, 0);
-					BotPosition[] waypoints = startIsLow
-						? [start with { Z = column.Z }, column, column with { Z = cruise }, end with { Z = cruise }, end]
-						: [start with { Z = cruise }, column with { Z = cruise }, column, end with { Z = column.Z }, end];
-					float meters = Length(start, waypoints);
-					if (best != null && meters >= best.Meters) continue;
-					NaturalFlightRoute candidate = Check(geometry, mapId, start, waypoints);
-					if (candidate.IsUsable) best = candidate;
-				}
+		NaturalFlightRoute? best = Columns(startIsLow);
+		// M6: a high start under rock (a ledge in Morheim's crater, the climb out shut all the way to the zone's ceiling) flies low
+		// to a clear column beside it as well; only when the usual columns find nothing, so a route found before is unchanged.
+		best ??= Columns(!startIsLow);
 		return best ?? direct;
+
+		// Columns beside the start (fly low to it, climb, cross) or beside the end (cross, descend, fly low to the end).
+		NaturalFlightRoute? Columns(bool besideStart)
+		{
+			BotPosition low = besideStart ? start : end;
+			NaturalFlightRoute? found = null;
+			for (float dx = -ColumnReach; dx <= ColumnReach; dx += ColumnSpacing)
+				for (float dy = -ColumnReach; dy <= ColumnReach; dy += ColumnSpacing)
+					foreach (float height in LowHeights)
+					{
+						var column = new BotPosition(low.X + dx, low.Y + dy, low.Z + height, 0);
+						BotPosition[] waypoints = besideStart
+							? [start with { Z = column.Z }, column, column with { Z = cruise }, end with { Z = cruise }, end]
+							: [start with { Z = cruise }, column with { Z = cruise }, column, end with { Z = column.Z }, end];
+						float meters = Length(start, waypoints);
+						if (found != null && meters >= found.Meters) continue;
+						NaturalFlightRoute candidate = Check(geometry, mapId, start, waypoints);
+						if (candidate.IsUsable) found = candidate;
+					}
+			return found;
+		}
 	}
 
 	private static NaturalFlightRoute Check(BotNavigationGeometry geometry, int mapId, BotPosition start, BotPosition[] waypoints)
@@ -121,8 +131,13 @@ public static class NaturalFlightProtocol
 	public static async Task<float> TakeOffAsync(INaturalJourneySession session, CancellationToken token)
 	{
 		await session.SendPacketAsync(session.Api.Fly(), token);
-		DecodedBotServerPacket flying = await session.WaitForPacketAsync(typeof(SM_EMOTION), token, packet =>
-			packet.Get<int>("senderObjectId") == session.CharacterId && packet.Get<byte>("emotionType") == (byte)EmotionType.FLY);
+		// The server's refusals end the wait instead of the watchdog (M6: STR_FLYING_FORBIDDEN_HERE at Slag Bulwark).
+		DecodedBotServerPacket flying = await session.WaitForPacketAsync(packet =>
+			packet.PacketType == typeof(SM_EMOTION) && packet.Get<int>("senderObjectId") == session.CharacterId &&
+				packet.Get<byte>("emotionType") == (byte)EmotionType.FLY ||
+			packet.PacketType == typeof(SM_SYSTEM_MESSAGE) && packet.Get<object>("name") is "STR_FLYING_FORBIDDEN_HERE" or "STR_FLYING_FORBIDDEN_ZONE" or
+				"STR_FLYING_TIME_NOT_READY" or "STR_CANT_FLY_NOW_DUE_TO_NOFLY" or "STR_FLYING_DISABLE_1" or "STR_FLYING_DISABLE_2", token);
+		if (flying.PacketType == typeof(SM_SYSTEM_MESSAGE)) throw new IOException($"Takeoff refused: {flying.Get<object>("name")}.");
 		float speed = flying.Get<float>("movementSpeed");
 		return speed > 0 ? speed : session.Api.World.MovementSpeed ?? throw new InvalidDataException("The FLY emotion carried no speed.");
 	}

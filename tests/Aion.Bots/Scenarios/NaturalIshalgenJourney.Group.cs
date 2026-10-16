@@ -40,6 +40,24 @@ public sealed partial class NaturalIshalgenJourney
 				Race: (string?)path.Attribute("race") ?? "PC_ALL", TitleId: (int?)path.Attribute("title_id") ?? 0)))];
 	private static (int Npc, int LocId, string Race, int TitleId)[]? groupPortalUses;
 
+	/// <summary>M6: the mesh materials whose skill is lava (material_templates.xml; Lava Singe and Lava, 150 fire damage every
+	/// three seconds): the crater floor south of Slag Bulwark, where the group fought for Q4311 and died to it.</summary>
+	private static HashSet<int> LavaMaterials(NaturalJourneyRuntime runtime) =>
+		lavaMaterials ??= [.. System.Xml.Linq.XDocument.Load(Path.Combine(runtime.RepoRoot, "game-server", "data", "static_data", "mesh_materials", "material_templates.xml"))
+			.Root!.Elements("material").Where(material => material.Elements("skill").Any(skill =>
+				runtime.Data.SkillDataDh.GetSkillTemplate((int)skill.Attribute("id")!)?.GetName()?.Contains("Lava", StringComparison.OrdinalIgnoreCase) == true))
+			.Select(material => (int)material.Attribute("id")!)];
+	private static HashSet<int>? lavaMaterials;
+
+	/// <summary>M6: the monsters that blow themselves up (an NPC skill named Explosion in npc_skills.xml): the crater floor's
+	/// flame shards killed all six at once, 2,600 each, while the group fought an ember spirit beside them.</summary>
+	private static HashSet<int> Exploders(NaturalJourneyRuntime runtime) =>
+		exploders ??= [.. System.Xml.Linq.XDocument.Load(Path.Combine(runtime.RepoRoot, "game-server", "data", "static_data", "npc_skills", "npc_skills.xml"))
+			.Root!.Elements("npc_skills").Where(entry => entry.Elements("npc_skill").Any(skill =>
+				runtime.Data.SkillDataDh.GetSkillTemplate((int)skill.Attribute("id")!)?.GetName() == "Explosion"))
+			.SelectMany(entry => ((string)entry.Attribute("npc_ids")!).Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse))];
+	private static HashSet<int>? exploders;
+
 	private async Task RunGroupQuestAsync(CancellationToken token)
 	{
 		BotWorldModel world = session.Api.World;
@@ -144,7 +162,9 @@ public sealed partial class NaturalIshalgenJourney
 		long? lastTakeoff = null;
 		(int X, int Y, int Z)? flownTo = null;
 		int flyTries = 0;
-		long portalAgainAt = 0;
+		long portalAgainAt = 0, offLavaAgainAt = 0;
+		var badDryGround = new List<BotPosition>();
+		var refusedFlights = new List<(BotPosition From, BotPosition To, long Until)>();
 		long hereSaidAt = long.MinValue / 2, leaderHereAt = long.MinValue / 2, rejoinAgainAt = 0, plannedWayAt = 0;
 		(BotPosition From, BotPosition To)? plannedNoWay = null;
 		long backOnMeshAt = 0, leaderSeenAt = 0;
@@ -403,6 +423,8 @@ public sealed partial class NaturalIshalgenJourney
 				!RevivedAway(member) && runtime.NowMillis - memberSeenAt.GetValueOrDefault(member.ObjectId, runtime.NowMillis) <= 60_000);
 			bool Together() => others.Where(Waited).All(member => !member.Dead && member.MapId == world.MapId && Seen(member) is { } at && Near(at) &&
 				(member.MaxMp <= 0 || member.CurrentMp * 100L / member.MaxMp >= 50));
+			// Nobody gathers on lava.
+			if (field) await StepOffLavaAsync();
 			if (Together()) { missedGatherings = 0; return; }
 			BotPosition stop = session.CurrentPosition;
 			// An interrupted movement plan must announce its stop before waiting for stationary followers.
@@ -610,8 +632,9 @@ public sealed partial class NaturalIshalgenJourney
 			{
 				long readyAt = runtime.NowMillis + (long)session.Api.Timing.TimeUntilCast(skill).TotalMilliseconds + 500;
 				session.TraceDiagnostic("group-field-return-wait", new Dictionary<string, object?> { ["position"] = session.CurrentPosition, ["waitMillis"] = readyAt - runtime.NowMillis });
+				// Not on lava: the leader waited out its Return on the crater floor.
 				while (runtime.NowMillis < readyAt && !world.IsDead)
-					if (!(leads && await GuardAsync())) await PauseAsync();
+					if (!(leads && await GuardAsync()) && !await StepOffLavaAsync()) await PauseAsync();
 				if (world.IsDead) { await combat.RestAsync(token); following.Reset(); return; }
 				await session.SynchronizeAsync(token);
 			}
@@ -653,18 +676,25 @@ public sealed partial class NaturalIshalgenJourney
 			bool keptOut = navigator.AvoidHostileAggro;
 			try
 			{
-				try { await WalkOnAsync(destination, within); return; }
+				// In the crater a goal on other ground is flown to at once: the leader walked the lava floor four minutes toward
+				// Embla before its walk failed at the floor's edge.
+				bool flyFirst = field && !crossing && !walkingBack && InFlyZone(session.CurrentPosition) && Island(session.CurrentPosition) is int fromGround &&
+					fromGround >= 0 && Island(destination, 8) is int toGround && toGround >= 0 && toGround != fromGround;
+				try { if (!flyFirst) { await WalkOnAsync(destination, within); return; } throw new IOException("Other ground in the crater."); }
 				// Ground closed by a portal's wall (Karhel's aetheric field in the Ice Claw village): the leader names the portal,
 				// and every member goes through it.
-				catch (IOException) when (field && leads && !crossing && GateTo(destination) is { } gate)
+				catch (IOException) when (field && leads && !crossing && GatesTo(destination).Length > 0)
 				{
-					if (!await PortalAsync(gate.Npc, gate.Title)) throw new IOException($"The portal {gate.Npc} did not take the leader toward {destination}.");
+					(int Npc, int Title)? gate = await ReachableGateAsync(destination);
+					if (gate == null || !await PortalAsync(gate.Value.Npc, gate.Value.Title)) throw new IOException($"No portal took the leader toward {destination} ({(gate == null ? "none in reach" : $"portal {gate.Value.Npc}")}).");
 				}
 				// The crater south of Slag Bulwark is a FLY zone on ground the navmesh does not join to the rest: the leader names
 				// the goal, and every member flies there on its own, as a bot alone does.
-				catch (IOException) when (field && leads && !crossing && (InFlyZone(destination) || InFlyZone(session.CurrentPosition)))
+				// A member walking on its own (to a quest NPC, after standing up at the obelisk) flies the same way: the Sorcerer,
+				// left at Slag Bulwark, never reached Padinerk to hand in Q2376.
+				catch (IOException) when (field && !crossing && (InFlyZone(destination) || InFlyZone(session.CurrentPosition)))
 				{
-					await SayAsync($"command:fly:{(int)MathF.Round(destination.X)}:{(int)MathF.Round(destination.Y)}:{(int)MathF.Round(destination.Z)}");
+					if (leads) await SayAsync($"command:fly:{(int)MathF.Round(destination.X)}:{(int)MathF.Round(destination.Y)}:{(int)MathF.Round(destination.Z)}");
 					if (!await CrossFlyZoneAsync(destination)) throw new IOException($"No walk nor flight reaches {destination}.");
 				}
 				await WalkOnAsync(destination, within);
@@ -684,6 +714,31 @@ public sealed partial class NaturalIshalgenJourney
 			}
 			return flyZones;
 		}
+		// Two looks, at the point and three metres under it: the navmesh can stand a point on a surface above the lava a bot then
+		// stands in (a ledge east of the drakes, 89.8 m over a lava patch at 86.9).
+		bool OnLava(BotPosition at) => world.MapId is int lavaMap && (Lava(lavaMap, at) || Lava(lavaMap, at with { Z = at.Z - 3 }));
+		bool Lava(int lavaMap, BotPosition at) => geometry.GroundMaterial(lavaMap, at) is int material && LavaMaterials(runtime).Contains(material);
+		// A member standing on lava out of a fight steps onto the nearest ground that is not, three to twenty metres off; a step
+		// that left it where it stood is not taken again (the members on the crater floor stepped two metres forty times).
+		async Task<bool> StepOffLavaAsync()
+		{
+			if (combat.InCombat || world.IsDead || world.MapId is not int map || runtime.NowMillis < offLavaAgainAt || !OnLava(session.CurrentPosition)) return false;
+			offLavaAgainAt = runtime.NowMillis + 10_000;
+			BotPosition here = session.CurrentPosition;
+			if (geometry.IslandGround(map, here, at => Distance(at, here) is > 3 and <= 20 && !OnLava(at) &&
+					!badDryGround.Any(bad => Distance(bad, at) < 1)).OrderBy(at => Distance(at, here))
+				.Cast<BotPosition?>().FirstOrDefault() is not { } dry) return false;
+			var path = await navigator.FindRouteAsync(here, dry, token);
+			if (path.Count == 0) path = [here, dry];
+			session.TraceDiagnostic("group-field-off-lava", new Dictionary<string, object?> { ["position"] = here, ["to"] = dry });
+			// The leader's own step must not start a gathering inside itself.
+			bool wasWalkingBack = walkingBack;
+			walkingBack = true;
+			try { await navigator.MoveAsync(path, token); }
+			finally { walkingBack = wasWalkingBack; }
+			if (Distance(session.CurrentPosition, here) < 1 || OnLava(session.CurrentPosition)) badDryGround.Add(dry);
+			return true;
+		}
 		bool InFlyZone(BotPosition at) => world.MapId != GroupNtcMap && FlyZones().Any(zone => !zone.Forbids && zone.Contains(at.X, at.Y, at.Z + 2)) &&
 			!FlyZones().Any(zone => zone.Forbids && zone.Contains(at.X, at.Y, at.Z + 2));
 		// M6: Protector Karhel stands in his aetheric field, which only the chosen enter (the operator, 2026-10-16: "You must
@@ -693,16 +748,16 @@ public sealed partial class NaturalIshalgenJourney
 		// A spawn or a portal's landing can stand a few metres off the mesh (Karhel 2.7 m): those are looked up wider.
 		int Island(BotPosition at, float snap = 2) => world.MapId is int map && geometry.NavMesh?.NavMeshes.Get(map) is { } mesh
 			? mesh.IslandOf(at, BotNavQuery.Default with { SnapHorizontal = snap }) : -1;
-		(int Npc, int Title)? GateTo(BotPosition goal)
+		(int Npc, int Title, int StatueIsland, BotPosition Statue)[] GatesTo(BotPosition goal)
 		{
-			if (world.MapId is not int map) return null;
+			if (world.MapId is not int map) return [];
 			// As the journey reads it: the client's own object, or an Asmodian's when it carries no race.
 			Race race = world.Objects.GetValueOrDefault(session.CharacterId)?.Race is byte raceId ? (Race)raceId : Race.ASMODIANS;
 			int here = Island(session.CurrentPosition), there = Island(goal, 8);
 			// A portal that lands on the goal's ground (in: Karhel's), or one standing on the leader's own ground that leads off it
 			// (out); one within 1,500 m to go in (the leader looks from the garrison, 815 m from Karhel's statue), 300 m to go out. The leader can stand on a patch of mesh of its own (east of the garrison, where its walk to
 			// Karhel stopped): its own walk takes the group to the statue.
-			if (there < 0 || here == there) return null;
+			if (there < 0 || here == there) return [];
 			BotPosition from = session.CurrentPosition;
 			return GroupPortalUses(runtime.RepoRoot)
 				.Where(path => path.Race == race.ToString() || path.Race == "PC_ALL")
@@ -714,7 +769,20 @@ public sealed partial class NaturalIshalgenJourney
 				.Where(entry => entry.StatueIsland >= 0 && entry.StatueIsland != there && entry.LandingIsland >= 0 &&
 					(entry.LandingIsland == there || here >= 0 && entry.StatueIsland == here && entry.LandingIsland != here && Distance(from, entry.Statue) <= 300))
 				.OrderBy(entry => entry.LandingIsland == there ? 0 : 1).ThenBy(entry => Distance(entry.Landing, goal))
-				.Select(entry => ((int, int)?)(entry.Path.Npc, entry.Path.TitleId)).FirstOrDefault();
+				.Select(entry => (entry.Path.Npc, entry.Path.TitleId, entry.StatueIsland, entry.Statue)).ToArray();
+		}
+		// A statue the leader can walk to: on its own ground, or one a route reaches (the statue inside Karhel's field was chosen
+		// for the way back to the flags, from the garrison; the travel planner's road does not reach the statue outside it).
+		async Task<(int Npc, int Title)?> ReachableGateAsync(BotPosition goal)
+		{
+			int here = Island(session.CurrentPosition);
+			foreach (var gate in GatesTo(goal))
+			{
+				if (gate.StatueIsland == here || (await navigator.FindRouteAsync(session.CurrentPosition, gate.Statue, token)).Count > 0)
+					return (gate.Npc, gate.Title);
+				session.TraceDiagnostic("group-field-portal-out-of-reach", new Dictionary<string, object?> { ["npc"] = gate.Npc, ["statue"] = gate.Statue });
+			}
+			return null;
 		}
 		// On the ground a portal lands on: the statue beside it, across its wall, is not used again.
 		bool PortalLanded(int npc) => GroupPortalUses(runtime.RepoRoot).Where(path => path.Npc == npc)
@@ -781,16 +849,22 @@ public sealed partial class NaturalIshalgenJourney
 			NaturalFlyZone? zone = zones.FirstOrDefault(entry => !entry.Forbids && Open(entry, goal))
 				?? zones.FirstOrDefault(entry => !entry.Forbids && Open(entry, session.CurrentPosition));
 			if (zone == null) return false;
-			bool Inside(BotPosition at) => Open(zone, at) && at.Z + 12 < zone.Top;
+			bool Inside(BotPosition at) => Open(zone, at) && at.Z + 12 < zone.Top && !OnLava(at);
 			// The landing: the zone's ground on the goal's island nearest it, or the goal's own static ground where the navmesh
 			// has none (Sarinerk stands past the edge of his ledge's mesh).
 			BotPosition? landing = geometry.IslandGround(map, goal, Inside).OrderBy(at => Distance(at, goal)).Cast<BotPosition?>().FirstOrDefault();
 			if (landing is not { } near || Distance(near, goal) > 6) landing = Inside(goal) ? geometry.StaticGroundAt(map, goal) ?? landing : landing;
 			if (landing is not { } land) return false;
-			// The takeoff: here inside the zone, or the zone's ground on this island nearest the landing.
+			// The takeoff: here inside the zone, or dry ground within thirty metres, or the zone's ground on this island nearest the
+			// landing (from the lava floor the leader chose ground 120 m back and stuck on its way to it).
 			BotPosition here = session.CurrentPosition;
 			BotPosition? takeoff = Inside(here) ? here
-				: geometry.IslandGround(map, here, Inside).OrderBy(at => Distance(at, land)).Cast<BotPosition?>().FirstOrDefault();
+				: geometry.IslandGround(map, here, at => Inside(at) && Distance(at, here) <= 30).OrderBy(at => Distance(at, here)).Cast<BotPosition?>().FirstOrDefault()
+					?? geometry.IslandGround(map, here, Inside).OrderBy(at => Distance(at, land)).Cast<BotPosition?>().FirstOrDefault();
+			// A flight refused from here to there is not planned again for a minute: each plan searches some 1,800 columns, and
+			// the leader asked five times in a second under the rock of a crater ledge.
+			if (refusedFlights.Any(refused => Distance(refused.From, here) <= 3 && Distance(refused.To, land) <= 3 && runtime.NowMillis < refused.Until))
+				return false;
 			session.TraceDiagnostic("group-field-fly", new Dictionary<string, object?>
 			{ ["zone"] = zone.Name, ["goal"] = goal, ["position"] = here, ["takeoff"] = takeoff, ["landing"] = land });
 			if (takeoff is not { } off) return false;
@@ -804,24 +878,92 @@ public sealed partial class NaturalIshalgenJourney
 					await navigator.MoveAsync(path, token);
 				}
 				if (world.IsDead || !Inside(session.CurrentPosition)) return false;
-				long wait = NaturalFlightPolicy.RestoreMillis(world.CurrentFlightTime, world.MaxFlightTime, world.MaxFlightTime);
-				if (lastTakeoff is long last) wait = Math.Max(wait, last + NaturalFlightPolicy.TakeoffReuseMillis - runtime.NowMillis);
-				if (wait > 0) await session.AdvanceAsync(TimeSpan.FromMilliseconds(wait + 100), token);
-				await session.SynchronizeAsync(token);
-				float height = MathF.Min(zone.Top - 6, MathF.Max(session.CurrentPosition.Z, land.Z) + 15);
-				NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, map, session.CurrentPosition, land, height);
+				// Higher when the way across is blocked, up to the zone's ceiling: a ridge between the obscuras' ledge and Padinerk
+				// shut the leg at 159 m, three times.
+				NaturalFlightRoute PlanFrom(BotPosition start)
+				{
+					float height = MathF.Min(zone.Top - 6, MathF.Max(start.Z, land.Z) + 15);
+					NaturalFlightRoute planned = NaturalFlightProtocol.Plan(geometry, map, start, land, height);
+					for (float higher = height + 20; !planned.IsUsable && higher <= zone.Top - 6; higher += 20)
+						planned = NaturalFlightProtocol.Plan(geometry, map, start, land, higher);
+					return planned;
+				}
+				NaturalFlightRoute route = PlanFrom(session.CurrentPosition);
+				// From under an overhang the climb itself is shut (the Templar by the drakes' ledge): the zone's ground nearby, as
+				// a player steps out before taking off.
+				if (!route.IsUsable)
+				{
+					BotPosition standing = session.CurrentPosition;
+					// Where its leader last stood first, which a flight has just left (the Sorcerer on a rock top under the skyrock east
+					// of the drakes, three metres from where its leader took off), then ten places within sixty metres.
+					// Nearest the landing first, as the leader chooses its takeoff: out at the ledge's edge, not under the rock.
+					IEnumerable<BotPosition> steps = geometry.IslandGround(map, standing, at => Inside(at) && Distance(at, standing) is > 4 and <= 60)
+						.OrderBy(at => Distance(at, land)).Take(10);
+					if (!leads && lastLeaderAt is { } leaderWas && Distance(leaderWas, standing) <= 60 && Inside(leaderWas)) steps = steps.Prepend(leaderWas);
+					int looked = 0, plannable = 0;
+					foreach (BotPosition step in steps)
+					{
+						looked++;
+						if (Distance(step, standing) < 1 || !PlanFrom(step).IsUsable) continue;
+						plannable++;
+						var stepPath = await navigator.FindRouteAsync(standing, step, token);
+						if (stepPath.Count == 0) continue;
+						await navigator.MoveAsync(stepPath, token);
+						route = PlanFrom(session.CurrentPosition);
+						break;
+					}
+					// A rock top whose own ground is all under the rock above: off its edge onto its leader's ground, within twenty
+					// metres, as a player steps down (the Sorcerer was refused three times there while its group flew on).
+					if (!route.IsUsable && !leads && lastLeaderAt is { } below)
+						foreach (BotPosition down in geometry.IslandGround(map, below, at => Inside(at) && Distance(at, standing) <= 20)
+							.OrderBy(at => Distance(at, standing)).Take(6))
+						{
+							looked++;
+							if (!PlanFrom(down).IsUsable) continue;
+							plannable++;
+							await navigator.MoveAsync([standing, down], token);
+							route = PlanFrom(session.CurrentPosition);
+							break;
+						}
+					session.TraceDiagnostic("group-field-fly-step-out", new Dictionary<string, object?>
+					{ ["position"] = standing, ["looked"] = looked, ["plannable"] = plannable, ["usable"] = route.IsUsable });
+				}
 				if (!route.IsUsable)
 				{
 					session.TraceDiagnostic("group-field-fly-refused", new Dictionary<string, object?> { ["reason"] = route.Refusal });
+					refusedFlights.Add((here, land, runtime.NowMillis + 60_000));
 					return false;
 				}
+				// The flight time this flight needs, not a full bar: after four flights in the crater the members waited for theirs
+				// to fill while their leader flew on, and the group did not gather. Six metres a second is slower than any flight.
+				int needed = (int)MathF.Ceiling(route.Meters / 6f) + NaturalFlightPolicy.LandingReserveFp;
+				long wait = NaturalFlightPolicy.RestoreMillis(world.CurrentFlightTime, needed, world.MaxFlightTime);
+				if (lastTakeoff is long last) wait = Math.Max(wait, last + NaturalFlightPolicy.TakeoffReuseMillis - runtime.NowMillis);
+				if (wait > 0)
+				{
+					session.TraceDiagnostic("group-field-fly-wait", new Dictionary<string, object?>
+					{ ["fp"] = world.CurrentFlightTime, ["maxFp"] = world.MaxFlightTime, ["needed"] = needed, ["waitMillis"] = wait });
+					await session.AdvanceAsync(TimeSpan.FromMilliseconds(wait + 100), token);
+				}
+				await session.SynchronizeAsync(token);
 				BotPosition from = session.CurrentPosition;
 				lastTakeoff = runtime.NowMillis;
-				float speed = await NaturalFlightProtocol.TakeOffAsync(session, token);
+				float speed;
+				try { speed = await NaturalFlightProtocol.TakeOffAsync(session, token); }
+				catch (IOException refused)
+				{
+					session.TraceDiagnostic("group-field-fly-refused", new Dictionary<string, object?> { ["reason"] = refused.Message });
+					return false;
+				}
 				NaturalFlightDecision go = NaturalFlightPolicy.CanFly(NaturalFlightProtocol.ToPlan(route, from, speed), world.CurrentFlightTime, zones);
 				if (!go.Allowed) session.TraceDiagnostic("group-field-fly-short", new Dictionary<string, object?> { ["reason"] = go.Reason });
 				await NaturalFlightProtocol.FlyAsync(session, map, from, route.Waypoints, speed, token);
 				await NaturalFlightProtocol.LandAsync(session, token);
+				await session.SynchronizeAsync(token);
+				// A step's stop on the ground where it landed: the others saw each member where it took off, 189 m below at the
+				// crater's floor, and the leader waited five minutes at every landing for a group standing beside it.
+				BotPosition landed = session.CurrentPosition;
+				await session.SendPacketAsync(session.Api.MoveTo(new(landed.X, landed.Y, landed.Z, landed.Heading, 0)), token);
 				await session.SynchronizeAsync(token);
 				following.Reset();
 				return true;
@@ -1312,6 +1454,7 @@ public sealed partial class NaturalIshalgenJourney
 					await LeaveAndGoHomeAsync();
 					break;
 				}
+				if (field) await StepOffLavaAsync();
 				if (healer != null) await healer.StepAsync(token);
 				else if (assist is int target && world.Objects.TryGetValue(target, out var enemy) && !enemy.IsCorpse &&
 					Distance(session.CurrentPosition, enemy.Position) <= 35 && session.PacketHistory.TakeLast(400)
@@ -1419,7 +1562,10 @@ public sealed partial class NaturalIshalgenJourney
 				// Sorcerer died four times on the trail, 120 to 215 m behind): only the safe road, or it waits where it is.
 				// Nor one apart for a minute: the trail leads where its leader stood before a Return (the Sorcerer walked it off a
 				// drop, 190 m from the garrison, while the group waited for it there).
-				if (!(field && Apart() && world.GroupLeaderId is int away && !world.Objects.ContainsKey(away)))
+				// Nor onto lava after a leader fighting on it, when near enough to fight and heal from dry ground.
+				bool leaderInLava = field && world.GroupLeaderId is int lavaChief && world.Objects.TryGetValue(lavaChief, out var lavaLeader) &&
+					Distance(session.CurrentPosition, lavaLeader.Position) <= 25 && !OnLava(session.CurrentPosition) && OnLava(lavaLeader.Position);
+				if (!(field && Apart() && world.GroupLeaderId is int away && !world.Objects.ContainsKey(away)) && !leaderInLava)
 					await following.StepAsync(token);
 				await PauseAsync();
 			}
@@ -1767,14 +1913,27 @@ public sealed partial class NaturalIshalgenJourney
 				await WaitForFollowersAsync(token);
 				await SayAsync($"command:{(finish ? "turn-in" : "accept")}:{plan.Id}:{npc}");
 				if (finish ? Status(plan.Id) is 3 or 4 : Status(plan.Id) is not (3 or 4 or 5)) await DialogQuestAsync(plan, npc, finish);
+				// Fifteen minutes: a member that stood up at the obelisk may have to fly to a giver in the crater.
 				await WaitAsync(() => Everybody(entry => finish ? entry.Status == 5 : entry.Status is 3 or 4 or 5, plan.Id),
-					$"every member to {(finish ? "turn in" : "accept")} Q{plan.Id}", 300);
+					$"every member to {(finish ? "turn in" : "accept")} Q{plan.Id}", 900);
 				session.TraceDiagnostic("group-field-step", new Dictionary<string, object?>
 				{ ["quest"] = plan.Id, ["npc"] = npc, ["done"] = finish ? "turned-in" : "accepted", ["members"] = world.GroupMembers.Count });
 			}
+			// A target is not fought beside a monster that blows itself up, as a player pulls the ember spirit away from the flame
+			// shards or leaves it.
+			bool BesideExploder(BotPosition at) => world.Objects.Values.Any(known => known.TemplateId is int other && Exploders(runtime).Contains(other) &&
+				!known.IsCorpse && Distance(known.Position, at) <= 12);
+			// While a drop is collected, not where a corpse could not be reached (a ruins caryatid on a ledge fifty metres under the
+			// rest: the Gladiator never came near enough to loot it, and the leader killed it there again and again).
+			bool collecting = false;
+			var unlootable = new List<BotPosition>();
+			bool Unlootable(BotPosition at) => collecting && unlootable.Any(spot => Distance(spot, at) <= 8);
 			int LivingTarget(int[] kinds) => world.Objects.Values.Where(known => known.TemplateId is int kind && kinds.Contains(kind) && !known.IsCorpse &&
-				!navigator.UnavailableObjects.Contains(known.ObjectId)).OrderBy(known => Distance(session.CurrentPosition, known.Position))
-				.FirstOrDefault()?.ObjectId ?? 0;
+				!navigator.UnavailableObjects.Contains(known.ObjectId) && !(field && BesideExploder(known.Position)) && !Unlootable(known.Position))
+				.OrderBy(known => Distance(session.CurrentPosition, known.Position)).FirstOrDefault()?.ObjectId ?? 0;
+			BotPosition[] exploderSpawns = field && world.MapId is int exploderMap ? [.. runtime.Data.SpawnsDh.GetSpawnsByWorldId(exploderMap)
+				.Where(group => Exploders(runtime).Contains(group.GetNpcId())).SelectMany(group => group.GetSpawnTemplates())
+				.Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0))] : [];
 			foreach (QuestRunPlan plan in quests)
 			{
 				if (Everybody(entry => entry.Status == 5, plan.Id)) continue;
@@ -1822,6 +1981,7 @@ public sealed partial class NaturalIshalgenJourney
 					if (kinds.Length == 0) throw new InvalidDataException($"Q{plan.Id} task {index} has no source on this map.");
 					int waits = 0;
 					bool unreachable = false;
+					collecting = task.Kind == QuestRunOperationKind.CollectQuestDrop;
 					while (!Done())
 					{
 						await combat.RestAsync(token);
@@ -1829,7 +1989,8 @@ public sealed partial class NaturalIshalgenJourney
 						BotPosition[] candidates = [.. kinds.SelectMany(kind => runtime.Data.SpawnsDh.GetSpawnsByWorldId(world.MapId!.Value)
 							.Where(group => group.GetNpcId() == kind).SelectMany(group => group.GetSpawnTemplates()))
 							.Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), spot.GetHeading()))
-							.OrderBy(spot => Distance(session.CurrentPosition, spot))];
+							.OrderBy(spot => exploderSpawns.Any(shard => Distance(shard, spot) <= 15) || Unlootable(spot) ? 1 : 0)
+							.ThenBy(spot => Distance(session.CurrentPosition, spot))];
 						int target = LivingTarget(kinds);
 						bool cameNear = false;
 						foreach (BotPosition spot in candidates.Take(8))
@@ -1948,8 +2109,13 @@ public sealed partial class NaturalIshalgenJourney
 							if (field && task.Kind == QuestRunOperationKind.CollectQuestDrop && world.Objects.TryGetValue(target, out var corpse) &&
 								Distance(session.CurrentPosition, corpse.Position) > 6)
 							{
+								// In the crater a corpse can lie a drop below on ground of its own: flown to, as a player would.
 								try { await WalkAsync(corpse.Position, 3); }
-								catch (IOException far) { session.TraceDiagnostic("group-field-corpse-unreached", new Dictionary<string, object?> { ["target"] = target, ["reason"] = far.Message }); }
+								catch (IOException far)
+								{
+									unlootable.Add(corpse.Position);
+									session.TraceDiagnostic("group-field-corpse-unreached", new Dictionary<string, object?> { ["target"] = target, ["reason"] = far.Message });
+								}
 							}
 							// Each member opens the corpse for the items that drop for it (drop_each_member); hold while they do.
 							for (int wait = 0; wait < 60 && world.Objects.TryGetValue(target, out _); wait++)
