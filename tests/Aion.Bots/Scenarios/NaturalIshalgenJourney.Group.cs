@@ -349,7 +349,9 @@ public sealed partial class NaturalIshalgenJourney
 		// sent them all back for him, and the wait for them ran out.
 		async Task FieldGatherAsync(CancellationToken ct)
 		{
-			if (walkingBack || world.GroupId == null) return;
+			// Nor on the way to a takeoff: its members go there on their own when told to fly, and the leader that waited for them
+			// halfway stayed behind while they flew (gs-c2).
+			if (walkingBack || crossing || world.GroupId == null) return;
 			// A fight can carry the leader off the mesh (knocked back, or a retreat across a ledge), where no way leads to it and
 			// none from it (the Templar north of the servile kalbak): back onto the mesh within twelve metres first.
 			if (!world.IsDead && runtime.NowMillis >= backOnMeshAt && world.MapId is int onMap && geometry.SnapToGround(onMap, session.CurrentPosition) == null &&

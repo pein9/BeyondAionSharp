@@ -363,7 +363,19 @@ public sealed partial class NaturalIshalgenJourney
 			if (BeforeMovementAsync == null) await session.ExecuteMovementAsync(plan, token);
 			else foreach (var frames in plan.Frames.Chunk(4))
 			{
+				BotPosition before = session.CurrentPosition;
 				await BeforeMovementAsync(token);
+				// A wait that took a Return (a field leader's recovery) leaves the rest of the plan behind: the Templar's next step
+				// went from the obelisk back into the crater, one step after every Return, for three hours (M6, gs-c2).
+				if (Distance(session.CurrentPosition, before) > StaleSegmentDistance)
+				{
+					session.TraceDiagnostic("stale-segment-refused", new Dictionary<string, object?>
+					{
+						["position"] = session.CurrentPosition, ["firstPoint"] = frames[0].Position,
+						["distance"] = Distance(session.CurrentPosition, before),
+					});
+					return;
+				}
 				float distance = 0;
 				var at = session.CurrentPosition;
 				foreach (var frame in frames) { distance += Distance(at, frame.Position); at = frame.Position; }
