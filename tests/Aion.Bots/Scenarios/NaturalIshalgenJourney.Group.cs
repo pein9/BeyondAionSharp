@@ -107,7 +107,10 @@ public sealed partial class NaturalIshalgenJourney
 		var rewardItems = new Dictionary<int, long>();
 
 		async Task SayAsync(string value) => await session.SendPacketAsync(session.Api.Say(tag + ":" + value, 5), token);
-		int Status(int? id = null) => world.Quests.GetValueOrDefault(id ?? quest.Id)?.Status ?? 0;
+		// M6: a field quest a member handed in before this login is in its completed list, not its journal: done. The helpers
+		// of a second group (the Spirit Master's and the Assassin's) have done the quests it plays.
+		int Status(int? id = null) => world.Quests.GetValueOrDefault(id ?? quest.Id)?.Status ??
+			(field && world.CompletedQuests.ContainsKey(id ?? quest.Id) ? 5 : 0);
 		bool GoneOrKilled(int target) => !world.Objects.TryGetValue(target, out var seen) || seen.IsCorpse ||
 			session.PacketHistory.TakeLast(4000).Any(packet => BotAttackStatus.CarriesHp(packet) &&
 				packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0);
@@ -366,11 +369,11 @@ public sealed partial class NaturalIshalgenJourney
 					gathering = runtime.NowMillis;
 					continue;
 				}
-				// A member in sight and 40 m off at most that stays out of reach for half a minute may be one that cannot come:
+				// A member in sight and 60 m off at most that stays out of reach for half a minute may be one that cannot come:
 				// the leader stands on ground its followers' mesh does not join (a fight left the Templar 16 m from the Gladiator
 				// and the Cleric). The leader goes to it, once a gathering; a member farther off is on its way.
 				if (!cameBack && runtime.NowMillis - gathering > 30_000 && others.Where(member => member.Online && !member.Dead)
-					.Select(Seen).OfType<BotPosition>().Where(at => !Near(at) && Distance(session.CurrentPosition, at) <= 40)
+					.Select(Seen).OfType<BotPosition>().Where(at => !Near(at) && Distance(session.CurrentPosition, at) <= 60)
 					.OrderBy(at => Distance(session.CurrentPosition, at)).Cast<BotPosition?>().FirstOrDefault() is { } apart)
 				{
 					cameBack = true;
@@ -1051,16 +1054,20 @@ public sealed partial class NaturalIshalgenJourney
 						way = geometry.FindJourneyPath(here, session.CurrentPosition, nearLeader);
 					// Then the navigator's own search, waypoint graph included: the one the leader's way back to it came from.
 					if (way.Count == 0) way = await navigator.FindRouteAsync(session.CurrentPosition, chiefSeen.Position, token);
-					// Last, as a player walks: straight over the ground to a leader near and in sight. The baked mesh leaves some
-					// ground out (all five stood 33 m behind their leader, east of Kimssi, where no search found a way either way).
-					if (way.Count == 0 && Distance(session.CurrentPosition, chiefSeen.Position) <= 40 &&
+					// Last, as a player walks: straight over the ground to a leader near and in sight (60 m). The baked mesh leaves
+					// some ground out (all five stood 33 m behind their leader east of Kimssi, and 43 m east of the cabin, where no
+					// search found a way either way).
+					if (way.Count == 0 && Distance(session.CurrentPosition, chiefSeen.Position) <= 60 &&
 						MathF.Abs(session.CurrentPosition.Z - chiefSeen.Position.Z) <= 8)
 						way = [session.CurrentPosition, chiefSeen.Position];
 					session.TraceDiagnostic("group-follow-planned-way", new Dictionary<string, object?> { ["to"] = chiefSeen.Position, ["points"] = way.Count });
 					plannedNoWay = way.Count == 0 ? (session.CurrentPosition, chiefSeen.Position) : null;
 					if (way.Count > 0) { await navigator.MoveAsync(way, token); following.Reset(); }
 				}
-				await following.StepAsync(token);
+				// M6: a member on its way back from the bind does not walk its leader's trail through what lies on it (the
+				// Sorcerer died four times on the trail, 120 to 215 m behind): only the safe road, or it waits where it is.
+				if (!(field && revivedAtBind && world.GroupLeaderId is int away && !world.Objects.ContainsKey(away)))
+					await following.StepAsync(token);
 				await PauseAsync();
 			}
 		}
@@ -1654,6 +1661,16 @@ public sealed partial class NaturalIshalgenJourney
 		{
 			int[] notDone = [.. quests.Where(plan => Status(plan.Id) != 5).Select(plan => plan.Id)];
 			if (notDone.Length > 0) throw new InvalidDataException($"The group member has not handed in Q{string.Join(", Q", notDone)}.");
+			// M6: what the round did is the server's once it stores the character, which it does when the player leaves: Q2494's
+			// hand-in, seconds before its round ended, was missing from the world captured after it. The member leaves and comes
+			// back, and its quests are still handed in.
+			await session.QuitAsync(token);
+			await session.WaitForReentryAsync(token);
+			await session.ReloginExistingCharacterAsync(token);
+			await session.EnterWorldAsync(token);
+			await session.SynchronizeAsync(token);
+			int[] lost = [.. quests.Where(plan => Status(plan.Id) != 5).Select(plan => plan.Id)];
+			if (lost.Length > 0) throw new InvalidDataException($"After a relog Q{string.Join(", Q", lost)} is not handed in.");
 			runtime.AssertClean();
 			var played = new { verified = true, CharacterId = session.CharacterId, name, leader = world.GroupLeaderId, roster,
 				quests = quests.Select(plan => plan.Id).ToArray(), elapsedMillis = runtime.NowMillis - started, position = session.CurrentPosition,

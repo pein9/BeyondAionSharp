@@ -54,7 +54,7 @@ public sealed partial class SimulationFastScenarioTests
 		// a later-capital one and has NA_ASCENSION=1 as well (the script's Restore-Snapshot and Get-LegEnvironment).
 		"l1" => new NaturalJourneyOptions(StopAt: entry.StopAt, AltgardLeg1: true, LaterCapital: true, ClassLine: line),
 		// M2 to M7: "mf", "mk", "md", "mc", "ms", "ma" and "mg" are the Morheim legs (docs/natural-morheim-leveling.md), from the group world.
-		"l2" or "l3" or "l4" or "l5" or "l6" or "l7" or "l8" or "l9" or "l10" or "l11" or "cg" or "l12" or "ax" or "mf" or "mk" or "md" or "mc" or "ms" or "ma" or "mg" or "mgk" =>
+		"l2" or "l3" or "l4" or "l5" or "l6" or "l7" or "l8" or "l9" or "l10" or "l11" or "cg" or "l12" or "ax" or "mf" or "mk" or "md" or "mc" or "ms" or "ma" or "mg" or "mgk" or "mgd" =>
 			new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: entry.Stage, LaterCapital: true, ClassLine: line),
 		// The muster (2026-10-12): a character that stands at the Abyss entry's end, in that leg's fortress.
 		"muster" => new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,

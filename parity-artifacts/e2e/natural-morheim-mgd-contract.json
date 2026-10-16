@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "morheim-mgd-desert-garrison",
+  "start": {
+    "contract": "natural-morheim-mgk-contract.json",
+    "snapshot": "morheim-gk2-s1",
+    "mapId": 220020000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 32,
+    "bindNpcId": 700258,
+    "completedQuestIds": [
+      24020,
+      2333
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "desert-garrison",
+    "mapId": 220020000,
+    "anchor": [
+      626.855,
+      907.954,
+      360.858
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "garrison",
+      "note": "Desert Garrison: its obelisk, where the group binds for the group quests of step M6",
+      "min": [
+        577,
+        858,
+        340
+      ],
+      "max": [
+        677,
+        958,
+        380
+      ]
+    }
+  ],
+  "quests": [],
+  "order": [],
+  "steps": [],
+  "objectUses": [],
+  "collections": [],
+  "bind": {
+    "npcId": 700213,
+    "position": [
+      626.855,
+      907.954,
+      360.858
+    ],
+    "onArrival": true,
+    "price": 4353,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 220020000,
+    "completedQuestIds": [],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 32,
+    "snapshot": "morheim-mgd",
+    "anchor": [
+      626.855,
+      907.954,
+      360.858
+    ],
+    "radius": 30,
+    "bindNpcId": 700213,
+    "heldQuestIds": []
+  }
+}
