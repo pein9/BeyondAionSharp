@@ -59,8 +59,8 @@ public sealed partial class NaturalIshalgenJourney
 		QuestRunPlan quest = quests[0];
 		QuestRunOperation[] kills = [.. tasks[quest.Id].Where(op => op.Kind == QuestRunOperationKind.Kill)];
 		var navigator = new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, [quest.Id], geometry),
-			geometry, runtime, stopOnDeath: false) { AvoidHostileAggro = true,
-			Planner = leads ? BotTravelPlanner.For(world.MapId.Value, geometry, runtime.Data) : null };
+			geometry, runtime, stopOnDeath: false) { AvoidHostileAggro = true, RouteFromNearestMesh = field,
+			Planner = leads || field ? BotTravelPlanner.For(world.MapId.Value, geometry, runtime.Data) : null };
 		var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry, stopOnDeath: false,
 			conservativeRangedHold: false, NaturalMauPolicyParameters.Baseline, ClassLine) { ApproachMapId = world.MapId.Value };
 		var following = new NaturalGroupFollowDriver(session, runtime) { Field = field };
@@ -87,6 +87,19 @@ public sealed partial class NaturalIshalgenJourney
 		// M6: the members this leader saw die since the group last gathered; the attackers of members this fighter failed to kill.
 		var fallenMembers = new HashSet<int>();
 		var protectFailures = new Dictionary<int, int>();
+		// M6: the field gatherings in a row that could not gather; where the leader last said it stands, when it last said so,
+		// and when a member that found no safe way to it looks again.
+		int missedGatherings = 0;
+		BotPosition? leaderHere = null;
+		// M6: where this field leader last stood alive, where it fell when it stood up at the bind, and its walk back there;
+		// and whether this member stood up at the bind and has not seen its leader since.
+		BotPosition? lastAlive = null, fellAt = null;
+		bool walkingBack = false, revivedAtBind = false;
+		long hereSaidAt = long.MinValue / 2, leaderHereAt = long.MinValue / 2, rejoinAgainAt = 0, plannedWayAt = 0;
+		(BotPosition From, BotPosition To)? plannedNoWay = null;
+		long backOnMeshAt = 0;
+		// M6: the field targets the leader went in to through other monsters' reach, once each.
+		var targetsGoneThrough = new HashSet<int>();
 		using var healer = options.Role == "healer" ? new NaturalGroupHealDriver(session, runtime, combat.ClassProfile) { CatchUp = field } : null;
 		var loot = new NaturalGroupLootDriver(session, runtime, item => world.Quests.Values.Where(entry => entry.Status == 3)
 			.SelectMany(entry => runtime.Data.Quests.GetQuestById(entry.QuestId)?.GetCollectItems()?.GetCollectItem() ?? [])
@@ -129,6 +142,12 @@ public sealed partial class NaturalIshalgenJourney
 						if (counts.Length == wanted.Length && counts.All(count => count >= 0)) progress[(sender, about)] = (status, counts);
 					}
 				}
+				else if (ledWhenItSpoke && words[1] == "here" && words.Length == 5 && int.TryParse(words[2], out int hereX) &&
+					int.TryParse(words[3], out int hereY) && int.TryParse(words[4], out int hereZ))
+				{
+					leaderHere = new BotPosition(hereX, hereY, hereZ, 0);
+					leaderHereAt = runtime.NowMillis;
+				}
 				else if (words[1] == "place" && words.Length == 4 && int.TryParse(words[2], out int map) && int.TryParse(words[3], out int instance))
 					places[sender] = (map, instance);
 				else if (ledWhenItSpoke && words[1] == "command")
@@ -140,7 +159,17 @@ public sealed partial class NaturalIshalgenJourney
 			}
 			chatCursor = session.PacketHistory.Count;
 			if (world.GroupLeaderId is int leading) leaderSeen = leading;
+			if (field && !world.IsDead) lastAlive = session.CurrentPosition;
+			if (field && world.GroupLeaderId is int chiefSeen && world.Objects.ContainsKey(chiefSeen)) revivedAtBind = false;
 			foreach (QuestRunPlan plan in quests) progress[(session.CharacterId, plan.Id)] = (Status(plan.Id), Counts(plan));
+			// M6: in the field the leader says where it stands every twenty seconds, for a member that stood up at the bind; not on
+			// its own way back from the bind, where its group would come to meet it.
+			if (field && leads && !walkingBack && fellAt == null && world.GroupId != null && runtime.NowMillis - hereSaidAt >= 20_000)
+			{
+				hereSaidAt = runtime.NowMillis;
+				BotPosition at = session.CurrentPosition;
+				await SayAsync($"here:{(int)at.X}:{(int)at.Y}:{(int)at.Z}");
+			}
 			string report = "progress:" + string.Join('|', quests.Select(plan => $"{plan.Id}={Status(plan.Id)}={string.Join(',', Counts(plan))}"));
 			if (world.GroupId != null && report != lastReport)
 			{
@@ -178,45 +207,29 @@ public sealed partial class NaturalIshalgenJourney
 			// Inside the camp F1 gathers the group before a pull and before a walk (RegroupedAsync). In a fight it moves as
 			// the fight needs: it stood 88 seconds under the Teleporter's spells waiting for a caster 13 metres off.
 			if (combat.InCombat && world.MapId == GroupNtcMap) return;
-			// M6: the wait is also asked before each step of a fight's approach; a fight is not left to gather the group.
-			if (field && combat.InCombat) return;
+			// M6: the field group gathers by its own rules. The wait is also asked before each step of a fight's approach, and a
+			// fight is not left to gather the group.
+			if (field)
+			{
+				if (!combat.InCombat) await FieldGatherAsync(ct);
+				return;
+			}
 			bool clericDead = world.GroupMembers.Values.Any(member => member.PlayerClass == (byte)PlayerClass.CLERIC && member.Dead);
 			// The bind is a place on one map. Inside an instance nobody is at it, and recovery there is not played yet.
 			bool atBind = world.ObeliskBindPoint is { } point && point.MapId == world.MapId && Distance(session.CurrentPosition, point.Position) < 30;
-			// M6: the leader's own entry in the group list keeps the place it had when the group formed (at the bind): it is
-			// none of the members these rules look for, or a field group 150 m out would turn back for itself.
-			IEnumerable<BotGroupMember> others = field ? world.GroupMembers.Values.Where(member => member.ObjectId != session.CharacterId) : world.GroupMembers.Values;
-			// M6: out of sight, a member's place in the group list is the one it had when the group formed (at the bind), so a
-			// field group knows a member stands at the bind only when it saw that member die and no longer sees it.
-			foreach (BotGroupMember member in others.Where(member => member.Dead)) fallenMembers.Add(member.ObjectId);
-			bool RevivedAway(BotGroupMember member) => fallenMembers.Contains(member.ObjectId) && member.Online && !member.Dead &&
-				!world.Objects.ContainsKey(member.ObjectId);
-			bool memberAtBind = field ? others.Any(RevivedAway) : world.ObeliskBindPoint is { } common && common.MapId == world.MapId && others.Any(member =>
+			bool memberAtBind = world.ObeliskBindPoint is { } common && common.MapId == world.MapId && world.GroupMembers.Values.Any(member =>
 				member.MapId == common.MapId && Distance(member.Position, common.Position) < 30 && Distance(session.CurrentPosition, member.Position) > 150);
 			if (world.ObeliskBindPoint?.MapId == world.MapId &&
-				(clericDead || memberAtBind || atBind && others.Any(member => Distance(session.CurrentPosition, member.Position) > 150)))
+				(clericDead || memberAtBind || atBind && world.GroupMembers.Values.Any(member => Distance(session.CurrentPosition, member.Position) > 150)))
 			{
-				session.TraceDiagnostic("group-recovery", new Dictionary<string, object?>
-				{
-					["clericDead"] = clericDead, ["memberAtBind"] = memberAtBind, ["atBind"] = atBind, ["position"] = session.CurrentPosition,
-					["members"] = others.Select(member => new { member.ObjectId, member.Name, member.Online, member.Dead, member.MapId, member.Position,
-						seen = world.Objects.ContainsKey(member.ObjectId) }).ToArray(),
-				});
 				await SayAsync("command:regroup");
 				if (!atBind) await ReturnToBindAsync();
-				await WaitAsync(() => others.All(member => member.Online && !member.Dead && Distance(session.CurrentPosition, member.Position) <= 12), "group recovery at the common bind", 180);
+				await WaitAsync(() => world.GroupMembers.Values.All(member => member.Online && !member.Dead && Distance(session.CurrentPosition, member.Position) <= 12), "group recovery at the common bind", 180);
 				await SayAsync("command:hunt");
-				fallenMembers.Clear();
 			}
-			// M6: on a slope in the field a follower stands a little below its leader, and a healer a little behind the others:
-			// near is 15 m on the flat and 12 m of height.
-			bool Near(BotPosition at) => field
-				? MathF.Sqrt(MathF.Pow(at.X - session.CurrentPosition.X, 2) + MathF.Pow(at.Y - session.CurrentPosition.Y, 2)) <= 15 &&
-					MathF.Abs(at.Z - session.CurrentPosition.Z) <= 12
-				: Distance(session.CurrentPosition, at) <= 12;
-			// M6: a member that is offline (its bot stopped) is not waited for: the Ranger's stop held the leader at every wait.
-			bool Together() => world.GroupMembers.Values.Where(member => member.ObjectId != session.CharacterId && (!field || member.Online)).All(member =>
-				member.Online && !member.Dead && member.MapId == world.MapId && Near(world.Objects.GetValueOrDefault(member.ObjectId)?.Position ?? member.Position) &&
+			bool Together() => world.GroupMembers.Values.Where(member => member.ObjectId != session.CharacterId).All(member =>
+				member.Online && !member.Dead && member.MapId == world.MapId && Distance(session.CurrentPosition,
+					world.Objects.GetValueOrDefault(member.ObjectId)?.Position ?? member.Position) <= 12 &&
 				(combat.InCombat || member.MaxMp <= 0 || member.CurrentMp * 100L / member.MaxMp >= 50));
 			if (!Together())
 			{
@@ -226,81 +239,172 @@ public sealed partial class NaturalIshalgenJourney
 				session.TraceDiagnostic("group-regroup", new Dictionary<string, object?>
 				{ ["position"] = at, ["members"] = world.GroupMembers.Values.Select(member => new { member.Name, member.Position, member.HpPercent }).ToArray() });
 			}
-			if (field)
+			await WaitAsync(Together, "followers to regroup");
+		}
+		// M6 (docs/natural-morheim-leveling.md): how a field group gathers, and what it does after a death.
+		// - A member that dies waits for the Cleric's resurrection; failing that it stands up at the bind and walks back to
+		//   where the leader says it stands (the follower's rejoin), and the group does not wait for it.
+		// - The leader that stood up at the bind walks back to where it fell, where its group is.
+		// - Without its Cleric (dead, or on its way back from the bind) the group holds where it is, up to fifteen minutes.
+		// - The whole group goes back to the bind when half of it stands up there, or after two gatherings in a row that
+		//   could not gather; a member that is late there is not waited for.
+		// The Sorcerer's death had sent five members 700 m home on foot (Return still cooling), where they stuck; the Templar's
+		// sent them all back for him, and the wait for them ran out.
+		async Task FieldGatherAsync(CancellationToken ct)
+		{
+			if (walkingBack || world.GroupId == null) return;
+			// A fight can carry the leader off the mesh (knocked back, or a retreat across a ledge), where no way leads to it and
+			// none from it (the Templar north of the servile kalbak): back onto the mesh within twelve metres first.
+			if (!world.IsDead && runtime.NowMillis >= backOnMeshAt && world.MapId is int onMap && geometry.SnapToGround(onMap, session.CurrentPosition) == null &&
+				geometry.SnapToGround(onMap, session.CurrentPosition, 12) is { } meshNear)
 			{
-				// M6: a leader that only waits lets a pack kill its group (twice by Kimssi's elites): whatever strikes a member
-				// while the group gathers is killed first, by all.
-				long gathering = runtime.NowMillis;
-				bool cameBack = false;
-				while (!Together())
+				backOnMeshAt = runtime.NowMillis + 30_000;
+				session.TraceDiagnostic("group-field-back-on-mesh", new Dictionary<string, object?> { ["position"] = session.CurrentPosition, ["to"] = meshNear });
+				// The move asks this gathering again before it starts: it is not asked twice.
+				walkingBack = true;
+				try { await navigator.MoveAsync([session.CurrentPosition, meshNear], ct); }
+				finally { walkingBack = false; }
+			}
+			IEnumerable<BotGroupMember> others = world.GroupMembers.Values.Where(member => member.ObjectId != session.CharacterId);
+			// Out of sight, a member's place in the group list is the one it had when the group formed (at the bind): a member
+			// stands at the bind only when the leader saw it die and no longer sees it.
+			foreach (BotGroupMember member in others.Where(member => member.Dead)) fallenMembers.Add(member.ObjectId);
+			bool RevivedAway(BotGroupMember member) => fallenMembers.Contains(member.ObjectId) && member.Online && !member.Dead &&
+				!world.Objects.ContainsKey(member.ObjectId);
+			bool IsCleric(BotGroupMember member) => member.PlayerClass == (byte)PlayerClass.CLERIC;
+			BotPosition? Seen(BotGroupMember member) => world.Objects.GetValueOrDefault(member.ObjectId)?.Position;
+			// On a slope a follower stands a little below its leader, and a healer a little behind the others: near is 15 m on
+			// the flat and 12 m of height.
+			bool Near(BotPosition at) => MathF.Sqrt(MathF.Pow(at.X - session.CurrentPosition.X, 2) + MathF.Pow(at.Y - session.CurrentPosition.Y, 2)) <= 15 &&
+				MathF.Abs(at.Z - session.CurrentPosition.Z) <= 12;
+			if (fellAt is { } fell && !world.IsDead)
+			{
+				fellAt = null;
+				// Only to a group that is still out there: when it fell with its leader it stands up at the bind as well.
+				bool groupOut = others.Any(member => member.Online && !member.Dead && Seen(member) == null && !RevivedAway(member));
+				if (groupOut && Distance(session.CurrentPosition, fell) > 40)
 				{
-					HashSet<int> striking = [.. session.PacketHistory.TakeLast(300)
-						.SelectMany(packet => world.GroupMembers.Keys.Select(member => runtime.IncomingAttacker(packet, member))).OfType<int>()];
-					int? foe = world.Objects.Values.Where(known => striking.Contains(known.ObjectId) && known.Kind == BotKnownObjectKind.Npc && !known.IsCorpse &&
-							!GoneOrKilled(known.ObjectId) && !navigator.UnavailableObjects.Contains(known.ObjectId))
-						.OrderBy(known => Distance(session.CurrentPosition, known.Position)).Select(known => (int?)known.ObjectId).FirstOrDefault();
-					if (foe is int attacker && !world.IsDead)
+					session.TraceDiagnostic("group-field-back-to-group", new Dictionary<string, object?> { ["position"] = session.CurrentPosition, ["to"] = fell });
+					// Alone it takes only the way out of every monster's reach (it died twice fighting its way back alone); with no
+					// such way it calls its group to the bind.
+					walkingBack = true;
+					bool back = false;
+					try { await WalkAsync(fell, 15); back = true; }
+					catch (IOException none) { session.TraceDiagnostic("group-field-back-to-group-failed", new Dictionary<string, object?> { ["reason"] = none.Message }); }
+					finally { walkingBack = false; }
+					if (!back && !world.IsDead && world.ObeliskBindPoint is { } bound && bound.MapId == world.MapId && Distance(session.CurrentPosition, bound.Position) < 30)
 					{
-						await SayAsync($"assist:{attacker}");
-						session.TraceDiagnostic("group-field-defend", new Dictionary<string, object?> { ["target"] = attacker, ["position"] = session.CurrentPosition });
-						try { if (await combat.TryKillAsync(attacker, ct) || GoneOrKilled(attacker)) navigator.UnavailableObjects.Add(attacker); }
-						catch (NaturalCombatApproachBlockedException) { navigator.UnavailableObjects.Add(attacker); }
-						continue;
-					}
-					if (world.IsDead) { await combat.RestAsync(ct); return; }
-					// Members that died stand up at the bind, far behind: the group gathers there. A member only lagging behind
-					// (the Cleric healing a fight 90 m back) is not one of them.
-					foreach (BotGroupMember member in others.Where(member => member.Dead)) fallenMembers.Add(member.ObjectId);
-					if (world.ObeliskBindPoint?.MapId == world.MapId && others.Any(RevivedAway))
-					{
-						session.TraceDiagnostic("group-field-recovery", new Dictionary<string, object?>
-						{
-							["position"] = session.CurrentPosition, ["self"] = session.CharacterId,
-							["members"] = others.Select(member => new { member.ObjectId, member.Name, member.Online, member.Dead, member.MapId, member.Position,
-								seen = world.Objects.ContainsKey(member.ObjectId) }).ToArray(),
-						});
 						await SayAsync("command:regroup");
-						await ReturnToBindAsync();
-						await WaitAsync(() => others.All(member => member.Online && !member.Dead && Near(world.Objects.GetValueOrDefault(member.ObjectId)?.Position ?? member.Position)),
-							"group recovery at the common bind", 300);
+						try
+						{
+							await WaitAsync(() => others.Where(member => member.Online).All(member => !member.Dead && Seen(member) is { } at && Near(at)),
+								"group recovery at the common bind", 300);
+						}
+						catch (IOException late) { session.TraceDiagnostic("group-field-recovery-late", new Dictionary<string, object?> { ["reason"] = late.Message }); }
 						await SayAsync("command:hunt");
 						fallenMembers.Clear();
-						gathering = runtime.NowMillis;
-						continue;
 					}
-					// M6: a member in sight and 40 m off at most that stays out of reach for half a minute may be one that cannot
-					// come: the leader stands on ground its followers' mesh does not join (a fight left the Templar 16 m from the
-					// Gladiator and the Cleric, and every gathering waited its five minutes). The leader goes to it, once a gathering;
-					// a member farther off is on its way (or chasing a monster).
-					if (!cameBack && runtime.NowMillis - gathering > 30_000 && others.Where(member => member.Online && !member.Dead)
-						.Select(member => world.Objects.GetValueOrDefault(member.ObjectId)?.Position).OfType<BotPosition>()
-						.Where(at => !Near(at) && Distance(session.CurrentPosition, at) <= 40).OrderBy(at => Distance(session.CurrentPosition, at))
-						.Cast<BotPosition?>().FirstOrDefault() is { } apart)
-					{
-						cameBack = true;
-						var back = await navigator.FindRouteAsync(session.CurrentPosition, apart, ct);
-						session.TraceDiagnostic("group-field-come-back", new Dictionary<string, object?>
-						{ ["position"] = session.CurrentPosition, ["to"] = apart, ["route"] = back.Count });
-						if (back.Count > 0) await navigator.MoveAsync(back, ct);
-						continue;
-					}
-					// A member that takes longer than five minutes is not waited for: the group goes on with those near (the Cleric
-					// circled 12 m off for three minutes, and the wait ran out three seconds before it arrived).
-					if (runtime.NowMillis - gathering > 300_000)
-					{
-						session.TraceDiagnostic("group-field-not-gathered", new Dictionary<string, object?>
-						{
-							["position"] = session.CurrentPosition,
-							["members"] = others.Select(member => new { member.Name, member.Dead, seen = world.Objects.ContainsKey(member.ObjectId),
-								distance = Distance(session.CurrentPosition, world.Objects.GetValueOrDefault(member.ObjectId)?.Position ?? member.Position) }).ToArray(),
-						});
-						return;
-					}
-					await PauseAsync();
 				}
-				return;
 			}
-			await WaitAsync(Together, "followers to regroup");
+			// Waited for: every member online but one on its way back from the bind, the Cleric always. An offline member is a
+			// bot that stopped (the Ranger's stop held the leader at every wait).
+			bool Waited(BotGroupMember member) => member.Online && (!RevivedAway(member) || IsCleric(member));
+			bool Together() => others.Where(Waited).All(member => !member.Dead && member.MapId == world.MapId && Seen(member) is { } at && Near(at) &&
+				(member.MaxMp <= 0 || member.CurrentMp * 100L / member.MaxMp >= 50));
+			if (Together()) { missedGatherings = 0; return; }
+			BotPosition stop = session.CurrentPosition;
+			// An interrupted movement plan must announce its stop before waiting for stationary followers.
+			await session.SendPacketAsync(session.Api.MoveTo(new(stop.X, stop.Y, stop.Z, stop.Heading, 0)), ct);
+			session.TraceDiagnostic("group-regroup", new Dictionary<string, object?>
+			{ ["position"] = stop, ["members"] = others.Select(member => new { member.Name, Position = Seen(member), member.HpPercent }).ToArray() });
+			long gathering = runtime.NowMillis;
+			bool cameBack = false;
+			while (!Together())
+			{
+				// A leader that only waits lets a pack kill its group (twice by Kimssi's elites): whatever strikes a member
+				// while the group gathers is killed first, by all.
+				HashSet<int> striking = [.. session.PacketHistory.TakeLast(300)
+					.SelectMany(packet => world.GroupMembers.Keys.Select(member => runtime.IncomingAttacker(packet, member))).OfType<int>()];
+				int? foe = world.Objects.Values.Where(known => striking.Contains(known.ObjectId) && known.Kind == BotKnownObjectKind.Npc && !known.IsCorpse &&
+						!GoneOrKilled(known.ObjectId) && !navigator.UnavailableObjects.Contains(known.ObjectId))
+					.OrderBy(known => Distance(session.CurrentPosition, known.Position)).Select(known => (int?)known.ObjectId).FirstOrDefault();
+				if (foe is int attacker && !world.IsDead)
+				{
+					await SayAsync($"assist:{attacker}");
+					session.TraceDiagnostic("group-field-defend", new Dictionary<string, object?> { ["target"] = attacker, ["position"] = session.CurrentPosition });
+					try { if (await combat.TryKillAsync(attacker, ct) || GoneOrKilled(attacker)) navigator.UnavailableObjects.Add(attacker); }
+					catch (NaturalCombatApproachBlockedException) { navigator.UnavailableObjects.Add(attacker); }
+					continue;
+				}
+				if (world.IsDead) { await combat.RestAsync(ct); return; }
+				foreach (BotGroupMember member in others.Where(member => member.Dead)) fallenMembers.Add(member.ObjectId);
+				bool clericAway = others.Any(member => IsCleric(member) && (member.Dead || RevivedAway(member)));
+				bool many = others.Count(RevivedAway) * 2 >= Math.Max(1, others.Count(member => member.Online));
+				bool stuck = missedGatherings >= 1 && runtime.NowMillis - gathering > 300_000;
+				if (world.ObeliskBindPoint?.MapId == world.MapId && (many || stuck))
+				{
+					missedGatherings = 0;
+					session.TraceDiagnostic("group-field-recovery", new Dictionary<string, object?>
+					{
+						["position"] = session.CurrentPosition, ["many"] = many, ["stuck"] = stuck,
+						["members"] = others.Select(member => new { member.ObjectId, member.Name, member.Online, member.Dead, seen = Seen(member) != null }).ToArray(),
+					});
+					await SayAsync("command:regroup");
+					// Return, or the walk to the bind while it cools: the walk does not stop to gather the group it is leaving.
+					walkingBack = true;
+					try { await ReturnToBindAsync(); }
+					catch (IOException none) { session.TraceDiagnostic("group-field-recovery-no-way", new Dictionary<string, object?> { ["reason"] = none.Message }); }
+					finally { walkingBack = false; }
+					try
+					{
+						await WaitAsync(() => others.Where(member => member.Online).All(member => !member.Dead && Seen(member) is { } at && Near(at)),
+							"group recovery at the common bind", 300);
+					}
+					catch (IOException late) { session.TraceDiagnostic("group-field-recovery-late", new Dictionary<string, object?> { ["reason"] = late.Message }); }
+					await SayAsync("command:hunt");
+					fallenMembers.Clear();
+					gathering = runtime.NowMillis;
+					continue;
+				}
+				// A member in sight and 40 m off at most that stays out of reach for half a minute may be one that cannot come:
+				// the leader stands on ground its followers' mesh does not join (a fight left the Templar 16 m from the Gladiator
+				// and the Cleric). The leader goes to it, once a gathering; a member farther off is on its way.
+				if (!cameBack && runtime.NowMillis - gathering > 30_000 && others.Where(member => member.Online && !member.Dead)
+					.Select(Seen).OfType<BotPosition>().Where(at => !Near(at) && Distance(session.CurrentPosition, at) <= 40)
+					.OrderBy(at => Distance(session.CurrentPosition, at)).Cast<BotPosition?>().FirstOrDefault() is { } apart)
+				{
+					cameBack = true;
+					var back = await navigator.FindRouteAsync(session.CurrentPosition, apart, ct);
+					if (back.Count == 0) back = PlannedWay(apart);
+					// As a player walks: straight over ground the baked mesh leaves out, to a member near and level enough.
+					if (back.Count == 0 && MathF.Abs(session.CurrentPosition.Z - apart.Z) <= 8) back = [session.CurrentPosition, apart];
+					session.TraceDiagnostic("group-field-come-back", new Dictionary<string, object?> { ["position"] = session.CurrentPosition, ["to"] = apart, ["route"] = back.Count });
+					if (back.Count > 0)
+					{
+						// The move asks for a gathering before each step; this one is not nested in itself.
+						walkingBack = true;
+						try { await navigator.MoveAsync(back, ct); }
+						finally { walkingBack = false; }
+					}
+					continue;
+				}
+				// A member that takes longer than five minutes is not waited for: the group goes on with those near (the Cleric
+				// circled 12 m off for three minutes, and the wait ran out three seconds before it arrived). The Cleric on its
+				// way back from the bind is waited for fifteen.
+				if (runtime.NowMillis - gathering > (clericAway ? 900_000 : 300_000))
+				{
+					session.TraceDiagnostic("group-field-not-gathered", new Dictionary<string, object?>
+					{
+						["position"] = session.CurrentPosition, ["clericAway"] = clericAway,
+						["members"] = others.Select(member => new { member.Name, member.Dead, seen = Seen(member) != null,
+							distance = Seen(member) is { } at ? Distance(session.CurrentPosition, at) : -1 }).ToArray(),
+					});
+					if (!clericAway) missedGatherings++;
+					return;
+				}
+				await PauseAsync();
+			}
+			missedGatherings = 0;
 		}
 		navigator.BeforeMovementAsync = WaitForFollowersAsync;
 		// The member changed maps: checked movement and combat are bound to the map the client stands on now.
@@ -310,12 +414,17 @@ public sealed partial class NaturalIshalgenJourney
 			// In the open a member keeps out of other monsters' circles on its way to a target. Inside the camp the group
 			// fights the packs, and a way around them does not exist: nobody plans one there.
 			navigator = new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, [quest.Id], geometry),
-				geometry, runtime, stopOnDeath: false) { AvoidHostileAggro = world.MapId != GroupNtcMap,
-				Planner = leads ? BotTravelPlanner.For(world.MapId!.Value, geometry, runtime.Data) : null, BeforeMovementAsync = WaitForFollowersAsync };
+				geometry, runtime, stopOnDeath: false) { AvoidHostileAggro = world.MapId != GroupNtcMap, RouteFromNearestMesh = field,
+				Planner = leads || field ? BotTravelPlanner.For(world.MapId!.Value, geometry, runtime.Data) : null, BeforeMovementAsync = WaitForFollowersAsync };
 			combat.EnterMap(navigator, geometry, world.MapId!.Value);
 			following.Reset();
 		}
-		combat.AfterBindRevive = EnterMap;
+		combat.AfterBindRevive = () =>
+		{
+			if (field && leads) fellAt = lastAlive;
+			if (field) revivedAtBind = true;
+			EnterMap();
+		};
 		combat.AfterInstanceRevive = EnterMap;
 		combat.WaitForGroupResurrectionAsync = async ct =>
 		{
@@ -356,8 +465,11 @@ public sealed partial class NaturalIshalgenJourney
 					for (int round = 0; round < 8 && !world.IsDead; round++)
 					{
 						HashSet<int> striking = [.. session.PacketHistory.TakeLast(300).Select(packet => runtime.IncomingAttacker(packet, session.CharacterId)).OfType<int>()];
-						BotKnownObject[] foes = [.. world.Objects.Values.Where(known => striking.Contains(known.ObjectId) && known.Kind == BotKnownObjectKind.Npc && !known.IsCorpse)];
+						BotKnownObject[] foes = [.. world.Objects.Values.Where(known => striking.Contains(known.ObjectId) && known.Kind == BotKnownObjectKind.Npc && !known.IsCorpse &&
+							!GoneOrKilled(known.ObjectId))];
 						if (foes.Length == 0) break;
+						// The Cleric never fights: it heals itself until the blows stop.
+						if (healer != null) { await healer.StepAsync(token); await PauseAsync(); continue; }
 						foreach (BotKnownObject foe in foes)
 						{
 							try { await combat.TryKillAsync(foe.ObjectId, token); }
@@ -422,29 +534,35 @@ public sealed partial class NaturalIshalgenJourney
 		async Task WalkOnAsync(BotPosition destination, float within)
 		{
 			var approach = new NaturalApproachProgress();
-			int clears = 0;
+			int clears = 0, replans = 0;
+			// The group fights its way: the monster that would wake nearest the way, first.
+			async Task<bool> ClearWayAsync(string why)
+			{
+				if (clears >= 12 || Blocker(destination) is not int blocker) return false;
+				clears++;
+				await WaitForFollowersAsync(token);
+				await SayAsync($"assist:{blocker}");
+				session.TraceDiagnostic("group-field-clear-way", new Dictionary<string, object?>
+				{ ["target"] = blocker, ["template"] = world.Objects.GetValueOrDefault(blocker)?.TemplateId, ["destination"] = destination, ["clears"] = clears, ["why"] = why });
+				try
+				{
+					if (await combat.TryKillAsync(blocker, token) || GoneOrKilled(blocker)) navigator.UnavailableObjects.Add(blocker);
+					else { navigator.UnavailableObjects.Add(blocker); navigator.LeftForAnother.Add(blocker); }
+				}
+				catch (NaturalCombatApproachBlockedException) { navigator.UnavailableObjects.Add(blocker); }
+				await combat.RestAsync(token);
+				return true;
+			}
 			for (int attempt = 0; Distance(session.CurrentPosition, destination) > within && approach.CanRetry(attempt) && approach.StalledAttempts < 3; attempt++)
 			{
 				var from = session.CurrentPosition;
 				var route = await navigator.FindRouteAsync(from, destination, token);
-				if (route.Count == 0 && field && healer == null && clears < 12 && Blocker(destination) is int blocker)
+				if (route.Count == 0 && field && leads && !walkingBack && await ClearWayAsync("no route"))
 				{
-					clears++;
-					await WaitForFollowersAsync(token);
-					await SayAsync($"assist:{blocker}");
-					session.TraceDiagnostic("group-field-clear-way", new Dictionary<string, object?>
-					{ ["target"] = blocker, ["template"] = world.Objects.GetValueOrDefault(blocker)?.TemplateId, ["destination"] = destination, ["clears"] = clears });
-					try
-					{
-						if (await combat.TryKillAsync(blocker, token) || GoneOrKilled(blocker)) navigator.UnavailableObjects.Add(blocker);
-						else { navigator.UnavailableObjects.Add(blocker); navigator.LeftForAnother.Add(blocker); }
-					}
-					catch (NaturalCombatApproachBlockedException) { navigator.UnavailableObjects.Add(blocker); }
-					await combat.RestAsync(token);
 					attempt--;
 					continue;
 				}
-				if (route.Count == 0 && field && navigator.AvoidHostileAggro)
+				if (route.Count == 0 && field && leads && !walkingBack && navigator.AvoidHostileAggro)
 				{
 					navigator.AvoidHostileAggro = false;
 					session.TraceDiagnostic("group-field-through", new Dictionary<string, object?> { ["destination"] = destination, ["reason"] = navigator.LastRouteDiagnostic });
@@ -466,9 +584,14 @@ public sealed partial class NaturalIshalgenJourney
 						// leader stands on, the ground its followers walk: at a cliff's edge the ground below is the foot of the drop
 						// (north of Kimssi, 8 m down), and static ground off the mesh left the leader 20 m from a group that had no way
 						// to it, nor it to them.
-						if (field && world.MapId is int ground && geometry.SnapToGround(ground, next) is { } under && under.Z <= next.Z + 2 &&
-							geometry.OnSameIsland(ground, at, under))
-							next = under with { Heading = point.Heading };
+						if (field && world.MapId is int ground)
+						{
+							if (geometry.SnapToGround(ground, next) is { } under && under.Z <= next.Z + 2 && geometry.OnSameIsland(ground, at, under))
+								next = under with { Heading = point.Heading };
+							// A step that cuts a corner of the mesh lands off it, where no way leads (north of the servile kalbak the
+							// leader stepped off, back on and off again for half an hour): the route's own point is on the mesh.
+							else if (geometry.SnapToGround(ground, next) == null) next = point;
+						}
 						if (!navigator.IsSegmentSafe([at, next], null, destination))
 						{
 							session.TraceDiagnostic("group-leader-replan", new Dictionary<string, object?> { ["position"] = at, ["destination"] = destination });
@@ -482,6 +605,20 @@ public sealed partial class NaturalIshalgenJourney
 					if (Distance(session.CurrentPosition, destination) <= within) return;
 					if (replan) break;
 				}
+				// M6: the same unsafe step twice (a klaw beside the way up to Kimssi; the walk gave up after three): the group
+				// fights the monster nearest the way, or takes the way through and fights what wakes.
+				if (replan && field && leads && !walkingBack && ++replans >= 2)
+				{
+					replans = 0;
+					if (await ClearWayAsync("unsafe step")) { attempt--; continue; }
+					if (navigator.AvoidHostileAggro)
+					{
+						navigator.AvoidHostileAggro = false;
+						session.TraceDiagnostic("group-field-through", new Dictionary<string, object?> { ["destination"] = destination, ["reason"] = "unsafe step" });
+						attempt--;
+						continue;
+					}
+				}
 				approach.Observe(Distance(from, session.CurrentPosition), false);
 			}
 			if (Distance(session.CurrentPosition, destination) > within) throw new IOException("The group leader could not reach its destination.");
@@ -493,7 +630,22 @@ public sealed partial class NaturalIshalgenJourney
 		async Task<int> NpcAsync(int template)
 		{
 			BotPosition at = Spawn(template);
-			await WalkAsync(at);
+			// M6: a field leader that cannot reach a quest NPC (the way up to Kimssi after a wipe) takes the group to the bind and
+			// walks again from there, twice.
+			for (int tried = 0; ; tried++)
+			{
+				try { await WalkAsync(at); break; }
+				catch (IOException none) when (field && leads && tried < 2 && world.ObeliskBindPoint is { } home && home.MapId == world.MapId)
+				{
+					session.TraceDiagnostic("group-field-npc-unreached", new Dictionary<string, object?> { ["npc"] = template, ["tried"] = tried, ["reason"] = none.Message });
+					await SayAsync("command:regroup");
+					walkingBack = true;
+					try { await ReturnToBindAsync(); }
+					catch (IOException) { }
+					finally { walkingBack = false; }
+					await SayAsync("command:hunt");
+				}
+			}
 			await session.SynchronizeAsync(token);
 			return world.Objects.Values.Where(known => known.TemplateId == template && !known.IsCorpse)
 				.OrderBy(known => Distance(session.CurrentPosition, known.Position)).First().ObjectId;
@@ -698,6 +850,10 @@ public sealed partial class NaturalIshalgenJourney
 			}
 		}
 		// M6: while the members use what the quest asks of them, the leader kills what strikes one of them.
+		// M6: the travel planner's way to a near point, which the navigator asks it for only past 100 m. Around Kellan's Cabin
+		// the leader's road crossed onto mesh no local way joins, and leader and group stood 17 m apart with no way either way.
+		IReadOnlyList<BotPosition> PlannedWay(BotPosition to) =>
+			navigator.Planner?.Plan(session.CurrentPosition, to, world.Level) is { Route.Count: > 0 } plan ? plan.Route : [];
 		async Task<bool> GuardAsync()
 		{
 			DateTimeOffset recent = session.Api.Timing.Now - TimeSpan.FromSeconds(5);
@@ -782,7 +938,14 @@ public sealed partial class NaturalIshalgenJourney
 					if (world.MapId != GroupNtcMap) await PauseAsync();
 					continue;
 				}
-				if (command == "regroup" && !returnedForRegroup) { await ReturnToBindAsync(); returnedForRegroup = true; }
+				if (command == "regroup" && !returnedForRegroup)
+				{
+					// M6: a field member with Return cooling walks to the bind on a way out of every monster's reach, or stays
+					// where it is when there is none (it rejoins its leader later).
+					try { await ReturnToBindAsync(); }
+					catch (IOException none) when (field) { session.TraceDiagnostic("group-field-regroup-failed", new Dictionary<string, object?> { ["reason"] = none.Message }); }
+					returnedForRegroup = true;
+				}
 				if (command != "regroup") returnedForRegroup = false;
 				if (command is "accept" or "turn-in" && arguments is [int about, int npc] && quests.FirstOrDefault(plan => plan.Id == about) is { } asked)
 				{
@@ -845,6 +1008,58 @@ public sealed partial class NaturalIshalgenJourney
 					}
 				}
 				if (options.GroupLoot) await loot.StepAsync(token);
+				// M6: a member that stood up at the bind and does not see its leader walks to where the leader last said it
+				// stands, on the planner's road and out of every monster's reach: the Sorcerer, on its trail through the klaw
+				// camp, died three times on the way back with no Cleric near.
+				if (field && !combat.InCombat && !world.IsDead && world.GroupLeaderId is int chief && !world.Objects.ContainsKey(chief) &&
+					// Only to a place said in the last minute: one said before the leader's own death sent the Cleric across the
+					// klaw camp to where nobody stood.
+					leaderHere is { } there && runtime.NowMillis - leaderHereAt <= 60_000 && Distance(session.CurrentPosition, there) > (revivedAtBind ? 40 : 400) &&
+					runtime.NowMillis >= rejoinAgainAt)
+				{
+					session.TraceDiagnostic("group-field-rejoin", new Dictionary<string, object?> { ["position"] = session.CurrentPosition, ["to"] = there });
+					try { await WalkAsync(there, 20); following.Reset(); }
+					catch (IOException none)
+					{
+						rejoinAgainAt = runtime.NowMillis + 30_000;
+						session.TraceDiagnostic("group-field-rejoin-wait", new Dictionary<string, object?> { ["reason"] = none.Message });
+					}
+				}
+				// M6: a follower that finds no way to the leader it sees takes the planner's (around Kellan's Cabin, 17 m apart).
+				// The searches are the costliest there are, and one that failed held the world: not again from the same place to
+				// the same place, and not more often than every twenty seconds.
+				if (field && following.BlockedTurns >= 6 && !combat.InCombat && !world.IsDead && runtime.NowMillis >= plannedWayAt &&
+					world.GroupLeaderId is int seenChief && world.Objects.TryGetValue(seenChief, out var chiefSeen) &&
+					Distance(session.CurrentPosition, chiefSeen.Position) > 12 &&
+					!(plannedNoWay is { } stuckAt && Distance(stuckAt.From, session.CurrentPosition) <= 3 && Distance(stuckAt.To, chiefSeen.Position) <= 3))
+				{
+					plannedWayAt = runtime.NowMillis + 20_000;
+					// A follower a fight carried off the mesh finds no way to anything (the Gladiator 17 m from its leader, which
+					// found a way to it): back onto the mesh within twelve metres first.
+					if (world.MapId is int standing && geometry.SnapToGround(standing, session.CurrentPosition) == null &&
+						geometry.SnapToGround(standing, session.CurrentPosition, 12) is { } meshNear)
+					{
+						session.TraceDiagnostic("group-follow-back-on-mesh", new Dictionary<string, object?> { ["position"] = session.CurrentPosition, ["to"] = meshNear });
+						await navigator.MoveAsync([session.CurrentPosition, meshNear], token);
+					}
+					IReadOnlyList<BotPosition> way = PlannedWay(chiefSeen.Position);
+					// A leader a fight carried off the mesh has no way to it at all: the ground of this member's island nearest it,
+					// within the 14 m that count as near.
+					if (way.Count == 0 && world.MapId is int here && geometry.IslandGround(here, session.CurrentPosition,
+							at => Distance(at, chiefSeen.Position) <= 14).OrderBy(at => Distance(at, chiefSeen.Position)).Cast<BotPosition?>().FirstOrDefault() is { } nearLeader &&
+						Distance(nearLeader, session.CurrentPosition) > 3)
+						way = geometry.FindJourneyPath(here, session.CurrentPosition, nearLeader);
+					// Then the navigator's own search, waypoint graph included: the one the leader's way back to it came from.
+					if (way.Count == 0) way = await navigator.FindRouteAsync(session.CurrentPosition, chiefSeen.Position, token);
+					// Last, as a player walks: straight over the ground to a leader near and in sight. The baked mesh leaves some
+					// ground out (all five stood 33 m behind their leader, east of Kimssi, where no search found a way either way).
+					if (way.Count == 0 && Distance(session.CurrentPosition, chiefSeen.Position) <= 40 &&
+						MathF.Abs(session.CurrentPosition.Z - chiefSeen.Position.Z) <= 8)
+						way = [session.CurrentPosition, chiefSeen.Position];
+					session.TraceDiagnostic("group-follow-planned-way", new Dictionary<string, object?> { ["to"] = chiefSeen.Position, ["points"] = way.Count });
+					plannedNoWay = way.Count == 0 ? (session.CurrentPosition, chiefSeen.Position) : null;
+					if (way.Count > 0) { await navigator.MoveAsync(way, token); following.Reset(); }
+				}
 				await following.StepAsync(token);
 				await PauseAsync();
 			}
@@ -1259,7 +1474,19 @@ public sealed partial class NaturalIshalgenJourney
 						{
 							if (target != 0) break;
 							// Once a monster comes into sight, its class combat driver owns the checked approach and pull.
-							await WalkAsync(spot, 60);
+							try { await WalkAsync(spot, 60); }
+							catch (IOException direct)
+							{
+								// M6: no way reaches Q2355's servile kalbak's spawn (the leader's run ended on it): the leader goes to
+								// the ground of its own island nearest the spawn, and a spawn it cannot come near is left for the next.
+								BotPosition? near = world.MapId is int map ? geometry.IslandGround(map, session.CurrentPosition, at => Distance(at, spot) <= 50)
+									.OrderBy(at => Distance(at, spot)).Cast<BotPosition?>().FirstOrDefault() : null;
+								session.TraceDiagnostic("group-field-spawn-unreachable", new Dictionary<string, object?>
+								{ ["quest"] = plan.Id, ["spot"] = spot, ["near"] = near, ["reason"] = direct.Message });
+								if (near is not { } ground) continue;
+								try { await WalkAsync(ground, 5); }
+								catch (IOException) { continue; }
+							}
 							target = LivingTarget(kinds);
 						}
 						if (target == 0)
@@ -1279,7 +1506,19 @@ public sealed partial class NaturalIshalgenJourney
 						{ ["quest"] = plan.Id, ["target"] = target, ["template"] = world.Objects.GetValueOrDefault(target)?.TemplateId, ["position"] = session.CurrentPosition });
 						try
 						{
-							if (await combat.TryKillAsync(target, token) || GoneOrKilled(target)) navigator.UnavailableObjects.Add(target);
+							bool fell;
+							try { fell = await combat.TryKillAsync(target, token) || GoneOrKilled(target); }
+							catch (NaturalCombatApproachBlockedException first) when (!GoneOrKilled(target) && targetsGoneThrough.Add(target))
+							{
+								// M6: no approach to Q2355's servile kalbak keeps out of every other monster's reach, and the group
+								// waited an hour for "another" one beside it alive: it goes in through them once and fights what wakes.
+								session.TraceDiagnostic("group-field-through-target", new Dictionary<string, object?> { ["target"] = target, ["reason"] = first.Message });
+								bool keptOut = navigator.AvoidHostileAggro;
+								navigator.AvoidHostileAggro = false;
+								try { fell = await combat.TryKillAsync(target, token) || GoneOrKilled(target); }
+								finally { navigator.AvoidHostileAggro = keptOut; }
+							}
+							if (fell) navigator.UnavailableObjects.Add(target);
 							else
 							{
 								failedTargets[target] = failedTargets.GetValueOrDefault(target) + 1;

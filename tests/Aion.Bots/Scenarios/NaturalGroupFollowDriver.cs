@@ -21,6 +21,9 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 	// search for a way found none.
 	private int blockedTurns;
 	private (BotPosition From, BotPosition To)? noWay;
+	private DateTimeOffset noLongSearchUntil;
+	/// <summary>M6: the turns in a row this follower found no checked way to its leader.</summary>
+	public int BlockedTurns => blockedTurns;
 	private bool leaderMoving;
 	private BotPosition? pursued;
 	private float pursuedBest, pursuedLast;
@@ -221,11 +224,15 @@ public sealed class NaturalGroupFollowDriver(INaturalJourneySession session, Nat
 				// M6: nor again from where it found none to where it found none: a fight left the Templar on a ledge 8 m from his
 				// group north of Kimssi, and each search for a way to it held the whole world ten seconds.
 				if (noWay is { } none && Distance(none.From, standing) <= 3 && Distance(none.To, currentLeader) <= 3) return;
+				// Nor more than once every thirty seconds: a leader that shifts a little in its fights made every search a new
+				// one, and each that failed held the world a hundred seconds.
+				if (session.Api.Timing.Now < noLongSearchUntil) return;
 				path = geometry.FindInteractionPath(map, standing, currentLeader);
 				// A way to within reach does not cross a seam of the mesh (the camp's gateway); a way to the exact point does.
 				if (path.Count == 0) path = geometry.FindJourneyPath(map, standing, currentLeader);
 				around = path.Count > 0;
 				noWay = around ? null : (standing, currentLeader);
+				if (!around) noLongSearchUntil = session.Api.Timing.Now + TimeSpan.FromSeconds(30);
 			}
 			if (runtime.SearchElsewhere is { } elsewhere) await elsewhere(Search);
 			else Search();

@@ -28,6 +28,18 @@ public sealed partial class NaturalIshalgenJourney
 		public string LastRouteDiagnostic { get; private set; } = "none";
 		/// <summary>Travel planner tried first for long non-combat legs (see BotTravelPlanner.PlanJourney).</summary>
 		public BotTravelPlanner? Planner { get; init; }
+		/// <summary>M6 (the field group): a route from a point off the mesh starts at the mesh within twelve metres. A fight
+		/// left the Templar off it north of the servile kalbak, and every search from there failed, slowly.</summary>
+		public bool RouteFromNearestMesh { get; init; }
+
+		// The point itself when it is on the mesh; the mesh under or beside it when it stands more than half a metre off (the
+		// router calls such an end off the mesh, "EndpointOffMesh"); null when there is none within twelve metres.
+		private BotPosition? NearestMesh(BotPosition point)
+		{
+			if (!RouteFromNearestMesh || session.Api.World.MapId is not int map) return null;
+			BotPosition? mesh = geometry.SnapToGround(map, point) ?? geometry.SnapToGround(map, point, 12);
+			return mesh is { } near && Distance(near, point) > .5f ? near : null;
+		}
 		public List<NaturalNavigationEvent> Events { get; } = [];
 		public HashSet<int> UnavailableObjects { get; } = [];
 		/// <summary>NR-R14b: the monsters among <see cref="UnavailableObjects"/> that a kill step left alive for another of
@@ -57,7 +69,16 @@ public sealed partial class NaturalIshalgenJourney
 						attackers.Contains(item.ObjectId) ? item.Position : item.SettledPosition, item.PatrolPath)).ToArray());
 		}
 
-		public Task<IReadOnlyList<BotPosition>> FindRouteAsync(BotPosition start, BotPosition destination,
+		public async Task<IReadOnlyList<BotPosition>> FindRouteAsync(BotPosition start, BotPosition destination,
+			CancellationToken token)
+		{
+			BotPosition to = NearestMesh(destination) ?? destination;
+			if (NearestMesh(start) is not { } onMesh) return await FindRouteFromAsync(start, to, token);
+			IReadOnlyList<BotPosition> fromMesh = await FindRouteFromAsync(onMesh, to, token);
+			return fromMesh.Count == 0 ? fromMesh : [onMesh, .. fromMesh];
+		}
+
+		private Task<IReadOnlyList<BotPosition>> FindRouteFromAsync(BotPosition start, BotPosition destination,
 			CancellationToken token)
 		{
 			token.ThrowIfCancellationRequested();
@@ -217,6 +238,17 @@ public sealed partial class NaturalIshalgenJourney
 
 		/// <param name="range">CP-18: how near to the target the route must end, from the class profile.</param>
 		public IReadOnlyList<BotPosition> FindRangedApproach(BotPosition start, BotPosition target,
+			int targetObjectId, float range, CancellationToken token)
+		{
+			if (NearestMesh(start) is { } onMesh)
+			{
+				IReadOnlyList<BotPosition> fromMesh = FindRangedApproachFrom(onMesh, target, targetObjectId, range, token);
+				return fromMesh.Count == 0 ? fromMesh : [onMesh, .. fromMesh];
+			}
+			return FindRangedApproachFrom(start, target, targetObjectId, range, token);
+		}
+
+		private IReadOnlyList<BotPosition> FindRangedApproachFrom(BotPosition start, BotPosition target,
 			int targetObjectId, float range, CancellationToken token)
 		{
 			token.ThrowIfCancellationRequested();

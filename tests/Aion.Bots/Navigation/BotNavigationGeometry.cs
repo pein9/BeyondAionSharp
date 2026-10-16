@@ -93,6 +93,11 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
     public BotPosition? SnapToGround(int mapId, BotPosition point) =>
         NavMesh?.NavMeshes.Get(mapId)?.Snap(point, BotNavQuery.Default with { SnapHorizontal = 2, SnapVertical = 10 });
 
+    /// <summary>M6: navmesh ground within <paramref name="horizontal"/> metres of <paramref name="point"/> (a bot a fight
+    /// carried off the mesh), or null.</summary>
+    public BotPosition? SnapToGround(int mapId, BotPosition point, float horizontal) =>
+        NavMesh?.NavMeshes.Get(mapId)?.Snap(point, BotNavQuery.Default with { SnapHorizontal = horizontal, SnapVertical = 10 });
+
     /// <summary>Actual static ground within the ordinary ±2 m height window (not a navmesh height).</summary>
     public BotPosition? StaticGroundAt(int mapId, BotPosition point)
     {

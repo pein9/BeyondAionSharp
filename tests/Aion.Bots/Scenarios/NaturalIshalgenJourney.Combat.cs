@@ -1536,7 +1536,13 @@ public sealed partial class NaturalIshalgenJourney
 				["hp"] = session.Api.World.CurrentHp, ["maxHp"] = session.Api.World.MaxHp,
 				["mp"] = session.Api.World.CurrentMp, ["maxMp"] = session.Api.World.MaxMp, ["revives"] = revives,
 			});
-			await RestAsync(token);
+			// M6: a death in a fight ends that fight. The rest at the obelisk fights for itself what strikes it there (the Chanter's
+			// rest defended itself inside the fight it had died in, and that is a nested fight).
+			bool fighting = InCombat;
+			InCombat = false;
+			navigator.InCombat = false;
+			try { await RestAsync(token); }
+			finally { InCombat = fighting; navigator.InCombat = fighting; }
 		}
 
 		/// <summary>Walk up to 8 m toward the target's last-known position (never nearer than 10 m), on a
@@ -1634,6 +1640,25 @@ public sealed partial class NaturalIshalgenJourney
 				// The cast never started: release the local casting gate, or the next walk is refused ("CM_MOVE is blocked
 				// while Casting") even when the caller recovers from this.
 				session.Api.Timing.RecordCastCancelled();
+				// M6: in a group the target can fall to another member's blow as the cast is sent, and the server answers that
+				// cast with nothing (the Chanter's assist, the Ranger's protect): the fight is over, not broken.
+				if (target != session.CharacterId && (!session.Api.World.Objects.TryGetValue(target, out BotKnownObject? cast) || cast.IsCorpse ||
+					session.PacketHistory.TakeLast(400).Any(packet => BotAttackStatus.CarriesHp(packet) && packet.Get<int>("objectId") == target &&
+						packet.Get<byte>("hpOrMp") == 0)))
+				{
+					session.TraceDiagnostic("combat-cast-unanswered-target-fell", new Dictionary<string, object?> { ["skillId"] = skill.Id, ["targetObjectId"] = target });
+					return false;
+				}
+				// M6: Java refuses a chain step whose chain has closed (ChainCondition) without a word; the Chanter's Booming
+				// Strike came at the end of its three seconds. The chain is closed here too, and the fight goes on.
+				if (skill.ChainCategory != null)
+				{
+					tableChain = NaturalChainState.None;
+					session.TraceDiagnostic("combat-chain-unanswered", new Dictionary<string, object?> { ["skillId"] = skill.Id, ["targetObjectId"] = target });
+					await session.AdvanceAsync(TimeSpan.FromMilliseconds(BotTimingContract.MinimumCastIntervalMillis + 1), token);
+					await session.SynchronizeAsync(token);
+					return true;
+				}
 				string[] recent = session.PacketHistory.TakeLast(15).Select(packet =>
 					packet.PacketType == typeof(SM_SYSTEM_MESSAGE)
 						? $"{packet.PacketType.Name}:{packet.Get<object>("name") ?? packet.Get<int>("msgId")}" : packet.PacketType.Name).ToArray();
