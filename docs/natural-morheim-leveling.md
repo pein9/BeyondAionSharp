@@ -5,7 +5,8 @@ Status: a plan, 2026-10-13, as the operator shaped it in three messages that day
 played, and step M4 (legs `md` and `mc`), where every bot reached 31 (`morheim-mc-s1-w1`). Step M7's gear check at 31
 came next, on the operator's word (`morheim-g31-s1-w1`), then M8 and M5 (`morheim-ma-s1-w1`, every bot at 32). The
 group step M6 is done: the cabin's, the garrison's and the crater's group quests and the campaign up to Q24023,
-by all eight (Q2355 and Q2343 left). The world is now `morheim-mc-s3-w1`.
+by all eight (Q2355 and Q2343 left). M9's report is written, and M10 is played: the Fire Temple six played Fire Temple,
+its two quests and Kromede, in one try. **Every step is done.** The world is now `morheim-ft-s1-w1`.
 
 It follows [natural-muster.md](natural-muster.md), whose rules MR-a to MR-i are this leg's rules, and starts from the
 group world `ntc-group-s5`.
@@ -360,7 +361,7 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
 - [x] **M9 The report:** per class its level, quests done, deaths and time; every quest that was not played and why;
   what the bots found wrong with the server.
   - 2026-10-16, written from the 22 captured worlds from `ntc-group-s5` to `morheim-mc-s3-w1`: [The report](#the-report).
-- [ ] **M10 Fire Temple, as a group of six at 31.** The operator, 2026-10-14, before leaving for a while: once the list
+- [x] **M10 Fire Temple, as a group of six at 31.** The operator, 2026-10-14, before leaving for a while: once the list
   above is done, "Map out the quests for 'Fire Temple'", "Group up with a full group of 6, make sure to have a
   cleric/templar/sorcerer plus 3 more of your choice", "minimum of level 31 each (the companion profile)", "Do Fire
   Temple as a group. This is a more difficult instance, so it might take a few tries." His answers the same day:
@@ -390,6 +391,28 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
       F2: leg `mgs` takes the six to Slag Bulwark, the obelisk nearest the crater. F3: an uncaptured trial, then the
       captured round: Flamyar's two quests taken together, the temple played, Kromede, out, the hand-in. F4: the
       line here, with what was skipped and why.
+  - 2026-10-16, played. F1 (`e0d5d04ab`): a round names the field group's instance and its bosses; the leader takes
+    every quest outside, takes the group in, works them, kills the bosses, leaves by the exit portal and hands them in
+    outside; a member that stood up at the bind goes back in, and the leader that fell inside goes in before it walks
+    back to where it fell. F2: leg `mgs` took all eight to Slag Bulwark (`morheim-mgs-s2`). F3: round
+    `run/morheim/M10/ft-six.json`, captured **`morheim-ft-s1-w1`**. The six (the Templar leading, the Cleric healing,
+    the Sorcerer, the Chanter, the Gladiator, the Ranger, all 34 and the Chanter 35) flew down to Flamyar, took Q2373
+    and Q2374 together and went in together at 2 game minutes; Q2373's weapon came from the ancient treasure chest
+    nearest the landing at 3, Q2374's ten kills were done at 17, and **Kromede the Corrupt fell to the first pull at
+    24, in 40 seconds**; out by the exit portal at 30, both quests handed in at once. No death, every member level 35
+    after it, each with the ring of its choice. It took one try, not the few the operator expected.
+  - The trials (f1 to f3) found three bot faults, all fixed in F1: Flamyar's two quests had no compiled plan, so the
+    stage took them for campaign quests and went straight in (the plans are now compiled, unedited); the entrance runs
+    a use bar before its dialog, and the wait for the dialog alone held the SIM world's clock (the portal step now
+    waits the bar out); and only the camp's members said where they stood, so the leader waited ten minutes for a
+    group that was already inside with it.
+  - F4, skipped and reported, as the operator said: Q24121 [Group] Secrets of the Fire Temple, Q24242 [Group] All the
+    Spells and Whistles and Q24275 [Group] Retribution Resolution have no handler in Java or here (4.8 retail ran
+    them: Aegir's, Gangleri's and Flamyar's; `docs/retail-quest-worklist.md` lists them for D32); Q4326 [Coin/Group]
+    Courting Disaster needs Q24275; Q2371 [Group] Kalgolem Crystals (Padinerk) needs Q24023, still held in the Sky
+    Temple Interior; Q24277 is a level-99 quest no player can take. The six named elites of the handler were not
+    met on the group's way and were not sought: no quest needs them. Q2374 was played once, as the operator said;
+    Q2378 (Bulagan, level 35) asks for it fifteen times.
 
 ## The report
 
