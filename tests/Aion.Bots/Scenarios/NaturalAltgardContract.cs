@@ -81,7 +81,7 @@ public sealed record NaturalAltgardContract(
 		// "mk" (M3) Kellan's Cabin, "md" (M4) Desert Garrison and "mc" (M4) the campaign's Q24021 and Q24022 with Q2333,
 		// "ms" (M5) Slag Bulwark and "ma" (M5) Alsig Village with the hand-ins held for them, and "mg" (M7) the way back to
 		// the fortress, bound there, for the gear check-in at 31; "mgk" (M6) the way to Kellan's Cabin for its group quests,
-		// and "mgd" the way to Desert Garrison for its own.
+		// "mgd" the way to Desert Garrison for its own, and "mgs" the way to Slag Bulwark for the crater's.
 		["mf"] = ("natural-morheim-mf-contract.json", "natural-morheim-mf-plans"),
 		["mk"] = ("natural-morheim-mk-contract.json", "natural-morheim-mk-plans"),
 		["md"] = ("natural-morheim-md-contract.json", "natural-morheim-md-plans"),
@@ -91,11 +91,12 @@ public sealed record NaturalAltgardContract(
 		["mg"] = ("natural-morheim-mg-contract.json", null),
 		["mgk"] = ("natural-morheim-mgk-contract.json", null),
 		["mgd"] = ("natural-morheim-mgd-contract.json", null),
+		["mgs"] = ("natural-morheim-mgs-contract.json", null),
 	};
 
 	/// <summary>The legs of the Morheim leg to level 31 (docs/natural-morheim-leveling.md): played on Morheim by a
 	/// mustered character of level 26 or more.</summary>
-	public static readonly IReadOnlySet<string> MorheimLegs = new HashSet<string> { "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd" };
+	public static readonly IReadOnlySet<string> MorheimLegs = new HashSet<string> { "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs" };
 
 	/// <summary>The muster's template quest: the fortress's repeatable coin quest (docs/natural-muster.md). The plans are
 	/// apart from the Abyss entry's, which has none, so that leg's navigation graph is what it was.</summary>

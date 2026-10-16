@@ -30,6 +30,16 @@ public sealed partial class NaturalIshalgenJourney
 	/// quest once (docs/natural-group-healer.md); the NTC stage plays the Group NTC leg; the field stage plays a list of
 	/// Morheim quests in the open (M6, docs/natural-morheim-leveling.md).
 	/// </summary>
+	/// <summary>M6: every portal used as an object in the shipped data (portal_template2.xml's portal_use: Java PortalAI): the
+	/// NPC, where it leads, whom it takes and the title it asks to be worn. Read from the file as the companion reads the
+	/// dialog portals: the server's own table keeps its entries to itself once it is loaded.</summary>
+	private static (int Npc, int LocId, string Race, int TitleId)[] GroupPortalUses(string repoRoot) =>
+		groupPortalUses ??= [.. System.Xml.Linq.XDocument.Load(Path.Combine(repoRoot, "game-server", "data", "static_data", "portals", "portal_template2.xml"))
+			.Root!.Elements("portal_use").SelectMany(use => use.Elements("portal_path").Select(path => (
+				Npc: (int)use.Attribute("npc_id")!, LocId: (int)path.Attribute("loc_id")!,
+				Race: (string?)path.Attribute("race") ?? "PC_ALL", TitleId: (int?)path.Attribute("title_id") ?? 0)))];
+	private static (int Npc, int LocId, string Race, int TitleId)[]? groupPortalUses;
+
 	private async Task RunGroupQuestAsync(CancellationToken token)
 	{
 		BotWorldModel world = session.Api.World;
@@ -108,6 +118,12 @@ public sealed partial class NaturalIshalgenJourney
 		int? assist = null;
 		var progress = new Dictionary<(int Member, int Quest), (int Status, int[] Counts)>();
 		var failedTargets = new Dictionary<int, int>();
+		// M6: the targets the field leader saw fall. The server gives a freed object id to the next object it spawns, and a
+		// named monster's respawn can carry the id of its own corpse (Millennium Eka was waited for 80 minutes, unseen).
+		var fallenTargets = new HashSet<int>();
+		// Of those, the ones whose corpse has gone from sight: a fresh corpse is not always seen as one yet.
+		var vanishedTargets = new HashSet<int>();
+		var retriedTargets = new Dictionary<int, int>();
 		// M6: the members this leader saw die since the group last gathered; the attackers of members this fighter failed to kill.
 		var fallenMembers = new HashSet<int>();
 		// M6: campaign quests whose monster no way reaches, left for later.
@@ -122,7 +138,13 @@ public sealed partial class NaturalIshalgenJourney
 		BotPosition? lastAlive = null, fellAt = null;
 		// walkingBack: the leader's own move must not start a gathering inside itself; safeOnly: the leader alone takes only the
 		// way out of every monster's reach (its walk back to where it fell), never the way through.
-		bool walkingBack = false, safeOnly = false, revivedAtBind = false, sayRevived = false;
+		bool walkingBack = false, safeOnly = false, revivedAtBind = false, sayRevived = false, crossing = false;
+		IReadOnlyList<NaturalFlyZone> flyZones = [];
+		int? flyZonesMap = null;
+		long? lastTakeoff = null;
+		(int X, int Y, int Z)? flownTo = null;
+		int flyTries = 0;
+		long portalAgainAt = 0;
 		long hereSaidAt = long.MinValue / 2, leaderHereAt = long.MinValue / 2, rejoinAgainAt = 0, plannedWayAt = 0;
 		(BotPosition From, BotPosition To)? plannedNoWay = null;
 		long backOnMeshAt = 0, leaderSeenAt = 0;
@@ -543,7 +565,22 @@ public sealed partial class NaturalIshalgenJourney
 						BotKnownObject[] foes = [.. world.Objects.Values.Where(known => striking.Contains(known.ObjectId) && known.Kind == BotKnownObjectKind.Npc && !known.IsCorpse &&
 							!GoneOrKilled(known.ObjectId))];
 						if (foes.Length == 0) break;
-						// The Cleric never fights: it heals itself until the blows stop.
+						// The Cleric never fights: it heals itself until the blows stop. Alone, before its group forms, it steps out
+						// of their reach first (its Returns were cut short three times at Deputy Lamipedon's spawn, and it walked
+						// on into a route that did not exist).
+						if (healer != null && world.GroupId == null && world.MapId is int escapeMap)
+						{
+							BotPosition[] foesAt = [.. foes.Select(foe => foe.Position)];
+							BotPosition here = session.CurrentPosition;
+							if (geometry.IslandGround(escapeMap, here, at => Distance(at, here) is > 30 and < 60 && foesAt.All(foe => Distance(at, foe) > 40))
+								.OrderByDescending(at => foesAt.Min(foe => Distance(at, foe))).Cast<BotPosition?>().FirstOrDefault() is { } away &&
+								await navigator.FindRouteAsync(here, away, token) is { Count: > 0 } path)
+							{
+								session.TraceDiagnostic("group-field-healer-steps-away", new Dictionary<string, object?> { ["position"] = here, ["to"] = away });
+								await navigator.MoveAsync(path, token);
+								break;
+							}
+						}
 						if (healer != null) { await healer.StepAsync(token); await PauseAsync(); continue; }
 						foreach (BotKnownObject foe in foes)
 						{
@@ -614,8 +651,182 @@ public sealed partial class NaturalIshalgenJourney
 			// M6: when nothing in sight shuts the way but the planner still keeps out of every monster's reach (Q2355's named
 			// elite stands in its own, among others), a field group takes the way through them and fights what wakes.
 			bool keptOut = navigator.AvoidHostileAggro;
-			try { await WalkOnAsync(destination, within); }
+			try
+			{
+				try { await WalkOnAsync(destination, within); return; }
+				// Ground closed by a portal's wall (Karhel's aetheric field in the Ice Claw village): the leader names the portal,
+				// and every member goes through it.
+				catch (IOException) when (field && leads && !crossing && GateTo(destination) is { } gate)
+				{
+					if (!await PortalAsync(gate.Npc, gate.Title)) throw new IOException($"The portal {gate.Npc} did not take the leader toward {destination}.");
+				}
+				// The crater south of Slag Bulwark is a FLY zone on ground the navmesh does not join to the rest: the leader names
+				// the goal, and every member flies there on its own, as a bot alone does.
+				catch (IOException) when (field && leads && !crossing && (InFlyZone(destination) || InFlyZone(session.CurrentPosition)))
+				{
+					await SayAsync($"command:fly:{(int)MathF.Round(destination.X)}:{(int)MathF.Round(destination.Y)}:{(int)MathF.Round(destination.Z)}");
+					if (!await CrossFlyZoneAsync(destination)) throw new IOException($"No walk nor flight reaches {destination}.");
+				}
+				await WalkOnAsync(destination, within);
+			}
 			finally { navigator.AvoidHostileAggro = keptOut; }
+		}
+		// M6: the crater south of Slag Bulwark (Sarinerk's and Padinerk's ledges, the floor, the ruins) is Morheim's second FLY
+		// zone, ground the navmesh does not join to the rest. A field member crosses it as a bot alone does (the Morheim legs'
+		// flyAcross): on foot to the zone's ground nearest the goal, a flight, and a landing beside the goal; and out the same way.
+		IReadOnlyList<NaturalFlyZone> FlyZones()
+		{
+			if (flyZonesMap != world.MapId && world.MapId is int map)
+			{
+				string file = Path.Combine(runtime.RepoRoot, $"game-server/data/static_data/zones/zones_{map}.xml");
+				flyZones = File.Exists(file) ? NaturalFlyZone.Load(file) : [];
+				flyZonesMap = map;
+			}
+			return flyZones;
+		}
+		bool InFlyZone(BotPosition at) => world.MapId != GroupNtcMap && FlyZones().Any(zone => !zone.Forbids && zone.Contains(at.X, at.Y, at.Z + 2)) &&
+			!FlyZones().Any(zone => zone.Forbids && zone.Contains(at.X, at.Y, at.Z + 2));
+		// M6: Protector Karhel stands in his aetheric field, which only the chosen enter (the operator, 2026-10-16: "You must
+		// have <Tayga Slayer> in order to enter this area"). Its wall is collision the navmesh leaves closed; the way in is the
+		// statue of the Mau hero beside it, a portal (Java PortalAI, portal_template2: title 58, Q24022 grants it at Landver's
+		// step), and the way out the statue inside. Java's PortalService wants the title worn.
+		// A spawn or a portal's landing can stand a few metres off the mesh (Karhel 2.7 m): those are looked up wider.
+		int Island(BotPosition at, float snap = 2) => world.MapId is int map && geometry.NavMesh?.NavMeshes.Get(map) is { } mesh
+			? mesh.IslandOf(at, BotNavQuery.Default with { SnapHorizontal = snap }) : -1;
+		(int Npc, int Title)? GateTo(BotPosition goal)
+		{
+			if (world.MapId is not int map) return null;
+			// As the journey reads it: the client's own object, or an Asmodian's when it carries no race.
+			Race race = world.Objects.GetValueOrDefault(session.CharacterId)?.Race is byte raceId ? (Race)raceId : Race.ASMODIANS;
+			int here = Island(session.CurrentPosition), there = Island(goal, 8);
+			// A portal that lands on the goal's ground (in: Karhel's), or one standing on the leader's own ground that leads off it
+			// (out); one within 1,500 m to go in (the leader looks from the garrison, 815 m from Karhel's statue), 300 m to go out. The leader can stand on a patch of mesh of its own (east of the garrison, where its walk to
+			// Karhel stopped): its own walk takes the group to the statue.
+			if (there < 0 || here == there) return null;
+			BotPosition from = session.CurrentPosition;
+			return GroupPortalUses(runtime.RepoRoot)
+				.Where(path => path.Race == race.ToString() || path.Race == "PC_ALL")
+				.Select(path => (Path: path, Loc: runtime.Data.PortalLocDataDh.GetPortalLoc(path.LocId)))
+				.Where(entry => entry.Loc != null && entry.Loc.GetWorldId() == map &&
+					runtime.Data.SpawnsDh.GetSpawnsByWorldId(map).Any(group => group.GetNpcId() == entry.Path.Npc) && Distance(from, Spawn(entry.Path.Npc)) <= 1500)
+				.Select(entry => (entry.Path, Landing: new BotPosition(entry.Loc!.GetX(), entry.Loc.GetY(), entry.Loc.GetZ(), 0), Statue: Spawn(entry.Path.Npc)))
+				.Select(entry => (entry.Path, entry.Landing, entry.Statue, LandingIsland: Island(entry.Landing, 8), StatueIsland: Island(entry.Statue, 8)))
+				.Where(entry => entry.StatueIsland >= 0 && entry.StatueIsland != there && entry.LandingIsland >= 0 &&
+					(entry.LandingIsland == there || here >= 0 && entry.StatueIsland == here && entry.LandingIsland != here && Distance(from, entry.Statue) <= 300))
+				.OrderBy(entry => entry.LandingIsland == there ? 0 : 1).ThenBy(entry => Distance(entry.Landing, goal))
+				.Select(entry => ((int, int)?)(entry.Path.Npc, entry.Path.TitleId)).FirstOrDefault();
+		}
+		// On the ground a portal lands on: the statue beside it, across its wall, is not used again.
+		bool PortalLanded(int npc) => GroupPortalUses(runtime.RepoRoot).Where(path => path.Npc == npc)
+			.Select(path => runtime.Data.PortalLocDataDh.GetPortalLoc(path.LocId)).OfType<Aion.GameServer.Model.Templates.Portal.PortalLoc>()
+			.Any(loc => new BotPosition(loc.GetX(), loc.GetY(), loc.GetZ(), 0) is var landing && (Distance(session.CurrentPosition, landing) <= 10 ||
+				Island(landing, 8) is int landed && landed >= 0 && landed == Island(session.CurrentPosition)));
+		async Task<bool> PortalAsync(int npc, int title)
+		{
+			if (world.MapId is not int map) return false;
+			BotPosition statue = Spawn(npc), before = session.CurrentPosition;
+			session.TraceDiagnostic("group-field-portal", new Dictionary<string, object?> { ["npc"] = npc, ["title"] = title, ["position"] = before, ["statue"] = statue });
+			if (Distance(session.CurrentPosition, statue) > 4 && leads)
+			{
+				try { await WalkOnAsync(statue, 3); }
+				catch (IOException far) { session.TraceDiagnostic("group-field-portal-unreached", new Dictionary<string, object?> { ["npc"] = npc, ["reason"] = far.Message }); return false; }
+			}
+			if (Distance(session.CurrentPosition, statue) > 4)
+			{
+				var path = await navigator.FindRouteAsync(session.CurrentPosition, statue, token);
+				if (path.Count == 0) path = geometry.FindInteractionPath(map, session.CurrentPosition, statue);
+				if (path.Count == 0) return false;
+				await navigator.MoveAsync(path, token);
+			}
+			await session.SynchronizeAsync(token);
+			// A blow breaks the use bar (Java ActionItemNpcAI), and two ice claw scratchers stand by the statue: the leader kills
+			// what strikes the group first. The members go through after it, from beside the statue (told on the way, two walked
+			// there alone from 480 m off).
+			for (int guard = 0; leads && guard < 12 && !world.IsDead && await GuardAsync(); guard++) { }
+			if (world.IsDead) return false;
+			if (leads) await SayAsync($"command:portal:{npc}");
+			if (world.Objects.Values.Where(known => known.TemplateId == npc && Distance(session.CurrentPosition, known.Position) <= 10)
+				.OrderBy(known => Distance(session.CurrentPosition, known.Position)).FirstOrDefault() is not { } gate) return false;
+			if (title != 0)
+			{
+				int asked = session.PacketHistory.Count;
+				await session.SendPacketAsync(GameClientPackets.SetDisplayTitle((ushort)title), token);
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
+				await session.SynchronizeAsync(token);
+				if (!session.PacketHistory.Skip(asked).Any(packet => packet.PacketType == typeof(SM_TITLE_INFO) && packet.Get<byte>("action") == 1 &&
+					packet.Get<ushort>("titleId") == title))
+				{
+					session.TraceDiagnostic("group-field-portal-title-refused", new Dictionary<string, object?> { ["npc"] = npc, ["title"] = title });
+					return false;
+				}
+			}
+			await NaturalAltgardQuestSteps.UseObjectAsync(session, gate.ObjectId, null, token);
+			await session.SynchronizeAsync(token);
+			session.AcceptTeleportPosition();
+			following.Reset();
+			// Through is where the portal lands, alive: two members that died on the way stood up at the obelisk, on other ground.
+			bool through = !world.IsDead && PortalLanded(npc);
+			session.TraceDiagnostic("group-field-portal-used", new Dictionary<string, object?> { ["npc"] = npc, ["through"] = through, ["position"] = session.CurrentPosition });
+			return through;
+		}
+		async Task<bool> CrossFlyZoneAsync(BotPosition goal)
+		{
+			if (crossing || world.MapId is not int map || world.IsDead) return false;
+			// Ground this member can walk to lies within a few metres of the goal: no flight.
+			if (geometry.IslandGround(map, session.CurrentPosition, at =>
+				MathF.Abs(at.X - goal.X) <= 8 && MathF.Abs(at.Y - goal.Y) <= 8 && MathF.Abs(at.Z - goal.Z) <= 6).Count > 0) return false;
+			IReadOnlyList<NaturalFlyZone> zones = FlyZones();
+			bool Open(NaturalFlyZone zone, BotPosition at) => zone.Contains(at.X, at.Y, at.Z + 2) &&
+				!zones.Any(other => other.Forbids && other.Contains(at.X, at.Y, at.Z + 2));
+			NaturalFlyZone? zone = zones.FirstOrDefault(entry => !entry.Forbids && Open(entry, goal))
+				?? zones.FirstOrDefault(entry => !entry.Forbids && Open(entry, session.CurrentPosition));
+			if (zone == null) return false;
+			bool Inside(BotPosition at) => Open(zone, at) && at.Z + 12 < zone.Top;
+			// The landing: the zone's ground on the goal's island nearest it, or the goal's own static ground where the navmesh
+			// has none (Sarinerk stands past the edge of his ledge's mesh).
+			BotPosition? landing = geometry.IslandGround(map, goal, Inside).OrderBy(at => Distance(at, goal)).Cast<BotPosition?>().FirstOrDefault();
+			if (landing is not { } near || Distance(near, goal) > 6) landing = Inside(goal) ? geometry.StaticGroundAt(map, goal) ?? landing : landing;
+			if (landing is not { } land) return false;
+			// The takeoff: here inside the zone, or the zone's ground on this island nearest the landing.
+			BotPosition here = session.CurrentPosition;
+			BotPosition? takeoff = Inside(here) ? here
+				: geometry.IslandGround(map, here, Inside).OrderBy(at => Distance(at, land)).Cast<BotPosition?>().FirstOrDefault();
+			session.TraceDiagnostic("group-field-fly", new Dictionary<string, object?>
+			{ ["zone"] = zone.Name, ["goal"] = goal, ["position"] = here, ["takeoff"] = takeoff, ["landing"] = land });
+			if (takeoff is not { } off) return false;
+			crossing = true;
+			try
+			{
+				if (Distance(here, off) > 3)
+				{
+					var path = await navigator.FindRouteAsync(here, off, token);
+					if (path.Count == 0) return false;
+					await navigator.MoveAsync(path, token);
+				}
+				if (world.IsDead || !Inside(session.CurrentPosition)) return false;
+				long wait = NaturalFlightPolicy.RestoreMillis(world.CurrentFlightTime, world.MaxFlightTime, world.MaxFlightTime);
+				if (lastTakeoff is long last) wait = Math.Max(wait, last + NaturalFlightPolicy.TakeoffReuseMillis - runtime.NowMillis);
+				if (wait > 0) await session.AdvanceAsync(TimeSpan.FromMilliseconds(wait + 100), token);
+				await session.SynchronizeAsync(token);
+				float height = MathF.Min(zone.Top - 6, MathF.Max(session.CurrentPosition.Z, land.Z) + 15);
+				NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, map, session.CurrentPosition, land, height);
+				if (!route.IsUsable)
+				{
+					session.TraceDiagnostic("group-field-fly-refused", new Dictionary<string, object?> { ["reason"] = route.Refusal });
+					return false;
+				}
+				BotPosition from = session.CurrentPosition;
+				lastTakeoff = runtime.NowMillis;
+				float speed = await NaturalFlightProtocol.TakeOffAsync(session, token);
+				NaturalFlightDecision go = NaturalFlightPolicy.CanFly(NaturalFlightProtocol.ToPlan(route, from, speed), world.CurrentFlightTime, zones);
+				if (!go.Allowed) session.TraceDiagnostic("group-field-fly-short", new Dictionary<string, object?> { ["reason"] = go.Reason });
+				await NaturalFlightProtocol.FlyAsync(session, map, from, route.Waypoints, speed, token);
+				await NaturalFlightProtocol.LandAsync(session, token);
+				await session.SynchronizeAsync(token);
+				following.Reset();
+				return true;
+			}
+			finally { crossing = false; }
 		}
 		async Task WalkOnAsync(BotPosition destination, float within)
 		{
@@ -752,23 +963,55 @@ public sealed partial class NaturalIshalgenJourney
 				runtime.Data.BindPointDataDh.GetBindPointTemplate(bindObelisk).GetPrice(), 5, token);
 			if (!bound.IsDone) throw new IOException(bound.Reason);
 		}
+		// M6: a field group meets at its obelisk. Its members come from where their last round left them: the four escorts of
+		// the garrison's second group stood 530 m east at Deputy Lamipedon's spawn, the two they escorted at the obelisk.
+		for (int tries = 0; field && Distance(session.CurrentPosition, obelisk) > 30; tries++)
+		{
+			session.TraceDiagnostic("group-field-to-obelisk", new Dictionary<string, object?> { ["position"] = session.CurrentPosition, ["obelisk"] = obelisk, ["tries"] = tries });
+			try { await ReturnToBindAsync(); }
+			catch (IOException failed) when (tries < 5)
+			{
+				session.TraceDiagnostic("group-field-to-obelisk-failed", new Dictionary<string, object?> { ["reason"] = failed.Message });
+				await PauseAsync();
+			}
+		}
 		session.TraceDiagnostic("group-start", new Dictionary<string, object?>
 		{ ["name"] = name, ["position"] = session.CurrentPosition, ["map"] = world.MapId, ["bind"] = world.ObeliskBindPoint, ["repeatBefore"] = repeatBefore });
+		// In the field the leader is met at the obelisk: a leader seen far off is where it stood before its Return (the
+		// Gladiator walked 400 m back east to it).
 		if (!leads && world.Objects.Values.FirstOrDefault(known => known.Name == leaderName) is { } rendezvous &&
-			Distance(session.CurrentPosition, rendezvous.Position) > 20) await WalkAsync(rendezvous.Position, 3);
+			Distance(session.CurrentPosition, rendezvous.Position) > 20 && !(field && Distance(rendezvous.Position, obelisk) > 30))
+			await WalkAsync(rendezvous.Position, 3);
 		if (leads)
 		{
 			foreach (string invited in roster.Where(member => member != name))
 			{
 				await WaitAsync(() => world.Objects.Values.Any(known => known.Name == invited && Distance(session.CurrentPosition, known.Position) <= 20), $"{invited} at the rendezvous");
-				await session.SendPacketAsync(session.Api.InviteToGroup(invited), token);
-				await WaitAsync(() => world.GroupMembers.Values.Any(member => member.Name == invited && member.Online), $"{invited} to accept");
+				// M6: a field member can be asked while it still rests at the obelisk after standing up there, and miss the
+				// question (the Cleric never answered): the leader asks again every minute, five times.
+				for (int asked = 1; ; asked++)
+				{
+					await session.SendPacketAsync(session.Api.InviteToGroup(invited), token);
+					try
+					{
+						await WaitAsync(() => world.GroupMembers.Values.Any(member => member.Name == invited && member.Online), $"{invited} to accept", field ? 60 : 120);
+						break;
+					}
+					catch (IOException) when (field && asked < 5) { session.TraceDiagnostic("group-field-invite-again", new Dictionary<string, object?> { ["invited"] = invited, ["asked"] = asked }); }
+				}
 			}
 		}
 		else
 		{
-			await WaitAsync(() => world.Question?.Code == 60000 && world.Question.Parameters.Contains(leaderName), "leader's invitation");
-			await session.SendPacketAsync(session.Api.Answer(1), token);
+			// M6: a field member asked while it stood up at the obelisk saw the Soul Healer's question take the invitation's place
+			// in its window, and the server asks nothing again while its first question waits (the Cleric never answered five):
+			// it answers the invitation it was sent.
+			var invitation = () => session.PacketHistory.LastOrDefault(packet => packet.PacketType == typeof(SM_QUESTION_WINDOW) &&
+				packet.Get<int>("code") == 60000 && packet.Get<string[]>("params").Contains(leaderName));
+			bool Asked() => world.Question?.Code == 60000 && world.Question.Parameters.Contains(leaderName);
+			await WaitAsync(() => Asked() || field && invitation() != null, "leader's invitation");
+			if (Asked()) await session.SendPacketAsync(session.Api.Answer(1), token);
+			else await session.SendPacketAsync(GameClientPackets.QuestionResponse(60000, 1, invitation()!.Get<int>("senderId")), token);
 		}
 		await WaitAsync(() => world.GroupMembers.Count == roster.Length && world.GroupMembers.Values.All(member => roster.Contains(member.Name!)) &&
 			world.GroupMembers.GetValueOrDefault(world.GroupLeaderId ?? 0)?.Name == leaderName, "the complete roster and leader");
@@ -1043,6 +1286,20 @@ public sealed partial class NaturalIshalgenJourney
 					else if (command == "turn-in" && Status(about) is 3 or 4 && OwnTasksDone(asked)) await DialogQuestAsync(asked, npc, true);
 				}
 				else if (command == "enter" && arguments is [int portal, int destination] && world.MapId != destination) await EnterAsync(portal, destination);
+				// M6: the leader went through a portal: a member on the statue's ground goes through it too.
+				else if (field && command == "portal" && arguments is [int gateNpc] && !world.IsDead && world.MapId is int gateMap &&
+					runtime.Data.SpawnsDh.GetSpawnsByWorldId(gateMap).Any(group => group.GetNpcId() == gateNpc) &&
+					Distance(session.CurrentPosition, Spawn(gateNpc)) <= 60 && !PortalLanded(gateNpc) &&
+					runtime.NowMillis >= portalAgainAt)
+				{
+					int gateTitle = GroupPortalUses(runtime.RepoRoot).FirstOrDefault(path => path.Npc == gateNpc).TitleId;
+					if (!await PortalAsync(gateNpc, gateTitle)) portalAgainAt = runtime.NowMillis + 30_000;
+				}
+				// M6: the leader flew to a goal in the crater's FLY zone: the member flies there too, three tries a goal.
+				else if (field && command == "fly" && arguments is [int flyX, int flyY, int flyZ] && flownTo != (flyX, flyY, flyZ) && !world.IsDead)
+				{
+					if (await CrossFlyZoneAsync(new BotPosition(flyX, flyY, flyZ, 0)) || ++flyTries >= 3) { flownTo = (flyX, flyY, flyZ); flyTries = 0; }
+				}
 				else if (command == "use" && arguments is [int usedFor, int usedTask] && quests.FirstOrDefault(plan => plan.Id == usedFor) is { } objectQuest &&
 					Counts(objectQuest)[usedTask] < tasks[usedFor][usedTask].Count) await UseObjectsAsync(objectQuest, usedTask);
 				else if (command == "chest" && arguments is [int chest, int opener] && opener == session.CharacterId && chest != toldChest)
@@ -1111,12 +1368,16 @@ public sealed partial class NaturalIshalgenJourney
 					runtime.NowMillis >= rejoinAgainAt)
 				{
 					session.TraceDiagnostic("group-field-rejoin", new Dictionary<string, object?> { ["position"] = session.CurrentPosition, ["to"] = there });
-					try { await WalkAsync(there, 20); following.Reset(); }
+					bool rejoined = false;
+					try { await WalkAsync(there, 20); rejoined = true; }
 					catch (IOException none)
 					{
 						rejoinAgainAt = runtime.NowMillis + 30_000;
 						session.TraceDiagnostic("group-field-rejoin-wait", new Dictionary<string, object?> { ["reason"] = none.Message });
 					}
+					// A leader in the crater's FLY zone is flown to.
+					if (!rejoined && InFlyZone(there) && await CrossFlyZoneAsync(there)) rejoined = true;
+					if (rejoined) following.Reset();
 				}
 				// M6: a follower that finds no way to the leader it sees takes the planner's (around Kellan's Cabin, 17 m apart).
 				// The searches are the costliest there are, and one that failed held the world: not again from the same place to
@@ -1600,14 +1861,50 @@ public sealed partial class NaturalIshalgenJourney
 							unreachable = true;
 							break;
 						}
+						// A living monster of the kind under the id of one that fell, and whose corpse went from sight, is its respawn.
+						vanishedTargets.UnionWith(fallenTargets.Where(id => !world.Objects.ContainsKey(id)));
+						if (target == 0 && field && world.Objects.Values.FirstOrDefault(known => known.TemplateId is int kind && kinds.Contains(kind) &&
+							!known.IsCorpse && vanishedTargets.Contains(known.ObjectId)) is { } respawned)
+						{
+							fallenTargets.Remove(respawned.ObjectId);
+							vanishedTargets.Remove(respawned.ObjectId);
+							navigator.UnavailableObjects.Remove(respawned.ObjectId);
+							navigator.LeftForAnother.Remove(respawned.ObjectId);
+							failedTargets.Remove(respawned.ObjectId);
+							session.TraceDiagnostic("group-field-respawn-seen", new Dictionary<string, object?> { ["quest"] = plan.Id, ["target"] = respawned.ObjectId, ["template"] = respawned.TemplateId });
+							continue;
+						}
+						// A living target set aside after a fight that went wrong (the leader fell to Protector Karhel and the group
+						// then waited for him to come back while he stood there) is tried again, five times.
+						if (target == 0 && field && world.Objects.Values.FirstOrDefault(known => known.TemplateId is int kind && kinds.Contains(kind) &&
+							!known.IsCorpse && !fallenTargets.Contains(known.ObjectId) && navigator.UnavailableObjects.Contains(known.ObjectId) &&
+							retriedTargets.GetValueOrDefault(known.ObjectId) < 5) is { } setAside)
+						{
+							retriedTargets[setAside.ObjectId] = retriedTargets.GetValueOrDefault(setAside.ObjectId) + 1;
+							navigator.UnavailableObjects.Remove(setAside.ObjectId);
+							navigator.LeftForAnother.Remove(setAside.ObjectId);
+							failedTargets.Remove(setAside.ObjectId);
+							session.TraceDiagnostic("group-field-target-again", new Dictionary<string, object?> { ["quest"] = plan.Id, ["target"] = setAside.ObjectId, ["tries"] = retriedTargets[setAside.ObjectId] });
+							await PauseAsync();
+							continue;
+						}
 						if (target == 0)
 						{
 							// A named monster the other group (or this one) killed a moment ago: wait at its spawn for it to come
 							// back (Q2494's Sku, Paku and Seku; Q2328's Millennium Eka, half an hour).
-							if (++waits > 80) throw new IOException($"No living target of Q{plan.Id} ({string.Join("/", kinds)}) came back.");
+							// A campaign monster is waited for fifteen minutes (Protector Karhel comes back in five), then left for later
+							// and the round goes on: the Cleric, dead at both of his deaths, waited out its eighty in g76.
+							if (++waits > (IsCampaign(plan) ? 15 : 80))
+							{
+								if (!IsCampaign(plan)) throw new IOException($"No living target of Q{plan.Id} ({string.Join("/", kinds)}) came back.");
+								session.TraceDiagnostic("group-field-campaign-left", new Dictionary<string, object?> { ["quest"] = plan.Id, ["task"] = index, ["kinds"] = kinds });
+								unreachable = true;
+								break;
+							}
 							session.TraceDiagnostic("group-field-wait-for-spawn", new Dictionary<string, object?> { ["quest"] = plan.Id, ["kinds"] = kinds, ["wait"] = waits });
 							await session.AdvanceAsync(TimeSpan.FromSeconds(60), token);
 							await ObserveAsync();
+							vanishedTargets.UnionWith(fallenTargets.Where(id => !world.Objects.ContainsKey(id)));
 							continue;
 						}
 						waits = 0;
@@ -1629,7 +1926,7 @@ public sealed partial class NaturalIshalgenJourney
 								try { fell = await combat.TryKillAsync(target, token) || GoneOrKilled(target); }
 								finally { navigator.AvoidHostileAggro = keptOut; }
 							}
-							if (fell) navigator.UnavailableObjects.Add(target);
+							if (fell) { navigator.UnavailableObjects.Add(target); fallenTargets.Add(target); }
 							else
 							{
 								failedTargets[target] = failedTargets.GetValueOrDefault(target) + 1;
@@ -1645,6 +1942,15 @@ public sealed partial class NaturalIshalgenJourney
 						}
 						if (options.GroupLoot)
 						{
+							// M6: a member opens a corpse within 15 m. The leader that pulled Millennium Eka from 50 m off left him where
+							// he fell, and the two that needed his item never came near it: the leader goes to the corpse of a quest
+							// drop's source, and its members with it.
+							if (field && task.Kind == QuestRunOperationKind.CollectQuestDrop && world.Objects.TryGetValue(target, out var corpse) &&
+								Distance(session.CurrentPosition, corpse.Position) > 6)
+							{
+								try { await WalkAsync(corpse.Position, 3); }
+								catch (IOException far) { session.TraceDiagnostic("group-field-corpse-unreached", new Dictionary<string, object?> { ["target"] = target, ["reason"] = far.Message }); }
+							}
 							// Each member opens the corpse for the items that drop for it (drop_each_member); hold while they do.
 							for (int wait = 0; wait < 60 && world.Objects.TryGetValue(target, out _); wait++)
 							{
@@ -1769,6 +2075,13 @@ public sealed partial class NaturalIshalgenJourney
 			// A campaign quest is worked here, not handed in: its giver and its end are the leg's (decision 11).
 			int[] notDone = [.. quests.Where(plan => !IsCampaign(plan) && Status(plan.Id) != 5).Select(plan => plan.Id)];
 			if (notDone.Length > 0) throw new InvalidDataException($"The group member has not handed in Q{string.Join(", Q", notDone)}.");
+			// Every member goes home before it leaves, so the next round's group forms at the obelisk (the garrison's group
+			// ended at Deputy Lamipedon's spawn, among monsters that cut the next round's Returns short).
+			if (world.ObeliskBindPoint is { } home && home.MapId == world.MapId && Distance(session.CurrentPosition, home.Position) > 30)
+			{
+				try { await ReturnToBindAsync(); }
+				catch (IOException late) { session.TraceDiagnostic("group-field-end-home-failed", new Dictionary<string, object?> { ["reason"] = late.Message }); }
+			}
 			// M6: what the round did is the server's once it stores the character, which it does when the player leaves: Q2494's
 			// hand-in, seconds before its round ended, was missing from the world captured after it. The member leaves and comes
 			// back, and its quests are still handed in.

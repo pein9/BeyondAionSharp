@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "morheim-mgs-slag-bulwark",
+  "start": {
+    "contract": "natural-morheim-mgd-contract.json",
+    "snapshot": "morheim-gd-s1",
+    "mapId": 220020000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 32,
+    "bindNpcId": 700213,
+    "completedQuestIds": [
+      24020,
+      2333
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "slag-bulwark",
+    "mapId": 220020000,
+    "anchor": [
+      1782.77,
+      1669.43,
+      197.937
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "bulwark",
+      "note": "Slag Bulwark: its obelisk, where the group binds for the crater's group quests of step M6",
+      "min": [
+        1733,
+        1619,
+        178
+      ],
+      "max": [
+        1833,
+        1719,
+        218
+      ]
+    }
+  ],
+  "quests": [],
+  "order": [],
+  "steps": [],
+  "objectUses": [],
+  "collections": [],
+  "bind": {
+    "npcId": 700259,
+    "position": [
+      1782.77,
+      1669.43,
+      197.937
+    ],
+    "onArrival": true,
+    "price": 4353,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 220020000,
+    "completedQuestIds": [],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 32,
+    "snapshot": "morheim-mgs",
+    "anchor": [
+      1782.77,
+      1669.43,
+      197.937
+    ],
+    "radius": 30,
+    "bindNpcId": 700259,
+    "heldQuestIds": []
+  }
+}

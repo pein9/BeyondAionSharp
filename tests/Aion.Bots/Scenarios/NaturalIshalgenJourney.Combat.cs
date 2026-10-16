@@ -384,7 +384,11 @@ public sealed partial class NaturalIshalgenJourney
 				}
 				// Kill evidence: experience, a loot window, or the target's own status at 0% HP (a grey monster
 				// pays no experience, so SM_STATUPDATE_EXP never comes; SM_DELETE follows the death status).
-				if (world.CurrentExperience > startingExperience || world.LootStatuses.ContainsKey(target) ||
+				// M6: in a field group another member's kill pays experience too; it is no evidence while the target is seen
+				// alive (the Templar left Protector Karhel at 70% for a member's kill, and died to him).
+				bool othersKill = HoldsGround && world.GroupId != null && observedTargetHpPercent is > 0 &&
+					world.Objects.TryGetValue(target, out BotKnownObject? stillThere) && !stillThere.IsCorpse;
+				if (world.CurrentExperience > startingExperience && !othersKill || world.LootStatuses.ContainsKey(target) ||
 					observedTargetHpPercent == 0) return true;
 				if (targetReturned)
 				{
@@ -1669,6 +1673,15 @@ public sealed partial class NaturalIshalgenJourney
 					await session.SynchronizeAsync(token);
 					return true;
 				}
+				// M6: a field member's rest under blows (the Templar's Herb Treatment cut short three times east of the Ice Claw
+				// village) had its fourth cast answered with nothing: the rest ends, and the group goes on.
+				if (HoldsGround && target == session.CharacterId)
+				{
+					session.TraceDiagnostic("combat-self-cast-unanswered", new Dictionary<string, object?> { ["skillId"] = skill.Id });
+					await session.AdvanceAsync(TimeSpan.FromMilliseconds(BotTimingContract.MinimumCastIntervalMillis + 1), token);
+					await session.SynchronizeAsync(token);
+					return false;
+				}
 				string[] recent = session.PacketHistory.TakeLast(15).Select(packet =>
 					packet.PacketType == typeof(SM_SYSTEM_MESSAGE)
 						? $"{packet.PacketType.Name}:{packet.Get<object>("name") ?? packet.Get<int>("msgId")}" : packet.PacketType.Name).ToArray();
@@ -1755,10 +1768,10 @@ public sealed partial class NaturalIshalgenJourney
 				}
 				if (started.Get<object>("name") is "STR_SKILL_OBSTACLE") return false;
 				if (started.Get<object>("name") is "STR_SKILL_CAN_NOT_ATTACK_WHILE_IN_ABNORMAL_STATE" or
-					"STR_SKILL_CANT_CAST_MAGIC_SKILL_WHILE_SILENCED" ||
+					"STR_SKILL_CANT_CAST_MAGIC_SKILL_WHILE_SILENCED" or "STR_SKILL_CANT_CAST_PHYSICAL_SKILL_IN_FEAR" ||
 					target == session.CharacterId && started.Get<object>("name") is "STR_SKILL_TARGET_IS_NOT_VALID")
 				{
-					// Stun/knockdown or silence is an ordinary refusal. Let the clock/effects advance,
+					// Stun/knockdown, silence or a bind (M6: the Templar bound east of the Ice Claw village) is an ordinary refusal. Let the clock/effects advance,
 					// then re-evaluate health, consumables and the target rather than waiting for a cast. M3: a skill on oneself is
 					// refused with STR_SKILL_TARGET_IS_NOT_VALID in a can't-attack state (Java Skill.canUseSkill clears the targets:
 					// the Assassin's Herb Treatment in a keraton fight), so it is the same refusal.

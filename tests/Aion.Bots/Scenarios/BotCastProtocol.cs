@@ -28,6 +28,8 @@ public static class BotCastProtocol
 			"STR_SKILL_CAN_NOT_ATTACK_WHILE_IN_ABNORMAL_STATE" or
 			// Java PlayerRestrictions.canUseSkill: silence refuses magical skills before any cast starts.
 			"STR_SKILL_CANT_CAST_MAGIC_SKILL_WHILE_SILENCED" or
+			// Java PlayerRestrictions.canUseSkill: a bind refuses physical skills (the message names fear).
+			"STR_SKILL_CANT_CAST_PHYSICAL_SKILL_IN_FEAR" or
 			// Java PlayerRestrictions.canUseSkill and TargetCondition: the target died or cannot be targeted any more.
 			"STR_SKILL_TARGET_IS_NOT_VALID";
 

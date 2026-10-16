@@ -230,6 +230,19 @@ internal static class NavDiag
 				float z = float.IsNaN(any) ? zGuess : any;
 				var here = new BotPosition(x, y, z, 0);
 				string edge = previous is BotPosition p ? (geometry.TraceEdge(mapId, p, here) != null ? "ok" : "REJECT") : "";
+				// What a rejected step meets: the mesh that blocks it and the nodes above it (NAV_BLOCKER=1).
+				if (edge == "REJECT" && previous is BotPosition from && Environment.GetEnvironmentVariable("NAV_BLOCKER") == "1")
+				{
+					var hit = map.GetCollisions(from.X, from.Y, from.Z + GeoMap.COLLISION_CHECK_Z_OFFSET, here.X, here.Y, here.Z + GeoMap.COLLISION_CHECK_Z_OFFSET,
+						1, CollisionIntention.DEFAULT_COLLISIONS.GetId(), IgnoreProperties.ASMODIANS).GetClosestCollision();
+					if (hit?.GetGeometry() is { } blocker)
+					{
+						var names = new List<string>();
+						for (Aion.GameServer.GeoEngine.Scene.Spatial? node = blocker; node != null; node = node.GetParent())
+							names.Add($"{node.GetName()}[{node.GetType().Name}]");
+						edge += $"  blocker {string.Join(" < ", names)} material {blocker.GetMaterialId()} intentions {blocker.GetCollisionIntentions()} at {hit.GetContactPoint()}";
+					}
+				}
 				Console.WriteLine($"{x,7:F1} {y,7:F1}  any {any,7:F2}  groundRule {flat,7:F2}  island {mesh.IslandOf(here, BotNavQuery.Default with { SnapHorizontal = 0.6f, SnapVertical = 2 }),4}  {edge}");
 				previous = here;
 			}
