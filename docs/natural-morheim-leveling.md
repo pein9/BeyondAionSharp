@@ -369,6 +369,27 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
   healer), the Gladiator and the Ranger; it is played in SIM from the level-31 world, with the group stages of
   [natural-group-ntc.md](natural-group-ntc.md); a wipe is an outcome, and the group tries again. Its own plan
   (the quests, the entry, the bosses, the steps) is written when M9 is ticked.
+  - 2026-10-16, the plan (sources: `quest_data.xml`, `spawns/Instances/320100000_Fire_Temple.xml`, Java
+    `FireTempleInstance`, `portal_template2.xml`, `instance_cooltimes.xml`):
+    - **The world.** The one world, `morheim-mc-s3-w1`, not the level-31 one, which is behind it now: the six are 34
+      (the Chanter 35), which meets "minimum of level 31". The other two stay as they are.
+    - **The quests.** Two can be played: Q2373 [Group] An Ancient Weapon (one Ancient Weapon from an ancient treasure
+      chest, 700252, which drops for each member that has the quest) and Q2374 [Group] Re-sanctifying the Temple (5
+      lurker gargoyles, 3 aetheric mugolems, 2 kalgolems of magic; played once). Both are Flamyar's (804606), beside
+      the gate. Skipped and reported: Q24121, Q24242 and Q24275, which have no handler, and Q4326, which needs Q24275;
+      Q2371 [Group] Kalgolem Crystals (Padinerk), which needs Q24023; Q24277 (level 99).
+    - **The entry.** The Fire Temple Entrance (730047, a portal dialog) on the crater floor, inside the fly zone's
+      band and 7 m south of its edge: the group flies down from the crater's rim and walks to it. A group of up to six
+      from level 27, no entry cooldown; the first member in makes the instance and the rest join it. The exit portal
+      (730048) stands 5 m from the landing inside.
+    - **The bosses.** No quest needs them; the group fights the ones on its way and ends with Kromede (Kromede the
+      Corrupt, level 37, 57,041 HP; one time in ten Vile Judge Kromede, 214,644 HP). The six named elites of the
+      instance handler (levels 34 to 36) are fought where the way passes them. All are ELITE; none is a hero.
+    - **The steps.** F1: the field group's instance: its portal, its map and its dialog as round settings (the NTC
+      ones are fixed), a member that stood up at the bind goes back in to its group, and a boss kill without a quest.
+      F2: leg `mgs` takes the six to Slag Bulwark, the obelisk nearest the crater. F3: an uncaptured trial, then the
+      captured round: Flamyar's two quests taken together, the temple played, Kromede, out, the hand-in. F4: the
+      line here, with what was skipped and why.
 
 ## The report
 
