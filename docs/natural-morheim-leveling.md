@@ -4,8 +4,7 @@ Status: a plan, 2026-10-13, as the operator shaped it in three messages that day
 [natural-morheim-quests.md](natural-morheim-quests.md). Steps M2 (Morheim Ice Fortress) and M3 (Kellan's Cabin) are
 played, and step M4 (legs `md` and `mc`), where every bot reached 31 (`morheim-mc-s1-w1`). Step M7's gear check at 31
 came next, on the operator's word (`morheim-g31-s1-w1`), then M8 and M5 (`morheim-ma-s1-w1`, every bot at 32). The
-group step M6 is under way, its cabin quests done by all eight and the garrison's by the Fire Temple six: the world is
-now `morheim-gd-s1-w1`.
+group step M6 is under way, its cabin and garrison quests done by all eight: the world is now `morheim-gd-s3-w1`.
 
 It follows [natural-muster.md](natural-muster.md), whose rules MR-a to MR-i are this leg's rules, and starts from the
 group world `ntc-group-s5`.
@@ -156,8 +155,8 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     Jorund, an abex's item, the Dead Fire and the white brow tayga it raises, Landver, Protector Karhel) and Q24021
     (Bragi, Tofa and movie 73, the spectres' items and Deputy Lamipedon's, Tofynir, the item used in its zone), ending
     at the garrison's obelisk. Round `m4-mc`, captured `morheim-mc-s1-w1`: **every bot is level 31**. All eight did
-    Q2333. None reached Protector Karhel (level 35, EXPERT; M6 found his ground closed on every side), so every bot left
-    Q24022 at var 6. The Ranger and the Templar did Q24021; five left it for the group, Lamipedon being one spawn the others
+    Q2333. None reached Protector Karhel (level 35, EXPERT): he stands in an aetheric field entered by a portal (see M6),
+    so every bot left Q24022 at var 6. The Ranger and the Templar did Q24021; five left it for the group, Lamipedon being one spawn the others
     kept dead, and the Gladiator stopped at him (a lone source not waited for again; fixed after, `383b17d33`). Each
     took 3.0 to 4.3 game hours, 2 to 8 deaths.
   - New for the leg engine: a leg can have several item uses (one that makes an item, Q2333's bucket; one that ends
@@ -252,12 +251,28 @@ One step per iteration. A step is ticked when a round shows it, with a dated lin
     to the bind. A member whose Return was cooling tried long walks home that failed: it waits for its Return where it
     stands. Campaign quests can be worked in a field round (decision 11): a named kill by its quest step, the items by
     the quest's drops, worked and not handed in.
-  - Found, a boundary to record: **Protector Karhel cannot be reached.** He stands on an island of the baked navmesh
-    (island 206, 189 polygons east of the Ice Claw village, x 1250 to 1331) that the router joins to nothing; every
-    step onto it (24 along its one border with the rest, at x 1247 to 1249) meets collision the server's own check
-    meets, though the ground there rises gently (0.4 m a metre), so it is something solid, not the slope. No bot came
-    within 500 m of him in M4 either. Q24022 stays at var 6 for every bot until that ground is read again (a re-bake,
-    or the mesh behind that collision named); a field round leaves a campaign monster no way reaches and goes on.
+  - Corrected the same day, on the operator's word (he looked it up: "Karhel's Aetheric Field ... only the chosen can enter
+    the aetheric field. You must have <Tayga Slayer> in order to enter this area"): Karhel's ground is the zone
+    `KARHELS_AETHERIC_FIELD_220020000`, walled by invisible collision (`nowalk_obstacle4_08m`) that the navmesh leaves
+    closed. The way in is the statue of the Mau hero beside it (730052, a portal: Java `PortalAI`, `portal_template2.xml`
+    title 58, which Q24022 grants at Landver's step), and the way out the statue inside (730053); Java's `PortalService`
+    wants the title worn. A field leader that cannot walk to a goal now looks for such a portal, wears its title, clears
+    the statue's attackers and uses it, and its members follow (`666f366f8`). Lesson kept: a target that seems out of
+    reach is looked up online first.
+  - 2026-10-16, the Spirit Master and the Assassin: round `gd-second.json` from `morheim-gd-s1`, the Templar leading, the
+    Cleric healing, the Gladiator and the Chanter with them; captured **`morheim-gd-s3-w1`** (`666f366f8`). Both handed
+    in Q2328, Q2344 and Q2342; all six killed Protector Karhel (Q24022 at var 7) and have Q24021's last item. 7.7 game
+    hours, 23 deaths (the Templar and the Cleric 6 each, the Assassin 5), three wipes in the Ice Claw village.
+  - Trials g60 to g76 found these, all fixed (`666f366f8`): the group met at its leader, but the escorts started 530 m
+    east, where the last round had ended, among monsters that cut their Returns short (the group now meets at its
+    obelisk, and every member goes home before a round ends); an invitation lost to the Soul Healer's question, which the
+    server does not send again; the two that needed Millennium Eka's item never came within loot range of his corpse; a
+    respawn under its corpse's object id; a bind's refusal of physical skills and an unanswered rest cast that ended
+    runs; and a member's kill whose experience ended the leader's fight with Karhel at 70%.
+  - Not usable: **`morheim-gd-s2-w1`**, a captured round whose group never formed (the same world as `morheim-gd-s1`).
+  - Left: the Sorcerer and the Ranger killed Karhel only in a trial (g76, five of the six credited); in the world they are
+    at var 6, for a short group round of their own. The rest of Q24022 (Tofa, Aegir) and of Q24021 (Tofynir, the item
+    used in its zone) is a lone bot's.
 - [x] **M7 Level 31 and the gear check.** Every quest of the leg done by all eight; level 31; Elite Rank 6 where it
   beats what is worn; the sale of what it replaced, the kit and the cleanup; a relog. The capture is the next group
   world.
