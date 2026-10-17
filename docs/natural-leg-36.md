@@ -157,6 +157,17 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
     flags are now read as flags, and a flight is tried before a stranded Return. Diagnostic `nl3-rp-d2`: the Cleric flew
     down to the trainers and back twice and played all four quests. Committed as `bff118c8e`; trial `nl3-rp-t2` and
     captured round `nl3-rp-c1` from `nl-rw-s1`: all eight played the four quests and stand bound at Primum (`nl-rp-s1`).
+  - 2026-10-17: leg `re` (Q2741, Q2743, Q2744 on Gjalf and Ganglot's island; Q2724 left out, decision 9). The island is
+    1,108 m from Primum and a full tank flies about 698 m, so a crossing now hops: from island ground to island ground
+    nearer the landing, waiting for the flight time between. The diagnostics `nl3-re-d1` to `d5` showed three faults
+    in the choice of a stone. Under Primum's roofs no stone was found, so a far crossing now takes off where there is
+    open sky. From Ganglot's island nothing cleared 15 m above the higher end, so a 60 m cruise is tried next. A stone
+    587 m across was 790 m flown, so the climb and descent now count. `d5` then played Q2724's talks to Mure and
+    Ganglot and flew to Amundi's spot, where nobody stands. Trial `nl3-re-t1`: seven of eight. The Gladiator's flight
+    back to the hub after a stranded fight was a straight 1,544 m (127 FP of 72), and it now hops. Committed as
+    `540aec462` (with the `rs` contract, quests played as far as they go, and report_to_many's reports); trial
+    `nl3-re-t2` and captured round `nl3-re-c1` from `nl-rp-s1`: all eight played the three quests, two deaths, three to
+    seven hops each (`nl-re-s1`).
 - [ ] **NL-4 Level 36.** Morheim's quests from 31 to 35 for any bot still short of 36 and for the zone's sake; the gear
   check-in at 36 (Elite Rank 5); the level-36 companion profiles; then Q24023 (the leg engine collects inside an
   instance, room by room, and goes down between the Sky Temple Interior's floors as a player does, by a glide or a
@@ -197,6 +208,12 @@ Mine, where the operator gave none; each is his to change:
    correction, the operator's to approve); Q24045 from var 2 and Q2767 (Tigraki Island stands 705 m from any other
    island, past one flight; a Wind Serum drunk in the air is a player's way, and building it is the operator's to
    ask for); the four gathering quests. Each is played as far as it goes.
+9. **No siege NPC stands in this world, so the quests that need one stop at it (NL-3):** the C# boot does not run
+   `SiegeService.initSieges`, which places every fortress's, artifact's and outpost's NPCs by its holder; restoring it is
+   P10-05 of `docs/e2e-player-simulation-plan.md`, deferred by the maintainer's D7, and not mine to reopen. Of Reshanta's
+   quests below 36 it stops three: Q2724 at Amundi (Siel's Eastern Fortress, 1132), Q24042 at the captured prisoner it
+   escorts (the Sulfur Tree Nest, 1141), and Q2727 at Dullaha (Roah, 1211; decision 8 names it). Q2724 is left out of the
+   east leg, its talks to Mure and Ganglot shown once in `nl3-re-d5`; Q24042 is played to Glati and left at the prisoner.
 
 ## Loop prompt
 
