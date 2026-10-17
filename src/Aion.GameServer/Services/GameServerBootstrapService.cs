@@ -307,7 +307,8 @@ public sealed class GameServerBootstrapService : IHostedService
 		// Java parity: GameServer.main registers scheduled rift openings after SpawnEngine.spawnAll() (RiftService.getInstance().initRifts()).
 		Aion.GameServer.Services.RiftService.GetInstance().InitRifts();
 
-		// GameServer.main:130-134, the faction ratio counts (GSConfig.ENABLE_RATIO_LIMITATION): NOT WIRED YET (P10-05).
+		// GameServer.main:130-134, the faction ratio counts, under GSConfig.ENABLE_RATIO_LIMITATION (false as shipped).
+		InitFactionRatioCounts();
 
 		// LimitedItemTradeService.getInstance().start() (GameServer.main:135): collects limited-trade NPCs from
 		// TRADE_LIST_DATA + GOODSLIST_DATA (both empty-but-non-null on the fixture => no NPCs collected) and
@@ -523,6 +524,22 @@ public sealed class GameServerBootstrapService : IHostedService
 		await _threadPoolManager.ShutdownAsync();
 		_started = false;
 		_logger.LogInformation("Game-server bootstrap stopped");
+	}
+
+	/// <summary>
+	/// Java parity: <c>GameServer.main:130-134</c>. When GSConfig.ENABLE_RATIO_LIMITATION is on, the Asmodian count and then
+	/// the Elyos count are read from PlayerDAO.getCharacterCountForRace (distinct accounts with a character of the race at
+	/// gameserver.ratio.min.required.level or above). Java's following <c>updateRatio(null, 0)</c> returns at once on its null
+	/// race, so the ratios stay as they are until the first real UpdateRatio (<see cref="Aion.GameServer.GameServer.SetCharacterCounts"/>).
+	/// </summary>
+	internal static void InitFactionRatioCounts()
+	{
+		if (Aion.GameServer.Configs.Main.GSConfig.ENABLE_RATIO_LIMITATION)
+		{
+			int asmodians = Aion.GameServer.Dao.PlayerDAO.GetCharacterCountForRace(Race.ASMODIANS);
+			int elyos = Aion.GameServer.Dao.PlayerDAO.GetCharacterCountForRace(Race.ELYOS);
+			Aion.GameServer.GameServer.SetCharacterCounts(asmodians, elyos);
+		}
 	}
 
 	/// <summary>

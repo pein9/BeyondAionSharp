@@ -59,6 +59,26 @@ public sealed class GameServerRatioTests : IDisposable
         Assert.Equal(40f, GameServer.GetRatiosFor(Race.ELYOS));
     }
 
+    [Fact]
+    public void TheBootBlockLeavesTheCountsAloneWhileTheLimitIsOff()
+    {
+        bool previousFlag = GSConfig.ENABLE_RATIO_LIMITATION;
+        GSConfig.ENABLE_RATIO_LIMITATION = false; // the shipped gameserver.ratio.limitation.enable
+        try
+        {
+            GameServer.SetCharacterCounts(asmodiansCount: 60, elyosCount: 40);
+
+            Aion.GameServer.Services.GameServerBootstrapService.InitFactionRatioCounts();
+
+            Assert.Equal(60, GameServer.GetCountFor(Race.ASMODIANS));
+            Assert.Equal(40, GameServer.GetCountFor(Race.ELYOS));
+        }
+        finally
+        {
+            GSConfig.ENABLE_RATIO_LIMITATION = previousFlag;
+        }
+    }
+
     private static FieldInfo Field(string name) =>
         typeof(GameServer).GetField(name, BindingFlags.Static | BindingFlags.NonPublic)
         ?? throw new InvalidOperationException("GameServer." + name + " not found");

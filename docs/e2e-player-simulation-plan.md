@@ -2207,7 +2207,9 @@ real geodata on in production immediately, because geo is enabled by default; th
   DB full-boot test became `SimulationBootTailTests` on the SIM boot. Housing (118-122) is wired: `HousingService`,
   `HousingBidService`, then the three cron tasks through `ThreadPoolManager.ConstructStartupSingleton` (inline in
   production; bounded construction and a zero-delay drain on the SIM pool, P4-08). `CronService.Schedule` now puts
-  its zone on the shared `CronExpression`, as Java's `CronTriggerImpl.setTimeZone` does.
+  its zone on the shared `CronExpression`, as Java's `CronTriggerImpl.setTimeZone` does. The ratio counts (130-134) are
+  wired under `gameserver.ratio.limitation.enable` (off as shipped, so the boot reads nothing): Asmodian then Elyos
+  counts from `PlayerDAO.GetCharacterCountForRace`, ratios left for the first `UpdateRatio`.
 - [ ] **P10-06** [LIVE] L — **Deferred by maintainer (D15): do not run the Java server.** Original proposal:
   differential Java-vs-C# runs, narrowly: build `../aion-server` `4.8` (kept at
   `lastCompletedJavaCommit`, P0-02) locally with JDK 25 and Maven; start the Java game server as a local process

@@ -1,5 +1,10 @@
+using Aion.Commons.Database;
 using Aion.Commons.Logging;
 using Aion.GameServer.Configs.Main;
+using Aion.GameServer.Dao;
+using Aion.GameServer.Dataholders;
+using Aion.GameServer.Model;
+using Aion.GameServer.Services;
 using Aion.GameServer.Services.Cron;
 using Aion.GameServer.Taskmanager.Tasks.Housing;
 using Aion.GameServer.Utils;
@@ -10,8 +15,8 @@ namespace Aion.Simulation.Tests;
 /// The tail of the production boot against the real database and data (P10-05, D7 approved 2026-10-17). The SIM
 /// fixture boots through <c>GameServerBootstrapService.StartAsync</c>, the production code path, so these read what
 /// that boot left behind; they replace the env-gated DB full-boot test that GameServerBootstrapTests had. Every test
-/// of the collection shares the world, so nothing here changes it, and what the boot did is read from the log lines
-/// written before "Game-server bootstrap completed". Java's boot tail: <c>GameServer.java:118-122</c> (housing),
+/// of the collection shares the world, so nothing here changes it (the faction ratio test puts back the rows and the
+/// counts it touches), and what the boot did is read from the log lines written before "Game-server bootstrap completed". Java's boot tail: <c>GameServer.java:118-122</c> (housing),
 /// 130-134 (faction ratio), 141 (<c>SiegeService.initSieges</c>), 173-175 (<c>startClock</c>, <c>PvpMapService.init</c>).
 /// </summary>
 [Collection(SimulationWorldCollection.Name)]
@@ -82,6 +87,85 @@ public sealed class SimulationBootTailTests(SimulationWorldFixture fixture)
 			Assert.Equal(NextIn(TimeZoneInfo.Local, lastRun ?? fixture.Epoch), task.GetNextRun());
 		else
 			Assert.Equal(nextFire, task.GetNextRun());
+	}
+
+	/// <summary>
+	/// GameServer.java:130-134 with gameserver.ratio.limitation.enable on. The shipped value is off, so the boot left the
+	/// counts alone, and the boot's own block is run here: with the flag off it changes nothing, and with it on the
+	/// Asmodian and Elyos counts are the distinct accounts with a character of the race at level 10 or above
+	/// (gameserver.ratio.min.required.level). The characters are this test's own rows on accounts no session uses; the
+	/// flag, the counts and the table are put back afterwards.
+	/// </summary>
+	[SkippableFact]
+	public void FactionRatioCountsAreTheAccountsWithALevelTenCharacterWhenTheLimitIsOn()
+	{
+		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
+		bool previousFlag = GSConfig.ENABLE_RATIO_LIMITATION;
+		int previousAsmodians = Aion.GameServer.GameServer.GetCountFor(Race.ASMODIANS);
+		int previousElyos = Aion.GameServer.GameServer.GetCountFor(Race.ELYOS);
+		long levelTen = DataManager.PLAYER_EXPERIENCE_TABLE.GetStartExpForLevel(GSConfig.RATIO_MIN_REQUIRED_LEVEL);
+		Assert.Equal(10, GSConfig.RATIO_MIN_REQUIRED_LEVEL);
+		var inserted = new List<int>();
+		try
+		{
+			GSConfig.ENABLE_RATIO_LIMITATION = false;
+			Aion.GameServer.GameServer.SetCharacterCounts(asmodiansCount: -1, elyosCount: -1);
+			GameServerBootstrapService.InitFactionRatioCounts();
+			Assert.Equal(-1, Aion.GameServer.GameServer.GetCountFor(Race.ASMODIANS));
+			Assert.Equal(-1, Aion.GameServer.GameServer.GetCountFor(Race.ELYOS));
+
+			int asmodiansBefore = PlayerDAO.GetCharacterCountForRace(Race.ASMODIANS);
+			int elyosBefore = PlayerDAO.GetCharacterCountForRace(Race.ELYOS);
+			// Three Asmodian accounts at level 10 or above, one of them with two such characters, an Asmodian account whose
+			// character is one point short of level 10, and two Elyos accounts.
+			InsertRatioCharacter(inserted, RatioAccount + 1, Race.ASMODIANS, levelTen);
+			InsertRatioCharacter(inserted, RatioAccount + 1, Race.ASMODIANS, levelTen * 3);
+			InsertRatioCharacter(inserted, RatioAccount + 2, Race.ASMODIANS, levelTen + 1);
+			InsertRatioCharacter(inserted, RatioAccount + 3, Race.ASMODIANS, levelTen * 2);
+			InsertRatioCharacter(inserted, RatioAccount + 4, Race.ASMODIANS, levelTen - 1);
+			InsertRatioCharacter(inserted, RatioAccount + 5, Race.ELYOS, levelTen);
+			InsertRatioCharacter(inserted, RatioAccount + 6, Race.ELYOS, levelTen * 2);
+
+			GSConfig.ENABLE_RATIO_LIMITATION = true;
+			GameServerBootstrapService.InitFactionRatioCounts();
+
+			Assert.Equal(asmodiansBefore + 3, Aion.GameServer.GameServer.GetCountFor(Race.ASMODIANS));
+			Assert.Equal(elyosBefore + 2, Aion.GameServer.GameServer.GetCountFor(Race.ELYOS));
+		}
+		finally
+		{
+			GSConfig.ENABLE_RATIO_LIMITATION = previousFlag;
+			Aion.GameServer.GameServer.SetCharacterCounts(previousAsmodians, previousElyos);
+			if (inserted.Count > 0)
+			{
+				using var connection = DatabaseFactory.GetConnection();
+				connection.Open();
+				using var command = connection.CreateCommand();
+				command.CommandText = "DELETE FROM players WHERE id IN (" + string.Join(",", inserted) + ")";
+				command.ExecuteNonQuery();
+			}
+		}
+	}
+
+	// Far above the session accounts (1-255) and above any object id a SIM process reaches.
+	private const int RatioAccount = 1_900_000_000;
+
+	private static void InsertRatioCharacter(List<int> inserted, int accountId, Race race, long exp)
+	{
+		int id = RatioAccount + 100 + inserted.Count;
+		using var connection = DatabaseFactory.GetConnection();
+		connection.Open();
+		using var command = connection.CreateCommand();
+		command.CommandText = "INSERT INTO players (id, name, account_id, account_name, exp, x, y, z, heading, world_id, gender, race, player_class) "
+			+ "VALUES (@id, @name, @account, @accountName, @exp, 0, 0, 0, 0, 220010000, 'MALE', @race, 'WARRIOR')";
+		command.Parameters.AddWithValue("@id", id);
+		command.Parameters.AddWithValue("@name", "Ratiocount" + inserted.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
+		command.Parameters.AddWithValue("@account", accountId);
+		command.Parameters.AddWithValue("@accountName", "sim-ratio-" + accountId.ToString(System.Globalization.CultureInfo.InvariantCulture));
+		command.Parameters.AddWithValue("@exp", exp);
+		command.Parameters.AddWithValue("@race", race.ToString());
+		inserted.Add(id);
+		Assert.Equal(1, command.ExecuteNonQuery());
 	}
 
 	private static DateTimeOffset NextIn(TimeZoneInfo zone, DateTimeOffset after) =>
