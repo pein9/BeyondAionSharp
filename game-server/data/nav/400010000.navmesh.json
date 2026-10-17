@@ -1,0 +1,40 @@
+{
+  "mapId": 400010000,
+  "mapName": "Reshanta",
+  "bakerVersion": 4,
+  "settingsFingerprint": "5db8e45a00557337",
+  "settings": {
+    "cellSize": 0.3,
+    "cellHeight": 0.2,
+    "agentHeight": 1.6,
+    "agentRadius": 0.5,
+    "agentMaxClimb": 0.8,
+    "agentMaxSlope": 45,
+    "tileSizeCells": 128,
+    "regionMinSize": 8,
+    "regionMergeSize": 20,
+    "edgeMaxLength": 12,
+    "edgeMaxError": 1.3,
+    "vertsPerPoly": 6,
+    "detailSampleDistance": 6,
+    "detailSampleMaxError": 1,
+    "flagMergeVoxels": 1,
+    "swimDepth": 1.5,
+    "roadHalfWidth": 3
+  },
+  "sourceFingerprint": "f35d2f1cd3c8f254",
+  "waterLevel": 16,
+  "tilesX": 107,
+  "tilesY": 107,
+  "tilesWithPolygons": 4212,
+  "polygons": 147325,
+  "polygonsByArea": {
+    "ground": 147325
+  },
+  "doors": 0,
+  "roads": 0,
+  "maskSectors": 18895,
+  "modelTriangles": 1117977,
+  "terrainTriangles": 0,
+  "navMeshSha256": "ac8a704881e025e281b468b00b4a5256733ad393607ab5be0f8ff467c7c8686a"
+}

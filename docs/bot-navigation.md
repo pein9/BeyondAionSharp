@@ -241,6 +241,7 @@ All of these are generated. Never hand-edit them. Change the inputs or settings 
 | Morheim (220020000) | 194,651 polygons, 12.4 MiB | 1,302 nodes, 4,772 links, 11 exits; regenerate with `--race ASMODIANS` |
 | Triniel Underground Arena (320090000) | 159 polygons, 6 KiB | none |
 | Brusthonin (220050000) | 142,016 polygons, 10.6 MiB | 1,555 nodes, 6,529 links, 3 exits; regenerate with `--race ASMODIANS` |
+| Reshanta (400010000) | 147,325 polygons, 9.8 MiB | none: `graph` stops in `SiegeService`'s static start (the tool sets up no `DataManager`) |
 | Nochsana Training Camp (300030000) | 4,167 polygons, 263 KiB | none |
 
 The three bridge maps have no roads and were baked with `bake --maps 320020000,120010000,220030000`.
@@ -259,6 +260,10 @@ Morheim has no extracted roads. The arena is one island from its entry to all th
 The leg to 36's NL-2 ([natural-leg-36.md](natural-leg-36.md)) adds Brusthonin with `bake --maps 220050000` and
 `graph --maps 220050000 --race ASMODIANS`, verified by `check --maps 220050000 --rebake`. Brusthonin has no extracted
 roads either; 1,426 of its 1,555 graph nodes are on the main network.
+
+NL-3 adds Reshanta with `bake --maps 400010000`, verified by `check --maps 400010000 --rebake`. Its travel graph is not
+made: `graph --maps 400010000 --race ASMODIANS` throws in `SiegeService`'s type initializer, which wants a registered
+`DataManager`; the islands are crossed by flight, so the planner's navmesh-only routes serve within an island.
 
 The Group NTC leg's N1 ([natural-group-ntc.md](natural-group-ntc.md)) adds Nochsana Training Camp with
 `bake --maps 300030000`, verified by `check --maps 300030000 --rebake`. The camp is one island from the landing to
