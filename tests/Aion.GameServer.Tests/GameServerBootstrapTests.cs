@@ -324,6 +324,88 @@ public sealed class GameServerBootstrapTests
 		await bootstrap.StopAsync(CancellationToken.None);
 	}
 
+	/// <summary>
+	/// Java GameServer.initUtilityServicesAndConfig:223-224: DatabaseCleaningService.deletePlayersOnInactiveAccounts runs
+	/// only under CleaningConfig.CLEANING_ENABLE. The service refuses every thread but the main one before it reads
+	/// anything, and the head runs here on a pool thread, so a head that completes never entered it: with the flag off,
+	/// PlayerDAO is never asked for inactive accounts and nothing is deleted.
+	/// </summary>
+	[Fact]
+	public async Task GameServerBootstrapHead_LeavesTheDatabaseCleaningAloneWhileItIsOff()
+	{
+		var calls = await RunHeadWithCleaningAsync(enabled: false, expectFailure: false);
+
+		Assert.Equal(["config", "offline", "used-ids"], calls);
+	}
+
+	/// <summary>
+	/// With the flag on, the cleaning runs right after the offline reset and before the used ids are read, as in Java. On a
+	/// pool thread it stops the boot with Java's IllegalStateException message before it touches the database.
+	/// </summary>
+	[Fact]
+	public async Task GameServerBootstrapHead_RunsTheDatabaseCleaningAfterTheOfflineResetWhenItIsOn()
+	{
+		var calls = await RunHeadWithCleaningAsync(enabled: true, expectFailure: true);
+
+		Assert.Equal(["config", "offline"], calls);
+	}
+
+	private static async Task<List<string>> RunHeadWithCleaningAsync(bool enabled, bool expectFailure)
+	{
+		bool previous = Aion.GameServer.Configs.Main.CleaningConfig.CLEANING_ENABLE;
+		using var dataManagerGuard = DataManagerSingletonGuard.Capture();
+		using var temp = StaticDataFixture.Create();
+		await using var threadPoolManager = new ThreadPoolManager(NullLogger<ThreadPoolManager>.Instance);
+		var calls = new List<string>();
+		var configLoadOptions = new GameServerConfigLoadOptions
+		{
+			PostLoadOverride = () =>
+			{
+				calls.Add("config");
+				Aion.GameServer.Configs.Main.CleaningConfig.CLEANING_ENABLE = enabled;
+			},
+		};
+		var gameTime = new GameTimeService(
+			NullLogger<GameTimeService>.Instance,
+			threadPoolManager,
+			TimeSpan.FromMilliseconds(10),
+			TimeSpan.FromMilliseconds(10));
+		var bootstrap = new GameServerBootstrapService(
+			temp,
+			new TrackingUsedIdRepository([], calls),
+			new IDFactory(),
+			Array.Empty<GameEngine>(),
+			new GameWorld(NullLogger<GameWorld>.Instance),
+			gameTime,
+			threadPoolManager,
+			new GameServerRuntimeContext(),
+			NullLogger<GameServerBootstrapService>.Instance,
+			new TrackingPlayerOnlineStateRepository(calls),
+			configLoadOptions);
+		try
+		{
+			// Task.Run: a pool thread, never the process's main thread (managed thread id 1).
+			Task head = Task.Run(() => bootstrap.StartHeadAsync(CancellationToken.None));
+			if (expectFailure)
+			{
+				var error = await Assert.ThrowsAsync<InvalidOperationException>(() => head);
+				Assert.Equal("DatabaseCleaningService can only be run from the main thread on server startup", error.Message);
+				Assert.False(temp.Loaded);
+			}
+			else
+			{
+				await head;
+				Assert.True(temp.Loaded);
+				await bootstrap.StopAsync(CancellationToken.None);
+			}
+		}
+		finally
+		{
+			Aion.GameServer.Configs.Main.CleaningConfig.CLEANING_ENABLE = previous;
+		}
+		return calls;
+	}
+
 	[Fact]
 	public async Task GameServerBootstrap_RealSpawnDataMaterializesNpcsIntoWorld()
 	{

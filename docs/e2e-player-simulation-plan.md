@@ -2216,7 +2216,9 @@ real geodata on in production immediately, because geo is enabled by default; th
   The tail ends in Java's order (173-176): the game clock starts, `PvpMapService.Init` makes the PvP map (an instance of
   301220000 with its NPCs and 18 random keymaster and chest positions, a 400 s supply task and the random-boss cron, all
   idle while `gameserver.pvpmap.enable` is off as shipped), then `CustomInstanceService`, then the world's ready flag.
-  All four boot-tail items are wired; the SIM proof is `SimulationBootTailTests` and L8C's `.pvp join` step.
+  All four boot-tail items are wired; the SIM proof is `SimulationBootTailTests` and L8C's `.pvp join` step. The head
+  also has Java's database cleaning (223-224): `DatabaseCleaningService.DeletePlayersOnInactiveAccounts` right after
+  the offline reset, under `gameserver.cleaning.enable` (off as shipped).
 - [ ] **P10-06** [LIVE] L — **Deferred by maintainer (D15): do not run the Java server.** Original proposal:
   differential Java-vs-C# runs, narrowly: build `../aion-server` `4.8` (kept at
   `lastCompletedJavaCommit`, P0-02) locally with JDK 25 and Maven; start the Java game server as a local process

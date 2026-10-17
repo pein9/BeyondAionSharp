@@ -73,7 +73,8 @@ public sealed class GameServerBootstrapService : IHostedService
 	}
 
 	/// <summary>
-	/// The head of the boot, Java <c>GameServer.main:93-105</c>: Config, the offline reset, the used ids, DataManager,
+	/// The head of the boot, Java <c>GameServer.main:93-105</c>: Config, the offline reset, the database cleaning when it is
+	/// enabled, the used ids, DataManager,
 	/// the world maps, GameTime and the CronService (Java's <c>initUtilityServicesAndConfig</c>), and the engines.
 	/// <see cref="StartAsync"/> runs it before <see cref="StartBodyAsync"/>. Internal so the no-database bootstrap
 	/// tests can run it alone: the body needs the database and the real data, as Java's does.
@@ -114,6 +115,12 @@ public sealed class GameServerBootstrapService : IHostedService
 		// database is initialized and before IDFactory reads the player table. This makes a restart after SIGKILL
 		// recoverable instead of rejecting every affected character with REENTRY_TIME.
 		await _playerOnlineStateRepository.SetAllPlayersOfflineAsync(cancellationToken);
+
+		// Java parity: initUtilityServicesAndConfig:223-224, right after the offline reset and before IDFactory reads the
+		// player table: delete the low-level characters of long-inactive accounts when gameserver.cleaning.enable is on
+		// (false as shipped). The service itself refuses any thread but the main one and an inactivity of 30 days or less.
+		if (Aion.GameServer.Configs.Main.CleaningConfig.CLEANING_ENABLE)
+			DatabaseCleaningService.DeletePlayersOnInactiveAccounts();
 
 		var usedIds = await _usedIdRepository.LoadUsedIdsAsync(cancellationToken);
 		_idFactory.LockIds(usedIds);
