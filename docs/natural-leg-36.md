@@ -168,6 +168,26 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
     `540aec462` (with the `rs` contract, quests played as far as they go, and report_to_many's reports); trial
     `nl3-re-t2` and captured round `nl3-re-c1` from `nl-rp-s1`: all eight played the three quests, two deaths, three to
     seven hops each (`nl-re-s1`).
+  - 2026-10-17: leg `rs` (the south: Q2729, Q2730, Q2731, Q2725, Q2753, Q2754, Q2756, Q2755 and Q1755, from Mokkurkalfi's
+    ledge to Triminos's rock; Q24042 played to Glati and left at the prisoner, decision 9; Q24043 to Sinjah and left at
+    the lure). Diagnostics `nl3-rs-d1` to `d3` and trials `t1` and `t2` found these faults:
+    - Hop stones under islands: a ledge 100 m under Primum, and one 170 m under island 7. A stone now has open sky
+      above it.
+    - The Cleric was killed by ashikar assaulters while it waited out its flight time on a stone beside Sinjah's
+      tower, and the Ranger died the same way on Mokkurkalfi's ledge. Every wait for flight time now answers an attack,
+      and stones keep 30 m from aggressive spawns when they can.
+    - The bag cleanup at a restock threw out Q2731's documents, its work item. An item a worked quest's data names now
+      always stays.
+    - Q2725 is a report_to_many quest, and its report before the end NPC's is now played.
+    - A revive's Soul Sickness, and once another slow, cut the flight speed below the hop's plan (592 m costing 77 FP
+      of 72). A refused hop now lands and plans again at the speed it took off at, and Soul Sickness is waited out
+      before a crossing past one flight.
+    - The Sorcerer left Q2753 for the group after an hour and ten deaths, as the engine allows (M4). The endpoint now
+      also leaves out what follows such a quest (Q2754).
+
+    Committed as `540aec462` (the contract) and `ece9d5ff4`; captured round `nl3-rs-c1` from `nl-re-s1`: all eight
+    reached the end, levels 34 to 36, 32 to 63 hops and 0 to 10 deaths each; the Ranger left Q2754 for the group
+    (`nl-rs-s1`).
 - [ ] **NL-4 Level 36.** Morheim's quests from 31 to 35 for any bot still short of 36 and for the zone's sake; the gear
   check-in at 36 (Elite Rank 5); the level-36 companion profiles; then Q24023 (the leg engine collects inside an
   instance, room by room, and goes down between the Sky Temple Interior's floors as a player does, by a glide or a
