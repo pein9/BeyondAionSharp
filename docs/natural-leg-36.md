@@ -129,6 +129,34 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
     be taken; most are given at Primum Fortress, and by their rewards alone they carry the least experienced bot to 36.
     Reshanta's navmesh is baked; its travel graph cannot be made yet (the tool stops in `SiegeService`'s static start).
     The way in is the Morheim Abyss Gate (portal 730063, high in the Morheim fortress; Q2042), which lands at Primum.
+  - 2026-10-17: the survey (kept in `run/nl/NL3/reshanta-research.md`) splits the step into legs, every one bound at
+    Primum's obelisk (730072), in this order (my decision 7): `rw` the way in (the campsite's teleporter to Morheim, a
+    flight up to the gate's platform 102 m above the fortress floor, the gate); `rp` Primum (Q24040, Q2721, Q2722,
+    Q24041 on the training ground 44 m below the fortress); `re` the east (Q2724, Q2741, Q2743, Q2744); `rs` the south
+    (Mokkurkalfi, Sinjah's tower, the Sulfur Tree Nest, Triminos: Q2725, Q2729 to Q2731, Q2753 to Q2756, Q1755, Q24042
+    with its escort, Q24043 with its lure); `ru` the upper layer (Q2726, Q2764 to Q2766, Q1771, Q2772, Q2773); `ro` the
+    trips out of the Abyss (Q24043's and Q24044's Pandaemonium and Ishalgen steps, Q24046, Q2757 and Q2758); and Q2728
+    in a group. The engine work they need, smallest first: a map trip by a portal object, the FLY zones of the map the
+    bot stands on (Reshanta is FLY everywhere, from its death level at 500 up), flights from island to island within
+    the bots' flight time, and the few mechanics named with their quests.
+  - 2026-10-17: leg `rw`. The first trials could not reach the Morheim Abyss Gate: it hangs 102 m above the fortress
+    floor under a canopy over a small platform, the bots tried to land on the platform, and no checked flight landed
+    there (and a stranded Return threw a bot back to its bind in Brusthonin). The operator, the same day: "You fly up to
+    the ring in the middle of the air, and 'use' the door while flying. It takes several seconds to use the door, then you
+    get teleported." Java agrees (talk range 16 m, no flight check, a 3 s bar, the teleport ends the flight). A portal
+    that hangs in the air is now flown to, to a point beside it within its reach, and used in flight; a map trip may be
+    a portal object; the FLY zones are the map's the bot stands on, and a map whose world flags hold FLY (Reshanta) is
+    one from its death level up; a stranded Return is cast only when the bind is on the bot's map. Diagnostic
+    `nl3-rw-d3`: the Cleric flew from the teleporter's landing to the ring, used it in the air and stood at Primum.
+    Committed as `14e801ba9` (with a sight diagnostic in NavBake, `ad81fbbfa`); trial `nl3-rw-t5` and captured round
+    `nl3-rw-c2` from `nl-gb-s2`: all eight in Primum, Q24040 started on arrival (`nl-rw-s1`).
+  - 2026-10-17: leg `rp` (Q24040, Q24041, Q2721, Q2722; Q24045 is left out with its later steps, decision 8). Trial
+    `nl3-rp-t1` stood every bot at Votan on its way to Leban, whose training ground is an island of its own: no route
+    reached it, the stranded Return waited out a 19-minute cooldown, and the flight was never tried (the FLY flag of
+    Reshanta's world map was read as a word the flags' text does not hold, so the map had no FLY zone at all). The map's
+    flags are now read as flags, and a flight is tried before a stranded Return. Diagnostic `nl3-rp-d2`: the Cleric flew
+    down to the trainers and back twice and played all four quests. Committed as `bff118c8e`; trial `nl3-rp-t2` and
+    captured round `nl3-rp-c1` from `nl-rw-s1`: all eight played the four quests and stand bound at Primum (`nl-rp-s1`).
 - [ ] **NL-4 Level 36.** Morheim's quests from 31 to 35 for any bot still short of 36 and for the zone's sake; the gear
   check-in at 36 (Elite Rank 5); the level-36 companion profiles; then Q24023 (the leg engine collects inside an
   instance, room by room, and goes down between the Sky Temple Interior's floors as a player does, by a glide or a
@@ -160,6 +188,15 @@ Mine, where the operator gave none; each is his to change:
    way to Parica (Q4020), and the bots are ten levels above the ground.
 6. **Q4011's second step is Kaindal in Ishalgen:** the bot takes the campsite's teleporter to Pandaemonium and
    Pandaemonium's to Ishalgen, as a player changes teleporters, and comes back by Return to the campsite's bind.
+7. **NL-3's legs and their order** are the survey's: the way in, Primum, the east, the south, the upper layer, the trips
+   out of the Abyss, then the group quest. The east comes before the south because it asks only for flights.
+8. **What NL-3 does not play, into the report:** Q2702 to Q2710 (kills of Elyos players); Q2701 (nothing starts it);
+   Q2727 from its third step and Q2774 to Q2776 (their NPCs spawn only while the Elyos hold Roah Fortress, and every
+   fortress of the world is the Balaur's); Q2846 (its start item has no source in the data); Q24044 from var 5 (the
+   Temporal Stone it asks for has no vendor or drop here; 4.8 retail sold it, by aioncodex: adding it is a retail
+   correction, the operator's to approve); Q24045 from var 2 and Q2767 (Tigraki Island stands 705 m from any other
+   island, past one flight; a Wind Serum drunk in the air is a player's way, and building it is the operator's to
+   ask for); the four gathering quests. Each is played as far as it goes.
 
 ## Loop prompt
 
