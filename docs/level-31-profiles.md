@@ -126,12 +126,19 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
     step that keeps no mana back (Boon of Iron-Clad), group-only rules (Word of Wind, Acquittal, Noble Grace) and the
     mantra swap. A ready follow-up before a state-bound skill that resets its chain, Assassination only on a stunned or
     poisoned target and a cast just before a summon are done by list order for now.
-- [ ] **L2 The gear and the stones.** The check-in buys every Elite Rank 6 piece that beats the worn one, and at 30 or
+- [x] **L2 The gear and the stones.** The check-in buys every Elite Rank 6 piece that beats the worn one, and at 30 or
   above it buys the second stone in Pandaemonium and sockets it.
+  - 2026-10-16 (`aecc52820`): the muster and its check-ins compare by level and grade first, and the number only at the
+    same level; from level 30 the check-in takes the fortress's teleporter to Pandaemonium, buys the class's second stone
+    with the character's own Kinah, comes home by Return and has it put in at the fortress's Stigma Master
+    (`NaturalStigma.Seconds`). Trial `l2-t1` from `morheim-mg-s1-w1` (the world the first check-in started from, where
+    leg `mg` had brought each of the eight to the fortress at 31, so L4 starts there too): every class bought the Elite
+    Rank 6 chest, gloves and boots it lacked, with its weapon (63 to 90 Silver Coins), and its second stone (695,500
+    Kinah, 35,312 to put in), and learned the stone's skill. The Assassin ends with the least Kinah, 321,742.
 - [ ] **L3 The rotations.** The new skills in the eight tables, tried in a trial round per class line on its own
   fights.
-- [ ] **L4 The check-in world.** Stage `check-in` played again for all eight from `morheim-mc-s1-w1`, where every one is
-  exactly 31: a trial, then the captured round `morheim-g31-s2`.
+- [ ] **L4 The check-in world.** Stage `check-in` played again for all eight from `morheim-mg-s1-w1`, where every one is
+  exactly 31 and stands at the fortress: a trial, then the captured round `morheim-g31-s2`.
 - [ ] **L5 The profiles.** The eight level-31 profiles written again from `morheim-g31-s2-w1`, `--check` passing; a
   companion round with the Fire Temple six at 31 (the Templar as the player's stand-in and five companions) shows the
   gear, the stones and the rotations in play. The Docker stack's companion host takes the new files at its next
