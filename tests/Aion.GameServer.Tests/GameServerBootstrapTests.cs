@@ -1,4 +1,3 @@
-using Aion.Commons.Database;
 using Aion.GameServer.Data;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Dataholders.LoadingUtils;
@@ -23,8 +22,11 @@ namespace Aion.GameServer.Tests;
 [Xunit.Collection("GoldenDataManager")]
 public sealed class GameServerBootstrapTests
 {
+	// The no-database tests run only the head of the boot (Java GameServer.main:93-105): its body needs the database
+	// and the real data, as Java's does, and the SIM boot runs all of it (tests/Aion.Simulation.Tests/
+	// SimulationBootTailTests). The body's singletons are built directly below, against the same fixture.
 	[Fact]
-	public async Task GameServerBootstrap_LoadsDataInitializesWorldAndStartsGameTime()
+	public async Task GameServerBootstrapHead_LoadsDataAndInitializesEnginesThenStops()
 	{
 		using var dataManagerGuard = DataManagerSingletonGuard.Capture();
 		using var temp = StaticDataFixture.Create();
@@ -36,26 +38,17 @@ public sealed class GameServerBootstrapTests
 			threadPoolManager,
 			TimeSpan.FromMilliseconds(10),
 			TimeSpan.FromMilliseconds(10));
-		var bootstrap = new GameServerBootstrapService(
-			temp,
-			new EmptyUsedIdRepository(),
-			new IDFactory(),
-			new[] { engine },
-			world,
-			gameTime,
-			threadPoolManager,
-			new GameServerRuntimeContext(),
-			NullLogger<GameServerBootstrapService>.Instance);
+		var bootstrap = NewMinimalBootstrap(temp, threadPoolManager, world, gameTime, engine);
 
-		await bootstrap.StartAsync(CancellationToken.None);
-		await WaitUntilAsync(() => gameTime.GameMinutes > 0);
+		await bootstrap.StartHeadAsync(CancellationToken.None);
 
-		Assert.True(bootstrap.IsStarted);
 		Assert.True(temp.Loaded);
 		Assert.Equal(1, engine.InitCalls);
-		Assert.True(world.IsInitialized);
-		Assert.True(gameTime.IsStarted);
 		Assert.Equal(1, temp.LoadedData!.StaticData.GetElementCount("item"));
+		// The world container, the game clock and IsStarted belong to the body.
+		Assert.False(bootstrap.IsStarted);
+		Assert.False(world.IsInitialized);
+		Assert.False(gameTime.IsStarted);
 
 		await bootstrap.StopAsync(CancellationToken.None);
 
@@ -63,6 +56,80 @@ public sealed class GameServerBootstrapTests
 		Assert.Equal(1, engine.ShutdownCalls);
 		Assert.False(gameTime.IsStarted);
 		Assert.Equal(0, world.ObjectCount);
+	}
+
+	/// <summary>
+	/// The singletons of the boot's body (Java GameServer.main:107-176), built directly in Java's order against the
+	/// items-only, no-database fixture, after the head. The body itself is no longer run without a database, so a
+	/// constructor that breaks on empty data (a null cron default, a missing AUTO_GROUP template, a missing HTML root)
+	/// fails here as well as in the SIM boot. HousingService and its tasks (main:118-122) need the database and are
+	/// left to the SIM boot; with no world maps SpawnAll spawns nothing and never reaches HousingService.
+	/// </summary>
+	[Fact]
+	public async Task GameServerBootstrapBody_SingletonsConstructAgainstTheNoDatabaseFixtureInJavaOrder()
+	{
+		using var dataManagerGuard = DataManagerSingletonGuard.Capture();
+		using var temp = StaticDataFixture.Create();
+		await using var threadPoolManager = new ThreadPoolManager(NullLogger<ThreadPoolManager>.Instance);
+		var world = new GameWorld(NullLogger<GameWorld>.Instance);
+		var gameTime = new GameTimeService(
+			NullLogger<GameTimeService>.Instance,
+			threadPoolManager,
+			TimeSpan.FromMilliseconds(10),
+			TimeSpan.FromMilliseconds(10));
+		var bootstrap = NewMinimalBootstrap(temp, threadPoolManager, world, gameTime);
+		await bootstrap.StartHeadAsync(CancellationToken.None);
+		try
+		{
+			// main:107-116: drop registration and the location init.
+			Aion.GameServer.Services.Drop.DropRegistrationService.GetInstance();
+			Aion.GameServer.Services.BaseService.GetInstance();
+			Aion.GameServer.Services.SiegeService.GetInstance();
+			Aion.GameServer.Services.WorldRaidService.GetInstance().InitWorldRaidLocations();
+			Aion.GameServer.Services.VortexService.GetInstance().InitVortexLocations();
+			Aion.GameServer.Services.RiftService.GetInstance().InitRiftLocations();
+			Aion.GameServer.Services.LegionDominionService.GetInstance().InitLocations();
+			// main:123-128: the challenge tasks, the spawns and what follows them.
+			Aion.GameServer.Services.ChallengeTaskService.GetInstance();
+			Aion.GameServer.SpawnEngine.SpawnEngine.SpawnAll();
+			Aion.GameServer.Services.TownService.GetInstance();
+			Aion.GameServer.Services.FlyRingService.GetInstance();
+			Aion.GameServer.Services.RiftService.GetInstance().InitRifts();
+			// main:135-137.
+			Aion.GameServer.Services.LimitedItemTradeService.GetInstance().Start();
+			if (Aion.GameServer.Configs.Main.CustomConfig.LIMITS_ENABLED)
+				Aion.GameServer.Services.Players.PlayerLimitService.GetInstance().ScheduleUpdate();
+			// main:143-157.
+			Aion.GameServer.Services.BaseService.GetInstance().InitBases();
+			Aion.GameServer.Services.WorldRaidService.GetInstance().InitWorldRaids();
+			Aion.GameServer.Services.ConquerorAndProtectorSystem.ConquerorAndProtectorService.GetInstance().Init();
+			Aion.GameServer.Services.AnnouncementService.GetInstance();
+			Aion.GameServer.Services.DebugService.GetInstance();
+			Aion.GameServer.Services.WeatherService.GetInstance();
+			Aion.GameServer.Services.BrokerService.GetInstance();
+			Aion.GameServer.Model.Siege.Influence.GetInstance();
+			Aion.GameServer.Services.ExchangeService.GetInstance();
+			Aion.GameServer.Services.PeriodicSaveService.GetInstance();
+			_ = Aion.GameServer.Services.AtreianPassportService.GetInstance();
+			_ = Aion.GameServer.Services.CronJobService.GetInstance();
+			// main:159-176.
+			if (!Aion.GameServer.Configs.Main.GeoDataConfig.GEO_MATERIALS_ENABLE)
+				Aion.GameServer.Services.CuringZoneService.GetInstance();
+			Aion.GameServer.Services.RoadService.GetInstance();
+			Aion.GameServer.Cache.HTMLCache.GetInstance();
+			Aion.GameServer.Services.Abyss.AbyssRankingCache.GetInstance();
+			Aion.GameServer.Services.Abyss.AbyssRankUpdateService.ScheduleUpdate();
+			Aion.GameServer.Services.Instance.PeriodicInstanceManager.GetInstance();
+			Aion.GameServer.Services.Event.EventService.GetInstance().Start();
+			Aion.GameServer.Services.AdminService.GetInstance();
+			Aion.GameServer.Services.CommandsAccessService.LoadAccesses();
+			Aion.GameServer.Services.Transfers.PlayerTransferService.GetInstance();
+			Aion.GameServer.Custom.Instance.CustomInstanceService.GetInstance();
+		}
+		finally
+		{
+			await bootstrap.StopAsync(CancellationToken.None);
+		}
 	}
 
 	[Fact]
@@ -242,7 +309,7 @@ public sealed class GameServerBootstrapTests
 			onlineState,
 			configLoadOptions);
 
-		await bootstrap.StartAsync(CancellationToken.None);
+		await bootstrap.StartHeadAsync(CancellationToken.None);
 
 		Assert.True(usedIds.Loaded);
 		Assert.True(onlineState.Reset);
@@ -269,12 +336,10 @@ public sealed class GameServerBootstrapTests
 		//
 		// SCOPE NOTE: this drives the spawn path for a single regular map (Sanctum 110010000) via the faithful
 		// SpawnEngine.SpawnObject, NOT the whole-world SpawnEngine.SpawnAll(). SpawnAll() iterates every WorldMap's
-		// every twin instance and, per instance, calls HousingService.SpawnHouses() — which (a) needs a live DB
-		// (HousingService ctor -> PlayerDAO.GetUsedIDs() returns null on no-DB, the documented #2 deferral; Java
-		// NPEs identically and does not guard it) and (b) re-spawns the same address-cached House object into each
-		// of a map's multiple twin instances (e.g. Heiron 210040000 has beginner_twin_count=3 => 4 instances),
-		// colliding on the House objectId in World.StoreObject. Both are pre-existing whole-world-boot concerns
-		// orthogonal to proving spawn materialization, so this guard scopes to the deterministic single-map spawn.
+		// every twin instance and, per instance, calls HousingService.SpawnHouses(), whose HousingService ctor needs a
+		// live DB (PlayerDAO.GetUsedIDs() returns null without one; Java NPEs identically and does not guard it). The
+		// whole-world boot is the SIM's (tests/Aion.Simulation.Tests/SimulationBootTailTests), so this guard scopes to
+		// the deterministic single-map spawn.
 		using var dataManagerGuard = DataManagerSingletonGuard.Capture();
 
 		// Load + register the real DataManager (the same DataManager.LoadAsync(repoRoot) the production
@@ -347,210 +412,22 @@ public sealed class GameServerBootstrapTests
 		Assert.True(euterpeSpawned, "known Sanctum NPC 798173 (Euterpe) did not spawn into the world");
 	}
 
-	[SkippableFact]
-	public async Task GameServerBootstrap_DbBackedFullBoot_RunsRealStartAsyncAgainstLiveMySql()
-	{
-		// STRONGEST end-to-end validation: boot the FULL GameServerBootstrapService.StartAsync against the LIVE
-		// MySQL container (localhost:3307/aion_gs) using the REAL game-server static data + cache (the same
-		// DataManager.LoadAsync(repoRoot) path proven by RealStaticDataLoadIntegrationTests / the spawn-backed test).
-		// Unlike the no-DB minimal-fixture bootstrap tests above (empty SIEGE/WORLD_MAPS data, no DB => the housing /
-		// siege / pvp-map blocks are documented deferrals), this exercises the real spawn path — SpawnEngine.SpawnAll()
-		// runs SpawnInstance for every twin instance of every non-instance world map, and SpawnInstance ALWAYS calls
-		// HousingService.GetInstance().SpawnHouses(instance, ownerId). So this empirically answers the #2 Housing
-		// question: with a live (empty) players table, PlayerDAO.GetUsedIDs() returns int[0] (not null), so the
-		// HousingService ctor's RevokeOwnershipOfDeletedPlayers no longer throws ArgumentNullException — the no-DB
-		// deferral is lifted. The remaining house-twin question is whether re-spawning the address-cached House object
-		// into a map's multiple twin instances collides on the House objectId (DuplicateAionObjectException) — the
-		// documented Java-latent throw on Heiron(210040000)/Beluslan(220040000) housing twins.
-		//
-		// Env-gated: visibly skipped unless AION_GAMESERVER_DB_INTEGRATION=1 (the Docker container is only present
-		// in the integration environment).
-		Skip.IfNot(Environment.GetEnvironmentVariable("AION_GAMESERVER_DB_INTEGRATION") == "1", "Set AION_GAMESERVER_DB_INTEGRATION=1 to run Docker MySQL integration tests.");
-		using var geoScope = new RealGeoBootstrapScope();
-		using var aiScope = new RealAiBootstrapScope();
-
-		var repoRoot = RealStaticData.RepoRoot();
-
-		// Point DatabaseFactory at the live integration container (root/aion @ 3307/aion_gs) and apply the real
-		// Java aion_gs schema so every DB-backed DAO the boot touches (PlayerDAO.GetUsedIDs, HousesDAO.LoadHouses,
-		// BrokerDAO, AnnouncementsDAO, AbyssRankDAO, CommandsAccessDAO, ...) reads against real (empty) tables.
-		DatabaseFactory.Initialize(
-			server: Environment.GetEnvironmentVariable("AION_GAMESERVER_DB_HOST") ?? "localhost",
-			userId: Environment.GetEnvironmentVariable("AION_GAMESERVER_DB_USER") ?? "root",
-			password: Environment.GetEnvironmentVariable("AION_GAMESERVER_DB_PASSWORD") ?? "aion",
-			database: Environment.GetEnvironmentVariable("AION_GAMESERVER_DB_NAME") ?? "aion_gs",
-			port: int.Parse(Environment.GetEnvironmentVariable("AION_GAMESERVER_DB_PORT") ?? "3307"));
-		await InitializeGameSchemaAsync(repoRoot);
-
-		using var dataManagerGuard = DataManagerSingletonGuard.Capture();
-		using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
-
-		// Load the REAL DataManager once (147 MB cache) and feed the FULL StartAsync via a pass-through loader so the
-		// boot does not re-parse it. StartAsync itself re-registers DataManager/World/IDFactory/ThreadPool singletons.
-		var dataManager = await RealStaticData.LoadAsync();
-		DataManager.RegisterInstance(dataManager);
-
-		// StartAsync now owns all content-engine initialization. Do not initialize the engines here too:
-		// a duplicate AI registration aborts boot, and duplicate geo loading registers material zones twice.
-		// The serial test scope clears/restores prior synthetic AI/geo state without changing production boot.
-		IDFactory.RegisterInstance(new IDFactory());
-		await using var threadPoolManager = new ThreadPoolManager(NullLogger<ThreadPoolManager>.Instance);
-		ThreadPoolManager.RegisterInstance(threadPoolManager);
-		var world = new GameWorld(NullLogger<GameWorld>.Instance);
-		world.LoadWorldMaps(DataManager.WORLD_MAPS_DATA);
-		GameWorld.RegisterInstance(world);
-
-		var gameTime = new GameTimeService(
-			NullLogger<GameTimeService>.Instance,
-			threadPoolManager,
-			TimeSpan.FromMilliseconds(10),
-			TimeSpan.FromMilliseconds(10));
-		var bootstrap = new GameServerBootstrapService(
-			new PassThroughStaticDataLoader(dataManager),
-			new MySqlUsedIdRepository(NullLogger<MySqlUsedIdRepository>.Instance),
-			IDFactory.GetInstance(),
-			Array.Empty<GameEngine>(),
+	private static GameServerBootstrapService NewMinimalBootstrap(
+		StaticDataFixture staticData,
+		ThreadPoolManager threadPoolManager,
+		GameWorld world,
+		GameTimeService gameTime,
+		params GameEngine[] engines) =>
+		new(
+			staticData,
+			new EmptyUsedIdRepository(),
+			new IDFactory(),
+			engines,
 			world,
 			gameTime,
 			threadPoolManager,
 			new GameServerRuntimeContext(),
 			NullLogger<GameServerBootstrapService>.Instance);
-
-		// Run the FULL StartAsync. The house-twin DuplicateAionObjectException is FIXED (WorldMapTemplate now applies
-		// the Java WorldConfig twin clamps: WORLD_MAX_TWINS_BEGINNER=-1 disables beginner twins, WORLD_MAX_TWINS_USUAL=1
-		// caps usual twins -> getInstanceCount()=1 for Heiron/Beluslan, so HousingService.SpawnHouses runs exactly once
-		// per house map and never re-stores an address-cached House objectId). The boot must now complete cleanly.
-		//
-		// HTMLCache (and any other production relative-path data lookup) resolves "./data/static_data/..." against the
-		// process working directory, which in a real deployment is the game-server dir. Point CWD at the repo's
-		// game-server dir for the duration of the boot so the production relative paths resolve to the real data tree.
-		var gameServerDir = System.IO.Path.Combine(repoRoot, "game-server");
-		var savedCwd = Directory.GetCurrentDirectory();
-		Exception? bootException = null;
-		try
-		{
-			Directory.SetCurrentDirectory(gameServerDir);
-			await bootstrap.StartAsync(cts.Token);
-		}
-		catch (Exception ex)
-		{
-			bootException = ex;
-		}
-		finally
-		{
-			Directory.SetCurrentDirectory(savedCwd);
-		}
-
-		// REGRESSION GUARD: the house-twin DuplicateAionObjectException must NOT reappear. Before the WorldConfig twin
-		// clamp was ported, the full boot threw DuplicateAionObjectException out of HousingService.SpawnHouses (a House
-		// re-stored into a second twin instance of Heiron/Beluslan). That was a C# divergence — Java's
-		// WorldMapTemplate.getBeginnerTwinCount()/getTwinCount() clamp by WorldConfig (beginner=-1 disabled, usual=1) so
-		// getInstanceCount()=1 and houses spawn once. If the dup ever resurfaces, the clamp regressed.
-		if (bootException is not null)
-		{
-			var flat0 = Flatten(bootException).ToList();
-			var dup = flat0.OfType<Aion.GameServer.World.Exceptions.DuplicateAionObjectException>().FirstOrDefault();
-			Assert.True(
-				dup is null,
-				"DB-backed full boot threw the house-twin DuplicateAionObjectException again — the WorldConfig twin clamp " +
-				"(WorldMapTemplate.GetBeginnerTwinCount/GetTwinCount) regressed: " +
-				string.Join(" => ", flat0.Select(e => $"{e.GetType().FullName}: {e.Message}")));
-		}
-
-		// CLEAN FULL BOOT: with the twin clamp in place the real spawn path (incl. HousingService.SpawnHouses across the
-		// single non-twin instance of every house map) runs to completion against live MySQL + real static data.
-		Assert.True(bootException is null,
-			"DB-backed full boot did not complete cleanly: " +
-			(bootException is null ? "" : string.Join(" => ", Flatten(bootException).Select(e => $"{e.GetType().FullName}: {e.Message}")) +
-			Environment.NewLine + bootException));
-		Assert.True(bootstrap.IsStarted, "full DB-backed boot did not reach IsStarted");
-		Assert.True(world.IsInitialized, "world not initialized after full DB-backed boot");
-		Assert.True(world.ObjectCount > 0, $"world empty after full DB-backed boot (ObjectCount={world.ObjectCount})");
-
-		// BOOT-TAIL CLOSURE: the two GameServer.main wires deferred out of the always-on StartAsync path —
-		// SiegeService.initSieges() (main:142) and PvpMapService.init() (main:176) — are FAITHFUL DB-gated, not
-		// guarded for empty data. Java SiegeService.initSieges() runs its FULL body whenever SiegeConfig.SIEGE_ENABLED
-		// (default true): it despawns/spawns from real SIEGE_LOCATION_DATA fortress/outpost/artifact registries,
-		// schedules from the full config/schedule/siege_schedule.xml, and UpdateFortressNextState() does
-		// GetSiegeLocation(scheduledLocId).SetNextState(...) with NO null guard — so it REQUIRES populated
-		// SIEGE_LOCATION_DATA (the empty no-DB minimal fixture would NRE; adding a guard would be un-faithful).
-		// PvpMapService.init() has no config gate at all and unconditionally resolves world map 301220000 via
-		// InstanceService.GetNextAvailableInstance — it REQUIRES the populated WORLD_MAPS_DATA the real boot carries.
-		// Both run clean ONLY against real data, so the faithful home for them is this DB-backed boot, not the
-		// minimal-fixture StartAsync path. Exercise + assert them here (CWD = game-server so the siege_schedule.xml
-		// relative path resolves), proving the boot tail is closed under real data.
-		Exception? tailException = null;
-		try
-		{
-			Directory.SetCurrentDirectory(gameServerDir);
-			Aion.GameServer.Services.SiegeService.GetInstance().InitSieges();
-			Aion.GameServer.Custom.Pvpmap.PvpMapService.GetInstance().Init();
-		}
-		catch (Exception ex)
-		{
-			tailException = ex;
-		}
-		finally
-		{
-			Directory.SetCurrentDirectory(savedCwd);
-		}
-		Assert.True(tailException is null,
-			"DB-backed SiegeService.InitSieges()/PvpMapService.Init() boot-tail wires threw against real data: " +
-			(tailException is null ? "" : string.Join(" => ", Flatten(tailException).Select(e => $"{e.GetType().FullName}: {e.Message}")) +
-			Environment.NewLine + tailException));
-		Assert.True(Aion.GameServer.Configs.Main.SiegeConfig.SIEGE_ENABLED,
-			"SIEGE_ENABLED must default true (Java siege.properties gameserver.siege.enable=true) for InitSieges to run its full body");
-		// PvpMapService.Init() registered the pvp-map instance handler; GetParticipantsSize()==0 is the live-handler
-		// path (not the null-handler short-circuit) — any unported dep would have thrown into tailException above.
-		Assert.Equal(0, Aion.GameServer.Custom.Pvpmap.PvpMapService.GetInstance().GetParticipantsSize());
-
-		await bootstrap.StopAsync(cts.Token);
-		Assert.False(bootstrap.IsStarted);
-	}
-
-	private static IEnumerable<Exception> Flatten(Exception ex)
-	{
-		var stack = new Stack<Exception>();
-		stack.Push(ex);
-		while (stack.Count > 0)
-		{
-			var current = stack.Pop();
-			yield return current;
-			if (current is AggregateException agg)
-				foreach (var inner in agg.InnerExceptions)
-					stack.Push(inner);
-			else if (current.InnerException != null)
-				stack.Push(current.InnerException);
-		}
-	}
-
-	private static async Task InitializeGameSchemaAsync(string repoRoot)
-	{
-		var schemaPath = System.IO.Path.Combine(repoRoot, "game-server", "sql", "aion_gs.sql");
-		var sql = await File.ReadAllTextAsync(schemaPath);
-		await using var connection = DatabaseFactory.GetConnection();
-		await connection.OpenAsync();
-		var lines = sql.Split('\n')
-			.Select(line => line.TrimEnd('\r'))
-			.Where(line => !line.TrimStart().StartsWith("--", StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(line));
-		foreach (var statement in string.Join('\n', lines)
-			.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-			.Where(s => !string.IsNullOrWhiteSpace(s)))
-		{
-			await using var command = connection.CreateCommand();
-			command.CommandText = statement;
-			await command.ExecuteNonQueryAsync();
-		}
-	}
-
-	private sealed class PassThroughStaticDataLoader : IStaticDataLoader
-	{
-		private readonly DataManager _dataManager;
-
-		public PassThroughStaticDataLoader(DataManager dataManager) => _dataManager = dataManager;
-
-		public Task<DataManager> LoadAsync(CancellationToken cancellationToken = default) => Task.FromResult(_dataManager);
-	}
 
 	private static async Task WaitUntilAsync(Func<bool> condition)
 	{
@@ -588,20 +465,6 @@ public sealed class GameServerBootstrapTests
 			Aion.GameServer.Configs.Main.GeoDataConfig.GEO_ENABLE = previousEnabled;
 			Aion.GameServer.Configs.Main.GeoDataConfig.GEO_MAP_IDS = previousFilter;
 			Directory.SetCurrentDirectory(previousDirectory);
-		}
-	}
-
-	private sealed class RealAiBootstrapScope : IDisposable
-	{
-		private readonly Dictionary<string, Type> handlers = (Dictionary<string, Type>)typeof(Aion.GameServer.Ai.AIEngine)
-			.GetField("aiHandlers", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-			.GetValue(Aion.GameServer.Ai.AIEngine.GetInstance())!;
-		private readonly KeyValuePair<string, Type>[] previous;
-		public RealAiBootstrapScope() { previous = handlers.ToArray(); handlers.Clear(); }
-		public void Dispose()
-		{
-			handlers.Clear();
-			foreach (var pair in previous) handlers.Add(pair.Key, pair.Value);
 		}
 	}
 

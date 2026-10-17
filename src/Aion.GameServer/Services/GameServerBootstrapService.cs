@@ -61,10 +61,25 @@ public sealed class GameServerBootstrapService : IHostedService
 
 	public async Task StartAsync(CancellationToken cancellationToken)
 	{
-		// Java parity: GameServer.main startup order through IDFactory, DataManager, engines, World, GameTime.
+		// Java parity: GameServer.main, in its order. One code path: the head, then the body.
 		var stopwatch = Stopwatch.StartNew();
 		_logger.LogInformation("Starting game-server bootstrap");
 
+		var dataManager = await StartHeadAsync(cancellationToken);
+		await StartBodyAsync(dataManager, cancellationToken);
+
+		_started = true;
+		_logger.LogInformation("Game-server bootstrap completed in {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+	}
+
+	/// <summary>
+	/// The head of the boot, Java <c>GameServer.main:93-105</c>: Config, the offline reset, the used ids, DataManager,
+	/// the world maps, GameTime and the CronService (Java's <c>initUtilityServicesAndConfig</c>), and the engines.
+	/// <see cref="StartAsync"/> runs it before <see cref="StartBodyAsync"/>. Internal so the no-database bootstrap
+	/// tests can run it alone: the body needs the database and the real data, as Java's does.
+	/// </summary>
+	internal async Task<Aion.GameServer.Dataholders.DataManager> StartHeadAsync(CancellationToken cancellationToken)
+	{
 		// Java GameServer.initUtilityServicesAndConfig loads Config before the database cleanup, used-id query and
 		// DataManager. EventService contributes no overrides yet: activeEvents is empty until EventService.Start().
 		Aion.GameServer.Configs.Config.Load(_configLoadOptions);
@@ -158,7 +173,7 @@ public sealed class GameServerBootstrapService : IHostedService
 				Aion.GameServer.Configs.Main.GSConfig.TIME_ZONE_ID ?? System.TimeZoneInfo.Local);
 
 		// Java parity: GameServer.main inits the engines in parallel (QuestEngine/AIEngine/InstanceEngine/
-		// ChatProcessor/ZoneService/GeoService.getInstance() -> GameEngine::init, line 101-102) right after
+		// ChatProcessor/ZoneService/GeoService.getInstance() -> GameEngine::init, lines 100-101) right after
 		// DataManager.getInstance() and BEFORE the location-init cluster + SpawnEngine.spawnAll(). This ordering is
 		// load-bearing: every Npc spawned by VortexService/SiegeService/SpawnEngine resolves its AI by name via
 		// AIEngine.NewAI, so the AIEngine (and the other engines) MUST be initialized before any spawn path runs.
@@ -200,26 +215,35 @@ public sealed class GameServerBootstrapService : IHostedService
 		if (shouldInitFaithfulEngines)
 			_faithfulEnginesInitialized = true;
 
-		// DropRegistrationService.getInstance() (GameServer.main:108): empty ctor (drop-table registration happens
+		return dataManager;
+	}
+
+	/// <summary>
+	/// The body of the boot, Java <c>GameServer.main:107-177</c>: from DropRegistrationService to the static data
+	/// validation, with the location init, the spawns and every service Java starts after them.
+	/// </summary>
+	private async Task StartBodyAsync(Aion.GameServer.Dataholders.DataManager dataManager, CancellationToken cancellationToken)
+	{
+		// DropRegistrationService.getInstance() (GameServer.main:107): empty ctor (drop-table registration happens
 		// per-NPC-death at runtime via RegisterDrop). Bounded singleton touch, dep-clean.
 		Aion.GameServer.Services.Drop.DropRegistrationService.GetInstance();
 
-		// Java parity: GameServer.main location-init cluster (lines 111-117), after DropRegistration, before
+		// Java parity: GameServer.main location-init cluster (lines 110-116), after DropRegistration, before
 		// HousingService/spawns. Each loads only LOCATION data (no schedules/spawns yet — those are the second-pass
 		// init*() calls later). All are bounded singleton getInstance()/init touches whose ctors iterate the
 		// faithfully-loaded *_DATA holders (BASE_DATA/SIEGE_LOCATION_DATA/WORLD_RAID_DATA/VORTEX_DATA/
 		// LEGION_DOMINION_DATA, all live via StaticData.TryLoadHolder) and whose DAO reads are try/catch-guarded
 		// (no DB => empty + logged, never an NRE), so they are dep-clean to wire here.
 
-		// BaseService.getInstance() (GameServer.main:111): ctor builds BaseLocation per BASE_DATA template.
+		// BaseService.getInstance() (GameServer.main:110): ctor builds BaseLocation per BASE_DATA template.
 		Aion.GameServer.Services.BaseService.GetInstance();
-		// SiegeService.getInstance() (GameServer.main:112): ctor loads SIEGE_LOCATION_DATA fortress/artifact/outpost
+		// SiegeService.getInstance() (GameServer.main:111): ctor loads SIEGE_LOCATION_DATA fortress/artifact/outpost
 		// locations (guarded by SiegeConfig.SIEGE_ENABLED, default true) and SiegeDAO.LoadSiegeLocations (try/catch).
 		Aion.GameServer.Services.SiegeService.GetInstance();
-		// WorldRaidService.getInstance().initWorldRaidLocations() (GameServer.main:113): loads WORLD_RAID_DATA
+		// WorldRaidService.getInstance().initWorldRaidLocations() (GameServer.main:112): loads WORLD_RAID_DATA
 		// locations (guarded by EventsConfig.ENABLE_WORLDRAID).
 		Aion.GameServer.Services.WorldRaidService.GetInstance().InitWorldRaidLocations();
-		// VortexService.getInstance().initVortexLocations() (GameServer.main:115): spawns peace-state vortex NPCs
+		// VortexService.getInstance().initVortexLocations() (GameServer.main:114): spawns peace-state vortex NPCs
 		// per VORTEX_DATA and schedules the Theobomos/Brusthonin invasions (guarded by CustomConfig.VORTEX_ENABLED,
 		// default true). The two invasion cron schedules are now populated from the Java @Property defaultValue cron
 		// strings via CronExpressions.GetOrCreate (CustomConfig.VORTEX_*_SCHEDULE field initializers), so the
@@ -229,40 +253,27 @@ public sealed class GameServerBootstrapService : IHostedService
 		// Java parity: GameServer.main loads rift location data before spawns (RiftService.getInstance().initRiftLocations()).
 		Aion.GameServer.Services.RiftService.GetInstance().InitRiftLocations();
 
-		// LegionDominionService.getInstance().initLocations() (GameServer.main:117): builds LegionDominionLocation per
+		// LegionDominionService.getInstance().initLocations() (GameServer.main:116): builds LegionDominionLocation per
 		// LEGION_DOMINION_DATA template + LegionDominionDAO.LoadOrCreate/LoadParticipants (try/catch-guarded DB reads).
 		Aion.GameServer.Services.LegionDominionService.GetInstance().InitLocations();
 
-		// Java parity: GameServer.main housing init block (lines 119-123), AFTER the location-init cluster, BEFORE
+		// Java parity: GameServer.main housing init block (lines 118-122), AFTER the location-init cluster, BEFORE
 		// SpawnEngine.spawnAll() (HousingService is init'd before spawns because it is touched on every instance spawn).
-		//
-		// HousingService.getInstance() (main:119) + HousingBidService.getInstance() (main:120) are DEFERRED for the
-		// no-DB bootstrap fixture: the HousingService ctor calls RevokeOwnershipOfDeletedPlayers() =>
-		// new HashSet<int>(PlayerDAO.GetUsedIDs()), and PlayerDAO.GetUsedIDs() returns NULL on DB failure (faithful:
-		// Java returns null too), so with the no-DB fixture new HashSet<>(null) throws ArgumentNullException (Java NPEs
-		// identically; the real server always has a DB returning an empty array). The 3 AbstractCronTask auction tasks
-		// (main:121-123) touch the same housing services and are deferred together.
-		//
-		// EMPIRICAL (DB-backed full-boot smoke, GameServerBootstrapTests.GameServerBootstrap_DbBackedFullBoot_*,
-		// run against the live MySQL container with real game-server data): the no-DB ArgumentNullException blocker is
-		// LIFTED with a live (empty) players table — PlayerDAO.GetUsedIDs() returns int[0], the HousingService ctor
-		// loads cleanly, and SpawnEngine.SpawnAll() reaches HousingService.SpawnHouses across every twin instance.
-		// HOWEVER, the with-DB full SpawnAll() then throws the documented Java-latent house-twin
-		// DuplicateAionObjectException: Heiron(210040000) HOUSE_6001 (objectId 130885) and Beluslan(220040000)
-		// HOUSE_7001 (objectId 152343) are address-cached House objects re-spawned into a 2nd twin instance of the same
-		// map, colliding on the House objectId in World.StoreObject (Java behaves identically — no upstream guard). So
-		// this block stays DEFERRED here too: enabling it does not change the SpawnAll() house-twin boundary, and the
-		// no-DB fixture path (empty WORLD_MAPS_DATA => SpawnAll iterates zero maps => HousingService never reached) must
-		// stay green. DO NOT add an un-faithful guard to force a whole-world boot past the house-twin throw.
-		// (HousingConfig.HOUSE_AUCTION_END_TIME / AUCTION_AUTO_FILL_TIME / HOUSE_MAINTENANCE_TIME cron defaults ARE
-		// now populated — that fix stands independent of this deferral.)
+		// NOT WIRED YET (P10-05, D7 approved 2026-10-17): HousingService.getInstance() (main:118),
+		// HousingBidService.getInstance() (main:119) and the three AbstractCronTask singletons AuctionEndTask,
+		// AuctionAutoFillTask and MaintenanceTask (main:120-122). Until they are, HousingService is first built inside
+		// SpawnAll (SpawnEngine.SpawnInstance -> HousingService.SpawnHouses), HousingBidService at the first login, and the
+		// three cron tasks only when a packet or command touches them. The HousingService ctor needs the database
+		// (PlayerDAO.GetUsedIDs() returns null without one, as Java's does), which is why the no-DB bootstrap tests run
+		// only StartHeadAsync. The house-twin DuplicateAionObjectException once cited here was a C# divergence, fixed by
+		// porting WorldConfig's twin clamps to WorldMapTemplate (commit 4f9d864f6).
 		// Aion.GameServer.Services.HousingService.GetInstance();
 		// Aion.GameServer.Services.HousingBidService.GetInstance();
 		// Aion.GameServer.Taskmanager.Tasks.Housing.AuctionEndTask.GetInstance();
 		// Aion.GameServer.Taskmanager.Tasks.Housing.AuctionAutoFillTask.GetInstance();
 		// Aion.GameServer.Taskmanager.Tasks.Housing.MaintenanceTask.GetInstance();
 
-		// ChallengeTaskService.getInstance() (GameServer.main:124): ctor initializes empty task maps. Dep-clean.
+		// ChallengeTaskService.getInstance() (GameServer.main:123): ctor initializes empty task maps. Dep-clean.
 		Aion.GameServer.Services.ChallengeTaskService.GetInstance();
 
 		// Java parity: GameServer.main calls SpawnEngine.spawnAll() after RiftService.initRiftLocations()
@@ -290,7 +301,7 @@ public sealed class GameServerBootstrapService : IHostedService
 			_logger.LogWarning(ex, "Gated spawns could not be loaded");
 		}
 
-		// Java parity: GameServer.main calls TownService.getInstance() right after SpawnEngine.spawnAll() (line 127),
+		// Java parity: GameServer.main calls TownService.getInstance() right after SpawnEngine.spawnAll() (line 126),
 		// before FlyRingService. Its ctor loads per-race towns via TownDAO (try/catch-guarded: no DB => empty + logged)
 		// and, only when both are empty, seeds towns from HOUSE_DATA lands/addresses (live HOUSE_DATA/NPC_DATA holders).
 		Aion.GameServer.Services.TownService.GetInstance();
@@ -303,19 +314,21 @@ public sealed class GameServerBootstrapService : IHostedService
 		// Java parity: GameServer.main registers scheduled rift openings after SpawnEngine.spawnAll() (RiftService.getInstance().initRifts()).
 		Aion.GameServer.Services.RiftService.GetInstance().InitRifts();
 
-		// LimitedItemTradeService.getInstance().start() (GameServer.main:136): collects limited-trade NPCs from
+		// GameServer.main:130-134, the faction ratio counts (GSConfig.ENABLE_RATIO_LIMITATION): NOT WIRED YET (P10-05).
+
+		// LimitedItemTradeService.getInstance().start() (GameServer.main:135): collects limited-trade NPCs from
 		// TRADE_LIST_DATA + GOODSLIST_DATA (both empty-but-non-null on the fixture => no NPCs collected) and
 		// schedules each limited item's reset cron (item.GetSalesTime()). Empty data => no-op. Dep-clean.
 		Aion.GameServer.Services.LimitedItemTradeService.GetInstance().Start();
 
-		// PlayerLimitService.getInstance().scheduleUpdate() (GameServer.main:137-138, guarded by
+		// PlayerLimitService.getInstance().scheduleUpdate() (GameServer.main:136-137, guarded by
 		// CustomConfig.LIMITS_ENABLED, default true): schedules the daily NPC-sell-limit reset cron.
 		// CustomConfig.LIMITS_UPDATE is now populated from the Java @Property default "0 0 0 ? * *" via
 		// CronExpressions.GetOrCreate (was null => CronService.Schedule NRE). Dep-clean.
 		if (Aion.GameServer.Configs.Main.CustomConfig.LIMITS_ENABLED)
 			Aion.GameServer.Services.Players.PlayerLimitService.GetInstance().ScheduleUpdate();
 
-		// Java parity: GameServer.main second-pass init block (lines 142-150), AFTER spawnAll/initRifts, BEFORE
+		// Java parity: GameServer.main second-pass init block (lines 141-149), AFTER spawnAll/initRifts, BEFORE
 		// DebugService/Weather/etc. These run separately from the location-init first pass because they depend on
 		// the spawn engine having run: they despawn the spawn-engine NPCs at each siege/base location and re-spawn
 		// the siege/base/raid-controlled NPCs, and they schedule sieges/bases/raids through CronService. All are
@@ -323,36 +336,32 @@ public sealed class GameServerBootstrapService : IHostedService
 		// is absent => no-op), the schedule files (config/schedule/{siege,world_raid}_schedule.xml) are present, and
 		// the DAO reads are DB.Select try/catch-guarded (no DB => empty + logged).
 
-		// SiegeService.getInstance().initSieges() (GameServer.main:142): FAITHFUL DB-GATED — kept OUT of this always-on
-		// StartAsync path, exercised+asserted in the DB-backed integration test instead. Java initSieges() runs its FULL
-		// body whenever SiegeConfig.SIEGE_ENABLED (siege.properties default true): it despawns/spawns from the real
-		// SIEGE_LOCATION_DATA fortress/outpost/artifact registries, schedules sieges from the FULL real
-		// config/schedule/siege_schedule.xml (fortress IDs 1011, 1131, 2011, ...), then UpdateFortressNextState() does
-		// GetSiegeLocation(scheduledLocId).SetNextState(...) with NO null guard — exactly like Java
-		// updateFortressNextState (no guard there either; Java is safe only because real SIEGE_LOCATION_DATA carries
-		// those fortress locations). The GameServerBootstrapTests minimal fixture loads an EMPTY SIEGE_LOCATION_DATA
-		// (items-only static data) while siege_schedule.xml stays the full real file, so GetSiegeLocation returns null
-		// and the faithful fortress.SetNextState would NRE the minimal-fixture bootstrap gate. Java does NOT guard for
-		// empty data and adding a C# null guard would be UN-FAITHFUL, so the faithful home for this wire is the
-		// DB-backed boot (real SIEGE_LOCATION_DATA): GameServerBootstrapTests.GameServerBootstrap_DbBackedFullBoot_*
-		// calls InitSieges() after the clean StartAsync and asserts it completes. Proven clean against real data there.
+		// SiegeService.getInstance().initSieges() (GameServer.main:141): NOT WIRED YET (P10-05, D7 approved 2026-10-17).
+		// Java initSieges() runs its FULL body whenever SiegeConfig.SIEGE_ENABLED (siege.properties default true): it
+		// despawns/spawns from the real SIEGE_LOCATION_DATA fortress/outpost/artifact registries, schedules sieges from the
+		// FULL real config/schedule/siege_schedule.xml (fortress IDs 1011, 1131, 2011, ...), then UpdateFortressNextState()
+		// does GetSiegeLocation(scheduledLocId).SetNextState(...) with NO null guard, exactly like Java
+		// updateFortressNextState (Java is safe only because real SIEGE_LOCATION_DATA carries those fortress locations).
+		// Adding a C# null guard would be UN-FAITHFUL. The real-data boot that exercises this tail is the SIM boot
+		// (tests/Aion.Simulation.Tests/SimulationBootTailTests); the old env-gated DB full-boot test that called it after
+		// StartAsync failed in UpdateFortressNextState (gap #65 of docs/e2e-player-simulation-plan.md).
 		// Aion.GameServer.Services.SiegeService.GetInstance().InitSieges();
 
-		// BaseService.getInstance().initBases() (GameServer.main:144): starts casual/stained/panesterra bases
+		// BaseService.getInstance().initBases() (GameServer.main:143): starts casual/stained/panesterra bases
 		// (Start is try/catch-guarded for BaseException/NRE; iterates allBaseLocations, empty => no-op).
 		Aion.GameServer.Services.BaseService.GetInstance().InitBases();
 
-		// WorldRaidService.getInstance().initWorldRaids() (GameServer.main:146): schedules world raids through
+		// WorldRaidService.getInstance().initWorldRaids() (GameServer.main:145): schedules world raids through
 		// CronService from config/schedule/world_raid_schedule.xml (guarded by EventsConfig.ENABLE_WORLDRAID, default true).
 		Aion.GameServer.Services.WorldRaidService.GetInstance().InitWorldRaids();
 
-		// ConquerorAndProtectorService.getInstance().init() (GameServer.main:148): registers the handled abyss
+		// ConquerorAndProtectorService.getInstance().init() (GameServer.main:147): registers the handled abyss
 		// worlds (CustomConfig.CONQUEROR_AND_PROTECTOR_WORLDS, all race-specific by default => no ArgumentException)
 		// and schedules the periodic kills-decrease task through ThreadPoolManager (guarded by
 		// CustomConfig.CONQUEROR_AND_PROTECTOR_SYSTEM_ENABLED + non-empty worlds, both default-on).
 		Aion.GameServer.Services.ConquerorAndProtectorSystem.ConquerorAndProtectorService.GetInstance().Init();
 
-		// AnnouncementService.getInstance() (GameServer.main:150): ctor Reload() loads announcements via
+		// AnnouncementService.getInstance() (GameServer.main:149): ctor Reload() loads announcements via
 		// AnnouncementsDAO.LoadAnnouncements (DB.Select try/catch-guarded: no DB => empty + logged) and schedules
 		// each via ThreadPoolManager.
 		Aion.GameServer.Services.AnnouncementService.GetInstance();
@@ -363,7 +372,7 @@ public sealed class GameServerBootstrapService : IHostedService
 		// DebugService: schedules the periodic world-player analysis task.
 		Aion.GameServer.Services.DebugService.GetInstance();
 
-		// WeatherService.getInstance() (GameServer.main:152): ctor iterates WORLD_MAPS_DATA (live), builds per-zone
+		// WeatherService.getInstance() (GameServer.main:151): ctor iterates WORLD_MAPS_DATA (live), builds per-zone
 		// weather arrays from MAP_WEATHER_DATA (GetWeather returns null on absent map => guarded skip), seeds the
 		// next weather from the current GameTime. Dep-clean: GameTimeService is already initialized (InitAsync above).
 		Aion.GameServer.Services.WeatherService.GetInstance();
@@ -383,26 +392,26 @@ public sealed class GameServerBootstrapService : IHostedService
 			_gameTimeConsumersWired = true;
 		}
 
-		// BrokerService.getInstance() (GameServer.main:153): ctor InitBrokerService() loads broker items via
+		// BrokerService.getInstance() (GameServer.main:152): ctor InitBrokerService() loads broker items via
 		// BrokerDAO.LoadBroker (DB.Select try/catch-guarded => empty no-DB) into per-race maps, then schedules the
 		// periodic expiry check + save manager through ThreadPoolManager. Empty broker => no-op loops.
 		Aion.GameServer.Services.BrokerService.GetInstance();
 
-		// Influence.getInstance() (GameServer.main:154): ctor RecalculateInfluence() iterates
+		// Influence.getInstance() (GameServer.main:153): ctor RecalculateInfluence() iterates
 		// SiegeService.GetSiegeLocations() (empty SIEGE_LOCATION_DATA => empty => zero influence rates). Dep-clean.
 		Aion.GameServer.Model.Siege.Influence.GetInstance();
 
-		// ExchangeService.getInstance() (GameServer.main:155): empty ctor (no boot work). Faithful no-op touch.
+		// ExchangeService.getInstance() (GameServer.main:154): empty ctor (no boot work). Faithful no-op touch.
 		Aion.GameServer.Services.ExchangeService.GetInstance();
 
-		// PeriodicSaveService.getInstance() (GameServer.main:156): faithful singleton; ctor schedules the
+		// PeriodicSaveService.getInstance() (GameServer.main:155): faithful singleton; ctor schedules the
 		// LegionWarehouseSaveTask (PeriodicSaveConfig.LEGION_ITEMS * 1000 ms) + ServerRunTimeSaveTask (2 min) via
 		// ThreadPoolManager.scheduleAtFixedRate. Scheduling boots cleanly (ThreadPoolManager initialized); the task
 		// bodies run at interval-fire against the live DB (LegionService.getCachedLegions empty + DB-guarded DAOs =>
 		// no-op no-DB). The reworked DI GameEngine PeriodicSaveService was retired.
 		Aion.GameServer.Services.PeriodicSaveService.GetInstance();
 
-		// AtreianPassportService.getInstance() (GameServer.main:157): ctor computes the passport expire date from
+		// AtreianPassportService.getInstance() (GameServer.main:156): ctor computes the passport expire date from
 		// ATREIAN_PASSPORT_DATA (empty => null expire => not disabled) and, when enabled, schedules the daily 09:00
 		// reset cron (DAILY_CRON_AT_09_00 = "0 0 9 ? * *", a non-null const string => no null-CronExpression NRE).
 		_ = Aion.GameServer.Services.AtreianPassportService.GetInstance();
@@ -419,9 +428,9 @@ public sealed class GameServerBootstrapService : IHostedService
 		// RoadService: spawns every roads/ template into each available instance of its world map.
 		Aion.GameServer.Services.RoadService.GetInstance();
 
-		// Java parity: GameServer.main trailing feature services (lines 163-177), after RoadService.
+		// Java parity: GameServer.main trailing feature services (lines 162-176), after RoadService.
 
-		// HTMLCache.getInstance() (GameServer.main:163): ctor Reload(false) falls through to
+		// HTMLCache.getInstance() (GameServer.main:162): ctor Reload(false) falls through to
 		// ParseDir(HTMLConfig.HTML_ROOT) when no html.cache file exists, caching every *.xhtml under the HTML
 		// tree (Java parity: dir.listFiles(HTML_FILTER) recursive). The bootstrap fixture now points
 		// HTMLConfig.HTML_ROOT at a temp copy of the real game-server HTML tree (and HTML_CACHE_FILE at a fresh
@@ -429,18 +438,18 @@ public sealed class GameServerBootstrapService : IHostedService
 		// Production reads the shipped ./data/static_data/HTML/. Dep-clean against the seeded HTML dir.
 		Aion.GameServer.Cache.HTMLCache.GetInstance();
 
-		// AbyssRankingCache.getInstance() (GameServer.main:164): ctor RefreshCache() loads ranking players/legions
+		// AbyssRankingCache.getInstance() (GameServer.main:163): ctor RefreshCache() loads ranking players/legions
 		// via AbyssRankDAO (DB.Select try/catch-guarded => empty no-DB) and builds per-race window packets from
 		// empty lists. Dep-clean.
 		Aion.GameServer.Services.Abyss.AbyssRankingCache.GetInstance();
 
-		// AbyssRankUpdateService.scheduleUpdate() (GameServer.main:165): schedules the rank-update + daily-GP-loss
+		// AbyssRankUpdateService.scheduleUpdate() (GameServer.main:164): schedules the rank-update + daily-GP-loss
 		// crons. RankingConfig.TOP_RANKING_UPDATE_RULE / TOP_RANKING_DAILY_GP_LOSS_TIME are now initialized from the
 		// Java @Property defaultValue cron strings ("0 0 0 ? * *" / "0 0 12 ? * *") via CronExpressions.GetOrCreate,
 		// so CronService.Schedule no longer receives a null CronExpression (the CronJobService null-cron failure mode).
 		Aion.GameServer.Services.Abyss.AbyssRankUpdateService.ScheduleUpdate();
 
-		// PeriodicInstanceManager.getInstance() (GameServer.main:166): Its ctor (guarded by
+		// PeriodicInstanceManager.getInstance() (GameServer.main:165): Its ctor (guarded by
 		// AutoGroupConfig.AUTO_GROUP_ENABLE, default true) calls ScheduleRegistration, whose log line invokes
 		// AutoGroupTypeExtensions.GetAGTByMaskId -> AutoGroupType.GetTemplate() -> data[self].Template. That
 		// per-type AutoGroup template comes from AUTO_GROUP_DATA, which the bootstrap fixture does NOT load (empty),
@@ -451,47 +460,44 @@ public sealed class GameServerBootstrapService : IHostedService
 		// iron-wall/idgel registration crons schedule cleanly. Dep-clean against the seeded AUTO_GROUP_DATA.
 		Aion.GameServer.Services.Instance.PeriodicInstanceManager.GetInstance();
 
-		// EventService.getInstance().start() (GameServer.main:167): validates configured event names + collects
+		// EventService.getInstance().start() (GameServer.main:166): validates configured event names + collects
 		// active events from EVENT_DATA (now empty-but-non-null via EventData.events = new(); EventsConfig.DISABLED_EVENTS
 		// now an empty set per the shipped events.properties) and schedules the 5-min check cron ("0 0/5 * ? * *").
 		Aion.GameServer.Services.Event.EventService.GetInstance().Start();
 
-		// AdminService.getInstance() (GameServer.main:169): ctor Reload() reads config/administration/item.restriction.txt
+		// AdminService.getInstance() (GameServer.main:168): ctor Reload() reads config/administration/item.restriction.txt
 		// inside a try/catch(IOException) (missing file => logged, empty list). Dep-clean.
 		Aion.GameServer.Services.AdminService.GetInstance();
 
-		// CommandsAccessService.loadAccesses() (GameServer.main:170): loads command ACLs via CommandsAccessDAO
+		// CommandsAccessService.loadAccesses() (GameServer.main:169): loads command ACLs via CommandsAccessDAO
 		// (DB.Select try/catch-guarded => empty no-DB). Static method, faithful boot wire.
 		Aion.GameServer.Services.CommandsAccessService.LoadAccesses();
 
-		// PlayerTransferService.getInstance() (GameServer.main:172): ctor parses PlayerTransferConfig.REMOVE_SKILL_LIST
+		// PlayerTransferService.getInstance() (GameServer.main:171): ctor parses PlayerTransferConfig.REMOVE_SKILL_LIST
 		// (default "*" => skip, no parsing). Dep-clean.
 		Aion.GameServer.Services.Transfers.PlayerTransferService.GetInstance();
 
-		// PvpMapService.getInstance().init() (GameServer.main:176): FAITHFUL DB-GATED — kept OUT of this always-on
-		// StartAsync path, exercised+asserted in the DB-backed integration test instead. Init() calls (unconditionally,
-		// NO config gate — PVP_MAP_ENABLED is not checked here) InstanceService.GetNextAvailableInstance(301220000, ...)
-		// which needs world map 301220000 to exist; the minimal fixture loads EMPTY WORLD_MAPS_DATA so the lookup has no
-		// WorldMap to register into (NRE). Java does not guard, so the faithful home is the DB-backed boot (real
-		// WORLD_MAPS_DATA): GameServerBootstrapTests.GameServerBootstrap_DbBackedFullBoot_* calls Init() after the clean
-		// StartAsync and asserts it completes. NOTE: this surfaced a real port defect — CustomConfig.PVP_MAP_RANDOM_BOSS
-		// _SCHEDULE was left null (should carry the Java @Property defaultValue "0 30 14,18,21 ? * *"); PvpMapHandler
-		// .StartRandomBossTask schedules off it during Init() and NRE'd CronService.Schedule. Fixed faithfully (inline
-		// CronExpressions.GetOrCreate default, same pattern as AutoGroupConfig). Proven clean against real data.
+		// PvpMapService.getInstance().init() (GameServer.main:175): NOT WIRED YET (P10-05, D7 approved 2026-10-17).
+		// Init() calls (unconditionally, NO config gate: PVP_MAP_ENABLED is not checked here)
+		// InstanceService.GetNextAvailableInstance(301220000, ...), which needs world map 301220000 to exist; Java does not
+		// guard, so it needs the real WORLD_MAPS_DATA of the SIM or production boot (SimulationBootTailTests). NOTE: an
+		// earlier real-data run surfaced a port defect: CustomConfig.PVP_MAP_RANDOM_BOSS_SCHEDULE was left null (it carries
+		// the Java @Property defaultValue "0 30 14,18,21 ? * *"); PvpMapHandler.StartRandomBossTask schedules off it during
+		// Init() and NRE'd CronService.Schedule. Fixed faithfully (inline CronExpressions.GetOrCreate default, same pattern
+		// as AutoGroupConfig).
 		// Aion.GameServer.Custom.Pvpmap.PvpMapService.GetInstance().Init();
 
-		// CustomInstanceService.getInstance() (GameServer.main:177): empty ctor; the LEADERBOARD_WINDOW_OBJECT_ID
+		// CustomInstanceService.getInstance() (GameServer.main:176): empty ctor; the LEADERBOARD_WINDOW_OBJECT_ID
 		// static field calls IDFactory.GetInstance().NextId() (IDFactory is live at this boot point). Dep-clean.
 		Aion.GameServer.Custom.Instance.CustomInstanceService.GetInstance();
 
 		_world.Initialize();
+		// GameTimeService.getInstance().startClock() (GameServer.main:173). Java starts the clock before PvpMapService.init()
+		// and CustomInstanceService (main:175-176); the C# order here is part of the P10-05 boot-tail work.
 		_gameTimeService.StartClock();
 
 		if (dataManager.StaticData.ValidationTask != null)
 			await dataManager.StaticData.ValidationTask.WaitAsync(cancellationToken);
-
-		_started = true;
-		_logger.LogInformation("Game-server bootstrap completed in {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
 	}
 
 	public async Task StopAsync(CancellationToken cancellationToken)
@@ -508,7 +514,7 @@ public sealed class GameServerBootstrapService : IHostedService
 
 		// Java parity: ShutdownHook.run():75 — PeriodicSaveService.getInstance().onShutdown() saves the legion
 		// warehouses + the serverLastRun server variable and cancels the periodic save tasks. The faithful singleton
-		// was already created at boot (GameServerBootstrapService.StartAsync, GameServer.main:156), so this just
+		// was already created at boot (GameServerBootstrapService.StartAsync, GameServer.main:155), so this just
 		// re-fetches it. Run it before the ThreadPoolManager shutdown below: StoreDataAndCancel cancels each
 		// scheduled save task and then performs the save inline, so the pool must still be intact.
 		PeriodicSaveService.GetInstance().OnShutdown();
