@@ -1,6 +1,6 @@
 # Natural leg to 36: what was left, Brusthonin, the first Abyss quests and the check-in at 36
 
-Status: a plan, 2026-10-17. The operator, the same day, after the level-31 profiles:
+Status: being played, 2026-10-17: NL-0 and NL-1 done; the world is `nl-g31-s2-w1`. The plan was written the same day. The operator, the same day, after the level-31 profiles:
 
 > 1. Finish anything we were in the middle of, unless we were waiting until we leveled up a bit (like lvl 36 with better
 >    gear).
@@ -32,7 +32,7 @@ experience and kinah are shared with it (quest rewards are not), and a round of 
 
 | What | State in the world | Step |
 |---|---|---|
-| Q24023 A Blazing Rescue (campaign, 29): the Sky Temple Interior, a solo instance; three key guardians, Flame Judge Bolcan 57,376 HP | all eight have it started | NL-1 |
+| Q24023 A Blazing Rescue (campaign, 29): the Sky Temple Interior, a solo instance; three key guardians, Flame Judge Bolcan 57,376 HP | all eight have it started | NL-4 (my decision 4) |
 | Q24024 A Nepra Protector, Q24025 Crisis in Morheim (campaign, 35) | started for the six at 35; the other two get them at 35 | the next phase (the operator) |
 | The second stigma stone and the Elite Rank 6 pieces the level-31 check-in skipped (L1 of [level-31-profiles.md](level-31-profiles.md)) | the world's eight still wear the old picks and one stone | NL-1 |
 | Q2330 Orders for Randet, Q4300 News For the Settlers (Morheim, 20): handed in at Brusthonin | not taken | NL-2 |
@@ -71,9 +71,15 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
     game minutes and was sent away at the end; one seat played six in turn. My decision: before a solo instance the bot
     sends its companion away and asks for it again outside (a companion cannot be asked for inside an instance at all);
     that is built with the first solo instance, in NL-1.
-- [ ] **NL-1 What was in the middle.** The world's eight get the check-in's fixed picks and their second stone (the stage
-  `check-in`, which their level allows). Then Q24023: the leg engine collects inside an instance and goes down between
-  the Sky Temple Interior's floors as a player does (a drop or a glide), and each bot plays it alone.
+- [x] **NL-1 What was in the middle.** The world's eight get the check-in's fixed picks and their second stone (the stage
+  `check-in`, which their level allows). Q24023 moved to NL-4 (my decision 4).
+  - 2026-10-17 (`ed7ab9b15`): leg `mg` took the eight from `morheim-ft-s1` back to the fortress, bound there, with
+    their Cleric companions (`nl-mg-s1`). The first check-in from it (`nl1-g31`) stopped the Ranger: the coin check
+    bought the level-31 Elite Rank 6 jerkin over its level-35 Flame Tunic on its higher grade and defence, and the
+    gear rules, which rank armor by item level first, never wore it. The coin check now ranks a piece by its level
+    alone, as the gear rules wear it. Trial `nl1-g31t2` and captured round `nl1-g31c2` from `nl-mg-s1`: all eight
+    reached, each with its second stone socketed (bought in Pandaemonium) and 0 to 3 Elite Rank 6 pieces bought where
+    one beat a worn piece (most wear level-35 Fire Temple pieces). The world is now `nl-g31-s2-w1`.
 - [ ] **NL-2 Brusthonin.** Q2330 and Q4300 from the fortress, the fortress teleporter (204399) to Brusthonin, the settlers
   area's quests (the hand-written ones get their steps), its two group quests in a group, and any quest of the area that
   sends a bot back to Morheim. The quest list first, made by `scripts/sim/zone-quest-list.py`.
@@ -81,8 +87,9 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
   campaign from Votan's Orders, the quests the list says play or need steps, and those that open on the way. The quest
   list first.
 - [ ] **NL-4 Level 36.** Morheim's quests from 31 to 35 for any bot still short of 36 and for the zone's sake; the gear
-  check-in at 36 (Elite Rank 5); the level-36 companion profiles; then Q2355 and the quests a step left for a higher
-  level.
+  check-in at 36 (Elite Rank 5); the level-36 companion profiles; then Q24023 (the leg engine collects inside an
+  instance, room by room, and goes down between the Sky Temple Interior's floors as a player does, by a glide or a
+  drop), Q2355 and the quests a step left for a higher level.
 - [ ] **NL-5 The report.** Per class its level, quests, deaths and time; what was not played and why.
 
 ## Decisions
@@ -97,6 +104,14 @@ Mine, where the operator gave none; each is his to change:
    cast the stone's skill, and the companions already wear them.
 3. **Morheim's quests from 31 to 35 are in NL-4,** after the Abyss: the operator's order has the Abyss bring the bots to
    36, and the zone's quests below 36 still belong to the leg (MR-j).
+4. **Q24023 waits for level 36 and the Elite Rank 5 gear (NL-4),** as the operator's first point allows ("unless we were
+   waiting until we leveled up a bit"). The Sky Temple Interior is a solo instance (the 4.8 client's
+   `client_instance_cooltime.xml`, id 24: one member a side), so neither a companion nor a group can go in. Its Fire
+   Room's monsters are the elite kind (client names `..._Ae`; 21,557 to 32,358 HP each where the Water and Wind Rooms'
+   have 3,637 to 5,141), and Flame Judge Bolcan (57,376 HP) stands with three corrupt flame spirits of his tribe
+   (32,358 HP each) within 13 m. The engine work it needs (three rooms of one instance entered by three portals, a
+   collection inside an instance, glides or drops between floors that no path joins: falls cost 1 % of max HP a metre
+   from 10 m, Java `FallDamageConfig`) is built then. The research is kept in `run/nl/NL1/q24023-research.md`.
 
 ## Loop prompt
 
