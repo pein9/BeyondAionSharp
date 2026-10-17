@@ -1,4 +1,4 @@
-using Aion.GameServer.Taskmanager.Tasks.Housing;
+using Aion.GameServer.Services;
 using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Tests.Ai;
@@ -6,12 +6,9 @@ namespace Aion.GameServer.Tests.Ai;
 /// <summary>SIM boot slice for the Java-ordered housing cron singletons, built through the startup-singleton seam.</summary>
 internal static class SimulationCronTaskInitialization
 {
-	public static void InitializeHousingTasks(ThreadPoolManager pool)
-	{
-		pool.ConstructStartupSingleton(nameof(AuctionEndTask), AuctionEndTask.GetInstance);
-		pool.ConstructStartupSingleton(nameof(AuctionAutoFillTask), AuctionAutoFillTask.GetInstance);
-		pool.ConstructStartupSingleton(nameof(MaintenanceTask), MaintenanceTask.GetInstance);
-	}
+	// The production boot's own step (GameServer.java:120-122), so this slice runs exactly what StartAsync runs.
+	public static void InitializeHousingTasks(ThreadPoolManager pool) =>
+		GameServerBootstrapService.ConstructHousingCronTasks(pool);
 
 	internal static void InitializeSequence(
 		ThreadPoolManager pool,

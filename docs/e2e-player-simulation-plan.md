@@ -2203,6 +2203,11 @@ real geodata on in production immediately, because geo is enabled by default; th
   tail the C# production boot skips: `HousingService` and the housing bid/auction/maintenance tasks, faction ratio counts,
   `SiegeService.InitSieges`, `PvpMapService.Init` (`GameServer.java:118-122,130-134,141,175`). Move the no-DB fixture
   that shaped today's boot off the production path.
+  Progress 2026-10-17: the no-DB bootstrap tests run only `StartHeadAsync` (Java lines 93-105) and the env-gated
+  DB full-boot test became `SimulationBootTailTests` on the SIM boot. Housing (118-122) is wired: `HousingService`,
+  `HousingBidService`, then the three cron tasks through `ThreadPoolManager.ConstructStartupSingleton` (inline in
+  production; bounded construction and a zero-delay drain on the SIM pool, P4-08). `CronService.Schedule` now puts
+  its zone on the shared `CronExpression`, as Java's `CronTriggerImpl.setTimeZone` does.
 - [ ] **P10-06** [LIVE] L — **Deferred by maintainer (D15): do not run the Java server.** Original proposal:
   differential Java-vs-C# runs, narrowly: build `../aion-server` `4.8` (kept at
   `lastCompletedJavaCommit`, P0-02) locally with JDK 25 and Maven; start the Java game server as a local process

@@ -38,6 +38,23 @@ public sealed class SimulationCronTaskInitializationTests
 			Assert.Equal("JobKey:VirtualJob:3", Assert.Single(service.FindJobs<MaintenanceTask>(withSubTypes: false)).Key.Name);
 			Assert.Equal(3, pool.ArmedTimerCount);
 			Assert.Empty(pool.Faults);
+
+			// The jobs fire in the cron service's zone. Scheduling put that zone on the shared expressions, as Java's
+			// CronTriggerImpl.setTimeZone does, so the task's own arithmetic agrees with its job from then on.
+			DateTimeOffset now = SystemClock.UtcNow();
+			DateTimeOffset auctionEnd = Assert.Single(service.FindNextFireTimes<AuctionEndTask>(false)).Value;
+			Assert.Equal(new DateTimeOffset(2030, 1, 6, 12, 0, 0, TimeSpan.Zero), auctionEnd);
+			Assert.Equal(auctionEnd, AuctionEndTask.GetInstance().GetNextRunAfter(now));
+			// GetNextRun is the constructor's, computed before the job was scheduled, in the expression's zone of that
+			// moment: the default one (Java's JVM zone, TimeZoneInfo.Local here). It equals the job's next fire only where
+			// the host zone gives the same instant, until the first run.
+			Assert.Equal(new CronExpression("0 0 12 ? * SUN") { TimeZone = TimeZoneInfo.Local }.GetTimeAfter(epoch),
+				AuctionEndTask.GetInstance().GetNextRun());
+			// MaintenanceTask shares AuctionAutoFillTask's interned Monday expression, which that task's job had already
+			// put in the service's zone before MaintenanceTask's constructor ran.
+			DateTimeOffset maintenance = Assert.Single(service.FindNextFireTimes<MaintenanceTask>(false)).Value;
+			Assert.Equal(new DateTimeOffset(2030, 1, 7, 0, 0, 0, TimeSpan.Zero), maintenance);
+			Assert.Equal(maintenance, MaintenanceTask.GetInstance().GetNextRun());
 		}
 		finally
 		{

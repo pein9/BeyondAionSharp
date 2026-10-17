@@ -147,6 +147,12 @@ public sealed class CronService
     {
         try
         {
+            // Java parity: CronScheduleBuilder.build() calls cronTrigger.setCronExpression(cronExpression), then
+            // cronTrigger.setTimeZone(timeZone), and Quartz's CronTriggerImpl.setTimeZone sets that zone on the
+            // CronExpression itself. The expressions are shared (CronExpressions.getOrCreate and the config fields), so
+            // every later getTimeAfter on one reads this service's zone, AbstractCronTask's next run among them.
+            cronExpression.TimeZone = timeZone;
+
             JobDataMap jdm = new JobDataMap();
             jdm.Put(RunnableRunner.KEY_RUNNABLE_OBJECT, r);
             jdm.Put(RunnableRunner.KEY_PROPERTY_IS_LONGRUNNING_TASK, longRunning);

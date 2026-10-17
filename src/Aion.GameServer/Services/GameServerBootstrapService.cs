@@ -258,20 +258,13 @@ public sealed class GameServerBootstrapService : IHostedService
 		Aion.GameServer.Services.LegionDominionService.GetInstance().InitLocations();
 
 		// Java parity: GameServer.main housing init block (lines 118-122), AFTER the location-init cluster, BEFORE
-		// SpawnEngine.spawnAll() (HousingService is init'd before spawns because it is touched on every instance spawn).
-		// NOT WIRED YET (P10-05, D7 approved 2026-10-17): HousingService.getInstance() (main:118),
-		// HousingBidService.getInstance() (main:119) and the three AbstractCronTask singletons AuctionEndTask,
-		// AuctionAutoFillTask and MaintenanceTask (main:120-122). Until they are, HousingService is first built inside
-		// SpawnAll (SpawnEngine.SpawnInstance -> HousingService.SpawnHouses), HousingBidService at the first login, and the
-		// three cron tasks only when a packet or command touches them. The HousingService ctor needs the database
-		// (PlayerDAO.GetUsedIDs() returns null without one, as Java's does), which is why the no-DB bootstrap tests run
-		// only StartHeadAsync. The house-twin DuplicateAionObjectException once cited here was a C# divergence, fixed by
-		// porting WorldConfig's twin clamps to WorldMapTemplate (commit 4f9d864f6).
-		// Aion.GameServer.Services.HousingService.GetInstance();
-		// Aion.GameServer.Services.HousingBidService.GetInstance();
-		// Aion.GameServer.Taskmanager.Tasks.Housing.AuctionEndTask.GetInstance();
-		// Aion.GameServer.Taskmanager.Tasks.Housing.AuctionAutoFillTask.GetInstance();
-		// Aion.GameServer.Taskmanager.Tasks.Housing.MaintenanceTask.GetInstance();
+		// SpawnEngine.spawnAll(): "init housing service before spawns since it gets called on every instance spawn". The
+		// HousingService ctor loads the houses and studios from the database and HousingBidService's ctor puts the loaded
+		// bids on them. (The house-twin DuplicateAionObjectException once cited against this block was a C# divergence,
+		// fixed by porting WorldConfig's twin clamps to WorldMapTemplate, commit 4f9d864f6.)
+		Aion.GameServer.Services.HousingService.GetInstance();
+		Aion.GameServer.Services.HousingBidService.GetInstance();
+		ConstructHousingCronTasks(_threadPoolManager);
 
 		// ChallengeTaskService.getInstance() (GameServer.main:123): ctor initializes empty task maps. Dep-clean.
 		Aion.GameServer.Services.ChallengeTaskService.GetInstance();
@@ -530,6 +523,25 @@ public sealed class GameServerBootstrapService : IHostedService
 		await _threadPoolManager.ShutdownAsync();
 		_started = false;
 		_logger.LogInformation("Game-server bootstrap stopped");
+	}
+
+	/// <summary>
+	/// Java parity: <c>GameServer.main:120-122</c>, AuctionEndTask, AuctionAutoFillTask and MaintenanceTask in that
+	/// order. Each AbstractCronTask constructor takes the shared semaphore that the previous task's startup body
+	/// releases on the thread pool, so they are built through <see cref="ThreadPoolManager.ConstructStartupSingleton{T}"/>:
+	/// inline on the boot thread in production, as in Java, and with a drain of the pool between them in SIM.
+	/// </summary>
+	internal static void ConstructHousingCronTasks(ThreadPoolManager threadPoolManager)
+	{
+		threadPoolManager.ConstructStartupSingleton(
+			nameof(Aion.GameServer.Taskmanager.Tasks.Housing.AuctionEndTask),
+			Aion.GameServer.Taskmanager.Tasks.Housing.AuctionEndTask.GetInstance);
+		threadPoolManager.ConstructStartupSingleton(
+			nameof(Aion.GameServer.Taskmanager.Tasks.Housing.AuctionAutoFillTask),
+			Aion.GameServer.Taskmanager.Tasks.Housing.AuctionAutoFillTask.GetInstance);
+		threadPoolManager.ConstructStartupSingleton(
+			nameof(Aion.GameServer.Taskmanager.Tasks.Housing.MaintenanceTask),
+			Aion.GameServer.Taskmanager.Tasks.Housing.MaintenanceTask.GetInstance);
 	}
 
 	private async ValueTask InitEngineAsync(GameEngine engine, CancellationToken cancellationToken)

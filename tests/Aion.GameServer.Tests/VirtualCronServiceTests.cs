@@ -27,7 +27,9 @@ public sealed class VirtualCronServiceTests
 			service = CronService.CreateDeterministic(typeof(ThreadPoolManagerRunnableRunner), zone);
 			var trace = new List<long>();
 			var runnable = new RecordingRunnable(() => trace.Add(pool.NowMillis));
-			CronExpression expression = CronExpressions.GetOrCreate("0 0 0 ? * *");
+			// A private expression: scheduling puts the service's zone on it, as Java's trigger does, and the interned
+			// instance is shared by the whole process.
+			var expression = new CronExpression("0 0 0 ? * *");
 
 			IJobDetail job = service.Schedule(runnable, expression);
 
@@ -56,6 +58,41 @@ public sealed class VirtualCronServiceTests
 			pool.Advance(TimeSpan.FromDays(1));
 			Assert.Equal(2, trace.Count);
 			Assert.False(service.Cancel(job));
+		}
+		finally
+		{
+			service?.Shutdown();
+			SystemClock.UseSystemClock();
+			ThreadPoolManager.RegisterInstance(previous ?? new ThreadPoolManager(NullLogger<ThreadPoolManager>.Instance));
+			await pool.DisposeAsync();
+		}
+	}
+
+	[Fact]
+	public async Task SchedulingPutsTheServiceZoneOnTheExpressionAsJavasTriggerDoes()
+	{
+		ThreadPoolManager? previous = TryGetThreadPool();
+		var pool = new VirtualThreadPool();
+		var zone = TimeZoneInfo.CreateCustomTimeZone("D7 UTC+02", TimeSpan.FromHours(2), "D7 UTC+02", "D7 UTC+02");
+		var epoch = new DateTimeOffset(2030, 1, 1, 21, 59, 59, TimeSpan.Zero);
+		CronService? service = null;
+		try
+		{
+			ThreadPoolManager.RegisterInstance(pool);
+			SystemClock.UseSource(() => epoch.ToUnixTimeMilliseconds() + pool.NowMillis);
+			service = CronService.CreateDeterministic(typeof(ThreadPoolManagerRunnableRunner), zone);
+			var runnable = new RecordingRunnable(() => { });
+			var expression = new CronExpression("0 0 0 ? * *") { TimeZone = TimeZoneInfo.Utc };
+			Assert.Equal(new DateTimeOffset(2030, 1, 2, 0, 0, 0, TimeSpan.Zero), expression.GetTimeAfter(epoch));
+
+			service.Schedule(runnable, expression);
+
+			// CronService.CronScheduleBuilder.build() -> CronTriggerImpl.setTimeZone -> CronExpression.setTimeZone: the
+			// caller's expression now reads the service's zone, and agrees with the job's next fire.
+			Assert.Same(zone, expression.TimeZone);
+			DateTimeOffset nextFire = Assert.Single(service.FindNextFireTimes<RecordingRunnable>(false)).Value;
+			Assert.Equal(new DateTimeOffset(2030, 1, 1, 22, 0, 0, TimeSpan.Zero), nextFire);
+			Assert.Equal(nextFire, expression.GetTimeAfter(epoch));
 		}
 		finally
 		{

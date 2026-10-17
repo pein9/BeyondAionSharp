@@ -1,4 +1,8 @@
 using Aion.Commons.Logging;
+using Aion.GameServer.Configs.Main;
+using Aion.GameServer.Services.Cron;
+using Aion.GameServer.Taskmanager.Tasks.Housing;
+using Aion.GameServer.Utils;
 
 namespace Aion.Simulation.Tests;
 
@@ -23,24 +27,66 @@ public sealed class SimulationBootTailTests(SimulationWorldFixture fixture)
 	}
 
 	/// <summary>
-	/// Today's state, before GameServer.java:118-122 is wired: HousingService is first built inside SpawnAll, by the
-	/// first map's SpawnInstance, after that map's spawn line; HousingBidService and the three housing cron tasks are
-	/// not built by the boot at all.
+	/// GameServer.java:118-122, before the spawns: HousingService loads the houses and studios, HousingBidService the
+	/// bids, then AuctionEndTask, AuctionAutoFillTask and MaintenanceTask each schedule their job in that order, all
+	/// before SpawnEngine's first spawn line.
 	/// </summary>
 	[SkippableFact]
-	public void HousingIsNotInitializedBeforeTheSpawns()
+	public void HousingIsInitializedBeforeTheSpawnsInJavaOrder()
 	{
 		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
 		IReadOnlyList<CapturedLogEntry> boot = BootLog();
 
 		int housesLoaded = IndexOfHousesLoaded(boot);
+		int bidsLoaded = SingleIndex(boot, IsBidsLoaded, "HousingBidService's \"Loaded bids for N houses\"");
+		int[] scheduled = HousingCronTasks.Select(task => SingleIndex(boot, entry =>
+			entry.Category == task && entry.Message.StartsWith("Scheduled " + task + " with cron expression: ", StringComparison.Ordinal),
+			"\"Scheduled " + task + "\"")).ToArray();
 		int firstSpawn = IndexOfFirstSpawn(boot);
-		Assert.True(housesLoaded > firstSpawn,
-			$"HousingService was built at boot entry {housesLoaded}, before the first spawn line at {firstSpawn}.");
-		Assert.DoesNotContain(boot, IsBidsLoaded);
-		foreach (string task in HousingCronTasks)
-			Assert.DoesNotContain(boot, entry => entry.Category == task);
+		int[] order = [housesLoaded, bidsLoaded, .. scheduled, firstSpawn];
+		Assert.True(order.SequenceEqual(order.Order()),
+			$"boot order (houses, bids, {string.Join(", ", HousingCronTasks)}, first spawn) was {string.Join(", ", order)}");
 	}
+
+	[SkippableFact]
+	public void EachHousingCronTaskHasOneCronJob()
+	{
+		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
+		CronService cron = CronService.GetInstance();
+		Assert.Single(cron.FindJobs<AuctionEndTask>(withSubTypes: false));
+		Assert.Single(cron.FindJobs<AuctionAutoFillTask>(withSubTypes: false));
+		Assert.Single(cron.FindJobs<MaintenanceTask>(withSubTypes: false));
+	}
+
+	/// <summary>
+	/// AuctionEndTask's own clock against its cron job. The job fires in the cron service's zone (GSConfig.TIME_ZONE_ID,
+	/// UTC in SIM), and scheduling put that zone on the shared expression, as Java's CronTriggerImpl.setTimeZone does, so
+	/// the task's next-run arithmetic agrees with the job from then on. GetNextRun itself is computed before the job is
+	/// scheduled (in the constructor, and by a run on start), in the expression's zone of that moment: the default one,
+	/// TimeZoneInfo.Local here as the JVM's zone is in Java. On a host whose zone is not UTC it therefore differs from the
+	/// job's next fire until the task first runs from its job, exactly as a Java server whose gameserver.timezone is not
+	/// its JVM's zone would.
+	/// </summary>
+	[SkippableFact]
+	public void AuctionEndTaskNextRunFollowsItsCronJob()
+	{
+		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
+		AuctionEndTask task = AuctionEndTask.GetInstance();
+		DateTimeOffset now = SystemClock.UtcNow();
+		DateTimeOffset nextFire = Assert.Single(CronService.GetInstance().FindNextFireTimes<AuctionEndTask>(withSubTypes: false)).Value;
+
+		Assert.Equal(NextIn(GSConfig.TIME_ZONE_ID, now), nextFire);
+		Assert.Equal(nextFire, task.GetNextRunAfter(now));
+		DateTimeOffset? lastRun = task.GetLastRun();
+		if (lastRun is null || lastRun <= fixture.Epoch)
+			Assert.Equal(NextIn(TimeZoneInfo.Local, lastRun ?? fixture.Epoch), task.GetNextRun());
+		else
+			Assert.Equal(nextFire, task.GetNextRun());
+	}
+
+	private static DateTimeOffset NextIn(TimeZoneInfo zone, DateTimeOffset after) =>
+		new Quartz.CronExpression(HousingConfig.HOUSE_AUCTION_END_TIME.CronExpressionString) { TimeZone = zone }.GetTimeAfter(after)
+		?? throw new InvalidOperationException("the auction end expression has no next time");
 
 	private static readonly string[] HousingCronTasks = ["AuctionEndTask", "AuctionAutoFillTask", "MaintenanceTask"];
 
