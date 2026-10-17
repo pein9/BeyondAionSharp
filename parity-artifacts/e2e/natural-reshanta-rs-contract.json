@@ -1,0 +1,449 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "reshanta-rs-the-south",
+  "start": {
+    "contract": "natural-reshanta-re-contract.json",
+    "snapshot": "nl-re-s1",
+    "mapId": 400010000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 34,
+    "bindNpcId": 730072,
+    "completedQuestIds": [
+      24040,
+      24041,
+      2721,
+      2722,
+      2741,
+      2743,
+      2744
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "primum",
+    "mapId": 400010000,
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "primum",
+      "note": "Primum Fortress, the main island: Undran, Hisui, Jebal, Lakadi, the obelisk",
+      "min": [
+        850,
+        2780,
+        1600
+      ],
+      "max": [
+        1160,
+        3160,
+        1675
+      ]
+    },
+    {
+      "key": "sulfur-tower",
+      "note": "the Sulfur isle guard tower: Sinjah, Glati, Gagrad",
+      "min": [
+        1148,
+        1935,
+        1580
+      ],
+      "max": [
+        1207,
+        1985,
+        1630
+      ]
+    },
+    {
+      "key": "ledge",
+      "note": "Mokkurkalfi's ledge and the ashikar flamehorns and flamecrests (Q2730)",
+      "min": [
+        804,
+        2126,
+        1460
+      ],
+      "max": [
+        1092,
+        2502,
+        1513
+      ]
+    },
+    {
+      "key": "vanguards",
+      "note": "the ashikar vanguards and churls of the tower island and island 7 (Q2753)",
+      "min": [
+        556,
+        929,
+        1567
+      ],
+      "max": [
+        1303,
+        1879,
+        1712
+      ]
+    },
+    {
+      "key": "apprentices",
+      "note": "the ashikar apprentices (Q2754)",
+      "min": [
+        561,
+        903,
+        1571
+      ],
+      "max": [
+        1211,
+        1685,
+        1710
+      ]
+    },
+    {
+      "key": "worms",
+      "note": "the sulfur worms and sticky sulfur worms (Q2756)",
+      "min": [
+        577,
+        702,
+        1453
+      ],
+      "max": [
+        1448,
+        1356,
+        1695
+      ]
+    },
+    {
+      "key": "embers",
+      "note": "the dry and smoking embers (Q2755)",
+      "min": [
+        668,
+        567,
+        1474
+      ],
+      "max": [
+        1276,
+        1407,
+        1704
+      ]
+    },
+    {
+      "key": "root-scouts",
+      "note": "the root scouts by the Sulfur Tree Nest (Q1755)",
+      "min": [
+        803,
+        766,
+        1459
+      ],
+      "max": [
+        1750,
+        1972,
+        1626
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2729,
+      "category": "QUEST",
+      "minimumLevel": 26,
+      "rewardExperience": 155871,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 278057,
+      "area": "ledge"
+    },
+    {
+      "id": 2730,
+      "category": "QUEST",
+      "minimumLevel": 26,
+      "rewardExperience": 155871,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 278091,
+      "area": "ledge"
+    },
+    {
+      "id": 2731,
+      "category": "QUEST",
+      "minimumLevel": 26,
+      "rewardExperience": 180114,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 278091,
+      "area": "sulfur-tower"
+    },
+    {
+      "id": 2725,
+      "category": "QUEST",
+      "minimumLevel": 27,
+      "rewardExperience": 180114,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to_many",
+      "startNpcId": 278003,
+      "area": "sulfur-tower"
+    },
+    {
+      "id": 2753,
+      "category": "QUEST",
+      "minimumLevel": 27,
+      "rewardExperience": 200627,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 278086,
+      "area": "vanguards"
+    },
+    {
+      "id": 2754,
+      "category": "QUEST",
+      "minimumLevel": 27,
+      "rewardExperience": 200627,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 278086,
+      "area": "apprentices",
+      "prerequisites": [
+        2753
+      ]
+    },
+    {
+      "id": 2756,
+      "category": "QUEST",
+      "minimumLevel": 27,
+      "rewardExperience": 233824,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 278087,
+      "area": "worms"
+    },
+    {
+      "id": 2755,
+      "category": "QUEST",
+      "minimumLevel": 28,
+      "rewardExperience": 233824,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 278087,
+      "area": "embers"
+    },
+    {
+      "id": 1755,
+      "category": "QUEST",
+      "minimumLevel": 26,
+      "rewardExperience": 180114,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 279000,
+      "area": "root-scouts"
+    },
+    {
+      "id": 24042,
+      "category": "MISSION",
+      "minimumLevel": 25,
+      "rewardExperience": 450488,
+      "prerequisite": null,
+      "handler": "reshanta/_24042AReadyRescue.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "sulfur-tower",
+      "stopsAtVar": 3
+    },
+    {
+      "id": 24043,
+      "category": "MISSION",
+      "minimumLevel": 25,
+      "rewardExperience": 404426,
+      "prerequisite": null,
+      "handler": "reshanta/_24043LazyLanguageLessons.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "sulfur-tower",
+      "stopsAtVar": 2
+    }
+  ],
+  "order": [
+    2729,
+    2730,
+    2731,
+    2725,
+    2753,
+    2754,
+    2756,
+    2755,
+    1755,
+    24042,
+    24043
+  ],
+  "steps": [
+    {
+      "key": "q24042-v0-jebal",
+      "questId": 24042,
+      "var": 0,
+      "npcId": 278002,
+      "position": [
+        924.903,
+        2993.79,
+        1646.4
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q24042-v1-lakadi",
+      "questId": 24042,
+      "var": 1,
+      "npcId": 278019,
+      "position": [
+        1110.1,
+        2961.53,
+        1639.93
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO2"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q24042-v2-glati",
+      "questId": 24042,
+      "var": 2,
+      "npcId": 278088,
+      "position": [
+        1181.93,
+        1959.97,
+        1604.82
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO3"
+      ],
+      "pages": [
+        1693
+      ],
+      "area": "sulfur-tower"
+    },
+    {
+      "key": "q24043-v0-hisui",
+      "questId": 24043,
+      "var": 0,
+      "npcId": 278003,
+      "position": [
+        934.688,
+        3004.79,
+        1646.4
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q24043-v1-sinjah",
+      "questId": 24043,
+      "var": 1,
+      "npcId": 278086,
+      "position": [
+        1172.83,
+        1959.83,
+        1605.35
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO2"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "sulfur-tower"
+    }
+  ],
+  "objectUses": [],
+  "collections": [],
+  "bind": {
+    "npcId": 730072,
+    "position": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "onArrival": true,
+    "price": 4071,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "WHOLE_MAP_400010000",
+        "bottom": 500,
+        "top": 4596
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 400010000,
+    "completedQuestIds": [
+      2729,
+      2730,
+      2731,
+      2725,
+      2753,
+      2754,
+      2756,
+      2755,
+      1755
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 34,
+    "snapshot": "nl-rs",
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 30,
+    "bindNpcId": 730072,
+    "heldQuestIds": []
+  }
+}

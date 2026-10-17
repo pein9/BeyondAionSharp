@@ -100,12 +100,16 @@ public sealed record NaturalAltgardContract(
 		["rw"] = ("natural-reshanta-rw-contract.json", null),
 		// NL-3: "rp" plays Primum's own quests: the campaign's first and the training ground below the fortress.
 		["rp"] = ("natural-reshanta-rp-contract.json", null),
+		// NL-3: "re" plays the east, Gjalf and Ganglot's island, and "rs" the south: Mokkurkalfi's ledge, Sinjah's tower, the
+		// Sulfur Tree Nest's island and Triminos; islands apart by hops of flight.
+		["re"] = ("natural-reshanta-re-contract.json", "natural-reshanta-re-plans"),
+		["rs"] = ("natural-reshanta-rs-contract.json", "natural-reshanta-rs-plans"),
 	};
 
 	/// <summary>The legs played by a mustered character of level 26 or more: the Morheim leg to level 31
 	/// (docs/natural-morheim-leveling.md), on Morheim, and the leg to 36's (docs/natural-leg-36.md), on Morheim and Brusthonin.</summary>
 	public static readonly IReadOnlySet<string> MusteredLegs = new HashSet<string>
-		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp" };
+		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp", "re", "rs" };
 
 	/// <summary>NL-2: Brusthonin, the settlers' land south of Morheim.</summary>
 	public const int Brusthonin = 220050000;
@@ -269,7 +273,8 @@ public sealed record NaturalAltgardContract(
 			throw new InvalidDataException("Natural Altgard order must name every contract quest exactly once.");
 		if (contract.Steps.Any(step => !questIds.Contains(step.QuestId)) ||
 			contract.Endpoint.CompletedQuestIds.Any(id => !questIds.Contains(id)) ||
-			contract.Excluded.Any(excluded => questIds.Contains(excluded.Id)))
+			contract.Excluded.Any(excluded => questIds.Contains(excluded.Id)) ||
+			contract.Quests.Any(quest => quest.StopsAtVar != null && (quest.IsTemplate || contract.Endpoint.CompletedQuestIds.Contains(quest.Id))))
 			throw new InvalidDataException("Natural Altgard steps, endpoint or exclusions disagree with the quest list.");
 		string[] areas = contract.Areas.Select(area => area.Key).ToArray();
 		if (contract.Steps.Any(step => step.Area != null && !areas.Contains(step.Area)) ||
@@ -427,8 +432,10 @@ public sealed record NaturalAltgardArea(string Key, string Note, float[] Min, fl
 		x >= Min[0] && x <= Max[0] && y >= Min[1] && y <= Max[1] && z >= Min[2] && z <= Max[2];
 }
 
+/// <param name="StopsAtVar">NL-3: a quest played as far as it goes (decision 8 of docs/natural-leg-36.md): the leg leaves it
+/// taken at this var, whose step the world cannot play (Q24042's prisoner is a siege spawn, and the boot spawns none).</param>
 public sealed record NaturalAltgardQuest(int Id, string Category, int MinimumLevel, int RewardExperience, int? Prerequisite,
-	string Handler, string? Template, int? StartNpcId, string? Area, int[]? Prerequisites = null)
+	string Handler, string? Template, int? StartNpcId, string? Area, int[]? Prerequisites = null, int? StopsAtVar = null)
 {
 	public bool IsTemplate => Handler == "template";
 	public IEnumerable<int> PrerequisiteList => (Prerequisite is int before ? new[] { before } : []).Concat(Prerequisites ?? []).Distinct();

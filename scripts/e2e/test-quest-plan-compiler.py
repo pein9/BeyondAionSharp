@@ -260,7 +260,7 @@ class CheckedInPlanDriftTests(unittest.TestCase):
     def test_checked_in_plans_match_a_fresh_compile(self) -> None:
         folders = [E2E_ARTIFACTS / "retail-quest-plans", *sorted(E2E_ARTIFACTS.glob("natural-altgard*-plans")),
                    E2E_ARTIFACTS / "natural-group-ntc-plans", *sorted(E2E_ARTIFACTS.glob("natural-morheim*-plans")),
-                   *sorted(E2E_ARTIFACTS.glob("natural-brusthonin*-plans"))]
+                   *sorted(E2E_ARTIFACTS.glob("natural-brusthonin*-plans")), *sorted(E2E_ARTIFACTS.glob("natural-reshanta*-plans"))]
         plans = {folder.name: sorted(folder.glob("*.json")) for folder in folders}
         # An emptied or renamed folder would otherwise pass with nothing to compare.
         self.assertGreaterEqual(len(folders), 6, "expected retail-quest-plans and the natural-altgard leg folders")

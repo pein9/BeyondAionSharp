@@ -1,0 +1,342 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2730,
+    "name": "Slaughter the Draconutes",
+    "nameId": 1104830,
+    "zone": "Reshanta",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 26,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/reshanta.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2730,
+        "start_npc_ids": 278091
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 278091,
+        "name": "mokkurkalfi",
+        "positions": [
+          {
+            "mapId": 400010000,
+            "x": 1004.33,
+            "y": 2439.17,
+            "z": 1487.69,
+            "heading": 0,
+            "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 278091,
+      "name": "mokkurkalfi",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 1004.33,
+          "y": 2439.17,
+          "z": 1487.69,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 278091,
+      "name": "mokkurkalfi",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 1004.33,
+          "y": 2439.17,
+          "z": 1487.69,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": 253739,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 253739,
+          "name": "ashikar flamehorn",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 842.179,
+              "y": 2388.32,
+              "z": 1477.12,
+              "heading": 15,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 930.089,
+              "y": 2150.31,
+              "z": 1489.28,
+              "heading": 35,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 943.285,
+              "y": 2479.42,
+              "z": 1495.58,
+              "heading": 21,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 967.967,
+              "y": 2432.25,
+              "z": 1492.59,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 974.186,
+              "y": 2486.72,
+              "z": 1494.67,
+              "heading": 72,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 974.32,
+              "y": 2164.4,
+              "z": 1486.66,
+              "heading": 78,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1006.49,
+              "y": 2407.87,
+              "z": 1489.33,
+              "heading": 64,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1026.23,
+              "y": 2396.92,
+              "z": 1488.45,
+              "heading": 71,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1077.08,
+              "y": 2423.09,
+              "z": 1497.85,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": 253740,
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 253740,
+          "name": "ashikar flamecrest",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 818.899,
+              "y": 2374.5,
+              "z": 1474.86,
+              "heading": 66,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 962.061,
+              "y": 2460.8,
+              "z": 1494.02,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 968.704,
+              "y": 2140.53,
+              "z": 1489.9,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 984.514,
+              "y": 2389.47,
+              "z": 1487.48,
+              "heading": 44,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 996.034,
+              "y": 2203.01,
+              "z": 1481.78,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1008.98,
+              "y": 2482.09,
+              "z": 1490.15,
+              "heading": 29,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1058.23,
+              "y": 2431.29,
+              "z": 1494.41,
+              "heading": 3,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 278091,
+          "name": "mokkurkalfi",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 1004.33,
+              "y": 2439.17,
+              "z": 1487.69,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "ap": 100,
+        "exp": 155871,
+        "gold": 22910,
+        "rewardItems": [
+          {
+            "count": 3,
+            "item_id": 162000014
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2730,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 26,
+      "name": "Slaughter the Draconutes",
+      "nameId": 1104830,
+      "quest_zone": "Reshanta",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "ap": 100,
+          "exp": 155871,
+          "gold": 22910
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 162000014
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": 253739,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": 253740,
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      }
+    ]
+  }
+}

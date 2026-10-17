@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2731,
+    "name": "Recovered Documents",
+    "nameId": 1104831,
+    "zone": "Reshanta",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 26,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/reshanta.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 278088,
+        "id": 2731,
+        "start_npc_ids": 278091
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 278091,
+        "name": "mokkurkalfi",
+        "positions": [
+          {
+            "mapId": 400010000,
+            "x": 1004.33,
+            "y": 2439.17,
+            "z": 1487.69,
+            "heading": 0,
+            "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 278091,
+      "name": "mokkurkalfi",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 1004.33,
+          "y": 2439.17,
+          "z": 1487.69,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 278088,
+      "name": "glati",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 1181.93,
+          "y": 1959.97,
+          "z": 1604.82,
+          "heading": 75,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 278088,
+          "name": "glati",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 1181.93,
+              "y": 1959.97,
+              "z": 1604.82,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "ap": 100,
+        "exp": 180114,
+        "gold": 4900,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2731,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 26,
+      "name": "Recovered Documents",
+      "nameId": 1104831,
+      "quest_zone": "Reshanta",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "ap": 100,
+          "exp": 180114,
+          "gold": 4900
+        }
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "item_id": 182205602
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

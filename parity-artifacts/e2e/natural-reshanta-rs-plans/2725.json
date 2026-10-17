@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2725,
+    "name": "Gone Native",
+    "nameId": 1104825,
+    "zone": "Reshanta",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 27,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/reshanta.xml",
+    "template": "report_to_many",
+    "templateData": {
+      "tag": "report_to_many",
+      "attributes": {
+        "id": 2725,
+        "start_npc_ids": 278003
+      },
+      "children": [
+        {
+          "tag": "npc_infos",
+          "attributes": {
+            "npc_ids": 278091
+          }
+        },
+        {
+          "tag": "npc_infos",
+          "attributes": {
+            "npc_ids": 278086
+          }
+        }
+      ]
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 278003,
+        "name": "hisui",
+        "positions": [
+          {
+            "mapId": 400010000,
+            "x": 934.688,
+            "y": 3004.79,
+            "z": 1646.4,
+            "heading": 104,
+            "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 278003,
+      "name": "hisui",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 934.688,
+          "y": 3004.79,
+          "z": 1646.4,
+          "heading": 104,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 278086,
+      "name": "sinjah",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 1172.83,
+          "y": 1959.83,
+          "z": 1605.35,
+          "heading": 75,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "sequence": 1,
+      "npcs": [
+        {
+          "id": 278091,
+          "name": "mokkurkalfi",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 1004.33,
+              "y": 2439.17,
+              "z": 1487.69,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "sequence": 2,
+      "npcs": [
+        {
+          "id": 278086,
+          "name": "sinjah",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 1172.83,
+              "y": 1959.83,
+              "z": 1605.35,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "ap": 100,
+        "exp": 180114,
+        "gold": 9180,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2725,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 27,
+      "name": "Gone Native",
+      "nameId": 1104825,
+      "quest_zone": "Reshanta",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "ap": 100,
+          "exp": 180114,
+          "gold": 9180
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,671 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2755,
+    "name": "Helping a Rescue Mission",
+    "nameId": 1104855,
+    "zone": "Reshanta",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 28,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/reshanta.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2755,
+        "start_npc_ids": 278087
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 278087,
+        "name": "gagrad",
+        "positions": [
+          {
+            "mapId": 400010000,
+            "x": 1172.76,
+            "y": 1970.45,
+            "z": 1605.59,
+            "heading": 75,
+            "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 278087,
+      "name": "gagrad",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 1172.76,
+          "y": 1970.45,
+          "z": 1605.59,
+          "heading": 75,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 278087,
+      "name": "gagrad",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 1172.76,
+          "y": 1970.45,
+          "z": 1605.59,
+          "heading": 75,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": "253700 253701",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 253700,
+          "name": "dry ember",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 682.605,
+              "y": 889.371,
+              "z": 1672.52,
+              "heading": 91,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 692.658,
+              "y": 862.89,
+              "z": 1669.97,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 705.375,
+              "y": 1042.12,
+              "z": 1679.71,
+              "heading": 120,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 707.25,
+              "y": 1024.38,
+              "z": 1680.01,
+              "heading": 26,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 726.912,
+              "y": 858.374,
+              "z": 1672.52,
+              "heading": 61,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 728.875,
+              "y": 1033.62,
+              "z": 1679.71,
+              "heading": 41,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 734.625,
+              "y": 628.75,
+              "z": 1689.43,
+              "heading": 39,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 756.295,
+              "y": 942.014,
+              "z": 1668.04,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 764.598,
+              "y": 684.457,
+              "z": 1676.93,
+              "heading": 99,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 767.423,
+              "y": 635.269,
+              "z": 1684.88,
+              "heading": 65,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 774.375,
+              "y": 863.0,
+              "z": 1671.87,
+              "heading": 93,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 780.704,
+              "y": 650.132,
+              "z": 1681.18,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 786.513,
+              "y": 771.097,
+              "z": 1670.67,
+              "heading": 109,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 789.375,
+              "y": 868.25,
+              "z": 1671.55,
+              "heading": 99,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 792.609,
+              "y": 936.502,
+              "z": 1661.15,
+              "heading": 40,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 813.725,
+              "y": 956.581,
+              "z": 1661.03,
+              "heading": 59,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 829.523,
+              "y": 908.407,
+              "z": 1667.01,
+              "heading": 108,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 872.678,
+              "y": 882.678,
+              "z": 1673.41,
+              "heading": 41,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 890.697,
+              "y": 909.176,
+              "z": 1666.88,
+              "heading": 84,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 895.365,
+              "y": 944.219,
+              "z": 1657.78,
+              "heading": 46,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 911.328,
+              "y": 966.257,
+              "z": 1659.74,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 913.82,
+              "y": 817.44,
+              "z": 1669.81,
+              "heading": 95,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 934.646,
+              "y": 832.727,
+              "z": 1665.71,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 937.683,
+              "y": 789.53,
+              "z": 1670.55,
+              "heading": 8,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 958.847,
+              "y": 811.578,
+              "z": 1666.88,
+              "heading": 85,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 967.125,
+              "y": 1361.38,
+              "z": 1522.25,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 970.571,
+              "y": 831.902,
+              "z": 1664.82,
+              "heading": 107,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 992.25,
+              "y": 1368.88,
+              "z": 1522.46,
+              "heading": 50,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 992.861,
+              "y": 767.057,
+              "z": 1674.7,
+              "heading": 44,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1000.89,
+              "y": 829.043,
+              "z": 1666.61,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1022.74,
+              "y": 1339.58,
+              "z": 1514.54,
+              "heading": 109,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1024.62,
+              "y": 1286.62,
+              "z": 1502.68,
+              "heading": 74,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1031.51,
+              "y": 1318.23,
+              "z": 1508.61,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1048.62,
+              "y": 1349.12,
+              "z": 1509.6,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1161.88,
+              "y": 1351.13,
+              "z": 1501.4591,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1234.0,
+              "y": 1392.0,
+              "z": 1511.1044,
+              "heading": 95,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 253701,
+          "name": "dry ember",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 736.461,
+              "y": 628.484,
+              "z": 1689.358,
+              "heading": 112,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 744.724,
+              "y": 632.039,
+              "z": 1688.443,
+              "heading": 33,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 749.521,
+              "y": 582.122,
+              "z": 1685.991,
+              "heading": 52,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 758.633,
+              "y": 591.905,
+              "z": 1685.82,
+              "heading": 35,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 770.022,
+              "y": 630.014,
+              "z": 1685.128,
+              "heading": 107,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 770.399,
+              "y": 684.059,
+              "z": 1676.985,
+              "heading": 85,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 781.261,
+              "y": 647.324,
+              "z": 1681.132,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 788.697,
+              "y": 608.393,
+              "z": 1680.865,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": 253696,
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 253696,
+          "name": "smoking ember",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 1079.2,
+              "y": 1164.12,
+              "z": 1489.29,
+              "heading": 52,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1102.72,
+              "y": 1122.3,
+              "z": 1491.35,
+              "heading": 105,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1117.25,
+              "y": 1161.88,
+              "z": 1492.72,
+              "heading": 117,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1129.5,
+              "y": 1197.5,
+              "z": 1491.61,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1155.55,
+              "y": 1139.37,
+              "z": 1495.75,
+              "heading": 97,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1161.04,
+              "y": 1117.08,
+              "z": 1497.67,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1169.5,
+              "y": 1319.25,
+              "z": 1499.31,
+              "heading": 33,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1172.12,
+              "y": 1241.88,
+              "z": 1501.07,
+              "heading": 7,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1178.88,
+              "y": 1289.38,
+              "z": 1496.86,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1184.89,
+              "y": 1334.65,
+              "z": 1500.17,
+              "heading": 119,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1192.39,
+              "y": 1383.67,
+              "z": 1505.67,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1222.75,
+              "y": 1372.0,
+              "z": 1508.68,
+              "heading": 21,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1229.5,
+              "y": 1350.0,
+              "z": 1506.57,
+              "heading": 95,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1261.5,
+              "y": 1386.75,
+              "z": 1508.46,
+              "heading": 85,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 278087,
+          "name": "gagrad",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 1172.76,
+              "y": 1970.45,
+              "z": 1605.59,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "ap": 100,
+        "exp": 233824,
+        "gold": 42380,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2755,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 28,
+      "name": "Helping a Rescue Mission",
+      "nameId": 1104855,
+      "quest_zone": "Reshanta",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "ap": 100,
+          "exp": 233824,
+          "gold": 42380
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": "253700 253701",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": 253696,
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      }
+    ]
+  }
+}

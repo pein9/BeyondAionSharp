@@ -37,8 +37,9 @@ public sealed record NaturalTemplateCollect(int ItemId, int Count);
 
 /// <summary>What a template quest needs: inventory items or every independent kill counter. Java keeps monster_hunt
 /// at START with the counters full until it is turned in.</summary>
+/// <param name="Reports">NL-3: the reports before the end NPC's (Java ReportToMany), each of which moves var 0 on.</param>
 public sealed record NaturalTemplateObjective(int QuestId, int? ItemId, int ItemCount, int KillVar, int KillCount, int? ClaimMapId = null,
-	NaturalTemplateKill[]? Kills = null, NaturalTemplateCollect[]? Collections = null)
+	NaturalTemplateKill[]? Kills = null, NaturalTemplateCollect[]? Collections = null, int Reports = 0)
 {
 	public static IReadOnlyDictionary<int, NaturalTemplateObjective> From(IReadOnlyDictionary<int, QuestRunPlan> plans) =>
 		plans.Values.ToDictionary(plan => plan.Id, plan =>
@@ -51,14 +52,16 @@ public sealed record NaturalTemplateObjective(int QuestId, int? ItemId, int Item
 				plan.Steps.Where(step => step.Kind == "kill").Select(step =>
 					new NaturalTemplateKill(step.Data.GetProperty("var").GetInt32(), step.Count)).ToArray(),
 				plan.Steps.Where(step => step.Kind == "collect" && step.ItemId > 0)
-					.Select(step => new NaturalTemplateCollect(step.ItemId, step.Count)).ToArray());
+					.Select(step => new NaturalTemplateCollect(step.ItemId, step.Count)).ToArray(),
+				Math.Max(0, plan.Steps.Count(step => step.Kind == "report") - 1));
 		});
 
 	public bool IsDone(BotQuestState? quest, IReadOnlyDictionary<int, long> items) =>
 		Collections is { Length: > 0 } collects ? collects.All(c => items.GetValueOrDefault(c.ItemId) >= c.Count)
 			: ItemId is int item ? items.GetValueOrDefault(item) >= ItemCount
 			: quest is { } state && (state.Status >= 4 ||
-				(Kills ?? [new(KillVar, KillCount)]).All(kill => NaturalQuestProgress.KillCount(state, kill.Var, kill.Count) >= kill.Count));
+				(Kills ?? [new(KillVar, KillCount)]).All(kill => NaturalQuestProgress.KillCount(state, kill.Var, kill.Count) >= kill.Count) &&
+				(state.StepAndFlags & 0x3F) >= Reports);
 }
 
 /// <summary>One next action in Leg 1: a template phase, a contract step (by key), the remedy, the air kills, a hunt for
@@ -168,7 +171,8 @@ public static class NaturalAltgardDecisionEngine
 			return Plan("town-service", null, $"The cube has {free} free slots: sell the surplus at {vendor} in {contract.Town.Key}.");
 
 		NaturalAltgardQuest[] open = contract.Order.Select(contract.Quest)
-			.Where(quest => !Done(quest.Id) && !HeldReady(quest.Id) && (only == null || only.Contains(quest.Id)) && !Deferred(quest)).ToArray();
+			.Where(quest => !Done(quest.Id) && !HeldReady(quest.Id) && (only == null || only.Contains(quest.Id)) && !Deferred(quest) &&
+				!(quest.StopsAtVar is int stop && Status(quest.Id) == Start && Var(quest.Id) >= stop)).ToArray();
 		NaturalAltgardQuest[] eligible = open.Where(Eligible).OrderByDescending(quest => offHub && Status(quest.Id) == Start &&
 			(contract.StepsFor(quest.Id).Any(step => contract.StepMap(step) == state.MapId) ||
 			 contract.InstanceTripList.Any(trip => trip.QuestId == quest.Id && trip.MapId == state.MapId))).ToArray();

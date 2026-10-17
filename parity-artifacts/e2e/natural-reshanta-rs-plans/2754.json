@@ -1,0 +1,319 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2754,
+    "name": "Reductions in Staff",
+    "nameId": 1104854,
+    "zone": "Reshanta",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 27,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2753
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/reshanta.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2754,
+        "start_npc_ids": 278086
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 278086,
+        "name": "sinjah",
+        "positions": [
+          {
+            "mapId": 400010000,
+            "x": 1172.83,
+            "y": 1959.83,
+            "z": 1605.35,
+            "heading": 75,
+            "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 278086,
+      "name": "sinjah",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 1172.83,
+          "y": 1959.83,
+          "z": 1605.35,
+          "heading": 75,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 278086,
+      "name": "sinjah",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 1172.83,
+          "y": 1959.83,
+          "z": 1605.35,
+          "heading": 75,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182205612,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182205612,
+          "npc_id": 253731,
+          "npc": {
+            "id": 253731,
+            "name": "ashikar apprentice",
+            "positions": [
+              {
+                "mapId": 400010000,
+                "x": 576.25,
+                "y": 998.125,
+                "z": 1695.09,
+                "heading": 65,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 678.5,
+                "y": 918.375,
+                "z": 1676.87,
+                "heading": 113,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 734.625,
+                "y": 1089.5,
+                "z": 1684.49,
+                "heading": 18,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 913.037,
+                "y": 1482.77,
+                "z": 1614.56,
+                "heading": 76,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 920.78,
+                "y": 1670.09,
+                "z": 1595.8666,
+                "heading": 18,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 927.45,
+                "y": 1593.3,
+                "z": 1601.0433,
+                "heading": 57,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1068.48,
+                "y": 1622.96,
+                "z": 1591.7848,
+                "heading": 59,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1195.81,
+                "y": 1657.96,
+                "z": 1586.2585,
+                "heading": 31,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182205612,
+          "npc_id": 253732,
+          "npc": {
+            "id": 253732,
+            "name": "ashikar apprentice",
+            "positions": [
+              {
+                "mapId": 400010000,
+                "x": 576.25,
+                "y": 998.125,
+                "z": 1695.092,
+                "heading": 108,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 679.061,
+                "y": 918.974,
+                "z": 1676.84,
+                "heading": 27,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 735.342,
+                "y": 1089.83,
+                "z": 1684.447,
+                "heading": 105,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 278086,
+          "name": "sinjah",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 1172.83,
+              "y": 1959.83,
+              "z": 1605.35,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "ap": 300,
+        "exp": 200627,
+        "gold": 22960,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2754,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 27,
+      "name": "Reductions in Staff",
+      "nameId": 1104854,
+      "quest_zone": "Reshanta",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182205612
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "ap": 300,
+          "exp": 200627,
+          "gold": 22960
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182205612,
+          "npc_id": 253731
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182205612,
+          "npc_id": 253732
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2753
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

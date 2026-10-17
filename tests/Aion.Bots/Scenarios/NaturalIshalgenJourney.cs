@@ -3356,12 +3356,19 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				float cruise = (rockTop?.Z ?? 0) + 8;
 				BotPosition Rock() => rockTop ?? throw new InvalidDataException($"{leg.Leg} has no flight landing.");
 				long? lastTakeoff = null;
+				// NL-3: the speed the server announced with the last takeoff (a hop's range is flight time by speed).
+				float lastFlightSpeed = 9f;
 				// The operator, 2026-10-13: "If stuck on lake, can always FLY back."
 				flyOutOfStrand = leg.Flight == null ? null : async () =>
 				{
 					NaturalFlightDecision able = NaturalFlightPolicy.CanTakeOff(new NaturalTakeoffObservation(true, session.CurrentPosition, false,
 						leg.Flight.WaterLevel, runtime.NowMillis, lastTakeoff, false, false, false), zones);
 					if (!able.Allowed) return false;
+					// NL-3: in Reshanta the hub lies farther than one flight from the islands (the Gladiator, 1544 m from Primum
+					// on Gjalf's island): the hops of a fly-zone crossing.
+					if (flyAcross != null && Distance(session.CurrentPosition, ground) >
+						(session.Api.World.MaxFlightTime - NaturalFlightPolicy.LandingReserveFp - 5) * lastFlightSpeed)
+						return await flyAcross(ground);
 					float? height = new float?[] { null, MathF.Max(cruise, session.CurrentPosition.Z) + 25 }.FirstOrDefault(over =>
 						NaturalFlightProtocol.Plan(geometry, leg.Hub.MapId, session.CurrentPosition, ground, over ?? cruise).IsUsable, -1);
 					if (height == -1) return false;
@@ -3397,14 +3404,26 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					BotPosition here = session.CurrentPosition;
 					float HeightFrom(BotPosition at) => MathF.Min(zone.Top - 6, MathF.Max(at.Z, land.Z) + 15);
 					bool Flies(BotPosition at) => NaturalFlightProtocol.Plan(geometry, map, at, land, HeightFrom(at)).IsUsable;
+					// NL-3: how far one flight takes the bot (its flight time by its speed, less the landing reserve).
+					float Range() => MathF.Max(60, (session.Api.World.MaxFlightTime - NaturalFlightPolicy.LandingReserveFp - 5) * lastFlightSpeed);
 					IReadOnlyList<BotPosition> ground = geometry.IslandGround(map, here, Inside);
 					BotPosition? takeoff = Inside(here) ? here : ground.OrderBy(at => Distance(at, land)).Cast<BotPosition?>().FirstOrDefault();
-					if (takeoff is { } first && !Flies(first))
+					// A landing past one flight is reached by hops (below), from here or the nearest ground with open sky above it
+					// (the bot stands under Primum's roofs by Jebal); only a near one looks for another takeoff.
+					bool SkyAbove(BotPosition at) => NaturalFlightProtocol.IsClear(geometry, map, at, at with { Z = MathF.Min(zone.Top - 6, at.Z + 30) });
+					if (takeoff is { } open && Distance(open, land) > Range() && !SkyAbove(open))
+					{
+						BotPosition[] nearby = [.. ground.Where(at => Distance(at, here) <= 200).OrderBy(at => Distance(at, here))];
+						int spread = Math.Max(1, nearby.Length / 200);
+						takeoff = nearby.Where((_, index) => index % spread == 0).Where(SkyAbove).Cast<BotPosition?>().FirstOrDefault() ?? open;
+					}
+					if (takeoff is { } first && Distance(first, land) <= Range() && !Flies(first))
 					{
 						// The fortress's courtyard lies under roofs 4 m up, and the teleporter's pad is a scrap of mesh of its own: the
 						// ground of every island within 150 m of the landing, nearest to the bot first, about 150 of it spread
 						// evenly (the open ground by the obelisk is 40 m from the gate). The walk there steps off the scrap.
-						BotPosition[] nearLanding = [.. geometry.GroundNear(map, land, 150, Inside).OrderBy(at => Distance(at, here))];
+						BotPosition[] nearLanding = [.. geometry.GroundNear(map, land, 150, Inside).Where(at => Distance(at, here) <= 200)
+							.OrderBy(at => Distance(at, here))];
 						int every = Math.Max(1, nearLanding.Length / 150);
 						BotPosition[] tried = [.. nearLanding.Where((_, index) => index % every == 0)];
 						takeoff = tried.Where(at => NaturalFlightProtocol.DirectlyClear(geometry, map, at, land, HeightFrom(at)))
@@ -3424,10 +3443,49 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					{
 						if (Distance(here, off) > 3 && (!await WalkRoadDefendingAsync(off, "fly-zone-takeoff", within: 3) ||
 							session.Api.World.IsDead || !Inside(session.CurrentPosition))) return false;
-						float height = HeightFrom(session.CurrentPosition);
-						if (!NaturalFlightProtocol.Plan(geometry, map, session.CurrentPosition, land, height).IsUsable) return false;
-						await FlyToAsync(land, height);
-						return true;
+						// NL-3: Reshanta's islands stand farther apart than one flight's time: the bot hops by the island ground in
+						// range nearest the landing, lands, lets its flight time come back (FlyToAsync waits for it) and flies on.
+						for (int hop = 0; ; hop++)
+						{
+							BotPosition from = session.CurrentPosition;
+							float height = HeightFrom(from);
+							float range = Range();
+							NaturalFlightRoute? route = Distance(from, land) <= range ? NaturalFlightProtocol.Plan(geometry, map, from, land, height) : null;
+							if (route is { IsUsable: true } && route.Meters <= range)
+							{
+								await FlyToAsync(land, height);
+								return true;
+							}
+							if (hop >= 12 || session.Api.World.IsDead) return false;
+							float Across(BotPosition a, BotPosition b) => MathF.Sqrt(MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2));
+							float Over(BotPosition a, BotPosition b, float rise) => MathF.Min(zone.Top - 6, MathF.Max(a.Z, b.Z) + rise);
+							// What the flight to a stone flies: the climb, the cruise and the descent (the fourth hop toward Amundi was
+							// 587 m across and 790 m flown).
+							float Flown(BotPosition a, BotPosition b, float rise) => Across(a, b) + 2 * Over(a, b, rise) - a.Z - b.Z;
+							// The stone: island ground nearer the landing whose flight fits one flight time, nearest the landing first,
+							// confirmed by its planned route; from Ganglot's island nothing clears 15 m over the higher end, so a higher
+							// cruise is tried next.
+							(BotPosition At, float Rise)? stone = null;
+							foreach (float rise in new[] { 15f, 60f })
+							{
+								foreach (BotPosition at in geometry.GroundNear(map, from, range, Inside)
+									.Where(at => Across(at, land) + 30 < Across(from, land) && Flown(from, at, rise) <= range * 0.95f)
+									.OrderBy(at => Across(at, land)).Take(400)
+									.Where(at => NaturalFlightProtocol.DirectlyClear(geometry, map, from, at, Over(from, at, rise))).Take(4))
+								{
+									NaturalFlightRoute planned = NaturalFlightProtocol.Plan(geometry, map, from, at, Over(from, at, rise));
+									if (planned.IsUsable && planned.Meters <= range) { stone = (at, rise); break; }
+								}
+								if (stone != null) break;
+							}
+							session.TraceDiagnostic("fly-hop", new Dictionary<string, object?>
+							{
+								["hop"] = hop, ["from"] = from, ["landing"] = land, ["range"] = range, ["meters"] = route is { IsUsable: true } ? route.Meters : null,
+								["stone"] = stone?.At, ["rise"] = stone?.Rise,
+							});
+							if (stone is not { } next) return false;
+							await FlyToAsync(next.At, Over(from, next.At, next.Rise));
+						}
 					}
 					finally { crossingFlyZone = false; }
 				};
@@ -4444,6 +4502,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					Require.True(route.IsUsable, $"No flight to {destination}: {route.Refusal}");
 					lastTakeoff = runtime.NowMillis;
 					float speed = await NaturalFlightProtocol.TakeOffAsync(session, token);
+					lastFlightSpeed = speed;
 					NaturalFlightDecision go = NaturalFlightPolicy.CanFly(NaturalFlightProtocol.ToPlan(route, from, speed), world.CurrentFlightTime, zones);
 					session.TraceDiagnostic($"altgard-{altgardLegId}-flight", new Dictionary<string, object?>
 					{
@@ -5404,14 +5463,25 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								["step"] = step.Key, ["reason"] = exception.Message, ["position"] = session.CurrentPosition,
 							});
 							BotPosition at = new(step.Position[0], step.Position[1], step.Position[2], 0);
-							if (!await WalkRoadDefendingAsync(at, $"talk-road-{step.Key}") && !session.Api.World.IsDead)
+							if (!await WalkRoadDefendingAsync(at, $"talk-road-{step.Key}") && !session.Api.World.IsDead &&
+								// NL-3: across the air where the map lets the bot fly (Amundi stands at Siel's Eastern camp, an island
+								// 1.2 km from Ganglot's, a siege spawn the shipped graph does not hold).
+								!(flyAcross != null && !combat.InCombat && await flyAcross(at)))
 							{
 								// No road from this ground at all: Return to the hub's obelisk, as a player does (the bind policy,
 								// AB-Q5), and walk from there.
 								await UseLearnedReturnToBindAsync();
 								await WalkRoadDefendingAsync(at, $"talk-road-{step.Key}-after-return");
 							}
-							npc = await ApproachShippedSpawnAsync(step.NpcId);
+							// NL-3: an NPC the shipped graph does not hold (a siege spawn) is met where the client sees it.
+							if (graph.GetMap(contract.MapId)?.Waypoints.Any(waypoint => waypoint.TemplateId == step.NpcId) != true)
+							{
+								NaturalNavigationResult met = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(contract.MapId, step.NpcId,
+									at, step.TalkRange, navigator, "NPC", token);
+								Require.True(met.Arrived, $"{step.Key}: {met.Reason}");
+								npc = Require.IsType<int>(met.TargetObjectId);
+							}
+							else npc = await ApproachShippedSpawnAsync(step.NpcId);
 						}
 					}
 					int fightsWaitedOut = 0;
@@ -5779,6 +5849,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				Require.All(leg.HeldList, held => Require.True(!world.CompletedQuestIds.Contains(held.QuestId) &&
 					world.Quests.TryGetValue(held.QuestId, out BotQuestState? state) && state.Status is 3 or 4 &&
 					heldObjectives[held.QuestId].IsDone(state, heldItems), $"Q{held.QuestId} is not held ready for {held.EndNpcId}."));
+				// NL-3: a quest played as far as it goes is left taken at its var.
+				Require.All(leg.Quests.Where(quest => quest.StopsAtVar != null), quest => Require.True(world.Quests.TryGetValue(quest.Id,
+					out BotQuestState? stopped) && stopped.Status == 3 && leg.QuestVar(stopped) >= quest.StopsAtVar,
+					$"Q{quest.Id} is not taken at var {quest.StopsAtVar}."));
 				Require.Equal(leg.Endpoint.MapId, world.MapId!.Value);
 				Require.True(world.Level >= leg.Endpoint.MinimumLevel, $"Endpoint level {world.Level} is below {leg.Endpoint.MinimumLevel}.");
 				Require.True(!world.IsDead, "The endpoint character is dead.");
@@ -9689,8 +9763,30 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							break;
 						}
 						case QuestRunOperationKind.Report:
-							// These frozen plans use only a final report; ClaimReward performs its NPC dialogue.
+						{
+							// The report_to plans have one report, the end NPC's, which ClaimReward plays. NL-3: Java ReportToMany (Q2725:
+							// Hisui gives it, Mokkurkalfi hears it, Sinjah ends it) has a report before the end NPC's for each NPC on the
+							// way, a talk whose SETPRO moves var 0 on to the next.
+							int ordinal = book.Operations.Take(index).Count(entry => entry.Kind == QuestRunOperationKind.Report);
+							if (ordinal == book.Operations.Count(entry => entry.Kind == QuestRunOperationKind.Report) - 1 || QuestStatus(plan.Id) != 3 ||
+								(session.Api.World.Quests[plan.Id].StepAndFlags & 0x3F) != ordinal)
+								break;
+							int listener = await ApproachShippedSpawnAsync(operation.Npcs?.FirstOrDefault()?.Id ??
+								throw new InvalidDataException($"Q{plan.Id} report {ordinal + 1} names no NPC."));
+							await NaturalDialogProtocol.OpenAsync(session, listener, token);
+							await NpcPageAsync(session, listener, token);
+							await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(listener, DialogAction.QUEST_SELECT, questId: plan.Id), token);
+							await NpcPageAsync(session, listener, token);
+							await NaturalDialogProtocol.SelectAsync(session,
+								session.Api.SelectDialog(listener, checked((ushort)(DialogAction.SETPRO1 + ordinal)), questId: plan.Id), token);
+							for (int wait = 0; wait < 20 && (session.Api.World.Quests[plan.Id].StepAndFlags & 0x3F) == ordinal; wait++)
+							{
+								await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+								await session.SynchronizeAsync(token);
+							}
+							Require.True((session.Api.World.Quests[plan.Id].StepAndFlags & 0x3F) > ordinal, $"Q{plan.Id}'s report {ordinal + 1} did not move it on.");
 							break;
+						}
 						case QuestRunOperationKind.Gather:
 							await GatherAsync(operation);
 							break;

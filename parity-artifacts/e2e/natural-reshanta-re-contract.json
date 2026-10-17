@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "reshanta-re-the-east",
+  "start": {
+    "contract": "natural-reshanta-rp-contract.json",
+    "snapshot": "nl-rp-s1",
+    "mapId": 400010000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 34,
+    "bindNpcId": 730072,
+    "completedQuestIds": [
+      24040,
+      24041,
+      2721,
+      2722
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "primum",
+    "mapId": 400010000,
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "primum",
+      "note": "Primum Fortress, the main island: Jebal, the obelisk",
+      "min": [
+        850,
+        2780,
+        1600
+      ],
+      "max": [
+        1160,
+        3160,
+        1675
+      ]
+    },
+    {
+      "key": "soul-reapers",
+      "note": "the soul reapers of Gjalf and Ganglot's island (Q2741)",
+      "min": [
+        2001,
+        3029,
+        1634
+      ],
+      "max": [
+        2486,
+        3508,
+        1698
+      ]
+    },
+    {
+      "key": "fallen-warriors",
+      "note": "the fallen warriors of the same island (Q2743)",
+      "min": [
+        1986,
+        3093,
+        1634
+      ],
+      "max": [
+        2454,
+        3485,
+        1697
+      ]
+    },
+    {
+      "key": "crystal-souls",
+      "note": "the blue crystal souls and evolved souls east of Gjalf (Q2744)",
+      "min": [
+        1484,
+        2742,
+        1378
+      ],
+      "max": [
+        3163,
+        3423,
+        1711
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2741,
+      "category": "QUEST",
+      "minimumLevel": 25,
+      "rewardExperience": 134338,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 278090,
+      "area": "soul-reapers"
+    },
+    {
+      "id": 2743,
+      "category": "QUEST",
+      "minimumLevel": 25,
+      "rewardExperience": 134338,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 278089,
+      "area": "fallen-warriors"
+    },
+    {
+      "id": 2744,
+      "category": "QUEST",
+      "minimumLevel": 25,
+      "rewardExperience": 155871,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 278090,
+      "area": "crystal-souls"
+    }
+  ],
+  "order": [
+    2741,
+    2743,
+    2744
+  ],
+  "steps": [],
+  "objectUses": [],
+  "collections": [],
+  "bind": {
+    "npcId": 730072,
+    "position": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "onArrival": true,
+    "price": 4071,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "WHOLE_MAP_400010000",
+        "bottom": 500,
+        "top": 4596
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [
+    {
+      "id": 2724,
+      "reason": "Missing in Action: its last talk is Amundi (278097), a siege spawn of Siel's Eastern Fortress (1132); the C# boot does not run SiegeService.initSieges (P10-05, deferred by D7), so no siege NPC is spawned. Its talks to Mure and Ganglot were played in nl3-re-d5",
+      "leg": 0
+    }
+  ],
+  "endpoint": {
+    "mapId": 400010000,
+    "completedQuestIds": [
+      2741,
+      2743,
+      2744
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 34,
+    "snapshot": "nl-re",
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 30,
+    "bindNpcId": 730072,
+    "heldQuestIds": []
+  }
+}

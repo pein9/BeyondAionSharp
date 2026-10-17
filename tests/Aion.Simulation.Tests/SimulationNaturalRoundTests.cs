@@ -57,8 +57,8 @@ public sealed partial class SimulationFastScenarioTests
 		"l1" => new NaturalJourneyOptions(StopAt: entry.StopAt, AltgardLeg1: true, LaterCapital: true, ClassLine: line),
 		// M2 to M7: "mf", "mk", "md", "mc", "ms", "ma" and "mg" are the Morheim legs (docs/natural-morheim-leveling.md), from the group world.
 		// NL-2: "mb" and "bs" take the bots to Brusthonin and play its Settlers Campsite (docs/natural-leg-36.md); NL-3: "rw"
-		// takes them into Reshanta and "rp" plays Primum's quests.
-		"l2" or "l3" or "l4" or "l5" or "l6" or "l7" or "l8" or "l9" or "l10" or "l11" or "cg" or "l12" or "ax" or "mf" or "mk" or "md" or "mc" or "ms" or "ma" or "mg" or "mgk" or "mgd" or "mgs" or "mb" or "bs" or "rw" or "rp" =>
+		// takes them into Reshanta, "rp" plays Primum's quests, "re" the east and "rs" the south.
+		"l2" or "l3" or "l4" or "l5" or "l6" or "l7" or "l8" or "l9" or "l10" or "l11" or "cg" or "l12" or "ax" or "mf" or "mk" or "md" or "mc" or "ms" or "ma" or "mg" or "mgk" or "mgd" or "mgs" or "mb" or "bs" or "rw" or "rp" or "re" or "rs" =>
 			new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: entry.Stage, LaterCapital: true, ClassLine: line),
 		// The muster (2026-10-12): a character that stands at the Abyss entry's end, in that leg's fortress.
 		"muster" => new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,

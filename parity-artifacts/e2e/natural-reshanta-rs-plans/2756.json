@@ -1,0 +1,397 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2756,
+    "name": "How to Beat Fried Worms",
+    "nameId": 1104856,
+    "zone": "Reshanta",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 27,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/reshanta.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2756,
+        "start_npc_ids": 278087
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 278087,
+        "name": "gagrad",
+        "positions": [
+          {
+            "mapId": 400010000,
+            "x": 1172.76,
+            "y": 1970.45,
+            "z": 1605.59,
+            "heading": 75,
+            "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 278087,
+      "name": "gagrad",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 1172.76,
+          "y": 1970.45,
+          "z": 1605.59,
+          "heading": 75,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 278087,
+      "name": "gagrad",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 1172.76,
+          "y": 1970.45,
+          "z": 1605.59,
+          "heading": 75,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": "253687 253688",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 253687,
+          "name": "sulfur worm",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 1171.38,
+              "y": 1266.38,
+              "z": 1496.17,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1207.88,
+              "y": 1341.38,
+              "z": 1503.14,
+              "heading": 84,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1374.9,
+              "y": 864.602,
+              "z": 1472.26,
+              "heading": 109,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1409.49,
+              "y": 907.312,
+              "z": 1470.62,
+              "heading": 3,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1432.14,
+              "y": 958.988,
+              "z": 1468.24,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1432.71,
+              "y": 883.651,
+              "z": 1471.21,
+              "heading": 39,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 253688,
+          "name": "sulfur worm",
+          "positions": [],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 3,
+      "npc_ids": "253692 253693",
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 253692,
+          "name": "sticky sulfur worm",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 591.89,
+              "y": 725.81,
+              "z": 1679.98,
+              "heading": 61,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 606.9,
+              "y": 763.42,
+              "z": 1673.3,
+              "heading": 74,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 617.88,
+              "y": 716.5,
+              "z": 1676.25,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 623.76,
+              "y": 763.57,
+              "z": 1670.63,
+              "heading": 73,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 628.2,
+              "y": 721.37,
+              "z": 1674.66,
+              "heading": 12,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 641.14,
+              "y": 773.81,
+              "z": 1666.56,
+              "heading": 101,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 650.88,
+              "y": 740.12,
+              "z": 1667.3,
+              "heading": 25,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 663.61,
+              "y": 729.45,
+              "z": 1663.07,
+              "heading": 114,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 722.1,
+              "y": 803.96,
+              "z": 1663.52,
+              "heading": 31,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 738.16,
+              "y": 806.25,
+              "z": 1664.47,
+              "heading": 46,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1093.12,
+              "y": 1215.38,
+              "z": 1495.42,
+              "heading": 16,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 1130.12,
+              "y": 1172.5,
+              "z": 1492.82,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 253693,
+          "name": "sticky sulfur worm",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 591.893,
+              "y": 725.813,
+              "z": 1679.984,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 617.875,
+              "y": 716.5,
+              "z": 1676.249,
+              "heading": 38,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 623.755,
+              "y": 763.571,
+              "z": 1670.631,
+              "heading": 34,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 650.875,
+              "y": 740.125,
+              "z": 1667.304,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 722.097,
+              "y": 803.963,
+              "z": 1663.516,
+              "heading": 29,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 278087,
+          "name": "gagrad",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 1172.76,
+              "y": 1970.45,
+              "z": 1605.59,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "ap": 100,
+        "exp": 233824,
+        "gold": 36920,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2756,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 27,
+      "name": "How to Beat Fried Worms",
+      "nameId": 1104856,
+      "quest_zone": "Reshanta",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "ap": 100,
+          "exp": 233824,
+          "gold": 36920
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": "253687 253688",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 3,
+          "npc_ids": "253692 253693",
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      }
+    ]
+  }
+}
