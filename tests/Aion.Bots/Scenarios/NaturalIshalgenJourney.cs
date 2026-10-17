@@ -3316,6 +3316,15 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				navigator = here;
 				geometry = runtime.CreateGeometry();
 				contract = contract with { MapId = session.Api.World.MapId!.Value };
+				// NL-3: the FLY zones of the map the bot stands on (EnterLegMap keeps them), not only the hub's.
+				var flyZonesByMap = new Dictionary<int, IReadOnlyList<NaturalFlyZone>>();
+				IReadOnlyList<NaturalFlyZone> FlyZonesOf(int mapId)
+				{
+					if (!flyZonesByMap.TryGetValue(mapId, out IReadOnlyList<NaturalFlyZone>? known))
+						flyZonesByMap[mapId] = known = NaturalFlyZone.ForMap(runtime.RepoRoot, runtime.Data.WorldMaps2.GetTemplate(mapId), mapId);
+					return known;
+				}
+				IReadOnlyList<NaturalFlyZone> zones = FlyZonesOf(contract.MapId);
 				// NL-a (docs/natural-leg-36.md): a Cleric companion goes with the bot on its solo quests.
 				if (options.SoloCompanion is string soloCompanion) await AskSoloCompanionAsync(soloCompanion, token);
 				combat = new NaturalJourneyCombat(session, here, runtime, geometry, stopOnDeath: false, options.OptimizeHubs, mauPolicy,
@@ -3337,8 +3346,6 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					.Where(id => !session.Api.World.CompletedQuestIds.Contains(id))
 					.ToDictionary(id => id, id => session.Api.World.Quests.TryGetValue(id, out BotQuestState? state)
 						? (state.Status, state.StepAndFlags) : throw new InvalidDataException($"Incoming Q{id} is missing."));
-				IReadOnlyList<NaturalFlyZone> zones = NaturalFlyZone.Load(Path.Combine(runtime.RepoRoot,
-					$"game-server/data/static_data/zones/zones_{leg.Hub.MapId}.xml"));
 				// Leg 1's flight: Borender's rock is the landing (AF-05); a leg with no flight step never flies.
 				NaturalAltgardStep? borender = leg.Steps.FirstOrDefault(step => step.Flight);
 				BotPosition? rockTop = borender == null ? null : geometry.SnapToGround(leg.Hub.MapId, new BotPosition(borender.Position[0] - 2.5f,
@@ -3367,8 +3374,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				bool crossingFlyZone = false;
 				flyAcross = leg.Flight == null || altgardLegId == null || !NaturalAltgardContract.MusteredLegs.Contains(altgardLegId) ? null : async goal =>
 				{
-					int map = leg.Hub.MapId;
-					if (crossingFlyZone || session.Api.World.MapId != map || session.Api.World.IsDead) return false;
+					// NL-3: on whichever map the bot stands (the Abyss Gate stands in Morheim's fortress for a leg from Brusthonin).
+					if (crossingFlyZone || session.Api.World.MapId is not int map || session.Api.World.IsDead) return false;
 					// Ground the bot can walk to lies within a few metres of the goal: no flight. A goal on no island of the mesh
 					// (Sarinerk past his ledge's edge) is near no walkable ground of this one.
 					if (geometry.IslandGround(map, session.CurrentPosition, at =>
@@ -3384,10 +3391,29 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					BotPosition? landing = geometry.IslandGround(map, goal, Inside).OrderBy(at => Distance(at, goal)).Cast<BotPosition?>().FirstOrDefault();
 					if (landing is not { } near || Distance(near, goal) > 6) landing = Inside(goal) ? geometry.StaticGroundAt(map, goal) ?? landing : landing;
 					if (landing is not { } land) return false;
-					// The takeoff: here inside the zone, or the zone's ground on this island nearest the landing.
+					// The takeoff: here inside the zone, or the zone's ground on this island nearest the landing. NL-3: when no checked
+					// flight leaves from that place, the nearest ground of this island inside the zone from which one does: under
+					// the Morheim fortress's roof, by its teleporter, the climb to the Abyss Gate's platform is blocked.
 					BotPosition here = session.CurrentPosition;
-					BotPosition? takeoff = Inside(here) ? here
-						: geometry.IslandGround(map, here, Inside).OrderBy(at => Distance(at, land)).Cast<BotPosition?>().FirstOrDefault();
+					float HeightFrom(BotPosition at) => MathF.Min(zone.Top - 6, MathF.Max(at.Z, land.Z) + 15);
+					bool Flies(BotPosition at) => NaturalFlightProtocol.Plan(geometry, map, at, land, HeightFrom(at)).IsUsable;
+					IReadOnlyList<BotPosition> ground = geometry.IslandGround(map, here, Inside);
+					BotPosition? takeoff = Inside(here) ? here : ground.OrderBy(at => Distance(at, land)).Cast<BotPosition?>().FirstOrDefault();
+					if (takeoff is { } first && !Flies(first))
+					{
+						// The fortress's courtyard lies under roofs 4 m up, and the teleporter's pad is a scrap of mesh of its own: the
+						// ground of every island within 150 m of the landing, nearest to the bot first, about 150 of it spread
+						// evenly (the open ground by the obelisk is 40 m from the gate). The walk there steps off the scrap.
+						BotPosition[] nearLanding = [.. geometry.GroundNear(map, land, 150, Inside).OrderBy(at => Distance(at, here))];
+						int every = Math.Max(1, nearLanding.Length / 150);
+						BotPosition[] tried = [.. nearLanding.Where((_, index) => index % every == 0)];
+						takeoff = tried.Where(at => NaturalFlightProtocol.DirectlyClear(geometry, map, at, land, HeightFrom(at)))
+							.Cast<BotPosition?>().FirstOrDefault() ?? first;
+						session.TraceDiagnostic("fly-zone-takeoff-search", new Dictionary<string, object?>
+						{
+							["ownIsland"] = ground.Count, ["nearLanding"] = nearLanding.Length, ["tried"] = tried.Length, ["found"] = takeoff,
+						});
+					}
 					session.TraceDiagnostic("fly-zone-crossing", new Dictionary<string, object?>
 					{
 						["zone"] = zone.Name, ["goal"] = goal, ["position"] = here, ["takeoff"] = takeoff, ["landing"] = land,
@@ -3398,7 +3424,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					{
 						if (Distance(here, off) > 3 && (!await WalkRoadDefendingAsync(off, "fly-zone-takeoff", within: 3) ||
 							session.Api.World.IsDead || !Inside(session.CurrentPosition))) return false;
-						float height = MathF.Min(zone.Top - 6, MathF.Max(session.CurrentPosition.Z, land.Z) + 15);
+						float height = HeightFrom(session.CurrentPosition);
 						if (!NaturalFlightProtocol.Plan(geometry, map, session.CurrentPosition, land, height).IsUsable) return false;
 						await FlyToAsync(land, height);
 						return true;
@@ -3709,8 +3735,29 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 									EnterLegMap();
 									await EnsureOnGroundAsync();
 									// Pandaemonium's teleporter is reached by the capital's own ways (its lifts, the Coliseum), as its talks are.
+									// NL-3: a portal object is used with its bar; one that hangs in the air out of reach of the ground the bot
+									// stands on (the Morheim Abyss Gate) is flown to and used in flight.
+									if (trip.UseMillis is int useMillis && runtime.Data.SpawnsDh.GetSpawnsByWorldId(onMap)
+										.Where(group => group.GetNpcId() == trip.TeleporterNpcId).SelectMany(group => group.GetSpawnTemplates())
+										.Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0)).FirstOrDefault() is { } door &&
+										door != default && geometry.IslandGround(onMap, session.CurrentPosition,
+											at => Distance(at, door) <= trip.TalkRange - 2).Count == 0)
+									{
+										Require.True(await FlyBesideAsync(door, trip.TalkRange - 3), $"No flight beside portal {trip.TeleporterNpcId}.");
+										await session.SynchronizeAsync(token);
+										int floating = session.Api.World.Objects.Values.Where(known => known.TemplateId == trip.TeleporterNpcId)
+											.OrderBy(known => Distance(known.Position, door)).Select(known => known.ObjectId).FirstOrDefault();
+										Require.True(floating != 0, $"Portal {trip.TeleporterNpcId} is not in sight beside it.");
+										await UseInstancePortalAsync(floating, useMillis, trip.MapId);
+										continue;
+									}
 									int teleporter = laterCapital != null && onMap == capitalContract.MapId
 										? await ApproachCapitalNpcAsync(trip.TeleporterNpcId) : await ApproachShippedSpawnAsync(trip.TeleporterNpcId);
+									if (trip.UseMillis is int walkedUseMillis)
+									{
+										await UseInstancePortalAsync(teleporter, walkedUseMillis, trip.MapId);
+										continue;
+									}
 									NaturalServiceOutcome travelled = await new NaturalServiceSteps(session).TeleportAsync(teleporter,
 										session.Api.World.Objects[teleporter].Position, trip.TalkRange, trip.LocationId, trip.Fare, trip.MapId, token);
 									Require.True(travelled.IsDone, travelled.Reason);
@@ -4362,7 +4409,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				throw new InvalidDataException("An Altgard leg exceeded 400 decisions.");
 
 				// Fly from wherever the Cleric stands (AF-05): wait out the takeoff reuse and a refill, check the policy first.
-				async Task FlyToAsync(BotPosition destination, float? cruiseHeight = null, NaturalAltgardFlight? flightRules = null)
+				async Task FlyToAsync(BotPosition destination, float? cruiseHeight = null, NaturalAltgardFlight? flightRules = null, bool land = true)
 				{
 					// Java PlayerController.updateSoulSickness applies 8291 on bind revival. Its speed penalty
 					// doubles the pillar descent's FP cost; wait for the real icon removal before taking off.
@@ -4392,7 +4439,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					NaturalFlightDecision ready = NaturalFlightPolicy.CanTakeOff(new NaturalTakeoffObservation(true, from, false,
 						(flightRules ?? leg.RequiredFlight).WaterLevel, runtime.NowMillis, lastTakeoff, false, false, false), zones);
 					Require.True(ready.Allowed, $"Cannot take off: {ready.Reason}");
-					NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, leg.Hub.MapId, from, destination, cruiseHeight ?? cruise);
+					int flightMap = session.Api.World.MapId ?? leg.Hub.MapId;
+					NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, flightMap, from, destination, cruiseHeight ?? cruise);
 					Require.True(route.IsUsable, $"No flight to {destination}: {route.Refusal}");
 					lastTakeoff = runtime.NowMillis;
 					float speed = await NaturalFlightProtocol.TakeOffAsync(session, token);
@@ -4402,9 +4450,47 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						["from"] = from, ["to"] = destination, ["meters"] = route.Meters, ["fp"] = world.CurrentFlightTime, ["decision"] = go.Reason,
 					});
 					Require.True(go.Allowed, go.Reason);
-					await NaturalFlightProtocol.FlyAsync(session, leg.Hub.MapId, from, route.Waypoints, speed, token);
-					await NaturalFlightProtocol.LandAsync(session, token);
+					await NaturalFlightProtocol.FlyAsync(session, flightMap, from, route.Waypoints, speed, token);
+					if (land) await NaturalFlightProtocol.LandAsync(session, token);
 					await session.SynchronizeAsync(token);
+				}
+
+				// NL-3 (the operator, 2026-10-17: "You fly up to the ring in the middle of the air, and 'use' the door while flying.
+				// It takes several seconds to use the door, then you get teleported"): a portal that hangs in the air (the Morheim
+				// Abyss Gate, under a canopy over its platform) is used from beside it, in flight. The bot flies from the nearest
+				// ground from which a checked flight reaches a point beside the portal within its reach, and stays in the air.
+				async Task<bool> FlyBesideAsync(BotPosition goal, float within)
+				{
+					int map = session.Api.World.MapId!.Value;
+					NaturalFlyZone? zone = zones.FirstOrDefault(entry => !entry.Forbids && entry.Contains(goal.X, goal.Y, goal.Z));
+					if (zone == null) return false;
+					bool Inside(BotPosition at) => zone.Contains(at.X, at.Y, at.Z + 2) && at.Z + 12 < zone.Top &&
+						!zones.Any(other => other.Forbids && other.Contains(at.X, at.Y, at.Z + 2));
+					BotPosition[] hovers = [.. new[] { 0f, 4f, 8f, 11f }.SelectMany(radius => radius == 0 ? [goal]
+						: Enumerable.Range(0, 8).Select(step => goal with
+						{
+							X = goal.X + radius * MathF.Cos(step * MathF.PI / 4), Y = goal.Y + radius * MathF.Sin(step * MathF.PI / 4),
+						})).Where(at => Distance(at, goal) <= within)];
+					float Cruise(BotPosition from, BotPosition to) => MathF.Min(zone.Top - 6, MathF.Max(from.Z, to.Z) + 5);
+					BotPosition here = session.CurrentPosition;
+					BotPosition[] ground = [.. geometry.GroundNear(map, goal, 150, Inside).OrderBy(at => Distance(at, here))];
+					int every = Math.Max(1, ground.Length / 150);
+					(BotPosition Takeoff, BotPosition Hover)? chosen = (Inside(here) ? new[] { here } : [])
+						.Concat(ground.Where((_, index) => index % every == 0))
+						.SelectMany(takeoff => hovers.Select(hover => (Takeoff: takeoff, Hover: hover)))
+						.Where(pair => NaturalFlightProtocol.DirectlyClear(geometry, map, pair.Takeoff, pair.Hover, Cruise(pair.Takeoff, pair.Hover)))
+						.Cast<(BotPosition, BotPosition)?>().FirstOrDefault();
+					session.TraceDiagnostic("fly-beside", new Dictionary<string, object?>
+					{
+						["goal"] = goal, ["position"] = here, ["ground"] = ground.Length, ["takeoff"] = chosen?.Takeoff, ["hover"] = chosen?.Hover,
+					});
+					if (chosen is not { } pick) return false;
+					if (Distance(here, pick.Takeoff) > 3 && (!await WalkRoadDefendingAsync(pick.Takeoff, "fly-beside-takeoff", within: 3) ||
+						session.Api.World.IsDead)) return false;
+					float height = Cruise(session.CurrentPosition, pick.Hover);
+					if (!NaturalFlightProtocol.Plan(geometry, map, session.CurrentPosition, pick.Hover, height).IsUsable) return false;
+					await FlyToAsync(pick.Hover, height, land: false);
+					return true;
 				}
 
 				// Everything but Borender's steps and the air fight is on foot: come down from the rock first.
@@ -4818,6 +4904,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					navigator.AvoidHostileAggro = true;
 					geometry = runtime.CreateGeometry();
 					contract = contract with { MapId = key.MapId };
+					zones = FlyZonesOf(key.MapId);
 					combat.EnterMap(navigator, geometry, key.MapId);
 					navigator.AvoidSpots = combat.DeathSpots;
 				}
@@ -6595,7 +6682,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				emptySpawnWaits = 0;
 				// AK-08: no hint has a route from here at all: a fight left the Cleric on ground the navmesh does not connect (smoke
 				// run 7: 20 m above MuMu Village). Cast Return, as the road walk does, and try once more from the bind.
+				// NL-3: only when the bind is on this map: a Return to another map does not reach a spawn here (the Abyss Gate's
+				// platform in Morheim, for a leg bound in Brusthonin).
 				if (!returnedFromStrand && reasons.Count > 0 && session.Api.World.Skills.ContainsKey(243) &&
+					session.Api.World.ObeliskBindPoint?.MapId == session.Api.World.MapId &&
 					reasons.All(reason => reason == "No collision-checked route to the current destination."))
 				{
 					session.TraceDiagnostic("stranded-return", new Dictionary<string, object?>

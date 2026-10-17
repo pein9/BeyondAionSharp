@@ -89,6 +89,18 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
             .Where(keep)];
     }
 
+    /// <summary>NL-3: the centres of the navmesh polygons of every island within <paramref name="radius"/> metres (across) of
+    /// <paramref name="point"/> that <paramref name="keep"/> accepts. Empty without a navmesh for the map.</summary>
+    public IReadOnlyList<BotPosition> GroundNear(int mapId, BotPosition point, float radius, Func<BotPosition, bool> keep)
+    {
+        BotNavMesh? mesh = NavMesh?.NavMeshes.Get(mapId);
+        if (mesh == null) return [];
+        return [.. mesh.Polygons()
+            .Select(polygon => new BotPosition(polygon.Ring.Average(v => v.X), polygon.Ring.Average(v => v.Y), polygon.Ring.Average(v => v.Z), 0))
+            .Where(at => MathF.Sqrt(MathF.Pow(at.X - point.X, 2) + MathF.Pow(at.Y - point.Y, 2)) <= radius)
+            .Where(keep)];
+    }
+
     /// <summary>Navmesh-snapped ground near <paramref name="point"/>, or null (no navmesh or nothing near).</summary>
     public BotPosition? SnapToGround(int mapId, BotPosition point) =>
         NavMesh?.NavMeshes.Get(mapId)?.Snap(point, BotNavQuery.Default with { SnapHorizontal = 2, SnapVertical = 10 });

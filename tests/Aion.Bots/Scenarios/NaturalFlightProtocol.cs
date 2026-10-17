@@ -71,6 +71,15 @@ public static class NaturalFlightProtocol
 		}
 	}
 
+	/// <summary>NL-3: the cheap part of <see cref="Plan"/>: a straight flight, or the climb, the crossing at cruise height and the
+	/// descent, is clear. For choosing among many takeoffs; the chosen one is planned in full.</summary>
+	public static bool DirectlyClear(BotNavigationGeometry geometry, int mapId, BotPosition start, BotPosition end, float cruiseZ)
+	{
+		float cruise = MathF.Max(cruiseZ, MathF.Max(start.Z, end.Z));
+		return IsClear(geometry, mapId, start, end) || IsClear(geometry, mapId, start, start with { Z = cruise }) &&
+			IsClear(geometry, mapId, start with { Z = cruise }, end with { Z = cruise }) && IsClear(geometry, mapId, end with { Z = cruise }, end);
+	}
+
 	private static NaturalFlightRoute Check(BotNavigationGeometry geometry, int mapId, BotPosition start, BotPosition[] waypoints)
 	{
 		BotPosition previous = start;

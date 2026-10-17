@@ -33,6 +33,21 @@ public sealed record NaturalFlyZone(string Name, bool Forbids, IReadOnlyList<(fl
 					Float(points, "bottom"), Float(points, "top"));
 			}).ToArray();
 
+	/// <summary>
+	/// NL-3: the zones a player flies in on one map: its zone file's, and on a map whose world flags hold FLY (Reshanta,
+	/// whose zone file has no FLY zone) the whole map from its death level up, as Java has it (WorldMapInstance.addObject
+	/// puts every player on such a map inside ZoneType.FLY; FlyController.canFly).
+	/// </summary>
+	public static IReadOnlyList<NaturalFlyZone> ForMap(string repoRoot, Aion.GameServer.Model.Templates.World.WorldMapTemplate? map, int mapId)
+	{
+		string file = Path.Combine(repoRoot, $"game-server/data/static_data/zones/zones_{mapId}.xml");
+		IReadOnlyList<NaturalFlyZone> zones = File.Exists(file) ? Load(file) : [];
+		if (map?.FlagsRaw?.Split(' ').Contains("FLY") != true || map.GetWorldSize() <= 0) return zones;
+		float size = map.GetWorldSize();
+		return [.. zones, new NaturalFlyZone($"WHOLE_MAP_{mapId}", false, [(0, 0), (size, 0), (size, size), (0, size)],
+			map.GetDeathLevel(), map.GetDeathLevel() + size)];
+	}
+
 	private static float Float(XElement node, string name) =>
 		float.Parse((string)node.Attribute(name)!, CultureInfo.InvariantCulture);
 }

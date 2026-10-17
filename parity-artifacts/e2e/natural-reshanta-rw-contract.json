@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "reshanta-rw-the-way-in",
+  "start": {
+    "contract": "natural-brusthonin-bs-contract.json",
+    "snapshot": "nl-gb-s2",
+    "mapId": 220050000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 34,
+    "bindNpcId": 700344,
+    "completedQuestIds": [
+      24020,
+      2333,
+      2042
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "settlers-campsite",
+    "mapId": 220050000,
+    "anchor": [
+      2929.06,
+      2432.08,
+      17.0035
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "settlers-campsite",
+      "note": "the Settlers Campsite: its teleporter to Morheim and the obelisk the bots are bound at",
+      "min": [
+        2880,
+        2400,
+        5
+      ],
+      "max": [
+        2950,
+        2455,
+        30
+      ]
+    },
+    {
+      "key": "primum-landing",
+      "note": "Primum Landing in Reshanta, where the Morheim Abyss Gate puts an Asmodian, beside the teleporter Briallen",
+      "min": [
+        1048,
+        2809,
+        1620
+      ],
+      "max": [
+        1108,
+        2869,
+        1660
+      ]
+    }
+  ],
+  "quests": [],
+  "order": [],
+  "steps": [],
+  "objectUses": [],
+  "collections": [],
+  "mapTrips": [
+    {
+      "mapId": 220020000,
+      "fromMapId": 220050000,
+      "teleporterNpcId": 205124,
+      "locationId": 10,
+      "fare": 2000,
+      "talkRange": 4
+    },
+    {
+      "mapId": 400010000,
+      "fromMapId": 220020000,
+      "teleporterNpcId": 730063,
+      "locationId": 0,
+      "fare": 0,
+      "talkRange": 15,
+      "useMillis": 3000
+    }
+  ],
+  "bind": {
+    "npcId": 700344,
+    "position": [
+      2929.06,
+      2432.08,
+      17.0035
+    ],
+    "onArrival": true,
+    "price": 2136,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 400010000,
+    "completedQuestIds": [],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 34,
+    "snapshot": "nl-rw",
+    "anchor": [
+      1078.0,
+      2839.0,
+      1636.0
+    ],
+    "radius": 30,
+    "bindNpcId": 700344,
+    "heldQuestIds": []
+  }
+}

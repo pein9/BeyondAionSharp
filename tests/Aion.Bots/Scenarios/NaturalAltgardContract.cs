@@ -93,18 +93,23 @@ public sealed record NaturalAltgardContract(
 		["mgd"] = ("natural-morheim-mgd-contract.json", null),
 		["mgs"] = ("natural-morheim-mgs-contract.json", null),
 		// NL-2 (docs/natural-leg-36.md): "mb" takes Morheim's two orders for the settlers at the fortress and hands them in
-		// at Brusthonin's Settlers Campsite, and "bs" plays the campsite's quests from its obelisk.
+		// at Brusthonin's Settlers Campsite, and "bs" plays the campsite's quests from its obelisk. NL-3: "rw" is the way into
+		// Reshanta, from the campsite by way of the Morheim fortress and its Abyss Gate to Primum.
 		["mb"] = ("natural-morheim-mb-contract.json", "natural-morheim-mb-plans"),
 		["bs"] = ("natural-brusthonin-bs-contract.json", "natural-brusthonin-bs-plans"),
+		["rw"] = ("natural-reshanta-rw-contract.json", null),
 	};
 
 	/// <summary>The legs played by a mustered character of level 26 or more: the Morheim leg to level 31
 	/// (docs/natural-morheim-leveling.md), on Morheim, and the leg to 36's (docs/natural-leg-36.md), on Morheim and Brusthonin.</summary>
 	public static readonly IReadOnlySet<string> MusteredLegs = new HashSet<string>
-		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs" };
+		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw" };
 
 	/// <summary>NL-2: Brusthonin, the settlers' land south of Morheim.</summary>
 	public const int Brusthonin = 220050000;
+
+	/// <summary>NL-3: Reshanta, the Abyss.</summary>
+	public const int Reshanta = 400010000;
 
 	/// <summary>The muster's template quest: the fortress's repeatable coin quest (docs/natural-muster.md). The plans are
 	/// apart from the Abyss entry's, which has none, so that leg's navigation graph is what it was.</summary>
@@ -436,8 +441,10 @@ public sealed record NaturalAltgardStep(string Key, int QuestId, int? Var, strin
 }
 
 /// <summary>AE-00: a quest trip from the hub map by teleporter; Return brings the Cleric back to its hub bind.</summary>
+/// <param name="UseMillis">NL-3: the trip is a portal object used with a bar of this length (Java PortalAI: the Morheim
+/// Abyss Gate, 3 s), not a teleporter's dialog.</param>
 public sealed record NaturalAltgardMapTrip(int MapId, int TeleporterNpcId, int LocationId, int Fare, float TalkRange,
-	int? FromMapId = null);
+	int? FromMapId = null, int? UseMillis = null);
 
 /// <summary>ND-01: Q2900's full-variable solo campaign, actual temporary stigma and five-minute enemy.
 /// Entry and exits are quest events, rather than a portal or an ordered kill counter.</summary>

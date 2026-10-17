@@ -62,9 +62,10 @@ public static class NaturalJourneyIdentityRules
 			altgardLeg == NaturalAbyssEntry.Leg && level >= 25 && worldId is NaturalAbyssEntry.Morheim or NaturalAbyssEntry.ArenaMap ||
 			// NL-2: the group stages (scoped as the Abyss entry) play Brusthonin's group quests with mustered characters.
 			altgardLeg == NaturalAbyssEntry.Leg && level >= 26 && worldId == NaturalAltgardContract.Brusthonin ||
-			// M2: a Morheim leg is taken up by a mustered character, on Morheim. NL-2: and Brusthonin's, on Brusthonin.
+			// M2: a Morheim leg is taken up by a mustered character, on Morheim. NL-2: and Brusthonin's, on Brusthonin; NL-3:
+			// and Reshanta's, in the Abyss.
 			altgardLeg != null && NaturalAltgardContract.MusteredLegs.Contains(altgardLeg) && level >= 26 &&
-			worldId is NaturalAbyssEntry.Morheim or NaturalAltgardContract.Brusthonin))
+			worldId is NaturalAbyssEntry.Morheim or NaturalAltgardContract.Brusthonin or NaturalAltgardContract.Reshanta))
 			return NaturalJourneyStage.AscensionCleric;
 		throw new InvalidDataException(
 			$"Retained natural character is outside the journey: {playerClass} level {level} on map {worldId?.ToString() ?? "unknown"}.");
