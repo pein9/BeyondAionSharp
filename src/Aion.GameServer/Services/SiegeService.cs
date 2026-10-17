@@ -756,13 +756,15 @@ public class SiegeService
     }
 
     /// <summary>Modifies the original cron expression to add additional time for preparations. Five minutes for regular fortress sieges. Ten minutes for Panesterra fortress sieges.</summary>
-    private string GetPreparationCronString(string siegeTime, int fortressId)
+    internal string GetPreparationCronString(string siegeTime, int fortressId)
     {
         try
         {
-            string[] cronParts = siegeTime.Split(" ");
-            sbyte minutes = sbyte.Parse(cronParts[1]);
-            sbyte hours = sbyte.Parse(cronParts[2]);
+            // Java parity: String.split(" ") drops trailing empty parts, and Byte.parseByte rejects an out-of-range value with
+            // NumberFormatException, not an overflow; String.valueOf is culture-free.
+            string[] cronParts = JavaPattern.Split(siegeTime, " ");
+            sbyte minutes = global::Aion.GameServer.Utils.ChatHandlers.JavaNumberParser.ParseSByte(cronParts[1]);
+            sbyte hours = global::Aion.GameServer.Utils.ChatHandlers.JavaNumberParser.ParseSByte(cronParts[2]);
             minutes -= (sbyte)(fortressId < 10000 ? 5 : 10);
             if (minutes < 0)
             {
@@ -772,8 +774,8 @@ public class SiegeService
                     // Java parity: services/SiegeService.java throws UnsupportedOperationException (preparation over midnight unsupported)
                     throw new NotSupportedException("Failed converting cron expression: " + siegeTime + "\nPreparation over midnight not supported.");
             }
-            cronParts[1] = minutes.ToString();
-            cronParts[2] = hours.ToString();
+            cronParts[1] = JavaString.ValueOf(minutes);
+            cronParts[2] = JavaString.ValueOf(hours);
             return string.Join(" ", cronParts);
         }
         catch (FormatException e)
