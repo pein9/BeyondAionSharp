@@ -123,6 +123,12 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
 - [ ] **NL-3 The first Abyss quests (25 to 33).** The way into Reshanta, its flying (islands, death below 500 m), the Abyss
   campaign from Votan's Orders, the quests the list says play or need steps, and those that open on the way. The quest
   list first.
+  - 2026-10-17 (`251cda903`): the list is [natural-reshanta-quests.md](natural-reshanta-quests.md): below 36, 26
+    quests from compiled plans and 23 with hand-written handlers (the ten "Defeat Elyos Soldiers" among them, which
+    need Elyos players and go into the report), one group quest (Q2728), four that ask for gathering, eight that cannot
+    be taken; most are given at Primum Fortress, and by their rewards alone they carry the least experienced bot to 36.
+    Reshanta's navmesh is baked; its travel graph cannot be made yet (the tool stops in `SiegeService`'s static start).
+    The way in is the Morheim Abyss Gate (portal 730063, high in the Morheim fortress; Q2042), which lands at Primum.
 - [ ] **NL-4 Level 36.** Morheim's quests from 31 to 35 for any bot still short of 36 and for the zone's sake; the gear
   check-in at 36 (Elite Rank 5); the level-36 companion profiles; then Q24023 (the leg engine collects inside an
   instance, room by room, and goes down between the Sky Temple Interior's floors as a player does, by a glide or a
