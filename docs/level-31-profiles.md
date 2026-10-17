@@ -1,8 +1,9 @@
 # Level-31 profiles: the best coin gear and each class's rotation
 
-Status: a plan, 2026-10-16. The operator, the same day, after Fire Temple: "Next up: Level 31 profile templates (just
-like the level 26 ones) where we have the best coin gear for each class, and make sure we have our correct skill
-rotations for each class. Plan this out."
+Status: done, 2026-10-16 (L1 to L6). The operator, the same day, after Fire Temple: "Next up: Level 31 profile
+templates (just like the level 26 ones) where we have the best coin gear for each class, and make sure we have our correct
+skill rotations for each class. Plan this out." Then: "Go ahead, run the loop, get the profiles for spawning the level 31
+template characters in place, and usable with our ".companions" command." They are: see [the report](#the-report).
 
 ## What is there now
 
@@ -155,12 +156,54 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
   - 2026-10-16, played before L3 (it fights nothing, so its world does not wait on the rotations): round
     `run/morheim/L4/check-in-eight-s2.json` on L2's code, captured **`morheim-g31-s2-w1`**. The eight stand at 31 at the
     fortress in the full Elite Rank 6 set where it is the better piece, with both stones in.
-- [ ] **L5 The profiles.** The eight level-31 profiles written again from `morheim-g31-s2-w1`, `--check` passing; a
+- [x] **L5 The profiles.** The eight level-31 profiles written again from `morheim-g31-s2-w1`, `--check` passing; a
   companion round with the Fire Temple six at 31 (the Templar as the player's stand-in and five companions) shows the
   gear, the stones and the rotations in play. The Docker stack's companion host takes the new files at its next
   nightly build.
-- [ ] **L6 The report.** Per class what it wears, its two stones and its rotation's new skills; what was left out and
+  - 2026-10-16 (`0b4ed05a5`): `make-companion-profiles.py` takes the level-31 source from `morheim-g31-s2`; only the eight
+    level-31 files changed, each with one thing more worn (the second stone), and `--check` passes for all nineteen.
+    The companion server tests pass. Round `l5-t1` (round file `run/morheim/L5/companions-31.json`, M8's, from
+    `morheim-g31-s2`): the level-31 Templar as the player's stand-in asked for a Cleric, a Gladiator, a Ranger, a
+    Sorcerer and a Chanter, and all five came at 31 with both stones in, followed, fought the marks and left; among
+    their casts Word of Inspiration, Invincibility Mantra, Dilation Arrow and Crushing Blow.
+- [x] **L6 The report.** Per class what it wears, its two stones and its rotation's new skills; what was left out and
   why.
+  - 2026-10-16: [the report](#the-report) below.
+
+## The report
+
+**What a player gets.** `.companion <class>` brings a companion at the highest level its class has a profile for that is
+not above the player's, so a player of 31 or more gets these; `.companion <class> 31` asks for one outright. The eight
+original classes have both levels, 26 and 31; the Rider, the Gunner and the Bard have 26 only (MR-h). The files are
+`game-server/data/companions/asmodians-<class>-31.json`, made from `morheim-g31-s2-w1`.
+
+**What each wears at 31.** The Elite Rank 6 weapon (and shield or second dagger), chest, gloves and boots of its class,
+the level-31 quest shoulders and legs (Morheim Shade Legionary, the same numbers as the Elite Rank 6 ones), both
+power shards and its kit; and two stigma stones:
+
+| Class | Stones | New in its table at 27 to 31 |
+|---|---|---|
+| Gladiator | Crippling Cut, Draining Blow | Daevic Fury, Crushing Blow, Springing Slice, Reckless Strike |
+| Templar | Inquisitor's Blow, Punishing Thrust | Unwavering Devotion, Hand of Healing |
+| Assassin | Searching Strike, Rune Knife | Rune Burst, Assassination |
+| Ranger | Bow of Blessing, Dilation Arrow | Spiral Arrow, Misery Shot |
+| Sorcerer | Ice Harpoon, Storm Strike | Empyrean Wisdom, Refracting Shard, Boon of Iron-Clad |
+| Spirit Master | Cyclone of Wrath, Magic's Freedom | Summoning Alacrity |
+| Cleric | Saving Grace, Noble Grace | Punishing Earth, Light of Recovery (solo ladder), Acquittal (group) |
+| Chanter | Word of Life, Word of Inspiration | Invincibility Mantra, Pentacle Shock, Soul Crush, Word of Wind (group) |
+
+**Left out, and why** (each with its reason in its profile): area skills that wake other monsters (Seismic Billow,
+Tranquilizing Cloud, Disenchant), skills that follow a skill the table leaves out (Face Smash, Nightmare, Booming
+Assault), detection and stealth (Searching Eye, Wind Walk, Hunter's Eye, Boon of Clairvoyance), a kiting aid (Tactical
+Retreat), Bestial Fury (its shorter reach), Aether's Hold (dear for its damage), Robe of Cold (it ends Robe of Flame),
+Fear (a feared monster runs among others) and the passives.
+
+**Seen but not exercised.** The fights of the trials were short: Daevic Fury waits for 2,000 DP, Springing Slice and
+Draining Blow for a thrown-down target, Hand of Healing and Iron-Clad for an emergency, Acquittal and Noble Grace for a
+group in trouble. Their rules are in place; Fire Temple's bosses or the next leg's fights will show them.
+
+**The bots' own world** (`morheim-ft-s1-w1`) keeps its gear until its check-in at 36, which buys with the fixed rule;
+the rotations are the same at every level, so its bots of 34 and 35 cast the new skills already.
 
 ## Decisions
 
