@@ -240,6 +240,7 @@ All of these are generated. Never hand-edit them. Change the inputs or settings 
 | Haramel (300200000) | 9,834 polygons, 529 KiB | Asmodian graph; regenerate with `--race ASMODIANS` |
 | Morheim (220020000) | 194,651 polygons, 12.4 MiB | 1,302 nodes, 4,772 links, 11 exits; regenerate with `--race ASMODIANS` |
 | Triniel Underground Arena (320090000) | 159 polygons, 6 KiB | none |
+| Brusthonin (220050000) | 142,016 polygons, 10.6 MiB | 1,555 nodes, 6,529 links, 3 exits; regenerate with `--race ASMODIANS` |
 | Nochsana Training Camp (300030000) | 4,167 polygons, 263 KiB | none |
 
 The three bridge maps have no roads and were baked with `bake --maps 320020000,120010000,220030000`.
@@ -254,6 +255,10 @@ The Abyss-entry leg's AX-02 ([natural-abyss-entry.md](natural-abyss-entry.md)) a
 Triniel Underground Arena with `bake --maps 220020000,320090000` and
 `graph --maps 220020000 --race ASMODIANS`, verified by `check --maps 220020000,320090000 --rebake`.
 Morheim has no extracted roads. The arena is one island from its entry to all three spirit groups.
+
+The leg to 36's NL-2 ([natural-leg-36.md](natural-leg-36.md)) adds Brusthonin with `bake --maps 220050000` and
+`graph --maps 220050000 --race ASMODIANS`, verified by `check --maps 220050000 --rebake`. Brusthonin has no extracted
+roads either; 1,426 of its 1,555 graph nodes are on the main network.
 
 The Group NTC leg's N1 ([natural-group-ntc.md](natural-group-ntc.md)) adds Nochsana Training Camp with
 `bake --maps 300030000`, verified by `check --maps 300030000 --rebake`. The camp is one island from the landing to
