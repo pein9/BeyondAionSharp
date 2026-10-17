@@ -49,6 +49,8 @@ public static class PlayerCommandScenario
 		await Command("gmlist", ".gmlist", p => Message(p, "There is no GM online."));
 		await Command("id", ".id 182005453", p => Message(p, "ID: 182005453"));
 		await Command("pvp", ".pvp info", p => Message(p, "There are currently no players on the map."));
+		// GameServer.java:175 makes the PvP map at boot; joining it is refused while gameserver.pvpmap.enable is off, as shipped.
+		await Command("pvp-join", ".pvp join", p => Message(p, "The PvP-Map is currently disabled."));
 		await Command("questrestart", ".questrestart 1101", p => Message(p, "Only currently active quests can be restarted."));
 		await Command("noexp-on", ".noexp", p => Message(p, "inactive"));
 		await Command("noexp-off", ".noexp", p => ActiveMessage(p));

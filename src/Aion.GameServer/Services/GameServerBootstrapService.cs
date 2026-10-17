@@ -471,24 +471,22 @@ public sealed class GameServerBootstrapService : IHostedService
 		// (default "*" => skip, no parsing). Dep-clean.
 		Aion.GameServer.Services.Transfers.PlayerTransferService.GetInstance();
 
-		// PvpMapService.getInstance().init() (GameServer.main:175): NOT WIRED YET (P10-05, D7 approved 2026-10-17).
-		// Init() calls (unconditionally, NO config gate: PVP_MAP_ENABLED is not checked here)
-		// InstanceService.GetNextAvailableInstance(301220000, ...), which needs world map 301220000 to exist; Java does not
-		// guard, so it needs the real WORLD_MAPS_DATA of the SIM or production boot (SimulationBootTailTests). NOTE: an
-		// earlier real-data run surfaced a port defect: CustomConfig.PVP_MAP_RANDOM_BOSS_SCHEDULE was left null (it carries
-		// the Java @Property defaultValue "0 30 14,18,21 ? * *"); PvpMapHandler.StartRandomBossTask schedules off it during
-		// Init() and NRE'd CronService.Schedule. Fixed faithfully (inline CronExpressions.GetOrCreate default, same pattern
-		// as AutoGroupConfig).
-		// Aion.GameServer.Custom.Pvpmap.PvpMapService.GetInstance().Init();
+		// GameTimeService.getInstance().startClock() (GameServer.main:173), before the PvP map and CustomInstanceService.
+		_gameTimeService.StartClock();
+
+		// PvpMapService.getInstance().init() (GameServer.main:175). It has no config gate: it always makes an instance of
+		// world map 301220000 (not auto-destroyed) whose PvpMapHandler opens the doors, spawns the map's NPCs, places the
+		// keymasters and treasure chests at random positions, starts the supply task (every 400 s) and schedules the random
+		// boss cron (CustomConfig.PVP_MAP_RANDOM_BOSS_SCHEDULE). Joining, the supply drops and the random boss all check
+		// gameserver.pvpmap.enable, false as shipped, so the map stays empty.
+		Aion.GameServer.Custom.Pvpmap.PvpMapService.GetInstance().Init();
 
 		// CustomInstanceService.getInstance() (GameServer.main:176): empty ctor; the LEADERBOARD_WINDOW_OBJECT_ID
 		// static field calls IDFactory.GetInstance().NextId() (IDFactory is live at this boot point). Dep-clean.
 		Aion.GameServer.Custom.Instance.CustomInstanceService.GetInstance();
 
+		// The world container's ready flag (C#-only: Java's World singleton has none), once Java's boot body is done.
 		_world.Initialize();
-		// GameTimeService.getInstance().startClock() (GameServer.main:173). Java starts the clock before PvpMapService.init()
-		// and CustomInstanceService (main:175-176); the C# order here is part of the P10-05 boot-tail work.
-		_gameTimeService.StartClock();
 
 		if (dataManager.StaticData.ValidationTask != null)
 			await dataManager.StaticData.ValidationTask.WaitAsync(cancellationToken);

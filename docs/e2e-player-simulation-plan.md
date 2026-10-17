@@ -2213,6 +2213,10 @@ real geodata on in production immediately, because geo is enabled by default; th
   (141) runs in the body: each fortress, outpost and standalone artifact gets its owner's PEACE group (1,454 NPCs with
   the shipped data, all Balaur but the two Silentera outposts), 22 `SiegeStartRunnable` cron jobs, the endless siege of
   every standalone artifact (49), the next states and the hourly status broadcast; gap #65 was a test-isolation defect.
+  The tail ends in Java's order (173-176): the game clock starts, `PvpMapService.Init` makes the PvP map (an instance of
+  301220000 with its NPCs and 18 random keymaster and chest positions, a 400 s supply task and the random-boss cron, all
+  idle while `gameserver.pvpmap.enable` is off as shipped), then `CustomInstanceService`, then the world's ready flag.
+  All four boot-tail items are wired; the SIM proof is `SimulationBootTailTests` and L8C's `.pvp join` step.
 - [ ] **P10-06** [LIVE] L — **Deferred by maintainer (D15): do not run the Java server.** Original proposal:
   differential Java-vs-C# runs, narrowly: build `../aion-server` `4.8` (kept at
   `lastCompletedJavaCommit`, P0-02) locally with JDK 25 and Maven; start the Java game server as a local process
@@ -2772,7 +2776,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 20 | Duplicate `CraftSkillUpdateService`; the `Craft` copy's unused profession lookup returns ordinal 0 instead of null (latent) | `services/craft/CraftSkillUpdateService.java:79-81` | P8-03: one canonical `Services.Craft` singleton with nullable lookup; all 36 trainer IDs and unmapped-NPC/dialog behavior tested |
 | 21 | `InventoryDAO.Store` catch scope too wide | `InventoryDAO.java:232` catches `SQLException` | P8-03: narrow to `MySqlException`; red/green tests cover catch type and non-SQL propagation |
 | 22 | `GeoWorldLoader` was a stub, so boot reported both the loader warning (`f802a125`, count 1) and four normalized missing-door-geometry warnings (`39050e81`, count 4) | `GeoWorldLoader.java` (285 lines); `GeoMap.java:287-301` at `ce54b7931` | Fixed in P9-01, measured in P9-03, Java query parity verified in P9-02 and geo-enabled SIM/LIVE scenario validation completed in P9-04. Both fingerprints marked fixed without an allowlist |
-| 23 | Production boot skips `HousingService`/housing tasks, faction ratio counts, `InitSieges`, `PvpMapService.Init` | `GameServer.java:118-122,130-134,141,175` | In progress (P10-05; D7 approved 2026-10-17) |
+| 23 | Production boot skips `HousingService`/housing tasks, faction ratio counts, `InitSieges`, `PvpMapService.Init` | `GameServer.java:118-122,130-134,141,175` | Wired 2026-10-17 in Java's order (P10-05; D7 approved 2026-10-17); SIM proof `SimulationBootTailTests`, to be run |
 | 24 | `BossAiHarness.Kill` calls `OnDie` twice (test bug) | n/a | Resolved by P6-08 (`b736fad55`) |
 | 25 | The DB-backed full-boot test pre-registers test AIs before `StartAsync` initializes the real AI engine, and the assembly-wide `SiegeServiceTestInit` can construct the process-global siege singleton against empty fixture data; in isolation this produces duplicate-AI registration before boot or a stale-location NRE in the separately asserted deferred boot tail | n/a (C# test-process defect; production `StartAsync` completed for P0-03 after bypassing the test AI preload) | P1-12 / P5-12 |
 | 26 | Concurrent chat clients can create separate channels for the same identifier, so neither receives the other's message | `ChatChannels.java:52-79` executes the scan/add path on the single NIO read/write dispatcher | Resolved by P3-09 (`efddb7a7b`) |

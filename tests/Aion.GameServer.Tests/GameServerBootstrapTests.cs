@@ -66,7 +66,8 @@ public sealed class GameServerBootstrapTests
 	/// left to the SIM boot; with no world maps SpawnAll spawns nothing and never reaches HousingService. So is
 	/// SiegeService.InitSieges (main:141): it needs the real siege data, and this process builds SiegeService with sieges
 	/// off (SiegeServiceTestInit), so its location maps are empty while the schedule it reads is not, which is the failure
-	/// gap #65 recorded.
+	/// gap #65 recorded. And so is PvpMapService.Init (main:175), which makes an instance of world map 301220000; the
+	/// fixture has no world maps.
 	/// </summary>
 	[Fact]
 	public async Task GameServerBootstrapBody_SingletonsConstructAgainstTheNoDatabaseFixtureInJavaOrder()

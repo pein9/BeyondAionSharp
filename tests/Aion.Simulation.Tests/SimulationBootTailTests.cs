@@ -2,9 +2,11 @@ using Aion.Commons.Database;
 using Aion.Commons.Logging;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Configs.Schedule;
+using Aion.GameServer.Custom.Pvpmap;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
+using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Siege;
 using Aion.GameServer.Model.Siege;
 using Aion.GameServer.Model.Templates.Npc;
@@ -14,6 +16,7 @@ using Aion.GameServer.Services.Cron;
 using Aion.GameServer.Services.Siege;
 using Aion.GameServer.Taskmanager.Tasks.Housing;
 using Aion.GameServer.Utils;
+using Aion.GameServer.World;
 
 namespace Aion.Simulation.Tests;
 
@@ -224,6 +227,32 @@ public sealed class SimulationBootTailTests(SimulationWorldFixture fixture)
 			int expected = start > nextUpdate.Value ? SiegeLocation.STATE_INVULNERABLE : SiegeLocation.STATE_VULNERABLE;
 			Assert.True(expected == location.GetNextState(), $"fortress {id}: next state {location.GetNextState()}, its next siege run is {start:O}, the next update {nextUpdate:O}");
 		}
+	}
+
+	/// <summary>
+	/// GameServer.java:173-176: the game clock starts, then PvpMapService.init makes the PvP map, an instance of 301220000
+	/// held by a PvpMapHandler and never auto-destroyed, with the map's NPCs in it, then CustomInstanceService runs; the
+	/// world container is marked ready after them. With gameserver.pvpmap.enable off, as shipped, nobody is on the map, and
+	/// a player who asks to join is told it is disabled (L8C's ".pvp join" step, SimulationPlayerCommandTests).
+	/// </summary>
+	[SkippableFact]
+	public void TheClockStartsAndThenThePvpMapIsMade()
+	{
+		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
+		Assert.False(CustomConfig.PVP_MAP_ENABLED);
+		WorldMapInstance pvpMap = Assert.Single(fixture.World.GetWorldMap(301220000), instance => instance.GetInstanceHandler() is PvpMapHandler);
+		Assert.Null(pvpMap.GetEmptyInstanceTask());
+		Assert.Contains(pvpMap, visible => visible is Npc);
+		Assert.Empty(pvpMap.GetPlayersInside());
+		Assert.Equal(0, PvpMapService.GetInstance().GetParticipantsSize());
+
+		IReadOnlyList<CapturedLogEntry> boot = BootLog();
+		int clock = SingleIndex(boot, entry => entry.Message.StartsWith("GameTime started.", StringComparison.Ordinal), "\"GameTime started\"");
+		int created = SingleIndex(boot, entry => entry.Category == "InstanceService"
+			&& entry.Message.StartsWith("Created new instance: 301220000 [" + pvpMap.GetInstanceId().ToString(System.Globalization.CultureInfo.InvariantCulture) + "]", StringComparison.Ordinal),
+			"PvP map \"Created new instance: 301220000\"");
+		int ready = SingleIndex(boot, entry => entry.Message == "Initialized world container", "\"Initialized world container\"");
+		Assert.True(clock < created && created < ready, $"boot order (clock started, PvP map made, world ready) was {clock}, {created}, {ready}");
 	}
 
 	private static int[] IndexesOf(IReadOnlyList<CapturedLogEntry> boot, Func<CapturedLogEntry, bool> match) =>
