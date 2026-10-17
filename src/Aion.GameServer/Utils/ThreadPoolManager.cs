@@ -52,6 +52,19 @@ public class ThreadPoolManager : IAsyncDisposable
 	/// <summary>Composition-root hook: bind the DI-created instance to the Java-style static accessor.</summary>
 	public static void RegisterInstance(ThreadPoolManager instance) => _instance = instance;
 
+	/// <summary>
+	/// Builds one of the singletons <c>GameServer.main</c> creates eagerly at boot (its <c>getInstance()</c> calls). This
+	/// pool runs the factory inline on the boot thread, as Java does. Infrastructure seam for a deterministic pool: a
+	/// constructor that hands work to the pool and waits for it (<c>AbstractCronTask</c>'s shared semaphore) only
+	/// finishes there when that pool's clock is driven, so the simulation pool overrides this.
+	/// </summary>
+	internal virtual T ConstructStartupSingleton<T>(string name, Func<T> factory)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(name);
+		ArgumentNullException.ThrowIfNull(factory);
+		return factory();
+	}
+
 	public virtual ScheduledTask Schedule(
 		Func<CancellationToken, ValueTask> action,
 		TimeSpan delay,

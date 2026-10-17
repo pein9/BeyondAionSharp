@@ -89,21 +89,27 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 			_taskTimings.Clear();
 	}
 
+	/// <summary>Wall-time limit for each phase of <see cref="ConstructStartupSingleton{T}"/>.</summary>
+	public TimeSpan StartupSingletonTimeout { get; set; } = TimeSpan.FromMinutes(2);
+
 	/// <summary>
-	/// Runs one eager singleton constructor and all work it queued for virtual time zero. Both phases use wall
-	/// time bounds because an <c>AbstractCronTask</c> constructor can wait forever on Java's shared semaphore,
-	/// while a startup body can block inside the synchronous virtual drain.
+	/// Runs one eager singleton constructor and then all work due at the current virtual instant, which includes
+	/// what the constructor queued. Both phases use wall time bounds because an <c>AbstractCronTask</c> constructor
+	/// can wait forever on Java's shared semaphore, while a startup body can block inside the synchronous virtual
+	/// drain. A scheduled body that faults in the drain fails the construction at once, before the next
+	/// singleton's constructor can wait on a semaphore that body never released.
 	/// </summary>
-	public async Task<T> InitializeAndDrainAsync<T>(string name, Func<T> factory, TimeSpan wallTimeTimeout)
+	internal override T ConstructStartupSingleton<T>(string name, Func<T> factory)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(name);
 		ArgumentNullException.ThrowIfNull(factory);
+		TimeSpan wallTimeTimeout = StartupSingletonTimeout;
 		if (wallTimeTimeout <= TimeSpan.Zero)
-			throw new ArgumentOutOfRangeException(nameof(wallTimeTimeout));
+			throw new InvalidOperationException($"{nameof(StartupSingletonTimeout)} must be positive.");
 
 		int firstNewFault = _faults.Count;
-		T value = await RunBoundedAsync(factory, name + " construction", wallTimeTimeout);
-		await RunBoundedAsync(
+		T value = RunBounded(factory, name + " construction", wallTimeTimeout);
+		RunBounded(
 			() =>
 			{
 				Advance(TimeSpan.Zero);
@@ -338,11 +344,11 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 		}
 	}
 
-	private static async Task<T> RunBoundedAsync<T>(Func<T> action, string operation, TimeSpan wallTimeTimeout)
+	private static T RunBounded<T>(Func<T> action, string operation, TimeSpan wallTimeTimeout)
 	{
 		try
 		{
-			return await Task.Run(action).WaitAsync(wallTimeTimeout);
+			return Task.Run(action).WaitAsync(wallTimeTimeout).GetAwaiter().GetResult();
 		}
 		catch (TimeoutException exception)
 		{

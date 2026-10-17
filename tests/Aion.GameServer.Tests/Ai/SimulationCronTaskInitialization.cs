@@ -1,24 +1,23 @@
 using Aion.GameServer.Taskmanager.Tasks.Housing;
-using Aion.GameServer.TestKit;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Tests.Ai;
 
-/// <summary>SIM boot slice for the Java-ordered housing cron singletons.</summary>
+/// <summary>SIM boot slice for the Java-ordered housing cron singletons, built through the startup-singleton seam.</summary>
 internal static class SimulationCronTaskInitialization
 {
-	public static async Task InitializeHousingTasksAsync(VirtualThreadPool pool, TimeSpan wallTimeTimeout)
+	public static void InitializeHousingTasks(ThreadPoolManager pool)
 	{
-		await pool.InitializeAndDrainAsync(nameof(AuctionEndTask), AuctionEndTask.GetInstance, wallTimeTimeout);
-		await pool.InitializeAndDrainAsync(nameof(AuctionAutoFillTask), AuctionAutoFillTask.GetInstance, wallTimeTimeout);
-		await pool.InitializeAndDrainAsync(nameof(MaintenanceTask), MaintenanceTask.GetInstance, wallTimeTimeout);
+		pool.ConstructStartupSingleton(nameof(AuctionEndTask), AuctionEndTask.GetInstance);
+		pool.ConstructStartupSingleton(nameof(AuctionAutoFillTask), AuctionAutoFillTask.GetInstance);
+		pool.ConstructStartupSingleton(nameof(MaintenanceTask), MaintenanceTask.GetInstance);
 	}
 
-	internal static async Task InitializeSequenceAsync(
-		VirtualThreadPool pool,
-		TimeSpan wallTimeTimeout,
+	internal static void InitializeSequence(
+		ThreadPoolManager pool,
 		params (string Name, Func<object> Factory)[] tasks)
 	{
 		foreach ((string name, Func<object> factory) in tasks)
-			await pool.InitializeAndDrainAsync(name, factory, wallTimeTimeout);
+			pool.ConstructStartupSingleton(name, factory);
 	}
 }

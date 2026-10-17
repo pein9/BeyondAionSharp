@@ -19,7 +19,7 @@ public sealed class SimulationCronTaskInitializationTests
 	public async Task HousingCronSingletonsAreConstructedAndDrainedInJavaOrder()
 	{
 		ThreadPoolManager? previous = TryGetThreadPool();
-		var pool = new VirtualThreadPool();
+		var pool = new VirtualThreadPool { StartupSingletonTimeout = WallTimeTimeout };
 		var epoch = new DateTimeOffset(2030, 1, 1, 8, 59, 0, TimeSpan.Zero);
 		CronService? service = null;
 		try
@@ -29,11 +29,13 @@ public sealed class SimulationCronTaskInitializationTests
 			service = CronService.CreateDeterministic(typeof(ThreadPoolManagerRunnableRunner), TimeZoneInfo.Utc);
 			using IDisposable cronScope = CronService.UseScopedInstance(service);
 
-			await SimulationCronTaskInitialization.InitializeHousingTasksAsync(pool, WallTimeTimeout);
+			SimulationCronTaskInitialization.InitializeHousingTasks(pool);
 
-			Assert.Single(service.FindJobs<AuctionEndTask>(withSubTypes: false));
-			Assert.Single(service.FindJobs<AuctionAutoFillTask>(withSubTypes: false));
-			Assert.Single(service.FindJobs<MaintenanceTask>(withSubTypes: false));
+			// Each body schedules its job before the next constructor runs, so the virtual job ids follow
+			// GameServer.java:120-122: AuctionEndTask, AuctionAutoFillTask, MaintenanceTask.
+			Assert.Equal("JobKey:VirtualJob:1", Assert.Single(service.FindJobs<AuctionEndTask>(withSubTypes: false)).Key.Name);
+			Assert.Equal("JobKey:VirtualJob:2", Assert.Single(service.FindJobs<AuctionAutoFillTask>(withSubTypes: false)).Key.Name);
+			Assert.Equal("JobKey:VirtualJob:3", Assert.Single(service.FindJobs<MaintenanceTask>(withSubTypes: false)).Key.Name);
 			Assert.Equal(3, pool.ArmedTimerCount);
 			Assert.Empty(pool.Faults);
 		}
@@ -50,15 +52,14 @@ public sealed class SimulationCronTaskInitializationTests
 	public async Task StartupBodyFaultFailsTheSequenceBeforeTheNextConstructorCanHang()
 	{
 		ThreadPoolManager? previous = TryGetThreadPool();
-		var pool = new VirtualThreadPool();
+		var pool = new VirtualThreadPool { StartupSingletonTimeout = WallTimeTimeout };
 		bool nextFactoryCalled = false;
 		try
 		{
 			ThreadPoolManager.RegisterInstance(pool);
-			AggregateException exception = await Assert.ThrowsAsync<AggregateException>(() =>
-				SimulationCronTaskInitialization.InitializeSequenceAsync(
+			AggregateException exception = Assert.Throws<AggregateException>(() =>
+				SimulationCronTaskInitialization.InitializeSequence(
 					pool,
-					WallTimeTimeout,
 					(nameof(ThrowingStartupCronTask), () => new ThrowingStartupCronTask()),
 					("next cron task", () =>
 					{
@@ -76,6 +77,29 @@ public sealed class SimulationCronTaskInitializationTests
 			ThreadPoolManager.RegisterInstance(previous ?? new ThreadPoolManager(NullLogger<ThreadPoolManager>.Instance));
 			await pool.DisposeAsync();
 		}
+	}
+
+	[Fact]
+	public async Task ProductionPoolConstructsStartupSingletonsInlineOnTheBootThread()
+	{
+		await using var pool = new ThreadPoolManager(NullLogger<ThreadPoolManager>.Instance);
+		var singleton = new object();
+		int bootThread = Environment.CurrentManagedThreadId;
+		int factoryThread = 0;
+
+		object constructed = pool.ConstructStartupSingleton("inline probe", () =>
+		{
+			factoryThread = Environment.CurrentManagedThreadId;
+			return singleton;
+		});
+
+		Assert.Same(singleton, constructed);
+		Assert.Equal(bootThread, factoryThread);
+		Assert.Equal(0, pool.ScheduledTaskCount);
+		// Java's getInstance() throws straight to GameServer.main; nothing wraps or delays the failure.
+		var failure = new InvalidOperationException("constructor failed");
+		Assert.Same(failure, Assert.Throws<InvalidOperationException>(() =>
+			pool.ConstructStartupSingleton<object>("failing probe", () => throw failure)));
 	}
 
 	private static ThreadPoolManager? TryGetThreadPool()
