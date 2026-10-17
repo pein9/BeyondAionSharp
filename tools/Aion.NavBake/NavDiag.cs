@@ -204,6 +204,42 @@ internal static class NavDiag
 		return 0;
 	}
 
+	/// <summary>NL-3: the server's sight along NAV_PATH ("x,y,z;x,y,z;..."), leg by leg in pieces of at most 40 m as a flight
+	/// is checked (NaturalFlightProtocol.IsClear), and the mesh that blocks a blocked piece.</summary>
+	public static int Sight(BotNavWorld world, int mapId)
+	{
+		GeoMap map = world.Map(mapId);
+		var geometry = world.Geometry(BotNavSites.RaceFor(world, mapId));
+		BotPosition[] path = Environment.GetEnvironmentVariable("NAV_PATH")!.Split(';').Select(t =>
+		{
+			float[] v = t.Split(',').Select(p => float.Parse(p, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+			return new BotPosition(v[0], v[1], v[2], 0);
+		}).ToArray();
+		for (int leg = 0; leg + 1 < path.Length; leg++)
+		{
+			BotPosition a = path[leg], b = path[leg + 1];
+			float meters = MathF.Sqrt(MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2) + MathF.Pow(a.Z - b.Z, 2));
+			int pieces = Math.Max(1, (int)MathF.Ceiling(meters / 40));
+			BotPosition previous = a;
+			string verdict = "clear";
+			for (int i = 1; i <= pieces; i++)
+			{
+				float t = (float)i / pieces;
+				var next = new BotPosition(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t, a.Z + (b.Z - a.Z) * t, 0);
+				if (!geometry.HasLineOfSight(mapId, previous, next))
+				{
+					var hit = map.GetCollisions(previous.X, previous.Y, previous.Z, next.X, next.Y, next.Z, 1,
+						CollisionIntention.DEFAULT_COLLISIONS.GetId(), IgnoreProperties.ASMODIANS).GetClosestCollision();
+					verdict = $"BLOCKED in piece {i} at {hit?.GetContactPoint()} by {hit?.GetGeometry()?.GetName()} (parent {hit?.GetGeometry()?.GetParent()?.GetName()})";
+					break;
+				}
+				previous = next;
+			}
+			Console.WriteLine($"{a} -> {b} ({meters:F1} m): {verdict}");
+		}
+		return 0;
+	}
+
 	/// <summary>Ground profile along NAV_PATH ("x,y,z;x,y,z;..."), every metre: the surface with sloping faces
 	/// allowed and with them invalidated (the bot's ground rule), and the navmesh island there.</summary>
 	public static int Profile(BotNavWorld world, int mapId, string navDir)

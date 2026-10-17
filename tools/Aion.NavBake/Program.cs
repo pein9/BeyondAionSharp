@@ -51,6 +51,7 @@ internal static class Program
 				"gap" => NavDiag.Gap(world, maps[0], navDir),
 				"island" => NavDiag.Island(world, maps[0], navDir),
 				"profile" => NavDiag.Profile(world, maps[0], navDir),
+				"sight" => NavDiag.Sight(world, maps[0]),
 				"columns" => NavDiag.Columns(world, maps[0]),
 				"diag" => NavDiag.Run(world, maps[0], navDir, options.Threads, int.Parse(options.Output!, CultureInfo.InvariantCulture)),
 				"validate" => NavValidate.Run(world, maps[0], navDir, options.Bin ?? throw new ArgumentException("--bin"), options.Output),
