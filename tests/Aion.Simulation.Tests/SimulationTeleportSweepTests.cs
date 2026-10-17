@@ -79,8 +79,10 @@ public sealed partial class SimulationFastScenarioTests
 				fixture.World.ForEachObject(o => { if (o is Npc n && n.IsSpawned() && npcIds.Contains(n.GetNpcId())) candidates.Add(n); });
 				if (candidates.Count == 0)
 				{
-					// Siege peace spawns are loaded separately from ordinary map spawns. Materialize
-					// an existing race-specific group as explicit director setup, not production boot.
+					// Siege peace spawns are loaded separately from ordinary map spawns: SiegeService.InitSieges places
+					// the owner's group of every location at boot. Give the location to the route NPC's race as
+					// explicit director setup, by the GM capture when the location already holds siege NPCs or a
+					// siege, and otherwise by materializing the race-specific group directly.
 					var sieges = SiegeService.GetInstance();
 					var source = sieges.GetSiegeLocations().Keys.Order()
 						.SelectMany(key => DataManager.SPAWNS_DATA.GetSiegeSpawnsByLocId(key) ?? [])
@@ -89,12 +91,9 @@ public sealed partial class SimulationFastScenarioTests
 							&& s.GetSiegeRace() is SiegeRace.ELYOS or SiegeRace.ASMODIANS);
 					if (source != null)
 					{
-						int sourceId = source.GetSiegeId(); var location = sieges.GetSiegeLocation(sourceId);
-						Assert.Empty(fixture.World.GetLocalSiegeNpcs(sourceId));
-						var originalRace = location.GetRace();
-						restoreSourceSiege = () => { sieges.DeSpawnNpcs(sourceId); location.SetRace(originalRace); };
-						location.SetRace(source.GetSiegeRace());
-						sieges.SpawnNpcs(sourceId, source.GetSiegeRace(), SiegeModType.PEACE);
+						int sourceId = source.GetSiegeId();
+						SimulationSiegeSetup.GiveLocation(fixture.World, sourceId, source.GetSiegeRace(),
+							restore => restoreSourceSiege = restore, details, "setupSourceSiegeMode");
 						details["setupSourceSiegeId"] = Id(sourceId);
 						details["setupSourceSiegeRace"] = source.GetSiegeRace().ToString();
 						fixture.World.ForEachObject(o => { if (o is Npc n && n.IsSpawned() && npcIds.Contains(n.GetNpcId())) candidates.Add(n); });

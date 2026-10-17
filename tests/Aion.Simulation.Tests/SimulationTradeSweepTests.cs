@@ -332,10 +332,9 @@ public sealed partial class SimulationFastScenarioTests
 			.FirstOrDefault(s => s.GetSiegeModType() == SiegeModType.PEACE && s.GetSiegeRace() is SiegeRace.ELYOS or SiegeRace.ASMODIANS);
 		if (siegeSpawn != null)
 		{
-			int id = siegeSpawn.GetSiegeId(); var loc = sieges.GetSiegeLocation(id); var oldRace = loc.GetRace();
-			Assert.Empty(fixture.World.GetLocalSiegeNpcs(id));
-			restore.Push(() => { sieges.DeSpawnNpcs(id); loc.SetRace(oldRace); });
-			loc.SetRace(siegeSpawn.GetSiegeRace()); sieges.SpawnNpcs(id, siegeSpawn.GetSiegeRace(), SiegeModType.PEACE);
+			// InitSieges placed the owner's peace group of every location at boot: the GM capture then changes the owner.
+			int id = siegeSpawn.GetSiegeId();
+			SimulationSiegeSetup.GiveLocation(fixture.World, id, siegeSpawn.GetSiegeRace(), restore.Push, details, "setupSiegeMode");
 			details["setupSiegeId"] = id.ToString(CultureInfo.InvariantCulture); Scan(); if (candidates.Count > 0) return candidates;
 		}
 		var bases = BaseService.GetInstance();
