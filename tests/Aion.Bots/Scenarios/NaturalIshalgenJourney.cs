@@ -3316,6 +3316,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				navigator = here;
 				geometry = runtime.CreateGeometry();
 				contract = contract with { MapId = session.Api.World.MapId!.Value };
+				// NL-a (docs/natural-leg-36.md): a Cleric companion goes with the bot on its solo quests.
+				if (options.SoloCompanion is string soloCompanion) await AskSoloCompanionAsync(soloCompanion, token);
 				combat = new NaturalJourneyCombat(session, here, runtime, geometry, stopOnDeath: false, options.OptimizeHubs, mauPolicy,
 					ClassLine, continuousAltgard ? combat.ReviveCount : haramelProgress?.Revives ?? 0)
 				{
@@ -5665,6 +5667,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			// character survived as it was; altgard-l1-completion.json carries the clock for the `altgard-l12` snapshot.
 			async Task CompleteAltgardLeg1Async(NaturalAltgardContract leg)
 			{
+				// NL-a: the companion is sent away before the endpoint's relog, which would end it anyway.
+				if (options.SoloCompanion != null) await DismissSoloCompanionAsync(token);
 				session.BeginStep("af-endpoint", "verify-and-relog-at-the-leg-1-endpoint");
 				await TopUpHelpItemsAsync("checkpoint");
 				BotWorldModel world = session.Api.World;

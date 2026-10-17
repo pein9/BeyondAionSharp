@@ -142,7 +142,9 @@ public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? R
 	// members need at a step: Q24022's Protector Karhel at var 6.
 	int[]? GroupQuests = null, int? GroupBind = null, NaturalGroupKill[]? GroupKills = null,
 	// M10: the instance the field group plays its quests in, and the bosses it kills there after them.
-	NaturalGroupInstance? GroupInstance = null, NaturalGroupBoss[]? GroupBosses = null);
+	NaturalGroupInstance? GroupInstance = null, NaturalGroupBoss[]? GroupBosses = null,
+	// NL-a (docs/natural-leg-36.md): the class of the companion a bot on solo quests asks for (a Cleric), null for none.
+	string? SoloCompanion = null);
 
 /// <summary>M6: a named kill a campaign quest's members need while their quest stands at <paramref name="Var"/>.</summary>
 public sealed record NaturalGroupKill(int Quest, int Npc, int Var);

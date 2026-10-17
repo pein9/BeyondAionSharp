@@ -33,7 +33,8 @@ public sealed partial class SimulationFastScenarioTests
 		string[]? GroupRoster = null, string? GroupLeader = null, bool GroupLoot = false, string? GroupUntil = null,
 		string[]? Companions = null, string? CompanionUntil = null, string? CompanionEnd = null,
 		string? CompanionTest = null, int? CompanionStockMinutes = null, int[]? GroupQuests = null, int? GroupBind = null,
-		NaturalGroupKill[]? GroupKills = null, NaturalGroupInstance? GroupInstance = null, NaturalGroupBoss[]? GroupBosses = null);
+		NaturalGroupKill[]? GroupKills = null, NaturalGroupInstance? GroupInstance = null, NaturalGroupBoss[]? GroupBosses = null,
+		string? SoloCompanion = null);
 
 	/// <summary>A seat of the companion host; it has no class line until the server makes its character.</summary>
 	private static bool IsCompanionSeat(NaturalRoundBot entry) => entry.Stage == "companion";
@@ -88,7 +89,7 @@ public sealed partial class SimulationFastScenarioTests
 			ClassLine: line, Companion: "stand-in", Companions: entry.Companions ?? throw new InvalidDataException("companion-lead names its companions."),
 			CompanionUntil: entry.CompanionUntil, CompanionEnd: entry.CompanionEnd),
 		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, the Morheim legs, muster, check-in, gh-survey, support, group-coin, group-ntc, group-field, companion-lead or companion."),
-		}) with { Role = entry.Role };
+		}) with { Role = entry.Role, SoloCompanion = entry.SoloCompanion };
 	}
 
 	/// <summary>
@@ -318,7 +319,7 @@ public sealed partial class SimulationFastScenarioTests
 						await seat.EnterWorldAsync(enterToken);
 						await seat.SynchronizeAsync(enterToken);
 						return true;
-					}, policy.AssertClean, () => policy.SnapshotProblems(), trace, dashboard);
+					}, policy.CheckClean, () => policy.SnapshotProblems(), trace, dashboard);
 				// The Cleric plays support, as in the group stages; every other class fights (CB-Q8).
 				await new NaturalIshalgenJourney(seat, companionRuntime, new NaturalJourneyOptions(ClassLine: line, Companion: "companion",
 					Role: playerClass == PlayerClass.CLERIC ? "healer" : null,
@@ -329,6 +330,8 @@ public sealed partial class SimulationFastScenarioTests
 				outcome = "reached";
 				list = await seat.ReadCharacterListAsync(token);
 			}
+			// NL-0: each companion was checked as it left; the seat's policy is completed once, here.
+			policy.AssertClean();
 		}
 		catch (Exception ended)
 		{

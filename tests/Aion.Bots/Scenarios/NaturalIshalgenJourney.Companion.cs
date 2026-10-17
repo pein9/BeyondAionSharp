@@ -14,6 +14,72 @@ namespace Aion.Bots.Scenarios;
 
 public sealed partial class NaturalIshalgenJourney
 {
+	/// <summary>
+	/// NL-a (docs/natural-leg-36.md; the operator, 2026-10-17: "when doing solo quests, let's give every bot a Cleric
+	/// companion"): a bot on solo quests asks for one in chat as a player does, and waits for it to join its group. A bot
+	/// told that no companion is free asks again a moment later; one that gets none goes on alone, as the rule is a help and
+	/// not a gate. The companion follows and heals and does nothing else (docs/companion-bots.md).
+	/// </summary>
+	private async Task<bool> AskSoloCompanionAsync(string playerClass, CancellationToken token)
+	{
+		BotWorldModel world = session.Api.World;
+		if (world.GroupMembers.Count > 1) return true;
+		session.BeginStep("solo-companion", "ask-for-" + playerClass);
+		async Task<string[]> SayAsync(string text)
+		{
+			int cursor = session.PacketHistory.Count;
+			await session.SendPacketAsync(session.Api.Say(text), token);
+			await session.SynchronizeAsync(token);
+			return [.. session.PacketHistory.Skip(cursor).Where(packet => packet.PacketType == typeof(SM_MESSAGE)).Select(packet => packet.Get<string>("message"))];
+		}
+		string[] answer = await SayAsync(".companion " + playerClass);
+		for (int again = 0; again < 15 && answer.Any(line => line.Contains("No companion is free right now.", StringComparison.Ordinal)); again++)
+		{
+			await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+			answer = await SayAsync(".companion " + playerClass);
+		}
+		if (!answer.Any(line => line.Contains("is on its way to you.", StringComparison.Ordinal)))
+		{
+			session.TraceDiagnostic("solo-companion-refused", new Dictionary<string, object?> { ["class"] = playerClass, ["answer"] = answer });
+			return false;
+		}
+		long asked = runtime.NowMillis;
+		while (world.GroupMembers.Count < 2)
+		{
+			if (runtime.NowMillis - asked > 120_000)
+			{
+				session.TraceDiagnostic("solo-companion-absent", new Dictionary<string, object?> { ["class"] = playerClass });
+				return false;
+			}
+			await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+			await session.SynchronizeAsync(token);
+		}
+		BotGroupMember companion = world.GroupMembers.Values.First(member => member.ObjectId != session.CharacterId);
+		session.TraceDiagnostic("solo-companion-joined", new Dictionary<string, object?>
+		{
+			["class"] = playerClass, ["companion"] = companion.Name, ["level"] = companion.Level, ["afterMillis"] = runtime.NowMillis - asked,
+			["leader"] = world.GroupLeaderId == session.CharacterId,
+		});
+		return true;
+	}
+
+	/// <summary>NL-a: the companion is sent away at the end of the bot's solo quests (and before a solo instance, which it
+	/// does not go into).</summary>
+	private async Task DismissSoloCompanionAsync(CancellationToken token)
+	{
+		BotWorldModel world = session.Api.World;
+		if (world.GroupMembers.Count < 2) return;
+		session.BeginStep("solo-companion", "dismiss");
+		await session.SendPacketAsync(session.Api.Say(".companion dismiss"), token);
+		long sent = runtime.NowMillis;
+		while (world.GroupMembers.Count > 1 && runtime.NowMillis - sent < 60_000)
+		{
+			await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+			await session.SynchronizeAsync(token);
+		}
+		session.TraceDiagnostic("solo-companion-dismissed", new Dictionary<string, object?> { ["left"] = world.GroupMembers.Count <= 1 });
+	}
+
 	/// <summary>How far the stand-in plays so far (docs/companion-bots.md, the C steps).</summary>
 	private static readonly string[] CompanionCheckpoints = ["joined", "walk", "marks", "loot", "inside", "general"];
 	/// <summary>The named monsters on the stand-in's way through the camp, in the order the Group NTC leg takes them.</summary>

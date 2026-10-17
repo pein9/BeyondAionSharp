@@ -137,12 +137,20 @@ public sealed class SimulationLogPolicy : IDisposable
 	{
 		if (Interlocked.Exchange(ref completed, 1) != 0)
 			throw new InvalidOperationException("Simulation log policy was already completed.");
+		CheckClean();
+		assertionPassed = true;
+	}
+
+	/// <summary>NL-0 (docs/natural-leg-36.md): the same check without completing the policy. A companion seat plays one
+	/// companion after another (a bot's Cleric sent away before a solo instance and asked for again after it); each is
+	/// checked as it leaves, and the seat completes the policy once, at its end.</summary>
+	public void CheckClean()
+	{
 		var problems = CollectProblems();
 		bool[] allowed = ClassifyAllowances(problems);
 		var unallowlisted = problems.Where((_, index) => !allowed[index]).ToArray();
 		if (unallowlisted.Length != 0)
 			throw new SimulationLogPolicyException(FormatFailure(unallowlisted), unallowlisted);
-		assertionPassed = true;
 	}
 
 	private bool[] ClassifyAllowances(IReadOnlyList<SimulationProblem> problems)
