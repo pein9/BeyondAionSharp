@@ -59,9 +59,18 @@ has none of: they go into the report.
 
 One step per iteration. A step is ticked when its round shows it, with a dated line under it.
 
-- [ ] **NL-0 The companion rule.** A solo stage that asks for a Cleric companion at its start and sends it away at its
+- [x] **NL-0 The companion rule.** A solo stage that asks for a Cleric companion at its start and sends it away at its
   end; companion seats in a round; the bot that enters a solo instance leaves its companion at the entrance. Shown in
   one trial round of all eight on a short solo leg.
+  - 2026-10-17 (`f1649efb3`): a round names the companion with `soloCompanion` on a solo leg's bots and gives the round
+    companion seats (stage `companion`, accounts of their own, after the bots). At the leg's start the bot says
+    `.companion cleric`, asks again while no seat is free, and goes on alone if it gets none (the rule is a help, not a
+    gate); before the endpoint's relog it sends the companion away. A seat now plays one companion after another (it
+    had stopped on its log check at its second). Trials `nl0-t1` (leg `mgd`) and `nl0-t2` (leg `mgk`, from Slag Bulwark
+    to Kellan's Cabin) from `morheim-ft-s1`: every bot's Cleric joined (level 31, its profile), followed it for 6 to 15
+    game minutes and was sent away at the end; one seat played six in turn. My decision: before a solo instance the bot
+    sends its companion away and asks for it again outside (a companion cannot be asked for inside an instance at all);
+    that is built with the first solo instance, in NL-1.
 - [ ] **NL-1 What was in the middle.** The world's eight get the check-in's fixed picks and their second stone (the stage
   `check-in`, which their level allows). Then Q24023: the leg engine collects inside an instance and goes down between
   the Sky Temple Interior's floors as a player does (a drop or a glide), and each bot plays it alone.
