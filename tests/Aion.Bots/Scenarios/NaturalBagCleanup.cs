@@ -123,6 +123,9 @@ public static class NaturalBagCleanup
 		{
 			NaturalInventoryDecision? decision = decided.GetValueOrDefault(item.ObjectId);
 			(bool goes, string reason) = needed.Contains(item.ItemId) ? (false, "leg-needs-it")
+				// NL-3: an item a worked quest's data names stays whatever the inventory rules call it: Q2731's documents
+				// (182205602, its work item) are not sellable and were thrown out at a restock before Glati took them.
+				: questItems.GetValueOrDefault(item.ItemId) is { Length: > 0 } named && named.Any(workedQuests.Contains) ? (false, "quest-worked")
 				: shard(item.ItemId) is { } info ? info.Boost < bestBoost ? (true, "lesser-power-shard") : (false, "power-shard")
 				: reasons.TryGetValue(item.ItemId, out string? superseded) ? (true, superseded)
 				: decision == null ? (false, "undecided")

@@ -3325,6 +3325,16 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					return known;
 				}
 				IReadOnlyList<NaturalFlyZone> zones = FlyZonesOf(contract.MapId);
+				// NL-3: the spawn spots of a map's aggressive monsters, which a hop's stone keeps away from.
+				var hostileByMap = new Dictionary<int, BotPosition[]>();
+				BotPosition[] HostileSpotsOf(int mapId)
+				{
+					if (!hostileByMap.TryGetValue(mapId, out BotPosition[]? known))
+						hostileByMap[mapId] = known = [.. runtime.Data.SpawnsDh.GetSpawnsByWorldId(mapId)
+							.Where(group => runtime.IsAggressive(runtime.Data.NpcDataDh.GetNpcTemplate(group.GetNpcId())))
+							.SelectMany(group => group.GetSpawnTemplates()).Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0))];
+					return known;
+				}
 				// NL-a (docs/natural-leg-36.md): a Cleric companion goes with the bot on its solo quests.
 				if (options.SoloCompanion is string soloCompanion) await AskSoloCompanionAsync(soloCompanion, token);
 				combat = new NaturalJourneyCombat(session, here, runtime, geometry, stopOnDeath: false, options.OptimizeHubs, mauPolicy,
@@ -3445,18 +3455,25 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							session.Api.World.IsDead || !Inside(session.CurrentPosition))) return false;
 						// NL-3: Reshanta's islands stand farther apart than one flight's time: the bot hops by the island ground in
 						// range nearest the landing, lands, lets its flight time come back (FlyToAsync waits for it) and flies on.
+						BotPosition[] hostile = HostileSpotsOf(map);
 						for (int hop = 0; ; hop++)
 						{
+							// On a stone the bot waits for its flight time as a player does, answering what attacks it: the Cleric sat
+							// out the wait beside Sinjah's tower while ashikar assaulters killed it.
+							long refill = NaturalFlightPolicy.RestoreMillis(session.Api.World.CurrentFlightTime, session.Api.World.MaxFlightTime,
+								session.Api.World.MaxFlightTime);
+							if (hop > 0 && refill > 0 && !await WaitBeforePullDefendingAsync((int)refill + 100, "fly-hop-refill")) return false;
+							// Soul Sickness slows a flight for its short while after a revive: a player waits it out before a long crossing.
+							if (session.Api.World.VisibleEffects?.FirstOrDefault(effect => effect.SkillId == 8291) is { RemainingMillis: > 0 } sick &&
+								Distance(session.CurrentPosition, land) > Range() &&
+								!await WaitBeforePullDefendingAsync((int)Math.Min(sick.RemainingMillis + 1000, 600_000), "fly-hop-soul-sickness")) return false;
 							BotPosition from = session.CurrentPosition;
 							float height = HeightFrom(from);
 							float range = Range();
 							NaturalFlightRoute? route = Distance(from, land) <= range ? NaturalFlightProtocol.Plan(geometry, map, from, land, height) : null;
-							if (route is { IsUsable: true } && route.Meters <= range)
-							{
-								await FlyToAsync(land, height);
-								return true;
-							}
+							if (route is { IsUsable: true } && route.Meters <= range && await FlyToAsync(land, height, mayRefuse: true)) return true;
 							if (hop >= 12 || session.Api.World.IsDead) return false;
+							if (route is { IsUsable: true } && route.Meters <= range) continue;
 							float Across(BotPosition a, BotPosition b) => MathF.Sqrt(MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2));
 							float Over(BotPosition a, BotPosition b, float rise) => MathF.Min(zone.Top - 6, MathF.Max(a.Z, b.Z) + rise);
 							// What the flight to a stone flies: the climb, the cruise and the descent (the fourth hop toward Amundi was
@@ -3464,14 +3481,16 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							float Flown(BotPosition a, BotPosition b, float rise) => Across(a, b) + 2 * Over(a, b, rise) - a.Z - b.Z;
 							// The stone: island ground nearer the landing whose flight fits one flight time, nearest the landing first,
 							// confirmed by its planned route; from Ganglot's island nothing clears 15 m over the higher end, so a higher
-							// cruise is tried next.
+							// cruise is tried next. It has open sky above it: a ledge 100 m under Primum is nearest Primum's landing
+							// and no flight leaves it upward. Ground 30 m or more from every aggressive monster's spawn comes first.
 							(BotPosition At, float Rise)? stone = null;
-							foreach (float rise in new[] { 15f, 60f })
+							foreach ((bool calm, float rise) in new[] { (true, 15f), (true, 60f), (false, 15f), (false, 60f) })
 							{
 								foreach (BotPosition at in geometry.GroundNear(map, from, range, Inside)
 									.Where(at => Across(at, land) + 30 < Across(from, land) && Flown(from, at, rise) <= range * 0.95f)
 									.OrderBy(at => Across(at, land)).Take(400)
-									.Where(at => NaturalFlightProtocol.DirectlyClear(geometry, map, from, at, Over(from, at, rise))).Take(4))
+									.Where(at => (!calm || !hostile.Any(spot => Distance(spot, at) < 30)) && SkyAbove(at) &&
+										NaturalFlightProtocol.DirectlyClear(geometry, map, from, at, Over(from, at, rise))).Take(4))
 								{
 									NaturalFlightRoute planned = NaturalFlightProtocol.Plan(geometry, map, from, at, Over(from, at, rise));
 									if (planned.IsUsable && planned.Meters <= range) { stone = (at, rise); break; }
@@ -3484,7 +3503,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								["stone"] = stone?.At, ["rise"] = stone?.Rise,
 							});
 							if (stone is not { } next) return false;
-							await FlyToAsync(next.At, Over(from, next.At, next.Rise));
+							await FlyToAsync(next.At, Over(from, next.At, next.Rise), mayRefuse: true);
 						}
 					}
 					finally { crossingFlyZone = false; }
@@ -4467,7 +4486,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				throw new InvalidDataException("An Altgard leg exceeded 400 decisions.");
 
 				// Fly from wherever the Cleric stands (AF-05): wait out the takeoff reuse and a refill, check the policy first.
-				async Task FlyToAsync(BotPosition destination, float? cruiseHeight = null, NaturalAltgardFlight? flightRules = null, bool land = true)
+				// NL-3: with mayRefuse, a flight that the speed the bot took off at cannot carry (Soul Sickness after a revive
+				// slows it: 592 m cost 77 FP of 72) lands again where it rose and answers false; the hops plan again at that speed.
+				async Task<bool> FlyToAsync(BotPosition destination, float? cruiseHeight = null, NaturalAltgardFlight? flightRules = null, bool land = true,
+					bool mayRefuse = false)
 				{
 					// Java PlayerController.updateSoulSickness applies 8291 on bind revival. Its speed penalty
 					// doubles the pillar descent's FP cost; wait for the real icon removal before taking off.
@@ -4483,22 +4505,27 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						{
 							await session.AdvanceAsync(TimeSpan.FromMilliseconds(Math.Min(1000, until - runtime.NowMillis)), token);
 							await session.SynchronizeAsync(token);
-							if (session.Api.World.IsDead) { await RestSafelyAsync(token); return; }
+							if (session.Api.World.IsDead) { await RestSafelyAsync(token); return false; }
 						}
 						Require.True(!NaturalAltgardQuestSteps.HasEffect(session.Api.World, 8291), "Soul Sickness did not expire after its observed flight wait.");
 					}
 					BotPosition from = session.CurrentPosition;
-					if (Distance(from, destination) < 3) return;
+					if (Distance(from, destination) < 3) return true;
 					BotWorldModel world = session.Api.World;
 					long wait = NaturalFlightPolicy.RestoreMillis(world.CurrentFlightTime, world.MaxFlightTime, world.MaxFlightTime);
 					if (lastTakeoff is { } last) wait = Math.Max(wait, last + NaturalFlightPolicy.TakeoffReuseMillis - runtime.NowMillis);
-					if (wait > 0) await session.AdvanceAsync(TimeSpan.FromMilliseconds(wait + 100), token);
+					// NL-3: the wait for flight time answers what attacks the bot (the Ranger died waiting on Mokkurkalfi's ledge and
+					// then waited for a takeoff while dead), and the flight leaves from where the fight left it.
+					if (wait > 0) await WaitBeforePullDefendingAsync((int)wait + 100, "flight-wait");
 					await session.SynchronizeAsync(token);
+					if (session.Api.World.IsDead) return false;
+					from = session.CurrentPosition;
 					NaturalFlightDecision ready = NaturalFlightPolicy.CanTakeOff(new NaturalTakeoffObservation(true, from, false,
 						(flightRules ?? leg.RequiredFlight).WaterLevel, runtime.NowMillis, lastTakeoff, false, false, false), zones);
 					Require.True(ready.Allowed, $"Cannot take off: {ready.Reason}");
 					int flightMap = session.Api.World.MapId ?? leg.Hub.MapId;
 					NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, flightMap, from, destination, cruiseHeight ?? cruise);
+					if (!route.IsUsable && mayRefuse) return false;
 					Require.True(route.IsUsable, $"No flight to {destination}: {route.Refusal}");
 					lastTakeoff = runtime.NowMillis;
 					float speed = await NaturalFlightProtocol.TakeOffAsync(session, token);
@@ -4508,10 +4535,17 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					{
 						["from"] = from, ["to"] = destination, ["meters"] = route.Meters, ["fp"] = world.CurrentFlightTime, ["decision"] = go.Reason,
 					});
+					if (!go.Allowed && mayRefuse)
+					{
+						await NaturalFlightProtocol.LandAsync(session, token);
+						await session.SynchronizeAsync(token);
+						return false;
+					}
 					Require.True(go.Allowed, go.Reason);
 					await NaturalFlightProtocol.FlyAsync(session, flightMap, from, route.Waypoints, speed, token);
 					if (land) await NaturalFlightProtocol.LandAsync(session, token);
 					await session.SynchronizeAsync(token);
+					return true;
 				}
 
 				// NL-3 (the operator, 2026-10-17: "You fly up to the ring in the middle of the air, and 'use' the door while flying.
@@ -5838,7 +5872,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				await TopUpHelpItemsAsync("checkpoint");
 				BotWorldModel world = session.Api.World;
 				// M4: what the bot left for the group step is not done here; the receipt names it.
-				int[] endpointQuests = [.. leg.Endpoint.CompletedQuestIds.Where(quest => !deferredToGroup.Contains(quest))];
+				// NL-3: and what follows a quest left for the group (the Sorcerer left Q2753, and Q2754 comes after it).
+				bool LeftForGroup(int quest) => deferredToGroup.Contains(quest) ||
+					leg.Quests.FirstOrDefault(entry => entry.Id == quest)?.PrerequisiteList.Any(LeftForGroup) == true;
+				int[] endpointQuests = [.. leg.Endpoint.CompletedQuestIds.Where(quest => !LeftForGroup(quest))];
 				Require.All(endpointQuests, quest => Require.Contains(quest, world.CompletedQuestIds));
 				foreach (int id in endpointQuests)
 					foreach (var item in runtime.Data.Quests.GetQuestById(id).GetQuestWorkItems()?.GetQuestWorkItem() ?? [])
