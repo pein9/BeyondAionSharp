@@ -146,7 +146,7 @@ every future run, including director/setup accounts.
 | Two-game-server character transfer | No current manifest scenario | Not selected | P10-09 corrected relay reaches a partial clone, then fails passport persistence and exposes duplicate starter inventory (§7/134–135); no accepted BA-001 journey |
 | Save/crash/relogin and duplicate-session lifecycle | O1 | Component/DAO tests, not a SIM manifest scenario | Implemented and accepted (P10-03) |
 | Sustained mixed activities and scale | SOAK | Not selected | Workload exists; small-population evidence is not the deferred larger-capacity acceptance (D17) |
-| Whole-instance, scheduled siege/housing and broader journey | No current manifest scenario | Phase 11 remains future work | Siege/housing in progress (P10-05, P11-05, P11-06; D7 approved 2026-10-17); natural journey remains separate policy work |
+| Whole-instance, scheduled siege/housing and broader journey | No current manifest scenario | Phase 11 remains future work | The siege/housing boot tail is restored (P10-05, done 2026-10-17; D7); their journeys remain P11-05 and P11-06; natural journey remains separate policy work |
 
 ## 2. Target design
 
@@ -2199,11 +2199,17 @@ real geodata on in production immediately, because geo is enabled by default; th
   managed frames. Raw post-cleanup logs have only the existing boot allowance. The initial
   probe exposed category-based heartbeat misclassification (#115), fixed and replayed.
   No lock-cycle proof, automatic restart, gameplay change or capacity acceptance is claimed.
-- [ ] **P10-05** [LIVE] M — **In progress (D7 approved 2026-10-17; declined 2026-09-17).** Restore the Java boot
+- [x] **P10-05** [LIVE] M — **Done 2026-10-17 (D7 approved 2026-10-17; declined 2026-09-17).** Restore the Java boot
   tail the C# production boot skips: `HousingService` and the housing bid/auction/maintenance tasks, faction ratio counts,
   `SiegeService.InitSieges`, `PvpMapService.Init` (`GameServer.java:118-122,130-134,141,175`). Move the no-DB fixture
   that shaped today's boot off the production path.
-  Progress 2026-10-17: the no-DB bootstrap tests run only `StartHeadAsync` (Java lines 93-105) and the env-gated
+  **Done:** commits `eccae23af` to `4bf50584a`. Proof: `SimulationBootTailTests` (Docker, `AION_SIM_DB_INTEGRATION=1`)
+  passed 10 of 10 on the SIM boot on 2026-10-17. Gaps #23 and #25 and known limit #3 are closed. As D7 records, the
+  neutral-gate baseline is not re-recorded, Java's siege calendar runs in SIM and LIVE, the server time zone is
+  unchanged and housing auctions and rent are on; `docker/README.md` says what the live server now runs. No LIVE
+  run is claimed. Still open, and not covered by these commits: the siege and housing journeys (P11-05, P11-06) and
+  BA-005.
+  Work 2026-10-17: the no-DB bootstrap tests run only `StartHeadAsync` (Java lines 93-105) and the env-gated
   DB full-boot test became `SimulationBootTailTests` on the SIM boot. Housing (118-122) is wired: `HousingService`,
   `HousingBidService`, then the three cron tasks through `ThreadPoolManager.ConstructStartupSingleton` (inline in
   production; bounded construction and a zero-delay drain on the SIM pool, P4-08). `CronService.Schedule` now puts
@@ -2216,7 +2222,7 @@ real geodata on in production immediately, because geo is enabled by default; th
   The tail ends in Java's order (173-176): the game clock starts, `PvpMapService.Init` makes the PvP map (an instance of
   301220000 with its NPCs and 18 random keymaster and chest positions, a 400 s supply task and the random-boss cron, all
   idle while `gameserver.pvpmap.enable` is off as shipped), then `CustomInstanceService`, then the world's ready flag.
-  All four boot-tail items are wired; the SIM proof is `SimulationBootTailTests` and L8C's `.pvp join` step. The head
+  All four boot-tail items are wired; L8C's scenario also says `.pvp join` and expects the disabled answer. The head
   also has Java's database cleaning (223-224): `DatabaseCleaningService.DeletePlayersOnInactiveAccounts` right after
   the offline reset, under `gameserver.cleaning.enable` (off as shipped).
 - [ ] **P10-06** [LIVE] L — **Deferred by maintainer (D15): do not run the Java server.** Original proposal:
@@ -2586,7 +2592,8 @@ real geodata on in production immediately, because geo is enabled by default; th
 **Done when (current non-deferred scope, D21):** P10-03 and P10-09 pass; complete clean Breadth runs establish
 repeatability with `report.json`, packet, quest, coverage, resource and ledger evidence; every allowlist and flaky
 entry has an owner and an unexpired date. Candidates 09 and 10 satisfy this closeout. Additional Full-run repetition
-and a two-hour ten-bot soak are explicitly waived. P10-02, P10-05, P10-06 and P10-07 remain deferred and uncompleted;
+and a two-hour ten-bot soak are explicitly waived. P10-02, P10-05, P10-06 and P10-07 remain deferred and uncompleted
+(P10-05 was later done, on 2026-10-17, after D7 was approved);
 their original acceptance criteria stay visible for the eventual deferred-work review.
 
 **Follow-up checkpoint completed:** the
@@ -2610,8 +2617,11 @@ GM commands force scheduled content without waiting for cron (`//siege`, `//rift
 - [ ] **P11-02** [BOTH] L — Full clears of two low-level instances, one per race: boss kill, loot, exit.
 - [ ] **P11-03** [BOTH] M — PvP arena and auto-group queue (`CM_AUTO_GROUP`) with 2–6 bots.
 - [ ] **P11-04** [BOTH] M — Rift open, cross-race entry and close; vortex and world raid start and stop.
-- [ ] **P11-05** [BOTH] L — Siege start, capture and end (in progress with P10-05; D7 approved 2026-10-17).
-- [ ] **P11-06** [BOTH] L — Housing: register, bid, acquire, decorate, pay rent, house teleport (in progress with P10-05; D7 approved 2026-10-17).
+- [ ] **P11-05** [BOTH] L — Siege start, capture and end. Open: P10-05 gave it the boot it needed (Java's siege
+  calendar, every location's owner NPCs, the endless artifact sieges), but no scenario yet starts, captures and ends
+  a siege; the teleport and trade sweeps only use `//siege capture` to set up an owner.
+- [ ] **P11-06** [BOTH] L — Housing: register, bid, acquire, decorate, pay rent, house teleport. Open: P10-05 builds
+  housing and its auction-end, auto-fill and maintenance tasks at boot, but no scenario plays any of these steps yet.
 - [ ] **P11-07** [SIM] S — Flight transporters, teleporters and day/night spawns (after P4-09).
 
 **Done when:** P11-01 passes for all 78 handlers in the SIM Full tier, and P11-02 and P11-04 pass in the LIVE Full tier.
@@ -2711,7 +2721,7 @@ exits (`docker compose events`) and MySQL errors.
 | D4 | Allowed production changes | (a) parity fixes citing `upstream/4.8`; (b) gameplay-neutral seams: logging bridge, `SystemClock` routing, socketless connection, login-link interface, `Rnd` seed, deterministic-mode switches, virtual cron | **Approved** 2026-09-17: (b) counts as infrastructure under CLAUDE.md |
 | D5 | GM usage | Director account (level 9) for setup; subjects at level 0; each system also gets at least one play-through scenario | Proposed |
 | D6 | Anti-hack checks in bot runs | Test-only oracle profile | **Declined** 2026-09-17: no anti-cheat checks; bot runs keep production security defaults (P6-04 dropped) |
-| D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Approved** 2026-10-17, reversing the 2026-09-17 decline: the maintainer said "We DO NEED the siege enabled ... to get all those missing features working on this server fully and enabled. (housing, sieges, etc)". P10-05, P11-05, P11-06 and BA-005 are in progress. His answers to the open questions, the same day: "Don't re-record the baseline because it doesn't change that much, keep Java's siege calendar"; "Keep whatever server time, doesn't matter"; on housing rent in the live world, "yes, we want parity so yes". So the neutral gate is not re-recorded, Java's siege schedule runs in SIM and LIVE, the time zone is not changed, and housing auctions and rent are on as Java has them |
+| D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Approved** 2026-10-17, reversing the 2026-09-17 decline: the maintainer said "We DO NEED the siege enabled ... to get all those missing features working on this server fully and enabled. (housing, sieges, etc)". P10-05 is done (2026-10-17, `eccae23af` to `4bf50584a`); P11-05, P11-06 and BA-005 are open, no longer blocked. His answers to the open questions, the same day: "Don't re-record the baseline because it doesn't change that much, keep Java's siege calendar"; "Keep whatever server time, doesn't matter"; on housing rent in the live world, "yes, we want parity so yes". So the neutral gate is not re-recorded, Java's siege schedule runs in SIM and LIVE, the time zone is not changed, and housing auctions and rent are on as Java has them |
 | D8 | Java reference for this work | Keep local `../aion-server` `4.8` at `lastCompletedJavaCommit` | **Done** 2026-09-17 (`6ffedcd4f` → `ce54b7931`) |
 | D9 | Where runs happen | Local scripts | **Decided** 2026-09-17: no GitHub Actions, no n8n or other schedulers (both removed from the repo). The `docker/` compose stack stays as the way the emulator is deployed and run. Runs may create and drop databases on a Docker MySQL freely |
 | D13 | How LIVE mode starts the servers | An isolated docker compose project built from `docker/` | **Decided** 2026-09-17: LIVE runs as its own compose project (own name, images, ports, MySQL and logs), so it tests the same images the emulator is deployed with (P3-00, P3-02, P3-08) |
@@ -2778,9 +2788,9 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 20 | Duplicate `CraftSkillUpdateService`; the `Craft` copy's unused profession lookup returns ordinal 0 instead of null (latent) | `services/craft/CraftSkillUpdateService.java:79-81` | P8-03: one canonical `Services.Craft` singleton with nullable lookup; all 36 trainer IDs and unmapped-NPC/dialog behavior tested |
 | 21 | `InventoryDAO.Store` catch scope too wide | `InventoryDAO.java:232` catches `SQLException` | P8-03: narrow to `MySqlException`; red/green tests cover catch type and non-SQL propagation |
 | 22 | `GeoWorldLoader` was a stub, so boot reported both the loader warning (`f802a125`, count 1) and four normalized missing-door-geometry warnings (`39050e81`, count 4) | `GeoWorldLoader.java` (285 lines); `GeoMap.java:287-301` at `ce54b7931` | Fixed in P9-01, measured in P9-03, Java query parity verified in P9-02 and geo-enabled SIM/LIVE scenario validation completed in P9-04. Both fingerprints marked fixed without an allowlist |
-| 23 | Production boot skips `HousingService`/housing tasks, faction ratio counts, `InitSieges`, `PvpMapService.Init` | `GameServer.java:118-122,130-134,141,175` | Wired 2026-10-17 in Java's order (P10-05; D7 approved 2026-10-17); SIM proof `SimulationBootTailTests`, to be run |
+| 23 | Production boot skips `HousingService`/housing tasks, faction ratio counts, `InitSieges`, `PvpMapService.Init` | `GameServer.java:118-122,130-134,141,175` | **Closed** by P10-05 (`eccae23af` to `4bf50584a`; D7 approved 2026-10-17): wired in Java's order; `SimulationBootTailTests` passed 10 of 10 on 2026-10-17 |
 | 24 | `BossAiHarness.Kill` calls `OnDie` twice (test bug) | n/a | Resolved by P6-08 (`b736fad55`) |
-| 25 | The DB-backed full-boot test pre-registers test AIs before `StartAsync` initializes the real AI engine, and the assembly-wide `SiegeServiceTestInit` can construct the process-global siege singleton against empty fixture data; in isolation this produces duplicate-AI registration before boot or a stale-location NRE in the separately asserted deferred boot tail | n/a (C# test-process defect; production `StartAsync` completed for P0-03 after bypassing the test AI preload) | P1-12 / P5-12 |
+| 25 | The DB-backed full-boot test pre-registers test AIs before `StartAsync` initializes the real AI engine, and the assembly-wide `SiegeServiceTestInit` can construct the process-global siege singleton against empty fixture data; in isolation this produces duplicate-AI registration before boot or a stale-location NRE in the separately asserted deferred boot tail | n/a (C# test-process defect; production `StartAsync` completed for P0-03 after bypassing the test AI preload) | **Resolved** by P10-05 (`7d772c231`, `dfdc9725d`): the DB-backed full-boot test is gone, so nothing in `Aion.GameServer.Tests` preloads test AIs before a boot or runs `InitSieges`; the no-database tests run only the boot's head (`StartHeadAsync`), and the full boot is the SIM fixture's (`SimulationBootTailTests`). Was P1-12 / P5-12 |
 | 26 | Concurrent chat clients can create separate channels for the same identifier, so neither receives the other's message | `ChatChannels.java:52-79` executes the scan/add path on the single NIO read/write dispatcher | Resolved by P3-09 (`efddb7a7b`) |
 | 27 | Character-list equipment loading throws for every visible item without a godstone because the LEFT JOIN's null `godstone_item_id` is read with `GetInt32` | `InventoryDAO.java:97` uses `ResultSet.getInt`, whose SQL-null value is `0` | Resolved by P3-09 (`efddb7a7b`) |
 | 28 | `GameTimeService.GetGameTime` returned a detached snapshot, so the ported `//time` command changed only that temporary object and server time stayed unchanged | `GameTimeService.java:31-33` returns its mutable field; `Time.java:55-69` mutates it directly | Resolved by P4-09 (`8df3cde9f`) |
@@ -2964,7 +2974,7 @@ fallback as evidence of the actual channel or alter this shared behavior.
 |---|---|---|
 | 1 | Real-client behaviour: client-side validation, HTML dialogs, rendering, whether the real client accepts each server packet (113 of 238 server packets currently have structured bot decoders; this is not real-client acceptance) | Golden packet suite, P10-07 client captures, a manual client session per release |
 | 2 | Combat numbers and NPC AI against Java (differential runs exclude combat and NPC streams) | Golden formula fixtures and the retail-AI fidelity audits |
-| 3 | Sieges and housing, while the Java boot tail is being restored (D7 approved 2026-10-17) | P10-05, P11-05 and P11-06, in progress |
+| 3 | **Closed** 2026-10-17: sieges and housing, while the production boot skipped the Java boot tail; P10-05 restored it (D7) | The SIM boot runs the tail (`SimulationBootTailTests`); the siege and housing journeys are P11-05 and P11-06, still open |
 | 4 | Mass PvP at realistic scale | Not covered; P10-02 soaks starter zones and a small Reshanta PvP set |
 | 5 | Geodata outside the starter zones | Extend P9-02 map by map |
 | 6 | External integrations (web shop token, web rewards, GameGuard, captcha) | Not covered |

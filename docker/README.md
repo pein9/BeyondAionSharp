@@ -111,6 +111,76 @@ powershell -ExecutionPolicy Bypass -File docker\RestartAll.ps1 -RestartOnly
 You never need to touch the `.properties` files — each server's container generates its
 own config from these values at start-up.
 
+## What the game server runs on its own
+
+Since the Java boot tail was restored (P10-05, approved as D7 on 2026-10-17), the game server runs Java's sieges
+and housing as shipped. Times are in the server's time zone: `gameserver.timezone` is empty, so it is the
+container's own zone (`docker-compose.yml` sets no `TZ`).
+
+**Sieges** (`gameserver.siege.enable = true` in `game-server/config/main/siege.properties`). At boot every fortress,
+outpost and stand-alone artifact (one that belongs to no fortress) gets its owner's NPCs, and each stand-alone
+artifact starts its endless siege.
+The calendar is `game-server/config/schedule/siege_schedule.xml`; a siege lasts its location's `siege_duration` in
+`game-server/data/static_data/siege/siege_locations.xml`.
+
+| Fortress | Siege starts | Lasts |
+|---|---|---|
+| Divine Fortress | Fri 21:00 | 50 min |
+| Siel's Western, Siel's Eastern, Sulfur, Roah, Asteria | Tue, Thu, Sat 17:00 | 60 min |
+| Krotan Refuge, Kysis, Miren | Mon 19:00; Sat 21:00 | 60 min |
+| Temple of Scales, Altar of Avarice (Inggison) | Sat 19:00; Mon, Wed 21:00 | 40 min |
+| Vorgaltem Citadel, Crimson Temple (Gelkmaros) | Thu, Sat 19:00; Wed 21:00 | 40 min |
+| Wealhtheow Keep (Kaldor) | Sun 21:00 | 60 min |
+| The agent fight (Levinshor) | Tue 20:50 | 70 min |
+
+- A fortress siege is prepared five minutes before it starts. A fortress the Elyos or the Asmodians have held for its
+  `occupy_count` sieges (2 for every fortress above: the capture counts one, each defence adds one) then goes back to
+  the Balaur. The agent fight starts with no preparation.
+- When a fortress siege starts, every player and kisk not of the owner's race is cleared out: the players go to
+  their bind point and the kisks die.
+- Balaur assaults (`gameserver.siege.assault.enable = true`) only hit places a player race holds: a chance at each
+  fortress siege start, coming 1 to 15 minutes in, and for an artifact 3 to 48 hours after its siege starts.
+- Every hour on the hour the server works out each fortress's next state and sends every player online the
+  fortress status.
+
+**Housing** (`game-server/config/main/housing.properties`):
+
+- Auto-fill, Monday 00:00 (`gameserver.housing.auction.auto_fill.time = 0 0 0 ? * MON`): for each race the house
+  broker is topped up with unowned houses to 20 houses, 10 mansions, 5 estates and 1 palace on auction.
+- Auction end, Sunday 12:00 (`gameserver.housing.auction.end_time = 0 0 12 ? * SUN`). A bid in the last five minutes
+  keeps that auction open five minutes more, up to 30 minutes past the end. Players may put a house up Monday to
+  Friday (`gameserver.housing.auction.register_days = 1, 5`).
+- Maintenance, Monday 00:00 (`gameserver.housing.maintain.time = 0 0 0 ? * MON`): rent is weekly and the first week
+  is free. An owner who is behind gets a mail; after two weeks unpaid the house is impounded and auctioned, and 90%
+  of its price is mailed back.
+- A housing task the server was down for runs once at the next boot, as Java's `AbstractCronTask` does.
+
+**PvP map.** At boot the server makes the custom PvP map (an instance of 301220000 with its NPCs). While
+`gameserver.pvpmap.enable = false` (`custom.properties`, as shipped), `.pvp join` answers "The PvP-Map is currently
+disabled." to everyone but staff, and the map's supply drops and random boss do not come.
+
+**Java's off switches:**
+
+| Setting | Effect |
+|---|---|
+| `gameserver.siege.enable = false` | No siege locations, siege NPCs or siege calendar |
+| `gameserver.siege.assault.enable = false` | No Balaur assaults |
+| `gameserver.housing.auction.enable = false` | No bids, house registration or auto-fill; running auctions still end on Sunday |
+| `gameserver.housing.pay.enable = false` | No rent: maintenance skips every house |
+| `gameserver.housing.auction.auto_fill.time =` (empty) | The auto-fill task is deactivated |
+| `gameserver.pvpmap.enable = true` | Opens the PvP map (level 60 and up) |
+
+To change one on the live server, either:
+
+- **Commit it.** Edit the key in `game-server/config/main/` on `main`. The image copies `game-server/config/`, so the
+  nightly run rebuilds the game server and restarts it with the new value.
+- **Use the overlay.** At every start `docker/gameserver/entrypoint.sh` appends each `*.properties` file in
+  `/app/config-overlay` to the `mygs.properties` it generates, after its own values, and `mygs.properties` wins over
+  `config/main/`. The live `docker-compose.yml` mounts nothing there yet: add a bind mount to the `gameserver`
+  service once (a commit too), for example `- ../run/config-overlay:/app/config-overlay:ro`. From then on a file in
+  `run/config-overlay` changes the keys at the next game-server start (`RestartAll.ps1 -RestartOnly`). Git ignores
+  `run/`, so the file does not stop the nightly deploy.
+
 ## How it fits together
 
 ```
