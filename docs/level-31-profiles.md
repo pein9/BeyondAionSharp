@@ -135,10 +135,26 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
     leg `mg` had brought each of the eight to the fortress at 31, so L4 starts there too): every class bought the Elite
     Rank 6 chest, gloves and boots it lacked, with its weapon (63 to 90 Silver Coins), and its second stone (695,500
     Kinah, 35,312 to put in), and learned the stone's skill. The Assassin ends with the least Kinah, 321,742.
-- [ ] **L3 The rotations.** The new skills in the eight tables, tried in a trial round per class line on its own
+- [x] **L3 The rotations.** The new skills in the eight tables, tried in a trial round per class line on its own
   fights.
-- [ ] **L4 The check-in world.** Stage `check-in` played again for all eight from `morheim-mg-s1-w1`, where every one is
+  - 2026-10-16 (`f52d93fcc`): the tables of L1's audit, each validator run to level 31 (a later rank of a skill left out
+    stays out with its reason), the second stone's skills in the catalog with their roles, and four rules a table can
+    ask for: a DP reserve (the Templar's Hand of Healing), a ladder step that keeps no mana back (Iron-Clad, Noble
+    Grace, Light of Recovery), a group-only upkeep (Word of Wind) and a toggle limit (the Chanter keeps the first three
+    mantras it has learned: Revival Mantra until Invincibility Mantra at 28). The Cleric's group driver casts Acquittal
+    when three members are at half health and Noble Grace when two are. Trials `l3-t2` and `l3-t3`, from the L4 world,
+    each class alone on a black arachna (stage `gh-survey`, which now takes a character of 26 or above): every profile
+    is valid, and the Gladiator cast Crushing Blow, the Templar Unwavering Devotion and Punishing Thrust, the Assassin
+    Assassination, Rune Burst and Rune Knife, the Ranger Misery Shot and Dilation Arrow, the Sorcerer Empyrean Wisdom
+    and Storm Strike as its opener, the Spirit Master Magic's Freedom, the Cleric Punishing Earth, the Chanter Word of
+    Inspiration with its three mantras. The Group NTC replay found the one change at 26: the first version took Revival
+    Mantra from the level-26 Chanter (`l3-n9a`, `l3-n9b`, the group waited in the camp); with the limit it passes
+    (`l3-n9d`, all six).
+- [x] **L4 The check-in world.** Stage `check-in` played again for all eight from `morheim-mg-s1-w1`, where every one is
   exactly 31 and stands at the fortress: a trial, then the captured round `morheim-g31-s2`.
+  - 2026-10-16, played before L3 (it fights nothing, so its world does not wait on the rotations): round
+    `run/morheim/L4/check-in-eight-s2.json` on L2's code, captured **`morheim-g31-s2-w1`**. The eight stand at 31 at the
+    fortress in the full Elite Rank 6 set where it is the better piece, with both stones in.
 - [ ] **L5 The profiles.** The eight level-31 profiles written again from `morheim-g31-s2-w1`, `--check` passing; a
   companion round with the Fire Temple six at 31 (the Templar as the player's stand-in and five companions) shows the
   gear, the stones and the rotations in play. The Docker stack's companion host takes the new files at its next
@@ -150,7 +166,7 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
 
 Mine, where the operator gave none; each is his to change:
 
-1. **The source world** is the check-in played again from `morheim-mc-s1-w1`, where the eight are exactly 31, as M8
+1. **The source world** is the check-in played again from `morheim-mg-s1-w1`, where the eight are exactly 31, as M8
    used the first check-in. A profile made from the bots of today (34 and 35) would carry ranks and stigma ranks
    learned after 31.
 2. **The bots' own world keeps its gear** until its check-in at 36; this plan does not re-gear it at 35.
