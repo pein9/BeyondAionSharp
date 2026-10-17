@@ -51,16 +51,16 @@ public static class NaturalAbyssCoinArmorPolicy
 	public static NaturalAbyssCoinManifest Plan(NaturalAbyssCoinArmor armor, NaturalAbyssCoinTier tier, IReadOnlyList<NaturalJourneyItem> inventory,
 		Func<int, int> physicalDefence, Func<int, int> staffMagicBoost, Func<int, (int Level, int Grade)>? rank = null)
 	{
-		// L2 (docs/level-31-profiles.md): with a rank, a piece of a higher level and no lower grade beats the worn one and a
-		// lower one does not; at the same level the number decides. At the check-in at 31 an Elite Rank 7 piece's +16 defence
-		// tied it with the Elite Rank 6 one, and twelve level-26 pieces stayed on.
+		// L2 (docs/level-31-profiles.md): with a rank, a piece of a higher level beats the worn one and a lower one does not; at
+		// the same level the number decides. At the check-in at 31 an Elite Rank 7 piece's +16 defence tied it with the Elite
+		// Rank 6 one, and twelve level-26 pieces stayed on. NL-1 (docs/natural-leg-36.md): the level alone, as the class's gear
+		// rules wear armor (NaturalClassGearTable: item level first, then its type): a higher grade at a lower level was bought
+		// and never worn (the Ranger's level-35 Flame Tunic against the level-31 Elite Rank 6 jerkin).
 		int Ranked(int coin, NaturalJourneyItem? held)
 		{
 			if (rank == null || held == null) return 0;
-			(int Level, int Grade) offered = rank(coin), worn = rank(held.ItemId);
-			if (offered.Level > worn.Level && offered.Grade >= worn.Grade) return 1;
-			if (offered.Level < worn.Level && offered.Grade <= worn.Grade) return -1;
-			return 0;
+			int offered = rank(coin).Level, worn = rank(held.ItemId).Level;
+			return offered > worn ? 1 : offered < worn ? -1 : 0;
 		}
 		string Levels(int coin, NaturalJourneyItem held) => $"a level-{rank!(coin).Level} piece against the worn level-{rank(held.ItemId).Level}";
 		if (armor.Better != DefenceStat || armor.StaffBetter is not (BoostStat or ClassWeaponStat))
