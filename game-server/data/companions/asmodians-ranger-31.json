@@ -74,7 +74,7 @@
     },
     {
       "slot": 8,
-      "itemId": 110301819,
+      "itemId": 110301135,
       "count": 1,
       "enchant": 0
     },
@@ -86,7 +86,7 @@
     },
     {
       "slot": 32,
-      "itemId": 114301140,
+      "itemId": 114301141,
       "count": 1,
       "enchant": 0
     },
@@ -155,13 +155,15 @@
       "itemId": 140001363,
       "count": 1,
       "enchant": 0
+    },
+    {
+      "slot": 2147483648,
+      "itemId": 140001357,
+      "count": 1,
+      "enchant": 0
     }
   ],
   "inventory": [
-    {
-      "itemId": 110301128,
-      "count": 1
-    },
     {
       "itemId": 160002274,
       "count": 8
@@ -702,8 +704,8 @@
     }
   ],
   "source": {
-    "snapshot": "morheim-g31-s1-w1",
-    "dumpSha256": "d23b02c97bebe3462531da7dceed079fe293b780b8adb718f0c4c2e0efee257d",
+    "snapshot": "morheim-g31-s2-w1",
+    "dumpSha256": "10c50a08a336521e37064f163bf8b1d3aa18fd64437b47ce2e45706e494b8544",
     "character": "Asimranger"
   }
 }

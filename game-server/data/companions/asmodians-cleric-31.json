@@ -86,7 +86,7 @@
     },
     {
       "slot": 32,
-      "itemId": 114501089,
+      "itemId": 114501090,
       "count": 1,
       "enchant": 0
     },
@@ -153,6 +153,12 @@
     {
       "slot": 1073741824,
       "itemId": 140001431,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 2147483648,
+      "itemId": 140001439,
       "count": 1,
       "enchant": 0
     }
@@ -670,8 +676,8 @@
     }
   ],
   "source": {
-    "snapshot": "morheim-g31-s1-w1",
-    "dumpSha256": "d23b02c97bebe3462531da7dceed079fe293b780b8adb718f0c4c2e0efee257d",
+    "snapshot": "morheim-g31-s2-w1",
+    "dumpSha256": "10c50a08a336521e37064f163bf8b1d3aa18fd64437b47ce2e45706e494b8544",
     "character": "Asimnjour"
   }
 }
