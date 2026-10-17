@@ -50,9 +50,9 @@ The baseline is not proof of runtime parity; it records the starting point again
 | Gate | Findings | State | Exit evidence |
 |---|---|---|---|
 | Release Gate 1 — primary server flows | BA-001, BA-002, BA-003, BA-004 | Verified in supported scope | BA-002/003/004 Verified; BA-001 is not applicable to the single-server emulator (D20) |
-| Release Gate 2 — gameplay and temporal data | BA-005, BA-006, BA-007 | Close to resolved | BA-006/007 Verified; BA-005's in-world siege journey remains deferred |
+| Release Gate 2 — gameplay and temporal data | BA-005, BA-006, BA-007 | Close to resolved | BA-006/007 Verified; BA-005's in-world siege journey is in progress (D7 approved 2026-10-17) |
 | Hardening and setup Gate | BA-008 through BA-018 | Verified | Semantic/schema suites, static-data atomicity, warning ratchet, full solution, and fidelity checks pass |
-| Completion Audit | All findings and backlog | Close to resolved | 16 Verified; BA-001 not applicable; BA-005 Code complete with its in-world journey deferred |
+| Completion Audit | All findings and backlog | Close to resolved | 16 Verified; BA-001 not applicable; BA-005 Code complete with its in-world journey in progress |
 
 ## Release Gate 1 — primary cross-server flows
 
@@ -154,6 +154,8 @@ callback API internals retain their focused loopback coverage. See `docs/e2e-pha
 **Status:** Code complete
 
 **Current work:** Nested callback/binding fixes and exhaustive shipped-data invariants pass; a live world-object gate repair and full assault remain runtime QA.
+
+**Note (2026-10-17):** the maintainer approved D7 in `docs/e2e-player-simulation-plan.md`, reversing its 2026-09-17 decline, so the in-world journey below is no longer deferred. It is in progress with P10-05 (the Java boot tail, `SiegeService.InitSieges` among it) and P11-05.
 
 - [x] `DoorRepairData` and `AssaultData` callbacks run before the parent location indexes.
 - [x] `DoorRepairStone.static_id` binds through a public XML member/proxy.
@@ -320,8 +322,8 @@ Tagged Chat nickname is tracked with BA-002 because it shares the same Java requ
 - [x] `docs/Full-Parity-Backlog.md` and the source audit agree with current implementation status.
 - [x] Final worktree/diff review found no whitespace errors and preserved the user's untracked `AGENTS.md`.
 
-The remaining unchecked completion item is BA-005's in-world siege journey, deferred with
-P10-05 under D7. D20 makes BA-001 not applicable and closes BA-003 on its supported
+The remaining unchecked completion item is BA-005's in-world siege journey, in progress with
+P10-05 since D7 was approved on 2026-10-17. D20 makes BA-001 not applicable and closes BA-003 on its supported
 single-server journeys. P10-09 retains the failed transfer evidence as historical diagnostics;
 it is not an acceptance gate or allowance. Chat-gag has a successful corrected runtime journey.
 See `docs/e2e-phase10-validation.md` for preserved failures and remaining coverage.
