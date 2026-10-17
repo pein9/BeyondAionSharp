@@ -12,7 +12,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// </summary>
 public static class NaturalChanterProfile
 {
-	private const int TopLevel = 26;
+	private const int TopLevel = 31;
 
 	/// <summary>
 	/// The Chanter's active skills to level 26, by role, beside the Priest's it keeps. Hallowed Strike opens the chain
@@ -43,7 +43,9 @@ public static class NaturalChanterProfile
 		[1574] = "binding", [1575] = "binding",
 		[1809] = "celerity",
 		[1657] = "shield-mantra", [1658] = "shield-mantra", [1659] = "shield-mantra",
+		// L3 (docs/level-31-profiles.md): the skills new at 27 to 31.
 		[1746] = "revival-mantra",
+		[1875] = "pentacle", [1891] = "soulcrush", [1714] = "invincibility-mantra", [1810] = "word-of-wind",
 		// The two powder skills, cast only in a rest.
 		[246] = "herb", [247] = "herb", [251] = "herb", [253] = "herb",
 		[249] = "mp-recovery", [250] = "mp-recovery", [252] = "mp-recovery", [254] = "mp-recovery",
@@ -53,6 +55,7 @@ public static class NaturalChanterProfile
 	public static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
 		[1699] = "Light of Resurrection revives another player; the bot plays solo.",
+		[1677] = "Booming Assault follows Booming Smash, which the table leaves out.",
 		[1587] = "Booming Smash takes Booming Strike's place after Hallowed Strike: a weaker hit with an 8 s snare, after which Crashing " +
 			"Strike does not follow. The table keeps the chain of three.",
 		[1769] = "Parrying Strike is a counter skill: the server accepts it only within 5 s of a parry of the Chanter's own (counter_skill " +
@@ -65,7 +68,10 @@ public static class NaturalChanterProfile
 	/// have no timer; a death ends them.</summary>
 	private static readonly NaturalKeptToggle[] KeptMantras =
 	[
-		new("celerity", "toggle-celerity-mantra"), new("shield-mantra", "toggle-shield-mantra"), new("revival-mantra", "toggle-revival-mantra"),
+		// L3: Invincibility Mantra (28; +10% physical attack, +100 magic boost, +40 magic accuracy) takes Revival Mantra's place
+		// once it is learned: the first three learned are kept (ToggleLimit).
+		new("celerity", "toggle-celerity-mantra"), new("shield-mantra", "toggle-shield-mantra"),
+		new("invincibility-mantra", "toggle-invincibility-mantra"), new("revival-mantra", "toggle-revival-mantra"),
 	];
 
 	/// <summary>
@@ -83,9 +89,12 @@ public static class NaturalChanterProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-chanter-v1",
-		Adjacent: ["circle", "infernal", "thunderbolt", "hallowed", "booming", "crashing", "meteor", "incandescent", "smite"],
+		// L3: Soul Crush on Infernal Blaze's stun, Pentacle Shock after Incandescent Blow; Word of Inspiration (the second
+		// stone) kept up in a fight, and Word of Wind for a group before the pull.
+		Adjacent: ["circle", "infernal", "thunderbolt", "soulcrush", "hallowed", "booming", "crashing", "meteor", "incandescent", "pentacle", "smite"],
 		AtRange: ["infernal", "thunderbolt", "smite"],
-		Upkeep: [new("blessing"), new("revival", DuringFight: true, UnderAttackOnly: true)],
+		Upkeep: [new("blessing"), new("word-of-wind", GroupOnly: true), new("revival", DuringFight: true, UnderAttackOnly: true),
+			new("inspiration", DuringFight: true)],
 		Recovery:
 		[
 			new(NaturalRecoveryKind.ShieldScroll, 50),
@@ -110,7 +119,8 @@ public static class NaturalChanterProfile
 		ArgumentNullException.ThrowIfNull(data);
 		var excluded = NaturalSkillCatalog.CommonExcluded.Concat(Excluded).ToDictionary(entry => entry.Key, entry => entry.Value);
 		NaturalPriestSkill[] skills = NaturalSkillCatalog.Build(data, PlayerClass.CHANTER, Roles, excluded);
-		NaturalProfileValidator.Require(data, PlayerClass.CHANTER, TopLevel, skills, excluded, Rules.Lines(skills), ChanterGear, KeptMantras);
+		NaturalProfileValidator.Require(data, PlayerClass.CHANTER, TopLevel, skills, excluded, Rules.Lines(skills), ChanterGear, KeptMantras,
+			toggleLimit: 3);
 		// NR-R8a: the Chanter opens from range and fights at melee, as the Templar does (NR-53c). When its target does not
 		// come to it, a monster that shoots such as Q2292's Mumu Ang, it walks up to that monster itself, and the walk-in
 		// rule (CP-56a) accepts the neighbour whose circle the target stands in. The Priest's and the Cleric's walk stays.
@@ -126,6 +136,7 @@ public static class NaturalChanterProfile
 			// The Priest's blessing in its Chanter rank, and the two buffs of 30 min.
 			Upkeep = [NaturalPriestProfile.Blessing, new("promise", "buff-promise-of-earth"), new("rage", "buff-rage-spell")],
 			Toggles = KeptMantras,
+			ToggleLimit = 3,
 			// NR-36: what it shoots with in flight.
 			AirAttackRoles = Rules.AtRange,
 			// NR-37: every second class holds for a patrol and assesses the fight, by its own table.

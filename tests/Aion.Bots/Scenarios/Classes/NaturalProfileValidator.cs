@@ -37,7 +37,7 @@ public static class NaturalProfileValidator
 	public static IReadOnlyList<string> Problems(StaticData data, PlayerClass playerClass, int maximumLevel,
 		IReadOnlyList<NaturalPriestSkill> skills, IReadOnlyDictionary<int, string> excluded,
 		IEnumerable<IReadOnlyList<int>> rotations, NaturalGearRules gear, IReadOnlyList<NaturalKeptToggle>? toggles = null,
-		IReadOnlyList<NaturalKeptSpirit>? spirits = null)
+		IReadOnlyList<NaturalKeptSpirit>? spirits = null, int? toggleLimit = null)
 	{
 		ArgumentNullException.ThrowIfNull(skills);
 		ArgumentNullException.ThrowIfNull(excluded);
@@ -47,10 +47,21 @@ public static class NaturalProfileValidator
 		foreach (var twice in skills.GroupBy(skill => skill.Id).Where(group => group.Count() > 1))
 			problems.Add($"Skill {twice.Key} has {twice.Count()} rows; a skill has one role.");
 		Dictionary<int, NaturalPriestSkill> byId = skills.GroupBy(skill => (int)skill.Id).ToDictionary(group => group.Key, group => group.First());
+		// L3 (docs/level-31-profiles.md): a later rank of a skill the table leaves out stays out with that rank's reason, as the
+		// catalog keeps it out (NaturalSkillCatalog.Build stops at an excluded rank before it).
+		Dictionary<int, int?> before = NaturalSkillCatalog.RankBefore(data, playerClass, Race.ASMODIANS);
+		string? Inherited(int id)
+		{
+			int? rank = before.GetValueOrDefault(id);
+			for (int step = 0; rank is int earlier && step < 16; step++, rank = before.GetValueOrDefault(earlier))
+				if (excluded.TryGetValue(earlier, out string? why)) return why;
+			return null;
+		}
 		foreach ((int id, int level) in NaturalSkillCatalog.AutoLearnedCastable(data, playerClass, maximumLevel)
 			.Concat(NaturalSkillCatalog.AutoLearnedToggles(data, playerClass, maximumLevel)).OrderBy(entry => entry.Key))
 		{
 			bool cast = byId.ContainsKey(id), left = excluded.TryGetValue(id, out string? reason);
+			if (!cast && !left && Inherited(id) is string inherited) { left = true; reason = inherited; }
 			if (cast && left) problems.Add($"Skill {id} has a role and an exclusion.");
 			else if (!cast && !left) problems.Add($"Skill {id}, auto-learned at level {level}, has neither a role nor an exclusion.");
 			else if (left && string.IsNullOrWhiteSpace(reason)) problems.Add($"Skill {id} is excluded without a reason.");
@@ -124,7 +135,8 @@ public static class NaturalProfileValidator
 		}
 		// Java EffectController.addEffect 76-86: three of the sub type CHANT; of the others one, and two for a Ranger or a Rider.
 		int otherLimit = playerClass is PlayerClass.RANGER or PlayerClass.RIDER ? 2 : 1;
-		if (chants > 3) problems.Add($"{chants} mantras are kept on; the server keeps three.");
+		// L3: more may be listed when the profile keeps only the first three learned (NaturalClassProfile.ToggleLimit).
+		if (chants > 3 && !(toggleLimit is int limit && limit <= 3)) problems.Add($"{chants} mantras are kept on; the server keeps three.");
 		if (others > otherLimit) problems.Add($"{others} toggles are kept on; the server keeps {otherLimit} for a {playerClass}.");
 		return problems;
 	}
@@ -132,9 +144,9 @@ public static class NaturalProfileValidator
 	/// <summary>Throws with every problem of the profile.</summary>
 	public static void Require(StaticData data, PlayerClass playerClass, int maximumLevel, IReadOnlyList<NaturalPriestSkill> skills,
 		IReadOnlyDictionary<int, string> excluded, IEnumerable<IReadOnlyList<int>> rotations, NaturalGearRules gear,
-		IReadOnlyList<NaturalKeptToggle>? toggles = null, IReadOnlyList<NaturalKeptSpirit>? spirits = null)
+		IReadOnlyList<NaturalKeptToggle>? toggles = null, IReadOnlyList<NaturalKeptSpirit>? spirits = null, int? toggleLimit = null)
 	{
-		IReadOnlyList<string> problems = Problems(data, playerClass, maximumLevel, skills, excluded, rotations, gear, toggles, spirits);
+		IReadOnlyList<string> problems = Problems(data, playerClass, maximumLevel, skills, excluded, rotations, gear, toggles, spirits, toggleLimit);
 		if (problems.Count > 0)
 			throw new InvalidDataException($"The {playerClass} profile is not valid: " + string.Join(" ", problems));
 	}

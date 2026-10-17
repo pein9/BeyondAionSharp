@@ -2507,8 +2507,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				if (options.SurveyNpcId is int surveyTarget)
 				{
 					Require.True(runtime.Profile.StartsWith("SIM-", StringComparison.Ordinal) && runtime.Seed == 1 && resuming &&
-						world.Level == 26 && world.MapId == leg.Hub.MapId && leg.Order.All(world.CompletedQuestIds.Contains),
-						"GH-01 surveys resume a level-26 mustered character in SIM at seed 1.");
+						world.Level >= 26 && world.MapId == leg.Hub.MapId && leg.Order.All(world.CompletedQuestIds.Contains),
+						// L3 (docs/level-31-profiles.md): and a checked one of 31, whose new skills a survey shows.
+						"GH-01 surveys resume a mustered character of level 26 or above in SIM at seed 1.");
 					session.BeginStep("gh-survey-start", "measure-the-ordinary-fighter");
 					await FallFromLoginPlaceAsync();
 					EnterObservedMap();

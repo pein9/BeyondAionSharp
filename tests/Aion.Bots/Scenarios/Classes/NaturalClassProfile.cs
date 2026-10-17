@@ -98,6 +98,9 @@ public sealed record NaturalClassProfile
 	/// <summary>NR-70a: the toggles kept on, in the order they are checked after the buffs. No more than the server lets
 	/// the class keep at once (<see cref="NaturalProfileValidator"/>); a class that names none keeps none.</summary>
 	public IReadOnlyList<NaturalKeptToggle> Toggles { get; init; } = [];
+	/// <summary>L3 (docs/level-31-profiles.md): the most toggles the server keeps on at once, the first ones learned in
+	/// <see cref="Toggles"/>; null for no limit. A Chanter keeps three mantras (Java EffectController.addEffect).</summary>
+	public int? ToggleLimit { get; init; }
 
 	/// <summary>NR-110a: the spirits kept, best first. The buff check summons the first whose skill is learned when the
 	/// bot has no spirit, and none while it has one: the server keeps one at a time. A class that names none keeps none.</summary>

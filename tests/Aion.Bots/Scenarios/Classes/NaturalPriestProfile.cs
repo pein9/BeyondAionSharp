@@ -39,6 +39,8 @@ public static class NaturalPriestProfile
 		// Light of Recovery (31) is a heal of one second's cast. Their later ranks, and every other rank above 26, take
 		// the role of the rank before them (NaturalSkillCatalog.Build).
 		[4195] = "group-heal", [4213] = "quick-heal",
+		// L3 (docs/level-31-profiles.md): Punishing Earth (30), its hardest hit, and Acquittal (31), for a group.
+		[4046] = "punishing", [4220] = "acquittal",
 	};
 
 	/// <summary>NR-16: the two skills of levels 25 and 26 the Cleric does not cast, beside
@@ -97,8 +99,9 @@ public static class NaturalPriestProfile
 	/// </para>
 	/// </summary>
 	internal static readonly NaturalRotationRules ClericRules = new("natural-cleric-v1",
-		Adjacent: ["spark", "followup", "touch", "servant", "infernal", "hallowed", "wind", "wrath", "smite"],
-		AtRange: ["spark", "followup", "touch", "servant", "wrath", "wind", "smite"],
+		// L3: Punishing Earth while the monster comes, and after Earth's Wrath with it on the Cleric.
+		Adjacent: ["spark", "followup", "touch", "servant", "infernal", "hallowed", "wind", "wrath", "punishing", "smite"],
+		AtRange: ["spark", "followup", "touch", "servant", "punishing", "wrath", "wind", "smite"],
 		Upkeep: [new("blessing"), new("rejuvenation", DuringFight: true, UnderAttackOnly: true)],
 		Recovery:
 		[
@@ -108,8 +111,12 @@ public static class NaturalPriestProfile
 			// MR-g: Saving Grace, its stigma, heals once its target is at half its health: no cast, so it is first.
 			new(NaturalRecoveryKind.Skill, 50, "saving-grace"),
 			new(NaturalRecoveryKind.Skill, 35, "flash-recovery", EmergencyOnly: true),
+			// L3: Noble Grace (the second stone, no cast: +35% healing received) before the heals it strengthens.
+			new(NaturalRecoveryKind.Skill, 55, "noble-grace", HpPercentMultiple: 70, KeepsNoMana: true, FromRun: NaturalRunPercent.Heal),
 			new(NaturalRecoveryKind.Skill, 55, "grace", HpPercentMultiple: 70, PassOverWhenCancelled: true, FinishInstead: true,
 				FromRun: NaturalRunPercent.Heal),
+			// L3: Light of Recovery (31), a heal of one second's cast, before Healing Light.
+			new(NaturalRecoveryKind.Skill, 55, "quick-heal", HpPercentMultiple: 70, FinishInstead: true, KeepsNoMana: true, FromRun: NaturalRunPercent.Heal),
 			new(NaturalRecoveryKind.Skill, 55, "heal", HpPercentMultiple: 70, FinishInstead: true, FromRun: NaturalRunPercent.Heal),
 		],
 		SwarmAttackers: NaturalPatrolPolicy.MaximumMembers + 1, FleeHpPercent: 30, AutoAttack: NaturalAutoAttack.Filler, ControlRole: "root",
@@ -118,7 +125,7 @@ public static class NaturalPriestProfile
 		Openers: ["smite"], OnlyWhileTargetAbove: new Dictionary<string, int> { ["servant"] = 50 }, RangedHoldWithin: 12);
 
 	/// <summary>The Cleric's catalog reaches this level: the level the recorded Cleric ends its Abyss-entry leg at.</summary>
-	private const int ClericCatalogTopLevel = 26;
+	private const int ClericCatalogTopLevel = 31;
 
 	/// <summary>The Priest's catalog, which a Chanter keeps as well.</summary>
 	internal static NaturalPriestSkill[] PriestCatalog(StaticData data) =>
@@ -207,7 +214,7 @@ public static class NaturalPriestProfile
 			Skills = skills,
 			SupportSkills = NaturalSkillCatalog.Build(data, PlayerClass.CLERIC,
 				ClericRoles.Where(row => row.Value is "heal" or "grace" or "flash-recovery" or "rejuvenation" or "blessing" or "penance" or "mp-recovery" or "herb"
-					or "group-heal" or "quick-heal")
+					or "group-heal" or "quick-heal" or "acquittal")
 					.Concat(new Dictionary<int, string> { [3935] = "cleanse", [3936] = "cleanse", [3937] = "cleanse",
 						[1699] = "resurrect", [243] = "return" })
 					.ToDictionary(row => row.Key, row => row.Value)),

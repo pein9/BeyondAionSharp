@@ -11,7 +11,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// </summary>
 public static class NaturalSpiritMasterProfile
 {
-	private const int TopLevel = 26;
+	private const int TopLevel = 31;
 
 	/// <summary>
 	/// The Spirit Master's own spells to level 26, by role, beside the Mage's it keeps. Erosion, which it has in every
@@ -25,6 +25,8 @@ public static class NaturalSpiritMasterProfile
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
+		// L3 (docs/level-31-profiles.md): the skills new at 27 to 31.
+		[3779] = "alacrity",
 		[1447] = "erosion", [1448] = "erosion", [1449] = "erosion", [1450] = "erosion", [1451] = "erosion",
 		[3603] = "earth", [3604] = "earth", [3605] = "earth",
 		[3614] = "stone", [3615] = "stone", [3616] = "stone",
@@ -58,6 +60,9 @@ public static class NaturalSpiritMasterProfile
 	/// <summary>Every other active skill a Spirit Master learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
+		[3775] = "Fear sends its target running among other monsters, which it brings back; the table's control is Root before a retreat.",
+		[3778] = "Nightmare follows Fear, which is left out.",
+		[3781] = "Disenchant hits every monster within 25 m, and route monsters carry no buffs; its DP go to Divine Spirit Armor.",
 		[3685] = "Summon: Wind Spirit I " + Spirit, [3687] = "Summon: Wind Spirit II " + Spirit, [3689] = "Summon: Wind Spirit III " + Spirit,
 		[3665] = "Summon: Water Spirit I " + Spirit, [3667] = "Summon: Water Spirit II " + Spirit,
 		[3780] = "Root of Enervation slows its target's attacks by a fifth for 35 to 45 s for 244 MP, which is the mana of four Erosions.",
@@ -89,8 +94,11 @@ public static class NaturalSpiritMasterProfile
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-spirit-master-v1",
 		// MR-g: Cyclone of Wrath, its stigma, with the other damage that lasts.
-		Adjacent: ["disturbance", "erosion", "spirit-erosion", "earth", "stone", "cyclone", "choke", "backdraft", "servant", "ice", "shock", "bolt", "blaze"],
-		AtRange: ["disturbance", "spirit-erosion", "earth", "stone", "erosion", "cyclone", "choke", "backdraft", "servant", "ice", "shock", "bolt", "blaze"],
+		// L3: Magic's Freedom (the second stone) early, and Summoning Alacrity just before the Wind Servant.
+		Adjacent: ["disturbance", "freedom", "erosion", "spirit-erosion", "earth", "stone", "cyclone", "choke", "backdraft", "alacrity", "servant",
+			"ice", "shock", "bolt", "blaze"],
+		AtRange: ["disturbance", "freedom", "spirit-erosion", "earth", "stone", "erosion", "cyclone", "choke", "backdraft", "alacrity", "servant",
+			"ice", "shock", "bolt", "blaze"],
 		Upkeep: [new("skin")],
 		Recovery: [new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
 		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.LastResort, ControlRole: "root",

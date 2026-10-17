@@ -110,12 +110,17 @@ public static class NaturalSkillCatalog
 			.Select(entry => Row(data, entry.Key, learned[entry.Key], entry.Value)).ToArray();
 		if (!NaturalStigma.Choices.TryGetValue(playerClass, out NaturalStigma.Choice? stone)) return own;
 		if (roles.Values.Contains(stone.Role)) throw new InvalidDataException($"{playerClass} role '{stone.Role}' is its stigma's.");
-		return [.. own, .. NaturalStigma.Skills(data, playerClass, race).OrderBy(entry => entry.Value).ThenBy(entry => entry.Key)
+		NaturalPriestSkill[] first = [.. NaturalStigma.Skills(data, playerClass, race).OrderBy(entry => entry.Value).ThenBy(entry => entry.Key)
 			.Select(entry => Row(data, entry.Key, entry.Value, stone.Role))];
+		// L3 (docs/level-31-profiles.md): the second stone's skills, from level 30, with the role its table gives them.
+		if (!NaturalStigma.Seconds.TryGetValue(playerClass, out NaturalStigma.Second? second)) return [.. own, .. first];
+		if (roles.Values.Contains(second.Role)) throw new InvalidDataException($"{playerClass} role '{second.Role}' is its second stigma's.");
+		return [.. own, .. first, .. NaturalStigma.StoneSkills(data, playerClass, second.StoneItemId, race).OrderBy(entry => entry.Value)
+			.ThenBy(entry => entry.Key).Select(entry => Row(data, entry.Key, entry.Value, second.Role))];
 	}
 
 	/// <summary>M8: for each auto-learned rank row of the class's lines, the rank before it (the skill tree's skillLearn).</summary>
-	private static Dictionary<int, int?> RankBefore(StaticData data, PlayerClass playerClass, Race race)
+	internal static Dictionary<int, int?> RankBefore(StaticData data, PlayerClass playerClass, Race race)
 	{
 		var before = new Dictionary<int, int?>();
 		PlayerClass starter = playerClass.GetStartingClass();

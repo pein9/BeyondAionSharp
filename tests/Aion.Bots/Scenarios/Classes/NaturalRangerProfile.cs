@@ -11,7 +11,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// </summary>
 public static class NaturalRangerProfile
 {
-	private const int TopLevel = 26;
+	private const int TopLevel = 31;
 
 	/// <summary>
 	/// The Ranger's active skills to level 26, by role. Every shot needs a bow. Swift Shot (level 10) opens the chain
@@ -23,6 +23,8 @@ public static class NaturalRangerProfile
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
+		// L3 (docs/level-31-profiles.md): the skills new at 27 to 31.
+		[830] = "spiral", [881] = "misery",
 		[994] = "swift", [995] = "swift", [996] = "swift", [997] = "swift",
 		[939] = "arrow", [940] = "arrow", [941] = "arrow",
 		[784] = "stun", [785] = "stun", [786] = "stun", [787] = "stun",
@@ -48,6 +50,9 @@ public static class NaturalRangerProfile
 	/// <summary>Every other active skill a Ranger learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
+		[868] = "Tactical Retreat speeds the Ranger after each hit taken; the bot does not kite, it walks checked routes.",
+		[889] = "Bestial Fury cuts the bow's reach by 10 m, under the 18 m the table stands off at.",
+		[1099] = "Hunter's Eye shows hidden creatures; no monster on the bot's way hides.",
 		[3182] = "Swift Edge I " + Melee, [3183] = "Swift Edge II " + Melee, [3184] = "Swift Edge III " + Melee,
 		[3185] = "Swift Edge IV " + Melee, [3186] = "Swift Edge V " + Melee, [3187] = "Swift Edge VI " + Melee,
 		[3223] = "Soul Slash I " + Melee, [3224] = "Soul Slash II " + Melee, [3225] = "Soul Slash III " + Melee, [3226] = "Soul Slash IV " + Melee,
@@ -83,8 +88,10 @@ public static class NaturalRangerProfile
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-ranger-v1",
 		// MR-g: Bow of Blessing, its stigma, is cast as Devotion is: on itself, while an attack reaches the target.
-		Adjacent: ["mau", "devotion", "bow-blessing", "stun", "rupture", "swift", "arrow", "entangle", "deadshot"],
-		AtRange: ["mau", "devotion", "bow-blessing", "entangle", "stun", "rupture", "swift", "arrow", "deadshot"],
+		// L3: Dilation Arrow (the second stone) early, Spiral Arrow after Arrow Strike, Misery Shot on a stunned, staggered or
+		// thrown-down target.
+		Adjacent: ["mau", "devotion", "bow-blessing", "dilation", "stun", "rupture", "swift", "arrow", "spiral", "entangle", "deadshot", "misery"],
+		AtRange: ["mau", "devotion", "bow-blessing", "dilation", "entangle", "stun", "rupture", "swift", "arrow", "spiral", "deadshot", "misery"],
 		Upkeep: [],
 		Recovery: [new(NaturalRecoveryKind.Skill, 70, "evasion"), new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
 		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler, ControlRole: "sleep");

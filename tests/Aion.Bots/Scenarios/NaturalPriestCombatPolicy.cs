@@ -114,7 +114,7 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	IReadOnlySet<int>? ActiveEffectSkillIds = null, string? OffHand = null, IReadOnlySet<ushort>? CastThisFight = null,
 	int TargetAbnormals = 0, IReadOnlyDictionary<string, int>? TargetRunes = null,
 	bool SpiritOut = false, bool SpiritAtTarget = false, int? SpiritHpPercent = null, float? SpiritDistance = null,
-	bool Rides = false);
+	bool Rides = false, bool Grouped = false);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);

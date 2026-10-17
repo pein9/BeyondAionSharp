@@ -478,7 +478,9 @@ public sealed partial class NaturalIshalgenJourney
 					SpiritDistance: world.Summon is { } ownSpirit && world.Objects.TryGetValue(ownSpirit.ObjectId, out BotKnownObject? spiritSeen)
 						? Distance(session.CurrentPosition, spiritSeen.Position) : null,
 					// NR-130a: the mech, for the skills that need one.
-					Rides: world.RobotId != 0);
+					Rides: world.RobotId != 0,
+					// L3: in a group, for the words cast only for a group.
+					Grouped: world.GroupId != null);
 				NaturalCombatChoice choice = policy.Decide(observation, now, mauPolicy);
 				// NR-110c: before the bot's first attack its spirit goes first. Time passes while the bot holds for the
 				// spirit's first hit, so the fight looks again.
@@ -978,11 +980,15 @@ public sealed partial class NaturalIshalgenJourney
 			}
 			// NR-70a: the toggles the profile keeps on. The server says when one starts and when one ends; one that is on
 			// is never cast (Java AuraEffect.applyEffect 35-42 logs that as an abuse of the cast packet).
+			int learnedToggles = 0;
 			foreach (NaturalKeptToggle toggle in profile.Toggles)
 			{
 				if (world.IsDead || world.CurrentHp <= 0 || InCombat) return;
 				NaturalPriestSkill? skill = NaturalPriestSkills.Best(toggle.Role, world.Level, world.Skills, profile.Skills);
-				if (skill == null || world.ActiveToggles.Contains(skill.Id)) continue;
+				if (skill == null) continue;
+				// L3: only the first ones learned, as many as the server keeps on (the Chanter's Revival Mantra until Invincibility).
+				if (profile.ToggleLimit is int most && ++learnedToggles > most) break;
+				if (world.ActiveToggles.Contains(skill.Id)) continue;
 				DateTimeOffset now = runtime.Epoch.AddMilliseconds(runtime.NowMillis);
 				if (cooldowns.TryGetValue(skill.CooldownId, out DateTimeOffset readyAt) && readyAt > now) continue;
 				if (world.CurrentMp < skill.ManaCost) continue;

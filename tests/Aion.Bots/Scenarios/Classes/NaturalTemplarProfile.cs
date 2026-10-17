@@ -11,7 +11,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// </summary>
 public static class NaturalTemplarProfile
 {
-	private const int TopLevel = 26;
+	private const int TopLevel = 31;
 
 	/// <summary>
 	/// The Templar's active skills to level 26, by role, beside the Warrior's it keeps. Ferocious Strike opens the first
@@ -23,6 +23,8 @@ public static class NaturalTemplarProfile
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
+		// L3 (docs/level-31-profiles.md): the skills new at 27 to 31.
+		[2932] = "unwavering", [3161] = "hand",
 		[2864] = "strike", [2865] = "strike", [2866] = "strike", [2867] = "strike", [2868] = "strike", [2869] = "strike",
 		[2877] = "robust", [2878] = "robust", [2879] = "robust", [2880] = "robust", [2881] = "robust",
 		[2903] = "rage", [2904] = "rage", [2905] = "rage", [2906] = "rage",
@@ -49,6 +51,7 @@ public static class NaturalTemplarProfile
 	/// <summary>Every other active skill and every toggle a Templar learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
+		[3106] = "Face Smash follows Shield Counter or Avenging Blow, counter skills the table leaves out.",
 		[3000] = "Stubborn Spirit I: " + Stance, [3001] = "Stubborn Spirit II: " + Stance, [3002] = "Stubborn Spirit III: " + Stance,
 		[3003] = "Stubborn Spirit IV: " + Stance,
 		[3010] = "Provoking Roar raises the enmity of what is already around the Templar and deals no damage; alone they are on it anyway.",
@@ -91,17 +94,20 @@ public static class NaturalTemplarProfile
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-templar-v1",
 		// MR-g: Inquisitor's Blow, its stigma, is to the Templar what Cleave is to the Gladiator: the pull that hits.
-		Adjacent: ["chastise", "dazing", "divine", "bash", "strike", "robust", "rage", "wrath", "smash", "inquisitor"],
+		// L3: Punishing Thrust, the second stone, its hardest hit; Unwavering Devotion kept up while it is hit.
+		Adjacent: ["chastise", "dazing", "divine", "bash", "strike", "robust", "rage", "wrath", "smash", "punishing-thrust", "inquisitor"],
 		AtRange: ["inquisitor", "taunt"],
-		Upkeep: [],
+		Upkeep: [new("unwavering", DuringFight: true, UnderAttackOnly: true)],
 		Recovery:
 		[
 			new(NaturalRecoveryKind.ShieldScroll, 50),
 			new(NaturalRecoveryKind.LifePotion, 75),
+			// L3: Hand of Healing (2,000 DP, half an hour) heals all of its health at once; its DP are kept for it.
+			new(NaturalRecoveryKind.Skill, 35, "hand", EmergencyOnly: true, KeepsNoMana: true),
 			new(NaturalRecoveryKind.Skill, 35, "armor", EmergencyOnly: true),
 		],
 		SwarmAttackers: 3, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler,
-		OnlyWhenHurt: new Dictionary<string, int> { ["rage"] = 80, ["chastise"] = 70 }, PullRoles: ["taunt"]);
+		OnlyWhenHurt: new Dictionary<string, int> { ["rage"] = 80, ["chastise"] = 70 }, PullRoles: ["taunt"], DpReserveRole: "hand");
 
 	/// <summary>NR-53b: the distances of a pull with a 15 m skill, as the Priest line's are those of 25 m: the planned
 	/// pull opens at 13 m, a far target is approached to 10 m with sight of it, and the stand-off is held at 11 m (15 m

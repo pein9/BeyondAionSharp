@@ -11,7 +11,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// </summary>
 public static class NaturalSorcererProfile
 {
-	private const int TopLevel = 26;
+	private const int TopLevel = 31;
 
 	/// <summary>
 	/// The Sorcerer's active skills to level 26, by role, beside the Mage's it keeps. Flame Bolt and Flame Harpoon
@@ -22,6 +22,8 @@ public static class NaturalSorcererProfile
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
+		// L3 (docs/level-31-profiles.md): the skills new at 27 to 31.
+		[1433] = "wisdom", [1250] = "shard", [1446] = "ironclad",
 		[1282] = "bolt", [1284] = "bolt", [1285] = "bolt", [1286] = "bolt", [1287] = "bolt",
 		[1403] = "blaze", [1404] = "blaze", [1405] = "blaze", [1406] = "blaze", [1407] = "blaze",
 		[1363] = "ice", [1365] = "ice", [1366] = "ice", [1367] = "ice",
@@ -52,6 +54,11 @@ public static class NaturalSorcererProfile
 	/// <summary>Every other active skill a Sorcerer learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
+		[1184] = "Aether's Hold: 379 damage for 185 MP behind a 2.8 s cast, and nothing of the Sorcerer's uses a lifted target.",
+		[1476] = "Boon of Clairvoyance shows hidden creatures; no monster on the bot's way hides.",
+		[1338] = "Tranquilizing Cloud puts every monster within 5 m of its target to sleep; the bot pulls one at a time.",
+		[1238] = "Robe of Cold shares Robe of Flame's cooldown id, and the server keeps one of them (Java " +
+			"EffectController.checkEffectCooldownId): Robe of Flame is kept.",
 		[1259] = "Wind Spear I " + WindSpear, [1260] = "Wind Spear II " + WindSpear, [1261] = "Wind Spear III " + WindSpear,
 		[1417] = "Curse of Roots holds its target for 20 s after a 1.5 s cast, and a hit ends it. The table names one control, the " +
 			"instant Root, cast on the way out before a retreat.",
@@ -83,10 +90,14 @@ public static class NaturalSorcererProfile
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-sorcerer-v1",
 		// MR-g: Ice Harpoon, its stigma, beside the harpoon it learns.
-		Adjacent: ["frost", "erosion", "ice", "shock", "empyrean", "blast", "ice-harpoon", "harpoon", "bolt", "blaze"],
-		AtRange: ["ice", "shock", "empyrean", "blast", "ice-harpoon", "harpoon", "bolt", "blaze"],
+		// L3: Empyrean Wisdom first (+70 magic boost, a third off every cost, 15 s in 30), Refracting Shard (free, mana back)
+		// before the flame skills, and Storm Strike (the second stone, a 4 s cast) only as the opener from range.
+		Adjacent: ["wisdom", "frost", "erosion", "ice", "shock", "empyrean", "blast", "ice-harpoon", "shard", "harpoon", "bolt", "blaze"],
+		AtRange: ["storm-strike", "wisdom", "ice", "shock", "empyrean", "blast", "ice-harpoon", "shard", "harpoon", "bolt", "blaze"],
 		Upkeep: [new("skin")],
-		Recovery: [new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
+		// L3: Boon of Iron-Clad (5 s that absorb every physical hit) in an emergency; its 352 MP are not kept back.
+		Recovery: [new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75),
+			new(NaturalRecoveryKind.Skill, 35, "ironclad", EmergencyOnly: true, KeepsNoMana: true)],
 		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.LastResort, ControlRole: "root",
 		ManaSkill: new("gainmana", 50));
 

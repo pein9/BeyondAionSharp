@@ -11,7 +11,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// </summary>
 public static class NaturalGladiatorProfile
 {
-	private const int TopLevel = 26;
+	private const int TopLevel = 31;
 
 	/// <summary>
 	/// The Gladiator's active skills to level 26, by role, beside the Warrior's it keeps. Ferocious Strike opens the first
@@ -25,6 +25,8 @@ public static class NaturalGladiatorProfile
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
+		// L3 (docs/level-31-profiles.md): the skills new at 27 to 31.
+		[599] = "fury", [531] = "crushing-blow", [590] = "springing", [605] = "reckless",
 		[2864] = "strike", [2865] = "strike", [2866] = "strike", [2867] = "strike", [2868] = "strike", [2869] = "strike",
 		[2877] = "robust", [2878] = "robust", [2879] = "robust", [2880] = "robust", [2881] = "robust",
 		[2903] = "rage", [2904] = "rage", [2905] = "rage", [2906] = "rage",
@@ -49,6 +51,7 @@ public static class NaturalGladiatorProfile
 	/// <summary>Every other active skill and toggle a Gladiator learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
+		[555] = "Seismic Billow " + Area + " It follows Roiling Hack or Pressure Wave, both left out.",
 		[769] = "Absorbing Fury I " + Area, [770] = "Absorbing Fury II " + Area, [771] = "Absorbing Fury III " + Area,
 		[772] = "Absorbing Fury IV " + Area,
 		[758] = "Roiling Hack follows Absorbing Fury and " + Area,
@@ -80,7 +83,10 @@ public static class NaturalGladiatorProfile
 	/// </para>
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-gladiator-v1",
-		Adjacent: ["explosion", "strike", "robust", "rage", "wrathful", "rupture", "smash", "aerial", "crashing", "cleave", "crippling"],
+		// L3: Daevic Fury first (+80% attack for 30 s, its DP before Explosion of Rage's), Crushing Blow's sure stumble early,
+		// Reckless Strike after Rupture, and Springing Slice and Draining Blow (the second stone) on a thrown-down target.
+		Adjacent: ["fury", "explosion", "crushing-blow", "strike", "robust", "rage", "wrathful", "rupture", "reckless", "smash", "aerial",
+			"crashing", "cleave", "crippling", "springing", "draining"],
 		AtRange: ["cleave", "taunt"],
 		Upkeep: [],
 		Recovery:

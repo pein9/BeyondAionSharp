@@ -11,7 +11,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// </summary>
 public static class NaturalAssassinProfile
 {
-	private const int TopLevel = 26;
+	private const int TopLevel = 31;
 
 	/// <summary>
 	/// The Assassin's active skills to level 26, by role, beside the Scout's it keeps. Swift Edge opens the chain Soul
@@ -26,6 +26,8 @@ public static class NaturalAssassinProfile
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
+		// L3 (docs/level-31-profiles.md): the skills new at 27 to 31.
+		[3292] = "burst", [3470] = "assassination",
 		[3182] = "edge", [3183] = "edge", [3184] = "edge", [3185] = "edge", [3186] = "edge", [3187] = "edge",
 		[3223] = "slash", [3224] = "slash", [3225] = "slash", [3226] = "slash",
 		[3283] = "runeslash", [3284] = "runeslash",
@@ -54,6 +56,8 @@ public static class NaturalAssassinProfile
 	/// <summary>Every other active skill and toggle an Assassin learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
+		[3270] = "Searching Eye shows hidden creatures; no monster on the bot's way hides.",
+		[3491] = "Wind Walk hides the Assassin and speeds it; the journey does not sneak, and its 2,000 DP go to Divine Strike.",
 		[3196] = "Surprise Attack I " + Surprise, [3197] = "Surprise Attack II " + Surprise, [3198] = "Surprise Attack III " + Surprise,
 		[3199] = "Surprise Attack IV " + Surprise, [3200] = "Surprise Attack V " + Surprise,
 		[3209] = "Counterattack I: " + Counter, [3210] = "Counterattack II: " + Counter, [3211] = "Counterattack III: " + Counter,
@@ -89,12 +93,15 @@ public static class NaturalAssassinProfile
 	/// </summary>
 	private static readonly NaturalRotationRules Rules = new("natural-assassin-v1",
 		// MR-g: Searching Strike, its stigma, before a chain is opened.
-		Adjacent: ["devotion", "divine", "pain", "binding", "searching", "edge", "slash", "runeslash", "fang", "kick", "carve", "eye", "flurry"],
+		// L3: Rune Burst at three runes while Pain Rune cools, Assassination into Searching Strike's stun, and Rune Knife
+		// (the second stone), which carves the rune its bursts take.
+		Adjacent: ["devotion", "divine", "pain", "burst", "binding", "searching", "assassination", "rune-knife", "edge", "slash", "runeslash",
+			"fang", "kick", "carve", "eye", "flurry"],
 		AtRange: [],
 		Upkeep: [],
 		Recovery: [new(NaturalRecoveryKind.Skill, 70, "evasion"), new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
 		SwarmAttackers: 3, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler, HoldOpenChain: true,
-		OnlyWithRunes: new Dictionary<string, int> { ["pain"] = 3, ["binding"] = 3 });
+		OnlyWithRunes: new Dictionary<string, int> { ["pain"] = 3, ["burst"] = 3, ["binding"] = 3 });
 
 	// NR-Q5, NR-Q6, NR-Q7 and NR-Q13: two daggers, leather first, and the kit of a class that does not cast from mana and
 	// rests with the powder.

@@ -36,7 +36,7 @@ public enum NaturalRunPercent
 /// <param name="FromRun">NR-10: the run's parameter that replaces the percentage.</param>
 public sealed record NaturalRecoveryStep(NaturalRecoveryKind Kind, int HpPercent, string? Role = null, int? HpPercentMultiple = null,
 	bool EmergencyOnly = false, bool PassOverWhenCancelled = false, bool FinishInstead = false,
-	NaturalRunPercent FromRun = NaturalRunPercent.None);
+	NaturalRunPercent FromRun = NaturalRunPercent.None, bool KeepsNoMana = false);
 
 /// <summary>NR-60a: a skill that restores mana, cast when mana is at or below <paramref name="MpPercent"/>, before a
 /// mana potion is drunk. NR-121: on the bot, or at the target when the skill is a shot the server gives mana for (the
@@ -62,7 +62,9 @@ public sealed record NaturalFinisher(string Role, int TargetHpPercent, bool From
 /// <param name="DuringFight">Also cast in a fight; otherwise only before a target is hit.</param>
 /// <param name="UnderAttackOnly">NR-11: a fight upkeep that is cast only while the bot is being attacked (a heal over
 /// time is wasted on a target that has not been pulled yet).</param>
-public sealed record NaturalRotationUpkeep(string Role, bool DuringFight = false, bool UnderAttackOnly = false);
+/// <param name="GroupOnly">L3 (docs/level-31-profiles.md): cast only while the bot is in a group (a word for the whole
+/// group, such as the Chanter's Word of Wind).</param>
+public sealed record NaturalRotationUpkeep(string Role, bool DuringFight = false, bool UnderAttackOnly = false, bool GroupOnly = false);
 
 /// <summary>When the weapon swings.</summary>
 public enum NaturalAutoAttack
@@ -126,7 +128,7 @@ public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjac
 	NaturalFinisher? Finisher = null, string? ReserveRole = null, int? ManaPotionReserveMargin = null,
 	IReadOnlyList<string>? Openers = null, IReadOnlyDictionary<string, int>? OnlyWhileTargetAbove = null, float? RangedHoldWithin = null,
 	IReadOnlyList<string>? PullRoles = null, NaturalManaStep? ManaSkill = null, IReadOnlyDictionary<string, int>? OnlyWithRunes = null,
-	IReadOnlyList<NaturalSpiritStep>? SpiritLadder = null)
+	IReadOnlyList<NaturalSpiritStep>? SpiritLadder = null, string? DpReserveRole = null)
 {
 	/// <summary>The table's two attack lists as lines of skill ids, every rank of a role in level order, for
 	/// <see cref="NaturalProfileValidator"/>.</summary>
@@ -418,6 +420,7 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			foreach (NaturalRotationUpkeep upkeep in rules.Upkeep.Where(upkeep => upkeep.DuringFight == duringFight))
 			{
 				if (upkeep.UnderAttackOnly && !state.Aggro) continue;
+				if (upkeep.GroupOnly && !state.Grouped) continue;
 				if (catalog.Any(skill => skill.Role == upkeep.Role && active.Contains(skill.Id))) continue;
 				if (Best(upkeep.Role, state) is { } buff && Ready(buff)) return buff;
 			}
@@ -519,6 +522,11 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		}
 		if (state.Cooldowns.TryGetValue(skill.CooldownId, out DateTimeOffset until) && until > now) reasons.Add(CoolingDown);
 		if (state.Dp < skill.DpCost) reasons.Add("Observed DP is below the skill's cost.");
+		// L3 (docs/level-31-profiles.md): the DP of the table's reserve role is kept while it is ready, as the mana of the
+		// reserve is: Empyrean Chastisement spent the Templar's 2,000 DP before Hand of Healing could have them.
+		else if (rules.DpReserveRole is string keptFor && skill.Role != keptFor && skill.DpCost > 0 && Best(keptFor, state) is { } kept &&
+			!(state.Cooldowns.TryGetValue(kept.CooldownId, out DateTimeOffset keptUntil) && keptUntil > now) && state.Dp - skill.DpCost < kept.DpCost)
+			reasons.Add($"The DP are kept for {keptFor}.");
 		int reserve = ReserveFor(skill, state, parameters);
 		if (state.Mp < skill.ManaCost + reserve) reasons.Add(reserve > 0 ? "Insufficient observed mana after the recovery reserve." : "Insufficient observed mana.");
 		// NR-130a: a cost that is a share of the whole mana (Java MpCondition.getCost 48-51, in whole numbers).
@@ -577,7 +585,7 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 	/// <summary>The recovery skill the reserve is kept for: the table's reserve role (NR-10), or the first learned skill of
 	/// the ladder.</summary>
 	private NaturalPriestSkill? ReserveSkill(NaturalCombatObservation state) => rules.ReserveRole != null ? Best(rules.ReserveRole, state)
-		: rules.Recovery.Where(step => step.Kind == NaturalRecoveryKind.Skill)
+		: rules.Recovery.Where(step => step.Kind == NaturalRecoveryKind.Skill && !step.KeepsNoMana)
 			.Select(step => Best(step.Role!, state)).OfType<NaturalPriestSkill>().FirstOrDefault();
 
 	/// <summary>NR-10: the table asks for a mana potion below the reserve, and mana is below the reserve skill's cost and

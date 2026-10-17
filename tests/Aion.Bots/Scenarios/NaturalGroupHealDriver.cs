@@ -86,6 +86,17 @@ public sealed class NaturalGroupHealDriver(INaturalJourneySession session, Natur
 		// M8 (the operator, 2026-10-14: "the cleric probably has more and better heals (a group heal?)"): Healing Wind heals
 		// every member within its reach at once. It is cast when two or more members there are at 70% or less and none is
 		// in the danger a single heal answers first (35% or less).
+		// L3 (docs/level-31-profiles.md): Acquittal (31; 2,000 DP, half an hour) takes up to five harmful effects off every
+		// member within its reach and heals each 20% of its health every 2 s for 10 s: cast when three or more are at 50% or
+		// less. Noble Grace, the second stone (no cast; 15 s of +35% healing received and +1,200 health for the group), goes
+		// before the heals when two or more there are at 50% or less.
+		foreach ((string role, int count) in new[] { ("acquittal", 3), ("noble-grace", 2) })
+		{
+			if (Best(role) is not { } word || !Ready(word, members[0])) continue;
+			float wordReach = runtime.Data.SkillDataDh.GetSkillTemplate(word.Id)?.GetProperties()?.GetEffectiveRange() ?? 0;
+			Member[] low = [.. members.Where(member => member.HpPercent <= 50 && Distance(member.Position, session.CurrentPosition) <= wordReach)];
+			if (low.Length >= count) return await CastAsync(word, session.CharacterId, role, low.Min(member => member.HpPercent), token);
+		}
 		NaturalPriestSkill? wind = Best("group-heal");
 		if (wind != null && byNeed.All(member => member.HpPercent > 35))
 		{
