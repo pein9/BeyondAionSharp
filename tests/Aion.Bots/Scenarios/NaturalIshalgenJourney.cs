@@ -2086,6 +2086,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					// MR-g: the bundle of Q2900 and the stone taken from it are kept until the stone is in its slot.
 					if (NaturalStigma.Choices.TryGetValue(combat.ClassProfile.Class, out NaturalStigma.Choice? ownStone))
 						bagNeeds.UnionWith([NaturalStigma.BundleItemId, ownStone.StoneItemId]);
+					if (NaturalStigma.Seconds.TryGetValue(combat.ClassProfile.Class, out NaturalStigma.Second? secondStone))
+						bagNeeds.Add(secondStone.StoneItemId);
 					combat.UsesBoosts = true;
 					async Task CheckAsync(string trigger)
 					{
@@ -2241,7 +2243,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					session.BeginStep("muster-coin-gear", "buy-the-best-coin-tier");
 					NaturalAbyssCoinTier tier = armor.Tiers.Where(entry => entry.Level <= world.Level).MaxBy(entry => entry.Level)
 						?? throw new InvalidDataException($"No coin tier is for level {world.Level}.");
-					NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(armor, tier, Observed().Inventory!, PhysicalDefence, StaffMagicBoost);
+					NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(armor, tier, Observed().Inventory!, PhysicalDefence, StaffMagicBoost, ItemRank);
 					manifests.Add(manifest);
 					session.TraceDiagnostic(NaturalAbyssCoinArmorSteps.ManifestDiagnostic, NaturalAbyssCoinArmorSteps.Row(manifest));
 					if (manifest.CoinsToSupply > 0)
@@ -2273,7 +2275,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					await CheckAsync($"coin-armor-{tier.Level}");
 					foreach (NaturalAbyssCoinTier wearable in armor.Tiers.Where(entry => entry.Level <= world.Level))
 					{
-						NaturalAbyssCoinManifest left = NaturalAbyssCoinArmorPolicy.Plan(armor, wearable, Observed().Inventory!, PhysicalDefence, StaffMagicBoost);
+						NaturalAbyssCoinManifest left = NaturalAbyssCoinArmorPolicy.Plan(armor, wearable, Observed().Inventory!, PhysicalDefence, StaffMagicBoost, ItemRank);
 						Require.True(left.Done, $"A {wearable.Name} piece still beats what is worn: " +
 							string.Join(", ", left.Slots.Where(slot => slot.Action != "keep").Select(slot => $"{slot.CoinItemId} ({slot.Action})")));
 					}
@@ -2281,6 +2283,64 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					// 3. The bags again: the pieces the coin gear replaced.
 					await SellSurplusAsync("sell-the-gear-replaced");
 					await CheckAsync("muster-end");
+
+					// MR-g: a stone is put in at the fortress's nearest Stigma Master, in his stigma window, for the service fee.
+					async Task<(long Fee, long Due, int Master)> SocketStoneAsync(int stoneItemId, long slot)
+					{
+						int masterNpc = runtime.Data.SpawnsDh.GetSpawnsByWorldId(leg.Hub.MapId)
+							.Where(group => runtime.Data.NpcDataDh.GetNpcTemplate(group.GetNpcId())?.GetTitleId() == NaturalStigma.MasterTitleId)
+							.SelectMany(group => group.GetSpawnTemplates().Select(spot => (Npc: group.GetNpcId(), At: new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0))))
+							.Where(spot => Distance(spot.At, hubAt) <= leg.Hub.Radius)
+							.OrderBy(spot => Distance(spot.At, session.CurrentPosition)).ThenBy(spot => spot.Npc).Select(spot => spot.Npc).First();
+						int master = await ApproachInFortressAsync(masterNpc);
+						await NaturalDialogProtocol.OpenAsync(session, master, token);
+						await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, p => p.Get<int>("targetObjectId") == master);
+						await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(master,
+							checked((ushort)NaturalAscensionContract.DialogActionId("OPEN_STIGMA_WINDOW"))), token);
+						await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, p => p.Get<ushort>("dialogPageId") == 1);
+						BotInventoryItem stone = world.Inventory.Values.Single(item => item.ItemId == stoneItemId);
+						long due = world.VendorPrices?.ServicePrice(NaturalStigma.InstallationBaseFee) ?? NaturalStigma.InstallationBaseFee, before = world.Kinah;
+						Require.True(before >= due, $"The stone costs {due} Kinah to put in and the character has {before}.");
+						await session.SendPacketAsync(GameClientPackets.EquipItem(0, slot, stone.ObjectId), token);
+						await session.SynchronizeAsync(token);
+						await session.SendPacketAsync(session.Api.CloseDialog(master), token);
+						return (before - world.Kinah, due, masterNpc);
+					}
+					// L2 (docs/level-31-profiles.md): the second stone is bought in Pandaemonium, from the vendor of its class's stones,
+					// with the character's own Kinah: by the fortress's teleporter there, and home by Return.
+					async Task<long> BuyStoneInPandaemoniumAsync(NaturalStigma.Second second)
+					{
+						NaturalAltgardMapTrip there = leg.MapTripList.Single(trip => trip.FromMapId == NaturalAbyssEntry.Morheim && trip.MapId == NaturalAbyssEntry.Pandaemonium);
+						int teleporter = await ApproachInFortressAsync(there.TeleporterNpcId);
+						NaturalServiceOutcome travelled = await new NaturalServiceSteps(session).TeleportAsync(teleporter, world.Objects[teleporter].Position,
+							there.TalkRange, there.LocationId, there.Fare, there.MapId, token);
+						Require.True(travelled.IsDone, travelled.Reason);
+						NaturalJourneyNavigator city = mapNavigators.Enter(NaturalMapKey.Observe(world));
+						BotPosition vendorAt = runtime.Data.SpawnsDh.GetSpawnsByWorldId(NaturalAbyssEntry.Pandaemonium)
+							.Where(group => group.GetNpcId() == second.VendorNpcId).SelectMany(group => group.GetSpawnTemplates())
+							.Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0)).First();
+						NaturalNavigationResult reached = await NaturalIshalgenNavigator.ApproachNpcAsync(NaturalAbyssEntry.Pandaemonium, second.VendorNpcId,
+							vendorAt, city, token);
+						Require.True(reached.Arrived, $"Stigma vendor {second.VendorNpcId}: {reached.Reason}");
+						int vendor = Require.IsType<int>(reached.TargetObjectId);
+						await NaturalDialogProtocol.OpenAsync(session, vendor, token);
+						await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, p => p.Get<int>("targetObjectId") == vendor);
+						await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(vendor, 2), token);
+						await session.WaitForPacketAsync(typeof(SM_TRADELIST), token);
+						long before = world.Kinah;
+						await session.SendPacketAsync(session.Api.Buy(vendor, [(second.StoneItemId, 1)]), token);
+						await session.SynchronizeAsync(token);
+						await session.SendPacketAsync(session.Api.CloseDialog(vendor), token);
+						long paid = before - world.Kinah;
+						session.TraceDiagnostic("muster-stigma-bought", new Dictionary<string, object?>
+						{ ["stone"] = second.StoneItemId, ["vendor"] = second.VendorNpcId, ["paid"] = paid, ["kinahAfter"] = world.Kinah });
+						Require.True(ItemCount(world, second.StoneItemId) == 1 && paid > 0, $"The stone {second.StoneItemId} was not bought ({paid} Kinah, Kinah {before}).");
+						await UseLearnedReturnToBindAsync();
+						await session.SynchronizeAsync(token);
+						navigator = mapNavigators.Enter(NaturalMapKey.Observe(world));
+						Require.Equal(leg.Hub.MapId, world.MapId ?? 0);
+						return paid;
+					}
 
 					// 3b. The stigma (MR-g): the class's stone out of the Stigma Support Bundle, put into the one slot a character
 					// has below level 30, at the fortress's Stigma Master. Until 2026-10-13 the cleanup threw the bundle of Q2900
@@ -2329,24 +2389,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 									$"The bundle did not give the stone {stigma.StoneItemId}.");
 								bundleOpened = true;
 							}
-							stigmaMaster = runtime.Data.SpawnsDh.GetSpawnsByWorldId(leg.Hub.MapId)
-								.Where(group => runtime.Data.NpcDataDh.GetNpcTemplate(group.GetNpcId())?.GetTitleId() == NaturalStigma.MasterTitleId)
-								.SelectMany(group => group.GetSpawnTemplates().Select(spot => (Npc: group.GetNpcId(), At: new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0))))
-								.Where(spot => Distance(spot.At, hubAt) <= leg.Hub.Radius)
-								.OrderBy(spot => Distance(spot.At, session.CurrentPosition)).ThenBy(spot => spot.Npc).Select(spot => spot.Npc).First();
-							int master = await ApproachInFortressAsync(stigmaMaster);
-							await NaturalDialogProtocol.OpenAsync(session, master, token);
-							await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, p => p.Get<int>("targetObjectId") == master);
-							await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(master,
-								checked((ushort)NaturalAscensionContract.DialogActionId("OPEN_STIGMA_WINDOW"))), token);
-							await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, p => p.Get<ushort>("dialogPageId") == 1);
-							BotInventoryItem stone = world.Inventory.Values.Single(item => item.ItemId == stigma.StoneItemId);
-							long due = world.VendorPrices?.ServicePrice(NaturalStigma.InstallationBaseFee) ?? NaturalStigma.InstallationBaseFee, before = world.Kinah;
-							Require.True(before >= due, $"The stone costs {due} Kinah to put in and the character has {before}.");
-							await session.SendPacketAsync(GameClientPackets.EquipItem(0, NaturalStigma.Slot, stone.ObjectId), token);
-							await session.SynchronizeAsync(token);
-							await session.SendPacketAsync(session.Api.CloseDialog(master), token);
-							stigmaFee = before - world.Kinah;
+							(stigmaFee, long due, stigmaMaster) = await SocketStoneAsync(stigma.StoneItemId, NaturalStigma.Slot);
 							Require.True(Socketed() && taught.All(skill => world.Skills.ContainsKey(skill)) && stigmaFee == due,
 								$"The stone {stigma.StoneItemId} was not put in: socketed {Socketed()}, skills [{string.Join(", ", taught.Where(skill => world.Skills.ContainsKey(skill)))}] of " +
 								$"[{string.Join(", ", taught)}], fee {stigmaFee} of {due}.");
@@ -2359,6 +2402,35 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						session.TraceDiagnostic("muster-stigma", stigmaRow);
 						await CheckAsync("muster-stigma");
 						Require.True(Socketed() && taught.All(skill => world.Skills.ContainsKey(skill)), "The gear check took the stigma out.");
+					}
+
+					// 3c. The second stone (L2, docs/level-31-profiles.md): level 30 opens the second regular slot (Java
+					// StigmaService.getPossibleStigmaCount); the class's second stone, bought in Pandaemonium, goes into it.
+					if (world.Level >= NaturalStigma.SecondSlotLevel && NaturalStigma.Seconds.TryGetValue(combat.ClassProfile.Class, out NaturalStigma.Second? second))
+					{
+						session.BeginStep("muster-stigma-second", "buy-and-socket-the-second-stone");
+						int[] secondTaught = [.. NaturalStigma.StoneSkills(runtime.Data, combat.ClassProfile.Class, second.StoneItemId)
+							.Where(skill => skill.Value <= world.Level).Select(skill => skill.Key).Order()];
+						bool SecondSocketed() => world.Inventory.Values.Any(item => item.ItemId == second.StoneItemId && item.Details.EquippedSlot == NaturalStigma.SecondSlot);
+						long stonePrice = 0, secondFee = 0, secondDue = 0;
+						int secondMaster = 0;
+						if (!SecondSocketed())
+						{
+							if (ItemCount(world, second.StoneItemId) == 0) stonePrice = await BuyStoneInPandaemoniumAsync(second);
+							(secondFee, secondDue, secondMaster) = await SocketStoneAsync(second.StoneItemId, NaturalStigma.SecondSlot);
+							Require.True(SecondSocketed() && secondTaught.All(skill => world.Skills.ContainsKey(skill)) && secondFee == secondDue,
+								$"The second stone {second.StoneItemId} was not put in: socketed {SecondSocketed()}, skills " +
+								$"[{string.Join(", ", secondTaught.Where(skill => world.Skills.ContainsKey(skill)))}] of [{string.Join(", ", secondTaught)}], fee {secondFee} of {secondDue}.");
+						}
+						var secondRow = new Dictionary<string, object?>
+						{
+							["class"] = combat.ObservedCharacter, ["stone"] = second.StoneItemId, ["role"] = second.Role, ["skills"] = secondTaught,
+							["slot"] = NaturalStigma.SecondSlot, ["vendor"] = second.VendorNpcId, ["price"] = stonePrice, ["master"] = secondMaster, ["fee"] = secondFee,
+						};
+						session.TraceDiagnostic("muster-stigma-second", secondRow);
+						if (stigmaRow != null) stigmaRow["second"] = secondRow;
+						await CheckAsync("muster-stigma-second");
+						Require.True(SecondSocketed() && secondTaught.All(skill => world.Skills.ContainsKey(skill)), "The gear check took the second stone out.");
 					}
 
 					// 4. The kit, every row at its full count.
@@ -2408,7 +2480,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						"The mustered character changed across a relog.");
 					foreach (NaturalAbyssCoinTier wearable in armor.Tiers.Where(entry => entry.Level <= again.Level))
 						Require.True(NaturalAbyssCoinArmorPolicy.Plan(armor, wearable,
-							NaturalAltgardObservation.Observe(again, session.CurrentPosition).Inventory!, PhysicalDefence, StaffMagicBoost).Done,
+							NaturalAltgardObservation.Observe(again, session.CurrentPosition).Inventory!, PhysicalDefence, StaffMagicBoost, ItemRank).Done,
 							$"A {wearable.Name} piece beats what is worn after the relog.");
 					await File.WriteAllTextAsync(Path.Combine(folder, NaturalAbyssEntry.MusterReceipt), System.Text.Json.JsonSerializer.Serialize(new
 					{
@@ -2581,6 +2653,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					session.TraceDiagnostic(NaturalAbyssAttempts.Diagnostic(NaturalAbyssAttempts.RingCourse), NaturalAbyssAttempts.Row(attempt));
 				}
 				int PhysicalDefence(int itemId) => NaturalAbyssCoinArmorPolicy.PhysicalDefence(runtime.Data.ItemDataDh.GetItemTemplate(itemId));
+				// L2 (docs/level-31-profiles.md): a piece's level and grade, which the muster and its check-ins compare first.
+				(int Level, int Grade) ItemRank(int itemId) => runtime.Data.ItemDataDh.GetItemTemplate(itemId) is { } ranked
+					? (ranked.GetLevel(), (int)ranked.GetItemQuality()) : (0, 0);
 				// AX-12c: a staff's magic boost, the stat the staff rule and the coin staff are decided by.
 				// NR-38b: a class other than the contract's is asked for its own weapon number, the one its gear rules wear by.
 				int StaffMagicBoost(int itemId)

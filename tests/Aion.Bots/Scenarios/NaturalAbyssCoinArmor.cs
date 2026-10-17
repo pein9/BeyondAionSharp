@@ -49,8 +49,20 @@ public static class NaturalAbyssCoinArmorPolicy
 	/// <summary>"Better" is the leg's default: more physical defence. A tie is not better, so nothing is bought for it.
 	/// AX-12c: the tier's staff by the staff rule, more magic boost than the worn staff.</summary>
 	public static NaturalAbyssCoinManifest Plan(NaturalAbyssCoinArmor armor, NaturalAbyssCoinTier tier, IReadOnlyList<NaturalJourneyItem> inventory,
-		Func<int, int> physicalDefence, Func<int, int> staffMagicBoost)
+		Func<int, int> physicalDefence, Func<int, int> staffMagicBoost, Func<int, (int Level, int Grade)>? rank = null)
 	{
+		// L2 (docs/level-31-profiles.md): with a rank, a piece of a higher level and no lower grade beats the worn one and a
+		// lower one does not; at the same level the number decides. At the check-in at 31 an Elite Rank 7 piece's +16 defence
+		// tied it with the Elite Rank 6 one, and twelve level-26 pieces stayed on.
+		int Ranked(int coin, NaturalJourneyItem? held)
+		{
+			if (rank == null || held == null) return 0;
+			(int Level, int Grade) offered = rank(coin), worn = rank(held.ItemId);
+			if (offered.Level > worn.Level && offered.Grade >= worn.Grade) return 1;
+			if (offered.Level < worn.Level && offered.Grade <= worn.Grade) return -1;
+			return 0;
+		}
+		string Levels(int coin, NaturalJourneyItem held) => $"a level-{rank!(coin).Level} piece against the worn level-{rank(held.ItemId).Level}";
 		if (armor.Better != DefenceStat || armor.StaffBetter is not (BoostStat or ClassWeaponStat))
 			throw new InvalidDataException($"Unknown coin gear rule '{armor.Better}', '{armor.StaffBetter}'.");
 		// NR-38b: the contract's class compares a staff by magic boost; another class its weapon by its own number.
@@ -61,7 +73,10 @@ public static class NaturalAbyssCoinArmorPolicy
 			NaturalJourneyItem? worn = inventory.FirstOrDefault(item => item.EquipmentSlot != NotWorn && (item.EquipmentSlot & piece.Slot) != 0);
 			int wornDefence = worn == null ? 0 : physicalDefence(worn.ItemId), coinDefence = physicalDefence(piece.ItemId);
 			bool owned = inventory.Any(item => item.ItemId == piece.ItemId);
+			int ranked = worn?.ItemId == piece.ItemId ? 0 : Ranked(piece.ItemId, worn);
 			(string action, string reason) = worn?.ItemId == piece.ItemId ? ("keep", "The piece is worn.")
+				: ranked < 0 ? ("keep", $"The worn piece is better: {Levels(piece.ItemId, worn!)}.")
+				: ranked > 0 ? (owned ? "wear" : "buy", $"{(owned ? "Owned and not worn: " : "")}{Levels(piece.ItemId, worn!)}.")
 				: coinDefence <= wornDefence ? ("keep", coinDefence == wornDefence
 					? $"A tie at {coinDefence} defence is not better." : $"The worn piece has {wornDefence} defence against {coinDefence}.")
 				: owned ? ("wear", $"Owned and not worn: {coinDefence} defence against {wornDefence}.")
@@ -73,7 +88,11 @@ public static class NaturalAbyssCoinArmorPolicy
 			NaturalJourneyItem? held = inventory.FirstOrDefault(item => item.EquipmentSlot != NotWorn && (item.EquipmentSlot & 1) != 0);
 			int heldBoost = held == null ? 0 : staffMagicBoost(held.ItemId), coinBoost = staffMagicBoost(staff.ItemId);
 			if (coinBoost <= 0) throw new InvalidDataException($"The coin {weaponName} {staff.ItemId} has no {statName}.");
+			int rankedStaff = held?.ItemId == staff.ItemId ? 0 : Ranked(staff.ItemId, held);
+			bool staffOwned = inventory.Any(item => item.ItemId == staff.ItemId);
 			(string action, string reason) = held?.ItemId == staff.ItemId ? ("keep", $"The {weaponName} is worn.")
+				: rankedStaff < 0 ? ("keep", $"The worn {weaponName} is better: {Levels(staff.ItemId, held!)}.")
+				: rankedStaff > 0 ? (staffOwned ? "wear" : "buy", $"{(staffOwned ? "Owned and not worn: " : "")}{Levels(staff.ItemId, held!)}.")
 				: coinBoost <= heldBoost ? ("keep", coinBoost == heldBoost
 					? $"A tie at {coinBoost} {statName} is not better." : $"The worn {weaponName} has {heldBoost} {statName} against {coinBoost}.")
 				: inventory.Any(item => item.ItemId == staff.ItemId) ? ("wear", $"Owned and not worn: {coinBoost} {statName} against {heldBoost}.")
@@ -87,7 +106,11 @@ public static class NaturalAbyssCoinArmorPolicy
 		{
 			NaturalJourneyItem? held = inventory.FirstOrDefault(item => item.EquipmentSlot == shield.Slot);
 			int heldNumber = held == null ? 0 : staffMagicBoost(held.ItemId), coinNumber = staffMagicBoost(shield.ItemId);
+			int rankedShield = held?.ItemId == shield.ItemId ? 0 : Ranked(shield.ItemId, held);
+			bool shieldOwned = inventory.Any(item => item.ItemId == shield.ItemId);
 			(string action, string reason) = held?.ItemId == shield.ItemId ? ("keep", "The shield is worn.")
+				: rankedShield < 0 ? ("keep", $"The worn shield is better: {Levels(shield.ItemId, held!)}.")
+				: rankedShield > 0 ? (shieldOwned ? "wear" : "buy", $"{(shieldOwned ? "Owned and not worn: " : "")}{Levels(shield.ItemId, held!)}.")
 				: coinNumber <= heldNumber ? ("keep", coinNumber == heldNumber
 					? $"A tie at {coinNumber} is not better." : $"The worn shield has {heldNumber} against {coinNumber}.")
 				: inventory.Any(item => item.ItemId == shield.ItemId) ? ("wear", $"Owned and not worn: {coinNumber} against {heldNumber}.")
@@ -104,7 +127,10 @@ public static class NaturalAbyssCoinArmorPolicy
 			int forMain = main is { Action: "wear" } || main is { Action: "keep" } && main.WornItemId == second.ItemId ? 1 : 0;
 			int forOffHand = held?.ItemId == second.ItemId ? 1 : 0;
 			bool spare = inventory.Count(item => item.ItemId == second.ItemId) > forMain + forOffHand;
+			int rankedSecond = held?.ItemId == second.ItemId ? 0 : Ranked(second.ItemId, held);
 			(string action, string reason) = held?.ItemId == second.ItemId ? ("keep", "The second weapon is worn.")
+				: rankedSecond < 0 ? ("keep", $"The worn second weapon is better: {Levels(second.ItemId, held!)}.")
+				: rankedSecond > 0 ? (spare ? "wear" : "buy", $"{(spare ? "Owned and not worn: " : "")}{Levels(second.ItemId, held!)}.")
 				: coinNumber <= heldNumber ? ("keep", coinNumber == heldNumber
 					? $"A tie at {coinNumber} weapon number is not better." : $"The worn second weapon has {heldNumber} weapon number against {coinNumber}.")
 				: spare ? ("wear", $"Owned and not worn: {coinNumber} weapon number against {heldNumber}.")

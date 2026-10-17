@@ -55,22 +55,58 @@ public static class NaturalStigma
 			"Drillbore: the one stone of its bundle that is neither a charge nor an area: a hit that stuns for 3 s."),
 	};
 
+	/// <summary>L2 (docs/level-31-profiles.md): the second regular stigma slot (Java ItemSlot.STIGMA2), which opens at
+	/// level 30 (Java StigmaService.getPossibleStigmaCount).</summary>
+	public const long SecondSlot = 1L << 31;
+	public const int SecondSlotLevel = 30;
+
+	/// <param name="StoneItemId">The stone bought for the second slot.</param>
+	/// <param name="VendorNpcId">Who sells it: Giles (204289) or Sinamara (204290) in Pandaemonium.</param>
+	/// <param name="Role">The role its skill has in the class's table.</param>
+	/// <param name="Why">What the skill does for the class.</param>
+	public sealed record Second(int StoneItemId, int VendorNpcId, string Role, string Why);
+
+	/// <summary>L2: the original eight's second stones, chosen by MR-g's rule from the level-20 stones Pandaemonium sells
+	/// (695,500 Kinah in the SIM world).</summary>
+	public static readonly IReadOnlyDictionary<PlayerClass, Second> Seconds = new Dictionary<PlayerClass, Second>
+	{
+		[PlayerClass.GLADIATOR] = new(140001305, 204289, "draining",
+			"Draining Blow: a hit on a thrown-down target that gives its damage back as health, in Crippling Cut's window."),
+		[PlayerClass.TEMPLAR] = new(140001325, 204289, "punishing-thrust",
+			"Punishing Thrust: its hardest hit, weapon +986 every minute, and hate for the tank."),
+		[PlayerClass.ASSASSIN] = new(140001344, 204289, "rune-knife",
+			"Rune Knife: a 20 m throw that carves the rune its rune attacks burst; a pull that hits."),
+		[PlayerClass.RANGER] = new(140001357, 204289, "dilation",
+			"Dilation Arrow: the target attacks at half its speed."),
+		[PlayerClass.SORCERER] = new(140001375, 204290, "storm-strike",
+			"Storm Strike: 2,716 damage behind a 4 s cast, as the opener."),
+		[PlayerClass.SPIRIT_MASTER] = new(140001396, 204290, "freedom",
+			"Magic's Freedom: +500 magic boost for every caster on the target."),
+		[PlayerClass.CLERIC] = new(140001439, 204290, "noble-grace",
+			"Noble Grace: 15 s of +35% healing received and +1,200 health for the group, without a cast."),
+		[PlayerClass.CHANTER] = new(140001412, 204290, "inspiration",
+			"Word of Inspiration: 15 s of +12% physical attack, +80 accuracy and +80 magic boost for the group."),
+	};
+
 	/// <summary>
 	/// The skills the class's stone teaches, with the level each comes at: every skill of the stone's groups that the
 	/// class's skill tree holds as a stigma row (Java StigmaService.addStigmaSkills). Empty for a class without a stone.
 	/// </summary>
-	public static IReadOnlyDictionary<int, int> Skills(StaticData data, PlayerClass playerClass, Race race = Race.ASMODIANS)
+	public static IReadOnlyDictionary<int, int> Skills(StaticData data, PlayerClass playerClass, Race race = Race.ASMODIANS) =>
+		Choices.TryGetValue(playerClass, out Choice? choice) ? StoneSkills(data, playerClass, choice.StoneItemId, race) : new Dictionary<int, int>();
+
+	/// <summary>L2: the skills any one stone teaches the class, the second stone's among them.</summary>
+	public static IReadOnlyDictionary<int, int> StoneSkills(StaticData data, PlayerClass playerClass, int stoneItemId, Race race = Race.ASMODIANS)
 	{
 		ArgumentNullException.ThrowIfNull(data);
 		var skills = new Dictionary<int, int>();
-		if (!Choices.TryGetValue(playerClass, out Choice? choice)) return skills;
-		Stigma stone = data.ItemDataDh.GetItemTemplate(choice.StoneItemId)?.GetStigma()
-			?? throw new InvalidDataException($"Item {choice.StoneItemId} is no stigma stone.");
+		Stigma stone = data.ItemDataDh.GetItemTemplate(stoneItemId)?.GetStigma()
+			?? throw new InvalidDataException($"Item {stoneItemId} is no stigma stone.");
 		foreach (string group in stone.GetGainSkillGroups())
 			foreach (SkillTemplate template in data.SkillDataDh.GetSkillTemplatesByGroup(group) ?? [])
 				foreach (SkillLearnTemplate row in data.SkillTreeDataDh.GetTemplatesForSkill(template.GetSkillId(), playerClass, race))
 					if (row.IsStigma()) skills.TryAdd(row.GetSkillId(), row.GetMinLevel());
-		if (skills.Count == 0) throw new InvalidDataException($"Stone {choice.StoneItemId} teaches a {playerClass} no skill.");
+		if (skills.Count == 0) throw new InvalidDataException($"Stone {stoneItemId} teaches a {playerClass} no skill.");
 		return skills;
 	}
 }
