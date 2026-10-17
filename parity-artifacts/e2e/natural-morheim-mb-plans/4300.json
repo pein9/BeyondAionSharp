@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 4300,
+    "name": "News For the Settlers",
+    "nameId": 1103711,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 20,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 205126,
+        "id": 4300,
+        "start_npc_ids": 204323
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204323,
+        "name": "feimdal",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 266.0,
+            "y": 2358.0,
+            "z": 446.0,
+            "heading": 120,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204323,
+      "name": "feimdal",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 266.0,
+          "y": 2358.0,
+          "z": 446.0,
+          "heading": 120,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 205126,
+      "name": "vitda",
+      "positions": [
+        {
+          "mapId": 220050000,
+          "x": 2923.98,
+          "y": 2424.64,
+          "z": 15.125,
+          "heading": 46,
+          "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 205126,
+          "name": "vitda",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 2923.98,
+              "y": 2424.64,
+              "z": 15.125,
+              "heading": 46,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 50008,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000007
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 4300,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 20,
+      "name": "News For the Settlers",
+      "nameId": 1103711,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 50008
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000007
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204263
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

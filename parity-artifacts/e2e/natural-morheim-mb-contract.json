@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "morheim-mb-orders-for-brusthonin",
+  "start": {
+    "contract": "natural-morheim-mg-contract.json",
+    "snapshot": "nl-g31-s2",
+    "mapId": 220020000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 34,
+    "bindNpcId": 700231,
+    "completedQuestIds": [
+      24020,
+      2333
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "morheim-ice-fortress",
+    "mapId": 220020000,
+    "anchor": [
+      268.111,
+      2338.76,
+      444.123
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "fortress",
+      "note": "Morheim Ice Fortress: Bolverk (Q2330), Feimdal (Q4300), the obelisk and the teleporter to Brusthonin",
+      "min": [
+        140,
+        2240,
+        430
+      ],
+      "max": [
+        410,
+        2470,
+        475
+      ]
+    },
+    {
+      "key": "settlers-campsite",
+      "note": "the Settlers Campsite: Randet, Vitda, Dehen, Snill, Jarnsaxa, Dettil, Vinduer, Blume, Tala, the obelisk, the teleporter and the flight teleporter, where the fortress teleporter lands",
+      "min": [
+        2880,
+        2400,
+        5
+      ],
+      "max": [
+        2950,
+        2455,
+        30
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2330,
+      "category": "QUEST",
+      "minimumLevel": 20,
+      "rewardExperience": 12951,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 204300,
+      "area": "fortress"
+    },
+    {
+      "id": 4300,
+      "category": "QUEST",
+      "minimumLevel": 20,
+      "rewardExperience": 50008,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 204323,
+      "area": "fortress"
+    }
+  ],
+  "order": [
+    2330,
+    4300
+  ],
+  "steps": [],
+  "objectUses": [],
+  "collections": [],
+  "mapTrips": [
+    {
+      "mapId": 220050000,
+      "fromMapId": 220020000,
+      "teleporterNpcId": 204399,
+      "locationId": 82,
+      "fare": 2000,
+      "talkRange": 4
+    }
+  ],
+  "bind": {
+    "npcId": 700231,
+    "position": [
+      268.111,
+      2338.76,
+      444.123
+    ],
+    "onArrival": true,
+    "price": 2690,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 220050000,
+    "completedQuestIds": [
+      2330,
+      4300
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 34,
+    "snapshot": "nl-mb",
+    "anchor": [
+      2920.59,
+      2426.18,
+      15.0482
+    ],
+    "radius": 30,
+    "bindNpcId": 700231,
+    "heldQuestIds": []
+  }
+}

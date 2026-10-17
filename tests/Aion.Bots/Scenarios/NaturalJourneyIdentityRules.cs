@@ -60,8 +60,9 @@ public static class NaturalJourneyIdentityRules
 			altgardLeg == "l11" && level >= 20 && worldId == 320070000 ||
 			altgardLeg == "l12" && level >= 16 && worldId == 300200000 ||
 			altgardLeg == NaturalAbyssEntry.Leg && level >= 25 && worldId is NaturalAbyssEntry.Morheim or NaturalAbyssEntry.ArenaMap ||
-			// M2: a Morheim leg is taken up by a mustered character, on Morheim.
-			altgardLeg != null && NaturalAltgardContract.MorheimLegs.Contains(altgardLeg) && level >= 26 && worldId == NaturalAbyssEntry.Morheim))
+			// M2: a Morheim leg is taken up by a mustered character, on Morheim. NL-2: and Brusthonin's, on Brusthonin.
+			altgardLeg != null && NaturalAltgardContract.MusteredLegs.Contains(altgardLeg) && level >= 26 &&
+			worldId is NaturalAbyssEntry.Morheim or NaturalAltgardContract.Brusthonin))
 			return NaturalJourneyStage.AscensionCleric;
 		throw new InvalidDataException(
 			$"Retained natural character is outside the journey: {playerClass} level {level} on map {worldId?.ToString() ?? "unknown"}.");

@@ -3365,7 +3365,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				// FLY zone holds (Sarinerk's ledge, the crater floor, the Fire Temple's gate) is reached as a player reaches it: the
 				// zone's ground nearest the goal on foot, a flight, and a landing beside the goal; and out the same way.
 				bool crossingFlyZone = false;
-				flyAcross = leg.Flight == null || altgardLegId == null || !NaturalAltgardContract.MorheimLegs.Contains(altgardLegId) ? null : async goal =>
+				flyAcross = leg.Flight == null || altgardLegId == null || !NaturalAltgardContract.MusteredLegs.Contains(altgardLegId) ? null : async goal =>
 				{
 					int map = leg.Hub.MapId;
 					if (crossingFlyZone || session.Api.World.MapId != map || session.Api.World.IsDead) return false;
@@ -3453,7 +3453,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				{
 					// AE-06/AO-04: delivery legs take hub flights; approaching the flight pad must not plan another flight. M3: so do the
 					// Morheim legs, whose hand-ins stand at other hubs (Q2495 at the fortress, from Kellan's Cabin).
-					if ((altgardLegId is "l7" or "l8" or "l9" or "l10" or "cg" or "l12" || NaturalAltgardContract.MorheimLegs.Contains(altgardLegId!)) &&
+					if ((altgardLegId is "l7" or "l8" or "l9" or "l10" or "cg" or "l12" || NaturalAltgardContract.MusteredLegs.Contains(altgardLegId!)) &&
 						session.Api.World.MapId == leg.Hub.MapId && !approachingAirline)
 					{
 						approachingAirline = true;
@@ -3699,14 +3699,20 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							if (next.MapId == leg.Hub.MapId)
 								await UseLearnedReturnToBindAsync();
 							else
-							{
-								NaturalAltgardMapTrip trip = leg.MapTripList.Single(entry => entry.MapId == next.MapId);
-								await EnsureOnGroundAsync();
-								int teleporter = await ApproachShippedSpawnAsync(trip.TeleporterNpcId);
-								NaturalServiceOutcome travelled = await new NaturalServiceSteps(session).TeleportAsync(teleporter,
-									session.Api.World.Objects[teleporter].Position, trip.TalkRange, trip.LocationId, trip.Fare, trip.MapId, token);
-								Require.True(travelled.IsDone, travelled.Reason);
-							}
+								for (int onMap = session.Api.World.MapId!.Value; onMap != next.MapId; onMap = session.Api.World.MapId!.Value)
+								{
+									// NL-2: a map no teleporter here reaches (Ishalgen from Brusthonin, for Q4011's Kaindal) is reached
+									// by way of the map its own teleporter stands on (Pandaemonium), as a player changes teleporters.
+									NaturalAltgardMapTrip trip = leg.MapTripList.FirstOrDefault(entry => entry.MapId == next.MapId &&
+										(entry.FromMapId == null || entry.FromMapId == onMap)) ?? leg.MapTripList.Single(entry => entry.FromMapId == onMap &&
+										leg.MapTripList.Any(onward => onward.MapId == next.MapId && onward.FromMapId == entry.MapId));
+									EnterLegMap();
+									await EnsureOnGroundAsync();
+									int teleporter = await ApproachShippedSpawnAsync(trip.TeleporterNpcId);
+									NaturalServiceOutcome travelled = await new NaturalServiceSteps(session).TeleportAsync(teleporter,
+										session.Api.World.Objects[teleporter].Position, trip.TalkRange, trip.LocationId, trip.Fare, trip.MapId, token);
+									Require.True(travelled.IsDone, travelled.Reason);
+								}
 							EnterLegMap();
 							Require.Equal(next.MapId, session.Api.World.MapId);
 							break;
@@ -3787,7 +3793,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								session.TraceDiagnostic("haramel-exhausted-sources-outcome", new Dictionary<string, object?> { ["quest"] = next.QuestId, ["reason"] = source.Message });
 								await LeaveHaramelAsync();
 							}
-							catch (TimeoutException stalled) when (NaturalAltgardContract.MorheimLegs.Contains(altgardLegId!) &&
+							catch (TimeoutException stalled) when (NaturalAltgardContract.MusteredLegs.Contains(altgardLegId!) &&
 								stalled.Message.StartsWith("Natural journey made no quest", StringComparison.Ordinal))
 							{
 								// M4: no progress on this quest alone for the watchdog's hour (the Sorcerer at Chieftain Promakis, an EXPERT): the
@@ -4026,7 +4032,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 									["quest"] = next.QuestId, ["from"] = var, ["reason"] = exception.Message,
 								});
 							}
-							catch (TimeoutException stalled) when (NaturalAltgardContract.MorheimLegs.Contains(altgardLegId!) &&
+							catch (TimeoutException stalled) when (NaturalAltgardContract.MusteredLegs.Contains(altgardLegId!) &&
 								stalled.Message.StartsWith("Natural journey made no quest", StringComparison.Ordinal))
 							{
 								// M4: a kill this bot cannot make alone in the watchdog's hour (Q24022's Protector Karhel, a level-35 EXPERT): the
@@ -4238,7 +4244,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 									await RestSafelyAsync(token);
 								}
 							}
-							catch (TimeoutException stalled) when (NaturalAltgardContract.MorheimLegs.Contains(altgardLegId!) &&
+							catch (TimeoutException stalled) when (NaturalAltgardContract.MusteredLegs.Contains(altgardLegId!) &&
 								stalled.Message.StartsWith("Natural journey made no quest", StringComparison.Ordinal))
 							{
 								// M4: a drop this bot cannot get alone in the watchdog's hour (Q24021's Deputy Lamipedon, an EXPERT in the middle of
@@ -5273,7 +5279,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						// until its budget ran out, for all eight; Altgard's transporter toward him lands on Impetusium, 70 m above
 						// him with no way down.
 						BotPosition far = new(step.Position[0], step.Position[1], step.Position[2], 0);
-						if (altgardLegId != null && NaturalAltgardContract.MorheimLegs.Contains(altgardLegId) && Distance(session.CurrentPosition, far) > 80)
+						if (altgardLegId != null && NaturalAltgardContract.MusteredLegs.Contains(altgardLegId) && Distance(session.CurrentPosition, far) > 80)
 						{
 							await WalkRoadDefendingAsync(far, $"talk-road-{step.Key}", within: 12);
 							if (session.Api.World.MapId != stepMap) return;
@@ -6508,7 +6514,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							// the Gladiator waited for good): do what a player does, fly back to the hub where it may fly, else Return
 							// to the bind, and plan the walk from there. Once for an approach, and only on a leg of Morheim, whose obelisk
 							// is on the hub's map.
-							if (!returnedForRoute && altgardLegId != null && NaturalAltgardContract.MorheimLegs.Contains(altgardLegId) &&
+							if (!returnedForRoute && altgardLegId != null && NaturalAltgardContract.MusteredLegs.Contains(altgardLegId) &&
 								!session.Api.World.IsDead && !combat.InCombat && session.Api.World.ObeliskBindPoint is { } boundAt &&
 								boundAt.MapId == session.Api.World.MapId && Distance(session.CurrentPosition, boundAt.Position) > 50)
 							{

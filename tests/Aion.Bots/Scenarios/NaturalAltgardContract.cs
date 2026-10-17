@@ -92,11 +92,19 @@ public sealed record NaturalAltgardContract(
 		["mgk"] = ("natural-morheim-mgk-contract.json", null),
 		["mgd"] = ("natural-morheim-mgd-contract.json", null),
 		["mgs"] = ("natural-morheim-mgs-contract.json", null),
+		// NL-2 (docs/natural-leg-36.md): "mb" takes Morheim's two orders for the settlers at the fortress and hands them in
+		// at Brusthonin's Settlers Campsite, and "bs" plays the campsite's quests from its obelisk.
+		["mb"] = ("natural-morheim-mb-contract.json", "natural-morheim-mb-plans"),
+		["bs"] = ("natural-brusthonin-bs-contract.json", "natural-brusthonin-bs-plans"),
 	};
 
-	/// <summary>The legs of the Morheim leg to level 31 (docs/natural-morheim-leveling.md): played on Morheim by a
-	/// mustered character of level 26 or more.</summary>
-	public static readonly IReadOnlySet<string> MorheimLegs = new HashSet<string> { "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs" };
+	/// <summary>The legs played by a mustered character of level 26 or more: the Morheim leg to level 31
+	/// (docs/natural-morheim-leveling.md), on Morheim, and the leg to 36's (docs/natural-leg-36.md), on Morheim and Brusthonin.</summary>
+	public static readonly IReadOnlySet<string> MusteredLegs = new HashSet<string>
+		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs" };
+
+	/// <summary>NL-2: Brusthonin, the settlers' land south of Morheim.</summary>
+	public const int Brusthonin = 220050000;
 
 	/// <summary>The muster's template quest: the fortress's repeatable coin quest (docs/natural-muster.md). The plans are
 	/// apart from the Abyss entry's, which has none, so that leg's navigation graph is what it was.</summary>

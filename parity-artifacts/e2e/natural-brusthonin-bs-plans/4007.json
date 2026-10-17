@@ -1,0 +1,525 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 4007,
+    "name": "Clearing the Fields",
+    "nameId": 1114006,
+    "zone": "Brusthonin",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 22,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 4004
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/brusthonin.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 4007,
+        "start_npc_ids": 205128
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 205128,
+        "name": "randet",
+        "positions": [
+          {
+            "mapId": 220050000,
+            "x": 2920.59,
+            "y": 2426.18,
+            "z": 15.0482,
+            "heading": 45,
+            "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 205128,
+      "name": "randet",
+      "positions": [
+        {
+          "mapId": 220050000,
+          "x": 2920.59,
+          "y": 2426.18,
+          "z": 15.0482,
+          "heading": 45,
+          "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 205128,
+      "name": "randet",
+      "positions": [
+        {
+          "mapId": 220050000,
+          "x": 2920.59,
+          "y": 2426.18,
+          "z": 15.0482,
+          "heading": 45,
+          "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 11,
+      "npc_ids": "213859 213860",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 213859,
+          "name": "undead farm resident",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 2045.09,
+              "y": 2146.14,
+              "z": 24.2704,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2046.35,
+              "y": 2137.48,
+              "z": 24.75,
+              "heading": 21,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2049.26,
+              "y": 2100.17,
+              "z": 26.8646,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2055.38,
+              "y": 2110.47,
+              "z": 27.0682,
+              "heading": 71,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2055.88,
+              "y": 2140.69,
+              "z": 24.875,
+              "heading": 95,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2057.71,
+              "y": 2125.74,
+              "z": 24.857,
+              "heading": 51,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2060.62,
+              "y": 2090.16,
+              "z": 27.2111,
+              "heading": 34,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2062.95,
+              "y": 2114.72,
+              "z": 27.3512,
+              "heading": 68,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2063.62,
+              "y": 2103.81,
+              "z": 27.375,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2068.58,
+              "y": 2100.26,
+              "z": 27.25,
+              "heading": 11,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2069.45,
+              "y": 2088.95,
+              "z": 27.3406,
+              "heading": 38,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 213860,
+          "name": "undead farm resident",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 1827.3,
+              "y": 2479.94,
+              "z": 18.4212,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1838.29,
+              "y": 2468.73,
+              "z": 18.2253,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1844.59,
+              "y": 2424.51,
+              "z": 14.4439,
+              "heading": 59,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1864.93,
+              "y": 2485.14,
+              "z": 18.0949,
+              "heading": 29,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1905.29,
+              "y": 2506.74,
+              "z": 17.25,
+              "heading": 2,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1919.78,
+              "y": 2465.22,
+              "z": 17.337,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2234.66,
+              "y": 2396.23,
+              "z": 21.8687,
+              "heading": 84,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2304.03,
+              "y": 2365.04,
+              "z": 19.7539,
+              "heading": 117,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2399.78,
+              "y": 2231.81,
+              "z": 20.7636,
+              "heading": 81,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 11,
+      "npc_ids": "213861 213862",
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 213861,
+          "name": "undead farm worker",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 1885.92,
+              "y": 2337.47,
+              "z": 19.625,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2283.92,
+              "y": 2363.73,
+              "z": 19.7291,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2315.28,
+              "y": 2351.62,
+              "z": 19.7068,
+              "heading": 71,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2422.94,
+              "y": 2226.98,
+              "z": 20.8713,
+              "heading": 106,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2427.89,
+              "y": 2247.74,
+              "z": 20.9768,
+              "heading": 74,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2467.27,
+              "y": 2228.64,
+              "z": 17.9141,
+              "heading": 3,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2481.64,
+              "y": 2200.51,
+              "z": 17.75,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 213862,
+          "name": "undead farm worker",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 1856.34,
+              "y": 2464.11,
+              "z": 18.334,
+              "heading": 7,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1861.48,
+              "y": 2424.22,
+              "z": 13.5988,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1873.07,
+              "y": 2440.58,
+              "z": 14.125,
+              "heading": 51,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1893.53,
+              "y": 2496.85,
+              "z": 17.4193,
+              "heading": 107,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1902.09,
+              "y": 2474.18,
+              "z": 17.3912,
+              "heading": 93,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1929.79,
+              "y": 2485.8,
+              "z": 17.25,
+              "heading": 78,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1938.11,
+              "y": 2383.04,
+              "z": 15.74,
+              "heading": 7,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2001.33,
+              "y": 2336.55,
+              "z": 13.8781,
+              "heading": 7,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 205128,
+          "name": "randet",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 2920.59,
+              "y": 2426.18,
+              "z": 15.0482,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 128250,
+        "gold": 33310,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000007
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 4007,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 22,
+      "name": "Clearing the Fields",
+      "nameId": 1114006,
+      "quest_zone": "Brusthonin",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 128250,
+          "gold": 33310
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000007
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 11,
+          "npc_ids": "213859 213860",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 11,
+          "npc_ids": "213861 213862",
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 4004
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

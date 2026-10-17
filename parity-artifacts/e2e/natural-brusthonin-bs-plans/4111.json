@@ -1,0 +1,307 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 4111,
+    "name": "A Case of the Snufflers",
+    "nameId": 1114108,
+    "zone": "Brusthonin",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 21,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 4005
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/brusthonin.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 4111,
+        "start_npc_ids": 730103
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 730103,
+        "name": "lugo",
+        "positions": [
+          {
+            "mapId": 220050000,
+            "x": 2533.0,
+            "y": 2313.0,
+            "z": 16.3125,
+            "heading": 2,
+            "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 730103,
+      "name": "lugo",
+      "positions": [
+        {
+          "mapId": 220050000,
+          "x": 2533.0,
+          "y": 2313.0,
+          "z": 16.3125,
+          "heading": 2,
+          "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 730103,
+      "name": "lugo",
+      "positions": [
+        {
+          "mapId": 220050000,
+          "x": 2533.0,
+          "y": 2313.0,
+          "z": 16.3125,
+          "heading": 2,
+          "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 10,
+      "npc_ids": "213847 213848",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 213847,
+          "name": "laggardly snuffler",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 2837.53,
+              "y": 1851.65,
+              "z": 27.1758,
+              "heading": 85,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2839.37,
+              "y": 1865.04,
+              "z": 26.5542,
+              "heading": 41,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2846.69,
+              "y": 1833.3,
+              "z": 27.0,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2847.56,
+              "y": 1878.39,
+              "z": 26.865,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2853.45,
+              "y": 1862.26,
+              "z": 27.2596,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2862.73,
+              "y": 1825.78,
+              "z": 26.9348,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2866.94,
+              "y": 1869.55,
+              "z": 27.9719,
+              "heading": 98,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2872.28,
+              "y": 1838.76,
+              "z": 26.7722,
+              "heading": 109,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 213848,
+          "name": "laggardly snuffler",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 2365.36,
+              "y": 2409.66,
+              "z": 15.6886,
+              "heading": 33,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2380.08,
+              "y": 2387.99,
+              "z": 16.1209,
+              "heading": 64,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2442.91,
+              "y": 2348.66,
+              "z": 16.8453,
+              "heading": 11,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2449.57,
+              "y": 2340.72,
+              "z": 16.8474,
+              "heading": 71,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 730103,
+          "name": "lugo",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 2533.0,
+              "y": 2313.0,
+              "z": 16.3125,
+              "heading": 2,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 56346,
+        "gold": 3300,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 188050588
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 4111,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 21,
+      "name": "A Case of the Snufflers",
+      "nameId": 1114108,
+      "quest_zone": "Brusthonin",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 56346,
+          "gold": 3300
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 188050588
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 10,
+          "npc_ids": "213847 213848",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 4005
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

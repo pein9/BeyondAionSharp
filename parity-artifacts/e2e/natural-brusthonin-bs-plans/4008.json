@@ -1,0 +1,338 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 4008,
+    "name": "Plague-spreading Porgus",
+    "nameId": 1114007,
+    "zone": "Brusthonin",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 22,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/brusthonin.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 4008,
+        "start_npc_ids": 205131
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 205131,
+        "name": "dehen",
+        "positions": [
+          {
+            "mapId": 220050000,
+            "x": 2892.51,
+            "y": 2444.53,
+            "z": 17.25,
+            "heading": 15,
+            "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 205131,
+      "name": "dehen",
+      "positions": [
+        {
+          "mapId": 220050000,
+          "x": 2892.51,
+          "y": 2444.53,
+          "z": 17.25,
+          "heading": 15,
+          "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 205131,
+      "name": "dehen",
+      "positions": [
+        {
+          "mapId": 220050000,
+          "x": 2892.51,
+          "y": 2444.53,
+          "z": 17.25,
+          "heading": 15,
+          "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 10,
+      "npc_ids": "213865 213866",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 213865,
+          "name": "hungry porgus",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 2181.1,
+              "y": 2127.94,
+              "z": 44.9353,
+              "heading": 94,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2187.01,
+              "y": 2158.34,
+              "z": 43.0,
+              "heading": 83,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2191.28,
+              "y": 2129.1,
+              "z": 44.5,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2191.28,
+              "y": 2138.52,
+              "z": 44.5,
+              "heading": 24,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2195.86,
+              "y": 2121.06,
+              "z": 44.8174,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2203.47,
+              "y": 2162.88,
+              "z": 44.2643,
+              "heading": 76,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2213.82,
+              "y": 2125.3,
+              "z": 44.5,
+              "heading": 21,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2214.4,
+              "y": 2160.02,
+              "z": 44.472,
+              "heading": 21,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2222.5,
+              "y": 2155.53,
+              "z": 44.2776,
+              "heading": 42,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2223.48,
+              "y": 2119.85,
+              "z": 44.625,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2229.72,
+              "y": 2135.07,
+              "z": 44.5,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 213866,
+          "name": "hungry porgus",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 1800.05,
+              "y": 2406.12,
+              "z": 21.125,
+              "heading": 49,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1806.12,
+              "y": 2416.73,
+              "z": 21.125,
+              "heading": 55,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1835.42,
+              "y": 2422.83,
+              "z": 14.1675,
+              "heading": 68,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1839.74,
+              "y": 2410.26,
+              "z": 14.1519,
+              "heading": 9,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1872.89,
+              "y": 2502.52,
+              "z": 18.0649,
+              "heading": 43,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 1881.25,
+              "y": 2487.83,
+              "z": 16.2795,
+              "heading": 9,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 205131,
+          "name": "dehen",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 2892.51,
+              "y": 2444.53,
+              "z": 17.25,
+              "heading": 15,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 68550,
+        "gold": 14500,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 188050584
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {},
+    "bonus": {
+      "level": 20,
+      "type": "MEDICINE"
+    }
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 4008,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 22,
+      "name": "Plague-spreading Porgus",
+      "nameId": 1114007,
+      "quest_zone": "Brusthonin",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 68550,
+          "gold": 14500
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 188050584
+            }
+          }
+        ]
+      },
+      {
+        "tag": "bonus",
+        "attributes": {
+          "level": 20,
+          "type": "MEDICINE"
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 10,
+          "npc_ids": "213865 213866",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

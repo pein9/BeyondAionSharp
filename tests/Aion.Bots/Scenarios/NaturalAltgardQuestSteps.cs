@@ -81,6 +81,9 @@ public static class NaturalAltgardQuestSteps
 		{
 			"OFFER" => after is (3, _), // an escort offer (Q2290 SELECT1_1) takes the quest straight to its follow var
 			"REWARD" => completed,
+			// NL-2: a step that ends on the reward request, where the NPC closes its window (Java _4020's Blume), leaves the
+			// quest at REWARD for a talk of its own.
+			_ when step.Actions[^1] == "SELECT_QUEST_REWARD" => completed || after is (4, _),
 			_ when step.Actions.Contains("SELECT_QUEST_REWARD") => completed,
 			// ND-03: full vars can decrease (99 -> 97) or remain at 10 when Munin changes the status to REWARD.
 			_ when step.NextVar is int expected => after is (3 or 4, int current) && current == expected,

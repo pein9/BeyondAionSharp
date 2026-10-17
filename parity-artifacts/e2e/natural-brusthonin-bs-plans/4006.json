@@ -1,0 +1,486 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 4006,
+    "name": "Frightcorn-ucopia",
+    "nameId": 1114005,
+    "zone": "Brusthonin",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 22,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/brusthonin.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 4006,
+        "start_npc_ids": 205121
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 205121,
+        "name": "jarnsaxa",
+        "positions": [
+          {
+            "mapId": 220050000,
+            "x": 2928.49,
+            "y": 2416.51,
+            "z": 15.0934,
+            "heading": 47,
+            "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 205121,
+      "name": "jarnsaxa",
+      "positions": [
+        {
+          "mapId": 220050000,
+          "x": 2928.49,
+          "y": 2416.51,
+          "z": 15.0934,
+          "heading": 47,
+          "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 205121,
+      "name": "jarnsaxa",
+      "positions": [
+        {
+          "mapId": 220050000,
+          "x": 2928.49,
+          "y": 2416.51,
+          "z": 15.0934,
+          "heading": 47,
+          "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 10,
+      "item_id": 182209003,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182209003,
+          "npc_id": 700341,
+          "npc": {
+            "id": 700341,
+            "name": "wild frightcorn",
+            "positions": [
+              {
+                "mapId": 220050000,
+                "x": 1817.73,
+                "y": 2515.44,
+                "z": 24.625,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1825.07,
+                "y": 2542.53,
+                "z": 24.5669,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1833.23,
+                "y": 2472.47,
+                "z": 18.6744,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1843.58,
+                "y": 2524.46,
+                "z": 24.7934,
+                "heading": 23,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1847.81,
+                "y": 2428.45,
+                "z": 14.4487,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1853.26,
+                "y": 2489.72,
+                "z": 18.1742,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1869.5,
+                "y": 2319.25,
+                "z": 19.625,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1874.79,
+                "y": 2429.26,
+                "z": 13.8228,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1875.32,
+                "y": 2338.28,
+                "z": 19.625,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1878.11,
+                "y": 2551.9,
+                "z": 29.625,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1897.61,
+                "y": 2537.92,
+                "z": 29.4851,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1898.24,
+                "y": 2495.82,
+                "z": 17.25,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1910.92,
+                "y": 2270.32,
+                "z": 15.2807,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1923.94,
+                "y": 2594.74,
+                "z": 38.875,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1924.87,
+                "y": 2488.99,
+                "z": 17.1868,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1928.75,
+                "y": 2470.3,
+                "z": 17.25,
+                "heading": 48,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1935.28,
+                "y": 2262.72,
+                "z": 15.0,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1935.79,
+                "y": 2370.73,
+                "z": 16.7046,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1947.35,
+                "y": 2365.57,
+                "z": 16.75,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1953.84,
+                "y": 2601.56,
+                "z": 39.1424,
+                "heading": 86,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1958.01,
+                "y": 2576.74,
+                "z": 39.375,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1960.01,
+                "y": 2527.9,
+                "z": 25.6241,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1977.06,
+                "y": 2494.05,
+                "z": 18.1319,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 1988.2,
+                "y": 2491.02,
+                "z": 18.5125,
+                "heading": 86,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 2011.17,
+                "y": 2330.91,
+                "z": 13.7291,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 2011.35,
+                "y": 2264.11,
+                "z": 22.0,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 2024.54,
+                "y": 2295.22,
+                "z": 18.0069,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 2027.69,
+                "y": 2237.95,
+                "z": 22.0,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 2032.82,
+                "y": 2506.93,
+                "z": 23.7567,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 2034.66,
+                "y": 2265.13,
+                "z": 21.832,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 2049.14,
+                "y": 2136.24,
+                "z": 24.8211,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 2049.36,
+                "y": 2513.82,
+                "z": 23.875,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 2057.89,
+                "y": 2092.67,
+                "z": 27.1598,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 2060.51,
+                "y": 2139.77,
+                "z": 24.8924,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              },
+              {
+                "mapId": 220050000,
+                "x": 2063.9,
+                "y": 2098.33,
+                "z": 27.25,
+                "heading": 3,
+                "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 205121,
+          "name": "jarnsaxa",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 2928.49,
+              "y": 2416.51,
+              "z": 15.0934,
+              "heading": 47,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 136950,
+        "gold": 17610,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000007
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {},
+    "bonus": {
+      "level": 20,
+      "type": "FOOD"
+    }
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 4006,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 22,
+      "name": "Frightcorn-ucopia",
+      "nameId": 1114005,
+      "quest_zone": "Brusthonin",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 182209003
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 136950,
+          "gold": 17610
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000007
+            }
+          }
+        ]
+      },
+      {
+        "tag": "bonus",
+        "attributes": {
+          "level": 20,
+          "type": "FOOD"
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182209003,
+          "npc_id": 700341
+        }
+      }
+    ]
+  }
+}

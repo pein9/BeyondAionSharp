@@ -1,0 +1,953 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "brusthonin-bs-settlers-campsite",
+  "start": {
+    "contract": "natural-morheim-mb-contract.json",
+    "snapshot": "nl-mb-s1",
+    "mapId": 220050000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 34,
+    "bindNpcId": 700231,
+    "completedQuestIds": [
+      24020,
+      2333,
+      2330,
+      4300
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "settlers-campsite",
+    "mapId": 220050000,
+    "anchor": [
+      2929.06,
+      2432.08,
+      17.0035
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "settlers-campsite",
+      "note": "the Settlers Campsite: Randet, Vitda, Dehen, Snill, Jarnsaxa, Dettil, Vinduer, Blume, Tala, the obelisk, the teleporter and the flight teleporter, where the fortress teleporter lands",
+      "min": [
+        2880,
+        2400,
+        5
+      ],
+      "max": [
+        2950,
+        2455,
+        30
+      ]
+    },
+    {
+      "key": "fields",
+      "note": "the sap laupedes and infected kurins of the fields (Q4003)",
+      "min": [
+        2277,
+        1736,
+        -1
+      ],
+      "max": [
+        2873,
+        2516,
+        49
+      ]
+    },
+    {
+      "key": "snufflers",
+      "note": "the laggardly snufflers round Lugo (Q4005, Q4111)",
+      "min": [
+        2350,
+        1811,
+        1
+      ],
+      "max": [
+        2887,
+        2425,
+        43
+      ]
+    },
+    {
+      "key": "frightcorn",
+      "note": "the wild frightcorn west of Baltasar Hill (Q4006)",
+      "min": [
+        1803,
+        2078,
+        -1
+      ],
+      "max": [
+        2079,
+        2617,
+        54
+      ]
+    },
+    {
+      "key": "porgus",
+      "note": "the hungry porgus (Q4008)",
+      "min": [
+        1785,
+        2105,
+        -1
+      ],
+      "max": [
+        2245,
+        2518,
+        60
+      ]
+    },
+    {
+      "key": "undead-hill",
+      "note": "the snickering boggarts and wailing banshees (Q4018)",
+      "min": [
+        1748,
+        1995,
+        0
+      ],
+      "max": [
+        2563,
+        2479,
+        60
+      ]
+    },
+    {
+      "key": "anubites",
+      "note": "the unfest vigilantes and anubite astrologers (Q4019)",
+      "min": [
+        2074,
+        1688,
+        0
+      ],
+      "max": [
+        2477,
+        2041,
+        47
+      ]
+    },
+    {
+      "key": "outriders",
+      "note": "the guardian outriders (Q4016)",
+      "min": [
+        2359,
+        1401,
+        1
+      ],
+      "max": [
+        2749,
+        1792,
+        44
+      ]
+    },
+    {
+      "key": "undead-farm",
+      "note": "the undead farm residents and workers (Q4007)",
+      "min": [
+        1812,
+        2074,
+        -1
+      ],
+      "max": [
+        2497,
+        2522,
+        42
+      ]
+    },
+    {
+      "key": "earth-mounds",
+      "note": "the earth mounds Randet sends the settler to (Q4004)",
+      "min": [
+        2359,
+        2320,
+        -24
+      ],
+      "max": [
+        2524,
+        2451,
+        57
+      ]
+    },
+    {
+      "key": "faded-letter",
+      "note": "the faded letter that starts Q4011",
+      "min": [
+        2286,
+        2176,
+        30
+      ],
+      "max": [
+        2306,
+        2196,
+        50
+      ]
+    },
+    {
+      "key": "worker-corpse",
+      "note": "the Asmodian worker corpse (Q4015)",
+      "min": [
+        2526,
+        1716,
+        14
+      ],
+      "max": [
+        2546,
+        1736,
+        34
+      ]
+    },
+    {
+      "key": "parica",
+      "note": "Parica, two of her, west of the camp (Q4020)",
+      "min": [
+        1755,
+        1926,
+        2
+      ],
+      "max": [
+        1992,
+        2320,
+        35
+      ]
+    },
+    {
+      "key": "baltasar-hill",
+      "note": "Virhu and Vidohunir below Baltasar Hill (Q4010, Q4012)",
+      "min": [
+        1946,
+        2238,
+        -4
+      ],
+      "max": [
+        2037,
+        2468,
+        37
+      ]
+    },
+    {
+      "key": "stone-coffins",
+      "note": "the corpses in the stone coffins (Q4012)",
+      "min": [
+        1839,
+        2586,
+        28
+      ],
+      "max": [
+        1887,
+        2619,
+        51
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 4001,
+      "category": "QUEST",
+      "minimumLevel": 20,
+      "rewardExperience": 12951,
+      "prerequisite": null,
+      "handler": "brusthonin/_4001CheckontheSettlers.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "settlers-campsite",
+      "prerequisites": [
+        2330
+      ]
+    },
+    {
+      "id": 4004,
+      "category": "QUEST",
+      "minimumLevel": 21,
+      "rewardExperience": 97950,
+      "prerequisite": null,
+      "handler": "brusthonin/_4004TheSeedsOfHope.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "earth-mounds",
+      "prerequisites": [
+        4001
+      ]
+    },
+    {
+      "id": 4007,
+      "category": "QUEST",
+      "minimumLevel": 22,
+      "rewardExperience": 128250,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 205128,
+      "area": "undead-farm",
+      "prerequisites": [
+        4004
+      ]
+    },
+    {
+      "id": 4003,
+      "category": "QUEST",
+      "minimumLevel": 20,
+      "rewardExperience": 73500,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 205131,
+      "area": "fields"
+    },
+    {
+      "id": 4005,
+      "category": "QUEST",
+      "minimumLevel": 21,
+      "rewardExperience": 80494,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 730103,
+      "area": "snufflers"
+    },
+    {
+      "id": 4111,
+      "category": "QUEST",
+      "minimumLevel": 21,
+      "rewardExperience": 56346,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 730103,
+      "area": "snufflers",
+      "prerequisites": [
+        4005
+      ]
+    },
+    {
+      "id": 4006,
+      "category": "QUEST",
+      "minimumLevel": 22,
+      "rewardExperience": 136950,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 205121,
+      "area": "frightcorn"
+    },
+    {
+      "id": 4008,
+      "category": "QUEST",
+      "minimumLevel": 22,
+      "rewardExperience": 68550,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 205131,
+      "area": "porgus"
+    },
+    {
+      "id": 4018,
+      "category": "QUEST",
+      "minimumLevel": 23,
+      "rewardExperience": 125700,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 205132,
+      "area": "undead-hill"
+    },
+    {
+      "id": 4019,
+      "category": "QUEST",
+      "minimumLevel": 23,
+      "rewardExperience": 141300,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 205127,
+      "area": "anubites"
+    },
+    {
+      "id": 4011,
+      "category": "QUEST",
+      "minimumLevel": 23,
+      "rewardExperience": 117433,
+      "prerequisite": null,
+      "handler": "brusthonin/_4011AnOldSettlersLetter.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "faded-letter"
+    },
+    {
+      "id": 4015,
+      "category": "QUEST",
+      "minimumLevel": 24,
+      "rewardExperience": 134338,
+      "prerequisite": null,
+      "handler": "brusthonin/_4015TheMissingLaborers.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "worker-corpse"
+    },
+    {
+      "id": 4016,
+      "category": "QUEST",
+      "minimumLevel": 24,
+      "rewardExperience": 141900,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 205130,
+      "area": "outriders",
+      "prerequisites": [
+        4015
+      ]
+    },
+    {
+      "id": 4020,
+      "category": "QUEST",
+      "minimumLevel": 24,
+      "rewardExperience": 136650,
+      "prerequisite": null,
+      "handler": "brusthonin/_4020ParicasSpecialOrder.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "parica"
+    },
+    {
+      "id": 4010,
+      "category": "QUEST",
+      "minimumLevel": 22,
+      "rewardExperience": 20020,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 730104,
+      "area": "baltasar-hill"
+    },
+    {
+      "id": 4012,
+      "category": "QUEST",
+      "minimumLevel": 22,
+      "rewardExperience": 117433,
+      "prerequisite": null,
+      "handler": "brusthonin/_4012TroublesomePromise.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "stone-coffins",
+      "prerequisites": [
+        4010
+      ]
+    }
+  ],
+  "order": [
+    4001,
+    4004,
+    4007,
+    4003,
+    4005,
+    4111,
+    4006,
+    4008,
+    4018,
+    4019,
+    4011,
+    4015,
+    4016,
+    4020,
+    4010,
+    4012
+  ],
+  "steps": [
+    {
+      "key": "q4001-offer-randet",
+      "questId": 4001,
+      "status": "OFFER",
+      "npcId": 205128,
+      "position": [
+        2920.59,
+        2426.18,
+        15.0482
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "settlers-campsite"
+    },
+    {
+      "key": "q4001-v0-dehen",
+      "questId": 4001,
+      "var": 0,
+      "npcId": 205131,
+      "position": [
+        2892.51,
+        2444.53,
+        17.25
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "settlers-campsite"
+    },
+    {
+      "key": "q4001-v1-snill",
+      "questId": 4001,
+      "var": 1,
+      "npcId": 205133,
+      "position": [
+        2914.55,
+        2438.82,
+        16.0344
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO2"
+      ],
+      "pages": [
+        1693
+      ],
+      "area": "settlers-campsite"
+    },
+    {
+      "key": "q4001-v2-jarnsaxa",
+      "questId": 4001,
+      "var": 2,
+      "npcId": 205121,
+      "position": [
+        2928.49,
+        2416.51,
+        15.0934
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        2375,
+        5
+      ],
+      "area": "settlers-campsite"
+    },
+    {
+      "key": "q4004-offer-randet",
+      "questId": 4004,
+      "status": "OFFER",
+      "npcId": 205128,
+      "position": [
+        2920.59,
+        2426.18,
+        15.0482
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        4762
+      ],
+      "area": "settlers-campsite"
+    },
+    {
+      "key": "q4004-reward-randet",
+      "questId": 4004,
+      "status": "REWARD",
+      "npcId": 205128,
+      "position": [
+        2920.59,
+        2426.18,
+        15.0482
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        10002,
+        5
+      ],
+      "area": "settlers-campsite"
+    },
+    {
+      "key": "q4011-offer-letter",
+      "questId": 4011,
+      "status": "OFFER",
+      "npcId": 730139,
+      "position": [
+        2295.54,
+        2185.99,
+        39.6855
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "faded-letter"
+    },
+    {
+      "key": "q4011-v0-dettil",
+      "questId": 4011,
+      "var": 0,
+      "npcId": 205132,
+      "position": [
+        2910.73,
+        2435.66,
+        15.8295
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO2"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "settlers-campsite"
+    },
+    {
+      "key": "q4011-v1-kaindal",
+      "questId": 4011,
+      "var": 1,
+      "npcId": 203522,
+      "position": [
+        595.69,
+        2467.97,
+        278.75
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SET_SUCCEED"
+      ],
+      "pages": [
+        1693
+      ],
+      "area": null,
+      "mapId": 220010000
+    },
+    {
+      "key": "q4011-reward-dettil",
+      "questId": 4011,
+      "status": "REWARD",
+      "npcId": 205132,
+      "position": [
+        2910.73,
+        2435.66,
+        15.8295
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        10002,
+        5
+      ],
+      "area": "settlers-campsite"
+    },
+    {
+      "key": "q4015-offer-vinduer",
+      "questId": 4015,
+      "status": "OFFER",
+      "npcId": 205130,
+      "position": [
+        2908.72,
+        2441.64,
+        16.182495
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "settlers-campsite"
+    },
+    {
+      "key": "q4015-v1-vinduer",
+      "questId": 4015,
+      "var": 1,
+      "npcId": 205130,
+      "position": [
+        2908.72,
+        2441.64,
+        16.182495
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        2375,
+        5
+      ],
+      "area": "settlers-campsite"
+    },
+    {
+      "key": "q4020-offer-blume",
+      "questId": 4020,
+      "status": "OFFER",
+      "npcId": 205120,
+      "position": [
+        2937.0,
+        2426.02,
+        15.5069
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "settlers-campsite"
+    },
+    {
+      "key": "q4020-v0-parica",
+      "questId": 4020,
+      "var": 0,
+      "npcId": 205141,
+      "position": [
+        1982.32,
+        1935.62,
+        25.101
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "parica"
+    },
+    {
+      "key": "q4020-v1-blume",
+      "questId": 4020,
+      "var": 1,
+      "npcId": 205120,
+      "position": [
+        2937.0,
+        2426.02,
+        15.5069
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD"
+      ],
+      "pages": [
+        2375
+      ],
+      "area": "settlers-campsite"
+    },
+    {
+      "key": "q4020-reward-blume",
+      "questId": 4020,
+      "status": "REWARD",
+      "npcId": 205120,
+      "position": [
+        2937.0,
+        2426.02,
+        15.5069
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        5,
+        5
+      ],
+      "area": "settlers-campsite"
+    },
+    {
+      "key": "q4012-offer-vidohunir",
+      "questId": 4012,
+      "status": "OFFER",
+      "npcId": 205142,
+      "position": [
+        1961.27,
+        2452.9,
+        11.3872
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "baltasar-hill"
+    },
+    {
+      "key": "q4012-reward-virhu",
+      "questId": 4012,
+      "status": "REWARD",
+      "npcId": 730104,
+      "position": [
+        2021.85,
+        2252.97,
+        22.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        5,
+        5
+      ],
+      "area": "baltasar-hill"
+    }
+  ],
+  "objectUses": [
+    {
+      "key": "q4004-earth-mounds",
+      "questId": 4004,
+      "npcId": 700340,
+      "fromVar": 0,
+      "toVar": 5,
+      "uses": 5,
+      "lootItemId": null,
+      "disappears": true,
+      "spawnCount": 25,
+      "respawnSeconds": 295,
+      "area": "earth-mounds"
+    },
+    {
+      "key": "q4015-worker-corpse",
+      "questId": 4015,
+      "npcId": 730107,
+      "fromVar": 0,
+      "toVar": 1,
+      "uses": 1,
+      "lootItemId": null,
+      "disappears": false,
+      "area": "worker-corpse"
+    },
+    {
+      "key": "q4012-stone-coffin",
+      "questId": 4012,
+      "npcId": 700342,
+      "fromVar": 0,
+      "toVar": 1,
+      "uses": 1,
+      "lootItemId": 182209005,
+      "disappears": true,
+      "spawnCount": 3,
+      "respawnSeconds": 295,
+      "area": "stone-coffins"
+    }
+  ],
+  "collections": [],
+  "mapTrips": [
+    {
+      "mapId": 120010000,
+      "fromMapId": 220050000,
+      "teleporterNpcId": 205124,
+      "locationId": 7,
+      "fare": 1400,
+      "talkRange": 4
+    },
+    {
+      "mapId": 220010000,
+      "fromMapId": 120010000,
+      "teleporterNpcId": 204191,
+      "locationId": 8,
+      "fare": 100,
+      "talkRange": 4
+    }
+  ],
+  "bind": {
+    "npcId": 700344,
+    "position": [
+      2929.06,
+      2432.08,
+      17.0035
+    ],
+    "onArrival": true,
+    "price": 2136,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": null,
+  "excluded": [
+    {
+      "id": 4014,
+      "reason": "[Group] The Lingering Ghost: played in a group (step NL-2)",
+      "leg": 0
+    },
+    {
+      "id": 4017,
+      "reason": "[Group] The Ikelus Manhunt: played in a group (step NL-2)",
+      "leg": 0
+    }
+  ],
+  "endpoint": {
+    "mapId": 220050000,
+    "completedQuestIds": [
+      4001,
+      4004,
+      4007,
+      4003,
+      4005,
+      4111,
+      4006,
+      4008,
+      4018,
+      4019,
+      4011,
+      4015,
+      4016,
+      4020,
+      4010,
+      4012
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 34,
+    "snapshot": "nl-bs",
+    "anchor": [
+      2929.06,
+      2432.08,
+      17.0035
+    ],
+    "radius": 30,
+    "bindNpcId": 700344,
+    "heldQuestIds": []
+  }
+}

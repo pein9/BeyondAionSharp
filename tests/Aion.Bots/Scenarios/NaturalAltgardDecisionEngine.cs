@@ -112,6 +112,7 @@ public static class NaturalAltgardDecisionEngine
 				: action == "template-claim" && questId is int id ? objectives.GetValueOrDefault(id)?.ClaimMapId ?? contract.Hub.MapId
 				: action is "enter-instance" or "leave-instance" ? contract.InstanceTripList.Single(trip => trip.QuestId == questId).MapId
 				: action == "revive-in-place" ? state.MapId!.Value
+				: action == "return-to-endpoint" ? contract.Endpoint.MapId
 				: action == "use-object" ? contract.ObjectUseList.Single(use => use.Key == stepKey).MapId ?? contract.Hub.MapId
 				: action == "collect" && questId is int collecting ? contract.CollectionList.FirstOrDefault(collection =>
 					collection.QuestId == collecting && collection.AtVar == Var(collecting))?.MapId ?? contract.Hub.MapId
@@ -326,7 +327,9 @@ public static class NaturalAltgardDecisionEngine
 		}
 
 		// AK-08: nothing else to do before a carrier's window opens: wait for it (the runner rests at the hub meanwhile).
-		if (offHub) return Plan("return-to-hub", null, "The work on this map is done; Return to the hub bind.");
+		// NL-2: a leg that ends on another map than its hub's (mb, at Brusthonin's Settlers Campsite, where it hands in) ends there.
+		if (offHub && (open.Length > 0 || state.MapId != contract.Endpoint.MapId))
+			return Plan("return-to-hub", null, "The work on this map is done; Return to the hub bind.");
 		if (carrierWait != null)
 			return Plan("wait-for-carrier", carrierWait.Carrier!.QuestId, $"{carrierWait.Reason} Wait {carrierWait.WaitGameMinutes} game minutes.",
 				$"{carrierWait.Carrier.NpcId}");

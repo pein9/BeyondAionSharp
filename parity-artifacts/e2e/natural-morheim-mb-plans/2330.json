@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2330,
+    "name": "Orders for Randet",
+    "nameId": 1103530,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 20,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 205128,
+        "id": 2330,
+        "start_npc_ids": 204300
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204300,
+        "name": "bolverk",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 217.545,
+            "y": 2325.57,
+            "z": 446.367,
+            "heading": 3,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204300,
+      "name": "bolverk",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 217.545,
+          "y": 2325.57,
+          "z": 446.367,
+          "heading": 3,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 205128,
+      "name": "randet",
+      "positions": [
+        {
+          "mapId": 220050000,
+          "x": 2920.59,
+          "y": 2426.18,
+          "z": 15.0482,
+          "heading": 45,
+          "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 205128,
+          "name": "randet",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 2920.59,
+              "y": 2426.18,
+              "z": 15.0482,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 12951,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2330,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 20,
+      "name": "Orders for Randet",
+      "nameId": 1103530,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 12951
+        }
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "item_id": 182204235
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
