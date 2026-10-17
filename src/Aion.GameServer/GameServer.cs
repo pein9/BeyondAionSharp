@@ -49,6 +49,22 @@ public static class GameServer
         ShutdownHook.Instance?.InitShutdown(exitCode, delaySeconds);
     }
 
+    /// <summary>
+    /// Java parity: the boot block in GameServer.main under GSConfig.ENABLE_RATIO_LIMITATION:
+    /// <c>ASMOS_COUNT = PlayerDAO.getCharacterCountForRace(ASMODIANS); ELYOS_COUNT = ...(ELYOS); updateRatio(null, 0);</c>
+    /// Only the counts are set, Asmodians first. The ratios are not recomputed and stay as they are (0 at boot), because
+    /// Java's <c>updateRatio(null, 0)</c> returns at once on a null race; the first real UpdateRatio computes them.
+    /// The caller reads the counts from the database; Java assigns them without its lock, the lock here is infrastructure.
+    /// </summary>
+    internal static void SetCharacterCounts(int asmodiansCount, int elyosCount)
+    {
+        lock (lockObj)
+        {
+            ASMOS_COUNT = asmodiansCount;
+            ELYOS_COUNT = elyosCount;
+        }
+    }
+
     public static void UpdateRatio(Race race, int i)
     {
         lock (lockObj)
