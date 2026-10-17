@@ -1191,14 +1191,34 @@ public sealed partial class NaturalIshalgenJourney
 		bool OwnTasksDone(QuestRunPlan plan) => Counts(plan).Select((count, index) => count >= tasks[plan.Id][index].Count).All(done => done);
 		async Task DialogQuestAsync(QuestRunPlan quest, int npc, bool finish)
 		{
-			var giver = world.Objects.Values.Where(known => known.TemplateId == npc && !known.IsCorpse && Distance(session.CurrentPosition, known.Position) <= 15)
-				.OrderBy(known => Distance(session.CurrentPosition, known.Position)).FirstOrDefault();
-			if (giver == null) return;
+			// NL-2: a giver that walks (Vinduer, round the Settlers Campsite) is looked for farther than the follow distance and
+			// met where it stops, as a player waits for it to turn round; one that cannot be met says so. The leader stood 8 m
+			// from Vinduer's last place and the followers farther, every walk to him found no way to that old place, and each
+			// gave up without a word: the group waited fifteen minutes for Q4017's hand-ins that nobody tried.
+			BotKnownObject? Giver() => world.Objects.Values.Where(known => known.TemplateId == npc && !known.IsCorpse &&
+				Distance(session.CurrentPosition, known.Position) <= 40).OrderBy(known => Distance(session.CurrentPosition, known.Position)).FirstOrDefault();
+			var giver = Giver();
+			for (int wait = 0; wait < 24 && giver?.MoveTarget != null; wait++)
+			{
+				await PauseAsync();
+				giver = Giver();
+			}
+			if (giver == null)
+			{
+				session.TraceDiagnostic("group-quest-npc-absent", new Dictionary<string, object?>
+				{ ["quest"] = quest.Id, ["npc"] = npc, ["finish"] = finish, ["position"] = session.CurrentPosition });
+				return;
+			}
 			// Following stops a little behind F1. Each member still needs its own short NPC interaction approach.
 			if (Distance(session.CurrentPosition, giver.Position) > 4)
 			{
 				var path = geometry.FindInteractionPath(world.MapId!.Value, session.CurrentPosition, giver.Position);
-				if (path.Count == 0) return;
+				if (path.Count == 0)
+				{
+					session.TraceDiagnostic("group-quest-npc-unreached", new Dictionary<string, object?>
+					{ ["quest"] = quest.Id, ["npc"] = npc, ["finish"] = finish, ["position"] = session.CurrentPosition, ["giver"] = giver.Position });
+					return;
+				}
 				await navigator.MoveAsync(path, token);
 			}
 			session.BeginStep(finish ? "group-quest-turn-in" : "group-quest-accept", $"q{quest.Id}");
@@ -1981,7 +2001,12 @@ public sealed partial class NaturalIshalgenJourney
 				await NpcAsync(npc);
 				await WaitForFollowersAsync(token);
 				await SayAsync($"command:{(finish ? "turn-in" : "accept")}:{plan.Id}:{npc}");
-				if (finish ? Status(plan.Id) is 3 or 4 : Status(plan.Id) is not (3 or 4 or 5)) await DialogQuestAsync(plan, npc, finish);
+				// NL-2: the leader tries again while its own journal has not moved, as the members do on every look (a walking giver).
+				for (int tries = 0; tries < 8 && (finish ? Status(plan.Id) is 3 or 4 : Status(plan.Id) is not (3 or 4 or 5)); tries++)
+				{
+					if (tries > 0) await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+					await DialogQuestAsync(plan, npc, finish);
+				}
 				// Fifteen minutes: a member that stood up at the obelisk may have to fly to a giver in the crater.
 				await WaitAsync(() => Everybody(entry => finish ? entry.Status == 5 : entry.Status is 3 or 4 or 5, plan.Id),
 					$"every member to {(finish ? "turn in" : "accept")} Q{plan.Id}", 900);

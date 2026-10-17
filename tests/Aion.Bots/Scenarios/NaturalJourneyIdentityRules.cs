@@ -60,6 +60,8 @@ public static class NaturalJourneyIdentityRules
 			altgardLeg == "l11" && level >= 20 && worldId == 320070000 ||
 			altgardLeg == "l12" && level >= 16 && worldId == 300200000 ||
 			altgardLeg == NaturalAbyssEntry.Leg && level >= 25 && worldId is NaturalAbyssEntry.Morheim or NaturalAbyssEntry.ArenaMap ||
+			// NL-2: the group stages (scoped as the Abyss entry) play Brusthonin's group quests with mustered characters.
+			altgardLeg == NaturalAbyssEntry.Leg && level >= 26 && worldId == NaturalAltgardContract.Brusthonin ||
 			// M2: a Morheim leg is taken up by a mustered character, on Morheim. NL-2: and Brusthonin's, on Brusthonin.
 			altgardLeg != null && NaturalAltgardContract.MusteredLegs.Contains(altgardLeg) && level >= 26 &&
 			worldId is NaturalAbyssEntry.Morheim or NaturalAltgardContract.Brusthonin))
