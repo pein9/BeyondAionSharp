@@ -1,5 +1,6 @@
 using System;
 using Aion.GameServer.Model;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -37,7 +38,9 @@ public class SiegeService
     /// <summary>Singleton that is loaded on the class initialization.</summary>
     private static readonly SiegeService instance = new SiegeService();
     /// <summary>Map that holds fortressId to Siege. We can easily know what fortresses are under siege ATM.</summary>
-    private readonly Dictionary<int, global::Aion.GameServer.Services.Siege.Siege> activeSieges = new Dictionary<int, global::Aion.GameServer.Services.Siege.Siege>();
+    // Java parity: ConcurrentHashMap. Started and stopped under lock(this), but read without it (GetSiege, IsSiegeInProgress,
+    // OnAbyssPointsAdded) from any thread.
+    private readonly ConcurrentDictionary<int, global::Aion.GameServer.Services.Siege.Siege> activeSieges = new ConcurrentDictionary<int, global::Aion.GameServer.Services.Siege.Siege>();
 
     // Player list on RVR Event.
     private readonly AtomicBoolean isInitialized = new AtomicBoolean();
@@ -234,12 +237,12 @@ public class SiegeService
         {
             log.LogDebug("Stopping siege of siege location: {LocationId}", siegeLocationId);
 
-            if (!activeSieges.TryGetValue(siegeLocationId, out global::Aion.GameServer.Services.Siege.Siege siege))
+            // Java parity: Siege siege = activeSieges.remove(siegeLocationId); if (siege == null) ...
+            if (!activeSieges.TryRemove(siegeLocationId, out var siege))
             {
                 log.LogDebug("Siege of siege location {LocationId} is not in progress, it was captured earlier?", siegeLocationId);
                 return;
             }
-            activeSieges.Remove(siegeLocationId);
             if (siege.IsFinished())
                 return;
             siege.StopSiege();
@@ -387,7 +390,7 @@ public class SiegeService
 
     public global::Aion.GameServer.Services.Siege.Siege GetSiege(int siegeLocationId)
     {
-        return activeSieges.GetValueOrDefault(siegeLocationId);
+        return activeSieges.TryGetValue(siegeLocationId, out var siege) ? siege : null;
     }
 
     public bool IsSiegeInProgress(int fortressId)

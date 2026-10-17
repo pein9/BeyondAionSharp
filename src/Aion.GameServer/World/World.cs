@@ -5,6 +5,7 @@ using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.GameObjects.Siege;
 using Aion.GameServer.Network.Aion.ServerPackets;
+using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.Audit;
 using Aion.GameServer.World.Container;
 using Aion.GameServer.World.Exceptions;
@@ -20,7 +21,9 @@ public sealed class World
 	// Java parity: world/World — faithful singleton backing stores (allPlayers, allObjects, localSiegeNpcs, worldMaps).
 	private readonly PlayerContainer _allPlayers = new();
 	private readonly ConcurrentDictionary<int, VisibleObject> _allObjects = new();
-	private readonly ConcurrentDictionary<int, List<SiegeNpc>> _localSiegeNpcs = new();
+	// Java parity: localSiegeNpcs is a ConcurrentHashMap of CopyOnWriteArrayList. A siege iterates a location's list while
+	// spawning into it (FortressSiege.spawnFactionTroopAssault) or deleting from it (DespawnSiegeNpcs), which a List rejects.
+	private readonly ConcurrentDictionary<int, CopyOnWriteArrayList<SiegeNpc>> _localSiegeNpcs = new();
 	private readonly Dictionary<int, WorldMap> _worldMaps = new();
 
 	// Java parity: World is a singleton (World.getInstance()). The faithful gameplay layer accesses it statically;
@@ -78,7 +81,7 @@ public sealed class World
 			throw new DuplicateAionObjectException(obj, _allObjects[obj.GetObjectId()]);
 
 		if (obj is SiegeNpc siegeNpc)
-			_localSiegeNpcs.GetOrAdd(siegeNpc.GetSiegeId(), _ => new List<SiegeNpc>()).Add(siegeNpc);
+			_localSiegeNpcs.GetOrAdd(siegeNpc.GetSiegeId(), _ => new CopyOnWriteArrayList<SiegeNpc>()).Add(siegeNpc);
 		else if (obj is Player player)
 			_allPlayers.Add(player);
 	}
