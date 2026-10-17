@@ -98,12 +98,14 @@ public sealed record NaturalAltgardContract(
 		["mb"] = ("natural-morheim-mb-contract.json", "natural-morheim-mb-plans"),
 		["bs"] = ("natural-brusthonin-bs-contract.json", "natural-brusthonin-bs-plans"),
 		["rw"] = ("natural-reshanta-rw-contract.json", null),
+		// NL-3: "rp" plays Primum's own quests: the campaign's first and the training ground below the fortress.
+		["rp"] = ("natural-reshanta-rp-contract.json", null),
 	};
 
 	/// <summary>The legs played by a mustered character of level 26 or more: the Morheim leg to level 31
 	/// (docs/natural-morheim-leveling.md), on Morheim, and the leg to 36's (docs/natural-leg-36.md), on Morheim and Brusthonin.</summary>
 	public static readonly IReadOnlySet<string> MusteredLegs = new HashSet<string>
-		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw" };
+		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp" };
 
 	/// <summary>NL-2: Brusthonin, the settlers' land south of Morheim.</summary>
 	public const int Brusthonin = 220050000;

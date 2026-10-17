@@ -6682,6 +6682,15 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				emptySpawnWaits = 0;
 				// AK-08: no hint has a route from here at all: a fight left the Cleric on ground the navmesh does not connect (smoke
 				// run 7: 20 m above MuMu Village). Cast Return, as the road walk does, and try once more from the bind.
+				// NL-3: no route from here to any spawn of it, on a map where the bot may fly: a flight first (the training ground
+				// below Primum is an island of its own), as a player flies there; the stranded Return waited out its cooldown.
+				if (!returnedFromStrand && reasons.Count > 0 && flyAcross != null && !combat.InCombat && anchors.Length > 0 &&
+					reasons.All(reason => reason == "No collision-checked route to the current destination.") &&
+					await flyAcross(anchors[0].Position))
+				{
+					await session.SynchronizeAsync(token);
+					return await ApproachShippedSpawnAsync(templateId, skipBlockedTarget, withinRange, returnedFromStrand: true, completedSource: completedSource, acceptObservedKill: acceptObservedKill);
+				}
 				// NL-3: only when the bind is on this map: a Return to another map does not reach a spawn here (the Abyss Gate's
 				// platform in Morheim, for a leg bound in Brusthonin).
 				if (!returnedFromStrand && reasons.Count > 0 && session.Api.World.Skills.ContainsKey(243) &&

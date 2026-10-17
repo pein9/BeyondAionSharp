@@ -1,0 +1,654 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "reshanta-rp-primum",
+  "start": {
+    "contract": "natural-reshanta-rw-contract.json",
+    "snapshot": "nl-rw-s1",
+    "mapId": 400010000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 34,
+    "bindNpcId": 700344,
+    "completedQuestIds": [
+      24020,
+      2333,
+      2042
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": [
+      24040
+    ]
+  },
+  "hub": {
+    "key": "primum",
+    "mapId": 400010000,
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "primum",
+      "note": "Primum Fortress, the main island: Votan, Jebal, Hisui, Spyr, Bord and the NPCs of Q2722, the obelisk, the landing and the teleport devices",
+      "min": [
+        850,
+        2780,
+        1600
+      ],
+      "max": [
+        1160,
+        3160,
+        1675
+      ]
+    },
+    {
+      "key": "training-ground",
+      "note": "the training ground, an island 44 m below and west of the main island: the seven trainers of Q24041 (Leban also for Q2722)",
+      "min": [
+        620,
+        2715,
+        1575
+      ],
+      "max": [
+        875,
+        2910,
+        1612
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 24040,
+      "category": "MISSION",
+      "minimumLevel": 25,
+      "rewardExperience": 20110,
+      "prerequisite": null,
+      "handler": "reshanta/_24040VotansOrders.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "primum"
+    },
+    {
+      "id": 24041,
+      "category": "MISSION",
+      "minimumLevel": 25,
+      "rewardExperience": 20110,
+      "prerequisite": null,
+      "handler": "reshanta/_24041TrainingInTheAbyss.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "training-ground"
+    },
+    {
+      "id": 2721,
+      "category": "QUEST",
+      "minimumLevel": 25,
+      "rewardExperience": 134338,
+      "prerequisite": null,
+      "handler": "reshanta/_2721MeetingWithTheBrigadeGeneral.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "primum"
+    },
+    {
+      "id": 2722,
+      "category": "QUEST",
+      "minimumLevel": 25,
+      "rewardExperience": 134338,
+      "prerequisite": null,
+      "handler": "reshanta/_2722TheComfortsofHome.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "primum"
+    }
+  ],
+  "order": [
+    24040,
+    24041,
+    2721,
+    2722
+  ],
+  "steps": [
+    {
+      "key": "q24040-votan",
+      "questId": 24040,
+      "var": 0,
+      "npcId": 278001,
+      "position": [
+        924.211,
+        3005.23,
+        1646.75
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        10002,
+        5
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q24041-v0-leban",
+      "questId": 24041,
+      "var": 0,
+      "npcId": 278126,
+      "position": [
+        747.73,
+        2817.9,
+        1594.22
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "training-ground"
+    },
+    {
+      "key": "q24041-v1-vicht",
+      "questId": 24041,
+      "var": 1,
+      "npcId": 278127,
+      "position": [
+        729.416,
+        2845.22,
+        1595.22
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO2"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "training-ground"
+    },
+    {
+      "key": "q24041-v2-mont",
+      "questId": 24041,
+      "var": 2,
+      "npcId": 278128,
+      "position": [
+        707.46,
+        2851.94,
+        1595.22
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO3"
+      ],
+      "pages": [
+        1693
+      ],
+      "area": "training-ground"
+    },
+    {
+      "key": "q24041-v3-abend",
+      "questId": 24041,
+      "var": 3,
+      "npcId": 278129,
+      "position": [
+        687.21,
+        2841.99,
+        1595.24
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO4"
+      ],
+      "pages": [
+        2034
+      ],
+      "area": "training-ground"
+    },
+    {
+      "key": "q24041-v4-brysa",
+      "questId": 24041,
+      "var": 4,
+      "npcId": 278130,
+      "position": [
+        690.674,
+        2799.22,
+        1595.22
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO5"
+      ],
+      "pages": [
+        2375
+      ],
+      "area": "training-ground"
+    },
+    {
+      "key": "q24041-v5-eldorey",
+      "questId": 24041,
+      "var": 5,
+      "npcId": 278131,
+      "position": [
+        712.694,
+        2792.68,
+        1595.22
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO6"
+      ],
+      "pages": [
+        2716
+      ],
+      "area": "training-ground"
+    },
+    {
+      "key": "q24041-v6-noiman",
+      "questId": 24041,
+      "var": 6,
+      "npcId": 278136,
+      "position": [
+        732.517,
+        2802.66,
+        1595.22
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SET_SUCCEED"
+      ],
+      "pages": [
+        3057
+      ],
+      "area": "training-ground"
+    },
+    {
+      "key": "q24041-reward-spyr",
+      "questId": 24041,
+      "status": "REWARD",
+      "npcId": 278054,
+      "position": [
+        938.988,
+        2830.07,
+        1639.02
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        10002,
+        5
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2721-offer-votan",
+      "questId": 2721,
+      "status": "OFFER",
+      "npcId": 278001,
+      "position": [
+        924.211,
+        3005.23,
+        1646.75
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2721-v0-jebal",
+      "questId": 2721,
+      "var": 0,
+      "npcId": 278002,
+      "position": [
+        924.903,
+        2993.79,
+        1646.4
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2721-v1-hisui",
+      "questId": 2721,
+      "var": 1,
+      "npcId": 278003,
+      "position": [
+        934.688,
+        3004.79,
+        1646.4
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2721-v2-spyr",
+      "questId": 2721,
+      "var": 2,
+      "npcId": 278054,
+      "position": [
+        938.988,
+        2830.07,
+        1639.02
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        2375,
+        5
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2722-offer-bord",
+      "questId": 2722,
+      "status": "OFFER",
+      "npcId": 278047,
+      "position": [
+        1035.48,
+        2862.18,
+        1635.9
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        4762
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2722-v0-blir",
+      "questId": 2722,
+      "var": 0,
+      "npcId": 278056,
+      "position": [
+        963.104,
+        2844.23,
+        1639.02
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2722-v1-leban",
+      "questId": 2722,
+      "var": 1,
+      "npcId": 278126,
+      "position": [
+        747.73,
+        2817.9,
+        1594.22
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO2"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "training-ground"
+    },
+    {
+      "key": "q2722-v2-asmu",
+      "questId": 2722,
+      "var": 2,
+      "npcId": 278043,
+      "position": [
+        970.36,
+        2944.14,
+        1644.53
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO3"
+      ],
+      "pages": [
+        1693
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2722-v3-enno",
+      "questId": 2722,
+      "var": 3,
+      "npcId": 278032,
+      "position": [
+        936.65,
+        2967.84,
+        1646.3984
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO4"
+      ],
+      "pages": [
+        2034
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2722-v4-huset",
+      "questId": 2722,
+      "var": 4,
+      "npcId": 278037,
+      "position": [
+        919.618,
+        3006.42,
+        1655.35
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO5"
+      ],
+      "pages": [
+        2375
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2722-v5-haug",
+      "questId": 2722,
+      "var": 5,
+      "npcId": 278040,
+      "position": [
+        912.882,
+        3021.43,
+        1655.48
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO6"
+      ],
+      "pages": [
+        2716
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2722-v6-ammu",
+      "questId": 2722,
+      "var": 6,
+      "npcId": 278068,
+      "position": [
+        1110.9,
+        3125.74,
+        1613.56
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO7"
+      ],
+      "pages": [
+        3057
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2722-v7-iva",
+      "questId": 2722,
+      "var": 7,
+      "npcId": 278066,
+      "position": [
+        1098.77,
+        2965.57,
+        1639.93
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SET_SUCCEED"
+      ],
+      "pages": [
+        3398
+      ],
+      "area": "primum",
+      "receivesItemId": 182205654
+    },
+    {
+      "key": "q2722-reward-bord",
+      "questId": 2722,
+      "status": "REWARD",
+      "npcId": 278047,
+      "position": [
+        1035.48,
+        2862.18,
+        1635.9
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        5,
+        5
+      ],
+      "area": "primum"
+    }
+  ],
+  "objectUses": [],
+  "collections": [],
+  "bind": {
+    "npcId": 730072,
+    "position": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "onArrival": true,
+    "price": 4071,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "WHOLE_MAP_400010000",
+        "bottom": 500,
+        "top": 4596
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [
+    {
+      "id": 2701,
+      "reason": "The Governor's Summons: nothing starts it (Java _2701 has no start hook; Q24040 took its place)",
+      "leg": 0
+    },
+    {
+      "id": 24045,
+      "reason": "A Speedy Errand: its later steps are on Tigraki Island, 705 m from any other island, past one flight (decision 8); its first two talks are at Primum",
+      "leg": 0
+    },
+    {
+      "id": 2702,
+      "reason": "Defeat 9th Rank Elyos Soldiers (and Q2703 to Q2710): kills of Elyos players, which a SIM world has none of",
+      "leg": 0
+    }
+  ],
+  "endpoint": {
+    "mapId": 400010000,
+    "completedQuestIds": [
+      24040,
+      24041,
+      2721,
+      2722
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 34,
+    "snapshot": "nl-rp",
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 30,
+    "bindNpcId": 730072,
+    "heldQuestIds": []
+  }
+}

@@ -42,7 +42,7 @@ public sealed record NaturalFlyZone(string Name, bool Forbids, IReadOnlyList<(fl
 	{
 		string file = Path.Combine(repoRoot, $"game-server/data/static_data/zones/zones_{mapId}.xml");
 		IReadOnlyList<NaturalFlyZone> zones = File.Exists(file) ? Load(file) : [];
-		if (map?.FlagsRaw?.Split(' ').Contains("FLY") != true || map.GetWorldSize() <= 0) return zones;
+		if (map == null || (map.GetFlags() & (int)Aion.GameServer.World.Zone.ZoneAttributes.Fly) == 0 || map.GetWorldSize() <= 0) return zones;
 		float size = map.GetWorldSize();
 		return [.. zones, new NaturalFlyZone($"WHOLE_MAP_{mapId}", false, [(0, 0), (size, 0), (size, size), (0, size)],
 			map.GetDeathLevel(), map.GetDeathLevel() + size)];
