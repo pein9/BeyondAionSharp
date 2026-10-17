@@ -1,11 +1,17 @@
 using Aion.Commons.Database;
 using Aion.Commons.Logging;
 using Aion.GameServer.Configs.Main;
+using Aion.GameServer.Configs.Schedule;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
+using Aion.GameServer.Model.GameObjects.Siege;
+using Aion.GameServer.Model.Siege;
+using Aion.GameServer.Model.Templates.Npc;
+using Aion.GameServer.Model.Templates.Spawns.Siegespawns;
 using Aion.GameServer.Services;
 using Aion.GameServer.Services.Cron;
+using Aion.GameServer.Services.Siege;
 using Aion.GameServer.Taskmanager.Tasks.Housing;
 using Aion.GameServer.Utils;
 
@@ -88,6 +94,140 @@ public sealed class SimulationBootTailTests(SimulationWorldFixture fixture)
 		else
 			Assert.Equal(nextFire, task.GetNextRun());
 	}
+
+	/// <summary>
+	/// GameServer.java:141, SiegeService.initSieges, after the spawns: each fortress, outpost and standalone artifact holds
+	/// exactly the PEACE group of its owner, every NPC of it a spawned SiegeNpc. With the SIM's new database every owner is
+	/// Balaur except the two Silentera outposts (2111 Elyos, 3111 Asmodian, as SiegeLocationData sets them), so Amundi
+	/// (278097) stands in Siel's Eastern Fortress (1132) in Reshanta and the five captured Asmodian prisoners (253626) in
+	/// Sulfur Fortress (1141).
+	/// </summary>
+	[SkippableFact]
+	public void EverySiegeLocationHoldsItsOwnersPeaceGroup()
+	{
+		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
+		SiegeService sieges = SiegeService.GetInstance();
+		IEnumerable<SiegeLocation> owned = sieges.GetFortresses().Values.Cast<SiegeLocation>()
+			.Concat(sieges.GetOutposts().Values).Concat(sieges.GetStandaloneArtifacts());
+		int total = 0;
+		foreach (SiegeLocation location in owned)
+		{
+			int id = location.GetLocationId();
+			int expected = (DataManager.SPAWNS_DATA.GetSiegeSpawnsByLocId(id) ?? []).SelectMany(group => group.GetSpawnTemplates())
+				.OfType<SiegeSpawnTemplate>().Count(spawn => spawn.GetSiegeRace() == location.GetRace() && spawn.GetSiegeModType() == SiegeModType.PEACE);
+			ICollection<SiegeNpc> npcs = fixture.World.GetLocalSiegeNpcs(id);
+			Assert.True(expected == npcs.Count, $"siege location {id} ({location.GetRace()}) holds {npcs.Count} siege NPCs, its PEACE group has {expected}");
+			Assert.All(npcs, npc =>
+			{
+				Assert.True(npc.IsSpawned());
+				Assert.Equal(location.GetWorldId(), npc.GetWorldId());
+				Assert.Equal(location.GetRace(), npc.GetSpawn().GetSiegeRace());
+				Assert.Equal(SiegeModType.PEACE, npc.GetSpawn().GetSiegeModType());
+			});
+			total += expected;
+		}
+		Assert.True(total > 0);
+
+		Assert.Equal(SiegeRace.BALAUR, sieges.GetFortress(1132).GetRace());
+		SiegeNpc amundi = Assert.Single(fixture.World.GetLocalSiegeNpcs(1132), npc => npc.GetNpcId() == 278097);
+		Assert.Equal(400010000, amundi.GetWorldId());
+		Assert.Equal(SiegeRace.BALAUR, sieges.GetFortress(1141).GetRace());
+		Assert.Equal(5, fixture.World.GetLocalSiegeNpcs(1141).Count(npc => npc.GetNpcId() == 253626));
+	}
+
+	/// <summary>
+	/// InitSieges schedules a SiegeStartRunnable for each siege time of config/schedule/siege_schedule.xml: the 21 fortress
+	/// times at their preparation times and the agent fight's one time, 22 cron jobs, logged in the boot's body after the
+	/// first spawn line.
+	/// </summary>
+	[SkippableFact]
+	public void TheSiegeCalendarHasACronJobForEachSiegeTime()
+	{
+		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
+		CronService cron = CronService.GetInstance();
+		Assert.Equal(22, cron.FindJobs<SiegeStartRunnable>(withSubTypes: false).Count);
+		var schedule = Aion.GameServer.Utils.Xml.JAXBUtil.Deserialize<SiegeSchedules>(new FileInfo(
+			Path.Combine(Aion.GameServer.TestKit.RealStaticData.RepoRoot(), "game-server", "config", "schedule", "siege_schedule.xml")));
+		var expected = schedule.GetFortresses().Cast<SiegeSchedules.SiegeSchedule>().Concat(schedule.GetAgentFights())
+			.ToDictionary(entry => entry.GetId(), entry => entry.GetSiegeTimes().Count);
+		var scheduled = cron.FindNextFireTimes<SiegeStartRunnable>(withSubTypes: false).Keys
+			.GroupBy(runnable => runnable.GetLocationId()).ToDictionary(group => group.Key, group => group.Count());
+		Assert.Equal(expected.OrderBy(pair => pair.Key), scheduled.OrderBy(pair => pair.Key));
+		Assert.Equal(8011, SiegeService.GetInstance().GetAgentLocation().GetLocationId());
+		Assert.Equal(1, scheduled[8011]);
+
+		IReadOnlyList<CapturedLogEntry> boot = BootLog();
+		int[] fortressLines = IndexesOf(boot, entry => entry.Category == "SIEGE_LOG"
+			&& entry.Message.StartsWith("Scheduled siege of fortressID ", StringComparison.Ordinal));
+		int[] agentLines = IndexesOf(boot, entry => entry.Category == "SIEGE_LOG"
+			&& entry.Message.StartsWith("Scheduled agent fight based on cron expression: ", StringComparison.Ordinal));
+		Assert.Equal(21, fortressLines.Length);
+		Assert.Single(agentLines);
+		Assert.True(fortressLines[0] > IndexOfFirstSpawn(boot), "the siege calendar was scheduled before the spawns");
+	}
+
+	/// <summary>
+	/// InitSieges starts the siege of every standalone artifact, and an artifact's siege is endless: it has its boss, the
+	/// one BOSS of the artifact's PEACE group, and no end is scheduled.
+	/// </summary>
+	[SkippableFact]
+	public void EveryStandaloneArtifactIsInItsEndlessSiege()
+	{
+		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
+		SiegeService sieges = SiegeService.GetInstance();
+		List<ArtifactLocation> standalone = sieges.GetStandaloneArtifacts();
+		Assert.NotEmpty(standalone);
+		foreach (ArtifactLocation artifact in standalone)
+		{
+			int id = artifact.GetLocationId();
+			Assert.True(sieges.IsSiegeInProgress(id), $"standalone artifact {id} is not in a siege");
+			var siege = Assert.IsType<ArtifactSiege>(sieges.GetSiege(id));
+			Assert.True(siege.IsStarted());
+			Assert.False(siege.IsFinished());
+			Assert.True(siege.IsEndless());
+			SiegeNpc boss = siege.GetBoss();
+			Assert.NotNull(boss);
+			Assert.Contains(boss, fixture.World.GetLocalSiegeNpcs(id));
+			Assert.Equal(AbyssNpcType.BOSS, boss.GetObjectTemplate().GetAbyssNpcType());
+		}
+	}
+
+	/// <summary>
+	/// InitSieges ends by setting the next state of every scheduled location from its earliest SiegeStartRunnable: vulnerable
+	/// when that run comes at or before the next hourly status update, invulnerable otherwise. The hourly broadcast job does
+	/// the same again on every hour, so the rule holds whenever this runs, for a fortress not under siege. (At the SIM
+	/// epoch, 08:59 UTC on a Wednesday, no preparation falls within the hour and every scheduled fortress is invulnerable.)
+	/// A location the data lacked would have stopped the boot with a NullReferenceException, as in Java.
+	/// </summary>
+	[SkippableFact]
+	public void EveryScheduledFortressHasItsNextState()
+	{
+		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
+		SiegeService sieges = SiegeService.GetInstance();
+		var nextUpdate = (DateTimeOffset?)typeof(SiegeService)
+			.GetField("nextStateUpdateTime", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+			.GetValue(sieges);
+		Assert.NotNull(nextUpdate);
+		Assert.InRange(sieges.GetSecondsUntilNextFortressState(), 0, 3600);
+		var earliest = CronService.GetInstance().FindNextFireTimes<SiegeStartRunnable>(withSubTypes: true)
+			.GroupBy(pair => pair.Key.GetLocationId()).ToDictionary(group => group.Key, group => group.Min(pair => pair.Value));
+		Assert.Equal(15, earliest.Count);
+		foreach ((int id, DateTimeOffset start) in earliest)
+		{
+			SiegeLocation location = sieges.GetSiegeLocation(id);
+			Assert.NotNull(location);
+			if (location is AgentLocation)
+				continue; // AgentLocation.getNextState follows its vulnerability, not the stored state
+			if (sieges.IsSiegeInProgress(id))
+				continue; // its preparation has run since the last update, so its next run is a week later
+			Assert.IsType<FortressLocation>(location);
+			int expected = start > nextUpdate.Value ? SiegeLocation.STATE_INVULNERABLE : SiegeLocation.STATE_VULNERABLE;
+			Assert.True(expected == location.GetNextState(), $"fortress {id}: next state {location.GetNextState()}, its next siege run is {start:O}, the next update {nextUpdate:O}");
+		}
+	}
+
+	private static int[] IndexesOf(IReadOnlyList<CapturedLogEntry> boot, Func<CapturedLogEntry, bool> match) =>
+		boot.Select((entry, index) => (entry, index)).Where(pair => match(pair.entry)).Select(pair => pair.index).ToArray();
 
 	/// <summary>
 	/// GameServer.java:130-134 with gameserver.ratio.limitation.enable on. The shipped value is off, so the boot left the

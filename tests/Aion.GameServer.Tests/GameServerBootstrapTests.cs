@@ -63,7 +63,10 @@ public sealed class GameServerBootstrapTests
 	/// items-only, no-database fixture, after the head. The body itself is no longer run without a database, so a
 	/// constructor that breaks on empty data (a null cron default, a missing AUTO_GROUP template, a missing HTML root)
 	/// fails here as well as in the SIM boot. HousingService and its tasks (main:118-122) need the database and are
-	/// left to the SIM boot; with no world maps SpawnAll spawns nothing and never reaches HousingService.
+	/// left to the SIM boot; with no world maps SpawnAll spawns nothing and never reaches HousingService. So is
+	/// SiegeService.InitSieges (main:141): it needs the real siege data, and this process builds SiegeService with sieges
+	/// off (SiegeServiceTestInit), so its location maps are empty while the schedule it reads is not, which is the failure
+	/// gap #65 recorded.
 	/// </summary>
 	[Fact]
 	public async Task GameServerBootstrapBody_SingletonsConstructAgainstTheNoDatabaseFixtureInJavaOrder()

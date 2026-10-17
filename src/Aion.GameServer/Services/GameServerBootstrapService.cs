@@ -330,16 +330,16 @@ public sealed class GameServerBootstrapService : IHostedService
 		// is absent => no-op), the schedule files (config/schedule/{siege,world_raid}_schedule.xml) are present, and
 		// the DAO reads are DB.Select try/catch-guarded (no DB => empty + logged).
 
-		// SiegeService.getInstance().initSieges() (GameServer.main:141): NOT WIRED YET (P10-05, D7 approved 2026-10-17).
-		// Java initSieges() runs its FULL body whenever SiegeConfig.SIEGE_ENABLED (siege.properties default true): it
-		// despawns/spawns from the real SIEGE_LOCATION_DATA fortress/outpost/artifact registries, schedules sieges from the
-		// FULL real config/schedule/siege_schedule.xml (fortress IDs 1011, 1131, 2011, ...), then UpdateFortressNextState()
-		// does GetSiegeLocation(scheduledLocId).SetNextState(...) with NO null guard, exactly like Java
-		// updateFortressNextState (Java is safe only because real SIEGE_LOCATION_DATA carries those fortress locations).
-		// Adding a C# null guard would be UN-FAITHFUL. The real-data boot that exercises this tail is the SIM boot
-		// (tests/Aion.Simulation.Tests/SimulationBootTailTests); the old env-gated DB full-boot test that called it after
-		// StartAsync failed in UpdateFortressNextState (gap #65 of docs/e2e-player-simulation-plan.md).
-		// Aion.GameServer.Services.SiegeService.GetInstance().InitSieges();
+		// SiegeService.getInstance().initSieges() (GameServer.main:141), which runs when SiegeConfig.SIEGE_ENABLED
+		// (gameserver.siege.enable, true as shipped) as it was when the service was built at main:111. It despawns the siege
+		// NPCs of every location, spawns the PEACE group of each fortress, outpost and standalone artifact for its owner
+		// (Balaur unless the siege_locations table says otherwise), schedules a SiegeStartRunnable for each siege time of
+		// config/schedule/siege_schedule.xml (21 fortress times and the agent fight), starts the endless siege of every
+		// standalone artifact, sets each scheduled location's next state and schedules the hourly status broadcast.
+		// UpdateFortressNextState dereferences every scheduled location without a guard, as Java's does: the shipped
+		// SIEGE_LOCATION_DATA holds them all. (Gap #65 of docs/e2e-player-simulation-plan.md was a test process whose
+		// SiegeService had been built with sieges off, so its location maps were empty.)
+		Aion.GameServer.Services.SiegeService.GetInstance().InitSieges();
 
 		// BaseService.getInstance().initBases() (GameServer.main:143): starts casual/stained/panesterra bases
 		// (Start is try/catch-guarded for BaseException/NRE; iterates allBaseLocations, empty => no-op).
