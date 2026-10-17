@@ -9701,6 +9701,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					: null;
 				int unsuccessfulKills = 0, tacticalRetreats = 0, walkedHome = 0, takenByOthers = 0;
 				var failedTargets = new Dictionary<int, int>();
+				// NL-2: where the last failed pull ended, and whether this hunt has taken its way out of a stranded spot.
+				BotPosition? lastFailedAt = null;
+				bool tookWayOut = false;
 				for (int attempt = 1; ; attempt++)
 				{
 					// RC-03: a bind death can leave Ishalgen. Let the normal transport loop return before another pull.
@@ -9795,8 +9798,35 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						if (++walkedHome >= 12)
 							throw new InvalidDataException($"NPC {templateId}: {walkedHome} targets gave up and walked home (last target {target}).");
 					}
-					else if (++unsuccessfulKills >= 6)
-						throw new InvalidDataException($"NPC {templateId} was not killed in {unsuccessfulKills} non-retreat attempts (last target {target}).");
+					else
+					{
+						// NL-2: two failed pulls that end where the bot stood is a stranded spot, not a monster that cannot be
+						// fought. The Assassin stood on one rock in Brusthonin for four game hours, 20 m from Q4016's
+						// outriders, with no checked way to any of them, until its six pulls were spent. On a mustered leg the
+						// hunt takes the way out once, as the approach does: a flight to the hub where it may fly, else
+						// Return to the bind, and hunts on from there.
+						bool stranded = !died && lastFailedAt is { } before && Distance(before, session.CurrentPosition) < 3;
+						lastFailedAt = died ? null : session.CurrentPosition;
+						if (stranded && !tookWayOut && altgardLegId != null && NaturalAltgardContract.MusteredLegs.Contains(altgardLegId) &&
+							!combat.InCombat && session.Api.World.ObeliskBindPoint is { } boundAt && boundAt.MapId == session.Api.World.MapId &&
+							Distance(session.CurrentPosition, boundAt.Position) > 50)
+						{
+							tookWayOut = true;
+							BotPosition strandedAt = session.CurrentPosition;
+							bool flew = flyOutOfStrand != null && await flyOutOfStrand();
+							if (!flew) await UseLearnedReturnToBindAsync();
+							session.TraceDiagnostic("hunt-way-out", new Dictionary<string, object?>
+							{
+								["templateId"] = templateId, ["position"] = strandedAt, ["way"] = flew ? "flight-to-the-hub" : "return-to-bind",
+								["arrived"] = session.CurrentPosition, ["failedPulls"] = unsuccessfulKills,
+							});
+							await session.SynchronizeAsync(token);
+							unsuccessfulKills = 0;
+							lastFailedAt = null;
+						}
+						else if (++unsuccessfulKills >= 6)
+							throw new InvalidDataException($"NPC {templateId} was not killed in {unsuccessfulKills} non-retreat attempts (last target {target}).");
+					}
 					await RestSafelyAsync(token);
 				}
 			}
