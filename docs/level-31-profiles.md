@@ -69,10 +69,63 @@ the Bard stay at 26 (MR-h).
 
 One step per iteration. A step is ticked when its round shows it, with a dated line under it.
 
-- [ ] **L1 The audit.** For each class: the Elite Rank 6 piece for each slot against what it wears at 31, and why the
+- [x] **L1 The audit.** For each class: the Elite Rank 6 piece for each slot against what it wears at 31, and why the
   check-in skipped it; the second stone, its price and seller, and the choice by MR-g's rule; the skills new at 27 to
   31 and the second stone's skill, each with its role or the reason it stays out. Written into this document as
   tables, for the operator to read before L3.
+  - 2026-10-16, the gear, from the check-in's own manifests (round `m7-g31`, trace `coin-armor-manifest`) and the
+    item data. The check-in compares a piece with the worn one by one number: physical defence for armor, the weapon's
+    number for a weapon, magic boost for a staff. An Elite Rank 7 piece of 26 carries a +16 defence bonus that brings it
+    level with the Elite Rank 6 piece of 31, and a tie keeps what is worn; the level-26 quest chests have a little more
+    defence and none of the Elite Rank 6 chest's HP, parry and magic resist. So twelve pieces of level 26 stayed on:
+
+    | Class | Kept at 31, though Elite Rank 6 is the better piece (cost in Silver Coins) |
+    |---|---|
+    | Gladiator, Templar | breastplate (18), gauntlets (9), sabatons (9): the Elite Rank 6 ones add 6 to 107 HP, 6 to 13 magic resist, evasion, parry or block |
+    | Assassin, Ranger | jerkin (18), boots (9): 107 and 53 HP, 9 and 5 magic resist, 41 parry |
+    | Cleric, Chanter | brogans (9): 13 magic boost, 53 MP, 5 magic resist, 2 speed |
+    | Sorcerer, Spirit Master | nothing: every Elite Rank 6 piece but two was bought |
+
+    The shoulders and legs every class wears are the level-31 quest pieces (Morheim Shade Legionary), with the same
+    numbers as the Elite Rank 6 ones (the Cleric's spaulders trade 12 hate and 11 magic attack for 6 concentration),
+    so they stay. All of these pieces are of the same grade (Legend). The rule L2 gives the check-in: **a piece of a
+    higher level and no lower grade beats the worn one; at the same level the check-in's number decides, as now.**
+    With it the eight buy those twelve pieces and nothing else changes.
+  - The second stone. Giles (204289) and Sinamara (204290) in Pandaemonium sell nine level-20 stones to each class, for
+    Kinah only: 695,500 each in the SIM world, and 35,312 more to socket it. A stone uses no Stigma Shards. The second
+    regular slot (`STIGMA2`, `1L << 31`) needs level 30 and Q2900 done, nothing more; a stone sent to any other slot
+    goes in, is paid for and comes out at the next login. Each bot ends the check-in with 1.0 to 1.2 million Kinah, so
+    stone and fee are within reach. My choices by MR-g's rule, his to change:
+
+    | Class | First stone | Second stone | Why |
+    |---|---|---|---|
+    | Gladiator | Crippling Cut | Draining Blow (140001305) | hits a thrown-down target and gives the damage back as HP, in the window Crippling Cut uses |
+    | Templar | Inquisitor's Blow | Punishing Thrust (140001325) | its hardest hit, weapon +986 a minute; hate for the tank |
+    | Assassin | Searching Strike | Rune Knife (140001344) | 20 m, carves the rune its rune attacks burst; a pull that hits |
+    | Ranger | Bow of Blessing | Dilation Arrow (140001357) | halves the target's attack speed |
+    | Sorcerer | Ice Harpoon | Storm Strike (140001375) | 2,716 damage behind a 4 s cast, as the opener only |
+    | Spirit Master | Cyclone of Wrath | Magic's Freedom (140001396) | +500 magic boost for every caster on the target |
+    | Cleric | Saving Grace | Noble Grace (140001439) | 15 s of +35% healing received and +1,200 HP for the group, a party word as Word of Life is; a line of its own in the group heal driver |
+    | Chanter | Word of Life | Word of Inspiration (140001412) | 15 s of +12% physical attack, +80 accuracy and +80 magic boost for the group, kept up in a fight; Splash Swing, the best plain hit, is a parry counter (`counter_skill="PARRY"`), which no table casts |
+
+  - The rotations. Every class's validator stops at level 26 (`TopLevel`), so the skills new at 27 to 31 are left out
+    without a word; L3 raises it to 31, and each new skill then has a role or a written reason:
+
+    | Class | In, with its role | Out, and why |
+    |---|---|---|
+    | Gladiator | Daevic Fury (self, first), Crushing Blow (a sure stumble after Explosion of Rage), Springing Slice (on a thrown-down target, adjacent only), Reckless Strike (after Rupture), Draining Blow (stone) | Seismic Billow: an area hit, and the chain steps before it are excluded area skills |
+    | Templar | Unwavering Devotion (in-fight upkeep under attack), Hand of Healing (emergency at 35%, with 2,000 DP kept for it), Punishing Thrust (stone) | Face Smash: both its openers are counter skills; Seal of Protection: a PvP passive |
+    | Assassin | Rune Burst (three runes, between Pain Rune and Binding Rune), Assassination (right after Searching Strike, into its stun), Rune Knife (stone, the pull) | Searching Eye: sees hidden players; Wind Walk: stealth |
+    | Ranger | Spiral Arrow (after Arrow Strike), Misery Shot (on a stunned, staggered or thrown-down target), Dilation Arrow (stone) | Tactical Retreat: a kiting aid; Hunter's Eye: detection; Bestial Fury: cuts the bow's reach under the 18 m stand-off |
+    | Sorcerer | Empyrean Wisdom (self, first), Refracting Shard (free, mana back), Boon of Iron-Clad (emergency), Storm Strike (stone, opener) | Aether's Hold: dear for its damage; Boon of Clairvoyance: detection; Tranquilizing Cloud: area; Robe of Cold: shares Robe of Flame's cooldown id, so each would end the other |
+    | Spirit Master | Summoning Alacrity (before the servant), Magic's Freedom (stone) | Fear and Nightmare: a feared monster runs among others; Disenchant: area, and monsters carry no buffs |
+    | Cleric | Punishing Earth (solo), Light of Recovery (also in the solo ladder), Acquittal (group: three members at 50% or less), Noble Grace (group: before the heals when two are at 50% or less) | Boost Spell Resist: a passive |
+    | Chanter | Invincibility Mantra (kept, in place of Revival Mantra: three mantras at most), Pentacle Shock (after Incandescent Blow), Soul Crush (on a stunned target), Word of Wind (group only), Word of Inspiration (stone, in-fight upkeep) | Booming Assault: its opener Booming Smash is left out of the table |
+
+    New rules the tables need: a DP reserve (the Templar's Hand of Healing against Empyrean Chastisement), a recovery
+    step that keeps no mana back (Boon of Iron-Clad), group-only rules (Word of Wind, Acquittal, Noble Grace) and the
+    mantra swap. A ready follow-up before a state-bound skill that resets its chain, Assassination only on a stunned or
+    poisoned target and a cast just before a summon are done by list order for now.
 - [ ] **L2 The gear and the stones.** The check-in buys every Elite Rank 6 piece that beats the worn one, and at 30 or
   above it buys the second stone in Pandaemonium and sockets it.
 - [ ] **L3 The rotations.** The new skills in the eight tables, tried in a trial round per class line on its own
