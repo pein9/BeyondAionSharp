@@ -1,0 +1,261 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 4014,
+    "name": "[Group] The Lingering Ghost",
+    "nameId": 1114013,
+    "zone": "Brusthonin",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 23,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 4007
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/brusthonin.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 4014,
+        "start_npc_ids": 205128
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 205128,
+        "name": "randet",
+        "positions": [
+          {
+            "mapId": 220050000,
+            "x": 2920.59,
+            "y": 2426.18,
+            "z": 15.0482,
+            "heading": 45,
+            "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 205128,
+      "name": "randet",
+      "positions": [
+        {
+          "mapId": 220050000,
+          "x": 2920.59,
+          "y": 2426.18,
+          "z": 15.0482,
+          "heading": 45,
+          "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 205128,
+      "name": "randet",
+      "positions": [
+        {
+          "mapId": 220050000,
+          "x": 2920.59,
+          "y": 2426.18,
+          "z": 15.0482,
+          "heading": 45,
+          "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 1,
+      "npc_ids": 213930,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 213930,
+          "name": "supervisor squiller",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 1844.0042,
+              "y": 2474.2905,
+              "z": 32.75257,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2202.967,
+              "y": 2263.8171,
+              "z": 39.817513,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            },
+            {
+              "mapId": 220050000,
+              "x": 2358.6299,
+              "y": 1888.0699,
+              "z": 32.95824,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 205128,
+          "name": "randet",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 2920.59,
+              "y": 2426.18,
+              "z": 15.0482,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 172650,
+        "title": 71,
+        "rewardItems": [],
+        "selectableItems": [
+          {
+            "count": 1,
+            "item_id": 111100765
+          },
+          {
+            "count": 1,
+            "item_id": 111300770
+          },
+          {
+            "count": 1,
+            "item_id": 111500753
+          },
+          {
+            "count": 1,
+            "item_id": 111600745
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 4014,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 23,
+      "name": "[Group] The Lingering Ghost",
+      "nameId": 1114013,
+      "quest_zone": "Brusthonin",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 172650,
+          "title": 71
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 111100765
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 111300770
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 111500753
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 111600745
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 1,
+          "npc_ids": 213930,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 4007
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

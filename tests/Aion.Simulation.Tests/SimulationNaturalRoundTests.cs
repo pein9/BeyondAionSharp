@@ -34,7 +34,7 @@ public sealed partial class SimulationFastScenarioTests
 		string[]? Companions = null, string? CompanionUntil = null, string? CompanionEnd = null,
 		string? CompanionTest = null, int? CompanionStockMinutes = null, int[]? GroupQuests = null, int? GroupBind = null,
 		NaturalGroupKill[]? GroupKills = null, NaturalGroupInstance? GroupInstance = null, NaturalGroupBoss[]? GroupBosses = null,
-		string? SoloCompanion = null);
+		string? SoloCompanion = null, int[]? OnlyQuests = null);
 
 	/// <summary>A seat of the companion host; it has no class line until the server makes its character.</summary>
 	private static bool IsCompanionSeat(NaturalRoundBot entry) => entry.Stage == "companion";
@@ -90,7 +90,9 @@ public sealed partial class SimulationFastScenarioTests
 			ClassLine: line, Companion: "stand-in", Companions: entry.Companions ?? throw new InvalidDataException("companion-lead names its companions."),
 			CompanionUntil: entry.CompanionUntil, CompanionEnd: entry.CompanionEnd),
 		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, the Morheim legs, muster, check-in, gh-survey, support, group-coin, group-ntc, group-field, companion-lead or companion."),
-		}) with { Role = entry.Role, SoloCompanion = entry.SoloCompanion };
+		}) with { Role = entry.Role, SoloCompanion = entry.SoloCompanion,
+			// NL-2: a diagnostic trial of some of a leg's quests (AM-06's limited run), never a captured round's.
+			AltgardOnlyQuests = entry.OnlyQuests };
 	}
 
 	/// <summary>

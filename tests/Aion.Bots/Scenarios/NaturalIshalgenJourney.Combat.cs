@@ -327,6 +327,10 @@ public sealed partial class NaturalIshalgenJourney
 			bool targetRanged = targetTemplate != null && targetTemplate.GetAttackRange() > Navigation.NaturalCombatGeometry.MeleeReach + 1;
 			long? lastHitByTargetMillis = null;
 			var incomingAttackers = new HashSet<int>();
+			// NL-2: the nearest the walk-ins of this fight have brought the bot to its target, and the walk-ins since that got
+			// it no nearer.
+			float closestApproach = float.MaxValue;
+			int approachesWithoutGain = 0;
 			// Fights may run long: a cornered Priest alternates heals and damage, and respawns or chain
 			// aggro can keep adding monsters. The bound only stops a genuine stall (every action rejected
 			// forever) from hanging the run; at a few seconds per action it is about an hour of game time.
@@ -677,6 +681,15 @@ public sealed partial class NaturalIshalgenJourney
 									$"Client position did not advance toward {npc.TemplateId}/{target}.");
 							break;
 						}
+						// NL-2: a target no walk-in brings nearer is out of reach. The Chanter walked in on an unfest vigilante
+						// in Brusthonin 347 times in 25 game minutes, between 32.7 and 39 m from it, each walk reported arrived,
+						// until the fight's action bound ended its leg. After twenty walk-ins with not a metre gained, the
+						// approach is blocked, as a route that is not found is: the caller leaves that monster.
+						float fromTarget = Distance(session.CurrentPosition, destination);
+						if (fromTarget < closestApproach - 1) (closestApproach, approachesWithoutGain) = (fromTarget, 0);
+						else if (++approachesWithoutGain >= 20)
+							throw new NaturalCombatApproachBlockedException($"{npc.TemplateId}/{target} stayed {fromTarget:F1} m away " +
+								$"through {approachesWithoutGain} walk-ins (nearest {closestApproach:F1} m).");
 						long approachStarted = runtime.NowMillis;
 						// CP-43a: a walk-in class goes to the target itself. The Priest line's approach, by the template's
 						// nearest monster, stays as recorded. NR-53c: the movement rules say which a class does.

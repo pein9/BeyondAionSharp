@@ -26,7 +26,8 @@ public sealed record NaturalLaterCapitalContract(int SchemaVersion, string JavaR
 		if (!profile.StartsWith("SIM-", StringComparison.Ordinal) || !(options.AscensionBridge || leg) ||
 			options.CapitalStage != null || options.StopAfterQuest != null || options.StopAt != null ||
 			options.Course != null || options.Encounter != null || options.MauPolicy != null || options.ClericEncounter ||
-			options.AltgardOnlyQuests != null)
+			// NL-2: a leg's own limited run (AM-06) keeps its capital ways: Q4011's trip goes through Pandaemonium.
+			options.AltgardOnlyQuests != null && !leg)
 			throw new InvalidOperationException("Later capital work requires an explicit natural SIM bridge or Altgard segment, without unrelated diagnostic scopes.");
 	}
 

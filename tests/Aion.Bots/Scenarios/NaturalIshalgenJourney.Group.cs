@@ -75,7 +75,9 @@ public sealed partial class NaturalIshalgenJourney
 			throw new InvalidDataException("The group needs two to six distinct existing characters, including self and its leader.");
 		bool leads = name == leaderName;
 		if (leads && options.Role == "healer") throw new InvalidDataException("This quest's bot leader must be a fighter.");
-		if (world.MapId != NaturalAbyssEntry.Morheim) throw new InvalidDataException("The group starts in Morheim.");
+		// NL-2: a field group plays Brusthonin's group quests too, from the Settlers Campsite.
+		if (world.MapId != NaturalAbyssEntry.Morheim && !(field && world.MapId == NaturalAltgardContract.Brusthonin))
+			throw new InvalidDataException("The group starts in Morheim.");
 		var geometry = runtime.CreateGeometry();
 		// M6: a campaign quest of the field list has its own handler and no plan (Q24021, Q24022). The group does its kills
 		// and collections for the members that have it, and each member's own leg does its talks: its collections come

@@ -116,7 +116,8 @@ public sealed record NaturalAltgardContract(
 	/// <summary>The quests of the Group NTC leg (docs/natural-group-ntc.md): the entry quest and Kelmar's two group
 	/// quests, given in Morheim Ice Fortress.</summary>
 	public const string GroupNtcPlans = "natural-group-ntc-plans";
-	/// <summary>M6: the compiled plans of the Morheim quests played by a group in the field (docs/natural-morheim-leveling.md).</summary>
+	/// <summary>M6: the compiled plans of the Morheim quests played by a group in the field (docs/natural-morheim-leveling.md);
+	/// NL-2: and Brusthonin's two (Q4014, Q4017, docs/natural-leg-36.md).</summary>
 	public const string GroupFieldPlans = "natural-morheim-group-plans";
 
 	public static IReadOnlyDictionary<int, QuestRunPlan> LoadGroupFieldPlans() =>

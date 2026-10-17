@@ -127,7 +127,8 @@ if ($World -gt 0) {
 			$elapsed = [long]$record.elapsedMillis + 20000
 			$bots = @($bots | ForEach-Object {
 				$bot = $_
-				$kept = @($record.characters | Where-Object { $_.line -eq $bot.line -and $_.characterId -gt 0 })
+				# NL-2: a companion seat's character is the server's throwaway, never one of the world's (an older record lists it).
+				$kept = @($record.characters | Where-Object { $_.line -eq $bot.line -and $_.characterId -gt 0 -and (Get-Field $_ 'stage') -ne 'companion' })
 				if ($kept.Count -gt 1) { throw "Round snapshot $restoredFrom holds two characters of line $($bot.line)." }
 				$next = [ordered]@{}
 				foreach ($property in $bot.PSObject.Properties) { $next[$property.Name] = $property.Value }
@@ -186,7 +187,9 @@ if ($World -gt 0) {
 			Invoke-Docker @('exec', $ContainerName, 'rm', '-f', $remote)
 			Copy-Item -LiteralPath $outcomeFile -Destination $directory
 			$captured = (Get-Date).ToUniversalTime().ToString('o')
-			$characters = @($outcome.bots | ForEach-Object {
+			# A companion seat's character is the server's throwaway, deleted when it leaves the world (docs/companion-bots.md):
+			# it is not one of the world's, though the dump can still hold the last one.
+			$characters = @($outcome.bots | Where-Object { (Get-Field $_ 'Stage') -ne 'companion' } | ForEach-Object {
 				[ordered]@{ seat = $_.Bot; line = $_.Line; stage = (Get-Field $_ 'Stage'); account = $_.Account; name = $_.Name; characterId = $_.CharacterId
 					outcome = $_.Outcome; level = $_.Level; completedQuests = $_.CompletedQuests; step = $_.Step; message = $_.Message }
 			})
@@ -195,7 +198,8 @@ if ($World -gt 0) {
 			# over, with the snapshot it was last played in, so the next round finds it.
 			if ($restoredFrom) {
 				$playedIds = @($characters | ForEach-Object { [int]$_.characterId })
-				foreach ($kept in @($record.characters | Where-Object { $_.characterId -gt 0 -and [int]$_.characterId -notin $playedIds })) {
+				foreach ($kept in @($record.characters | Where-Object { $_.characterId -gt 0 -and [int]$_.characterId -notin $playedIds -and
+					(Get-Field $_ 'stage') -ne 'companion' })) {
 					$carried = [ordered]@{}
 					foreach ($property in $kept.PSObject.Properties) { $carried[$property.Name] = $property.Value }
 					if (-not (Get-Field $kept 'lastPlayedIn')) { $carried.lastPlayedIn = $restoredFrom }

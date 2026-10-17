@@ -3708,7 +3708,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 										leg.MapTripList.Any(onward => onward.MapId == next.MapId && onward.FromMapId == entry.MapId));
 									EnterLegMap();
 									await EnsureOnGroundAsync();
-									int teleporter = await ApproachShippedSpawnAsync(trip.TeleporterNpcId);
+									// Pandaemonium's teleporter is reached by the capital's own ways (its lifts, the Coliseum), as its talks are.
+									int teleporter = laterCapital != null && onMap == capitalContract.MapId
+										? await ApproachCapitalNpcAsync(trip.TeleporterNpcId) : await ApproachShippedSpawnAsync(trip.TeleporterNpcId);
 									NaturalServiceOutcome travelled = await new NaturalServiceSteps(session).TeleportAsync(teleporter,
 										session.Api.World.Objects[teleporter].Position, trip.TalkRange, trip.LocationId, trip.Fare, trip.MapId, token);
 									Require.True(travelled.IsDone, travelled.Reason);

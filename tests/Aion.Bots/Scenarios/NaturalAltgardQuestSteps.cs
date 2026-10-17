@@ -19,6 +19,7 @@ public static class NaturalAltgardQuestSteps
 		BotWorldModel world = session.Api.World;
 		(byte Status, int Var)? before = State(world, step.QuestId);
 		Expect(step, before);
+		int opening = session.PacketHistory.Count;
 		await NaturalDialogProtocol.OpenAsync(session, npc, token);
 		// NR-R11b: an NPC that is fighting opens no dialog and says nothing (Java NpcController.onDialogRequest 250-262 hands the
 		// request to the AI, and AbstractAI.canHandleEvent 75-83 takes DIALOG_START only in IDLE or WALKING). Neifenmer, a guard, was
@@ -27,8 +28,18 @@ public static class NaturalAltgardQuestSteps
 		if (await session.WaitForPacketWithinAsync(typeof(SM_DIALOG_WINDOW), TimeSpan.FromSeconds(5), token,
 			packet => packet.Get<int>("targetObjectId") == npc) == null)
 		{
-			if (NaturalDialogProtocol.OpponentOf(session, npc) is int opponent) throw new NaturalDialogNpcFightingException(npc, opponent);
-			await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, packet => packet.Get<int>("targetObjectId") == npc);
+			// NL-2: an NPC whose talk is a use bar (Java ActionItemNpcAI, its talk_info delay: the faded letter that starts
+			// Q4011) opens its dialog when the bar is full. The clock runs through the bar, as a player waits it out.
+			if (session.PacketHistory.Skip(Math.Min(opening, session.PacketHistory.Count)).LastOrDefault(packet =>
+				packet.PacketType == typeof(SM_USE_OBJECT) && packet.Get<int>("targetObjectId") == npc && packet.Get<byte>("actionType") == 1) is { } bar)
+			{
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(bar.Get<int>("durationMs") + 250), token);
+				await session.SynchronizeAsync(token);
+			}
+			else if (NaturalDialogProtocol.OpponentOf(session, npc) is int opponent) throw new NaturalDialogNpcFightingException(npc, opponent);
+			if (!session.PacketHistory.Skip(Math.Min(opening, session.PacketHistory.Count)).Any(packet =>
+				packet.PacketType == typeof(SM_DIALOG_WINDOW) && packet.Get<int>("targetObjectId") == npc))
+				await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, packet => packet.Get<int>("targetObjectId") == npc);
 		}
 		// A walking NPC (Tulberg) walks on until the talk stops it. Java NpcController.onDialogSelect drops a choice made from out of
 		// talk range without a word, so a walker that stopped beyond reach left the talk waiting for a page that never came (run-fast,

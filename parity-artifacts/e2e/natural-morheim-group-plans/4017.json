@@ -1,0 +1,276 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 4017,
+    "name": "[Group] The Ikelus Manhunt",
+    "nameId": 1114016,
+    "zone": "Brusthonin",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 24,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 4016
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/brusthonin.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 4017,
+        "start_npc_ids": 205130
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 205130,
+        "name": "vinduer",
+        "positions": [
+          {
+            "mapId": 220050000,
+            "x": 2908.72,
+            "y": 2441.64,
+            "z": 16.182495,
+            "heading": 49,
+            "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 205130,
+      "name": "vinduer",
+      "positions": [
+        {
+          "mapId": 220050000,
+          "x": 2908.72,
+          "y": 2441.64,
+          "z": 16.182495,
+          "heading": 49,
+          "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 205130,
+      "name": "vinduer",
+      "positions": [
+        {
+          "mapId": 220050000,
+          "x": 2908.72,
+          "y": 2441.64,
+          "z": 16.182495,
+          "heading": 49,
+          "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 1,
+      "npc_ids": 213931,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 213931,
+          "name": "centurion ikelus",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 2334.41,
+              "y": 1389.04,
+              "z": 30.9951,
+              "heading": 114,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 205130,
+          "name": "vinduer",
+          "positions": [
+            {
+              "mapId": 220050000,
+              "x": 2908.72,
+              "y": 2441.64,
+              "z": 16.182495,
+              "heading": 49,
+              "source": "game-server/data/static_data/spawns/Npcs/220050000_Brusthonin.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 186750,
+        "title": 72,
+        "rewardItems": [],
+        "selectableItems": [
+          {
+            "count": 1,
+            "item_id": 100200607
+          },
+          {
+            "count": 1,
+            "item_id": 100900489
+          },
+          {
+            "count": 1,
+            "item_id": 101500500
+          },
+          {
+            "count": 1,
+            "item_id": 100500502
+          },
+          {
+            "count": 1,
+            "item_id": 101800508
+          },
+          {
+            "item_id": 102000900
+          },
+          {
+            "count": 1,
+            "item_id": 102100491
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 4017,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 24,
+      "name": "[Group] The Ikelus Manhunt",
+      "nameId": 1114016,
+      "quest_zone": "Brusthonin",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 186750,
+          "title": 72
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 100200607
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 100900489
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 101500500
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 100500502
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 101800508
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 102000900
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 102100491
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 1,
+          "npc_ids": 213931,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 4016
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
