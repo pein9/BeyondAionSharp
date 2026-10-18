@@ -41677,3 +41677,23 @@ world it places 258 objects on 14 maps (262 over all channels):
   ever wrote the `HLFP_ID_TOWN_*` and `HDFP_ID_TOWN_*` counters.
 - Instances get their gated groups when they are created (63 instance maps have some). No instance
   exists in a fresh world, so none of that is counted here.
+
+## The elite Ashunatal lost Java's AI to the retail one
+
+Found by scenario INSTANCES (P11-01, `docs/e2e-player-simulation-plan.md`), which creates every instance and fails on any
+logged problem. Aturam Sky Fortress logged `Error during spawn` twice, from `SummonerAI.HandleSpawned`.
+
+`c2da15bed` gave Ashunatal Shadowslip **217376** the retail pattern `Station_NinjaNM` by rewriting the class Java calls
+`AshunatalShadowslipAI`, keeping Java's AI name `ashunatal_shadowslip`, and pointing 217376 at it. But Java gives that AI
+to the **other** Ashunatal, the elite **219183** that stands at (302, 875) — 217376 is plain `aggressive` in Java. Her Java
+class holds door 2 shut while she fights, opens doors 2 and 17 when she goes home or dies, and walks her off on route
+3002400001 after skill 19417.
+
+With the name taken, 219183 ran the retail `SummonerAI` subclass, which reads a summon table she does not have
+(`spawn_helpers.xml` has one for 217376 only). `HandleSpawned` threw on every creation of the instance and the spawner
+deleted her, so she was not in Aturam at all, and nor were her doors.
+
+The fix gives 219183 Java's class back as `AshunatalShadowslipEliteAI`, under the name `ashunatal_shadowslip_elite`
+(`npc_templates.xml`); 217376 keeps the retail class and its name, so the summon audits' AI lists stay as they are. No
+retail pattern names 219183, so Java's behaviour stands for her. Pin:
+`AshunatalShadowslipAiTests.TheEliteAshunatalSpawnsUnderJavasAi`.

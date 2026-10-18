@@ -19,6 +19,7 @@ public sealed class AshunatalShadowslipAiTests
 	private const int AturamSkyFortress = 300240000;
 
 	private const int Ashunatal = 217376;
+	private const int EliteAshunatal = 219183;
 	private const int ExplosionShadow = 217379;
 	private const int DecayShadow = 217380;
 	private const int DisruptionShadow = 217381;
@@ -195,5 +196,22 @@ public sealed class AshunatalShadowslipAiTests
 		Strike(boss, raider);
 
 		Assert.Single(Live(harness, DecayShadow));
+	}
+
+	/// <summary>
+	/// <b>The elite Ashunatal keeps Java's AI.</b> Java gives 219183 its door-holding AshunatalShadowslipAI; the retail pattern of
+	/// 217376 took that AI's name, so 219183 ran the retail summoner without a summon table and threw at every spawn of Aturam
+	/// Sky Fortress (SummonerAI.HandleSpawned), which left her out of the instance. She now spawns under the Java port.
+	/// </summary>
+	[Fact]
+	public void TheEliteAshunatalSpawnsUnderJavasAi()
+	{
+		using BossAiHarness harness = BossAiHarness.For(AturamSkyFortress).WithWorldSize(2048)
+			.WithAi(typeof(AshunatalShadowslipEliteAI), typeof(AshunatalShadowslipAI), typeof(SummonerAI), typeof(AggressiveNpcAI), typeof(GeneralNpcAI))
+			.Build();
+		Npc elite = harness.Spawn(EliteAshunatal, 302.087f, 875.245f, 900.964f);
+		Assert.True(elite.IsSpawned());
+		Assert.IsType<AshunatalShadowslipEliteAI>(elite.GetAi());
+		Assert.IsType<AshunatalShadowslipAI>(harness.Spawn(Ashunatal, 407f, 820f, 903f).GetAi());
 	}
 }
