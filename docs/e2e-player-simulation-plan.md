@@ -146,7 +146,8 @@ every future run, including director/setup accounts.
 | Two-game-server character transfer | No current manifest scenario | Not selected | P10-09 corrected relay reaches a partial clone, then fails passport persistence and exposes duplicate starter inventory (§7/134–135); no accepted BA-001 journey |
 | Save/crash/relogin and duplicate-session lifecycle | O1 | Component/DAO tests, not a SIM manifest scenario | Implemented and accepted (P10-03) |
 | Sustained mixed activities and scale | SOAK | Not selected | Workload exists; small-population evidence is not the deferred larger-capacity acceptance (D17) |
-| Whole-instance, scheduled siege/housing and broader journey | No current manifest scenario | Phase 11 remains future work | The siege/housing boot tail is restored (P10-05, done 2026-10-17; D7); their journeys remain P11-05 and P11-06; natural journey remains separate policy work |
+| Scheduled sieges: preparation, start, capture, end, Balaur assault, gate repair | SIEGE | Implemented (P11-05, 2026-10-17); own epoch, a Thursday's 17:00 Reshanta and 19:00 Gelkmaros slots | Not selected |
+| Whole-instance, housing and broader journey | No current manifest scenario | Phase 11 remains future work | The housing boot tail is restored (P10-05, done 2026-10-17; D7); its journey remains P11-06; natural journey remains separate policy work |
 
 ## 2. Target design
 
@@ -2256,7 +2257,8 @@ real geodata on in production immediately, because geo is enabled by default; th
   an acceptance gate. The supported scope is:
   BA-002 chat auth success, gagged, timeout/disconnect, duplicate request; BA-003 login-server kick,
   reconnect key, access grant, account ban, MAC/HDD ban sync, duplicate login; BA-005 in-world siege gate repair
-  and assault (deferred with P10-05, D7); BA-006 hardware-ban persistence across a login-server restart.
+  and assault (deferred with P10-05, D7; both played in SIM by P11-05's scenario SIEGE, 2026-10-17); BA-006
+  hardware-ban persistence across a login-server restart.
   **Done in supported scope:** the watcher has an explicit second-GS topology option with independent log/heartbeat
   identity, Docker failure attribution, source validation, repro context and owned hang diagnostics.
   First-GS allowances and O1 crash gaps do not extend to the second instance. The opt-in `cross-server`
@@ -2617,9 +2619,39 @@ GM commands force scheduled content without waiting for cron (`//siege`, `//rift
 - [ ] **P11-02** [BOTH] L — Full clears of two low-level instances, one per race: boss kill, loot, exit.
 - [ ] **P11-03** [BOTH] M — PvP arena and auto-group queue (`CM_AUTO_GROUP`) with 2–6 bots.
 - [ ] **P11-04** [BOTH] M — Rift open, cross-race entry and close; vortex and world raid start and stop.
-- [ ] **P11-05** [BOTH] L — Siege start, capture and end. Open: P10-05 gave it the boot it needed (Java's siege
-  calendar, every location's owner NPCs, the endless artifact sieges), but no scenario yet starts, captures and ends
-  a siege; the teleport and trade sweeps only use `//siege capture` to set up an owner.
+- [x] **P11-05** [BOTH] L — Siege start, capture and end. **Done 2026-10-17 in SIM (scenario `SIEGE`); no LIVE run is
+  claimed.** `SimulationSiegeScenarioTests.cs` plays Java's siege calendar through on the virtual clock from the
+  process's own epoch, Thursday 2026-09-17 15:58 UTC (`reset-SIEGE`), with three ordinary bots (two level-50 Asmodian
+  Gladiators in a group and a legion they make with their own packets, one level-30 Elyos Gladiator), every expected
+  value from the Java code: the 16:00 and later hourly broadcasts (`SM_FORTRESS_INFO` ×N, `SM_FORTRESS_STATUS` with the
+  next states and influences, `SM_FORTRESS_INFO` ×N); the 16:55 preparation, whose occupy-count rule puts Siel's
+  Western Fortress (1131, given to the Elyos at occupy count 2) back to the Balaur with Java's message, packets and
+  database row; the 17:00 start of 1131, 1132, 1141, 1211 and 1251 (vulnerable, `SM_SIEGE_LOCATION_STATE` to every
+  player, the SIEGE groups replacing the PEACE ones, one boss each, and `clearLocation` killing an Elyos kisk inside
+  1132 and sending its Elyos player to his bind point); the capture of 1132 by real auto-attacks on Ulsaruk (owner race
+  and legion, the artifact, occupy count 1, faction balance -1, the Asmodian PEACE group, the `siege_locations` row,
+  `STR_ABYSS_GUILD_WIN_CASTLE`, the world buff 12148 for Asmodians, the top-12 grade's item by mail, the legion's
+  5,000,000 kinah in its warehouse with its history entry and its five item rewards mailed to the brigade general); a
+  Balaur assault on the Asmodians' 1141 (the dredgion for everyone, the first wave's TELEPORT assaulters by its
+  defenders, the announcements to the player inside, and the end Java gives the fight: with seed 1 the assaulters take
+  the fortress, losers and winners told, no rewards with `gameserver.siege.reward.balaur.victory` off); a gate repair of
+  1141 by its defender (`GateRepairAI`: both questions, the fee, the 1% heal, the cooldown refusal); 1131, 1211 and
+  1251 defended by the Balaur to their end at 18:00 with their PEACE groups back; at 19:00 the capture of Vorgaltem
+  Citadel (3011), whose first grade pays 10,000,000 kinah and 200 GP and whose legion GP of 1000 is split and capped at
+  200 a member; and at 19:40 Crimson Temple's end, after which Silentera's outpost 3111 gets its PEACE group again and
+  every player its `SM_RIFT_ANNOUNCE`. It runs with `gameserver.log.siege` on and checks Java's text of every siege-log
+  line. Director setup, recorded in the class: the class and level changes, the two GM captures, setup teleports, the
+  bosses lowered to 4 and 2 HP (two Gladiators hit a fortress boss for 1 a swing), a gate damaged by twice its repair,
+  and the 1141 assault forced by the GM's `//siege assault 1141 60` because Java's own roll at the start is 3% at that
+  influence. Found and fixed: §7/163–165 (siege-log text and categories; no gameplay divergence turned up). Seen and
+  kept as Java has it: Ulsaruk's area attack strikes his GENERAL_DRAGON lead scouts, who strike back (see the note
+  after §7). Run it with `AION_SIM_DB_INTEGRATION=1 AION_SIM_TIER=Full AION_SIM_PROCESS_KEY=reset-SIEGE
+  AION_SIM_SCENARIO=SIEGE dotnet test tests/Aion.Simulation.Tests --filter
+  "FullyQualifiedName~SimulationFastScenarioTests.ManifestScenariosRunInFixedProcessOrder"` (about 75 s with the boot;
+  passed with seeds 1, 2 and 3). Not covered: a LIVE siege, the agent fight (8011), outpost and artifact sieges as
+  their own captures, Panesterra, mercenaries, a player-held fortress's own defence rewards, Balaur assault waves past
+  the first in detail, and the faction-troop assault Java sends against a player-held fortress with a level-65 boss
+  at its siege start.
 - [ ] **P11-06** [BOTH] L — Housing: register, bid, acquire, decorate, pay rent, house teleport. Open: P10-05 builds
   housing and its auction-end, auto-fill and maintenance tasks at boot, but no scenario plays any of these steps yet.
 - [ ] **P11-07** [SIM] S — Flight transporters, teleporters and day/night spawns (after P4-09).
@@ -2721,7 +2753,7 @@ exits (`docker compose events`) and MySQL errors.
 | D4 | Allowed production changes | (a) parity fixes citing `upstream/4.8`; (b) gameplay-neutral seams: logging bridge, `SystemClock` routing, socketless connection, login-link interface, `Rnd` seed, deterministic-mode switches, virtual cron | **Approved** 2026-09-17: (b) counts as infrastructure under CLAUDE.md |
 | D5 | GM usage | Director account (level 9) for setup; subjects at level 0; each system also gets at least one play-through scenario | Proposed |
 | D6 | Anti-hack checks in bot runs | Test-only oracle profile | **Declined** 2026-09-17: no anti-cheat checks; bot runs keep production security defaults (P6-04 dropped) |
-| D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Approved** 2026-10-17, reversing the 2026-09-17 decline: the maintainer said "We DO NEED the siege enabled ... to get all those missing features working on this server fully and enabled. (housing, sieges, etc)". P10-05 is done (2026-10-17, `eccae23af` to `4bf50584a`); P11-05, P11-06 and BA-005 are open, no longer blocked. His answers to the open questions, the same day: "Don't re-record the baseline because it doesn't change that much, keep Java's siege calendar"; "Keep whatever server time, doesn't matter"; on housing rent in the live world, "yes, we want parity so yes". So the neutral gate is not re-recorded, Java's siege schedule runs in SIM and LIVE, the time zone is not changed, and housing auctions and rent are on as Java has them |
+| D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Approved** 2026-10-17, reversing the 2026-09-17 decline: the maintainer said "We DO NEED the siege enabled ... to get all those missing features working on this server fully and enabled. (housing, sieges, etc)". P10-05 is done (2026-10-17, `eccae23af` to `4bf50584a`); P11-05 is done in SIM (scenario SIEGE, 2026-10-17) and with it BA-005's gate repair and fortress assault; P11-06 is open, no longer blocked. His answers to the open questions, the same day: "Don't re-record the baseline because it doesn't change that much, keep Java's siege calendar"; "Keep whatever server time, doesn't matter"; on housing rent in the live world, "yes, we want parity so yes". So the neutral gate is not re-recorded, Java's siege schedule runs in SIM and LIVE, the time zone is not changed, and housing auctions and rent are on as Java has them |
 | D8 | Java reference for this work | Keep local `../aion-server` `4.8` at `lastCompletedJavaCommit` | **Done** 2026-09-17 (`6ffedcd4f` → `ce54b7931`) |
 | D9 | Where runs happen | Local scripts | **Decided** 2026-09-17: no GitHub Actions, no n8n or other schedulers (both removed from the repo). The `docker/` compose stack stays as the way the emulator is deployed and run. Runs may create and drop databases on a Docker MySQL freely |
 | D13 | How LIVE mode starts the servers | An isolated docker compose project built from `docker/` | **Decided** 2026-09-17: LIVE runs as its own compose project (own name, images, ports, MySQL and logs), so it tests the same images the emulator is deployed with (P3-00, P3-02, P3-08) |
@@ -2957,8 +2989,14 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 160 | `SM_STATUPDATE_EXP` writes a sixth int64, always zero, after `maxBoostExp` (D37) | `SM_STATUPDATE_EXP.java:36-40` writes five. The 4.8 client reads six (`game.dll`, dispatch case 8 at 0x10362C57); the sixth is its Blessing of Wisdom pool. Reported upstream (`docs/upstream-reports/sm-statupdate-exp-sixth-field.patch`) | Retained under D37; `GoldenPacketFixtureTests.ExpPayloadIsTheJavaGoldenFollowedByTheClientsSixthField` |
 | 161 | `TrinielUndergroundArenaInstance` (320090000) and `SanctumUndergroundArenaInstance` (310080000) are instance handlers with no Java counterpart: `OnReviveEvent` revives at 25% HP and MP with soul sickness and teleports inside the instance to (277.86734, 289.877625, 164.1) and (278.503967, 289.728882, 164.1), heading 90 (D38) | Java gives neither arena a handler, so `GeneralInstanceHandler.allowInstanceRevive()` is false there and `SM_DIE` offers the bind revive only. NCSoft's world files give the points. Reported upstream (`docs/upstream-reports/quest-arenas-revive-inside.patch`) | Retained under D38; `SimulationQuestTimerCorrectionTests.ArenaDeathFailsTheAttemptAtOnceAndTheReviveIsInsideTheArena` plays the death, the offered revive, the exit and Garm's next arena |
 | 162 | Companion bots, a feature with no Java counterpart (D41): `Custom/Companion` (`CompanionService`, `CompanionProfile`, the `.companion` player command). The command is not public, so the command loader does not register it; the service registers it when the server starts with `AION_COMPANIONS=true` or a host switches it on. It makes a level-26 character from a generated profile (`game-server/data/companions`) on an account a host offered, through `PlayerService.StoreNewPlayer`, and deletes it through `PlayerService.DeletePlayerFromDB` when it has left the world. Three lines of ported code call it: `GameServerHostedService.StartAsync`, the end of `PlayerEnterWorldService.EnterWorld` (a companion joins its player's group as an accepted invitation does, and with its first companion a group's loot is set to free for all through `PlayerGroupService.ChangeGroupRules`) and the end of `PlayerLeaveWorldService.LeaveWorld`. Its own task looks at the companions every ten seconds and ends, disconnects or deletes one that should be gone. A seat is an account named in `AION_COMPANION_ACCOUNTS` that waits at character selection, found through `LoginServer.LoggedInAccounts`, a read-only view added for it; a companion's character is marked by its note | Java has no such command, service or data. While the switch is off the server is as Java's: the command does not exist and the two calls return at once | Retained under D41; SIM test `CompanionCommandMakesAThrowawayCharacterAndDeletesIt`, unit tests `CompanionProfileTests`; plan and steps in [companion-bots.md](companion-bots.md) |
+| 163 | `FortressAssault`'s "Initialized fortress assault" line printed its floats as C# does (`[factionBalance=1]`, `[influence=0]`) | `FortressAssault.java` `calculateDifficultySettings` concatenates floats, which prints them as `Float.toString` (`1.0`, `0.0`) | Fixed (P11-05) with `JavaString.ValueOf`; `SiegeLogParityTests.FortressAssaultLogsItsDifficultyAsJavaPrintsFloats`, scenario SIEGE |
+| 164 | `GateRepairAI`, `ArtifactAI` and `AhserionAI` logged under their class names, so their lines never reached siege.log | All three use `LoggerFactory.getLogger("SIEGE_LOG")` (`ArtifactAI`'s missing-skill error alone goes to its class logger) | Fixed (P11-05); `SiegeLogParityTests.SiegeAisWriteToTheSiegeLog`, scenario SIEGE checks the gate repair's line |
+| 165 | With `gameserver.log.siege` on, `Siege.sendRewardsToParticipants` and `FortressSiege.distributeLegionGp` printed the rewarded players as a C# type name | Java concatenates the `List`/`Set` (`AbstractCollection.toString`: `[a, b]`) | Fixed (P11-05) with `JavaString.ValueOf`; scenario SIEGE checks both lines (they need the database, so no unit test) |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
+`TribeRelationService.checkSiegeRelation` makes every siege NPC whose base tribe is GENERAL_DRAGON hostile to every
+creature, so a fortress boss's area attack (Ulsaruk's 17552, five times its damage on NPCs by `FortressProtectorNpcAI`)
+strikes the Balaur lead scouts beside him, and they strike back and can kill him (seen in SIEGE, P11-05).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the
 packet's `1/1` fallback rather than the real channel (`PlayerEnterWorldService`, `TeleportService`,
 `SM_CHANNEL_INFO` at `ce54b7931`). Soak gathering distributes cohorts across existing indices 0–4,
@@ -2974,7 +3012,7 @@ fallback as evidence of the actual channel or alter this shared behavior.
 |---|---|---|
 | 1 | Real-client behaviour: client-side validation, HTML dialogs, rendering, whether the real client accepts each server packet (113 of 238 server packets currently have structured bot decoders; this is not real-client acceptance) | Golden packet suite, P10-07 client captures, a manual client session per release |
 | 2 | Combat numbers and NPC AI against Java (differential runs exclude combat and NPC streams) | Golden formula fixtures and the retail-AI fidelity audits |
-| 3 | **Closed** 2026-10-17: sieges and housing, while the production boot skipped the Java boot tail; P10-05 restored it (D7) | The SIM boot runs the tail (`SimulationBootTailTests`); the siege and housing journeys are P11-05 and P11-06, still open |
+| 3 | **Closed** 2026-10-17: sieges and housing, while the production boot skipped the Java boot tail; P10-05 restored it (D7) | The SIM boot runs the tail (`SimulationBootTailTests`); the siege journey is scenario SIEGE (P11-05, done in SIM 2026-10-17); the housing journey, P11-06, is still open |
 | 4 | Mass PvP at realistic scale | Not covered; P10-02 soaks starter zones and a small Reshanta PvP set |
 | 5 | Geodata outside the starter zones | Extend P9-02 map by map |
 | 6 | External integrations (web shop token, web rewards, GameGuard, captcha) | Not covered |
@@ -3040,6 +3078,18 @@ Take NPC and object positions from server packets at run time; spawn XML positio
 | Pandaemonium salt vendor Daraia | npc 204101 | (1173.63, 1528.79, 214.164); salt for 6501 only |
 | Pandaemonium oven | static 150000009, static_id 111 | (1169.701, 1535.215, 214.105) |
 | Asmodian cooking work order | quest 6500 | recipe 155009206 (1 × 182291205 → 182291522) |
+
+### Sieges (SIEGE, P11-05)
+
+| What | Id | Position / notes |
+|---|---|---|
+| Thursday 17:00 Reshanta slot | fortresses 1131, 1132, 1141, 1211, 1251 (`400010000`) | preparation 16:55; siege 3600 s; occupy count 2 |
+| Ulsaruk (1132's Balaur SIEGE boss) | npc 263311 | (2621.608, 2857.771, 1460.718); 4,536,385 HP, `fortress_protector` |
+| Quiet ground inside 1132 (kisk spot) | — | (2460, 3040, 1575.61); 140 m from any NPC, no NOBIND zone; (E) Personal Kisk item 184000017 |
+| Quiet ground inside 1141 | — | (1306, 1290, 1579.02); 68 m from any NPC |
+| 1141 gate stone and its door | npc 275404 static 204 → door static 49 (npc 275401) | repair fee 188030000 ×5, cooldown 30 s |
+| Thursday 19:00 Gelkmaros slot | fortresses 3011, 3021 (`220070000`); outpost 3111 depends on both | siege 2400 s |
+| Vorgaltem Citadel's Balaur SIEGE boss | npc 257610 | (1196.241, 787.5281, 314.0141); level 65 |
 
 ### Skills and items
 

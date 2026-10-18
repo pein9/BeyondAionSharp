@@ -2000,6 +2000,20 @@
     "resetEpoch": true
   },
   {
+    "id": "SIEGE",
+    "modes": ["Sim"],
+    "tier": "Full",
+    "race": "Both",
+    "map": 400010000,
+    "channelNeeds": "Exclusive",
+    "bots": 3,
+    "virtualDuration": "03:45:00",
+    "consumes": [],
+    "requires": ["Db", "D7"],
+    "expectedFail": null,
+    "resetEpoch": true
+  },
+  {
     "id": "SOAK",
     "modes": ["Live"],
     "tier": "Soak",

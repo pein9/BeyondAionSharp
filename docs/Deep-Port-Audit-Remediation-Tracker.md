@@ -8,7 +8,7 @@
 
 **Java specification baseline:** `4.8` at `59f65a9561bfa655eb24134da88ba3121c66ee8a`
 
-**Overall state:** Close to resolved — 15 findings verified; three findings retain open runtime journeys or deferred acceptance. P10-09 B2/B2F verify BA-002's Chat journeys, including the D19-authorized gag correction.
+**Overall state:** Verified in supported scope — 17 findings verified; BA-001 is not applicable to the single-server product (D20). P10-09 B2/B2F verify BA-002's Chat journeys, including the D19-authorized gag correction; scenario SIEGE (P11-05) verifies BA-005's siege journey.
 
 ## Status rules
 
@@ -38,8 +38,9 @@ The baseline is not proof of runtime parity; it records the starting point again
 
 | Status | Count |
 |---|---:|
-| Verified | 15 |
-| Code complete | 3 |
+| Verified | 17 |
+| Not applicable | 1 |
+| Code complete | 0 |
 | In progress | 0 |
 | Not started | 0 |
 | Blocked | 0 |
@@ -50,9 +51,9 @@ The baseline is not proof of runtime parity; it records the starting point again
 | Gate | Findings | State | Exit evidence |
 |---|---|---|---|
 | Release Gate 1 — primary server flows | BA-001, BA-002, BA-003, BA-004 | Verified in supported scope | BA-002/003/004 Verified; BA-001 is not applicable to the single-server emulator (D20) |
-| Release Gate 2 — gameplay and temporal data | BA-005, BA-006, BA-007 | Close to resolved | BA-006/007 Verified; BA-005's in-world siege journey is in progress (D7 approved 2026-10-17) |
+| Release Gate 2 — gameplay and temporal data | BA-005, BA-006, BA-007 | Verified | BA-005/006/007 Verified; BA-005's gate repair and fortress assault are played in SIM by scenario SIEGE (P11-05, 2026-10-17) |
 | Hardening and setup Gate | BA-008 through BA-018 | Verified | Semantic/schema suites, static-data atomicity, warning ratchet, full solution, and fidelity checks pass |
-| Completion Audit | All findings and backlog | Close to resolved | 16 Verified; BA-001 not applicable; BA-005 Code complete with its in-world journey in progress |
+| Completion Audit | All findings and backlog | Verified in supported scope | 17 Verified; BA-001 not applicable |
 
 ## Release Gate 1 — primary cross-server flows
 
@@ -151,9 +152,15 @@ callback API internals retain their focused loopback coverage. See `docs/e2e-pha
 
 ### BA-005 — Siege nested JAXB callbacks
 
-**Status:** Code complete
+**Status:** Verified
 
-**Current work:** Nested callback/binding fixes and exhaustive shipped-data invariants pass; a live world-object gate repair and full assault remain runtime QA.
+**Current work:** Nested callback/binding fixes and exhaustive shipped-data invariants pass, and the SIM scenario SIEGE
+(P11-05, `docs/e2e-player-simulation-plan.md`) plays both runtime journeys in the restored boot: a Balaur assault on the
+Asmodian-held Sulfur Fortress (1141) runs from its dredgion through its first wave (TELEPORT assaulters by the
+defenders, announcements to the player inside) to the siege's end, and the 1141 defender repairs gate 49 at gate stone
+204 (`GateRepairAI`: both questions, the 188030000 ×5 fee, the heal of 1% of the gate's maximum, the 30 s cooldown
+refusal). The assault's start is the GM's `//siege assault`, because Java's own roll at the siege start is 3% at that
+influence; everything after it is automatic. No LIVE run is claimed.
 
 **Note (2026-10-17):** the maintainer approved D7 in `docs/e2e-player-simulation-plan.md`, reversing its 2026-09-17 decline, so the in-world journey below is no longer deferred. It is in progress with P10-05 (the Java boot tail, `SiegeService.InitSieges` among it) and P11-05.
 
@@ -161,7 +168,7 @@ callback API internals retain their focused loopback coverage. See `docs/e2e-pha
 - [x] `DoorRepairStone.static_id` binds through a public XML member/proxy.
 - [x] Real-data test resolves fortress `1131`, stone `199`, door `53`.
 - [x] A known assault location has non-empty teleport, commander, and combat lists.
-- [ ] One gate repair and one automatic fortress assault pass QA/integration coverage.
+- [x] One gate repair and one automatic fortress assault pass QA/integration coverage (SIM scenario SIEGE, 2026-10-17).
 - [x] Full solution tests pass (1,002/1,002).
 
 ### BA-006 — Database options and time semantics
@@ -322,8 +329,8 @@ Tagged Chat nickname is tracked with BA-002 because it shares the same Java requ
 - [x] `docs/Full-Parity-Backlog.md` and the source audit agree with current implementation status.
 - [x] Final worktree/diff review found no whitespace errors and preserved the user's untracked `AGENTS.md`.
 
-The remaining unchecked completion item is BA-005's in-world siege journey, in progress with
-P10-05 since D7 was approved on 2026-10-17. D20 makes BA-001 not applicable and closes BA-003 on its supported
+BA-005's in-world siege journey, the last unchecked completion item, is played in SIM by scenario SIEGE (P11-05,
+2026-10-17), after P10-05 restored the boot it needs (D7, approved 2026-10-17). D20 makes BA-001 not applicable and closes BA-003 on its supported
 single-server journeys. P10-09 retains the failed transfer evidence as historical diagnostics;
 it is not an acceptance gate or allowance. Chat-gag has a successful corrected runtime journey.
 See `docs/e2e-phase10-validation.md` for preserved failures and remaining coverage.
@@ -368,3 +375,12 @@ See `docs/e2e-phase10-validation.md` for preserved failures and remaining covera
 - Final adversarial review hardened the MAC/HDD inbound list readers against peer-sized allocation: impossible positive counts are rejected against frame capacity while valid and negative counts retain Java behavior. Huge/truncated production-lenient and negative-count cases pass in the 9/9 protocol suite. The warning toolchain is pinned to .NET SDK 10.0.301 locally and in CI.
 - Final gates pass: 1,002/1,002 solution tests, fidelity guardrail, 0 raw command/downstream parser bypasses, sole `GetDateTime` use limited to SQL `DATE`, 0 broken local links, and `git diff --check` exit 0.
 - Final state: 13 Verified, five Code complete. Remaining work is limited to the explicitly listed two-GS/Login/Chat, in-world siege, and hardware-ban synchronization/restart journeys.
+
+### 2026-10-17 — BA-005 verified by the siege journey
+
+- Scenario SIEGE (P11-05) plays a Thursday's 17:00 Reshanta and 19:00 Gelkmaros sieges in SIM from the restored boot:
+  preparation and occupy-count reset, start and clearing, two captures with their rewards, Balaur defences, a Balaur
+  assault on a player-held fortress and a gate repair. BA-005's last item is checked and its status is Verified.
+- The journey found no gameplay divergence; it found three siege-log ones, fixed: `FortressAssault`'s float text,
+  three siege AIs logging outside SIEGE_LOG, and the rewarded-player lists printed as C# type names
+  (`docs/e2e-player-simulation-plan.md` §7/163–165).

@@ -94,6 +94,21 @@ public sealed class ScenarioManifestTests
 	}
 
 	[Fact]
+	public void SiegeJourneyPlaysAThursdayInAnIsolatedProcess()
+	{
+		var scenario = Load().Get("SIEGE");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(ScenarioTier.Full, scenario.Tier); Assert.Equal(ScenarioChannelNeeds.Exclusive, scenario.ChannelNeeds);
+		Assert.Equal(ScenarioRace.Both, scenario.Race); Assert.Equal(3, scenario.Bots);
+		Assert.Equal([ScenarioRequirement.Db, ScenarioRequirement.D7], scenario.Requires);
+		DateTimeOffset epoch = SimulationWorldFixture.EpochForProcess("reset-SIEGE");
+		Assert.Equal(new DateTimeOffset(2026, 9, 17, 15, 58, 0, TimeSpan.Zero), epoch);
+		Assert.Equal(DayOfWeek.Thursday, epoch.DayOfWeek);
+		// Two minutes before the 16:00 broadcast, and past Crimson Temple's end at 19:40 (19:00 + 2400 s).
+		Assert.True(epoch + scenario.VirtualDuration > new DateTimeOffset(2026, 9, 17, 19, 40, 1, TimeSpan.Zero));
+	}
+
+	[Fact]
 	public void GatherSweepIsFullOnlyAndDeclaresTheCompleteSourceInventory()
 	{
 		var scenario = Load().Get("SWEEP-GATHER");
