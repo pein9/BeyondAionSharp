@@ -82,13 +82,13 @@ public class CustomInstanceDAO
             using MySqlDataReader rset = stmt.ExecuteReader();
             while (rset.Read())
             {
-                int playerId = rset.GetInt32(rset.GetOrdinal("c.player_id"));
-                int rank = rset.GetInt32(rset.GetOrdinal("c.rank"));
+                int playerId = rset.GetInt32(DatabaseColumns.Ordinal(rset, "c.player_id"));
+                int rank = rset.GetInt32(DatabaseColumns.Ordinal(rset, "c.rank"));
                 long lastEntry = rset.GetInt64(rset.GetOrdinal("last_entry_epoch_millis"));
-                int maxRank = rset.GetInt32(rset.GetOrdinal("c.max_rank"));
-                int dps = rset.GetInt32(rset.GetOrdinal("c.dps"));
-                string name = rset.GetString(rset.GetOrdinal("p.name"));
-                PlayerClass playerClass = Enum.Parse<PlayerClass>(rset.GetString(rset.GetOrdinal("p.player_class")));
+                int maxRank = rset.GetInt32(DatabaseColumns.Ordinal(rset, "c.max_rank"));
+                int dps = rset.GetInt32(DatabaseColumns.Ordinal(rset, "c.dps"));
+                string name = rset.GetString(DatabaseColumns.Ordinal(rset, "p.name"));
+                PlayerClass playerClass = Enum.Parse<PlayerClass>(rset.GetString(DatabaseColumns.Ordinal(rset, "p.player_class")));
                 players.Add(new CustomInstanceRankedPlayer(playerId, rank, lastEntry, maxRank, dps, name, playerClass));
             }
         }

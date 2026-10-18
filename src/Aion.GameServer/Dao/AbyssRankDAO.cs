@@ -237,21 +237,21 @@ public class AbyssRankDAO
             using MySqlDataReader rs = stmt.ExecuteReader();
             while (rs.Read())
             {
-                int position = rs.GetInt32(rs.GetOrdinal("a.rank_pos"));
-                int oldPosition = rs.GetInt32(rs.GetOrdinal("a.old_rank_pos"));
-                int id = rs.GetInt32(rs.GetOrdinal("p.id"));
-                string name = rs.GetString(rs.GetOrdinal("p.name"));
-                Race race = Enum.Parse<Race>(rs.GetString(rs.GetOrdinal("p.race")));
-                int level = DataManager.PLAYER_EXPERIENCE_TABLE.GetLevelForExp(rs.GetInt64(rs.GetOrdinal("p.exp")));
-                int rank = rs.GetInt32(rs.GetOrdinal("a.rank"));
-                int ap = rs.GetInt32(rs.GetOrdinal("a.ap"));
-                int gp = rs.GetInt32(rs.GetOrdinal("a.gp"));
-                int title = rs.GetInt32(rs.GetOrdinal("p.title_id"));
-                PlayerClass playerClass = Enum.Parse<PlayerClass>(rs.GetString(rs.GetOrdinal("p.player_class")));
-                Gender gender = Enum.Parse<Gender>(rs.GetString(rs.GetOrdinal("p.gender")));
+                int position = rs.GetInt32(DatabaseColumns.Ordinal(rs, "a.rank_pos"));
+                int oldPosition = rs.GetInt32(DatabaseColumns.Ordinal(rs, "a.old_rank_pos"));
+                int id = rs.GetInt32(DatabaseColumns.Ordinal(rs, "p.id"));
+                string name = rs.GetString(DatabaseColumns.Ordinal(rs, "p.name"));
+                Race race = Enum.Parse<Race>(rs.GetString(DatabaseColumns.Ordinal(rs, "p.race")));
+                int level = DataManager.PLAYER_EXPERIENCE_TABLE.GetLevelForExp(rs.GetInt64(DatabaseColumns.Ordinal(rs, "p.exp")));
+                int rank = rs.GetInt32(DatabaseColumns.Ordinal(rs, "a.rank"));
+                int ap = rs.GetInt32(DatabaseColumns.Ordinal(rs, "a.ap"));
+                int gp = rs.GetInt32(DatabaseColumns.Ordinal(rs, "a.gp"));
+                int title = rs.GetInt32(DatabaseColumns.Ordinal(rs, "p.title_id"));
+                PlayerClass playerClass = Enum.Parse<PlayerClass>(rs.GetString(DatabaseColumns.Ordinal(rs, "p.player_class")));
+                Gender gender = Enum.Parse<Gender>(rs.GetString(DatabaseColumns.Ordinal(rs, "p.gender")));
                 // Java parity: l.name comes from a LEFT JOIN (null for a legionless ranked player); Java getString
                 // returns null, C# GetString throws on DBNull -> ranking list truncated at the first legionless player.
-                int lnOrd = rs.GetOrdinal("l.name");
+                int lnOrd = DatabaseColumns.Ordinal(rs, "l.name");
                 string legionName = rs.IsDBNull(lnOrd) ? null : rs.GetString(lnOrd);
                 results.Add(new RankingListPlayer(position, oldPosition, id, name, race, level, rank, ap, gp, title, playerClass, gender, legionName));
             }
@@ -275,13 +275,13 @@ public class AbyssRankDAO
             using MySqlDataReader rs = stmt.ExecuteReader();
             while (rs.Read())
             {
-                int position = rs.GetInt32(rs.GetOrdinal("l.rank_pos"));
-                int oldPosition = rs.GetInt32(rs.GetOrdinal("l.old_rank_pos"));
-                int id = rs.GetInt32(rs.GetOrdinal("l.id"));
-                string name = rs.GetString(rs.GetOrdinal("l.name"));
-                Race race = Enum.Parse<Race>(rs.GetString(rs.GetOrdinal("p.race")));
-                int level = rs.GetInt32(rs.GetOrdinal("l.level"));
-                long contributionPoints = rs.GetInt64(rs.GetOrdinal("l.contribution_points"));
+                int position = rs.GetInt32(DatabaseColumns.Ordinal(rs, "l.rank_pos"));
+                int oldPosition = rs.GetInt32(DatabaseColumns.Ordinal(rs, "l.old_rank_pos"));
+                int id = rs.GetInt32(DatabaseColumns.Ordinal(rs, "l.id"));
+                string name = rs.GetString(DatabaseColumns.Ordinal(rs, "l.name"));
+                Race race = Enum.Parse<Race>(rs.GetString(DatabaseColumns.Ordinal(rs, "p.race")));
+                int level = rs.GetInt32(DatabaseColumns.Ordinal(rs, "l.level"));
+                long contributionPoints = rs.GetInt64(DatabaseColumns.Ordinal(rs, "l.contribution_points"));
                 int memberCount = LoadLegionMemberCount(con, id);
                 results.Add(new RankingListLegion(position, oldPosition, id, name, race, level, contributionPoints, memberCount));
             }
