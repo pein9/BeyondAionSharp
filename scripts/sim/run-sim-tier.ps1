@@ -116,6 +116,7 @@ function Write-RunMetadata {
 			'reset-L8C' { '2026-12-16T12:00:00.0000000+00:00' }
 			'reset-L8' { '2026-08-09T23:50:00.0000000+00:00' }
 			'reset-SIEGE' { '2026-09-17T15:58:00.0000000+00:00' }
+			'reset-HOUSING' { '2026-09-20T23:58:00.0000000+00:00' }
 			default { '2026-09-16T08:59:00.0000000+00:00' }
 		})
 		timeZone = 'UTC'
@@ -137,6 +138,8 @@ function Write-RunMetadata {
 			@{ 'SWEEP-SKILL' = @{ setup = 'Four ordinary race-specific subjects, including same-race party helpers; director class/daeva eligibility/level, skill learning, temporary mastery only for classless skill rows, equipment, consumables, HP/MP/DP, player/dead targets, compatible spirits/robot mode, chain/counter windows and shipped crowd-control effects; independent-row cooldown/effect/summoned-object cleanup; natural combat/respawn waits; normal casts, pet follow-up casts, passive application and gathering/morphing required; profession failure chance set to zero for action execution and restored afterward' } }
 		} elseif ($scenarioIds.Contains('SIEGE')) {
 			@{ SIEGE = @{ 'gameserver.log.siege' = $true; setup = 'Ordinary level-50 Asmodian Gladiators (group and legion by their own packets) and a level-30 Elyos Gladiator; 1131 given to the Elyos with occupy count 2 and 1141 to the Asmodians by the GM capture; setup teleports; fortress bosses lowered to 4 and 2 HP; a gate damaged by twice its repair; the 1141 assault by //siege assault 1141 60 unless the siege start rolled one' } }
+		} elseif ($scenarioIds.Contains('HOUSING')) {
+			@{ HOUSING = @{ setup = 'Ordinary level-30 Gladiators (three Asmodians, one Elyos); the Asmodians'' housing quest 28802 completed, its Homeward Bound skill book given to the house buyer and read by him; kinah for bids and rent; two tables and a wallpaper for the owner; the third Asmodian given a Pernon house as if bought on 2026-09-13 with its rent due 2026-09-21 00:00; setup teleports of the visitors to the house door' } }
 		} elseif ($scenarioIds.Contains('SWEEP-TRADE')) {
 			@{ 'SWEEP-TRADE' = @{ setup = 'Ordinary race-specific subjects; level, legion, kinah/AP/rank, required materials and dialog prerequisites; shipped siege/base spawns, matching Panesterra faction and director game-calendar changes; director clears nearby hostile NPCs when a vendor is fighting, then waits for normal AI return; previous-row supplied inventory/products cleaned between independent catalogs' } }
 		} else { @{} })

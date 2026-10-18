@@ -147,7 +147,8 @@ every future run, including director/setup accounts.
 | Save/crash/relogin and duplicate-session lifecycle | O1 | Component/DAO tests, not a SIM manifest scenario | Implemented and accepted (P10-03) |
 | Sustained mixed activities and scale | SOAK | Not selected | Workload exists; small-population evidence is not the deferred larger-capacity acceptance (D17) |
 | Scheduled sieges: preparation, start, capture, end, Balaur assault, gate repair | SIEGE | Implemented (P11-05, 2026-10-17); own epoch, a Thursday's 17:00 Reshanta and 19:00 Gelkmaros slots | Not selected |
-| Whole-instance, housing and broader journey | No current manifest scenario | Phase 11 remains future work | The housing boot tail is restored (P10-05, done 2026-10-17; D7); its journey remains P11-06; natural journey remains separate policy work |
+| Housing: auction, bids, acquisition, rent and maintenance, decoration, house gate, door settings, sale, impoundment | HOUSING | Implemented (P11-06, 2026-10-18); own epoch, two weeks from a Sunday | Not selected |
+| Whole-instance and broader journey | No current manifest scenario | Phase 11 remains future work | Natural journey remains separate policy work |
 
 ## 2. Target design
 
@@ -2209,7 +2210,7 @@ real geodata on in production immediately, because geo is enabled by default; th
   neutral-gate baseline is not re-recorded, Java's siege calendar runs in SIM and LIVE, the server time zone is
   unchanged and housing auctions and rent are on; `docker/README.md` says what the live server now runs. No LIVE
   run is claimed. Still open, and not covered by these commits: the siege and housing journeys (P11-05, P11-06) and
-  BA-005.
+  BA-005 (all since played in SIM: scenario SIEGE on 2026-10-17, scenario HOUSING on 2026-10-18).
   Work 2026-10-17: the no-DB bootstrap tests run only `StartHeadAsync` (Java lines 93-105) and the env-gated
   DB full-boot test became `SimulationBootTailTests` on the SIM boot. Housing (118-122) is wired: `HousingService`,
   `HousingBidService`, then the three cron tasks through `ThreadPoolManager.ConstructStartupSingleton` (inline in
@@ -2652,8 +2653,51 @@ GM commands force scheduled content without waiting for cron (`//siege`, `//rift
   their own captures, Panesterra, mercenaries, a player-held fortress's own defence rewards, Balaur assault waves past
   the first in detail, and the faction-troop assault Java sends against a player-held fortress with a level-65 boss
   at its siege start.
-- [ ] **P11-06** [BOTH] L — Housing: register, bid, acquire, decorate, pay rent, house teleport. Open: P10-05 builds
-  housing and its auction-end, auto-fill and maintenance tasks at boot, but no scenario plays any of these steps yet.
+- [x] **P11-06** [BOTH] L — Housing: register, bid, acquire, decorate, pay rent, house teleport. **Done 2026-10-18 in SIM
+  (scenario `HOUSING`); no LIVE run is claimed.** `SimulationHousingScenarioTests.cs` plays two weeks of Java's housing
+  calendar (housing.properties: auto-fill and maintenance Monday 00:00, auction end Sunday 12:00, registration Monday to
+  Friday) on the virtual clock from the process's own epoch, Sunday 2026-09-20 23:58 UTC (`reset-HOUSING`), with four
+  ordinary level-30 Gladiators (three Asmodians, one Elyos), every expected value from the Java code: the empty broker
+  before the auto-fill; the Monday auto-fill of each race (20 HOUSE, 10 MANSION, 5 ESTATE and 1 PALACE at their default
+  prices, sale signs, open doors, `house_bids` rows, its log lines) and each race's `SM_HOUSE_BIDS` listing only its own
+  houses; bids by `CM_PLACE_BID` with Java's refusals in Java's order (the Elyos without his housing quest 18802, an
+  overdue owner, the leader again, another house while leading, a raise of 100% or more, a bid not above the last), an
+  outbid with `STR_MSG_HOUSING_BID_CANCEL`, `SM_RECEIVE_BIDS(0)` and the refund by a `FAILED_BID` auction mail claimed
+  back with the mail packets; the Sunday auction end (the owner, the `houses` row, the home sign, the butler with the
+  owner's name, the `WIN_BID` mail, the unsold houses' `FAILED_SALE` lines) and the winner's notification at his next
+  login (`HousingBidService.onPlayerLogin`); the first maintenance giving the new house its free week; rent by
+  `CM_HOUSE_PAY_RENT` (the land's 400,000 fee, the next maintenance run as the new date, the client's four-week cap);
+  Homeward Bound, learned from 28802's skill book, summoning the house gate (`HouseGateAI`: the question,
+  `SM_HOUSE_TELEPORT`, the way back kept) and `CM_HOUSE_TELEPORT_BACK`; decoration by `CM_HOUSE_EDIT` and
+  `CM_HOUSE_DECORATE` (the registry lists, two tables added, placed, moved, taken back and deleted, a wallpaper on line 8,
+  each answer packet, `SM_HOUSE_OBJECT`, `SM_DELETE_HOUSE_OBJECT`, `SM_HOUSE_UPDATE`, and `player_registered_items` after
+  logout); a house script set and removed (`house_scripts`); a friendship, a friend and a stranger entering by the door
+  (`CM_HOUSE_OPEN_DOOR`), `CM_HOUSE_SETTINGS` friends-only sending the stranger out and closed sending everyone out (to
+  `teleportNearHouseDoor`'s point, with Java's messages and the settings in the `houses` row after logout), the
+  relationship crystal (`CM_HOUSE_TELEPORT` 1 and 2), the friend leaving his own house by its door and coming back, and the
+  owner's kick; the owner registering his house (`CM_REGISTER_HOUSE`, its 30% fee; the overdue, already-registered,
+  own-house and Sunday refusals); a bid at 11:57 prolonging that auction to 12:05 (`AuctionEndTask.tryProlongAuction`),
+  the house sold then, the seller's 24,000,000 (`calculateSaleRewardKinah`), his decoration taken out of the house and
+  the buyer's acquisition; and a house the director gave as bought on 2026-09-13 with its rent due on 09-21: the first and
+  second overdue mails, then on 10-05 its impoundment and re-auction, the third mail's 90% refund (10,800,000) and
+  `STR_MSG_HOUSING_SEQUESTRATE` at its owner's next login. Director setup, recorded in the class and in run-sim-tier's
+  metadata: class and level, the Asmodians' housing quest 28802, its skill book given to the buyer (who reads it), kinah,
+  two tables and a wallpaper, the overdue house, and the visitors' setup teleports to the door. Found and fixed:
+  §7/166–169. Seen and kept as Java has it: the point outside a house's door is still inside its `HOUSE_<address>` zone,
+  which takes in the yard, so a visitor sent out still counts as inside for the next kick; `CM_HOUSE_SCRIPT`'s
+  `SM_HOUSE_SCRIPTS` goes only to the players who see the owner; house settings and decoration reach the database at the
+  owner's logout or the periodic save; before `AuctionEndTask` first runs its next run is in the host's zone (see
+  `SimulationBootTailTests`), and the first week's remaining auction seconds follow it; the two Monday 00:00 jobs run in
+  the order they were scheduled in SIM (auto-fill first), an order Quartz leaves open in Java. Run it with
+  `AION_SIM_DB_INTEGRATION=1 AION_SIM_TIER=Full AION_SIM_PROCESS_KEY=reset-HOUSING AION_SIM_SCENARIO=HOUSING dotnet test
+  tests/Aion.Simulation.Tests --filter "FullyQualifiedName~SimulationFastScenarioTests.ManifestScenariosRunInFixedProcessOrder"`
+  (about 38 minutes: two weeks of world time cost about 5.5 s an hour, most of it the walker groups that Java, like this
+  port, keeps walking in inactive regions; passed with seeds 1 and 2). Not covered: a LIVE run; studios; a second house and its
+  grace period (`GRACE_START`, the old house impounded with the 50% refund, `GRACE_SUCCESS`); using house objects
+  (`CM_USE_HOUSE_OBJECT`: chairs, storages, the postbox, NPC objects, cooldowns, use counts, expiry); renovation
+  (`CM_HOUSE_EDIT` 14–16); the butler's and the sign's dialogs; the random friend teleport (3); a cancelled auction; a
+  second bid inside a prolongation; legion members as friends at the door; `AuctionEndTask.shouldRunOnStart` after a
+  restart.
 - [ ] **P11-07** [SIM] S — Flight transporters, teleporters and day/night spawns (after P4-09).
 
 **Done when:** P11-01 passes for all 78 handlers in the SIM Full tier, and P11-02 and P11-04 pass in the LIVE Full tier.
@@ -2753,7 +2797,7 @@ exits (`docker compose events`) and MySQL errors.
 | D4 | Allowed production changes | (a) parity fixes citing `upstream/4.8`; (b) gameplay-neutral seams: logging bridge, `SystemClock` routing, socketless connection, login-link interface, `Rnd` seed, deterministic-mode switches, virtual cron | **Approved** 2026-09-17: (b) counts as infrastructure under CLAUDE.md |
 | D5 | GM usage | Director account (level 9) for setup; subjects at level 0; each system also gets at least one play-through scenario | Proposed |
 | D6 | Anti-hack checks in bot runs | Test-only oracle profile | **Declined** 2026-09-17: no anti-cheat checks; bot runs keep production security defaults (P6-04 dropped) |
-| D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Approved** 2026-10-17, reversing the 2026-09-17 decline: the maintainer said "We DO NEED the siege enabled ... to get all those missing features working on this server fully and enabled. (housing, sieges, etc)". P10-05 is done (2026-10-17, `eccae23af` to `4bf50584a`); P11-05 is done in SIM (scenario SIEGE, 2026-10-17) and with it BA-005's gate repair and fortress assault; P11-06 is open, no longer blocked. His answers to the open questions, the same day: "Don't re-record the baseline because it doesn't change that much, keep Java's siege calendar"; "Keep whatever server time, doesn't matter"; on housing rent in the live world, "yes, we want parity so yes". So the neutral gate is not re-recorded, Java's siege schedule runs in SIM and LIVE, the time zone is not changed, and housing auctions and rent are on as Java has them |
+| D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Approved** 2026-10-17, reversing the 2026-09-17 decline: the maintainer said "We DO NEED the siege enabled ... to get all those missing features working on this server fully and enabled. (housing, sieges, etc)". P10-05 is done (2026-10-17, `eccae23af` to `4bf50584a`); P11-05 is done in SIM (scenario SIEGE, 2026-10-17) and with it BA-005's gate repair and fortress assault; P11-06 is done in SIM (scenario HOUSING, 2026-10-18). His answers to the open questions, the same day: "Don't re-record the baseline because it doesn't change that much, keep Java's siege calendar"; "Keep whatever server time, doesn't matter"; on housing rent in the live world, "yes, we want parity so yes". So the neutral gate is not re-recorded, Java's siege schedule runs in SIM and LIVE, the time zone is not changed, and housing auctions and rent are on as Java has them |
 | D8 | Java reference for this work | Keep local `../aion-server` `4.8` at `lastCompletedJavaCommit` | **Done** 2026-09-17 (`6ffedcd4f` → `ce54b7931`) |
 | D9 | Where runs happen | Local scripts | **Decided** 2026-09-17: no GitHub Actions, no n8n or other schedulers (both removed from the repo). The `docker/` compose stack stays as the way the emulator is deployed and run. Runs may create and drop databases on a Docker MySQL freely |
 | D13 | How LIVE mode starts the servers | An isolated docker compose project built from `docker/` | **Decided** 2026-09-17: LIVE runs as its own compose project (own name, images, ports, MySQL and logs), so it tests the same images the emulator is deployed with (P3-00, P3-02, P3-08) |
@@ -2992,11 +3036,18 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 163 | `FortressAssault`'s "Initialized fortress assault" line printed its floats as C# does (`[factionBalance=1]`, `[influence=0]`) | `FortressAssault.java` `calculateDifficultySettings` concatenates floats, which prints them as `Float.toString` (`1.0`, `0.0`) | Fixed (P11-05) with `JavaString.ValueOf`; `SiegeLogParityTests.FortressAssaultLogsItsDifficultyAsJavaPrintsFloats`, scenario SIEGE |
 | 164 | `GateRepairAI`, `ArtifactAI` and `AhserionAI` logged under their class names, so their lines never reached siege.log | All three use `LoggerFactory.getLogger("SIEGE_LOG")` (`ArtifactAI`'s missing-skill error alone goes to its class logger) | Fixed (P11-05); `SiegeLogParityTests.SiegeAisWriteToTheSiegeLog`, scenario SIEGE checks the gate repair's line |
 | 165 | With `gameserver.log.siege` on, `Siege.sendRewardsToParticipants` and `FortressSiege.distributeLegionGp` printed the rewarded players as a C# type name | Java concatenates the `List`/`Set` (`AbstractCollection.toString`: `[a, b]`) | Fixed (P11-05) with `JavaString.ValueOf`; scenario SIEGE checks both lines (they need the database, so no unit test) |
+| 166 | `SM_HOUSE_BIDS` wrote each house's C# `HouseType` value as its type (HOUSE 2, ESTATE 0): the file did not import `Model.Templates.Housing`, so `GetId()` bound to the global `EnumGetIdExtension.GetId` fallback | `SM_HOUSE_BIDS.java` writes `house.getHouseType().getId()` (STUDIO 0, HOUSE 1, MANSION 2, ESTATE 3, PALACE 4) | Fixed (P11-06); `EnumGetIdBindingTests.NoEnumWithItsOwnJavaIdUsesTheGlobalGetIdFallback` scans the compiled server for a box of such an enum before a call of the fallback; scenario HOUSING compares every entry |
+| 167 | `SM_INSTANCE_SCORE` wrote the instance progression type's C# value (0 to 3) for the same reason | `SM_INSTANCE_SCORE.java:35` writes `InstanceProgressionType.getId()` (12, 1, 2 or 3 × 1024 × 1024) | Fixed (found by the test of 166) |
+| 168 | `PlayerScripts` stored nothing: `CM_HOUSE_SCRIPT` changed the slot in memory only, a removal left the row, and an owner change kept the old owner's scripts in `house_scripts` | `PlayerScripts.set` stores through `HouseScriptsDAO.storeScript` (inserting a NEW house first), `remove` and `removeAll` delete; a script that does not decompress or has the wrong size is logged and refused | Fixed (P11-06); scenario HOUSING checks the row after setting and after removing a script (it needs the world and the database, so no unit test) |
+| 169 | `HouseController.teleportNearHouseDoor` computed the door with an unsigned heading: where a house's relationship crystal sees its butler at a heading below 30 (132 of the 468 HOUSE addresses), `h - 30` wrapped to 226–255, so the point outside the door was 2 m off (48° wrong) and the heading inside the house wrong | Java's byte is signed: `convertHeadingToAngle(-20)` is 300°, and `-20 < 60` turns it into 40 | Fixed (P11-06); scenario HOUSING sends its friend out of and back into a house chosen for such a door (it needs the world, so no unit test) |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `TribeRelationService.checkSiegeRelation` makes every siege NPC whose base tribe is GENERAL_DRAGON hostile to every
 creature, so a fortress boss's area attack (Ulsaruk's 17552, five times its damage on NPCs by `FortressProtectorNpcAI`)
 strikes the Balaur lead scouts beside him, and they strike back and can kill him (seen in SIEGE, P11-05).
+`HouseController.teleportNearHouseDoor`'s point outside a house's door lies inside the house's `HOUSE_<address>` zone,
+which takes in the yard, so a visitor the door settings or a kick send out still counts as inside the house (seen in
+HOUSING, P11-06).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the
 packet's `1/1` fallback rather than the real channel (`PlayerEnterWorldService`, `TeleportService`,
 `SM_CHANNEL_INFO` at `ce54b7931`). Soak gathering distributes cohorts across existing indices 0–4,
@@ -3012,7 +3063,7 @@ fallback as evidence of the actual channel or alter this shared behavior.
 |---|---|---|
 | 1 | Real-client behaviour: client-side validation, HTML dialogs, rendering, whether the real client accepts each server packet (113 of 238 server packets currently have structured bot decoders; this is not real-client acceptance) | Golden packet suite, P10-07 client captures, a manual client session per release |
 | 2 | Combat numbers and NPC AI against Java (differential runs exclude combat and NPC streams) | Golden formula fixtures and the retail-AI fidelity audits |
-| 3 | **Closed** 2026-10-17: sieges and housing, while the production boot skipped the Java boot tail; P10-05 restored it (D7) | The SIM boot runs the tail (`SimulationBootTailTests`); the siege journey is scenario SIEGE (P11-05, done in SIM 2026-10-17); the housing journey, P11-06, is still open |
+| 3 | **Closed** 2026-10-17: sieges and housing, while the production boot skipped the Java boot tail; P10-05 restored it (D7) | The SIM boot runs the tail (`SimulationBootTailTests`); the siege journey is scenario SIEGE (P11-05, done in SIM 2026-10-17); the housing journey is scenario HOUSING (P11-06, done in SIM 2026-10-18) |
 | 4 | Mass PvP at realistic scale | Not covered; P10-02 soaks starter zones and a small Reshanta PvP set |
 | 5 | Geodata outside the starter zones | Extend P9-02 map by map |
 | 6 | External integrations (web shop token, web rewards, GameGuard, captcha) | Not covered |
@@ -3090,6 +3141,18 @@ Take NPC and object positions from server packets at run time; spawn XML positio
 | 1141 gate stone and its door | npc 275404 static 204 → door static 49 (npc 275401) | repair fee 188030000 ×5, cooldown 30 s |
 | Thursday 19:00 Gelkmaros slot | fortresses 3011, 3021 (`220070000`); outpost 3111 depends on both | siege 2400 s |
 | Vorgaltem Citadel's Balaur SIEGE boss | npc 257610 | (1196.241, 787.5281, 314.0141); level 65 |
+
+### Housing (HOUSING, P11-06)
+
+| What | Id | Position / notes |
+|---|---|---|
+| Pernon (Asmodian housing zone) | map 710010000 | 501 addresses; houses spawn in its one instance |
+| Pernon HOUSE land | land 338001 | building 353000 (CP_C), level 21, 12,000,000 kinah, fee 400,000 a week; 234 addresses |
+| Asmodian housing quest | quest 28802 | `HousingService.canOwnHouse`; reward Homeward Bound skill book 169500953 (Elyos: 18802) |
+| Homeward Bound (Asmodian) | skill 296 | 6000 ms cast, 700 ms hit; summons house gate 749247 (`housegate`) for 30 s; question 160014, or 904435 where returning to battle is barred |
+| Table | item 170000005 | passive house object 3000006, no use days |
+| Sky Blue Doodle Patterned Wallpaper | item 171110023 | house part 3524001, INWALL_ANY: line 8 is room 0 |
+| Friend invitation | question 1401498 | |
 
 ### Skills and items
 

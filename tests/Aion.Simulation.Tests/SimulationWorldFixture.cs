@@ -37,6 +37,8 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 		"reset-L8" => new DateTimeOffset(2026, 8, 9, 23, 50, 0, TimeSpan.Zero),
 		// P11-05: two minutes before the 16:00 broadcast of the Thursday whose 17:00 Reshanta sieges SIEGE plays.
 		"reset-SIEGE" => SimulationFastScenarioTests.SiegeEpoch,
+		// P11-06: two minutes before the Monday 00:00 auto-fill of the house auction that HOUSING plays.
+		"reset-HOUSING" => SimulationFastScenarioTests.HousingEpoch,
 		_ => FixedEpoch,
 	};
 	public DateTimeOffset Epoch { get; private set; }

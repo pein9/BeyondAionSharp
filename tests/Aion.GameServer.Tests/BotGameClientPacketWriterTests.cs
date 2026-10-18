@@ -192,6 +192,27 @@ public sealed partial class BotGameClientPacketWriterTests
 		yield return C("block-add", GameClientPackets.BlockAdd("Friend", "A reason"), game, new Dictionary<string, object?> { ["targetName"] = "Friend", ["reason"] = "A reason" });
 		yield return C("block-delete", GameClientPackets.BlockDelete("Friend"), game, "targetName", "Friend");
 		yield return C("block-reason", GameClientPackets.BlockReason("Friend", "Edited"), game, new Dictionary<string, object?> { ["targetName"] = "Friend", ["reason"] = "Edited" });
+		yield return C("house-bids", GameClientPackets.HouseBids(), game);
+		yield return C("house-bid", GameClientPackets.PlaceHouseBid(37, 18_000_000), game, new Dictionary<string, object?> { ["listIndex"] = 37, ["bidOffer"] = 18_000_000L });
+		yield return C("house-register", GameClientPackets.RegisterHouse(20_000_000), game, "bidKinah", 20_000_000L);
+		yield return C("house-rent", GameClientPackets.PayHouseRent(3), game, "weekCount", 3);
+		yield return C("house-teleport", GameClientPackets.HouseTeleport(2, 153, 154), game,
+			new Dictionary<string, object?> { ["actionId"] = 2, ["playerId1"] = 153, ["playerId2"] = 154 });
+		yield return C("house-teleport-back", GameClientPackets.HouseTeleportBack(), game);
+		yield return C("house-edit-mode", GameClientPackets.HouseEdit(1), game, "action", 1);
+		yield return C("house-edit-add", GameClientPackets.HouseEdit(3, 155), game, new Dictionary<string, object?> { ["action"] = 3, ["itemObjectId"] = 155 });
+		yield return C("house-edit-place", GameClientPackets.HouseEdit(5, 156, 1.5f, 2.5f, 3.5f, 90), game,
+			new Dictionary<string, object?> { ["action"] = 5, ["itemObjectId"] = 156, ["x"] = 1.5f, ["y"] = 2.5f, ["z"] = 3.5f, ["rotation"] = 90 });
+		yield return C("house-decorate", GameClientPackets.HouseDecorate(157, 3524001, 8), game, new Dictionary<string, object?> { ["objectId"] = 157, ["lineNo"] = 8 });
+		yield return C("house-settings", GameClientPackets.HouseSettings(2, false, "Welcome"), game,
+			new Dictionary<string, object?> { ["doorState"] = (byte)2, ["showOwnerName"] = false, ["signNotice"] = "Welcome" });
+		yield return C("house-open-door", GameClientPackets.HouseOpenDoor(20057, true), game, new Dictionary<string, object?> { ["address"] = 20057, ["leave"] = true });
+		yield return C("house-kick", GameClientPackets.HouseKick(2), game, "option", (byte)2);
+		yield return C("house-object-use", GameClientPackets.UseHouseObject(158), game, "itemObjectId", 158);
+		yield return C("house-script", GameClientPackets.HouseScript(20057, 1, [1, 2, 3], 6), game,
+			new Dictionary<string, object?> { ["address"] = 20057, ["scriptId"] = 1, ["totalSize"] = 11, ["compressedSize"] = 3, ["uncompressedSize"] = 6, ["scriptContent"] = new byte[] { 1, 2, 3 } });
+		yield return C("house-script-delete", GameClientPackets.HouseScript(20057, 1, null, 0), game,
+			new Dictionary<string, object?> { ["address"] = 20057, ["scriptId"] = 1, ["totalSize"] = 0 });
 	}
 
 	private static object[] C(string name, BotClientPacket packet, AionConnection.State state,

@@ -2014,6 +2014,20 @@
     "resetEpoch": true
   },
   {
+    "id": "HOUSING",
+    "modes": ["Sim"],
+    "tier": "Full",
+    "race": "Both",
+    "map": 710010000,
+    "channelNeeds": "Exclusive",
+    "bots": 4,
+    "virtualDuration": "14.00:10:00",
+    "consumes": [],
+    "requires": ["Db", "D7"],
+    "expectedFail": null,
+    "resetEpoch": true
+  },
+  {
     "id": "SOAK",
     "modes": ["Live"],
     "tier": "Soak",

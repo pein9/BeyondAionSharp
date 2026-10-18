@@ -109,6 +109,21 @@ public sealed class ScenarioManifestTests
 	}
 
 	[Fact]
+	public void HousingJourneyPlaysTwoWeeksFromASundayInAnIsolatedProcess()
+	{
+		var scenario = Load().Get("HOUSING");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(ScenarioTier.Full, scenario.Tier); Assert.Equal(ScenarioChannelNeeds.Exclusive, scenario.ChannelNeeds);
+		Assert.Equal(ScenarioRace.Both, scenario.Race); Assert.Equal(4, scenario.Bots);
+		Assert.Equal([ScenarioRequirement.Db, ScenarioRequirement.D7], scenario.Requires);
+		DateTimeOffset epoch = SimulationWorldFixture.EpochForProcess("reset-HOUSING");
+		Assert.Equal(new DateTimeOffset(2026, 9, 20, 23, 58, 0, TimeSpan.Zero), epoch);
+		Assert.Equal(DayOfWeek.Sunday, epoch.DayOfWeek);
+		// Two minutes before the Monday 00:00 auto-fill, and past the third Monday's maintenance and the login after it.
+		Assert.True(epoch + scenario.VirtualDuration > new DateTimeOffset(2026, 10, 5, 0, 5, 0, TimeSpan.Zero));
+	}
+
+	[Fact]
 	public void GatherSweepIsFullOnlyAndDeclaresTheCompleteSourceInventory()
 	{
 		var scenario = Load().Get("SWEEP-GATHER");
