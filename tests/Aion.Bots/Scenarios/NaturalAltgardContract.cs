@@ -57,7 +57,8 @@ public sealed record NaturalAltgardContract(
 	NaturalAbyssEntry? AbyssEntry = null,
 	NaturalAltgardClassPath[]? ClassPaths = null,
 	NaturalAltgardItemStart[]? ItemStarts = null,
-	NaturalAltgardItemUse[]? ItemUses = null)
+	NaturalAltgardItemUse[]? ItemUses = null,
+	NaturalAltgardInstanceRooms? InstanceRooms = null)
 {
 	/// <summary>The contract file and plan directory of each leg (none when the leg has no template quests).</summary>
 	public static readonly IReadOnlyDictionary<string, (string Contract, string? Plans)> Legs = new Dictionary<string, (string, string?)>
@@ -122,12 +123,14 @@ public sealed record NaturalAltgardContract(
 		["vo"] = ("natural-morheim-vo-contract.json", "natural-morheim-vo-plans"),
 		// NL-4: "vh" is Halabana Outpost's quests from 31 to 35 and the fortress's Q2401, handed in at Halabana.
 		["vh"] = ("natural-morheim-vh-contract.json", "natural-morheim-vh-plans"),
+		// NL-4: "vs" is the campaign's Q24023, the Sky Temple Interior's three rooms, worked out of Slag Bulwark.
+		["vs"] = ("natural-morheim-vs-contract.json", null),
 	};
 
 	/// <summary>The legs played by a mustered character of level 26 or more: the Morheim leg to level 31
 	/// (docs/natural-morheim-leveling.md), on Morheim, and the leg to 36's (docs/natural-leg-36.md), on Morheim and Brusthonin.</summary>
 	public static readonly IReadOnlySet<string> MusteredLegs = new HashSet<string>
-		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp", "re", "rs", "ru", "rq", "rt", "ro", "rb", "va", "vo", "vh" };
+		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp", "re", "rs", "ru", "rq", "rt", "ro", "rb", "va", "vo", "vh", "vs" };
 
 	/// <summary>NL-2: Brusthonin, the settlers' land south of Morheim.</summary>
 	public const int Brusthonin = 220050000;
@@ -302,6 +305,7 @@ public sealed record NaturalAltgardContract(
 		{
 			if (contract.StepMap(step) != contract.Hub.MapId && !contract.MapTripList.Any(trip => trip.MapId == contract.StepMap(step)) &&
 				!contract.InstanceTripList.Any(trip => trip.MapId == contract.StepMap(step)) &&
+				contract.InstanceRooms?.MapId != contract.StepMap(step) &&
 				contract.Haramel?.MapId != contract.StepMap(step) &&
 				contract.Destiny?.AllowedMaps.Contains(contract.StepMap(step)) != true)
 				throw new InvalidDataException($"Natural Altgard step {step.Key} has no trip to its map.");
@@ -321,9 +325,10 @@ public sealed record NaturalAltgardContract(
 			contract.PoisonList.Any(poison => !contract.Steps.Any(step => step.Key == poison.RemovedByStep)))
 			throw new InvalidDataException("Natural Altgard object uses, zone steps, collections or poisons disagree with the quests and steps.");
 		string[] stepKeys = contract.Steps.Select(step => step.Key).ToArray();
+		// NL-4: or a talk of a started quest (Q24023's Anund at the fortress, before the bind at Slag Bulwark).
 		if (contract.Bind?.BeforeStep is { } before &&
-			!contract.Steps.Any(step => step.Key == before && step.ExpectedStatus == "OFFER" && contract.StepMap(step) == contract.Hub.MapId))
-			throw new InvalidDataException("Natural Altgard bind prerequisite must name an offer on the hub map.");
+			!contract.Steps.Any(step => step.Key == before && step.ExpectedStatus is "OFFER" or "START" && contract.StepMap(step) == contract.Hub.MapId))
+			throw new InvalidDataException("Natural Altgard bind prerequisite must name an offer or a talk on the hub map.");
 		if (contract.EscortList.Select(escort => escort.Key).Distinct().Count() != contract.EscortList.Length ||
 			contract.EscortList.Any(escort => !questIds.Contains(escort.QuestId) || !stepKeys.Contains(escort.StartStep) ||
 				!stepKeys.Contains(escort.RestartStep) || !areas.Contains(escort.Area) || escort.ClearAreas.Any(area => !areas.Contains(area)) ||
@@ -360,6 +365,13 @@ public sealed record NaturalAltgardContract(
 			trip.PortalPosition.Length != 3 || trip.Arrival.Length != 3 || trip.ExitPosition.Length != 3 ||
 			trip.BossPosition.Length != 3 || trip.MovieExitPosition.Length != 3 || trip.UseMillis < 0 || trip.ExitUseMillis < 0))
 			throw new InvalidDataException("Natural Altgard instance trips disagree with the quests, maps or transitions.");
+		if (contract.InstanceRooms is { } rooms && (!questIds.Contains(rooms.QuestId) || rooms.MapId == contract.Hub.MapId ||
+			rooms.EnterVars.Length == 0 || rooms.Rooms.Length == 0 || rooms.Rooms.Select(room => room.Key).Distinct().Count() != rooms.Rooms.Length ||
+			rooms.Rooms.Any(room => room.Min.Length != 3 || room.Max.Length != 3 || room.PortalPosition.Length != 3 || room.Arrival.Length != 3 ||
+				room.ExitPosition.Length != 3 || !room.Contains(room.Arrival) || !room.Contains(room.ExitPosition)) ||
+			contract.CollectionList.SingleOrDefault(collection => collection.QuestId == rooms.QuestId && collection.MapId == rooms.MapId) is not { } keys ||
+			!keys.Items.Select(item => item.ItemId).SequenceEqual(rooms.Rooms.Select(room => room.ItemId))))
+			throw new InvalidDataException("Natural Altgard instance rooms disagree with the quests, maps, collection or their own boxes.");
 		int[] otherMaps = contract.HuntList.Select(hunt => hunt.MapId).Concat(contract.ObjectUseList.Select(use => use.MapId)).OfType<int>().ToArray();
 		if (otherMaps.Any(map => map != contract.Hub.MapId && !contract.InstanceTripList.Any(trip => trip.MapId == map) && contract.Haramel?.MapId != map))
 			throw new InvalidDataException("A hunt or object use has no instance trip to its map.");
@@ -421,6 +433,7 @@ public sealed record NaturalAltgardContract(
 			.Concat(CubeExpansion is { } cube ? [cube.TeleporterNpcId] : [])
 			.Concat(MapTripList.Select(trip => trip.TeleporterNpcId))
 			.Concat(InstanceTripList.SelectMany(trip => new[] { trip.PortalNpcId, trip.ExitNpcId, trip.BossNpcId }))
+			.Concat(InstanceRooms?.Rooms.SelectMany(room => new[] { room.PortalNpcId, room.ExitNpcId }) ?? [])
 			.Concat(Destiny is { } destiny ? [destiny.EnemyNpcId, 203545, 203513] : [])
 			.Concat(CoinGear is { } gear ? [gear.VendorNpcId] : [])
 			.Concat(Haramel?.GraphNpcIds ?? [])
@@ -525,6 +538,26 @@ public sealed record NaturalAltgardDestiny(int QuestId, int MapId, int[] Allowed
 public sealed record NaturalAltgardInstanceTrip(int QuestId, int MapId, int FromVar, int EnterVar, int PortalNpcId,
 	float[] PortalPosition, int UseMillis, float[] Arrival, int ExitNpcId, float[] ExitPosition, int ExitUseMillis, int ResetVar,
 	int BossNpcId, float[] BossPosition, int SpawnVar, int KillVar, int MovieId, float[] MovieExitPosition);
+
+/// <summary>
+/// NL-4: a solo instance whose rooms are entered by portals of their own and are not joined inside (Q24023's Sky Temple
+/// Interior, 320050000). A second room's portal puts the player back into the same copy (Java <c>PortalService.port</c>, the
+/// registered solo instance), at that room's landing; each room holds one quest item, and its exit beside the item's keeper
+/// goes back out to the entrance pad. The rooms are the quest's collection, in its order.
+/// </summary>
+/// <param name="EnterVars">The quest's vars at which the rooms are worked (Q24023: 2, which the first entry turns into 3, and 3).</param>
+public sealed record NaturalAltgardInstanceRooms(int QuestId, int MapId, int[] EnterVars, int UseMillis, NaturalAltgardInstanceRoom[] Rooms)
+{
+	/// <summary>The room whose box holds <paramref name="at"/> (the zone's polygon bounds and height band), if any.</summary>
+	public NaturalAltgardInstanceRoom? RoomAt(float[] at) => Rooms.FirstOrDefault(room => room.Contains(at));
+}
+
+/// <param name="Min">The room's box, from its SUB zone's polygon and height band (<c>zones_320050000.xml</c>).</param>
+public sealed record NaturalAltgardInstanceRoom(string Key, float[] Min, float[] Max, int PortalNpcId, float[] PortalPosition,
+	float[] Arrival, int ExitNpcId, float[] ExitPosition, int ItemId, int SourceNpcId)
+{
+	public bool Contains(float[] at) => at[0] >= Min[0] && at[0] <= Max[0] && at[1] >= Min[1] && at[1] <= Max[1] && at[2] >= Min[2] && at[2] <= Max[2];
+}
 
 /// <param name="Zone">AB-01: where the item must be used when not <paramref name="Anywhere"/> (Q24013's poison), and the
 /// monsters the use spawns (Java <c>onItemUseEvent</c>: two Feral Black Claw Sharpeyes).</param>

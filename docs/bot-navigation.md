@@ -276,6 +276,12 @@ gate monster stands, though every step through it passes the server's ground che
 crosses the seam by stepping off the island; an interaction route does not, so the leader walks to a point inside
 the gateway first. Seven of the 28 weapons chests stand outside the walls on the camp's island.
 
+The leg to 36's NL-4 ([natural-leg-36.md](natural-leg-36.md)) adds the Sky Temple Interior for Q24023 with
+`bake --maps 320050000`, verified by `check --maps 320050000 --rebake`. The bake matches the local `run/nav` mesh the
+research read: 3,266 polygons on 371 islands. Its three rooms are not joined, and the Wind and Fire Rooms' floors are islands
+23 to 37 m apart that no walk joins. The bot glides down between them (`NaturalFloorGlide`), and its routes stay on one
+island at a time.
+
 Haramel's HM-02 mesh is generated with `bake --maps 300200000`; use
 `graph --maps 300200000 --race ASMODIANS` because the neutral instance serves both races and its exit
 must select Altgard for this journey. `check --maps 300200000 --rebake` compares the generated mesh.

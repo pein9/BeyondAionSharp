@@ -33,6 +33,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 	private sealed class NaturalHaramelGroundApproachUnavailableException(string message) : IOException(message);
 	private sealed class NaturalBookCollectionMapChangedException : IOException;
 
+	/// <summary>NL-4: a death in an instance room revived the bot at its bind outside; the leg plans the way back in.</summary>
+	private sealed class NaturalLeftInstanceRoomException() : IOException("A death took the bot out of the instance room.");
+
 	/// <summary>AC-06: the Leg 3 escort's clear areas hold grave robbers with respawn_time 295 s (the Altgard spawn data);
 	/// a clear holds that long after its first kill.</summary>
 	private const long EscortClearRespawnMillis = 295_000;
@@ -556,6 +559,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			// M5: how a Morheim leg reaches ground it has no road to inside a FLY zone (the Fire Temple's crater): it walks into
 			// the zone, flies and lands beside the goal. False when no flight across a zone leads there.
 			Func<BotPosition, Task<bool>>? flyAcross = null;
+			// NL-4: how a leg with instance rooms (Q24023's Sky Temple Interior) goes down to a floor no walk joins: a glide.
+			Func<BotPosition, Task<bool>>? glideDown = null;
 			// M4: the quests this bot left for the group step on a Morheim leg (no progress on one alone for an hour).
 			var deferredToGroup = new HashSet<int>();
 			Func<int, float, Func<int?>?, Task<int>>? haramelApproach = null;
@@ -918,8 +923,20 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					throw new TimeoutException($"Mau course exceeded its 3,600-second game-clock cap ({runtime.NowMillis - journeyStart} ms).");
 			}
 			long lastProgressObservation = -1000;
+			// NL-4: a kill in a solo instance's rooms is progress toward the room's key: its monsters never respawn, so the excuse
+			// is bounded by their number (the Fire Room's two lower tiers hold about a hundred elites).
+			(NaturalJourneyNavigator? Navigator, int Kills) roomKills = (null, 0);
 			session.AfterSynchronize = () =>
 			{
+				if (altgardLeg?.InstanceRooms is { } killRooms && session.Api.World.MapId == killRooms.MapId)
+				{
+					if (!ReferenceEquals(roomKills.Navigator, navigator)) roomKills = (navigator, navigator.UnavailableObjects.Count);
+					else if (navigator.UnavailableObjects.Count > roomKills.Kills)
+					{
+						roomKills = (navigator, navigator.UnavailableObjects.Count);
+						ExcuseBoundedWait();
+					}
+				}
 				EnforceCourseGameClock();
 				if (!session.Api.World.LoginStateObserved || runtime.NowMillis - lastProgressObservation < 1000) return;
 				lastProgressObservation = runtime.NowMillis;
@@ -3418,7 +3435,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				{
 					ApproachMapId = contract.MapId,
 				};
-				if (leg.Destiny != null || leg.Haramel != null) combat.AfterBindRevive = () => EnterLegMap(newEntry: true);
+				if (leg.Destiny != null || leg.Haramel != null || leg.InstanceRooms != null) combat.AfterBindRevive = () => EnterLegMap(newEntry: true);
 				here.AvoidSpots = combat.DeathSpots;
 				navigationDefense = combat;
 				WithQuestLoot(combat);
@@ -3473,6 +3490,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				{
 					// NL-3: on whichever map the bot stands (the Abyss Gate stands in Morheim's fortress for a leg from Brusthonin).
 					if (crossingFlyZone || session.Api.World.MapId is not int map || session.Api.World.IsDead) return false;
+					// NL-4: the Sky Temple Interior has no FLY zone; its floors are glided down to instead.
+					if (leg.InstanceRooms?.MapId == map) return false;
 					// NL-3: Reshanta's upper layer lies 1,200 m above the lower, past what one flight climbs; a flight transporter
 					// carries the bot between them as players go (Mure up to Hwiath, Hwiath down), the one whose pad lies on the
 					// bot's layer and whose landing on the goal's, nearest the two, and of the bot's own race (the Elyos have their
@@ -3711,6 +3730,23 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						}
 					}
 					finally { crossingFlyZone = false; }
+				};
+				var floorGlide = new NaturalFloorGlide(session, () => geometry);
+				glideDown = leg.InstanceRooms is not { } glideRooms ? null : async goal =>
+				{
+					if (session.Api.World.MapId != glideRooms.MapId || session.Api.World.IsDead || combat.InCombat) return false;
+					BotPosition[] monsters = [.. runtime.Data.SpawnsDh.GetSpawnsByWorldId(glideRooms.MapId)
+						.Where(group => group.GetNpcId() != glideRooms.Rooms.FirstOrDefault(room => room.Contains([goal.X, goal.Y, goal.Z]))?.SourceNpcId &&
+							runtime.IsAggressive(runtime.Data.NpcDataDh.GetNpcTemplate(group.GetNpcId())))
+						.SelectMany(group => group.GetSpawnTemplates()).Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0))];
+					return await floorGlide.GlideTowardAsync(glideRooms.MapId, goal,
+						async takeoff => (await NaturalIshalgenNavigator.ExploreWithinRangeAsync(glideRooms.MapId, -1, takeoff, 1.5f, navigator,
+							"glide-takeoff", token)).Arrived,
+						async () =>
+						{
+							await DefendAgainstEngagedAsync("glide-takeoff");
+							await RestSafelyAsync(token);
+						}, monsters, token);
 				};
 				var haramelTravel = new NaturalHaramelTravel(session, runtime, () => geometry,
 					async (at, range) =>
@@ -4084,6 +4120,48 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							await PrepareRebirthAsync();
 							int portal = await ApproachShippedSpawnAsync(trip.PortalNpcId, withinRange: TalkRange(trip.PortalNpcId));
 							await UseInstancePortalAsync(portal, trip.UseMillis, trip.MapId);
+							break;
+						}
+						case "enter-room":
+						{
+							// NL-4: one room of a solo instance by its own portal on the entrance pad (Q24023). NL-a: the companion
+							// does not go in; it is sent away first, and asked for again once the last room is done.
+							NaturalAltgardInstanceRooms rooms = leg.InstanceRooms!;
+							NaturalAltgardInstanceRoom room = rooms.Rooms.Single(entry => entry.Key == next.StepKey);
+							if (options.SoloCompanion != null) await DismissSoloCompanionAsync(token);
+							int portal = await ApproachShippedSpawnAsync(room.PortalNpcId, withinRange: TalkRange(room.PortalNpcId));
+							if (session.Api.World.IsDead || session.Api.World.MapId != leg.Hub.MapId) break;
+							await UseInstancePortalAsync(portal, rooms.UseMillis, rooms.MapId);
+							session.TraceDiagnostic($"altgard-{altgardLegId}-room-entered", new Dictionary<string, object?>
+							{
+								["room"] = room.Key, ["instance"] = session.Api.World.InstanceId, ["position"] = session.CurrentPosition,
+							});
+							break;
+						}
+						case "leave-room":
+						{
+							NaturalAltgardInstanceRooms rooms = leg.InstanceRooms!;
+							NaturalAltgardInstanceRoom? room = next.StepKey is { } key ? rooms.Rooms.Single(entry => entry.Key == key) : null;
+							if (room == null)
+							{
+								// Nowhere in a room's box (a fall off its floor that the bot survived): Return, which the map allows.
+								session.TraceDiagnostic($"altgard-{altgardLegId}-room-lost", new Dictionary<string, object?> { ["position"] = session.CurrentPosition });
+								await UseLearnedReturnToBindAsync();
+								await RestSafelyAsync(token);
+								break;
+							}
+							int exit;
+							try { exit = await ApproachShippedSpawnAsync(room.ExitNpcId, withinRange: TalkRange(room.ExitNpcId)); }
+							catch (NaturalLeftInstanceRoomException) { break; }
+							if (session.Api.World.IsDead || session.Api.World.MapId != rooms.MapId) break;
+							await UseInstancePortalAsync(exit, rooms.UseMillis, leg.Hub.MapId);
+							session.TraceDiagnostic($"altgard-{altgardLegId}-room-left", new Dictionary<string, object?>
+							{
+								["room"] = room.Key, ["position"] = session.CurrentPosition,
+							});
+							if (options.SoloCompanion is string companionClass &&
+								rooms.Rooms.All(entry => ItemCount(session.Api.World, entry.ItemId) > 0))
+								await AskSoloCompanionAsync(companionClass, token);
 							break;
 						}
 						case "leave-instance":
@@ -4732,8 +4810,16 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 									await RestSafelyAsync(token);
 								}
 							}
+							catch (NaturalLeftInstanceRoomException)
+							{
+								session.TraceDiagnostic($"altgard-{altgardLegId}-room-death", new Dictionary<string, object?>
+								{
+									["quest"] = next.QuestId, ["item"] = wanted.ItemId, ["revives"] = combat.ReviveCount, ["position"] = session.CurrentPosition,
+								});
+							}
+							// NL-4: a solo instance's quest has no group step to leave it for; the stall stops the journey as it is.
 							catch (TimeoutException stalled) when (NaturalAltgardContract.MusteredLegs.Contains(altgardLegId!) &&
-								stalled.Message.StartsWith("Natural journey made no quest", StringComparison.Ordinal))
+								stalled.Message.StartsWith("Natural journey made no quest", StringComparison.Ordinal) && leg.InstanceRooms?.QuestId != next.QuestId)
 							{
 								// M4: a drop this bot cannot get alone in the watchdog's hour (Q24021's Deputy Lamipedon, an EXPERT in the middle of
 								// the spectres' ground): the quest, and what needs it first, is left for the group step (M6).
@@ -7106,6 +7192,12 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					return await haramelApproach(templateId, withinRange ?? MathF.Min(5, runtime.Data.NpcDataDh.GetNpcTemplate(templateId)?.GetTalkDistance() ?? 3), CompletedApproachSource);
 				// Dead on entry (a use bar or a walk ended in a death nobody handled): revive and recover first.
 				if (session.Api.World.IsDead || session.Api.World.CurrentHp <= 0) await RestSafelyAsync(token);
+				// NL-4: revived outside the instance whose room holds this spawn (any approach that a death interrupted, the
+				// guard-clear's own retry too, the trial nl4-vs-d4): the leg's next decision is the way back in.
+				if (altgardLeg?.InstanceRooms is { } roomsLeft && session.Api.World.MapId is int standing && standing != roomsLeft.MapId &&
+					runtime.Data.SpawnsDh.GetSpawnsByWorldId(roomsLeft.MapId).Any(group => group.GetNpcId() == templateId) &&
+					!runtime.Data.SpawnsDh.GetSpawnsByWorldId(standing).Any(group => group.GetNpcId() == templateId))
+					throw new NaturalLeftInstanceRoomException();
 				bool Connected(BotWaypoint waypoint) => templateId is < 210000 or >= 700000 ||
 					altgardLeg?.PillarFlight is not { } pillar || pillar.IsUpper(session.CurrentPosition.Z) ||
 					geometry.GroundAround(contract.MapId, waypoint.Position, [3f, 5f, 8f, 12f]).Any(point => Distance(point, waypoint.Position) <= 6 &&
@@ -7148,6 +7240,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				{
 					var progress = new NaturalApproachProgress();
 					int islandFlights = 0;
+					int floorGlides = 0;
 					for (int guardClears = 0; guardClears <= NaturalApproachProgress.MaximumAttempts; guardClears++)
 					{
 						BotPosition beforeApproach = session.CurrentPosition;
@@ -7168,6 +7261,15 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						if (result.Arrived && result.TargetObjectId is int objectId) { emptySpawnWaits = 0; return objectId; }
 						if (result.Arrived) // explore mode reached the hint with nothing in view: same as an empty hint
 							result = new(false, $"Reached the spawn hint but no NPC was observed within {withinRange:F0} m.", null, result.RouteSearches, result.Segments);
+						// NL-4: a spawn on a lower floor that no walk joins (the Sky Temple Interior's tiers) is glided down to, whatever
+						// the route search said (the trial nl4-vs-d3's hazards hid the missing walk and the bot fought a tier for 35 minutes).
+						if (glideDown != null && floorGlides < 3 && !result.Arrived && session.Api.World.MapId is int glideMap &&
+							anchor.Position.Z < session.CurrentPosition.Z - 10 && !geometry.OnSameIsland(glideMap, session.CurrentPosition, anchor.Position))
+						{
+							floorGlides++;
+							BotPosition beforeGlide = session.CurrentPosition;
+							if (await glideDown(anchor.Position) && Distance(beforeGlide, session.CurrentPosition) > 2) continue;
+						}
 						// NL-3: a spawn on another island is flown to, not cleared toward: no walk joins them (Kuenunerk's jewel
 						// boxes stand on scraps of ground 190 m above one another, and the Templar waited at the foot of one).
 						if (flyAcross != null && islandFlights < 3 && result.Reason == "No collision-checked route to the current destination." &&
@@ -7361,6 +7463,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				async Task<int> RetryAfterReviveAsync(BotPosition from, string phase)
 				{
 					await RestSafelyAsync(token);
+					// NL-4: revived outside the instance whose room holds this spawn: the leg's next decision is the way back in.
+					if (altgardLeg?.InstanceRooms is { } rooms && session.Api.World.MapId != rooms.MapId &&
+						runtime.Data.SpawnsDh.GetSpawnsByWorldId(rooms.MapId).Any(group => group.GetNpcId() == templateId))
+						throw new NaturalLeftInstanceRoomException();
 					session.TraceDiagnostic("spawn-approach-retry-after-revive", new Dictionary<string, object?>
 					{
 						["templateId"] = templateId, ["phase"] = phase, ["from"] = from,
@@ -7725,7 +7831,11 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						geometry.SnapToGround(map, seen.Position with { Z = seen.Position.Z + 2 }) is { } ground)
 					{
 						IReadOnlyList<BotPosition> path = geometry.FindLocalPath(map, session.CurrentPosition, ground);
-						if (path.Count == 0 || !navigator.IsSegmentSafe(path, corpse)) skipped = "no-safe-path"; // try again later
+						// NL-4: a room keeper's corpse holds the room's only key and the keeper never respawns (the trial nl4-vs-d5
+						// killed Flame Judge Bolcan and left his corpse to despawn for want of a path clear of monsters).
+						bool onlyKey = altgardLeg?.InstanceRooms is { } keyRooms && keyRooms.MapId == map &&
+							keyRooms.Rooms.Any(room => room.SourceNpcId == seen.TemplateId && ItemCount(world, room.ItemId) < 1);
+						if (path.Count == 0 || !onlyKey && !navigator.IsSegmentSafe(path, corpse)) skipped = "no-safe-path"; // try again later
 						else
 						{
 							await navigator.MoveAsync(path, lootToken);
@@ -7932,7 +8042,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							combat.DecidedPullTarget = plan.Target.Npc.ObjectId;
 							break;
 						}
-						if (altgardLegId == "l10")
+						// NL-4: a mustered leg defends itself while it holds, too (the trial nl4-vs-d2 held for a minute beside two elites
+						// that were hitting it, and died).
+						if (altgardLegId == "l10" || altgardLegId != null && NaturalAltgardContract.MusteredLegs.Contains(altgardLegId))
 						{
 							if (!await WaitBeforePullDefendingAsync(patrol.WaitMillis, purpose)) return null;
 						}

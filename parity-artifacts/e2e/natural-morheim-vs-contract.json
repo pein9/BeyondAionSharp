@@ -1,0 +1,392 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "morheim-vs-sky-temple",
+  "start": {
+    "contract": "natural-morheim-vh-contract.json",
+    "snapshot": "nl-g36-s2",
+    "mapId": 220020000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 37,
+    "bindNpcId": 700231,
+    "completedQuestIds": [
+      24040,
+      24041,
+      2721,
+      2722,
+      2741,
+      2743,
+      2744,
+      2729,
+      2730,
+      2731,
+      2725,
+      2753,
+      2756,
+      2755,
+      1755,
+      2726,
+      2764,
+      2765,
+      2766,
+      1771,
+      2772
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": [
+      24023
+    ]
+  },
+  "hub": {
+    "key": "slag-bulwark",
+    "mapId": 220020000,
+    "anchor": [
+      1782.77,
+      1669.43,
+      197.937
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "slag-bulwark",
+      "note": "Slag Bulwark: Gangleri, the obelisk",
+      "min": [
+        1753,
+        1637,
+        182
+      ],
+      "max": [
+        1807,
+        1694,
+        212
+      ]
+    },
+    {
+      "key": "fortress",
+      "note": "Morheim Ice Fortress: Anund",
+      "min": [
+        164,
+        2315,
+        442
+      ],
+      "max": [
+        214,
+        2365,
+        472
+      ]
+    },
+    {
+      "key": "sky-temple",
+      "note": "the Sky Temple's entrance: Bulagan and the three room portals",
+      "min": [
+        1649,
+        1095,
+        185
+      ],
+      "max": [
+        1753,
+        1180,
+        222
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 24023,
+      "category": "MISSION",
+      "minimumLevel": 29,
+      "rewardExperience": 1037982,
+      "prerequisite": null,
+      "handler": "morheim/_24023ABlazingRescue.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "sky-temple"
+    }
+  ],
+  "order": [
+    24023
+  ],
+  "steps": [
+    {
+      "key": "q24023-v0-anund",
+      "questId": 24023,
+      "var": 0,
+      "npcId": 204317,
+      "position": [
+        189.0,
+        2340.0,
+        457.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "fortress"
+    },
+    {
+      "key": "q24023-v1-bulagan",
+      "questId": 24023,
+      "var": 1,
+      "npcId": 204408,
+      "position": [
+        1728.0,
+        1120.0,
+        207.5
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO2"
+      ],
+      "pages": [
+        1352,
+        10
+      ],
+      "area": "sky-temple",
+      "receivesItemId": 182215369
+    },
+    {
+      "key": "q24023-v3-bulagan",
+      "questId": 24023,
+      "var": 3,
+      "npcId": 204408,
+      "position": [
+        1728.0,
+        1120.0,
+        207.5
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "CHECK_USER_HAS_QUEST_ITEM"
+      ],
+      "pages": [
+        2034,
+        10000
+      ],
+      "area": "sky-temple"
+    },
+    {
+      "key": "q24023-reward-gangleri",
+      "questId": 24023,
+      "status": "REWARD",
+      "npcId": 204372,
+      "position": [
+        1778.487,
+        1662.303,
+        197.625
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_REWARD8"
+      ],
+      "pages": [
+        10002,
+        5
+      ],
+      "area": "slag-bulwark"
+    }
+  ],
+  "objectUses": [],
+  "collections": [
+    {
+      "questId": 24023,
+      "atVar": 3,
+      "mapId": 320050000,
+      "items": [
+        {
+          "itemId": 182215366,
+          "count": 1,
+          "sourceNpcIds": [
+            212833
+          ]
+        },
+        {
+          "itemId": 182215367,
+          "count": 1,
+          "sourceNpcIds": [
+            212835
+          ]
+        },
+        {
+          "itemId": 182215368,
+          "count": 1,
+          "sourceNpcIds": [
+            212876
+          ]
+        }
+      ]
+    }
+  ],
+  "instanceRooms": {
+    "questId": 24023,
+    "mapId": 320050000,
+    "enterVars": [
+      2,
+      3
+    ],
+    "useMillis": 3000,
+    "rooms": [
+      {
+        "key": "water",
+        "min": [
+          352.25,
+          16.0,
+          100.0
+        ],
+        "max": [
+          500.4,
+          171.72,
+          350.0
+        ],
+        "portalNpcId": 730041,
+        "portalPosition": [
+          1674.475,
+          1147.674,
+          200.354
+        ],
+        "arrival": [
+          472.07,
+          114.28,
+          214.81
+        ],
+        "exitNpcId": 730042,
+        "exitPosition": [
+          377.547,
+          72.938,
+          226.345
+        ],
+        "itemId": 182215366,
+        "sourceNpcId": 212833
+      },
+      {
+        "key": "wind",
+        "min": [
+          289.5,
+          16.0,
+          250.0
+        ],
+        "max": [
+          489.28,
+          480.41,
+          550.0
+        ],
+        "portalNpcId": 730043,
+        "portalPosition": [
+          1683.62,
+          1155.37,
+          200.354
+        ],
+        "arrival": [
+          306.94,
+          433.35,
+          416.82
+        ],
+        "exitNpcId": 730044,
+        "exitPosition": [
+          461.581,
+          438.242,
+          374.965
+        ],
+        "itemId": 182215367,
+        "sourceNpcId": 212835
+      },
+      {
+        "key": "fire",
+        "min": [
+          15.42,
+          0.57,
+          350.0
+        ],
+        "max": [
+          283.77,
+          340.82,
+          750.0
+        ],
+        "portalNpcId": 730045,
+        "portalPosition": [
+          1685.98,
+          1143.31,
+          200.354
+        ],
+        "arrival": [
+          101.68,
+          24.68,
+          611.04
+        ],
+        "exitNpcId": 730046,
+        "exitPosition": [
+          230.291,
+          303.65,
+          547.233
+        ],
+        "itemId": 182215368,
+        "sourceNpcId": 212876
+      }
+    ]
+  },
+  "mapTrips": [],
+  "bind": {
+    "npcId": 700259,
+    "position": [
+      1782.77,
+      1669.43,
+      197.937
+    ],
+    "onArrival": true,
+    "price": 4353,
+    "acceptRange": 5,
+    "beforeStep": "q24023-v0-anund"
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [
+    {
+      "questId": 24023,
+      "action": "SELECTED_QUEST_REWARD8",
+      "itemId": 101501361,
+      "itemGroup": "STAFF"
+    }
+  ],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 220020000,
+    "completedQuestIds": [
+      24023
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 37,
+    "snapshot": "nl-vs",
+    "anchor": [
+      1782.77,
+      1669.43,
+      197.937
+    ],
+    "radius": 30,
+    "bindNpcId": 700259,
+    "heldQuestIds": []
+  }
+}

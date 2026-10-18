@@ -114,6 +114,7 @@ public static class NaturalAltgardDecisionEngine
 				: action is "equip-stigma" or "destiny-fight" ? contract.Destiny!.MapId
 				: action == "template-claim" && questId is int id ? objectives.GetValueOrDefault(id)?.ClaimMapId ?? contract.Hub.MapId
 				: action is "enter-instance" or "leave-instance" ? contract.InstanceTripList.Single(trip => trip.QuestId == questId).MapId
+				: action is "enter-room" or "leave-room" ? contract.InstanceRooms!.MapId
 				: action == "revive-in-place" ? state.MapId!.Value
 				: action == "return-to-endpoint" ? contract.Endpoint.MapId
 				: action == "use-object" ? contract.ObjectUseList.Single(use => use.Key == stepKey).MapId ?? contract.Hub.MapId
@@ -122,7 +123,7 @@ public static class NaturalAltgardDecisionEngine
 				: action == "hunt" ? contract.HuntList.First(hunt => hunt.QuestId == questId &&
 					Var(questId!.Value) >= hunt.FromVar && Var(questId.Value) < hunt.ToVar).MapId ?? contract.Hub.MapId
 				: contract.Hub.MapId;
-			return new(sequence, state.MapId != map && action is not ("revive-at-bind" or "revive-in-place" or "enter-instance" or "recover-destiny") ? "travel-to-map" : action,
+			return new(sequence, state.MapId != map && action is not ("revive-at-bind" or "revive-in-place" or "enter-instance" or "enter-room" or "recover-destiny") ? "travel-to-map" : action,
 				stepKey, questId, "planned", reason, [.. checks], map);
 		}
 		NaturalAltgardDecision Stop(string action, string outcome, string reason, int? questId = null) =>
@@ -140,15 +141,18 @@ public static class NaturalAltgardDecisionEngine
 				: Plan("revive-at-bind", null, "Dead: revive at the working hub's obelisk.");
 		bool offHub = state.MapId != contract.Hub.MapId;
 		if (offHub && !contract.MapTripList.Any(trip => trip.MapId == state.MapId) && !contract.InstanceTripList.Any(trip => trip.MapId == state.MapId) &&
+			contract.InstanceRooms?.MapId != state.MapId &&
 			contract.Destiny?.AllowedMaps.Contains(state.MapId.Value) != true)
 			return Stop("wrong-map", "blocked", $"{contract.Leg} is on map {contract.Hub.MapId}; the Cleric is on {state.MapId}.");
 		// AB-08, the standing bind policy (AB-Q5): bind at the hub's obelisk first.
 		if (!offHub && contract.Bind is { OnArrival: true } bind && !BoundAt(bind, contract.Hub.MapId, state.Bind))
 		{
 			// AO-00: take the departure hub's message before flying to the next hub to bind (Q2266 at Valurion).
+			// NL-4: or the talk of a started quest that is still due there (Q24023's Anund at the fortress).
 			if (bind.BeforeStep is { } key && contract.Steps.Single(step => step.Key == key) is { } before &&
 				!state.CompletedQuestIds.Contains(before.QuestId) &&
-				(!state.Quests.TryGetValue(before.QuestId, out BotQuestState? quest) || quest.Status is not (Start or Reward or 5)) &&
+				(before.ExpectedStatus == "START" ? Status(before.QuestId) == Start && Var(before.QuestId) == before.Var
+					: !state.Quests.TryGetValue(before.QuestId, out BotQuestState? quest) || quest.Status is not (Start or Reward or 5)) &&
 				state.Level >= contract.Quest(before.QuestId).MinimumLevel && (only == null || only.Contains(before.QuestId)))
 				return Plan("talk", before.QuestId, "Take the departure message before changing the working bind.", key);
 			return Plan("bind", null, $"Bind at the {contract.Hub.Key} obelisk ({bind.NpcId}) before working out of it.");
@@ -175,7 +179,8 @@ public static class NaturalAltgardDecisionEngine
 				!(quest.StopsAtVar is int stop && Status(quest.Id) == Start && Var(quest.Id) >= stop)).ToArray();
 		NaturalAltgardQuest[] eligible = open.Where(Eligible).OrderByDescending(quest => offHub && Status(quest.Id) == Start &&
 			(contract.StepsFor(quest.Id).Any(step => contract.StepMap(step) == state.MapId) ||
-			 contract.InstanceTripList.Any(trip => trip.QuestId == quest.Id && trip.MapId == state.MapId))).ToArray();
+			 contract.InstanceTripList.Any(trip => trip.QuestId == quest.Id && trip.MapId == state.MapId) ||
+			 contract.InstanceRooms is { } inRooms && inRooms.QuestId == quest.Id && inRooms.MapId == state.MapId)).ToArray();
 		// A hand-in where the leg ends (Leg 2: Q2215 at Manir's Campsite, AM-Q1) waits until everything else is done.
 		string? endArea = contract.Endpoint.Anchor is { } end
 			? contract.Areas.Where(area => area.Contains(end[0], end[1], end[2]))
@@ -284,6 +289,25 @@ public static class NaturalAltgardDecisionEngine
 						: Plan("recover-destiny", quest.Id, "The equip state needs exactly one observed tutorial stone; recover the attempt.");
 				if (var == destiny.FightVar)
 					return Plan("destiny-fight", quest.Id, "Fight the current timed Hellion; a lost window requires ordinary outside recovery.");
+			}
+			// NL-4: the rooms of one solo instance, each entered by its own portal, one quest item a room (Q24023). In a room that
+			// holds the first missing item, collect it; anywhere else in the copy, go out by the room's exit; outside, go in by the
+			// portal of that item's room.
+			if (contract.InstanceRooms is { } rooms && quest.Id == rooms.QuestId && rooms.EnterVars.Contains(var))
+			{
+				NaturalAltgardInstanceRoom? missing = rooms.Rooms.FirstOrDefault(room => state.ItemCounts.GetValueOrDefault(room.ItemId) < 1);
+				if (state.MapId == rooms.MapId)
+				{
+					NaturalAltgardInstanceRoom? here = rooms.RoomAt([state.Position.X, state.Position.Y, state.Position.Z]);
+					if (missing != null && here == missing)
+						return contract.CollectionList.Any(collection => collection.QuestId == quest.Id && collection.AtVar == var)
+							? Plan("collect", quest.Id, $"Q{quest.Id} var {var}: take item {missing.ItemId} in the {missing.Key} room.")
+							: Stop("refresh-observation", "planned", $"Q{quest.Id} var {var}: the entry's var change has not been observed yet.", quest.Id);
+					return Plan("leave-room", quest.Id, missing == null ? $"Q{quest.Id}: every room's item is held; go out."
+						: $"Q{quest.Id}: item {missing.ItemId} is in the {missing.Key} room; go out of {here?.Key ?? "this place"}.", here?.Key);
+				}
+				if (missing != null)
+					return Plan("enter-room", quest.Id, $"Q{quest.Id} var {var}: go into the {missing.Key} room for item {missing.ItemId}.", missing.Key);
 			}
 			if (contract.InstanceTripList.Any(trip => trip.QuestId == quest.Id && var == trip.ResetVar && state.MapId == trip.MapId))
 				return Plan("leave-instance", quest.Id, $"Q{quest.Id} reset to var {var}: leave through Dimension Exit before re-entry.");
