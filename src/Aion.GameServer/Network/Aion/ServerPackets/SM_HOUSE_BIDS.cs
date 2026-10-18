@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.House;
+using Aion.GameServer.Model.Templates.Housing;
 using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Services;
 using Aion.GameServer.Taskmanager.Tasks.Housing;
