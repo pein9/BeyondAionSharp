@@ -369,7 +369,8 @@ public class FortressSiege : Siege<FortressLocation>
                 foreach (int participant in participatedLegionMembers)
                     Aion.GameServer.Services.Abyss.GloryPointsService.AddGp(participant, gp);
                 if (LoggingConfig.LOG_SIEGE)
-                    log.LogInformation(this + ": Distributed " + gp + " GP each, to the following members of " + legion + ": " + participatedLegionMembers);
+                    // Java parity: the set prints as AbstractCollection.toString, [a, b], not as its C# type name.
+                    log.LogInformation(this + ": Distributed " + gp + " GP each, to the following members of " + legion + ": " + JavaString.ValueOf(participatedLegionMembers));
             }
         }
         catch (Exception e)

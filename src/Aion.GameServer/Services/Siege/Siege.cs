@@ -239,8 +239,9 @@ public abstract class Siege
                 }
                 if (LoggingConfig.LOG_SIEGE && rewardedGpPlayers.Count != 0)
                 {
+                    // Java parity: the list prints as AbstractCollection.toString, [a, b], not as its C# type name.
                     log.LogInformation(this + ": Distributed " + gp + " " + (isWinner ? "winner" : "loser") + " GP each, to the following players (rank " + rewardLevel
-                        + "): " + rewardedGpPlayers);
+                        + "): " + JavaString.ValueOf(rewardedGpPlayers));
                 }
             }
         }
