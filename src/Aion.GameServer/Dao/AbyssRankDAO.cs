@@ -272,18 +272,27 @@ public class AbyssRankDAO
             con.Open();
             using MySqlCommand stmt = con.CreateCommand();
             stmt.CommandText = SELECT_RANKING_LIST_LEGIONS;
-            using MySqlDataReader rs = stmt.ExecuteReader();
-            while (rs.Read())
+            // Java counts each legion's members on the same connection while its result set is open (Connector/J has read the
+            // whole result by then). MySqlConnector refuses a second command while a reader is open, so the rows are read first.
+            var rows = new List<(int Position, int OldPosition, int Id, string Name, Race Race, int Level, long ContributionPoints)>();
+            using (MySqlDataReader rs = stmt.ExecuteReader())
             {
-                int position = rs.GetInt32(DatabaseColumns.Ordinal(rs, "l.rank_pos"));
-                int oldPosition = rs.GetInt32(DatabaseColumns.Ordinal(rs, "l.old_rank_pos"));
-                int id = rs.GetInt32(DatabaseColumns.Ordinal(rs, "l.id"));
-                string name = rs.GetString(DatabaseColumns.Ordinal(rs, "l.name"));
-                Race race = Enum.Parse<Race>(rs.GetString(DatabaseColumns.Ordinal(rs, "p.race")));
-                int level = rs.GetInt32(DatabaseColumns.Ordinal(rs, "l.level"));
-                long contributionPoints = rs.GetInt64(DatabaseColumns.Ordinal(rs, "l.contribution_points"));
-                int memberCount = LoadLegionMemberCount(con, id);
-                results.Add(new RankingListLegion(position, oldPosition, id, name, race, level, contributionPoints, memberCount));
+                while (rs.Read())
+                {
+                    int position = rs.GetInt32(DatabaseColumns.Ordinal(rs, "l.rank_pos"));
+                    int oldPosition = rs.GetInt32(DatabaseColumns.Ordinal(rs, "l.old_rank_pos"));
+                    int id = rs.GetInt32(DatabaseColumns.Ordinal(rs, "l.id"));
+                    string name = rs.GetString(DatabaseColumns.Ordinal(rs, "l.name"));
+                    Race race = Enum.Parse<Race>(rs.GetString(DatabaseColumns.Ordinal(rs, "p.race")));
+                    int level = rs.GetInt32(DatabaseColumns.Ordinal(rs, "l.level"));
+                    long contributionPoints = rs.GetInt64(DatabaseColumns.Ordinal(rs, "l.contribution_points"));
+                    rows.Add((position, oldPosition, id, name, race, level, contributionPoints));
+                }
+            }
+            foreach (var row in rows)
+            {
+                int memberCount = LoadLegionMemberCount(con, row.Id);
+                results.Add(new RankingListLegion(row.Position, row.OldPosition, row.Id, row.Name, row.Race, row.Level, row.ContributionPoints, memberCount));
             }
         }
         catch (Exception e)
