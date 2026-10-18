@@ -4,7 +4,7 @@
   "leg": "morheim-va-alsig-village-36",
   "start": {
     "contract": "natural-reshanta-rb-contract.json",
-    "snapshot": "nl-rb-s2",
+    "snapshot": "nl-rb-s3",
     "mapId": 220020000,
     "race": "ASMODIANS",
     "class": "CLERIC",
