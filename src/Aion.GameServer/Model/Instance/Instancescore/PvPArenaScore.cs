@@ -171,10 +171,23 @@ public class PvPArenaScore : InstanceScore<PvPArenaPlayerReward>
 
     public bool ReachedScoreGap()
     {
-        List<int> points = GetPlayerRewards().Select(r => r.GetPoints()).ToList();
-        int maxPoints = points.Max();
-        int minPoints = points.Min();
-        return maxPoints - minPoints >= maxScoreGap;
+        return ReachedScoreGap(GetPlayerRewards().Select(r => r.GetPoints()), maxScoreGap);
+    }
+
+    /// <summary>
+    /// Java: <c>IntSummaryStatistics points = ...summaryStatistics(); points.getMax() - points.getMin() &gt;= maxScoreGap</c>.
+    /// With no rewards getMax() is Integer.MIN_VALUE and getMin() Integer.MAX_VALUE, and their difference overflows to 1, so
+    /// Java answers false; LINQ's Max and Min throw on an empty sequence.
+    /// </summary>
+    internal static bool ReachedScoreGap(IEnumerable<int> points, int maxScoreGap)
+    {
+        int maxPoints = int.MinValue, minPoints = int.MaxValue;
+        foreach (int point in points)
+        {
+            maxPoints = Math.Max(maxPoints, point);
+            minPoints = Math.Min(minPoints, point);
+        }
+        return unchecked(maxPoints - minPoints) >= maxScoreGap;
     }
 
     public virtual int GetTotalPoints()
