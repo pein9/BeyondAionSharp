@@ -14,14 +14,16 @@ public sealed class CompanionProfileTests
     {
         IReadOnlyList<CompanionProfile> profiles = CompanionProfile.LoadAll(Folder);
 
-        // Every class at 26, and the eight original classes at 31 too (step M8 of docs/natural-morheim-leveling.md).
-        Assert.Equal(19, profiles.Count);
+        // Every class at 26, and the eight original classes at 31 too (step M8 of docs/natural-morheim-leveling.md), and again
+        // from the gear check-in at 36, where the quests had carried them to 37 and 38 (NL-4 of docs/natural-leg-36.md).
+        Assert.Equal(27, profiles.Count);
         Assert.Equal(11, profiles.Where(profile => profile.Level == CompanionService.Level).Select(profile => profile.PlayerClass).Distinct().Count());
         Assert.Equal(8, profiles.Where(profile => profile.Level == 31).Select(profile => profile.PlayerClass).Distinct().Count());
+        Assert.Equal(8, profiles.Where(profile => profile.Level is 37 or 38).Select(profile => profile.PlayerClass).Distinct().Count());
         Assert.All(profiles, profile =>
         {
             Assert.Equal(Race.ASMODIANS, profile.Race);
-            Assert.Contains(profile.Level, new[] { CompanionService.Level, 31 });
+            Assert.Contains(profile.Level, new[] { CompanionService.Level, 31, 37, 38 });
             Assert.False(profile.PlayerClass.IsStartingClass());
             Assert.NotEmpty(profile.Equipment);
             Assert.NotEmpty(profile.Inventory);
