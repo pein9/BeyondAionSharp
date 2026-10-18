@@ -207,6 +207,22 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
     lifts each. The Sorcerer, the Chanter, the Assassin and the Ranger left Q2762 for the group after an hour without
     progress: most of its 42 mirrorglass waterworms float where no navmesh lies, as the survey guessed. Q2763 follows
     it for those four (`nl-ru-s1`).
+  - 2026-10-18: leg `rt` (Tigraki Island: Q2767 and Q24045, decision 8's two quests, on the operator's word of the day
+    before). The island stands 705 m from any other island, so the bots fly there on Greater Wind Serums. A landing past
+    every stone is flown to, or else the stone nearest it, within what two serums add to one flight. The serums and a
+    flight speed scroll are the leg's approved supply: the scroll is read on the ground, and a serum is drunk on the move
+    once its whole restore fits. In this leg the scroll's speed alone carried every crossing, so no serum was drunk.
+    Q24045's talks with Gaochinerk and Garkbinerk start scripted quest flights (flypaths 55 and 56, Black Cloud Island
+    and back); a leg step now flies such a path and lands. Diagnostic `nl3-rt-d1` played both quests in one try, and trial
+    `nl3-rt-t1` played them with all eight. Committed as `f4789b254`; captured round `nl3-rt-c1` from `nl-ru-s1`: all eight
+    reached the end, levels 35 and 36 (`nl-rt-s1`).
+  - 2026-10-18: leg `rq` (what the sieges opened: Q24042 to its end, Q2724 with Amundi; Q24043 waits at its lure,
+    decision 10). With the D7 boot tail back, the siege garrisons stand, and a step's NPC that the travel graph does not
+    know is found by the leg's own step positions. Q24042's prisoner is followed to coordinates (the escort's goal has no
+    NPC); its hand-in at Lakadi once took no notice of the select that ends it, and a reward talk is now played once more
+    when the quest does not move. Six of eight stopped at Q24043's lure in trial `nl3-rq-t1`. The diagnostics `d10` to
+    `d15` and what they found are decision 10. Committed as `f4789b254` and `2ded7c925`; captured round `nl3-rq-c1` from
+    `nl-rt-s1`: all eight reached the end, levels 35 and 36 (`nl-rq-s1`).
 - [ ] **NL-4 Level 36.** Morheim's quests from 31 to 35 for any bot still short of 36 and for the zone's sake; the gear
   check-in at 36 (Elite Rank 5); the level-36 companion profiles; then Q24023 (the leg engine collects inside an
   instance, room by room, and goes down between the Sky Temple Interior's floors as a player does, by a glide or a
@@ -264,6 +280,17 @@ Mine, where the operator gave none; each is his to change:
    quests below 36 it stops three: Q2724 at Amundi (Siel's Eastern Fortress, 1132), Q24042 at the captured prisoner it
    escorts (the Sulfur Tree Nest, 1141), and Q2727 at Dullaha (Roah, 1211; decision 8 names it). Q2724 is left out of the
    east leg, its talks to Mure and Ganglot shown once in `nl3-re-d5`; Q24042 is played to Glati and left at the prisoner.
+   (Overtaken the same day: the operator's "We DO NEED the siege enabled" brought the sieges back, and the leg `rq` plays
+   Q2724 and Q24042; Q2727 still waits for Roah in Elyos hands, decision 8.)
+10. **Q24043 waits at its lure until the operator says how it is done (NL-3, 2026-10-18).** Sinjah's lure needs an ashikar
+   assaulter struck with an auto-attack within 15 m of him; the nearest stands 85 m away. Java turns a monster home after
+   20 s in which it has neither struck nor been struck (`AttackManager.checkGiveupDistance`; Reshanta has no `ai_info`).
+   Six tries (`nl3-rq-t1`, diagnostics `d10` to `d15`) found more: a bot that runs is never caught; the Cleric companion
+   (NL-a) draws the monster's attacks; the walk's own defence kills the monster on the way; and a monster drawn from 130 m
+   away stays within 30 m of its spawn. The bot now strikes first, leads in stretches and strikes again as it catches up.
+   That played the lure once (the Sorcerer in `d14`) and failed in the other tries. The operator was asked how a player
+   brings the monster to Sinjah in the client (or for a recording); until then `rq` leaves Q24043 at var 2 and `ro`
+   leaves out its errand to Phosphor.
 
 ## Loop prompt
 
