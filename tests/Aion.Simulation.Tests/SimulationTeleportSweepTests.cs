@@ -76,8 +76,17 @@ public sealed partial class SimulationFastScenarioTests
 				var npcIds = routes.SelectMany(t => t.GetNpcIds()).ToHashSet();
 				details["routeNpcIds"] = string.Join(',', npcIds.Order());
 				var candidates = new List<Npc>();
-				fixture.World.ForEachObject(o => { if (o is Npc n && n.IsSpawned() && npcIds.Contains(n.GetNpcId())) candidates.Add(n); });
-				if (candidates.Count == 0)
+				void Scan()
+				{
+					candidates.Clear();
+					fixture.World.ForEachObject(o => { if (o is Npc n && n.IsSpawned() && npcIds.Contains(n.GetNpcId())) candidates.Add(n); });
+				}
+				// A route NPC that no subject may use is no route: a Balaur owner's teleporter, which InitSieges places
+				// with the Balaur peace group of a fortress at boot (ldf5_fortress_7011_dynamic_bal for 325), sends the
+				// sweep on to the setup below as if nothing stood there.
+				bool NoFriendlyCandidate() => !candidates.Any(n => IsFriendly(n, SubjectFor(n)));
+				Scan();
+				if (NoFriendlyCandidate())
 				{
 					// Siege peace spawns are loaded separately from ordinary map spawns: SiegeService.InitSieges places
 					// the owner's group of every location at boot. Give the location to the route NPC's race as
@@ -96,10 +105,10 @@ public sealed partial class SimulationFastScenarioTests
 							restore => restoreSourceSiege = restore, details, "setupSourceSiegeMode");
 						details["setupSourceSiegeId"] = Id(sourceId);
 						details["setupSourceSiegeRace"] = source.GetSiegeRace().ToString();
-						fixture.World.ForEachObject(o => { if (o is Npc n && n.IsSpawned() && npcIds.Contains(n.GetNpcId())) candidates.Add(n); });
+						Scan();
 					}
 				}
-				if (candidates.Count == 0)
+				if (NoFriendlyCandidate())
 				{
 					var bases = BaseService.GetInstance();
 					var source = bases.GetBaseLocations().OrderBy(b => b.GetId())
@@ -130,7 +139,7 @@ public sealed partial class SimulationFastScenarioTests
 						else { location.SetOccupier(source.GetOccupier()); bases.Start(sourceId); }
 						details["setupSourceBaseId"] = Id(sourceId);
 						details["setupSourceBaseOccupier"] = source.GetOccupier().ToString();
-						fixture.World.ForEachObject(o => { if (o is Npc n && n.IsSpawned() && npcIds.Contains(n.GetNpcId())) candidates.Add(n); });
+						Scan();
 					}
 				}
 				int[] spawnMaps = maps.Where(map => npcIds.Any(npc => DataManager.SPAWNS_DATA.GetSpawnsForNpc(map, npc).Any(g => g.GetSpawnTemplates().Count != 0))).ToArray();
@@ -141,14 +150,14 @@ public sealed partial class SimulationFastScenarioTests
 					report.Record(Id(id), DataSweepStatus.Unreachable, routes.Length == 0 ? "No incoming NPC teleporter route is shipped" : "No shipped spawn definition or runtime spawn for any incoming route NPC", details);
 					continue;
 				}
-				if (candidates.Count == 0)
+				if (NoFriendlyCandidate())
 					foreach (int map in spawnMaps)
 					{
 						if (!fixture.World.GetWorldMap(map).IsInstanceType()) continue;
 						if (!instances.TryGetValue(map, out var instance))
 							instances.Add(map, instance = InstanceService.GetNextAvailableInstance(map, 0, 0, 1, autoDestroy: false));
 						candidates.AddRange(instance.OfType<Npc>().Where(n => n.IsSpawned() && npcIds.Contains(n.GetNpcId())));
-						if (candidates.Count > 0) break;
+						if (!NoFriendlyCandidate()) break;
 					}
 				Assert.NotEmpty(candidates);
 				var npc = candidates.OrderByDescending(n => IsFriendly(n, SubjectFor(n))).ThenBy(n => n.GetWorldId()).ThenBy(n => n.GetInstanceId()).ThenBy(n => n.GetObjectId()).First();
