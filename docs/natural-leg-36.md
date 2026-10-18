@@ -120,7 +120,7 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
   - The step is done: every one of the eight has played the eighteen quests of Brusthonin below 36 and Morheim's two
     orders for it, and none of the settlers' quests sends a bot back to Morheim. The quests' experience is small at
     these levels: the eight stand at 35, the Spirit Master and the Assassin at 34. The world is `nl-gb-s2-w1`.
-- [ ] **NL-3 The first Abyss quests (25 to 33).** The way into Reshanta, its flying (islands, death below 500 m), the Abyss
+- [x] **NL-3 The first Abyss quests (25 to 33).** The way into Reshanta, its flying (islands, death below 500 m), the Abyss
   campaign from Votan's Orders, the quests the list says play or need steps, and those that open on the way. The quest
   list first.
   - 2026-10-17 (`251cda903`): the list is [natural-reshanta-quests.md](natural-reshanta-quests.md): below 36, 26
@@ -242,6 +242,38 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
 
     Diagnostic `d14` played Q24044 to its end. Committed as `2ded7c925`; captured round `nl3-ro-c1` from `nl-rq-s1`: all
     eight reached the end, levels 35 to 37 (`nl-ro-s1`).
+  - 2026-10-18: leg `rb` (Q2773, from Kuenunerk on the upper layer by Choirinererk in Morheim to Horu in Beluslan
+    Fortress). Q2757 and Q2758 were in the leg until diagnostic `d7` and wait for NL-4 (decision 12).
+    The diagnostics `nl3-rb-d1` to `d7` and the rounds found these faults:
+    - Choirinererk is a temporary spawn of Morheim's nights (21:00 to 05:00 game time). A talk step can now name its
+      NPC's hours, and the bot waits at his spot for them.
+    - The wait outlasted the hour of the watchdog for four bots in the first captured round, and it is now excused as
+      it goes. An NPC not yet at his spot when the bot arrives is waited for there.
+    - Horu stands on a platform of the fortress that only a flight joins to the ground. A fly-zone crossing now takes
+      off from the bot's own island first. When its takeoff lies on another island, the bot flies down to that
+      island's ground nearest it.
+    - The packs round Choirinererk cornered bots off their road. The road to a talk is now rested and walked again to
+      within 25 m, and a route shut by monsters is fought through along the road.
+    - A round can go on from a world where bots stopped on one of the leg's trip maps.
+
+    Built as `9d241294c`, `994d5680c` and `0e8cc4afd` (with the Beluslan navmesh, `0c49200c9`). Captured in three rounds
+    of one world:
+    - `nl3-rb-c1` from `nl-ro-s1`: the Cleric, the Templar and the Sorcerer (`nl-rb-s1`);
+    - `nl3-rb-c2`: the Chanter, the Gladiator and the Assassin (`nl-rb-s2`);
+    - `nl3-rb-c3`: the Spirit Master and the Ranger (`nl-rb-s3`).
+  - 2026-10-18, the step is done. Every leg of decision 7 is played and captured in one world, `nl-rb-s3`:
+    - legs: the way in, Primum, the east, the south, the upper layer, Tigraki, the siege quests, the errands out of the
+      Abyss and Q2773 to Beluslan;
+    - levels: the Cleric, the Chanter and the Gladiator at 37; the Templar, the Sorcerer and the Ranger at 36; the
+      Spirit Master and the Assassin at 35.
+
+    What it leaves, and where:
+    - **Group, NL-4's group pass (decision 13):** Q2728 (Ladacus), Q2753 and Q2754 for the Sorcerer and the Ranger,
+      Q2762 and Q2763 for four bots.
+    - **A higher level, NL-4 (decision 12):** Q2757, Q2758 and Q24046.
+    - **The operator's answer on the lure (decision 10):** Q24043 at Sinjah's lure.
+    - **Not played (decision 8):** the Elyos player kills, Q2701, Q2727 and the Roah quests while Roah is the Balaur's,
+      Q2846, and the four gathering quests.
 - [ ] **NL-4 Level 36.** Morheim's quests from 31 to 35 for any bot still short of 36 and for the zone's sake; the gear
   check-in at 36 (Elite Rank 5); the level-36 companion profiles; then Q24023 (the leg engine collects inside an
   instance, room by room, and goes down between the Sky Temple Interior's floors as a player does, by a glide or a
@@ -314,6 +346,24 @@ Mine, where the operator gave none; each is his to change:
    Ishalgen and Pandaemonium), `rb` (Q2773, Q2757 and Q2758, which end in Beluslan), and `rd` (Q24046: Brusthonin,
    Pandaemonium and the Shadow Court Dungeon). Each is a round of the eight with its own snapshot, so a fault in one
    leg costs none of the others.
+12. **Q2757, Q2758 and Q24046 wait for NL-4, among "the quests a step left for a higher level" (NL-3, 2026-10-18).**
+   - Q2757 and Q2758 start at level 28, but both end with Etun on Kurngalfberg, 1.5 km into Beluslan's level-40
+     ground. aioncodex's 4.8 page has the same place.
+   - In diagnostic `nl3-rb-d7` the Cleric, at 37, met a pack every 20 m and was cornered twice. 120 hazards then
+     rejected every route to him.
+   - Q24046 sends a bot alone into the Shadow Court Dungeon, a solo instance where no companion goes (NL-a). Its
+     monsters are levels 43 to 46.
+   - They are played after the gear check-in at 36, or later.
+
+   (aioncodex's 4.8 page gives Q2757 to Gagrad (278087) in Reshanta. Java's data and this server's give it to Etun
+   in Beluslan; moving the giver would be a retail correction, the operator's to approve.)
+13. **Reshanta's group quests go to NL-4's group pass, with Q2355 (NL-3, 2026-10-18).**
+   - They are Q2728 (Ladacus, an Elyos guard of 77,859 HP, 2,750 m from Primum) and what bots left for the group:
+     Q2753 and Q2754 for the Sorcerer and the Ranger, and Q2762 and Q2763 for four bots.
+   - The group stage (`group-field`) flies its members across a fly zone in one flight. Morheim's craters ask no more.
+     Reshanta's islands ask for hops, so the group has to hop together; that is built once, for NL-4's pass.
+   - Q2762's mirrorglass waterworms float where no navmesh lies. They are a kill in the air (the leg engine's air kills,
+     `NaturalAltgardAirKills`), not a matter of numbers, and are tried there too.
 
 ## Loop prompt
 
