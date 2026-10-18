@@ -37,6 +37,30 @@ public sealed class AutoGroupParityTests
 		}
 	}
 
+	[Fact]
+	public void TicketStacksThatExpireAlikeArePaidInInventoryOrderAsJavaListSortDoes()
+	{
+		SystemClock.UseSource(() => Now);
+		try
+		{
+			// AutoInstance.removeItem sorts the ticket's stacks by expire time: two stacks that expire alike, then one that
+			// never expires (0).
+			Item first = new(1, new ItemTemplate { expireTime = 60 });
+			Item second = new(2, new ItemTemplate { expireTime = 60 });
+			Item lasting = new(3, new ItemTemplate());
+			Assert.Equal(first.GetExpireTime(), second.GetExpireTime());
+			Assert.Equal(0, lasting.GetExpireTime());
+			var items = new List<Item> { first, second, lasting };
+			AutoInstance.SortByExpireTime(items);
+			// Java's List.sort is stable: [lasting, first, second]. List<T>.Sort gave [lasting, second, first].
+			Assert.Equal([lasting, first, second], items);
+		}
+		finally
+		{
+			SystemClock.UseSystemClock();
+		}
+	}
+
 	private static Player Player(int objectId, string name)
 	{
 		var common = new PlayerCommonData(objectId);

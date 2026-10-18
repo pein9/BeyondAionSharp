@@ -33,7 +33,7 @@ public abstract class AutoInstance : AutoInstanceHandler
             itemCount += item.GetItemCount();
         if (itemCount < requiredCount)
             return false;
-        items.Sort((a, b) => a.GetExpireTime().CompareTo(b.GetExpireTime()));
+        SortByExpireTime(items);
         foreach (Item item in items)
         {
             requiredCount = player.GetInventory().DecreaseItemCount(item, requiredCount);
@@ -41,6 +41,18 @@ public abstract class AutoInstance : AutoInstanceHandler
                 break;
         }
         return true;
+    }
+
+    /// <summary>
+    /// Java: <c>items.sort(Comparator.comparingInt(Item::getExpireTime))</c>, a stable merge sort, so stacks that expire alike
+    /// are used in inventory order. List&lt;T&gt;.Sort is not stable: with three stacks its sorting network moves an equal one
+    /// past another, and another stack pays the ticket.
+    /// </summary>
+    internal static void SortByExpireTime(List<Item> items)
+    {
+        List<Item> sorted = items.OrderBy(item => item.GetExpireTime()).ToList();
+        items.Clear();
+        items.AddRange(sorted);
     }
 
     public virtual void OnInstanceCreate(WorldMapInstance instance)
