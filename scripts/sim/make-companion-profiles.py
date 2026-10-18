@@ -13,7 +13,8 @@ generate them again, never edit them by hand.
 Step M8 of docs/natural-morheim-leveling.md adds a second level: the level-31 profiles of the eight original classes, from
 the world of the gear check-in at 31 (rule MR-h: the Rider, the Gunner and the Bard stay at 26). Step L4 of
 docs/level-31-profiles.md played that check-in again, with the better Elite Rank 6 pieces and the second stigma stone:
-the level-31 profiles come from its world.
+the level-31 profiles come from its world. Step NL-4 of docs/natural-leg-36.md adds the original eight's profiles from the
+world of the gear check-in at 36 (Elite Rank 5), at the levels the bots stood at there (37 and 38).
 
 A snapshot lives under run/snapshots, which is not checked in. Without it --check still reads every profile and checks
 its items; it says that it could not compare.
@@ -39,7 +40,7 @@ QUEST_GROUPS = ('QUEST', 'KEY')
 UNEQUIPPED_SLOT = 65535
 # The worlds the profiles come from, each with the classes it gives (None: every character in it).
 ORIGINAL_EIGHT = ('GLADIATOR', 'TEMPLAR', 'ASSASSIN', 'RANGER', 'SORCERER', 'SPIRIT_MASTER', 'CLERIC', 'CHANTER')
-SOURCES = (('ntc-group-s5', None), ('morheim-g31-s2', ORIGINAL_EIGHT))
+SOURCES = (('ntc-group-s5', None), ('morheim-g31-s2', ORIGINAL_EIGHT), ('nl-g36-s2', ORIGINAL_EIGHT))
 CUBE = 0
 # PlayerClass ids, which index an item's restrict row.
 CLASS_IDS = {'WARRIOR': 0, 'GLADIATOR': 1, 'TEMPLAR': 2, 'SCOUT': 3, 'ASSASSIN': 4, 'RANGER': 5, 'MAGE': 6, 'SORCERER': 7,
