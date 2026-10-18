@@ -115,7 +115,7 @@ public sealed partial class SimulationFastScenarioTests
 	{
 		null or "" or "support" => null,
 		"bridge" => "bridge-completion.json",
-		"muster" or "check-in" => NaturalAbyssEntry.MusterReceipt,
+		"muster" or "check-in" or "check-in-36" => NaturalAbyssEntry.MusterReceipt,
 		"gh-survey" => "gh-survey-completion.json",
 		_ => $"altgard-{entry.Stage}-completion.json",
 	};
