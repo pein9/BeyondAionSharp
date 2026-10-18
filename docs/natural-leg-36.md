@@ -223,6 +223,25 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
     when the quest does not move. Six of eight stopped at Q24043's lure in trial `nl3-rq-t1`. The diagnostics `d10` to
     `d15` and what they found are decision 10. Committed as `f4789b254` and `2ded7c925`; captured round `nl3-rq-c1` from
     `nl-rt-s1`: all eight reached the end, levels 35 and 36 (`nl-rq-s1`).
+  - 2026-10-18: leg `ro` (the errands out of the Abyss: Q24044 by Munin in Ishalgen, Kasir and Lyeanenerk in Pandaemonium,
+    Lugbug and the Artifact of the Inception on Leibo Island; Q24043's errand to Phosphor joins it once its lure is
+    played). The survey's `ro` is split by where its quests end (my decision 11): `ro` here, `rb` the quests that end in
+    Beluslan (Q2773, Q2757, Q2758), and `rd` Q24046 with the Shadow Court Dungeon. The bots leave by Primum's teleport
+    device to Morheim: its use bar, then the fare question Java's `PortalRequestAI` asks. They change to Morheim's and
+    Pandaemonium's teleporters as the shortest chain of the leg's trips, and come back by Return. The Cleric diagnostics
+    `nl3-ro-d1` to `d14` found these faults:
+    - Primum's devices stand on a terrace the navmesh splits off, and one was taken for a ring in the air. A portal is
+      flown to only when no ground lies at its feet.
+    - The walks to the device and to the Artifact found no approach point to their 3 m, for 43 minutes and an hour.
+      They stand on bases no navmesh covers. A portal or quest object is now used from its talk range.
+    - Kasir stands behind the library's desk, 6.3 m from where a player can stand. Java's talk range is measured
+      between the bodies' edges (talk distance plus 1 m, the NPC's and the player's bound radii added: 6.6 m).
+    - The bot now walks to its island's ground nearest such a thing and steps straight on over the server's ground until
+      it is within reach.
+    - The Temporal Stone comes by the leg's approved supply before the Artifact's use, on the operator's word.
+
+    Diagnostic `d14` played Q24044 to its end. Committed as `2ded7c925`; captured round `nl3-ro-c1` from `nl-rq-s1`: all
+    eight reached the end, levels 35 to 37 (`nl-ro-s1`).
 - [ ] **NL-4 Level 36.** Morheim's quests from 31 to 35 for any bot still short of 36 and for the zone's sake; the gear
   check-in at 36 (Elite Rank 5); the level-36 companion profiles; then Q24023 (the leg engine collects inside an
   instance, room by room, and goes down between the Sky Temple Interior's floors as a player does, by a glide or a
@@ -291,6 +310,10 @@ Mine, where the operator gave none; each is his to change:
    That played the lure once (the Sorcerer in `d14`) and failed in the other tries. The operator was asked how a player
    brings the monster to Sinjah in the client (or for a recording); until then `rq` leaves Q24043 at var 2 and `ro`
    leaves out its errand to Phosphor.
+11. **The survey's trips out of the Abyss are three legs, by where their quests end (NL-3, 2026-10-18):** `ro` (Q24044,
+   Ishalgen and Pandaemonium), `rb` (Q2773, Q2757 and Q2758, which end in Beluslan), and `rd` (Q24046: Brusthonin,
+   Pandaemonium and the Shadow Court Dungeon). Each is a round of the eight with its own snapshot, so a fault in one
+   leg costs none of the others.
 
 ## Loop prompt
 
