@@ -150,12 +150,12 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.Equal(60, AutoGroupConfig.DREDGION_REGISTRATION_PERIOD);
 		Assert.Equal(["0 0 0,12,20 ? * *"], AutoGroupConfig.DREDGION_TIMES.Select(cron => cron.CronExpressionString));
 
-		await using var first = new SimulationL0Session(fixture, policy, "b01", 161, "Asimarenaa", Race.ASMODIANS);
-		await using var second = new SimulationL0Session(fixture, policy, "b02", 162, "Asimarenab", Race.ASMODIANS);
-		await using var third = new SimulationL0Session(fixture, policy, "b03", 163, "Asimarenac", Race.ASMODIANS);
-		await using var fourth = new SimulationL0Session(fixture, policy, "b04", 164, "Asimarenad", Race.ASMODIANS);
-		await using var fifth = new SimulationL0Session(fixture, policy, "b05", 165, "Asimarenae", Race.ASMODIANS);
-		await using var sixth = new SimulationL0Session(fixture, policy, "b06", 166, "Asimarenaf", Race.ASMODIANS);
+		await using var first = new SimulationL0Session(fixture, policy, "b01", 102, "Asimarenaa", Race.ASMODIANS);
+		await using var second = new SimulationL0Session(fixture, policy, "b02", 103, "Asimarenab", Race.ASMODIANS);
+		await using var third = new SimulationL0Session(fixture, policy, "b03", 104, "Asimarenac", Race.ASMODIANS);
+		await using var fourth = new SimulationL0Session(fixture, policy, "b04", 105, "Asimarenad", Race.ASMODIANS);
+		await using var fifth = new SimulationL0Session(fixture, policy, "b05", 106, "Asimarenae", Race.ASMODIANS);
+		await using var sixth = new SimulationL0Session(fixture, policy, "b06", 107, "Asimarenaf", Race.ASMODIANS);
 		SimulationL0Session[] sessions = [first, second, third, fourth, fifth, sixth];
 		created.AddRange(sessions);
 		arenaCast = sessions;
@@ -1335,7 +1335,7 @@ public sealed partial class SimulationFastScenarioTests
 			courage.GetTotalCount() > 0 ? courage : defaultCourage);
 	}
 
-	/// <summary>ArenaOfDisciplineInstance at difficulty 1: 700 AP, 310 crucible and 20 courage insignia a player; base 200 AP and 90 crucible insignia; 72% of the rank share to the first, 28% to the second; RatesConfig's discipline rate 1.0 for an ordinary account.</summary>
+	/// <summary>ArenaOfDisciplineInstance at difficulty 1: 700 AP, 310 crucible and 20 courage insignia a player; base 200 AP and 90 crucible insignia; 72% of the rank share to the first, 28% to the second; RatesConfig's discipline rate 1.0 for an ordinary player.</summary>
 	private static ExpectedArenaReward ExpectedDisciplineReward(int score, int totalPoints, int playerCount, int rank) =>
 		ExpectedArenaRewardOf((700, 0, 310, 20), (200, 0, 90, 0), playerCount, score, totalPoints, rank == 0 ? 0.72f : 0.28f, 1f, new ArenaRewardItem(0, 0, 0, 0));
 

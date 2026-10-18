@@ -193,6 +193,8 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			// 97 is AX-12b's probe: a death, the obelisk revive and Golenthor's soul healing.
 			// 151-200 belong to the D32 register (parity-artifacts/e2e/retail-quest-implemented.json), one per quest;
 			// test-retail-quest-inventory.py keeps every other SIM test out of them.
+			// 102-107 are also ARENA's six (P11-03). They are L1's, as HOUSING's 102-105 and RIFT's 106-111 are: an account
+			// need only be fresh in its process, and each of these scenarios runs in a process of its own (resetEpoch).
 			// 201-220 are Leg 7-11's controlled probes, outside D32's reserved accounts.
 			// 221-222 are CG-02/03's unused travel/quest and purchase probes (CG-01 audit).
 			// 223 is HM-02's Haramel travel probe; no earlier probe or D32 register uses it.
