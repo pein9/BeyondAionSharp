@@ -20,7 +20,8 @@ public class WorldRaidRunnable : Aion.Commons.Lang.Runnable
 
     public void Run()
     {
-        log.LogDebug("Attempting to start world raid with ID: " + worldRaidSchedule.GetId() + " and location pool: " + worldRaidSchedule.GetLocations());
+        // Java concatenates the lists, which prints them as AbstractCollection.toString does: [1, 2, 3].
+        log.LogDebug("Attempting to start world raid with ID: " + worldRaidSchedule.GetId() + " and location pool: " + Aion.GameServer.Utils.JavaString.ValueOf(worldRaidSchedule.GetLocations()));
         List<int> validRaidLocations = worldRaidSchedule.GetLocations()
             .Where(locationId => WorldRaidService.GetInstance().IsValidWorldRaidLocation(locationId)
                 && !WorldRaidService.GetInstance().IsWorldRaidInProgress(locationId))
@@ -44,6 +45,6 @@ public class WorldRaidRunnable : Aion.Commons.Lang.Runnable
         foreach (int locationId in validRaidLocations)
             WorldRaidService.GetInstance().StartRaid(locationId, worldRaidSchedule.IsSpecialRaid());
         if (validRaidLocations.Count != 0)
-            log.LogDebug("Started scheduled world raid with ID " + worldRaidSchedule.GetId() + " at the following raid locations: " + validRaidLocations);
+            log.LogDebug("Started scheduled world raid with ID " + worldRaidSchedule.GetId() + " at the following raid locations: " + Aion.GameServer.Utils.JavaString.ValueOf(validRaidLocations));
     }
 }
