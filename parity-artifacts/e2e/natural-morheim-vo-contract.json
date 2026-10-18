@@ -1,0 +1,332 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "morheim-vo-observatory-36",
+  "start": {
+    "contract": "natural-morheim-va-contract.json",
+    "snapshot": "nl-va-s1",
+    "mapId": 220020000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 35,
+    "bindNpcId": 700232,
+    "completedQuestIds": [
+      24040,
+      24041,
+      2721,
+      2722,
+      2741,
+      2743,
+      2744,
+      2729,
+      2730,
+      2731,
+      2725,
+      2753,
+      2756,
+      2755,
+      1755,
+      2726,
+      2764,
+      2765,
+      2766,
+      1771,
+      2772
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "observatory",
+    "mapId": 220020000,
+    "anchor": [
+      2803.15,
+      1100.83,
+      171.839
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "observatory",
+      "note": "Morheim Observatory: Tyr, Angreboda, Gullveig, the obelisk and the flight master",
+      "min": [
+        2763,
+        1075,
+        156
+      ],
+      "max": [
+        2837,
+        1147,
+        193
+      ]
+    },
+    {
+      "key": "alsig",
+      "note": "Alsig Village: Tekor, where Q2418 ends",
+      "min": [
+        2449,
+        1775,
+        80
+      ],
+      "max": [
+        2499,
+        1825,
+        110
+      ]
+    },
+    {
+      "key": "q2400",
+      "note": "the monsters of Q2400 (211514, 212526, 212527)",
+      "min": [
+        2473,
+        1138,
+        93
+      ],
+      "max": [
+        2862,
+        1552,
+        150
+      ]
+    },
+    {
+      "key": "q2415",
+      "note": "the monsters of Q2415 (211529, 211545, 212535, 212536)",
+      "min": [
+        2675,
+        1027,
+        105
+      ],
+      "max": [
+        2954,
+        1306,
+        173
+      ]
+    },
+    {
+      "key": "q2416",
+      "note": "the monsters of Q2416 (212528, 212529, 212533, 212534)",
+      "min": [
+        2210,
+        927,
+        93
+      ],
+      "max": [
+        2848,
+        1535,
+        222
+      ]
+    },
+    {
+      "key": "q4335",
+      "note": "the monsters of Q4335 (212533, 212534, 212535, 212536)",
+      "min": [
+        2210,
+        927,
+        105
+      ],
+      "max": [
+        2933,
+        1296,
+        222
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2400,
+      "category": "QUEST",
+      "minimumLevel": 35,
+      "rewardExperience": 987102,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204366,
+      "area": "q2400"
+    },
+    {
+      "id": 2415,
+      "category": "QUEST",
+      "minimumLevel": 35,
+      "rewardExperience": 987102,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204366,
+      "area": "q2415"
+    },
+    {
+      "id": 2416,
+      "category": "QUEST",
+      "minimumLevel": 35,
+      "rewardExperience": 987102,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204364,
+      "area": "q2416"
+    },
+    {
+      "id": 2418,
+      "category": "QUEST",
+      "minimumLevel": 35,
+      "rewardExperience": 987102,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 204369,
+      "area": "alsig"
+    },
+    {
+      "id": 4335,
+      "category": "QUEST",
+      "minimumLevel": 35,
+      "rewardExperience": 987102,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204369,
+      "area": "q4335"
+    },
+    {
+      "id": 2411,
+      "category": "QUEST",
+      "minimumLevel": 35,
+      "rewardExperience": 806224,
+      "prerequisite": null,
+      "handler": "morheim/_2411EarthSpiritWaterSpirit.cs",
+      "template": null,
+      "startNpcId": 204369,
+      "area": "observatory"
+    }
+  ],
+  "order": [
+    2411,
+    2400,
+    2415,
+    2416,
+    4335,
+    2418
+  ],
+  "steps": [
+    {
+      "key": "q2411-offer-tyr",
+      "questId": 2411,
+      "status": "OFFER",
+      "npcId": 204369,
+      "position": [
+        2812.84,
+        1109.39,
+        178.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        4762
+      ],
+      "area": "observatory"
+    },
+    {
+      "key": "q2411-v0-tyr",
+      "questId": 2411,
+      "var": 0,
+      "npcId": 204369,
+      "position": [
+        2812.84,
+        1109.39,
+        178.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT1_1",
+        "SETPRO10"
+      ],
+      "pages": [
+        1003,
+        1012
+      ],
+      "area": "observatory"
+    },
+    {
+      "key": "q2411-reward-angreboda",
+      "questId": 2411,
+      "status": "REWARD",
+      "npcId": 204366,
+      "position": [
+        2791.63,
+        1100.89,
+        172.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        1352,
+        5
+      ],
+      "area": "observatory"
+    }
+  ],
+  "objectUses": [],
+  "collections": [],
+  "mapTrips": [],
+  "bind": {
+    "npcId": 700260,
+    "position": [
+      2803.15,
+      1100.83,
+      171.839
+    ],
+    "onArrival": true,
+    "price": 7125,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 220020000,
+    "completedQuestIds": [
+      2411,
+      2400,
+      2415,
+      2416,
+      4335,
+      2418
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 35,
+    "snapshot": "nl-vo",
+    "anchor": [
+      2803.15,
+      1100.83,
+      171.839
+    ],
+    "radius": 30,
+    "bindNpcId": 700260,
+    "heldQuestIds": []
+  }
+}

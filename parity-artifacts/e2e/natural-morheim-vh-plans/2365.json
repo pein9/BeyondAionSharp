@@ -1,0 +1,439 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2365,
+    "name": "Putting out Fires",
+    "nameId": 1103565,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "PC_ALL"
+  },
+  "gates": {
+    "minimumLevel": 31,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2365,
+        "start_npc_ids": 204363
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204363,
+        "name": "magni",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 2130.0,
+            "y": 2290.0,
+            "z": 229.0,
+            "heading": 120,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204363,
+      "name": "magni",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2130.0,
+          "y": 2290.0,
+          "z": 229.0,
+          "heading": 120,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204363,
+      "name": "magni",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2130.0,
+          "y": 2290.0,
+          "z": 229.0,
+          "heading": 120,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 10,
+      "npc_ids": "212476 212477",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 212476,
+          "name": "wrathful petrahulk",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 1900.89,
+              "y": 2858.92,
+              "z": 280.112,
+              "heading": 64,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1931.8,
+              "y": 2841.31,
+              "z": 272.135,
+              "heading": 41,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1963.52,
+              "y": 2908.77,
+              "z": 273.778,
+              "heading": 78,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1978.52,
+              "y": 2876.51,
+              "z": 264.931,
+              "heading": 109,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 1988.41,
+              "y": 2920.53,
+              "z": 264.027,
+              "heading": 92,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2011.16,
+              "y": 2949.81,
+              "z": 252.899,
+              "heading": 61,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2034.73,
+              "y": 2675.87,
+              "z": 270.881,
+              "heading": 113,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2041.63,
+              "y": 2771.92,
+              "z": 249.019,
+              "heading": 110,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2045.05,
+              "y": 2953.84,
+              "z": 242.298,
+              "heading": 25,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2076.32,
+              "y": 2927.15,
+              "z": 235.586,
+              "heading": 91,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2111.34,
+              "y": 2800.94,
+              "z": 215.311,
+              "heading": 31,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2124.2,
+              "y": 2859.24,
+              "z": 232.754,
+              "heading": 6,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2138.04,
+              "y": 2735.71,
+              "z": 228.357,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2138.32,
+              "y": 2879.29,
+              "z": 228.831,
+              "heading": 62,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2140.59,
+              "y": 2972.26,
+              "z": 240.19,
+              "heading": 5,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2142.99,
+              "y": 2984.69,
+              "z": 248.216,
+              "heading": 62,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2149.88,
+              "y": 2792.26,
+              "z": 230.5,
+              "heading": 114,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2155.69,
+              "y": 2951.09,
+              "z": 237.152,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2162.76,
+              "y": 2793.04,
+              "z": 230.375,
+              "heading": 47,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2174.34,
+              "y": 2979.22,
+              "z": 239.331,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2190.63,
+              "y": 2815.08,
+              "z": 221.212,
+              "heading": 82,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2195.52,
+              "y": 2805.05,
+              "z": 223.207,
+              "heading": 17,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2196.81,
+              "y": 2925.27,
+              "z": 222.115,
+              "heading": 113,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2197.09,
+              "y": 2892.14,
+              "z": 224.983,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2197.74,
+              "y": 2841.21,
+              "z": 218.524,
+              "heading": 52,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2207.93,
+              "y": 2675.93,
+              "z": 225.254,
+              "heading": 23,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2212.42,
+              "y": 2758.41,
+              "z": 228.021,
+              "heading": 53,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2221.32,
+              "y": 2656.48,
+              "z": 225.037,
+              "heading": 76,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2236.79,
+              "y": 2712.46,
+              "z": 226.485,
+              "heading": 61,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2242.17,
+              "y": 2881.54,
+              "z": 214.914,
+              "heading": 24,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2282.57,
+              "y": 2826.63,
+              "z": 232.187,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2289.86,
+              "y": 2674.51,
+              "z": 228.27,
+              "heading": 37,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2311.5,
+              "y": 2775.41,
+              "z": 240.506,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 212477,
+          "name": "wrathful petrahulk",
+          "positions": [],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204363,
+          "name": "magni",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2130.0,
+              "y": 2290.0,
+              "z": 229.0,
+              "heading": 120,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 633457,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2365,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 31,
+      "name": "Putting out Fires",
+      "nameId": 1103565,
+      "quest_zone": "Morheim",
+      "race_permitted": "PC_ALL",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 633457
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 10,
+          "npc_ids": "212476 212477",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

@@ -58,8 +58,9 @@ public sealed partial class SimulationFastScenarioTests
 		// M2 to M7: "mf", "mk", "md", "mc", "ms", "ma" and "mg" are the Morheim legs (docs/natural-morheim-leveling.md), from the group world.
 		// NL-2: "mb" and "bs" take the bots to Brusthonin and play its Settlers Campsite (docs/natural-leg-36.md); NL-3: "rw"
 		// takes them into Reshanta, "rp" plays Primum's quests, "re" the east, "rs" the south, "ru" the upper layer, "rq" the siege quests, "rt" Tigraki
-		// "ro" the errands out of the Abyss and "rb" Q2773 to Beluslan; NL-4: "va" Alsig Village's quests from 31 to 35.
-		"l2" or "l3" or "l4" or "l5" or "l6" or "l7" or "l8" or "l9" or "l10" or "l11" or "cg" or "l12" or "ax" or "mf" or "mk" or "md" or "mc" or "ms" or "ma" or "mg" or "mgk" or "mgd" or "mgs" or "mb" or "bs" or "rw" or "rp" or "re" or "rs" or "ru" or "rq" or "rt" or "ro" or "rb" or "va" =>
+		// "ro" the errands out of the Abyss and "rb" Q2773 to Beluslan; NL-4: "va" Alsig Village's quests from 31 to 35 and
+		// "vo" Morheim Observatory's, "vh" Halabana Outpost's.
+		"l2" or "l3" or "l4" or "l5" or "l6" or "l7" or "l8" or "l9" or "l10" or "l11" or "cg" or "l12" or "ax" or "mf" or "mk" or "md" or "mc" or "ms" or "ma" or "mg" or "mgk" or "mgd" or "mgs" or "mb" or "bs" or "rw" or "rp" or "re" or "rs" or "ru" or "rq" or "rt" or "ro" or "rb" or "va" or "vo" or "vh" =>
 			new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: entry.Stage, LaterCapital: true, ClassLine: line),
 		// The muster (2026-10-12): a character that stands at the Abyss entry's end, in that leg's fortress.
 		"muster" => new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
@@ -68,6 +69,10 @@ public sealed partial class SimulationFastScenarioTests
 		// tier, by a character the Morheim legs brought to the fortress at that level.
 		"check-in" => new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
 			ClassLine: line, Muster: true, CheckInLevel: 31),
+		// NL-4 (docs/natural-leg-36.md): the gear check-in at 36, Elite Rank 5 from the same Silver Coin vendors, by a character
+		// leg mg brought back to the fortress.
+		"check-in-36" => new NaturalJourneyOptions(StopAt: entry.StopAt, AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
+			ClassLine: line, Muster: true, CheckInLevel: 36),
 		// GH-01: one uncaptured field encounter from the group world's muster endpoint, with the ordinary fight table.
 		"gh-survey" => new NaturalJourneyOptions(AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
 			ClassLine: line, Muster: true, SurveyNpcId: entry.TargetNpcId ?? 212644),
@@ -91,7 +96,7 @@ public sealed partial class SimulationFastScenarioTests
 		"companion-lead" => new NaturalJourneyOptions(AscensionBridge: true, AltgardLegId: NaturalAbyssEntry.Leg, LaterCapital: true,
 			ClassLine: line, Companion: "stand-in", Companions: entry.Companions ?? throw new InvalidDataException("companion-lead names its companions."),
 			CompanionUntil: entry.CompanionUntil, CompanionEnd: entry.CompanionEnd),
-		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, the Morheim legs, muster, check-in, gh-survey, support, group-coin, group-ntc, group-field, companion-lead or companion."),
+		_ => throw new InvalidDataException($"Stage '{entry.Stage}' is not a stage of a round: none (the plain journey), bridge, l1 to l11, cg, l12, ax, the Morheim legs, muster, check-in, check-in-36, gh-survey, support, group-coin, group-ntc, group-field, companion-lead or companion."),
 		}) with { Role = entry.Role, SoloCompanion = entry.SoloCompanion,
 			// NL-2: a diagnostic trial of some of a leg's quests (AM-06's limited run), never a captured round's.
 			AltgardOnlyQuests = entry.OnlyQuests };

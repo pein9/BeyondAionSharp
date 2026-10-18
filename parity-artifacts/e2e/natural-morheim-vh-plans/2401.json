@@ -1,0 +1,335 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2401,
+    "name": "Poisoned Weapons",
+    "nameId": 1103601,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 34,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "end_npc_ids": 204380,
+        "id": 2401,
+        "start_npc_ids": 204320
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204320,
+        "name": "neior",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 365.543,
+            "y": 2434.6,
+            "z": 452.193,
+            "heading": 102,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204320,
+      "name": "neior",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 365.543,
+          "y": 2434.6,
+          "z": 452.193,
+          "heading": 102,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204380,
+      "name": "modgud",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2354.97,
+          "y": 2220.28,
+          "z": 125.913,
+          "heading": 5,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 5,
+      "item_id": 182204164,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182204164,
+          "npc_id": 211518,
+          "npc": {
+            "id": 211518,
+            "name": "chaintail scolopen",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 2474.19,
+                "y": 2302.36,
+                "z": 101.465,
+                "heading": 65,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2687.27,
+                "y": 1982.23,
+                "z": 112.023,
+                "heading": 71,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2694.33,
+                "y": 1559.29,
+                "z": 109.634,
+                "heading": 74,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2793.11,
+                "y": 2171.81,
+                "z": 99.8426,
+                "heading": 91,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2806.02,
+                "y": 2204.99,
+                "z": 107.878,
+                "heading": 84,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2816.36,
+                "y": 2235.5,
+                "z": 106.483,
+                "heading": 82,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2820.03,
+                "y": 2038.73,
+                "z": 115.494,
+                "heading": 50,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2822.37,
+                "y": 2141.95,
+                "z": 102.975,
+                "heading": 68,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2825.62,
+                "y": 2054.09,
+                "z": 113.56,
+                "heading": 28,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2827.68,
+                "y": 2127.19,
+                "z": 104.818,
+                "heading": 7,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2853.0,
+                "y": 2052.8,
+                "z": 111.15,
+                "heading": 94,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2861.46,
+                "y": 2190.37,
+                "z": 103.058,
+                "heading": 75,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2876.91,
+                "y": 2205.31,
+                "z": 105.682,
+                "heading": 61,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2882.42,
+                "y": 2173.86,
+                "z": 105.651,
+                "heading": 44,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2895.71,
+                "y": 2144.77,
+                "z": 107.643,
+                "heading": 19,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "item_id": 182204164,
+          "npc_id": 211534,
+          "npc": {
+            "id": 211534,
+            "name": "chaintail scolopen",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204380,
+          "name": "modgud",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2354.97,
+              "y": 2220.28,
+              "z": 125.913,
+              "heading": 5,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 806224,
+        "gold": 23990,
+        "rewardItems": [
+          {
+            "count": 2,
+            "item_id": 186000008
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2401,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 34,
+      "name": "Poisoned Weapons",
+      "nameId": 1103601,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 182204164
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 806224,
+          "gold": 23990
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 2,
+              "item_id": 186000008
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204164,
+          "npc_id": 211518
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182204164,
+          "npc_id": 211534
+        }
+      }
+    ]
+  }
+}

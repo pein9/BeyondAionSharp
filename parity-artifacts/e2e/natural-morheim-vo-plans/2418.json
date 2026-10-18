@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2418,
+    "name": "A Gentle Reminder",
+    "nameId": 1103618,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 35,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 204340,
+        "id": 2418,
+        "start_npc_ids": 204369
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204369,
+        "name": "tyr",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 2812.84,
+            "y": 1109.39,
+            "z": 178.0,
+            "heading": 68,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204369,
+      "name": "tyr",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2812.84,
+          "y": 1109.39,
+          "z": 178.0,
+          "heading": 68,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204340,
+      "name": "tekor",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2474.87,
+          "y": 1800.46,
+          "z": 95.656,
+          "heading": 104,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204340,
+          "name": "tekor",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2474.87,
+              "y": 1800.46,
+              "z": 95.656,
+              "heading": 104,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 987102,
+        "gold": 8360,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2418,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 35,
+      "name": "A Gentle Reminder",
+      "nameId": 1103618,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 987102,
+          "gold": 8360
+        }
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "item_id": 182204179
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

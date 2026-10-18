@@ -1,0 +1,293 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "morheim-vh-halabana-36",
+  "start": {
+    "contract": "natural-morheim-vo-contract.json",
+    "snapshot": "nl-vo-s1",
+    "mapId": 220020000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 36,
+    "bindNpcId": 700260,
+    "completedQuestIds": [
+      24040,
+      24041,
+      2721,
+      2722,
+      2741,
+      2743,
+      2744,
+      2729,
+      2730,
+      2731,
+      2725,
+      2753,
+      2756,
+      2755,
+      1755,
+      2726,
+      2764,
+      2765,
+      2766,
+      1771,
+      2772
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "halabana",
+    "mapId": 220020000,
+    "anchor": [
+      2348.211,
+      2225.085,
+      127.226
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "halabana",
+      "note": "Halabana Outpost: Magni, Modgud, the obelisk and the flight master",
+      "min": [
+        2105,
+        2193,
+        110
+      ],
+      "max": [
+        2379,
+        2315,
+        244
+      ]
+    },
+    {
+      "key": "fortress",
+      "note": "Morheim Ice Fortress: Neior, who gives Q2401",
+      "min": [
+        340,
+        2409,
+        437
+      ],
+      "max": [
+        390,
+        2459,
+        467
+      ]
+    },
+    {
+      "key": "q2401",
+      "note": "the monsters of Q2401 (211518, 211534)",
+      "min": [
+        2444,
+        1529,
+        84
+      ],
+      "max": [
+        2925,
+        2332,
+        130
+      ]
+    },
+    {
+      "key": "q2362",
+      "note": "the monsters of Q2362 (212460, 212461, 212462)",
+      "min": [
+        1782,
+        1671,
+        165
+      ],
+      "max": [
+        2268,
+        2280,
+        257
+      ]
+    },
+    {
+      "key": "q2365",
+      "note": "the monsters of Q2365 (212476, 212477)",
+      "min": [
+        1870,
+        2626,
+        199
+      ],
+      "max": [
+        2341,
+        3014,
+        295
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2362,
+      "category": "QUEST",
+      "minimumLevel": 31,
+      "rewardExperience": 291412,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204363,
+      "area": "q2362"
+    },
+    {
+      "id": 2365,
+      "category": "QUEST",
+      "minimumLevel": 31,
+      "rewardExperience": 633457,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204363,
+      "area": "q2365"
+    },
+    {
+      "id": 2401,
+      "category": "QUEST",
+      "minimumLevel": 34,
+      "rewardExperience": 806224,
+      "prerequisite": null,
+      "handler": "ItemCollecting template (quest_script_data/morheim.xml), by steps",
+      "template": null,
+      "startNpcId": 204320,
+      "area": "q2401"
+    }
+  ],
+  "order": [
+    2362,
+    2365,
+    2401
+  ],
+  "steps": [
+    {
+      "key": "q2401-offer-neior",
+      "questId": 2401,
+      "status": "OFFER",
+      "npcId": 204320,
+      "position": [
+        365.543,
+        2434.6,
+        452.193
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "fortress"
+    },
+    {
+      "key": "q2401-v0-modgud",
+      "questId": 2401,
+      "var": 0,
+      "npcId": 204380,
+      "position": [
+        2354.97,
+        2220.28,
+        125.913
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "CHECK_USER_HAS_QUEST_ITEM"
+      ],
+      "pages": [
+        2375,
+        5
+      ],
+      "area": "halabana"
+    },
+    {
+      "key": "q2401-reward-modgud",
+      "questId": 2401,
+      "status": "REWARD",
+      "npcId": 204380,
+      "position": [
+        2354.97,
+        2220.28,
+        125.913
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        5,
+        5
+      ],
+      "area": "halabana"
+    }
+  ],
+  "objectUses": [],
+  "collections": [
+    {
+      "questId": 2401,
+      "atVar": 0,
+      "items": [
+        {
+          "itemId": 182204164,
+          "count": 5,
+          "sourceNpcIds": [
+            211518,
+            211534
+          ]
+        }
+      ]
+    }
+  ],
+  "mapTrips": [],
+  "bind": {
+    "npcId": 700261,
+    "position": [
+      2348.211,
+      2225.085,
+      127.226
+    ],
+    "onArrival": true,
+    "price": 7758,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 220020000,
+    "completedQuestIds": [
+      2362,
+      2365,
+      2401
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 36,
+    "snapshot": "nl-vh",
+    "anchor": [
+      2348.211,
+      2225.085,
+      127.226
+    ],
+    "radius": 30,
+    "bindNpcId": 700261,
+    "heldQuestIds": []
+  }
+}

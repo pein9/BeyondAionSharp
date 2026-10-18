@@ -118,12 +118,16 @@ public sealed record NaturalAltgardContract(
 		["rb"] = ("natural-reshanta-rb-contract.json", null),
 		// NL-4: "va" is Alsig Village's quests from 31 to 35, reached from Primum by its teleport device to Morheim.
 		["va"] = ("natural-morheim-va-contract.json", "natural-morheim-va-plans"),
+		// NL-4: "vo" is Morheim Observatory's quests from 31 to 35.
+		["vo"] = ("natural-morheim-vo-contract.json", "natural-morheim-vo-plans"),
+		// NL-4: "vh" is Halabana Outpost's quests from 31 to 35 and the fortress's Q2401, handed in at Halabana.
+		["vh"] = ("natural-morheim-vh-contract.json", "natural-morheim-vh-plans"),
 	};
 
 	/// <summary>The legs played by a mustered character of level 26 or more: the Morheim leg to level 31
 	/// (docs/natural-morheim-leveling.md), on Morheim, and the leg to 36's (docs/natural-leg-36.md), on Morheim and Brusthonin.</summary>
 	public static readonly IReadOnlySet<string> MusteredLegs = new HashSet<string>
-		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp", "re", "rs", "ru", "rq", "rt", "ro", "rb", "va" };
+		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp", "re", "rs", "ru", "rq", "rt", "ro", "rb", "va", "vo", "vh" };
 
 	/// <summary>NL-2: Brusthonin, the settlers' land south of Morheim.</summary>
 	public const int Brusthonin = 220050000;
