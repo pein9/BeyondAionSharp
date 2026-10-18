@@ -316,6 +316,26 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
     - Round `nl4-c38-t1` from `nl-g36-s2`: the Gladiator at 38 as the stand-in player called five companions (Cleric,
       Templar, Ranger, Sorcerer, Chanter). They came at 37 and 38, followed him, killed his marked targets in fifteen
       fights and left when he looted.
+  - 2026-10-18, Q24023 in the Sky Temple Interior (leg `vs`, `2ef97d327`): its three rooms are one solo instance, each
+    room entered by its own portal; the bot glides down between floors no walk joins (`NaturalFloorGlide`).
+    - The Cleric played it whole in trial `nl4-vs-d6`: 2 h 45 min of game time and three deaths. It killed Flame Judge
+      Bolcan alone, looted the Abyss Key, and finished Bulagan's check and Gangleri's reward.
+    - Captured round `nl4-vs-c1` from `nl-g36-s2`, capturing `nl-vs-s1`: only the Cleric reached the end, with no
+      deaths. Of the other seven:
+      - The Templar, the Ranger, the Sorcerer and the Assassin stopped at a room portal: a hit cut off the 3-second
+        use (Java `ItemUseObserver`), and the bot waited for a teleport that never came. The fix is written: the use
+        watches for the abort, and the bot fights and tries again. Its checks are chain 39.
+      - The Fire Room's ordinary monsters are elites of 21,557 to 32,358 HP, standing in pairs; the other classes died
+        there again and again.
+        - The Gladiator stopped at 20 deaths on its top tier. Twice it was out longer than the copy's 600 s, and its
+          kills came back with a new copy.
+        - The Chanter: 16 entries and 6 deaths, an hour without a kill.
+        - The Spirit Master: 7 deaths, then a takeoff near Slag Bulwark that the server refused
+          (STR_FLYING_FORBIDDEN_HERE).
+        - The Sorcerer had 9 deaths and the Assassin 2 before they stopped at the portal.
+    - **Paused on the operator's word (2026-10-18)** until he settles the Fire Room. Open: how players go down it in
+      the 4.8 client (the quest text speaks of three floating disks), and what the classes that cannot clear it alone
+      should do.
 - [ ] **NL-5 The report.** Per class its level, quests, deaths and time; what was not played and why.
 
 ## Decisions
