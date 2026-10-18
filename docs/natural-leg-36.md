@@ -188,6 +188,25 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
     Committed as `540aec462` (the contract) and `ece9d5ff4`; captured round `nl3-rs-c1` from `nl-re-s1`: all eight
     reached the end, levels 34 to 36, 32 to 63 hops and 0 to 10 deaths each; the Ranger left Q2754 for the group
     (`nl-rs-s1`).
+  - 2026-10-17: leg `ru` (the upper layer, 1,200 m above the lower: Q2726, Q2762, Q2763, Q2764, Q2765, Q2766, Q1771 and
+    Q2772). Diagnostics `nl3-ru-d1` to `d3` and trials `t1` and `t2` found these faults:
+    - No flight climbs 1,200 m, and the airline planner priced the climb as a walk. A crossing to a goal more than
+      600 m above or below the bot now takes the flight transporter between the layers, Mure up to Hwiath and
+      Hwiath down.
+    - Once the transporter was of the Elyos (Theon), who do not talk to an Asmodian. The transporter is now one of
+      the bot's own race.
+    - Junjunbinerk stands where no navmesh lies within 20 m, so the walk after the flight found no road again, and the
+      walk and the crossing called each other without end. A walk now ends where its flight lands within reach.
+    - Kuenunerk's jewel boxes (Q2772) stand on scraps of ground 190 m above one another. A bot below a box waited for
+      guards to clear instead of flying. A spawn on another island is now flown to.
+    - The Templar and the Chanter were killed in the air on a hop, and their landing waited for ever. The death now
+      ends the wait.
+
+    The `t2` world had the D7 boot tail in it (the siege garrisons stand at every fortress). Committed as `0c7d8d74a`;
+    captured round `nl3-ru-c1` from `nl-rs-s1`: all eight reached the end, levels 35 and 36, 0 to 3 deaths and 5 to 11
+    lifts each. The Sorcerer, the Chanter, the Assassin and the Ranger left Q2762 for the group after an hour without
+    progress: most of its 42 mirrorglass waterworms float where no navmesh lies, as the survey guessed. Q2763 follows
+    it for those four (`nl-ru-s1`).
 - [ ] **NL-4 Level 36.** Morheim's quests from 31 to 35 for any bot still short of 36 and for the zone's sake; the gear
   check-in at 36 (Elite Rank 5); the level-36 companion profiles; then Q24023 (the leg engine collects inside an
   instance, room by room, and goes down between the Sky Temple Interior's floors as a player does, by a glide or a
@@ -198,6 +217,17 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
 
 The operator's, 2026-10-17: **Q24024 and Q24025 wait for the next planning phase,** until the bots are a higher level
 ("we do not want to do Q24024 and Q24025 until the bots are a higher level"); Q24026, which follows them, waits with them.
+
+The operator's, later the same day: **the bots are supplied a Temporal Stone when a quest needs one, and Greater Wind
+Serums to use** ("Seed our bots with a temporal stone when needed and Greater Wind Serum for them to use"). This answers
+decision 8's two questions without a change to the server's data: the Temporal Stone (188020000) comes by the bot's
+supply when Q24044 reaches the step that asks for it, and Greater Wind Serums (162000026, skill 9911, one every 54 s, not
+drunk on the move) carry a flight past one tank, to Tigraki Island for Q24045 and Q2767. Then: "We CAN drink the flight
+potion while on the move, and should drink it when we get the max flight time out of it, also have our bots use a
+greater whatever scroll for flight speed boosts": a serum is drunk in flight once the flight time it restores fits, and
+the Greater Raging Wind Scroll (164000079) speeds long crossings. And: "We DO NEED the siege enabled", with housing and
+the rest of the boot tail D7 declined, delegated to other agents while this leg goes on; decision 9's three quests are
+played once the sieges stand.
 
 Mine, where the operator gave none; each is his to change:
 
