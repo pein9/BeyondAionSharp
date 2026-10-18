@@ -1467,6 +1467,56 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			long ObservedExperience() => session.Api.World.CurrentExperience +
 				runtime.Data.PlayerExperienceTable.GetStartExpForLevel(session.Api.World.Level);
 
+			// NL-3: a talk or a use within reach of something that stands where no navmesh lies near it (Kasir behind the
+			// Pandaemonium library's desk, the Artifact of the Inception on its base on Leibo Island): the bot walks to the ground
+			// of its own island nearest it, then steps straight on over the server's ground, short of what blocks sight, until it
+			// is within reach, as a player walks up to a counter.
+			async Task<bool> StepWithinReachAsync(BotNavigationGeometry ground, NaturalJourneyNavigator walker, int map, BotPosition target,
+				float reach, string purpose)
+			{
+				bool Refused(string reason)
+				{
+					session.TraceDiagnostic("step-within-reach-refused", new Dictionary<string, object?>
+					{ ["purpose"] = purpose, ["reason"] = reason, ["position"] = session.CurrentPosition });
+					return false;
+				}
+				if (Distance(session.CurrentPosition, target) <= reach) return true;
+				BotPosition? nearest = ground.IslandGround(map, session.CurrentPosition, at => Distance(at, target) <= reach + 4)
+					.OrderBy(at => Distance(at, target)).Cast<BotPosition?>().FirstOrDefault();
+				if (nearest is not { } edge) return Refused("no ground of this island near it");
+				if (Distance(session.CurrentPosition, edge) > 0.5f)
+				{
+					IReadOnlyList<BotPosition> toEdge = ground.FindJourneyPath(map, session.CurrentPosition, edge);
+					if (toEdge.Count == 0) return Refused($"no path to {edge}");
+					await walker.MoveAsync(toEdge, token);
+					await walker.SynchronizeAsync(token);
+				}
+				var steps = new List<BotPosition>();
+				BotPosition last = session.CurrentPosition;
+				while (Distance(last, target) > reach && steps.Count < 40)
+				{
+					float gap = Distance(last, target);
+					BotPosition ahead = new(last.X + (target.X - last.X) * 0.25f / gap, last.Y + (target.Y - last.Y) * 0.25f / gap, last.Z, last.Heading);
+					if (ground.StaticGroundAt(map, ahead) is not { } footing || MathF.Abs(footing.Z - last.Z) > 0.8f ||
+						!ground.HasLineOfSight(map, last, footing with { X = footing.X + (target.X - last.X) * 0.3f / gap, Y = footing.Y + (target.Y - last.Y) * 0.3f / gap }))
+						break;
+					steps.Add(footing);
+					last = footing;
+				}
+				if (Distance(last, target) > reach) return Refused($"the straight steps end {Distance(last, target):F1} m away at {last}");
+				if (steps.Count > 0)
+				{
+					await walker.MoveAsync(steps, token);
+					await walker.SynchronizeAsync(token);
+				}
+				session.TraceDiagnostic("step-within-reach", new Dictionary<string, object?>
+				{
+					["purpose"] = purpose, ["reach"] = reach, ["steps"] = steps.Count, ["position"] = session.CurrentPosition,
+					["distance"] = Distance(session.CurrentPosition, target),
+				});
+				return Distance(session.CurrentPosition, target) <= reach;
+			}
+
 			async Task<int> ApproachCapitalNpcAsync(int npcId)
 			{
 				int map = session.Api.World.MapId!.Value;
@@ -1503,10 +1553,13 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						if (approach.Arrived) break;
 					}
 				}
-				if (!approach.Arrived && (laterCapital != null || altgardLeg?.AbyssEntry != null))
+				if (!approach.Arrived && (laterCapital != null || altgardLeg?.AbyssEntry != null ||
+					options.AltgardLegId is { } capitalLeg && NaturalAltgardContract.MusteredLegs.Contains(capitalLeg)))
 				{
 					// The generic navigator uses a three-metre interaction radius. City NPCs
 					// can have reachable ground farther out but still inside their shipped talk range.
+					// NL-3: Kasir (Q24044) stands in the museum hall 11.7 m past Kushar's desk, where the navmesh ends
+					// (nl3-ro-d5).
 					BotKnownObject? seen = session.Api.World.Objects.Values.FirstOrDefault(o => o.TemplateId == npcId && !o.IsCorpse);
 					BotPosition target = seen?.SettledPosition ?? anchor;
 					float range = Math.Min(5, runtime.Data.NpcDataDh.GetNpcTemplate(npcId)!.GetTalkDistance());
@@ -1525,8 +1578,28 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						}
 					}
 				}
+				if (!approach.Arrived && options.AltgardLegId is { } counterLeg && NaturalAltgardContract.MusteredLegs.Contains(counterLeg) &&
+					await ApproachOverCounterAsync() is int across)
+					return across;
 				Require.True(approach.Arrived, $"Capital NPC {npcId}: {approach.Reason}");
 				return Require.IsType<int>(approach.TargetObjectId);
+
+				// NL-3: Kasir (Q24044) stands behind the Pandaemonium library's desk (pr_d_library_in_03c), on ground the bake
+				// cut off 2.5 m from the hall's, 6.5 m from him (nl3-ro-d6). The bot walks to the hall's ground nearest him and
+				// steps straight on to the desk, on the server's ground and short of what blocks sight, until he is in talk
+				// range, as a player leans on a counter (nl3-ro-d8: the desk stops it 6.3 m from him).
+				async Task<int?> ApproachOverCounterAsync()
+				{
+					BotKnownObject? behind = session.Api.World.Objects.Values.Where(o => o.TemplateId == npcId && !o.IsCorpse)
+						.OrderBy(o => Distance(session.CurrentPosition, o.SettledPosition)).FirstOrDefault();
+					if (behind == null) return null;
+					// Java isInTalkRange: talk distance plus 1 m between the bodies' edges (isInRange, centerToCenter false),
+					// the NPC's bound radius and the player's added (0.25 m for every player, PlayerAccountData), less
+					// 0.15 m in hand.
+					var counterNpc = runtime.Data.NpcDataDh.GetNpcTemplate(npcId)!;
+					float talk = counterNpc.GetTalkDistance() + 1 + counterNpc.GetBoundRadius().GetMaxOfFrontAndSide() + 0.25f - 0.15f;
+					return await StepWithinReachAsync(mapGeometry, here, map, behind.SettledPosition, talk, $"talk-{npcId}") ? behind.ObjectId : null;
+				}
 			}
 
 			async Task PlayLaterCapitalStepAsync(NaturalAltgardStep step)
@@ -3909,9 +3982,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								{
 									// NL-2: a map no teleporter here reaches (Ishalgen from Brusthonin, for Q4011's Kaindal) is reached
 									// by way of the map its own teleporter stands on (Pandaemonium), as a player changes teleporters.
+									// NL-3: from Reshanta a capital or a home zone is two or three teleporters away (Primum's Morheim device,
+									// Morheim's teleporter to Pandaemonium, Pandaemonium's to Ishalgen): the first trip of the shortest chain.
 									NaturalAltgardMapTrip trip = leg.MapTripList.FirstOrDefault(entry => entry.MapId == next.MapId &&
-										(entry.FromMapId == null || entry.FromMapId == onMap)) ?? leg.MapTripList.Single(entry => entry.FromMapId == onMap &&
-										leg.MapTripList.Any(onward => onward.MapId == next.MapId && onward.FromMapId == entry.MapId));
+										(entry.FromMapId == null || entry.FromMapId == onMap)) ?? FirstTripOfChain(onMap, next.MapId!.Value);
 									EnterLegMap();
 									await EnsureOnGroundAsync();
 									// Pandaemonium's teleporter is reached by the capital's own ways (its lifts, the Coliseum), as its talks are.
@@ -3921,21 +3995,28 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 										.Where(group => group.GetNpcId() == trip.TeleporterNpcId).SelectMany(group => group.GetSpawnTemplates())
 										.Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0)).FirstOrDefault() is { } door &&
 										door != default && geometry.IslandGround(onMap, session.CurrentPosition,
-											at => Distance(at, door) <= trip.TalkRange - 2).Count == 0)
+											at => Distance(at, door) <= trip.TalkRange - 2).Count == 0 &&
+										// Primum's teleport devices stand on the fortress's ground, on a terrace the navmesh splits off
+										// from the bot's (nl3-ro-d2): only a portal with no ground at its feet hangs in the air.
+										geometry.StaticGroundAt(onMap, door) == null)
 									{
 										Require.True(await FlyBesideAsync(door, trip.TalkRange - 3), $"No flight beside portal {trip.TeleporterNpcId}.");
 										await session.SynchronizeAsync(token);
 										int floating = session.Api.World.Objects.Values.Where(known => known.TemplateId == trip.TeleporterNpcId)
 											.OrderBy(known => Distance(known.Position, door)).Select(known => known.ObjectId).FirstOrDefault();
 										Require.True(floating != 0, $"Portal {trip.TeleporterNpcId} is not in sight beside it.");
-										await UseInstancePortalAsync(floating, useMillis, trip.MapId);
+										await UseInstancePortalAsync(floating, useMillis, trip.MapId, trip.Confirm);
 										continue;
 									}
-									int teleporter = laterCapital != null && onMap == capitalContract.MapId
-										? await ApproachCapitalNpcAsync(trip.TeleporterNpcId) : await ApproachShippedSpawnAsync(trip.TeleporterNpcId);
+									// A portal object is used from its talk range (the server's is its talk distance plus 1 m): Primum's
+									// teleport devices stand on bases no navmesh covers, and a walk to the ordinary 3 m found no approach
+									// point for 43 minutes (nl3-ro-d3), stopping 6.3 m away.
+									int teleporter = (laterCapital != null || NaturalAltgardContract.MusteredLegs.Contains(altgardLegId!)) && onMap == capitalContract.MapId
+										? await ApproachCapitalNpcAsync(trip.TeleporterNpcId)
+										: await ApproachShippedSpawnAsync(trip.TeleporterNpcId, withinRange: trip.UseMillis != null ? trip.TalkRange + 0.5f : null);
 									if (trip.UseMillis is int walkedUseMillis)
 									{
-										await UseInstancePortalAsync(teleporter, walkedUseMillis, trip.MapId);
+										await UseInstancePortalAsync(teleporter, walkedUseMillis, trip.MapId, trip.Confirm);
 										continue;
 									}
 									NaturalServiceOutcome travelled = await new NaturalServiceSteps(session).TeleportAsync(teleporter,
@@ -4228,53 +4309,120 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 									await RestSafelyAsync(token);
 									break;
 								}
-								// NL-3: a lure (Q24043): the monster is drawn into the radius of the point first, by walking into its aggro
-								// range without a blow and back to the point with it following, and struck once it stands inside.
+								// NL-3: a lure (Q24043): the monster is led into the radius of the point and struck there with an auto-attack.
 								if (hunt.Lure is { Length: 3 } lure)
 								{
 									BotPosition point = new(lure[0], lure[1], lure[2], 0);
 									for (int attempt = 0; attempt < 6 && !Counted() && !session.Api.World.IsDead; attempt++)
 									{
-										// aioncodex /48/ (Sinjah): "Once it's badly wounded, bring it close, and we'll capture it." The monster
-										// follows once it has taken the bot as its target: the bot waits for that, closer if it has not.
-										int drawn = await ApproachShippedSpawnAsync(hunt.NpcIds.First(SpawnsOnMap), withinRange: 9);
-										bool Drawn() => Engaged() is var engaged && (engaged.Attackers.Contains(drawn) || engaged.Pursuers.Contains(drawn));
-										for (int wait = 0; wait < 12 && !Drawn() && !session.Api.World.IsDead; wait++)
+										// aioncodex /48/ (Sinjah): "Once it's badly wounded, bring it close, and we'll capture it." The monster is
+										// the one nearest the point, 85 m along the ledge: one drawn from 130 m away (diagnostic nl3-rq-d13) never
+										// came more than 30 m from its spawn, and the nearest spawn to the bot is not the nearest to the point
+										// (nl3-rq-d14: the Sorcerer's was, the Gladiator's never). So the bot looks from the point first.
+										if (Distance(session.CurrentPosition, point) > hunt.LureRadius)
+											await NaturalIshalgenNavigator.ExploreWithinRangeAsync(contract.MapId, -1, point, hunt.LureRadius - 3, navigator, "lure-point", token);
+										int drawn = 0;
+										if (session.Api.World.Objects.Values.Where(known => known.TemplateId is int kind && hunt.NpcIds.Contains(kind) && !known.IsCorpse &&
+											!navigator.UnavailableObjects.Contains(known.ObjectId) && Distance(known.Position, point) < 120)
+											.MinBy(known => Distance(known.Position, point)) is { } nearest)
 										{
-											if (wait == 6) await ApproachShippedSpawnAsync(hunt.NpcIds.First(SpawnsOnMap), withinRange: 4);
-											await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
-											await session.SynchronizeAsync(token);
-										}
-										await NaturalIshalgenNavigator.ExploreAnchorAsync(contract.MapId, -1, point, navigator, "lure-point", token);
-										float? closest = null;
-										// The blow comes from where the bot stands, the moment the monster is inside the radius: the guards
-										// by Sinjah kill it if it lingers, and a guard's kill does not count.
-										for (int wait = 0; wait < 40 && !Counted() && !session.Api.World.IsDead; wait++)
-										{
-											await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
-											await session.SynchronizeAsync(token);
-											if (!session.Api.World.Objects.TryGetValue(drawn, out BotKnownObject? follower)) break;
-											float gap = Distance(follower.Position, point);
-											closest = MathF.Min(closest ?? gap, gap);
-											if (gap > hunt.LureRadius - 1) continue;
-											// The blow that counts is an auto-attack: Java's PlayerController.attackTarget calls the quest's
-											// attack event before the swing, and skill damage has not reached NpcController.onAttack since
-											// Java's 47ec44faf8 (the Cleric's spells at 5 m from Sinjah counted for nothing). The monster has
-											// come to fight the bot, so it stands within reach or soon will.
-											await session.SendPacketAsync(session.Api.Target(drawn), token);
-											for (int swing = 0; swing < 4 && !Counted() && session.Api.World.Objects.ContainsKey(drawn); swing++)
+											navigator.Led = new HashSet<int> { nearest.ObjectId };
+											try
 											{
-												await session.SendPacketAsync(session.Api.Attack(drawn, 1500, (byte)swing), token);
+												if ((await NaturalIshalgenNavigator.ApproachNpcObjectAsync(contract.MapId, nearest.TemplateId!.Value, nearest.ObjectId,
+													nearest.Position, navigator, token)).Arrived)
+													drawn = nearest.ObjectId;
+											}
+											finally { navigator.Led = new HashSet<int>(); }
+										}
+										if (drawn == 0) drawn = await ApproachShippedSpawnAsync(hunt.NpcIds.First(SpawnsOnMap), withinRange: 9);
+										// The walks would fight the monster the bot leads (diagnostic nl3-rq-d12: the Sorcerer's spells killed it
+										// 10 m from its spawn): the navigator leaves it alone until the attempt ends.
+										navigator.Led = new HashSet<int> { drawn };
+										try
+										{
+											// Java's AttackManager.checkGiveupDistance turns a monster home once it has neither struck nor been struck
+											// for 20 s (Reshanta has no ai_info: chase_home 200); Sinjah stands 85 m from the nearest assaulter, and a
+											// follower never catches a bot that runs. Trial nl3-rq-t1: six of eight ran ahead to the point, and the
+											// monster turned back 8 m short of them; diagnostic nl3-rq-d11: it took the bot's Cleric companion (NL-a)
+											// as its target and stayed beside it, out of the bot's reach. So the bot strikes it first, then leads it
+											// in stretches, and strikes it each time it has caught up, a few seconds apart, walking back to it when
+											// it hangs back, as a player keeps a long pull its own and from turning home.
+											BotPosition seenAt = session.Api.World.Objects.TryGetValue(drawn, out BotKnownObject? atHome) ? atHome.Position : session.CurrentPosition;
+											BotPosition spawnedAt = runtime.Data.SpawnsDh.GetSpawnsByWorldId(contract.MapId).Where(group => hunt.NpcIds.Contains(group.GetNpcId()))
+												.SelectMany(group => group.GetSpawnTemplates()).Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0))
+												.DefaultIfEmpty(seenAt).MinBy(spot => Distance(spot, seenAt));
+											long? lastStrike = null;
+											int swings = 0, strikes = 0;
+											float Gap() => session.Api.World.Objects.TryGetValue(drawn, out BotKnownObject? known)
+												? Distance(known.Position, session.CurrentPosition) : float.MaxValue;
+											float FromPoint() => session.Api.World.Objects.TryGetValue(drawn, out BotKnownObject? known)
+												? Distance(known.Position, point) : float.MaxValue;
+											bool StrikeDue() => Gap() < 45 && session.Api.World.Objects.TryGetValue(drawn, out BotKnownObject? led) &&
+												Distance(led.Position, spawnedAt) > 20 && (lastStrike is not long struck || runtime.NowMillis - struck > 6000);
+											// One swing from within reach: the monster comes to the bot or its companion, and the bot goes to it
+											// when it stays beside the companion.
+											async Task<bool> StrikeAsync()
+											{
+												for (int wait = 0; wait < 8 && Gap() > 5 && !session.Api.World.IsDead; wait++)
+												{
+													await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+													await session.SynchronizeAsync(token);
+												}
+												if (Gap() is > 5 and < 45 && session.Api.World.Objects.TryGetValue(drawn, out BotKnownObject? away))
+													await NaturalIshalgenNavigator.ApproachNpcObjectAsync(contract.MapId, away.TemplateId ?? hunt.NpcIds[0], drawn, away.Position, navigator, token);
+												if (Gap() > 5 || session.Api.World.IsDead) return false;
+												await session.SendPacketAsync(session.Api.Target(drawn), token);
+												await session.SendPacketAsync(session.Api.Attack(drawn, 1500, (byte)swings++), token);
+												lastStrike = runtime.NowMillis;
+												strikes++;
 												await session.AdvanceAsync(TimeSpan.FromMilliseconds(1600), token);
 												await session.SynchronizeAsync(token);
+												return true;
 											}
-											if (!Counted()) await DefendAgainstEngagedAsync("lure-strike");
-											break;
+											bool led = await StrikeAsync();
+											for (int stretch = 0; led && stretch < 16 && !Counted() && !session.Api.World.IsDead && FromPoint() > hunt.LureRadius - 1 &&
+												Distance(session.CurrentPosition, point) > hunt.LureRadius - 3; stretch++)
+											{
+												await NaturalIshalgenNavigator.ExploreWithinRangeAsync(contract.MapId, -1, point, hunt.LureRadius - 3, navigator,
+													"lure-point", token, stopWhen: StrikeDue);
+												if (StrikeDue()) led = await StrikeAsync();
+											}
+											if (led && !Counted() && !session.Api.World.IsDead && Distance(session.CurrentPosition, point) > hunt.LureRadius - 3)
+												await NaturalIshalgenNavigator.ExploreWithinRangeAsync(contract.MapId, -1, point, hunt.LureRadius - 3, navigator, "lure-point", token);
+											float? closest = null;
+											// The blow that counts comes the moment the monster is inside the radius: the guards by Sinjah kill it
+											// if it lingers, and a guard's kill does not count. It is an auto-attack: Java's
+											// PlayerController.attackTarget calls the quest's attack event before the swing, and skill damage has not
+											// reached NpcController.onAttack since Java's 47ec44faf8 (the Cleric's spells at 5 m from Sinjah counted
+											// for nothing).
+											for (int wait = 0; led && wait < 40 && !Counted() && !session.Api.World.IsDead; wait++)
+											{
+												if (!session.Api.World.Objects.ContainsKey(drawn)) break;
+												float gap = FromPoint();
+												closest = MathF.Min(closest ?? gap, gap);
+												if (gap > hunt.LureRadius - 1)
+												{
+													if (StrikeDue()) await StrikeAsync();
+													await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+													await session.SynchronizeAsync(token);
+													continue;
+												}
+												for (int swing = 0; swing < 4 && !Counted() && session.Api.World.Objects.ContainsKey(drawn) && FromPoint() <= hunt.LureRadius - 1; swing++)
+												{
+													lastStrike = null;
+													if (!await StrikeAsync()) break;
+												}
+												if (!Counted()) await DefendAgainstEngagedAsync("lure-strike");
+												break;
+											}
+											session.TraceDiagnostic($"altgard-{altgardLegId}-lure", new Dictionary<string, object?>
+											{
+												["quest"] = next.QuestId, ["attempt"] = attempt, ["monster"] = drawn, ["closest"] = closest, ["strikes"] = strikes,
+												["led"] = led, ["counted"] = Counted(),
+											});
 										}
-										session.TraceDiagnostic($"altgard-{altgardLegId}-lure", new Dictionary<string, object?>
-										{
-											["quest"] = next.QuestId, ["attempt"] = attempt, ["monster"] = drawn, ["closest"] = closest, ["counted"] = Counted(),
-										});
+										finally { navigator.Led = new HashSet<int>(); }
 										if (!Counted()) await RestSafelyAsync(token);
 									}
 									Require.True(Counted(), $"Q{next.QuestId}: no lured monster was struck within {hunt.LureRadius} m of the point.");
@@ -4374,8 +4522,37 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							// AM-04/05: a quest object in the world (Q2213's Okaru Tree, Q24012's carts), used as the client does.
 							await EnsureOnGroundAsync();
 							NaturalAltgardObjectUse use = leg.ObjectUseList.Single(candidate => candidate.Key == next.StepKey);
-							int item = await ApproachShippedSpawnAsync(use.NpcId, skipBlockedTarget: true,
-								withinRange: use.MapId == null ? null : TalkRange(use.NpcId));
+							if (use.TakesItemId is int takes && ItemCount(session.Api.World, takes) == 0)
+							{
+								// NL-3: the operator, 2026-10-17: "Seed our bots with a temporal stone when needed". No vendor or drop of
+								// this server gives it (decision 8); the leg's approval does, once, before the use.
+								Func<int, long, CancellationToken, Task> supply = runtime.SupplyHelpItemAsync
+									?? throw new InvalidOperationException($"{use.Key}: the use takes item {takes}, and this run supplies nothing.");
+								long already = legItemsSupplied.GetValueOrDefault(takes);
+								NaturalHelpItemSupply.RequireApproved(takes, 1, altgardLegId, already);
+								await supply(takes, 1, token);
+								await session.SynchronizeAsync(token);
+								legItemsSupplied[takes] = already + 1;
+								session.TraceDiagnostic("help-item-supplied", new Dictionary<string, object?>
+								{
+									["trigger"] = use.Key, ["itemId"] = takes, ["count"] = 1, ["after"] = ItemCount(session.Api.World, takes),
+								});
+							}
+							// NL-3: the Artifact of the Inception (Q24044) stands on a base no navmesh covers, and the walk to the
+							// ordinary 3 m found no approach point 9 m from it for an hour (nl3-ro-d11); its talk distance is 5, the mesh ends 5.6 m
+							// from it, and the server takes a use from 6.6 m (5 + 1 m between the bodies' edges). In the
+							// mustered legs an object is used from its talk range.
+							float? useRange = use.MapId != null ? TalkRange(use.NpcId)
+								: altgardLegId != null && NaturalAltgardContract.MusteredLegs.Contains(altgardLegId) ? MathF.Max(3, TalkRange(use.NpcId) + 1) : null;
+							// The navigator plans to the object itself and finds no approach point where no mesh lies near it
+							// (nl3-ro-d12): the bot first steps within reach of it.
+							if (useRange is float reach && use.MapId == null &&
+								runtime.Data.SpawnsDh.GetSpawnsByWorldId(contract.MapId).Where(group => group.GetNpcId() == use.NpcId)
+									.SelectMany(group => group.GetSpawnTemplates()).Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0))
+									.OrderBy(spot => Distance(spot, session.CurrentPosition)).FirstOrDefault() is { } objectAt && objectAt != default &&
+								Distance(session.CurrentPosition, objectAt) is > 0 and < 40)
+								await StepWithinReachAsync(geometry, navigator, contract.MapId, objectAt, reach - 0.3f, use.Key);
+							int item = await ApproachShippedSpawnAsync(use.NpcId, skipBlockedTarget: true, withinRange: useRange);
 							if (altgardLegId == "l10")
 							{
 								// Java ItemUseObserver aborts the bar on an attack. The last approach can draw
@@ -5502,13 +5679,41 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					}
 				}
 
-				async Task UseInstancePortalAsync(int objectId, int duration, int destination)
+				NaturalAltgardMapTrip FirstTripOfChain(int from, int to)
 				{
+					var reached = new Dictionary<int, NaturalAltgardMapTrip> { [from] = null! };
+					var frontier = new Queue<int>([from]);
+					while (frontier.TryDequeue(out int map))
+						foreach (NaturalAltgardMapTrip onward in leg.MapTripList.Where(entry => (entry.FromMapId ?? leg.Hub.MapId) == map))
+						{
+							if (!reached.TryAdd(onward.MapId, map == from ? onward : reached[map])) continue;
+							if (onward.MapId == to) return reached[to];
+							frontier.Enqueue(onward.MapId);
+						}
+					throw new InvalidDataException($"No chain of the leg's map trips leads from map {from} to map {to}.");
+				}
+
+				async Task UseInstancePortalAsync(int objectId, int duration, int destination, bool confirm = false)
+				{
+					int beforeUse = session.PacketHistory.Count;
 					await NaturalDialogProtocol.OpenAsync(session, objectId, token);
 					DecodedBotServerPacket started = await session.WaitForPacketAsync(typeof(SM_USE_OBJECT), token,
 						packet => packet.Get<int>("targetObjectId") == objectId && packet.Get<byte>("actionType") == 1);
 					Require.Equal(duration, started.Get<int>("durationMs"));
-					session.Api.World.BeginWorldReload();
+					if (confirm)
+					{
+						// Java PortalRequestAI.handleUseItemFinish: the question comes when the bar ends, and yes teleports.
+						await session.AdvanceAsync(TimeSpan.FromMilliseconds(duration + 1), token);
+						static bool Asks(DecodedBotServerPacket packet) => packet.PacketType == typeof(SM_QUESTION_WINDOW) &&
+							packet.Get<int>("code") == SM_QUESTION_WINDOW.STR_TELEPORT_NEED_CONFIRM;
+						DecodedBotServerPacket question = session.PacketHistory.Skip(Math.Min(beforeUse, session.PacketHistory.Count)).LastOrDefault(Asks)
+							?? await session.WaitForPacketAsync(Asks, token);
+						session.Api.World.BeginWorldReload();
+						await session.SendPacketAsync(GameClientPackets.QuestionResponse(question.Get<int>("code"), 1, question.Get<int>("senderId")), token);
+						duration = 0;
+					}
+					else
+						session.Api.World.BeginWorldReload();
 					await session.AdvanceAsync(TimeSpan.FromMilliseconds(duration + 1), token);
 					await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token, packet => packet.Get<int>("worldId") == destination);
 					await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
@@ -5617,7 +5822,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					int npc;
 					int stepMap = leg.StepMap(step);
 					Require.Equal(stepMap, session.Api.World.MapId);
-					if (laterCapital != null && stepMap == capitalContract.MapId)
+					// NL-3: the Abyss campaign's errands in Pandaemonium are reached by the capital's own ways, its lifts and the
+					// Coliseum, as the capital's talks are.
+					if ((laterCapital != null || altgardLegId != null && NaturalAltgardContract.MusteredLegs.Contains(altgardLegId)) &&
+						stepMap == capitalContract.MapId)
 						npc = await ApproachCapitalNpcAsync(step.NpcId);
 					else if (stepMap != leg.Hub.MapId && leg.Haramel == null)
 					{

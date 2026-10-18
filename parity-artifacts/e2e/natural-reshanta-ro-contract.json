@@ -1,0 +1,340 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "reshanta-ro-out-of-the-abyss",
+  "start": {
+    "contract": "natural-reshanta-rq-contract.json",
+    "snapshot": "nl-rq-s1",
+    "mapId": 400010000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 35,
+    "bindNpcId": 730072,
+    "completedQuestIds": [
+      24040,
+      24041,
+      2721,
+      2722,
+      2741,
+      2743,
+      2744,
+      2729,
+      2730,
+      2731,
+      2725,
+      2753,
+      2756,
+      2755,
+      1755,
+      2726,
+      2764,
+      2765,
+      2766,
+      1771,
+      2772
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "primum",
+    "mapId": 400010000,
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "primum",
+      "note": "Primum Fortress, the main island: Hisui, Scoda, Kaoranerk, the teleport devices, the obelisk",
+      "min": [
+        850,
+        2780,
+        1600
+      ],
+      "max": [
+        1160,
+        3160,
+        1675
+      ]
+    },
+    {
+      "key": "leibo",
+      "note": "Leibo Island: Lugbug and the Artifact of the Inception (1600 m from Primum)",
+      "min": [
+        2119,
+        1930,
+        1573
+      ],
+      "max": [
+        2165,
+        1976,
+        1616
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 24044,
+      "category": "MISSION",
+      "minimumLevel": 26,
+      "rewardExperience": 1225484,
+      "prerequisite": null,
+      "handler": "reshanta/_24044ChangeTheFuture.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "leibo"
+    }
+  ],
+  "order": [
+    24044
+  ],
+  "steps": [
+    {
+      "key": "q24044-v0-scoda",
+      "questId": 24044,
+      "var": 0,
+      "npcId": 278036,
+      "position": [
+        903.514,
+        3027.75,
+        1655.41
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q24044-v1-munin",
+      "questId": 24044,
+      "var": 1,
+      "npcId": 203550,
+      "position": [
+        378.74,
+        1895.46,
+        328.838
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO2"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": null,
+      "mapId": 220010000
+    },
+    {
+      "key": "q24044-v2-kasir",
+      "questId": 24044,
+      "var": 2,
+      "npcId": 204207,
+      "position": [
+        1403.58,
+        1046.9,
+        206.024
+      ],
+      "talkRange": 7,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO3"
+      ],
+      "pages": [
+        1693
+      ],
+      "area": null,
+      "mapId": 120010000
+    },
+    {
+      "key": "q24044-v3-lyeanenerk",
+      "questId": 24044,
+      "var": 3,
+      "npcId": 798067,
+      "position": [
+        973.022,
+        1215.22,
+        201.514
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO4"
+      ],
+      "pages": [
+        2034
+      ],
+      "area": null,
+      "mapId": 120010000
+    },
+    {
+      "key": "q24044-v4-lugbug",
+      "questId": 24044,
+      "var": 4,
+      "npcId": 279029,
+      "position": [
+        2139.41,
+        1949.8,
+        1595.72
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO5"
+      ],
+      "pages": [
+        2375
+      ],
+      "area": "leibo"
+    },
+    {
+      "key": "q24044-v6-lugbug",
+      "questId": 24044,
+      "var": 6,
+      "npcId": 279029,
+      "position": [
+        2139.41,
+        1949.8,
+        1595.72
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SET_SUCCEED"
+      ],
+      "pages": [
+        3057
+      ],
+      "area": "leibo"
+    },
+    {
+      "key": "q24044-reward-scoda",
+      "questId": 24044,
+      "status": "REWARD",
+      "npcId": 278036,
+      "position": [
+        903.514,
+        3027.75,
+        1655.41
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        10002,
+        5
+      ],
+      "area": "primum"
+    }
+  ],
+  "objectUses": [
+    {
+      "key": "q24044-artifact",
+      "questId": 24044,
+      "npcId": 700355,
+      "fromVar": 5,
+      "toVar": 6,
+      "uses": 1,
+      "lootItemId": null,
+      "disappears": false,
+      "area": "leibo",
+      "takesItemId": 188020000
+    }
+  ],
+  "collections": [],
+  "mapTrips": [
+    {
+      "mapId": 220020000,
+      "fromMapId": 400010000,
+      "teleporterNpcId": 730077,
+      "locationId": 10,
+      "fare": 2500,
+      "talkRange": 6,
+      "useMillis": 3000,
+      "confirm": true
+    },
+    {
+      "mapId": 120010000,
+      "fromMapId": 220020000,
+      "teleporterNpcId": 204399,
+      "locationId": 7,
+      "fare": 1500,
+      "talkRange": 4
+    },
+    {
+      "mapId": 220010000,
+      "fromMapId": 120010000,
+      "teleporterNpcId": 204191,
+      "locationId": 8,
+      "fare": 100,
+      "talkRange": 4
+    },
+    {
+      "mapId": 120010000,
+      "fromMapId": 220010000,
+      "teleporterNpcId": 203679,
+      "locationId": 7,
+      "fare": 100,
+      "talkRange": 4
+    }
+  ],
+  "bind": {
+    "npcId": 730072,
+    "position": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "onArrival": true,
+    "price": 4071,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "WHOLE_MAP_400010000",
+        "bottom": 500,
+        "top": 4596
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 400010000,
+    "completedQuestIds": [
+      24044
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 35,
+    "snapshot": "nl-ro",
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 30,
+    "bindNpcId": 730072,
+    "heldQuestIds": []
+  }
+}

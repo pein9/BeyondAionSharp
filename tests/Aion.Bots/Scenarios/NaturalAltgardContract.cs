@@ -110,12 +110,15 @@ public sealed record NaturalAltgardContract(
 		["rq"] = ("natural-reshanta-rq-contract.json", null),
 		// NL-3: "rt" is Tigraki Island (Q24045, Q2767), 705 m from any other island, reached on Wind Serums.
 		["rt"] = ("natural-reshanta-rt-contract.json", null),
+		// NL-3: "ro" is the Abyss campaign's errands out of the Abyss, in Ishalgen and Pandaemonium (Q24044), by Primum's teleport
+		// device to Morheim and the teleporters on from there, and back by Return.
+		["ro"] = ("natural-reshanta-ro-contract.json", null),
 	};
 
 	/// <summary>The legs played by a mustered character of level 26 or more: the Morheim leg to level 31
 	/// (docs/natural-morheim-leveling.md), on Morheim, and the leg to 36's (docs/natural-leg-36.md), on Morheim and Brusthonin.</summary>
 	public static readonly IReadOnlySet<string> MusteredLegs = new HashSet<string>
-		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp", "re", "rs", "ru", "rq", "rt" };
+		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp", "re", "rs", "ru", "rq", "rt", "ro" };
 
 	/// <summary>NL-2: Brusthonin, the settlers' land south of Morheim.</summary>
 	public const int Brusthonin = 220050000;
@@ -462,8 +465,10 @@ public sealed record NaturalAltgardStep(string Key, int QuestId, int? Var, strin
 /// <summary>AE-00: a quest trip from the hub map by teleporter; Return brings the Cleric back to its hub bind.</summary>
 /// <param name="UseMillis">NL-3: the trip is a portal object used with a bar of this length (Java PortalAI: the Morheim
 /// Abyss Gate, 3 s), not a teleporter's dialog.</param>
+/// <param name="Confirm">NL-3: after the bar the portal asks whether to go, with its fare (Java PortalRequestAI,
+/// SM_QUESTION_WINDOW STR_TELEPORT_NEED_CONFIRM: Primum's teleport devices), and the bot answers yes.</param>
 public sealed record NaturalAltgardMapTrip(int MapId, int TeleporterNpcId, int LocationId, int Fare, float TalkRange,
-	int? FromMapId = null, int? UseMillis = null);
+	int? FromMapId = null, int? UseMillis = null, bool Confirm = false);
 
 /// <summary>ND-01: Q2900's full-variable solo campaign, actual temporary stigma and five-minute enemy.
 /// Entry and exits are quest events, rather than a portal or an ordered kill counter.</summary>
@@ -618,9 +623,11 @@ public sealed record NaturalAltgardAvoid(int NpcId, int QuestId, int UntilVar, i
 /// used; <paramref name="SpawnCount"/> spawns respawn after <paramref name="RespawnSeconds"/>).</summary>
 /// <param name="DialogPage">A dialog the use opens before the loot (Q2221's safe: page 1693), closed with
 /// <paramref name="CloseAction"/>.</param>
+/// <param name="TakesItemId">NL-3: the use takes this item (Q24044's Temporal Stone at the Artifact of the Inception, Java
+/// useQuestObject); a bot without it is given it by its leg's approved supply first (the operator, 2026-10-17).</param>
 public sealed record NaturalAltgardObjectUse(string Key, int QuestId, int NpcId, int FromVar, int ToVar, int Uses, int? LootItemId,
 	bool Disappears, string? Area, int SpawnCount = 1, int RespawnSeconds = 0, int? DialogPage = null, string? CloseAction = null,
-	int? MapId = null, int? MovieId = null);
+	int? MapId = null, int? MovieId = null, int? TakesItemId = null);
 
 /// <summary>
 /// AC-01: an escort (docs/natural-altgard-leveling.md, "The escort handler"). The start step's last action makes the follower

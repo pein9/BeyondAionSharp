@@ -106,6 +106,9 @@ public static class NaturalHelpItemAllowlist
 		// have our bots use a greater whatever scroll for flight speed boosts." Tigraki Island stands 705 m from any other island.
 		new("rt", 162000026, "wind-serum", 20, "the operator, 2026-10-17: Greater Wind Serums for the crossing past one flight"),
 		new("rt", 164000079, "flight-speed", 10, "the operator, 2026-10-17: a greater flight speed scroll before such a crossing"),
+		new("ro", 188020000, "temporal-stone", 1, "the operator, 2026-10-17: a Temporal Stone when a quest needs one (Q24044's Artifact)"),
+		new("ro", 162000026, "wind-serum", 20, "the operator, 2026-10-17: Greater Wind Serums for the crossing past one flight"),
+		new("ro", 164000079, "flight-speed", 10, "the operator, 2026-10-17: a greater flight speed scroll before such a crossing"),
 	];
 }
 

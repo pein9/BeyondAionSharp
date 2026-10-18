@@ -48,6 +48,8 @@ public sealed partial class NaturalIshalgenJourney
 		/// <summary>CP-56a: the monsters a walk-in approach has accepted as its target's pack. While it is set their
 		/// circles are no hazard to a route or a segment; it is empty outside that approach.</summary>
 		public IReadOnlySet<int> AcceptedPack { get; set; } = new HashSet<int>();
+		/// <summary>NL-3: the monster a lure leads (Q24043): a walk neither fights it nor routes round it while it is set.</summary>
+		public IReadOnlySet<int> Led { get; set; } = new HashSet<int>();
 		private BotPosition? lastMovementStart;
 		public BotPosition? LastMovementStart => lastMovementStart;
 		private bool defending;
@@ -322,7 +324,7 @@ public sealed partial class NaturalIshalgenJourney
 			BotPosition? objective = destination ?? observed
 				.FirstOrDefault(npc => npc.ObjectId == targetObjectId)?.Position;
 			return observed
-			.Where(npc => npc.ObjectId != targetObjectId && !AcceptedPack.Contains(npc.ObjectId) &&
+			.Where(npc => npc.ObjectId != targetObjectId && !AcceptedPack.Contains(npc.ObjectId) && !Led.Contains(npc.ObjectId) &&
 				(destination == null || Distance(npc.Position, destination.Value) > 0.1f))
 			.Select(npc => (npc,
 				template: runtime.Data.NpcDataDh.GetNpcTemplate(npc.TemplateId)))
@@ -410,7 +412,7 @@ public sealed partial class NaturalIshalgenJourney
 			if (defending || DefendOnAttackAsync == null || session.Api.World.IsDead) return;
 			int[] attackers = session.PacketHistory.Skip(packetStart)
 				.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId, session.Api.World.Summon?.ObjectId))
-				.OfType<int>().Distinct().ToArray();
+				.OfType<int>().Distinct().Where(attacker => !Led.Contains(attacker)).ToArray();
 			if (attackers.Length == 0) return;
 			defending = true;
 			try
