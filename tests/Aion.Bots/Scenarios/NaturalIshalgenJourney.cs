@@ -4002,7 +4002,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								await TravelDestinyMapAsync(next.MapId!.Value);
 								break;
 							}
-							if (next.MapId == leg.Hub.MapId)
+							// NL-4: Return lands at the bind; a bot bound off the hub's map (at Primum, for Morheim's Alsig Village)
+							// takes the leg's trips to it instead.
+							if (next.MapId == leg.Hub.MapId && (session.Api.World.ObeliskBindPoint?.MapId is not int boundMap ||
+								boundMap == leg.Hub.MapId || !TripChainLeads(session.Api.World.MapId!.Value, leg.Hub.MapId)))
 								await UseLearnedReturnToBindAsync();
 							else
 								for (int onMap = session.Api.World.MapId!.Value; onMap != next.MapId; onMap = session.Api.World.MapId!.Value)
@@ -5706,6 +5709,12 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					}
 				}
 
+				bool TripChainLeads(int from, int to)
+				{
+					try { FirstTripOfChain(from, to); return true; }
+					catch (InvalidDataException) { return false; }
+				}
+
 				NaturalAltgardMapTrip FirstTripOfChain(int from, int to)
 				{
 					var reached = new Dictionary<int, NaturalAltgardMapTrip> { [from] = null! };
@@ -5888,7 +5897,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						// NL-3: a pack that corners the bot on the way can leave it 290 m off its road (Choirinererk, 1.5 km from Morheim's
 						// fortress, nl3-rb-d3); the road is rested and walked again from where the fight left it.
 						for (int roadTry = 0; roadTry < 3 && altgardLegId != null && NaturalAltgardContract.MusteredLegs.Contains(altgardLegId) &&
-							Distance(session.CurrentPosition, far) > 80; roadTry++)
+							Distance(session.CurrentPosition, far) > (roadTry == 0 ? 80 : 25); roadTry++)
 						{
 							if (roadTry > 0) await RestSafelyAsync(token);
 							if (await WalkRoadDefendingAsync(far, $"talk-road-{step.Key}", within: 12)) break;
@@ -5896,6 +5905,16 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						}
 						NaturalNavigationResult reached = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(stepMap, step.NpcId,
 							new BotPosition(step.Position[0], step.Position[1], step.Position[2], 0), step.TalkRange, navigator, "NPC", token);
+						// NL-3: the packs round Choirinererk shut every route that keeps clear of them (the Ranger 64 m from him and the
+						// Spirit Master 271 m, nl3-rb-c2): the bot fights its way along the road, then looks again.
+						if (!reached.Arrived && altgardLegId != null && NaturalAltgardContract.MusteredLegs.Contains(altgardLegId) &&
+							!session.Api.World.IsDead && session.Api.World.MapId == stepMap)
+						{
+							await RestSafelyAsync(token);
+							await WalkRoadDefendingAsync(far, $"talk-road-through-{step.Key}", within: step.TalkRange);
+							reached = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(stepMap, step.NpcId,
+								new BotPosition(step.Position[0], step.Position[1], step.Position[2], 0), step.TalkRange, navigator, "NPC", token);
+						}
 						Require.True(reached.Arrived, $"{step.Key}: {reached.Reason}");
 						// NL-3: an NPC that keeps hours may not stand at his spot yet (the game time unseen, or his window just
 						// closing: the Chanter at Choirinererk's spot, nl3-rb-c1). The bot waits for him there, up to a game day.

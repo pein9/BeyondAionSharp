@@ -1,0 +1,496 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2389,
+    "name": "Crop Stompers",
+    "nameId": 1103589,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 33,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2389,
+        "start_npc_ids": 204340
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204340,
+        "name": "tekor",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 2474.87,
+            "y": 1800.46,
+            "z": 95.656,
+            "heading": 104,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204340,
+      "name": "tekor",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2474.87,
+          "y": 1800.46,
+          "z": 95.656,
+          "heading": 104,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204340,
+      "name": "tekor",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2474.87,
+          "y": 1800.46,
+          "z": 95.656,
+          "heading": 104,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 7,
+      "item_id": 182204157,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "item_id": 182204157,
+          "npc_id": 212487,
+          "npc": {
+            "id": 212487,
+            "name": "imposing crestlich",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 2642.92,
+                "y": 1876.54,
+                "z": 101.851,
+                "heading": 87,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2665.35,
+                "y": 1861.44,
+                "z": 102.154,
+                "heading": 60,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2668.57,
+                "y": 1838.22,
+                "z": 102.903,
+                "heading": 39,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2668.98,
+                "y": 1745.47,
+                "z": 95.2145,
+                "heading": 81,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2680.49,
+                "y": 1937.02,
+                "z": 101.127,
+                "heading": 71,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2680.81,
+                "y": 1706.49,
+                "z": 93.8947,
+                "heading": 101,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2688.96,
+                "y": 1908.25,
+                "z": 100.396,
+                "heading": 113,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2691.65,
+                "y": 1802.96,
+                "z": 95.0,
+                "heading": 31,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2691.77,
+                "y": 1858.74,
+                "z": 98.9645,
+                "heading": 33,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2698.93,
+                "y": 1884.75,
+                "z": 98.6141,
+                "heading": 60,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2707.28,
+                "y": 1740.66,
+                "z": 104.198,
+                "heading": 9,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2724.94,
+                "y": 1688.58,
+                "z": 96.2791,
+                "heading": 78,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2735.77,
+                "y": 1861.88,
+                "z": 96.7711,
+                "heading": 15,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2736.58,
+                "y": 1745.96,
+                "z": 110.607,
+                "heading": 57,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2737.61,
+                "y": 1791.58,
+                "z": 114.774,
+                "heading": 90,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2751.83,
+                "y": 1725.67,
+                "z": 112.239,
+                "heading": 60,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2753.58,
+                "y": 1690.83,
+                "z": 94.0525,
+                "heading": 78,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2754.86,
+                "y": 1765.14,
+                "z": 115.375,
+                "heading": 72,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2768.38,
+                "y": 1745.45,
+                "z": 109.125,
+                "heading": 52,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2780.36,
+                "y": 1788.95,
+                "z": 95.3523,
+                "heading": 15,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2781.58,
+                "y": 1711.18,
+                "z": 94.3021,
+                "heading": 92,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2804.92,
+                "y": 1845.51,
+                "z": 95.75,
+                "heading": 45,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2808.37,
+                "y": 1745.8,
+                "z": 94.7037,
+                "heading": 6,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2811.41,
+                "y": 1911.41,
+                "z": 110.5,
+                "heading": 18,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2811.8,
+                "y": 1712.56,
+                "z": 95.6201,
+                "heading": 67,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2815.67,
+                "y": 1816.19,
+                "z": 97.1134,
+                "heading": 34,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2824.43,
+                "y": 1784.1,
+                "z": 96.6521,
+                "heading": 63,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "item_id": 182204157,
+          "npc_id": 212488,
+          "npc": {
+            "id": 212488,
+            "name": "imposing crestlich",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 2755.54,
+                "y": 1849.13,
+                "z": 96.47437,
+                "heading": 24,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "item_id": 182204157,
+          "npc_id": 212489,
+          "npc": {
+            "id": 212489,
+            "name": "splendid crestlich",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 2862.32,
+                "y": 1760.12,
+                "z": 96.375,
+                "heading": 12,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2871.13,
+                "y": 1788.66,
+                "z": 106.445,
+                "heading": 53,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2889.4,
+                "y": 1769.53,
+                "z": 100.116,
+                "heading": 39,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2900.73,
+                "y": 1802.76,
+                "z": 100.859,
+                "heading": 23,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204340,
+          "name": "tekor",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2474.87,
+              "y": 1800.46,
+              "z": 95.656,
+              "heading": 104,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 484471,
+        "gold": 39590,
+        "rewardItems": [
+          {
+            "count": 2,
+            "item_id": 186000008
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2389,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 33,
+      "name": "Crop Stompers",
+      "nameId": 1103589,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 7,
+              "item_id": 182204157
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 484471,
+          "gold": 39590
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 2,
+              "item_id": 186000008
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "item_id": 182204157,
+          "npc_id": 212487
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "item_id": 182204157,
+          "npc_id": 212488
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "item_id": 182204157,
+          "npc_id": 212489
+        }
+      }
+    ]
+  }
+}

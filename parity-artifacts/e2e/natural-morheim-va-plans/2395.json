@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2395,
+    "name": "Report to the Observatory",
+    "nameId": 1103595,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 34,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 204369,
+        "id": 2395,
+        "start_npc_ids": 204345
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204345,
+        "name": "rikesh",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 2363.72,
+            "y": 1717.35,
+            "z": 103.44,
+            "heading": 5,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204345,
+      "name": "rikesh",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2363.72,
+          "y": 1717.35,
+          "z": 103.44,
+          "heading": 5,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204369,
+      "name": "tyr",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2812.84,
+          "y": 1109.39,
+          "z": 178.0,
+          "heading": 68,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204369,
+          "name": "tyr",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2812.84,
+              "y": 1109.39,
+              "z": 178.0,
+              "heading": 68,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 806224,
+        "gold": 7760,
+        "rewardItems": [
+          {
+            "count": 2,
+            "item_id": 186000008
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2395,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 34,
+      "name": "Report to the Observatory",
+      "nameId": 1103595,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 806224,
+          "gold": 7760
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 2,
+              "item_id": 186000008
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "item_id": 182204192
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,546 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2388,
+    "name": "Stopping the Klaw Expansion",
+    "nameId": 1103588,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 33,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2388,
+        "start_npc_ids": 204342
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204342,
+        "name": "mirka",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 2402.61,
+            "y": 1720.33,
+            "z": 103.0,
+            "heading": 10,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204342,
+      "name": "mirka",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2402.61,
+          "y": 1720.33,
+          "z": 103.0,
+          "heading": 10,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204342,
+      "name": "mirka",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2402.61,
+          "y": 1720.33,
+          "z": 103.0,
+          "heading": 10,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 3,
+      "npc_ids": "211503 211515",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 211503,
+          "name": "klaw patrol",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2838.01,
+              "y": 1662.65,
+              "z": 102.835,
+              "heading": 79,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2861.12,
+              "y": 1620.56,
+              "z": 118.161,
+              "heading": 89,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2865.9,
+              "y": 1666.54,
+              "z": 91.0521,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2869.34,
+              "y": 1633.06,
+              "z": 116.235,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2875.24,
+              "y": 1676.53,
+              "z": 90.1725,
+              "heading": 35,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2890.49,
+              "y": 1721.42,
+              "z": 89.99438,
+              "heading": 118,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2895.84,
+              "y": 1702.16,
+              "z": 91.1151,
+              "heading": 95,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2896.77,
+              "y": 1663.03,
+              "z": 89.875,
+              "heading": 69,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2908.22,
+              "y": 1702.2,
+              "z": 89.875,
+              "heading": 40,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2927.81,
+              "y": 1741.63,
+              "z": 89.8983,
+              "heading": 95,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2946.42,
+              "y": 1789.68,
+              "z": 89.875,
+              "heading": 115,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2958.94,
+              "y": 1746.92,
+              "z": 90.6827,
+              "heading": 112,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2959.73,
+              "y": 1769.81,
+              "z": 90.057,
+              "heading": 20,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2969.66,
+              "y": 1747.4,
+              "z": 89.9181,
+              "heading": 8,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 211515,
+          "name": "klaw patrol",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2946.72,
+              "y": 1808.82,
+              "z": 90.365005,
+              "heading": 59,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 7,
+      "npc_ids": "211502 212618",
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 211502,
+          "name": "klaw spy",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2834.73,
+              "y": 1709.56,
+              "z": 94.6867,
+              "heading": 77,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2843.65,
+              "y": 1635.47,
+              "z": 112.52,
+              "heading": 31,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2852.89,
+              "y": 1681.37,
+              "z": 94.9419,
+              "heading": 44,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2855.5,
+              "y": 1631.06,
+              "z": 113.82,
+              "heading": 19,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2867.61,
+              "y": 1728.32,
+              "z": 96.9475,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2875.24,
+              "y": 1676.53,
+              "z": 90.1725,
+              "heading": 35,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2876.54,
+              "y": 1670.56,
+              "z": 90.2148,
+              "heading": 59,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2879.09,
+              "y": 1703.02,
+              "z": 89.943,
+              "heading": 83,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2882.67,
+              "y": 1656.48,
+              "z": 89.9346,
+              "heading": 96,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2890.49,
+              "y": 1721.42,
+              "z": 89.99438,
+              "heading": 118,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2890.9,
+              "y": 1682.45,
+              "z": 91.1526,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2905.16,
+              "y": 1709.34,
+              "z": 89.875,
+              "heading": 66,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2905.95,
+              "y": 1677.56,
+              "z": 90.1984,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2906.13,
+              "y": 1734.21,
+              "z": 90.0984,
+              "heading": 47,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2919.06,
+              "y": 1677.69,
+              "z": 89.875,
+              "heading": 1,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2920.22,
+              "y": 1709.97,
+              "z": 90.9166,
+              "heading": 31,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2936.61,
+              "y": 1725.65,
+              "z": 91.0869,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2939.52,
+              "y": 1759.79,
+              "z": 89.875,
+              "heading": 120,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2941.27,
+              "y": 1709.18,
+              "z": 89.875,
+              "heading": 78,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2944.9,
+              "y": 1740.74,
+              "z": 90.4904,
+              "heading": 95,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2955.71,
+              "y": 1727.45,
+              "z": 90.0566,
+              "heading": 86,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2960.27,
+              "y": 1807.04,
+              "z": 89.875,
+              "heading": 53,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2970.33,
+              "y": 1756.94,
+              "z": 90.2682,
+              "heading": 111,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2975.84,
+              "y": 1723.98,
+              "z": 90.1045,
+              "heading": 118,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 212618,
+          "name": "klaw spy",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2946.72,
+              "y": 1808.82,
+              "z": 90.365005,
+              "heading": 59,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204342,
+          "name": "mirka",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2402.61,
+              "y": 1720.33,
+              "z": 103.0,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 633457,
+        "gold": 39980,
+        "rewardItems": [
+          {
+            "count": 2,
+            "item_id": 186000008
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2388,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 33,
+      "name": "Stopping the Klaw Expansion",
+      "nameId": 1103588,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 633457,
+          "gold": 39980
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 2,
+              "item_id": 186000008
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 3,
+          "npc_ids": "211503 211515",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 7,
+          "npc_ids": "211502 212618",
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      }
+    ]
+  }
+}

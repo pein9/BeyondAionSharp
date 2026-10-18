@@ -1,0 +1,332 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 4327,
+    "name": "War of the Worgs",
+    "nameId": 1135300,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 31,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 4327,
+        "start_npc_ids": 204343
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204343,
+        "name": "kamer",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 2421.08,
+            "y": 1836.34,
+            "z": 93.297485,
+            "heading": 115,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204343,
+      "name": "kamer",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2421.08,
+          "y": 1836.34,
+          "z": 93.297485,
+          "heading": 115,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204343,
+      "name": "kamer",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2421.08,
+          "y": 1836.34,
+          "z": 93.297485,
+          "heading": 115,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 7,
+      "item_id": 182204268,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204268,
+          "npc_id": 212466,
+          "npc": {
+            "id": 212466,
+            "name": "rainbow laupede",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 1855.94,
+                "y": 1929.99,
+                "z": 205.257,
+                "heading": 118,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1873.77,
+                "y": 1948.81,
+                "z": 202.83,
+                "heading": 40,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1880.01,
+                "y": 2022.09,
+                "z": 213.75,
+                "heading": 71,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1890.28,
+                "y": 1966.18,
+                "z": 202.761,
+                "heading": 98,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1893.74,
+                "y": 1992.06,
+                "z": 208.629,
+                "heading": 90,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1917.2,
+                "y": 1961.34,
+                "z": 205.952,
+                "heading": 75,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1918.39,
+                "y": 2102.86,
+                "z": 210.785,
+                "heading": 96,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1936.04,
+                "y": 1973.27,
+                "z": 209.666,
+                "heading": 14,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1940.66,
+                "y": 2108.11,
+                "z": 214.263,
+                "heading": 102,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1965.44,
+                "y": 1989.79,
+                "z": 215.259,
+                "heading": 2,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1966.64,
+                "y": 2249.57,
+                "z": 247.335,
+                "heading": 72,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 1980.41,
+                "y": 2007.99,
+                "z": 217.747,
+                "heading": 116,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2008.44,
+                "y": 2241.47,
+                "z": 238.675,
+                "heading": 62,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2013.13,
+                "y": 2278.38,
+                "z": 247.809,
+                "heading": 78,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204268,
+          "npc_id": 212467,
+          "npc": {
+            "id": 212467,
+            "name": "rainbow laupede",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204343,
+          "name": "kamer",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2421.08,
+              "y": 1836.34,
+              "z": 93.297485,
+              "heading": 115,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 340413,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000008
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 4327,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 31,
+      "name": "War of the Worgs",
+      "nameId": 1135300,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 7,
+              "item_id": 182204268
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 340413
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000008
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204268,
+          "npc_id": 212466
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182204268,
+          "npc_id": 212467
+        }
+      }
+    ]
+  }
+}

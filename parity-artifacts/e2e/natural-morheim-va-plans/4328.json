@@ -1,0 +1,300 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 4328,
+    "name": "A Friend in Need",
+    "nameId": 1135301,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 31,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 4328,
+        "start_npc_ids": 204348
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204348,
+        "name": "virashak",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 2488.72,
+            "y": 1795.96,
+            "z": 95.2742,
+            "heading": 112,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          },
+          {
+            "mapId": 220020000,
+            "x": 2493.0,
+            "y": 1713.0,
+            "z": 90.1875,
+            "heading": 73,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204348,
+      "name": "virashak",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2488.72,
+          "y": 1795.96,
+          "z": 95.2742,
+          "heading": 112,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        },
+        {
+          "mapId": 220020000,
+          "x": 2493.0,
+          "y": 1713.0,
+          "z": 90.1875,
+          "heading": 73,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204348,
+      "name": "virashak",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2488.72,
+          "y": 1795.96,
+          "z": 95.2742,
+          "heading": 112,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        },
+        {
+          "mapId": 220020000,
+          "x": 2493.0,
+          "y": 1713.0,
+          "z": 90.1875,
+          "heading": 73,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 5,
+      "item_id": 182204269,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182204269,
+          "npc_id": 212465,
+          "npc": {
+            "id": 212465,
+            "name": "wasp vespine",
+            "positions": [
+              {
+                "mapId": 220020000,
+                "x": 1897.98,
+                "y": 2209.72,
+                "z": 244.592,
+                "heading": 118,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2033.95,
+                "y": 2194.07,
+                "z": 230.343,
+                "heading": 45,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2106.95,
+                "y": 1871.53,
+                "z": 209.411,
+                "heading": 115,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2162.25,
+                "y": 1984.36,
+                "z": 206.081,
+                "heading": 39,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2168.25,
+                "y": 2175.77,
+                "z": 211.514,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2198.43,
+                "y": 2034.03,
+                "z": 210.666,
+                "heading": 108,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2199.58,
+                "y": 2044.52,
+                "z": 212.281,
+                "heading": 88,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2221.63,
+                "y": 2099.26,
+                "z": 222.102,
+                "heading": 61,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              },
+              {
+                "mapId": 220020000,
+                "x": 2229.09,
+                "y": 2093.33,
+                "z": 220.848,
+                "heading": 93,
+                "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204348,
+          "name": "virashak",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2488.72,
+              "y": 1795.96,
+              "z": 95.2742,
+              "heading": 112,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2493.0,
+              "y": 1713.0,
+              "z": 90.1875,
+              "heading": 73,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 340413,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000008
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 4328,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 31,
+      "name": "A Friend in Need",
+      "nameId": 1135301,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 182204269
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 340413
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000008
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182204269,
+          "npc_id": 212465
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,266 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2403,
+    "name": "Stubborn by Nature",
+    "nameId": 1103603,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 35,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2403,
+        "start_npc_ids": 204353
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204353,
+        "name": "securis",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 2535.07,
+            "y": 1736.5,
+            "z": 89.0,
+            "heading": 5,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204353,
+      "name": "securis",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2535.07,
+          "y": 1736.5,
+          "z": 89.0,
+          "heading": 5,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204353,
+      "name": "securis",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2535.07,
+          "y": 1736.5,
+          "z": 89.0,
+          "heading": 5,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 9,
+      "npc_ids": "212492 212493",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 212492,
+          "name": "virago warrior",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2848.49,
+              "y": 2280.71,
+              "z": 112.656,
+              "heading": 51,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2850.88,
+              "y": 2231.81,
+              "z": 107.0,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2883.34,
+              "y": 2102.98,
+              "z": 108.25,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2915.75,
+              "y": 2240.9,
+              "z": 110.25,
+              "heading": 26,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2919.2,
+              "y": 2177.64,
+              "z": 104.419,
+              "heading": 79,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2928.11,
+              "y": 2263.25,
+              "z": 119.932,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2966.24,
+              "y": 2254.65,
+              "z": 122.029,
+              "heading": 87,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2981.97,
+              "y": 2229.98,
+              "z": 120.75,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 212493,
+          "name": "virago warrior",
+          "positions": [],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204353,
+          "name": "securis",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2535.07,
+              "y": 1736.5,
+              "z": 89.0,
+              "heading": 5,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 987102,
+        "gold": 23980,
+        "rewardItems": [
+          {
+            "count": 12,
+            "item_id": 160002018
+          },
+          {
+            "count": 2,
+            "item_id": 186000008
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2403,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 35,
+      "name": "Stubborn by Nature",
+      "nameId": 1103603,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 987102,
+          "gold": 23980
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 12,
+              "item_id": 160002018
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 2,
+              "item_id": 186000008
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 9,
+          "npc_ids": "212492 212493",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

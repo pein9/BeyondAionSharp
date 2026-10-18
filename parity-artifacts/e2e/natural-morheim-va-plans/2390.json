@@ -1,0 +1,392 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2390,
+    "name": "The Tripeed Thief",
+    "nameId": 1103590,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 33,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2390,
+        "start_npc_ids": 204342
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204342,
+        "name": "mirka",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 2402.61,
+            "y": 1720.33,
+            "z": 103.0,
+            "heading": 10,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204342,
+      "name": "mirka",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2402.61,
+          "y": 1720.33,
+          "z": 103.0,
+          "heading": 10,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204342,
+      "name": "mirka",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2402.61,
+          "y": 1720.33,
+          "z": 103.0,
+          "heading": 10,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": "211505 211516",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 211505,
+          "name": "virago looter",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2641.53,
+              "y": 1796.49,
+              "z": 90.065,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2651.02,
+              "y": 1870.25,
+              "z": 100.906,
+              "heading": 77,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2661.05,
+              "y": 1846.39,
+              "z": 103.833,
+              "heading": 77,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2681.56,
+              "y": 1872.81,
+              "z": 99.8518,
+              "heading": 97,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2696.91,
+              "y": 1828.68,
+              "z": 95.5571,
+              "heading": 52,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2710.62,
+              "y": 1809.25,
+              "z": 94.75,
+              "heading": 74,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2711.43,
+              "y": 1996.53,
+              "z": 115.332,
+              "heading": 69,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2742.07,
+              "y": 1905.17,
+              "z": 100.75438,
+              "heading": 40,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2759.24,
+              "y": 1842.43,
+              "z": 96.1425,
+              "heading": 8,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2782.03,
+              "y": 1893.05,
+              "z": 100.627,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2790.8,
+              "y": 1851.22,
+              "z": 93.2258,
+              "heading": 74,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2796.62,
+              "y": 1910.08,
+              "z": 110.289,
+              "heading": 54,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2808.64,
+              "y": 1574.26,
+              "z": 116.848,
+              "heading": 89,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2857.31,
+              "y": 2032.64,
+              "z": 112.822,
+              "heading": 61,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2874.7,
+              "y": 1932.07,
+              "z": 121.72,
+              "heading": 96,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 211516,
+          "name": "virago looter",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2726.22,
+              "y": 1936.33,
+              "z": 101.701,
+              "heading": 83,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2747.42,
+              "y": 1975.28,
+              "z": 113.415,
+              "heading": 99,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2748.76,
+              "y": 1919.77,
+              "z": 101.849,
+              "heading": 64,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2804.19,
+              "y": 1950.43,
+              "z": 113.328,
+              "heading": 66,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2828.63,
+              "y": 2190.9,
+              "z": 99.875,
+              "heading": 76,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2856.55,
+              "y": 2272.95,
+              "z": 112.684,
+              "heading": 76,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2862.67,
+              "y": 2101.43,
+              "z": 108.375,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2887.2,
+              "y": 2106.05,
+              "z": 108.25,
+              "heading": 54,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2915.53,
+              "y": 2245.2,
+              "z": 110.375,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            },
+            {
+              "mapId": 220020000,
+              "x": 2924.02,
+              "y": 2179.36,
+              "z": 104.02,
+              "heading": 54,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204342,
+          "name": "mirka",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2402.61,
+              "y": 1720.33,
+              "z": 103.0,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 633457,
+        "gold": 27690,
+        "rewardItems": [
+          {
+            "count": 2,
+            "item_id": 186000008
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2390,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 33,
+      "name": "The Tripeed Thief",
+      "nameId": 1103590,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 633457,
+          "gold": 27690
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 2,
+              "item_id": 186000008
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": "211505 211516",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 4329,
+    "name": "The Know It All",
+    "nameId": 1135302,
+    "zone": "Morheim",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 31,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/morheim.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 204341,
+        "id": 4329,
+        "start_npc_ids": 204344
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204344,
+        "name": "adhis",
+        "positions": [
+          {
+            "mapId": 220020000,
+            "x": 2456.99,
+            "y": 1766.77,
+            "z": 91.15938,
+            "heading": 110,
+            "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204344,
+      "name": "adhis",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2456.99,
+          "y": 1766.77,
+          "z": 91.15938,
+          "heading": 110,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204341,
+      "name": "karina",
+      "positions": [
+        {
+          "mapId": 220020000,
+          "x": 2395.45,
+          "y": 1798.93,
+          "z": 101.5,
+          "heading": 100,
+          "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204341,
+          "name": "karina",
+          "positions": [
+            {
+              "mapId": 220020000,
+              "x": 2395.45,
+              "y": 1798.93,
+              "z": 101.5,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Npcs/220020000_Morheim.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 404557,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000008
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 4329,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 31,
+      "name": "The Know It All",
+      "nameId": 1135302,
+      "quest_zone": "Morheim",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 404557
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000008
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182204270
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

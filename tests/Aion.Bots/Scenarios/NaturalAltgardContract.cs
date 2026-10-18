@@ -116,12 +116,14 @@ public sealed record NaturalAltgardContract(
 		// NL-3: "rb" is Q2773, which ends with Horu in Beluslan, by Primum's teleport device and Morheim's teleporter (Q2757 and Q2758,
 		// which end with Etun on Kurngalfberg, wait for NL-4).
 		["rb"] = ("natural-reshanta-rb-contract.json", null),
+		// NL-4: "va" is Alsig Village's quests from 31 to 35, reached from Primum by its teleport device to Morheim.
+		["va"] = ("natural-morheim-va-contract.json", "natural-morheim-va-plans"),
 	};
 
 	/// <summary>The legs played by a mustered character of level 26 or more: the Morheim leg to level 31
 	/// (docs/natural-morheim-leveling.md), on Morheim, and the leg to 36's (docs/natural-leg-36.md), on Morheim and Brusthonin.</summary>
 	public static readonly IReadOnlySet<string> MusteredLegs = new HashSet<string>
-		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp", "re", "rs", "ru", "rq", "rt", "ro", "rb" };
+		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp", "re", "rs", "ru", "rq", "rt", "ro", "rb", "va" };
 
 	/// <summary>NL-2: Brusthonin, the settlers' land south of Morheim.</summary>
 	public const int Brusthonin = 220050000;

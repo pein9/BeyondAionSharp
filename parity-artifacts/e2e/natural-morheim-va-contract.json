@@ -1,0 +1,581 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "morheim-va-alsig-village-36",
+  "start": {
+    "contract": "natural-reshanta-rb-contract.json",
+    "snapshot": "nl-rb-s2",
+    "mapId": 220020000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 35,
+    "bindNpcId": 700232,
+    "completedQuestIds": [
+      24040,
+      24041,
+      2721,
+      2722,
+      2741,
+      2743,
+      2744,
+      2729,
+      2730,
+      2731,
+      2725,
+      2753,
+      2756,
+      2755,
+      1755,
+      2726,
+      2764,
+      2765,
+      2766,
+      1771,
+      2772
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "alsig-village",
+    "mapId": 220020000,
+    "anchor": [
+      2384.329,
+      1750.154,
+      102.373
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "alsig",
+      "note": "Alsig Village: the givers, the obelisk and the flight master",
+      "min": [
+        2337,
+        1688,
+        74
+      ],
+      "max": [
+        2560,
+        1913,
+        118
+      ]
+    },
+    {
+      "key": "observatory",
+      "note": "Morheim Observatory: Tyr, the end of Q2395",
+      "min": [
+        2787,
+        1084,
+        163
+      ],
+      "max": [
+        2837,
+        1134,
+        193
+      ]
+    },
+    {
+      "key": "q2385",
+      "note": "the monsters of Q2385 (211482, 211495)",
+      "min": [
+        2183,
+        1594,
+        74
+      ],
+      "max": [
+        2691,
+        2048,
+        143
+      ]
+    },
+    {
+      "key": "q4323",
+      "note": "the monsters of Q4323 (211485, 211499, 211500)",
+      "min": [
+        2235,
+        1862,
+        91
+      ],
+      "max": [
+        2529,
+        2112,
+        133
+      ]
+    },
+    {
+      "key": "q4324",
+      "note": "the monsters of Q4324 (211484, 211493)",
+      "min": [
+        2136,
+        1606,
+        73
+      ],
+      "max": [
+        2656,
+        2056,
+        159
+      ]
+    },
+    {
+      "key": "q4327",
+      "note": "the monsters of Q4327 (212466, 212467)",
+      "min": [
+        1825,
+        1899,
+        187
+      ],
+      "max": [
+        2043,
+        2308,
+        262
+      ]
+    },
+    {
+      "key": "q4328",
+      "note": "the monsters of Q4328 (212465)",
+      "min": [
+        1867,
+        1841,
+        191
+      ],
+      "max": [
+        2259,
+        2239,
+        259
+      ]
+    },
+    {
+      "key": "q2387",
+      "note": "the monsters of Q2387 (212471, 212472)",
+      "min": [
+        2071,
+        2277,
+        192
+      ],
+      "max": [
+        2349,
+        2964,
+        262
+      ]
+    },
+    {
+      "key": "q2388",
+      "note": "the monsters of Q2388 (211502, 211503, 211515, 212618)",
+      "min": [
+        2804,
+        1590,
+        74
+      ],
+      "max": [
+        3005,
+        1838,
+        133
+      ]
+    },
+    {
+      "key": "q2389",
+      "note": "the monsters of Q2389 (212487, 212488, 212489)",
+      "min": [
+        2612,
+        1658,
+        78
+      ],
+      "max": [
+        2930,
+        1967,
+        130
+      ]
+    },
+    {
+      "key": "q2390",
+      "note": "the monsters of Q2390 (211505, 211516)",
+      "min": [
+        2611,
+        1544,
+        75
+      ],
+      "max": [
+        2954,
+        2302,
+        136
+      ]
+    },
+    {
+      "key": "q4333",
+      "note": "the monsters of Q4333 (212479, 212480)",
+      "min": [
+        1869,
+        2383,
+        205
+      ],
+      "max": [
+        2287,
+        2770,
+        314
+      ]
+    },
+    {
+      "key": "q2403",
+      "note": "the monsters of Q2403 (212492, 212493)",
+      "min": [
+        2818,
+        2072,
+        89
+      ],
+      "max": [
+        3011,
+        2310,
+        137
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2385,
+      "category": "QUEST",
+      "minimumLevel": 31,
+      "rewardExperience": 404557,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204349,
+      "area": "q2385"
+    },
+    {
+      "id": 4323,
+      "category": "QUEST",
+      "minimumLevel": 31,
+      "rewardExperience": 283190,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204352,
+      "area": "q4323"
+    },
+    {
+      "id": 4324,
+      "category": "QUEST",
+      "minimumLevel": 31,
+      "rewardExperience": 283190,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204349,
+      "area": "q4324"
+    },
+    {
+      "id": 4327,
+      "category": "QUEST",
+      "minimumLevel": 31,
+      "rewardExperience": 340413,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204343,
+      "area": "q4327"
+    },
+    {
+      "id": 4328,
+      "category": "QUEST",
+      "minimumLevel": 31,
+      "rewardExperience": 340413,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204348,
+      "area": "q4328"
+    },
+    {
+      "id": 4329,
+      "category": "QUEST",
+      "minimumLevel": 31,
+      "rewardExperience": 404557,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 204344,
+      "area": "alsig"
+    },
+    {
+      "id": 2387,
+      "category": "QUEST",
+      "minimumLevel": 32,
+      "rewardExperience": 484471,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204343,
+      "area": "q2387"
+    },
+    {
+      "id": 4330,
+      "category": "QUEST",
+      "minimumLevel": 32,
+      "rewardExperience": 404557,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 204344,
+      "area": "alsig"
+    },
+    {
+      "id": 2388,
+      "category": "QUEST",
+      "minimumLevel": 33,
+      "rewardExperience": 633457,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204342,
+      "area": "q2388"
+    },
+    {
+      "id": 2389,
+      "category": "QUEST",
+      "minimumLevel": 33,
+      "rewardExperience": 484471,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204340,
+      "area": "q2389"
+    },
+    {
+      "id": 2390,
+      "category": "QUEST",
+      "minimumLevel": 33,
+      "rewardExperience": 633457,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204342,
+      "area": "q2390"
+    },
+    {
+      "id": 4333,
+      "category": "QUEST",
+      "minimumLevel": 33,
+      "rewardExperience": 633457,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 204357,
+      "area": "q4333"
+    },
+    {
+      "id": 2403,
+      "category": "QUEST",
+      "minimumLevel": 35,
+      "rewardExperience": 987102,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 204353,
+      "area": "q2403"
+    },
+    {
+      "id": 2395,
+      "category": "QUEST",
+      "minimumLevel": 34,
+      "rewardExperience": 806224,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 204345,
+      "area": "observatory"
+    },
+    {
+      "id": 2392,
+      "category": "QUEST",
+      "minimumLevel": 33,
+      "rewardExperience": 484471,
+      "prerequisite": null,
+      "handler": "morheim/_2392BeautifulFeather.cs",
+      "template": null,
+      "startNpcId": 798085,
+      "area": "q2390"
+    }
+  ],
+  "order": [
+    2385,
+    4323,
+    4324,
+    4327,
+    4328,
+    4329,
+    4330,
+    2387,
+    2388,
+    2389,
+    2390,
+    2392,
+    4333,
+    2403,
+    2395
+  ],
+  "steps": [
+    {
+      "key": "q2392-offer-muorinerk",
+      "questId": 2392,
+      "status": "OFFER",
+      "npcId": 798085,
+      "position": [
+        2438.78,
+        1707.24,
+        101.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        4762
+      ],
+      "area": "alsig"
+    },
+    {
+      "key": "q2392-v0-muorinerk",
+      "questId": 2392,
+      "var": 0,
+      "npcId": 798085,
+      "position": [
+        2438.78,
+        1707.24,
+        101.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1011,
+        5
+      ],
+      "area": "alsig"
+    },
+    {
+      "key": "q2392-reward-muorinerk",
+      "questId": 2392,
+      "status": "REWARD",
+      "npcId": 798085,
+      "position": [
+        2438.78,
+        1707.24,
+        101.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        5,
+        5
+      ],
+      "area": "alsig"
+    }
+  ],
+  "objectUses": [],
+  "collections": [
+    {
+      "questId": 2392,
+      "atVar": 0,
+      "items": [
+        {
+          "itemId": 182204159,
+          "count": 1,
+          "sourceNpcIds": [
+            211505,
+            211516
+          ]
+        }
+      ]
+    }
+  ],
+  "mapTrips": [
+    {
+      "mapId": 220020000,
+      "fromMapId": 400010000,
+      "teleporterNpcId": 730077,
+      "locationId": 10,
+      "fare": 2500,
+      "talkRange": 6,
+      "useMillis": 3000,
+      "confirm": true
+    },
+    {
+      "mapId": 400010000,
+      "fromMapId": 220020000,
+      "teleporterNpcId": 730063,
+      "locationId": 0,
+      "fare": 0,
+      "talkRange": 15,
+      "useMillis": 3000
+    }
+  ],
+  "bind": {
+    "npcId": 700232,
+    "position": [
+      2384.329,
+      1750.154,
+      102.373
+    ],
+    "onArrival": true,
+    "price": 6095,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "FLYINGZONESHAPESUBZONE_1_220020000",
+        "bottom": 429.23337,
+        "top": 579.2334
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 220020000,
+    "completedQuestIds": [
+      2385,
+      4323,
+      4324,
+      4327,
+      4328,
+      4329,
+      4330,
+      2387,
+      2388,
+      2389,
+      2390,
+      2392,
+      4333,
+      2403,
+      2395
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 35,
+    "snapshot": "nl-va",
+    "anchor": [
+      2384.329,
+      1750.154,
+      102.373
+    ],
+    "radius": 30,
+    "bindNpcId": 700232,
+    "heldQuestIds": []
+  }
+}
