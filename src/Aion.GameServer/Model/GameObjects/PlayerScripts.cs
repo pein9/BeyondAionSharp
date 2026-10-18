@@ -1,141 +1,122 @@
-using System.IO.Compression;
 using System.Text;
+using Aion.GameServer.Dao;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.House;
 using Aion.GameServer.Network.Aion.ServerPackets;
+using Aion.GameServer.Services;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.Collections;
+using Aion.GameServer.Utils.Xml;
+using Microsoft.Extensions.Logging;
 
 namespace Aion.GameServer.Model.GameObjects;
 
-// Java parity: model/gameobjects/player/PlayerScripts (@author Rolandas, Neon, Sykra). Uses the faithful
-// model/house/PlayerScript record (the previously-duplicated GameObjects.PlayerScript record was removed to
-// unify on Model.House.PlayerScript, which SM_HOUSE_SCRIPTS consumes). DB persistence stays DAO-owned in this port.
+/// <summary>
+/// Java parity: model/gameobjects/player/PlayerScripts (Rolandas, Neon, Sykra). A house's eight script slots: setting or
+/// removing one stores it through HouseScriptsDAO, as Java does (only the DAO's own load passes storeInDb false). An
+/// empty slot holds an empty byte array where Java holds null; both have no data.
+/// </summary>
 public sealed class PlayerScripts
 {
-	public const byte ScriptLimit = 8;
+	public const byte SCRIPT_LIMIT = 8; // max number of scripts a player can have
+	private static readonly ILogger log = AionLog.For(nameof(PlayerScripts));
 
-	private readonly PlayerScript[] _scripts = new PlayerScript[ScriptLimit];
+	private readonly int houseObjId;
+	private readonly PlayerScript[] scripts = new PlayerScript[SCRIPT_LIMIT];
 
-	public PlayerScripts(int houseObjectId)
+	public PlayerScripts(int houseId)
 	{
-		FillEmptyScripts();
+		houseObjId = houseId;
+		FillEmptyScriptsArray();
+	}
+
+	private void FillEmptyScriptsArray()
+	{
+		for (int i = 0; i < SCRIPT_LIMIT; i++)
+			scripts[i] = new PlayerScript(i, Array.Empty<byte>(), 0);
+	}
+
+	public bool Set(int id, byte[] compressedXML, int uncompressedSize)
+	{
+		return Set(id, compressedXML, uncompressedSize, true);
+	}
+
+	public bool Set(int id, byte[] compressedXML, int uncompressedSize, bool storeInDb)
+	{
+		if (IsInvalidScriptId(id))
+			return false;
+		string? scriptXML = DecompressAndValidate(compressedXML, uncompressedSize);
+		if (scriptXML == null)
+			return false;
+		if (storeInDb)
+		{
+			Aion.GameServer.Model.House.House house = HousingService.GetInstance().FindHouseOrStudio(houseObjId);
+			if (house.GetPersistentState() == IPersistable.PersistentState.NEW)
+				house.Save(); // new houses must be inserted first, due to foreign key constraints
+			HouseScriptsDAO.StoreScript(houseObjId, id, scriptXML);
+		}
+		scripts[id] = new PlayerScript(id, compressedXML, uncompressedSize);
+		return true;
+	}
+
+	public void Remove(int scriptId)
+	{
+		if (IsInvalidScriptId(scriptId))
+			return;
+		HouseScriptsDAO.DeleteScript(houseObjId, scriptId);
+		scripts[scriptId] = new PlayerScript(scriptId, Array.Empty<byte>(), 0);
+	}
+
+	public void RemoveAll()
+	{
+		HouseScriptsDAO.DeleteScriptsForHouse(houseObjId);
+		FillEmptyScriptsArray();
 	}
 
 	public PlayerScript? Get(int scriptId)
 	{
-		return IsInvalidScriptId(scriptId) ? null : _scripts[scriptId];
-	}
-
-	public bool Set(int scriptId, byte[] compressedXml, int uncompressedSize)
-	{
 		if (IsInvalidScriptId(scriptId))
-			return false;
-		if (!TryDecompressAndValidate(compressedXml, uncompressedSize, out _))
-			return false;
-
-		_scripts[scriptId] = new PlayerScript(scriptId, compressedXml.ToArray(), uncompressedSize);
-		return true;
+			return null;
+		return scripts[scriptId];
 	}
 
-	// Java parity: PlayerScripts.set(int, byte[], int, boolean storeInDb). The storeInDb branch persists via
-	// HousingService/HouseScriptsDAO before caching; here the calling DAO owns persistence, so storeInDb only
-	// gates that (callers pass false) and the cache update is identical to the 3-arg overload.
-	public bool Set(int scriptId, byte[] compressedXml, int uncompressedSize, bool storeInDb)
+	private bool IsInvalidScriptId(int scriptId)
 	{
-		_ = storeInDb;
-		return Set(scriptId, compressedXml, uncompressedSize);
+		return scriptId < 0 || scriptId >= scripts.Length;
 	}
 
-	public bool Remove(int scriptId)
+	private string? DecompressAndValidate(byte[]? compressedXML, int uncompressedSize)
 	{
-		if (IsInvalidScriptId(scriptId))
-			return false;
-
-		_scripts[scriptId] = new PlayerScript(scriptId, Array.Empty<byte>(), 0);
-		return true;
+		if (compressedXML == null || compressedXML.Length == 0)
+			return "";
+		byte[] bytes;
+		try
+		{
+			bytes = CompressUtil.Decompress(compressedXML);
+		}
+		catch (Exception ex)
+		{
+			log.LogError(ex, "Housing script data for house {HouseObjId} could not be decompressed", houseObjId);
+			return null;
+		}
+		string scriptXML = Encoding.Unicode.GetString(bytes);
+		if (bytes.Length != uncompressedSize)
+		{
+			log.LogWarning("Unexpected housing script size after decompression for house {HouseObjId}: Expected {Expected} bytes, got {Actual} bytes:\n{Script}",
+				houseObjId, uncompressedSize, bytes.Length, scriptXML);
+			return null;
+		}
+		return scriptXML;
 	}
 
-	// Java parity: PlayerScripts.removeAll() — clears every script slot. (DAO persistence is owned by the
-	// calling HousingService/HouseScriptsDAO in this port, matching the inverted Remove/Set ownership above.)
-	public void RemoveAll()
-	{
-		FillEmptyScripts();
-	}
-
-	public bool RestoreFromXml(int scriptId, string? scriptXml)
-	{
-		// Java parity: dao/HouseScriptsDAO.addScript(..., storeInDb=false).
-		if (string.IsNullOrEmpty(scriptXml))
-			return Set(scriptId, Array.Empty<byte>(), 0);
-
-		var bytes = Encoding.Unicode.GetBytes(scriptXml);
-		return Set(scriptId, Compress(bytes), bytes.Length);
-	}
-
-	public static bool TryDecodeXml(byte[] compressedXml, int uncompressedSize, out string scriptXml)
-	{
-		return TryDecompressAndValidate(compressedXml, uncompressedSize, out scriptXml);
-	}
-
-	// Java parity: PlayerScripts.sendToPlayer(Player, int) — split the script array into packet-body-sized parts
-	// and send one SM_HOUSE_SCRIPTS per part.
 	public void SendToPlayer(Player player, int houseAddress)
 	{
 		if (player == null)
 			return;
 		SplitList<PlayerScript> scriptSplitList = new DynamicServerPacketBodySplitList<PlayerScript>(
-			new List<PlayerScript>(_scripts), false, SM_HOUSE_SCRIPTS.STATIC_BODY_SIZE,
+			new List<PlayerScript>(scripts), false, SM_HOUSE_SCRIPTS.STATIC_BODY_SIZE,
 			SM_HOUSE_SCRIPTS.DYNAMIC_BODY_PART_SIZE_CALCULATOR);
 		foreach (var part in scriptSplitList)
 			PacketSendUtility.SendPacket(player, new SM_HOUSE_SCRIPTS(houseAddress, part));
-	}
-
-	private void FillEmptyScripts()
-	{
-		for (var i = 0; i < _scripts.Length; i++)
-			_scripts[i] = new PlayerScript(i, Array.Empty<byte>(), 0);
-	}
-
-	private bool IsInvalidScriptId(int scriptId)
-	{
-		return scriptId < 0 || scriptId >= _scripts.Length;
-	}
-
-	private static bool TryDecompressAndValidate(byte[] compressedXml, int uncompressedSize, out string scriptXml)
-	{
-		scriptXml = string.Empty;
-		if (compressedXml.Length == 0)
-			return true;
-
-		byte[] bytes;
-		try
-		{
-			bytes = Decompress(compressedXml);
-		}
-		catch
-		{
-			return false;
-		}
-
-		scriptXml = Encoding.Unicode.GetString(bytes);
-		return bytes.Length == uncompressedSize;
-	}
-
-	private static byte[] Decompress(byte[] bytes)
-	{
-		using var source = new MemoryStream(bytes);
-		using var inflater = new ZLibStream(source, CompressionMode.Decompress);
-		using var target = new MemoryStream();
-		inflater.CopyTo(target);
-		return target.ToArray();
-	}
-
-	public static byte[] Compress(byte[] bytes)
-	{
-		using var target = new MemoryStream();
-		using (var deflater = new ZLibStream(target, CompressionLevel.Optimal, leaveOpen: true))
-			deflater.Write(bytes);
-		return target.ToArray();
 	}
 }
