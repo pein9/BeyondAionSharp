@@ -3381,7 +3381,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				NaturalAltgardContract leg = altgardLeg ?? throw new InvalidOperationException("An Altgard leg needs its contract.");
 				IReadOnlySet<int>? only = options.AltgardOnlyQuests?.ToHashSet();
 				Require.True(combat.IsLineSecondClass, $"An Altgard leg needs the {ClassLine.SecondName}; the character is {combat.ObservedCharacter}.");
-				Require.True(session.Api.World.MapId == leg.Hub.MapId || leg.Haramel?.MapId == session.Api.World.MapId || leg.Destiny?.AllowedMaps.Contains(session.Api.World.MapId ?? 0) == true,
+				// NL-3: a round that goes on from a world where a bot stopped on a trip of its leg (the five in Morheim at
+				// Choirinererk's spot, nl3-rb-c1) starts there; the decision engine plays the steps of the map it stands on.
+				Require.True(session.Api.World.MapId == leg.Hub.MapId || leg.Haramel?.MapId == session.Api.World.MapId || leg.Destiny?.AllowedMaps.Contains(session.Api.World.MapId ?? 0) == true ||
+					leg.MapTripList.Any(trip => trip.MapId == session.Api.World.MapId),
 					"The retained character is outside the approved leg maps.");
 				NaturalJourneyNavigator here = mapNavigators.Enter(LegMapKey());
 				here.DefendOnAttackAsync = navigator.DefendOnAttackAsync;
@@ -5860,13 +5863,14 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							["step"] = step.Key, ["opens"] = opens, ["closes"] = closes, ["gameHour"] = NaturalGameClock.HourOf(nowMinutes),
 							["realMinutes"] = (waitUntil - runtime.NowMillis) / 60000, ["position"] = session.CurrentPosition,
 						});
+						// The wait is excused as it goes: an hour of it ended four bots' rounds (nl3-rb-c1).
 						while (runtime.NowMillis < waitUntil && !session.Api.World.IsDead)
 						{
 							await DefendAgainstEngagedAsync($"hours-wait-{step.Key}");
 							await session.AdvanceAsync(TimeSpan.FromSeconds(30), token);
 							await session.SynchronizeAsync(token);
+							ExcuseBoundedWait();
 						}
-						ExcuseBoundedWait();
 						if (session.Api.World.IsDead) return;
 					}
 					// NL-3: the Abyss campaign's errands in Pandaemonium are reached by the capital's own ways, its lifts and the
@@ -5893,6 +5897,18 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						NaturalNavigationResult reached = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(stepMap, step.NpcId,
 							new BotPosition(step.Position[0], step.Position[1], step.Position[2], 0), step.TalkRange, navigator, "NPC", token);
 						Require.True(reached.Arrived, $"{step.Key}: {reached.Reason}");
+						// NL-3: an NPC that keeps hours may not stand at his spot yet (the game time unseen, or his window just
+						// closing: the Chanter at Choirinererk's spot, nl3-rb-c1). The bot waits for him there, up to a game day.
+						for (int wait = 0; reached.TargetObjectId == null && step.Hours != null && wait < 240 && !session.Api.World.IsDead; wait++)
+						{
+							await DefendAgainstEngagedAsync($"hours-wait-{step.Key}");
+							await session.AdvanceAsync(TimeSpan.FromSeconds(30), token);
+							await session.SynchronizeAsync(token);
+							ExcuseBoundedWait();
+							if (session.Api.World.Objects.Values.Any(known => known.TemplateId == step.NpcId && !known.IsCorpse))
+								reached = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(stepMap, step.NpcId,
+									new BotPosition(step.Position[0], step.Position[1], step.Position[2], 0), step.TalkRange, navigator, "NPC", token);
+						}
 						npc = Require.IsType<int>(reached.TargetObjectId);
 					}
 					else if (step.Flight)
