@@ -86,7 +86,8 @@ public class RiftManager
             }
         }
 
-        log.LogInformation("Rift opened: " + rift.Name() + ", spawned " + spawned + " Npcs (guards=" + isWithGuards + ").");
+        // Java concatenates the boolean, which prints "true" or "false".
+        log.LogInformation("Rift opened: " + rift.Name() + ", spawned " + spawned + " Npcs (guards=" + Aion.GameServer.Utils.JavaString.ValueOf(isWithGuards) + ").");
     }
 
     private Npc SpawnInstance(int instance, SpawnTemplate template, RVController controller)
