@@ -3382,17 +3382,47 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					float? height = new float?[] { null, MathF.Max(cruise, session.CurrentPosition.Z) + 25 }.FirstOrDefault(over =>
 						NaturalFlightProtocol.Plan(geometry, leg.Hub.MapId, session.CurrentPosition, ground, over ?? cruise).IsUsable, -1);
 					if (height == -1) return false;
-					await FlyToAsync(ground, height);
-					return true;
+					// NL-3: a flight the speed of its takeoff cannot carry is a crossing by hops instead.
+					return await FlyToAsync(ground, height, mayRefuse: true) || flyAcross != null && await flyAcross(ground);
 				};
 				// The operator, 2026-10-14: "around Fire temple is a FLY ZONE". Ground the navmesh cannot walk to from here but a
 				// FLY zone holds (Sarinerk's ledge, the crater floor, the Fire Temple's gate) is reached as a player reaches it: the
 				// zone's ground nearest the goal on foot, a flight, and a landing beside the goal; and out the same way.
 				bool crossingFlyZone = false;
+				bool approachingAirline = false;
 				flyAcross = leg.Flight == null || altgardLegId == null || !NaturalAltgardContract.MusteredLegs.Contains(altgardLegId) ? null : async goal =>
 				{
 					// NL-3: on whichever map the bot stands (the Abyss Gate stands in Morheim's fortress for a leg from Brusthonin).
 					if (crossingFlyZone || session.Api.World.MapId is not int map || session.Api.World.IsDead) return false;
+					// NL-3: Reshanta's upper layer lies 1,200 m above the lower, past what one flight climbs; a flight transporter
+					// carries the bot between them as players go (Mure up to Hwiath, Hwiath down), the one whose pad lies on the
+					// bot's layer and whose landing on the goal's, nearest the two, and of the bot's own race (the Elyos have their
+					// own, Echo to Theon, which do not talk to an Asmodian). The way to its pad and from its landing is this crossing
+					// again.
+					if (!approachingAirline && MathF.Abs(goal.Z - session.CurrentPosition.Z) > 600 && airlines
+						.Where(route => route.MapId == map &&
+							runtime.Data.NpcDataDh.GetNpcTemplate(route.NpcId)?.GetRace().ToString() == leg.Start.Race &&
+							MathF.Abs(route.Departure.Z - session.CurrentPosition.Z) < 400 &&
+							MathF.Abs(route.Landing.Z - goal.Z) < 400)
+						.OrderBy(route => Distance(session.CurrentPosition, route.Departure) + Distance(route.Landing, goal))
+						.FirstOrDefault() is { } lift)
+					{
+						session.TraceDiagnostic("fly-zone-lift", new Dictionary<string, object?>
+						{
+							["route"] = lift.Route, ["npc"] = lift.NpcId, ["from"] = session.CurrentPosition, ["goal"] = goal,
+						});
+						approachingAirline = true;
+						try
+						{
+							int transporter = await ApproachShippedSpawnAsync(lift.NpcId);
+							if (session.Api.World.IsDead) return false;
+							NaturalServiceOutcome lifted = await new NaturalServiceSteps(session).FlyAsync(transporter,
+								session.Api.World.Objects[transporter].Position, 6, lift, token);
+							Require.True(lifted.IsDone, lifted.Reason);
+						}
+						finally { approachingAirline = false; }
+						if (Distance(session.CurrentPosition, goal) <= 8) return true;
+					}
 					// Ground the bot can walk to lies within a few metres of the goal: no flight. A goal on no island of the mesh
 					// (Sarinerk past his ledge's edge) is near no walkable ground of this one.
 					if (geometry.IslandGround(map, session.CurrentPosition, at =>
@@ -3550,7 +3580,6 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				// AG-07: far approaches take the leg's road first. A walk cut short by a fight (a retreat, or a death and the
 				// revive at the bind) walks again from where it left the Cleric, three walks at most; no road at all leaves the
 				// approach to the navigator.
-				bool approachingAirline = false;
 				int? warlockRoadRevives = null;
 				farApproach = async (at, templateId, sourceComplete) =>
 				{
@@ -4702,8 +4731,16 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							road = navigator.FindCampaignMemoryPreferenceRoute(session.CurrentPosition, goal, token);
 							avoidRememberedDeathSpots = false;
 						}
+						// NL-3: a flight that lands within reach ends the walk; Junjunbinerk stands where no navmesh lies within
+						// 20 m, so the walk after the landing found no road again, and the two called each other without end.
 						if (road.Count == 0)
-							return flyAcross != null && await flyAcross(destination) && await WalkRoadDefendingAsync(destination, purpose, within, stopAt, sourceComplete);
+						{
+							BotPosition beforeFlight = session.CurrentPosition;
+							if (flyAcross == null || !await flyAcross(destination)) return false;
+							bool landed = Distance(session.CurrentPosition, destination) <= within;
+							return landed || Distance(beforeFlight, session.CurrentPosition) < 2 ? landed
+								: await WalkRoadDefendingAsync(destination, purpose, within, stopAt, sourceComplete);
+						}
 					}
 					// Walk the road only as far as its first point where the caller wants to stop.
 					if (stopAt != null && road.Select((point, index) => (point, index)).FirstOrDefault(entry => stopAt(entry.point)) is
@@ -6638,6 +6675,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				foreach (BotWaypoint anchor in anchors.Take(12))
 				{
 					var progress = new NaturalApproachProgress();
+					int islandFlights = 0;
 					for (int guardClears = 0; guardClears <= NaturalApproachProgress.MaximumAttempts; guardClears++)
 					{
 						BotPosition beforeApproach = session.CurrentPosition;
@@ -6658,6 +6696,16 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						if (result.Arrived && result.TargetObjectId is int objectId) { emptySpawnWaits = 0; return objectId; }
 						if (result.Arrived) // explore mode reached the hint with nothing in view: same as an empty hint
 							result = new(false, $"Reached the spawn hint but no NPC was observed within {withinRange:F0} m.", null, result.RouteSearches, result.Segments);
+						// NL-3: a spawn on another island is flown to, not cleared toward: no walk joins them (Kuenunerk's jewel
+						// boxes stand on scraps of ground 190 m above one another, and the Templar waited at the foot of one).
+						if (flyAcross != null && islandFlights < 3 && result.Reason == "No collision-checked route to the current destination." &&
+							session.Api.World.MapId is int spawnMap &&
+							geometry.IslandGround(spawnMap, session.CurrentPosition, at => Distance(at, anchor.Position) <= (withinRange ?? 25) + 5).Count == 0)
+						{
+							islandFlights++;
+							BotPosition beforeFlight = session.CurrentPosition;
+							if (await flyAcross(anchor.Position) && Distance(beforeFlight, session.CurrentPosition) > 2) continue;
+						}
 						// Monsters on the way are not a wall: fight through to the objective (observed or its
 						// shipped anchor) one pull at a time before giving up on this spawn hint.
 						if (progress.CanRetry(guardClears) && result.Reason is "No collision-checked route to the current destination." or

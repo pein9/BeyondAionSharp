@@ -198,8 +198,13 @@ public static class NaturalFlightProtocol
 	/// <summary>Land where the bot hovers; the server ends the flight and starts restoring flight time.</summary>
 	public static async Task LandAsync(INaturalJourneySession session, CancellationToken token)
 	{
+		// NL-3: a bot killed in the air (the Templar and the Chanter, by upper Reshanta's monsters on a hop) never lands;
+		// its death ends the wait, and the revive takes over.
+		if (session.Api.World.IsDead) return;
 		await session.SendPacketAsync(session.Api.Land(), token);
-		await session.WaitForPacketAsync(typeof(SM_EMOTION), token, packet =>
-			packet.Get<int>("senderObjectId") == session.CharacterId && packet.Get<byte>("emotionType") == (byte)EmotionType.LAND);
+		await session.WaitForPacketAsync(packet =>
+			packet.PacketType == typeof(SM_EMOTION) && packet.Get<int>("senderObjectId") == session.CharacterId &&
+				packet.Get<byte>("emotionType") == (byte)EmotionType.LAND ||
+			packet.PacketType == typeof(SM_DIE), token);
 	}
 }

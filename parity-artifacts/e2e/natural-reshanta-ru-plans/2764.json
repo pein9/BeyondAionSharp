@@ -1,0 +1,653 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2764,
+    "name": "Avenging the Family",
+    "nameId": 1104864,
+    "zone": "Reshanta",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 32,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/reshanta.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2764,
+        "start_npc_ids": 278107
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 278107,
+        "name": "muirica",
+        "positions": [
+          {
+            "mapId": 400010000,
+            "x": 577.722,
+            "y": 2598.18,
+            "z": 2888.78,
+            "heading": 45,
+            "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 278107,
+      "name": "muirica",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 577.722,
+          "y": 2598.18,
+          "z": 2888.78,
+          "heading": 45,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 278107,
+      "name": "muirica",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 577.722,
+          "y": 2598.18,
+          "z": 2888.78,
+          "heading": 45,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 4,
+      "npc_ids": 256647,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 256647,
+          "name": "dakaer grunt",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 560.08,
+              "y": 1998.27,
+              "z": 2726.9,
+              "heading": 6,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 567.44,
+              "y": 2013.32,
+              "z": 2729.74,
+              "heading": 72,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 577.08,
+              "y": 2007.14,
+              "z": 2728.53,
+              "heading": 12,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 577.61,
+              "y": 2102.99,
+              "z": 2733.34,
+              "heading": 66,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 592.74,
+              "y": 1985.21,
+              "z": 2722.56,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 600.46,
+              "y": 2034.25,
+              "z": 2735.55,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 622.3,
+              "y": 1957.55,
+              "z": 2721.99,
+              "heading": 114,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 625.01,
+              "y": 2034.26,
+              "z": 2735.79,
+              "heading": 55,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 638.51,
+              "y": 1981.97,
+              "z": 2721.8,
+              "heading": 78,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 640.82,
+              "y": 2075.38,
+              "z": 2729.35,
+              "heading": 19,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 643.97,
+              "y": 1950.84,
+              "z": 2719.27,
+              "heading": 92,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 650.87,
+              "y": 1910.4,
+              "z": 2716.24,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 665.07,
+              "y": 2079.92,
+              "z": 2724.68,
+              "heading": 29,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 671.84,
+              "y": 1913.41,
+              "z": 2718.56,
+              "heading": 87,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 673.46,
+              "y": 2008.3,
+              "z": 2730.71,
+              "heading": 7,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 730.28,
+              "y": 1897.46,
+              "z": 2723.55,
+              "heading": 66,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 2,
+      "npc_ids": 256636,
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 256636,
+          "name": "dakaer raider",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 563.37,
+              "y": 2033.58,
+              "z": 2733.86,
+              "heading": 6,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 574.27,
+              "y": 2034.95,
+              "z": 2734.33,
+              "heading": 117,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 628.93,
+              "y": 2115.64,
+              "z": 2727.63,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 638.61,
+              "y": 1962.94,
+              "z": 2720.97,
+              "heading": 120,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 665.57,
+              "y": 2176.82,
+              "z": 2738.63,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 689.25,
+              "y": 2166.24,
+              "z": 2736.5,
+              "heading": 50,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 689.95,
+              "y": 2143.71,
+              "z": 2733.6,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 699.18,
+              "y": 1909.64,
+              "z": 2720.33,
+              "heading": 99,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 2,
+      "npc_ids": 256650,
+      "seq": 2,
+      "step": 0,
+      "var": 2,
+      "npcs": [
+        {
+          "id": 256650,
+          "name": "dakaer churl",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 527.7,
+              "y": 2034.49,
+              "z": 2737.21,
+              "heading": 87,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 573.93,
+              "y": 2120.4,
+              "z": 2732.72,
+              "heading": 39,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 577.35,
+              "y": 2112.93,
+              "z": 2732.82,
+              "heading": 95,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 594.75,
+              "y": 2104.59,
+              "z": 2732.54,
+              "heading": 43,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 598.78,
+              "y": 2105.95,
+              "z": 2732.08,
+              "heading": 3,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 602.08,
+              "y": 2118.5,
+              "z": 2729.9,
+              "heading": 108,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 618.1,
+              "y": 1972.64,
+              "z": 2721.77,
+              "heading": 22,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 646.99,
+              "y": 2133.64,
+              "z": 2728.07,
+              "heading": 70,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 650.98,
+              "y": 2008.27,
+              "z": 2729.24,
+              "heading": 118,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 659.85,
+              "y": 1896.18,
+              "z": 2716.32,
+              "heading": 50,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 663.52,
+              "y": 2148.77,
+              "z": 2732.22,
+              "heading": 16,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 676.42,
+              "y": 2133.61,
+              "z": 2732.32,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 1,
+      "npc_ids": 256652,
+      "seq": 3,
+      "step": 0,
+      "var": 3,
+      "npcs": [
+        {
+          "id": 256652,
+          "name": "dakaer medic",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 554.37,
+              "y": 2070.48,
+              "z": 2736.95,
+              "heading": 16,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 580.74,
+              "y": 1974.52,
+              "z": 2721.95,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 608.83,
+              "y": 2018.57,
+              "z": 2732.08,
+              "heading": 8,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 615.92,
+              "y": 2022.09,
+              "z": 2734.63,
+              "heading": 107,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 649.54,
+              "y": 1932.99,
+              "z": 2717.12,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 658.14,
+              "y": 2084.48,
+              "z": 2725.3,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 658.74,
+              "y": 2119.1,
+              "z": 2727.62,
+              "heading": 102,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 659.07,
+              "y": 1983.3,
+              "z": 2722.98,
+              "heading": 41,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 659.82,
+              "y": 1921.28,
+              "z": 2717.2,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 664.81,
+              "y": 2022.42,
+              "z": 2730.41,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            },
+            {
+              "mapId": 400010000,
+              "x": 676.66,
+              "y": 2109.73,
+              "z": 2726.5,
+              "heading": 115,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 278107,
+          "name": "muirica",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 577.722,
+              "y": 2598.18,
+              "z": 2888.78,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "ap": 250,
+        "exp": 484471,
+        "rewardItems": [],
+        "selectableItems": [
+          {
+            "count": 1,
+            "item_id": 123000869
+          },
+          {
+            "count": 1,
+            "item_id": 123000870
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2764,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 32,
+      "name": "Avenging the Family",
+      "nameId": 1104864,
+      "quest_zone": "Reshanta",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "ap": 250,
+          "exp": 484471
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 123000869
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 123000870
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 4,
+          "npc_ids": 256647,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 2,
+          "npc_ids": 256636,
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 2,
+          "npc_ids": 256650,
+          "seq": 2,
+          "step": 0,
+          "var": 2
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 1,
+          "npc_ids": 256652,
+          "seq": 3,
+          "step": 0,
+          "var": 3
+        }
+      }
+    ]
+  }
+}

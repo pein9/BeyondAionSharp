@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2772,
+    "name": "Treasure of the Ancient City",
+    "nameId": 1104872,
+    "zone": "Reshanta",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 31,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/reshanta.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2772,
+        "start_npc_ids": 279019
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 279019,
+        "name": "kuenunerk",
+        "positions": [
+          {
+            "mapId": 400010000,
+            "x": 3113.9,
+            "y": 880.885,
+            "z": 2841.67,
+            "heading": 0,
+            "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 279019,
+      "name": "kuenunerk",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 3113.9,
+          "y": 880.885,
+          "z": 2841.67,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 279019,
+      "name": "kuenunerk",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 3113.9,
+          "y": 880.885,
+          "z": 2841.67,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 15,
+      "item_id": 182205647,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182205647,
+          "npc_id": 700305,
+          "npc": {
+            "id": 700305,
+            "name": "ancient jewel box",
+            "positions": [
+              {
+                "mapId": 400010000,
+                "x": 2542.8298,
+                "y": 568.4783,
+                "z": 2882.2322,
+                "heading": 15,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 2585.9128,
+                "y": 661.04236,
+                "z": 2900.937,
+                "heading": 28,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 2646.4087,
+                "y": 307.23364,
+                "z": 2913.2673,
+                "heading": 35,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 2829.74,
+                "y": 1497.83,
+                "z": 2660.66,
+                "heading": 25,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 2992.36,
+                "y": 1272.83,
+                "z": 2910.92,
+                "heading": 25,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 3097.71,
+                "y": 1244.05,
+                "z": 3002.68,
+                "heading": 48,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 3107.29,
+                "y": 1363.79,
+                "z": 2663.12,
+                "heading": 48,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 3127.98,
+                "y": 1475.16,
+                "z": 2851.7,
+                "heading": 48,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 279019,
+          "name": "kuenunerk",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 3113.9,
+              "y": 880.885,
+              "z": 2841.67,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "ap": 100,
+        "exp": 340413,
+        "gold": 25730,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2772,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 31,
+      "name": "Treasure of the Ancient City",
+      "nameId": 1104872,
+      "quest_zone": "Reshanta",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 15,
+              "item_id": 182205647
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "ap": 100,
+          "exp": 340413,
+          "gold": 25730
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182205647,
+          "npc_id": 700305
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,366 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2766,
+    "name": "Buckles Under Pressure",
+    "nameId": 1104866,
+    "zone": "Reshanta",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 32,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2765
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/reshanta.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2766,
+        "start_npc_ids": 278108
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 278108,
+        "name": "arnora",
+        "positions": [
+          {
+            "mapId": 400010000,
+            "x": 568.802,
+            "y": 2589.26,
+            "z": 2886.06,
+            "heading": 45,
+            "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 278108,
+      "name": "arnora",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 568.802,
+          "y": 2589.26,
+          "z": 2886.06,
+          "heading": 45,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 278108,
+      "name": "arnora",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 568.802,
+          "y": 2589.26,
+          "z": 2886.06,
+          "heading": 45,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182205617,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "item_id": 182205617,
+          "npc_id": 256669,
+          "npc": {
+            "id": 256669,
+            "name": "restless skeleton",
+            "positions": [
+              {
+                "mapId": 400010000,
+                "x": 977.3,
+                "y": 2047.99,
+                "z": 2860.39,
+                "heading": 45,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 977.78,
+                "y": 2026.13,
+                "z": 2866.6,
+                "heading": 101,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 982.13,
+                "y": 2042.44,
+                "z": 2861.56,
+                "heading": 48,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 992.35,
+                "y": 2005.03,
+                "z": 2869.57,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 998.6,
+                "y": 1975.57,
+                "z": 2871.14,
+                "heading": 79,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1007.66,
+                "y": 2057.72,
+                "z": 2863.34,
+                "heading": 37,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1010.8,
+                "y": 2058.06,
+                "z": 2863.54,
+                "heading": 114,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1011.74,
+                "y": 1995.44,
+                "z": 2868.85,
+                "heading": 87,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1012.3,
+                "y": 2033.7,
+                "z": 2865.27,
+                "heading": 97,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1043.8,
+                "y": 2036.91,
+                "z": 2864.41,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1046.91,
+                "y": 2093.57,
+                "z": 2869.16,
+                "heading": 62,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1070.17,
+                "y": 2058.23,
+                "z": 2866.3,
+                "heading": 27,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1113.18,
+                "y": 2012.24,
+                "z": 2880.05,
+                "heading": 78,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1191.57,
+                "y": 2044.56,
+                "z": 2872.45,
+                "heading": 35,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1192.0,
+                "y": 2131.04,
+                "z": 2879.86,
+                "heading": 37,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1214.57,
+                "y": 2107.84,
+                "z": 2876.89,
+                "heading": 13,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1215.21,
+                "y": 2073.44,
+                "z": 2873.52,
+                "heading": 35,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1226.35,
+                "y": 2025.65,
+                "z": 2878.4,
+                "heading": 67,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1257.7,
+                "y": 2043.49,
+                "z": 2880.64,
+                "heading": 13,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              },
+              {
+                "mapId": 400010000,
+                "x": 1261.78,
+                "y": 2002.51,
+                "z": 2881.3,
+                "heading": 48,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 278108,
+          "name": "arnora",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 568.802,
+              "y": 2589.26,
+              "z": 2886.06,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "ap": 100,
+        "exp": 633457,
+        "gold": 39410,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2766,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 32,
+      "name": "Buckles Under Pressure",
+      "nameId": 1104866,
+      "quest_zone": "Reshanta",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182205617
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "ap": 100,
+          "exp": 633457,
+          "gold": 39410
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "item_id": 182205617,
+          "npc_id": 256669
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2765
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

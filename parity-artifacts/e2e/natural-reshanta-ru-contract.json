@@ -1,0 +1,292 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "reshanta-ru-the-upper-layer",
+  "start": {
+    "contract": "natural-reshanta-rs-contract.json",
+    "snapshot": "nl-rs-s1",
+    "mapId": 400010000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 34,
+    "bindNpcId": 730072,
+    "completedQuestIds": [
+      24040,
+      24041,
+      2721,
+      2722,
+      2741,
+      2743,
+      2744,
+      2729,
+      2730,
+      2731,
+      2725,
+      2753,
+      2756,
+      2755,
+      1755
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "primum",
+    "mapId": 400010000,
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "primum",
+      "note": "Primum Fortress, the main island: Jebal, the obelisk",
+      "min": [
+        850,
+        2780,
+        1600
+      ],
+      "max": [
+        1160,
+        3160,
+        1675
+      ]
+    },
+    {
+      "key": "claim",
+      "note": "Q2726's reports: Duneyr on the lower Eastern Shard, Hwiath above it, Grabakr",
+      "min": [
+        554,
+        2589,
+        1631
+      ],
+      "max": [
+        1654,
+        3009,
+        2958
+      ]
+    },
+    {
+      "key": "waterworms",
+      "note": "the mirrorglass waterworms between Junjunbinerk and Minonerk (Q2762, Q2763)",
+      "min": [
+        706,
+        1895,
+        2777
+      ],
+      "max": [
+        1385,
+        3106,
+        2982
+      ]
+    },
+    {
+      "key": "dakaer",
+      "note": "Muirica's dakaer grunts, raiders, churls and medic (Q2764)",
+      "min": [
+        513,
+        1881,
+        2701
+      ],
+      "max": [
+        745,
+        2613,
+        2904
+      ]
+    },
+    {
+      "key": "spirits",
+      "note": "Arnora's fearful spirits and restless skeletons (Q2765, Q2766)",
+      "min": [
+        554,
+        1940,
+        2845
+      ],
+      "max": [
+        1283,
+        2604,
+        2906
+      ]
+    },
+    {
+      "key": "ancient-city",
+      "note": "Kuenunerk's ancient city: skeletal miscreants, cursed centurions, garcikhans, jewel boxes (Q1771, Q2772)",
+      "min": [
+        2528,
+        292,
+        2615
+      ],
+      "max": [
+        3143,
+        1635,
+        3052
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2726,
+      "category": "QUEST",
+      "minimumLevel": 30,
+      "rewardExperience": 291412,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to_many",
+      "startNpcId": 278002,
+      "area": "claim"
+    },
+    {
+      "id": 2762,
+      "category": "QUEST",
+      "minimumLevel": 30,
+      "rewardExperience": 340413,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 279018,
+      "area": "waterworms"
+    },
+    {
+      "id": 2763,
+      "category": "QUEST",
+      "minimumLevel": 30,
+      "rewardExperience": 340413,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 279017,
+      "area": "waterworms",
+      "prerequisites": [
+        2762
+      ]
+    },
+    {
+      "id": 2764,
+      "category": "QUEST",
+      "minimumLevel": 32,
+      "rewardExperience": 484471,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 278107,
+      "area": "dakaer"
+    },
+    {
+      "id": 2765,
+      "category": "QUEST",
+      "minimumLevel": 32,
+      "rewardExperience": 633457,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 278108,
+      "area": "spirits"
+    },
+    {
+      "id": 2766,
+      "category": "QUEST",
+      "minimumLevel": 32,
+      "rewardExperience": 633457,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 278108,
+      "area": "spirits",
+      "prerequisites": [
+        2765
+      ]
+    },
+    {
+      "id": 1771,
+      "category": "QUEST",
+      "minimumLevel": 31,
+      "rewardExperience": 404557,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 279019,
+      "area": "ancient-city"
+    },
+    {
+      "id": 2772,
+      "category": "QUEST",
+      "minimumLevel": 31,
+      "rewardExperience": 340413,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 279019,
+      "area": "ancient-city"
+    }
+  ],
+  "order": [
+    2726,
+    2762,
+    2763,
+    2764,
+    2765,
+    2766,
+    1771,
+    2772
+  ],
+  "steps": [],
+  "objectUses": [],
+  "collections": [],
+  "bind": {
+    "npcId": 730072,
+    "position": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "onArrival": true,
+    "price": 4071,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "WHOLE_MAP_400010000",
+        "bottom": 500,
+        "top": 4596
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 400010000,
+    "completedQuestIds": [
+      2726,
+      2762,
+      2763,
+      2764,
+      2765,
+      2766,
+      1771,
+      2772
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 34,
+    "snapshot": "nl-ru",
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 30,
+    "bindNpcId": 730072,
+    "heldQuestIds": []
+  }
+}

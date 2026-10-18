@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2726,
+    "name": "Staking a Claim",
+    "nameId": 1104826,
+    "zone": "Reshanta",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 30,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/reshanta.xml",
+    "template": "report_to_many",
+    "templateData": {
+      "tag": "report_to_many",
+      "attributes": {
+        "id": 2726,
+        "start_npc_ids": 278002
+      },
+      "children": [
+        {
+          "tag": "npc_infos",
+          "attributes": {
+            "npc_ids": 278082
+          }
+        },
+        {
+          "tag": "npc_infos",
+          "attributes": {
+            "npc_ids": 278015
+          }
+        },
+        {
+          "tag": "npc_infos",
+          "attributes": {
+            "npc_ids": 278105
+          }
+        }
+      ]
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 278002,
+        "name": "jebal",
+        "positions": [
+          {
+            "mapId": 400010000,
+            "x": 924.903,
+            "y": 2993.79,
+            "z": 1646.4,
+            "heading": 104,
+            "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 278002,
+      "name": "jebal",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 924.903,
+          "y": 2993.79,
+          "z": 1646.4,
+          "heading": 104,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 278105,
+      "name": "grabakr",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 569.11,
+          "y": 2603.8,
+          "z": 2887.41,
+          "heading": 45,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "sequence": 1,
+      "npcs": [
+        {
+          "id": 278082,
+          "name": "duneyr",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 1638.54,
+              "y": 2874.49,
+              "z": 1666.55,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "sequence": 2,
+      "npcs": [
+        {
+          "id": 278015,
+          "name": "hwiath",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 1596.63,
+              "y": 2951.15,
+              "z": 2943.25,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "sequence": 3,
+      "npcs": [
+        {
+          "id": 278105,
+          "name": "grabakr",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 569.11,
+              "y": 2603.8,
+              "z": 2887.41,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "ap": 150,
+        "exp": 291412,
+        "gold": 16150,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2726,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 30,
+      "name": "Staking a Claim",
+      "nameId": 1104826,
+      "quest_zone": "Reshanta",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "ap": 150,
+          "exp": 291412,
+          "gold": 16150
+        }
+      }
+    ]
+  }
+}

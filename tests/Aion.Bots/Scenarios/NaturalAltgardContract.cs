@@ -101,15 +101,17 @@ public sealed record NaturalAltgardContract(
 		// NL-3: "rp" plays Primum's own quests: the campaign's first and the training ground below the fortress.
 		["rp"] = ("natural-reshanta-rp-contract.json", null),
 		// NL-3: "re" plays the east, Gjalf and Ganglot's island, and "rs" the south: Mokkurkalfi's ledge, Sinjah's tower, the
-		// Sulfur Tree Nest's island and Triminos; islands apart by hops of flight.
+		// Sulfur Tree Nest's island and Triminos; islands apart by hops of flight. "ru" plays the upper layer, reached by Mure's
+		// flight transporter.
 		["re"] = ("natural-reshanta-re-contract.json", "natural-reshanta-re-plans"),
 		["rs"] = ("natural-reshanta-rs-contract.json", "natural-reshanta-rs-plans"),
+		["ru"] = ("natural-reshanta-ru-contract.json", "natural-reshanta-ru-plans"),
 	};
 
 	/// <summary>The legs played by a mustered character of level 26 or more: the Morheim leg to level 31
 	/// (docs/natural-morheim-leveling.md), on Morheim, and the leg to 36's (docs/natural-leg-36.md), on Morheim and Brusthonin.</summary>
 	public static readonly IReadOnlySet<string> MusteredLegs = new HashSet<string>
-		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp", "re", "rs" };
+		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp", "re", "rs", "ru" };
 
 	/// <summary>NL-2: Brusthonin, the settlers' land south of Morheim.</summary>
 	public const int Brusthonin = 220050000;
