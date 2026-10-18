@@ -265,6 +265,10 @@ NL-3 adds Reshanta with `bake --maps 400010000`, verified by `check --maps 40001
 made: `graph --maps 400010000 --race ASMODIANS` throws in `SiegeService`'s type initializer, which wants a registered
 `DataManager`; the islands are crossed by flight, so the planner's navmesh-only routes serve within an island.
 
+NL-3's trips out of the Abyss add Beluslan, where Q2757, Q2758 and Q2773 end, with `bake --maps 220040000` and
+`graph --maps 220040000 --race ASMODIANS`, verified by `check --maps 220040000 --rebake`. 1,489 of its 1,648 graph nodes
+are on the main network.
+
 The Group NTC leg's N1 ([natural-group-ntc.md](natural-group-ntc.md)) adds Nochsana Training Camp with
 `bake --maps 300030000`, verified by `check --maps 300030000 --rebake`. The camp is one island from the landing to
 the fortress gate. The fortress interior is a second island: the bake splits the ground in the gateway, where the
