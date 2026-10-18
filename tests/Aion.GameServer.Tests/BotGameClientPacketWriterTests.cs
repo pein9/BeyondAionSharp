@@ -213,6 +213,10 @@ public sealed partial class BotGameClientPacketWriterTests
 			new Dictionary<string, object?> { ["address"] = 20057, ["scriptId"] = 1, ["totalSize"] = 11, ["compressedSize"] = 3, ["uncompressedSize"] = 6, ["scriptContent"] = new byte[] { 1, 2, 3 } });
 		yield return C("house-script-delete", GameClientPackets.HouseScript(20057, 1, null, 0), game,
 			new Dictionary<string, object?> { ["address"] = 20057, ["scriptId"] = 1, ["totalSize"] = 0 });
+		yield return C("auto-group-register", GameClientPackets.AutoGroup(33, 100, 2), game,
+			new Dictionary<string, object?> { ["instanceMaskId"] = 33, ["windowId"] = (byte)100, ["entryRequestId"] = (byte)2 });
+		yield return C("auto-group-enter", GameClientPackets.AutoGroup(24, 102), game,
+			new Dictionary<string, object?> { ["instanceMaskId"] = 24, ["windowId"] = (byte)102, ["entryRequestId"] = (byte)0 });
 	}
 
 	private static object[] C(string name, BotClientPacket packet, AionConnection.State state,

@@ -316,6 +316,9 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			case "RIFT":
 				await RunRiftAsync(execution.Scenario, includeHistory);
 				break;
+			case "ARENA":
+				await RunArenaAsync(execution.Scenario, includeHistory);
+				break;
 			default:
 				throw new InvalidOperationException($"SIM scenario '{execution.Scenario.Id}' has no runner.");
 		}

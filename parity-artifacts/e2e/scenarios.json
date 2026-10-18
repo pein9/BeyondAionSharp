@@ -2042,6 +2042,20 @@
     "resetEpoch": true
   },
   {
+    "id": "ARENA",
+    "modes": ["Sim"],
+    "tier": "Full",
+    "race": "Asmodians",
+    "map": 120080000,
+    "channelNeeds": "Exclusive",
+    "bots": 6,
+    "virtualDuration": "10:20:00",
+    "consumes": [],
+    "requires": ["Db", "D7"],
+    "expectedFail": null,
+    "resetEpoch": true
+  },
+  {
     "id": "SOAK",
     "modes": ["Live"],
     "tier": "Soak",

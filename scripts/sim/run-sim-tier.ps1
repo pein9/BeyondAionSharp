@@ -118,6 +118,7 @@ function Write-RunMetadata {
 			'reset-SIEGE' { '2026-09-17T15:58:00.0000000+00:00' }
 			'reset-HOUSING' { '2026-09-20T23:58:00.0000000+00:00' }
 			'reset-RIFT' { '2026-10-03T15:58:00.0000000+00:00' }
+			'reset-ARENA' { '2026-10-10T09:58:00.0000000+00:00' }
 			default { '2026-09-16T08:59:00.0000000+00:00' }
 		})
 		timeZone = 'UTC'
@@ -143,6 +144,8 @@ function Write-RunMetadata {
 			@{ HOUSING = @{ setup = 'Ordinary level-30 Gladiators (three Asmodians, one Elyos); the Asmodians'' housing quest 28802 completed, its Homeward Bound skill book given to the house buyer and read by him; kinah for bids and rent; two tables and a wallpaper for the owner; the third Asmodian given a Pernon house as if bought on 2026-09-13 with its rent due 2026-09-21 00:00; setup teleports of the visitors to the house door' } }
 		} elseif ($scenarioIds.Contains('RIFT')) {
 			@{ RIFT = @{ setup = 'Ordinary Gladiators, four at level 55 (two Elyos, two Asmodians) and two at level 30; setup teleports to where each waits (the bases of Cygnea and Enshar, beside the vortex spots of Kaisinel Academy and Marchutan Priory, quiet ground inside the invasion zones of Brusthonin and Theobomos, the obelisks of Verteron and Altgard), beside a rift before using it, beside the rift generator and the raid boss before fighting them; the Brusthonin rift generator and one Altgard raid boss lowered to 4 HP; everyone logged out from Saturday 19:00 to Sunday 15:50' } }
+		} elseif ($scenarioIds.Contains('ARENA')) {
+			@{ ARENA = @{ setup = 'Ordinary level-46 Asmodian Gladiators, one made level 51 before noon and five level 56 before 20:00; the arena tickets given (186000135 to four; 186000184 to all six, one only after his group is refused; three 186000185 to five, one first given two); setup teleports beside the arena gates of Marchutan Priory and beside Rukbar in Reshanta, and, inside an arena, beside the opponent before a fight; the monsters aggressive to the players deleted from each arena once they are inside and after each round''s ports; the victim of each fight lowered to 20 HP before each blow' } }
 		} elseif ($scenarioIds.Contains('SWEEP-TRADE')) {
 			@{ 'SWEEP-TRADE' = @{ setup = 'Ordinary race-specific subjects; level, legion, kinah/AP/rank, required materials and dialog prerequisites; shipped siege/base spawns, matching Panesterra faction and director game-calendar changes; director clears nearby hostile NPCs when a vendor is fighting, then waits for normal AI return; previous-row supplied inventory/products cleaned between independent catalogs' } }
 		} else { @{} })

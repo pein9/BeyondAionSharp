@@ -149,6 +149,7 @@ every future run, including director/setup accounts.
 | Scheduled sieges: preparation, start, capture, end, Balaur assault, gate repair | SIEGE | Implemented (P11-05, 2026-10-17); own epoch, a Thursday's 17:00 Reshanta and 19:00 Gelkmaros slots | Not selected |
 | Housing: auction, bids, acquisition, rent and maintenance, decoration, house gate, door settings, sale, impoundment | HOUSING | Implemented (P11-06, 2026-10-18); own epoch, two weeks from a Sunday | Not selected |
 | Rifts, the dimensional vortex and world raids: hourly rifts and their close, crossings both ways, a volatile rift, two invasions (ended by the generator and by the timer), invaders and defenders, world raid start, boss kill and end | RIFT | Implemented (P11-04, 2026-10-18); own epoch, a Saturday the 3rd and the Sunday after | Not selected |
+| PvP arenas and the auto-group queue: entry windows and refusals, registrations alone and as a group, matches of the arenas of discipline, harmony and glory, a quick entry, a relog inside an arena, rewards and exits, the dredgions' periodic registration | ARENA | Implemented (P11-03, 2026-10-18); own epoch, a Saturday from 09:58 to 20:13 | Not selected |
 | Whole-instance and broader journey | No current manifest scenario | Phase 11 remains future work | Natural journey remains separate policy work |
 
 ## 2. Target design
@@ -2619,7 +2620,74 @@ GM commands force scheduled content without waiting for cron (`//siege`, `//rift
   handler's create path runs with zero problems; the group leaves via `CM_INSTANCE_LEAVE`; the `instance_cooltimes`
   entry blocks re-entry, and re-entry succeeds once the cooldown passes on the virtual clock.
 - [ ] **P11-02** [BOTH] L — Full clears of two low-level instances, one per race: boss kill, loot, exit.
-- [ ] **P11-03** [BOTH] M — PvP arena and auto-group queue (`CM_AUTO_GROUP`) with 2–6 bots.
+- [x] **P11-03** [BOTH] M — PvP arena and auto-group queue (`CM_AUTO_GROUP`) with 2–6 bots. **Done 2026-10-18 in SIM
+  (scenario `ARENA`); no LIVE run is claimed.** Java 4.8's queue is `AutoGroupService` with `AutoGroupType`'s 32 masks (the
+  three dredgions; the arenas of chaos, discipline, harmony and glory and their training grounds, at difficulties 1 to 4;
+  Kamar, Engulfed Ophidan Bridge, Iron Wall Warfront and Idgel Dome), which the client enters by `CM_AUTO_GROUP` from a
+  gate's INSTANCE_PARTY_MATCH (`PortalDialogAI`), a match maker's MATCH_MAKER (`DialogService`) or a periodic instance's
+  icon; `PeriodicInstanceManager` opens the battlegrounds' registrations by autogroup.properties' crons (the dredgions at 0,
+  12 and 20 o'clock for 60 minutes) and `PvPArenaService` keeps the arenas' hours and tickets. Java boots only
+  `PeriodicInstanceManager` (`GameServer.main`, after `AbyssRankUpdateService.scheduleUpdate`), and the C# boot does the same in
+  the same place (since `8638bf9c6`) with autogroup.properties as Java ships it; nothing had to be wired.
+  `SimulationArenaScenarioTests.cs` plays from the process's own epoch, Saturday 2026-10-10 09:58 UTC (`reset-ARENA`), with
+  six ordinary Asmodian Gladiators, every expected value from the Java code: the Arena of Discipline's gate in Marchutan
+  Priory (page 1011, INSTANCE_PARTY_MATCH, `SM_AUTO_GROUP` read field by field), the closed hour at 09:59
+  (`STR_MSG_INSTANCE_CLOSED_TIME`), the Glory gate offering a level-46 player no window, the missing ticket, a registration
+  alone (the success, the waiting window with request type and leader), a double registration, a cancel, two matches made at
+  the second registration (the entry window), a declined entry (the ticket kept), entries (the ticket paid, Java's
+  `DisciplineInstancePosition` point for the reward's position, the entered window), the sixteen closed doors until the
+  first round at 120 s (`getTime` 180000), a kill (200 and -100 points, the message, the victim's boost of morale for his
+  rank, the instance revive), the second and third rounds in new zones, the final round's mod (a higher-ranked victim worth
+  three times), the end at 660 s with `ArenaOfDisciplineInstance`'s rewards (AP and insignia by rank and score share, each
+  player's table and rows) and the exit to instance_exit.xml's point a minute later, the arena destroyed; a lone player's
+  arena that cannot start (`canStart`), ended as interrupted with a full arena's runner-up reward; the Arena of Harmony with two
+  groups of three made by their own invitations: a member's refusal, a group refused for a member without a ticket (both
+  messages), the two group registrations, `AutoHarmonyInstance`'s two harmony groups, each player leaving his group as he
+  enters and the first of each harmony group making its AUTO_GROUP team and the group's reward, a kill whose 800 points go to
+  the killer's team's reward (merged group damage) and are heard by its members, the victim's group's -150,
+  `HarmonyScoreWriter`'s board, the rewards by group rank split into thirds (`splitGroupRewards`, Math.round) with the
+  winners' supply package and each player's own reward table, and the exit out of the teams; the noon registration of the
+  three dredgions (icon and message by level, Baranath for 46 and Chantra for the one made 51), the icon clicked (104),
+  Rukbar's MATCH_MAKER in Reshanta, a quick, a new and a group registration (each member's icon closed, success, waiting
+  window), a cancel and its penalty's icon ten seconds later, a queued member's logout and the icon at his next login, and
+  the 13:00 close (icons closed, the queued players' cancel window); six Asmodians cannot fill a dredgion, so none starts; at
+  20:00 the Arena of Glory (weekends 20:00 to 22:00, three tickets, levels 56 to 60) and Terath Dredgion's icon: the closed
+  hour at 19:59, too few tickets, a player still in a group, four registrations, a quick entry refused while the arena is full
+  and taken into it when one of the four declines (`checkQueueForQuickEntries`), two kills (1000 and -200), a player logging out
+  of the running arena and back in (`InstanceService.onPlayerLogin` puts him back; `updateBonusTime` takes the offline time
+  from his bonus, which ranks him below the other loser), the four ranks' rewards with tied scores sharing the higher rank,
+  and the exit. Director setup, recorded in the class and in run-sim-tier's metadata: class and levels (46; 51 for one before
+  noon; 56 for five before 20:00), the tickets and the subjects kept short of them, setup teleports beside the gates, beside
+  Rukbar and beside the opponent before a fight, each arena's aggressive monsters deleted once the players are inside and
+  after each round's ports (a Lurking Fangwing two metres from one of Harmony's starting points killed a waiting bot), and
+  the victim of a fight lowered to 20 HP before each blow (a level-56 player's natural regeneration outpaces a starter
+  weapon). Found and fixed: §7/172–175 (the queue's and the tickets' sort stability, an empty arena's score gap, the order of
+  action-item aborts; the scenario itself turned up no divergence). Seen and kept as Java has it: the arrival's time bonus
+  (see the note after §7); `AutoGroupService`'s penalty refuses nothing, it only re-sends the open registrations' icon ten
+  seconds later; the arenas set no entry cooldown (`AutoPvPFFAInstance` and `AutoHarmonyInstance` do not call
+  `AutoInstance.onPressEnter`); a Harmony victim's boost of morale ranks his own reward among the groups' scores (15 s);
+  `ArenaOfGloryInstance` gives rank 1 a Mithril Medal and then, in the same branch, three Platinum Medals in its place;
+  Glory's score packets carry no reward table flag; each Discipline player gets the end's table once for every player
+  (`broadcastResults` calls a `sendPacket` that sends to all). Open question for the maintainer, not settled by Java or this
+  plan: Java's hash-ordered collections leak into the protocol and into one choice, and the port has its own orders
+  (insertion order, or `ConcurrentDictionary`'s buckets): the rows of `SM_INSTANCE_SCORE` (`InstanceScore`'s
+  `ConcurrentHashMap`), the members of a harmony board (`getPlayersInside`), the order of the open registrations' icons at
+  login (a `HashSet`), the order in which a player's other registrations are dropped (`lookingParties.values()`), the race
+  `AutoInstance.getMaxPlayers` reads first, and the choice: which member leads a queued group whose leader logs out
+  (`LookingForParty`'s `HashMap`). Emulating Java's hash orders would be a change across the port; the scenario compares those
+  rows as sets and does not log a queued leader out. Seen, not fixed, outside P11-03: `InstanceCooltimeData`'s daily and
+  weekly entry resets keep the current UTC offset where Java's `ZonedDateTime` applies the zone's rules, so a reset across a
+  DST change is an hour off (SIM runs in UTC; it belongs with P11-01's cooldowns); `PeriodicInstanceRegistrationService` is a
+  C#-only class nothing calls. Run it with `AION_SIM_DB_INTEGRATION=1 AION_SIM_TIER=Full AION_SIM_PROCESS_KEY=reset-ARENA
+  AION_SIM_SCENARIO=ARENA dotnet test tests/Aion.Simulation.Tests --filter
+  "FullyQualifiedName~SimulationFastScenarioTests.ManifestScenariosRunInFixedProcessOrder"` (about 1.5 minutes with the
+  boot; passed with seeds 1, 2 and 3). Not covered: a LIVE run; the Arena of Chaos and the chaos training grounds (eight
+  players), the training grounds of discipline and harmony (their NPCs 207056–207059 are not spawned in 4.8's data), the
+  difficulties 2 to 4 (levels 51 to 65); a dredgion, Kamar, Engulfed Ophidan Bridge, Iron Wall Warfront or Idgel Dome match
+  (six to 24 players a side), and with them `AutoPvpInstance`'s teams and entry cooldown; the arenas' monsters, relics, flame
+  throwers, fly rings and gathering points and their points; Harmony's quick entry; a queued leader's logout; a logout
+  between the entry window and the entry; `gameserver.autogroup.announce_battleground_registrations`; the GM command
+  `//instance`; the instance recruitment (`OPEN_INSTANCE_RECRUIT`, `CM_FIND_GROUP`), which is not the auto-group queue.
 - [x] **P11-04** [BOTH] M — Rift open, cross-race entry and close; vortex and world raid start and stop. **Done 2026-10-18 in
   SIM (scenario `RIFT`); no LIVE run is claimed.** Java 4.8 has all three and boots them as the C# boot does, in Java's order
   (`GameServer.main`: the locations of world raids, the vortex and rifts before the spawns, `RiftService.initRifts` after
@@ -2848,7 +2916,7 @@ exits (`docker compose events`) and MySQL errors.
 | D4 | Allowed production changes | (a) parity fixes citing `upstream/4.8`; (b) gameplay-neutral seams: logging bridge, `SystemClock` routing, socketless connection, login-link interface, `Rnd` seed, deterministic-mode switches, virtual cron | **Approved** 2026-09-17: (b) counts as infrastructure under CLAUDE.md |
 | D5 | GM usage | Director account (level 9) for setup; subjects at level 0; each system also gets at least one play-through scenario | Proposed |
 | D6 | Anti-hack checks in bot runs | Test-only oracle profile | **Declined** 2026-09-17: no anti-cheat checks; bot runs keep production security defaults (P6-04 dropped) |
-| D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Approved** 2026-10-17, reversing the 2026-09-17 decline: the maintainer said "We DO NEED the siege enabled ... to get all those missing features working on this server fully and enabled. (housing, sieges, etc)". P10-05 is done (2026-10-17, `eccae23af` to `4bf50584a`); P11-05 is done in SIM (scenario SIEGE, 2026-10-17) and with it BA-005's gate repair and fortress assault; P11-06 is done in SIM (scenario HOUSING, 2026-10-18); P11-04's rifts, vortex and world raids, which the boot already ran, are played in SIM by scenario RIFT (2026-10-18). His answers to the open questions, the same day: "Don't re-record the baseline because it doesn't change that much, keep Java's siege calendar"; "Keep whatever server time, doesn't matter"; on housing rent in the live world, "yes, we want parity so yes". So the neutral gate is not re-recorded, Java's siege schedule runs in SIM and LIVE, the time zone is not changed, and housing auctions and rent are on as Java has them |
+| D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Approved** 2026-10-17, reversing the 2026-09-17 decline: the maintainer said "We DO NEED the siege enabled ... to get all those missing features working on this server fully and enabled. (housing, sieges, etc)". P10-05 is done (2026-10-17, `eccae23af` to `4bf50584a`); P11-05 is done in SIM (scenario SIEGE, 2026-10-17) and with it BA-005's gate repair and fortress assault; P11-06 is done in SIM (scenario HOUSING, 2026-10-18); P11-04's rifts, vortex and world raids, which the boot already ran, are played in SIM by scenario RIFT (2026-10-18); P11-03's arenas and auto-group queue, which the boot also already ran, are played in SIM by scenario ARENA (2026-10-18). His answers to the open questions, the same day: "Don't re-record the baseline because it doesn't change that much, keep Java's siege calendar"; "Keep whatever server time, doesn't matter"; on housing rent in the live world, "yes, we want parity so yes". So the neutral gate is not re-recorded, Java's siege schedule runs in SIM and LIVE, the time zone is not changed, and housing auctions and rent are on as Java has them |
 | D8 | Java reference for this work | Keep local `../aion-server` `4.8` at `lastCompletedJavaCommit` | **Done** 2026-09-17 (`6ffedcd4f` → `ce54b7931`) |
 | D9 | Where runs happen | Local scripts | **Decided** 2026-09-17: no GitHub Actions, no n8n or other schedulers (both removed from the repo). The `docker/` compose stack stays as the way the emulator is deployed and run. Runs may create and drop databases on a Docker MySQL freely |
 | D13 | How LIVE mode starts the servers | An isolated docker compose project built from `docker/` | **Decided** 2026-09-17: LIVE runs as its own compose project (own name, images, ports, MySQL and logs), so it tests the same images the emulator is deployed with (P3-00, P3-02, P3-08) |
@@ -3093,6 +3161,10 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 169 | `HouseController.teleportNearHouseDoor` computed the door with an unsigned heading: where a house's relationship crystal sees its butler at a heading below 30 (132 of the 468 HOUSE addresses), `h - 30` wrapped to 226–255, so the point outside the door was 2 m off (48° wrong) and the heading inside the house wrong | Java's byte is signed: `convertHeadingToAngle(-20)` is 300°, and `-20 < 60` turns it into 40 | Fixed (P11-06); scenario HOUSING sends its friend out of and back into a house chosen for such a door (it needs the world, so no unit test) |
 | 170 | `RiftManager.spawnRift`'s "Rift opened: ..., spawned N Npcs (guards=...)" line printed the flag as C# does (`guards=False`) | Java concatenates the boolean (`guards=false`) | Fixed (P11-04) with `JavaString.ValueOf`; scenario RIFT checks the line of every rift and vortex it opens (it needs the world, so no unit test) |
 | 171 | `WorldRaidRunnable`'s two debug lines ("... and location pool: ...", "... at the following raid locations: ...") printed the lists as a C# type name | Java concatenates the `List<Integer>`s (`AbstractCollection.toString`: `[4, 5, 6]`) | Fixed (P11-04) with `JavaString.ValueOf`; `WorldRaidLogParityTests` pins the first, scenario RIFT checks both from the raids of the 3rd |
+| 172 | `AutoGroupService.checkQueueForNewMatches` sorted the queue with `List<T>.Sort`, which is not stable: three parties of the same entry type, size and registration millisecond came out reordered (`[A, B, C]` with C before them sorted to `[C, B, A]`), so another party could be matched first | Java's `List.sort(null)` is a stable merge sort (`[C, A, B]`) | Fixed (P11-03); `AutoGroupParityTests.QueuedPartiesThatCompareEqualKeepTheirOrderAsJavaListSortDoes` |
+| 173 | `AutoInstance.removeItem` sorted the ticket's stacks with `List<T>.Sort`: with three stacks that expire alike, another stack paid the ticket | Java sorts them with the stable `List.sort(Comparator.comparingInt(Item::getExpireTime))` | Fixed (P11-03); `AutoGroupParityTests.TicketStacksThatExpireAlikeArePaidInInventoryOrderAsJavaListSortDoes` |
+| 174 | `PvPArenaScore.reachedScoreGap` threw `InvalidOperationException` (LINQ's `Max` of nothing) when no player reward was left, skipping the rest of the point update | Java's `IntSummaryStatistics` of nothing gives `MIN_VALUE - MAX_VALUE`, which overflows to 1: no gap | Fixed (P11-03); `PvPArenaParityTests.NoRewardsReachNoScoreGapAsJavaSummaryStatisticsAnswer` (the scenario cannot reach it: a point update after every player left) |
+| 175 | `ActionItemNpcAI.handleDied` aborted the players using a dying object (an arena relic or flame thrower, any action item) from the last to start to the first, so their packets went out in reverse | Java iterates the observers forward (`iter.remove()`, then `abort()`) | Fixed (P11-03); no test (it needs the world, and the scenario uses no such object) |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `TribeRelationService.checkSiegeRelation` makes every siege NPC whose base tribe is GENERAL_DRAGON hostile to every
@@ -3108,6 +3180,13 @@ it as a failure, so its defenders wait the timer out 30 m from the camp and the 
 `HouseController.teleportNearHouseDoor`'s point outside a house's door lies inside the house's `HOUSE_<address>` zone,
 which takes in the yard, so a visitor the door settings or a kick send out still counts as inside the house (seen in
 HOUSING, P11-06).
+`PvPArenaInstance.onEnterInstance` treats every arrival but a first registration as a return, and `AutoPvPFFAInstance` and
+`AutoHarmonyInstance.onPressEnter` have already registered the player's reward (`PvPArenaScore.portToPosition`), so his first
+arrival calls `PvPArenaPlayerReward.updateBonusTime` with no logout time: his time bonus (8100, 12000 or 10800) loses
+`(int) System.currentTimeMillis()` times bonus / 660000, millions at any date of this decade (about -7.66 million in Discipline
+on 2026-10-10). His score points (bonus plus points) are then negative, his time bonus and participation show as 0, and the
+score share of the rewards comes out close to an even split; a Harmony group's reward is not touched (seen in ARENA, P11-03,
+which computes every expected value with Java's formula).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the
 packet's `1/1` fallback rather than the real channel (`PlayerEnterWorldService`, `TeleportService`,
 `SM_CHANNEL_INFO` at `ce54b7931`). Soak gathering distributes cohorts across existing indices 0–4,
@@ -3228,6 +3307,19 @@ Take NPC and object positions from server packets at run time; spawn XML positio
 | Quiet ground of Fregion's Flame | — | (818.9, 1998.7), 100 m from any spawn |
 | Vortex questions | 904304 (pass, names the rift, 5 m), 904306 (defend) | messages 1401454 open notice, 1401474 sent out, 1401452 offence alliance left |
 | World raids of the 3rd, 17:30 | Verteron 1–3 (bosses 234558–234560), Altgard 4–6 (234561–234563) | flag 832819, vortex 702550 (40 m up), markers 702548, advent effect 702549; messages 1402383–1402386, 1402459 |
+
+### PvP arenas and the auto-group queue (ARENA, P11-03)
+
+| What | Id | Position / notes |
+|---|---|---|
+| Arena gates of Marchutan Priory | npcs 730482 (chaos), 730484 (discipline), 730645 (glory), 730577 (harmony) (`120080000`) | (534.71, 340.78), (562.16, 342.49), (563.16, 313.99), (535.39, 314.26); `portal_dialog`, page 1011, INSTANCE_PARTY_MATCH 77, talk distance 7 |
+| The arenas' Asmodian exit | instance_exit.xml | Marchutan Priory (549.32, 328.39505, 93.49) |
+| Arena of Discipline, difficulty 1 | mask 24, map 300360000 | levels 46–50; two players; ticket 186000135 ×1; name 402046, title 903479; a door at each of the 16 starting points |
+| Arena of Harmony, difficulty 1 | mask 33, map 300450000 | levels 46–50; two groups of three; ticket 186000184 ×1; name 403505, title 904400; winners' item 188052179 |
+| Arena of Glory, difficulty 1 | mask 38, map 300550000 | levels 56–60; four players; tickets 186000185 ×3; name 403554, title 903479; weekends 20:00–22:00 |
+| Rukbar (Baranath Dredgion's Asmodian match maker) | npc 279055 (`400010000`) | (1075.89, 2955.12, 1638.55); MATCH_MAKER 63 |
+| Dredgion registrations | masks 1, 2, 3 (maps 300110000, 300210000, 300440000) | levels 46–50, 51–55, 56–65; names 401193, 401675, 401836; titles 401197, 401677, 401837 |
+| Insignia | items 186000130 (crucible), 186000137 (courage) | |
 
 ### Skills and items
 

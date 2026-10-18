@@ -141,6 +141,23 @@ public sealed class ScenarioManifestTests
 	}
 
 	[Fact]
+	public void ArenaJourneyPlaysASaturdayMorningInAnIsolatedProcess()
+	{
+		var scenario = Load().Get("ARENA");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(ScenarioTier.Full, scenario.Tier); Assert.Equal(ScenarioChannelNeeds.Exclusive, scenario.ChannelNeeds);
+		Assert.Equal(ScenarioRace.Asmodians, scenario.Race); Assert.Equal(6, scenario.Bots);
+		Assert.Equal([ScenarioRequirement.Db, ScenarioRequirement.D7], scenario.Requires);
+		DateTimeOffset epoch = SimulationWorldFixture.EpochForProcess("reset-ARENA");
+		Assert.Equal(new DateTimeOffset(2026, 10, 10, 9, 58, 0, TimeSpan.Zero), epoch);
+		// PvPArenaService opens the arenas of discipline and harmony at 10:00 on a Saturday and the Arena of Glory at 20:00;
+		// autogroup.properties opens the dredgions' registration at 12:00 and 20:00 for 60 minutes. The Glory match ends at about
+		// 20:11 and its players leave a minute later.
+		Assert.Equal(DayOfWeek.Saturday, epoch.DayOfWeek);
+		Assert.True(epoch + scenario.VirtualDuration > new DateTimeOffset(2026, 10, 10, 20, 13, 0, TimeSpan.Zero));
+	}
+
+	[Fact]
 	public void GatherSweepIsFullOnlyAndDeclaresTheCompleteSourceInventory()
 	{
 		var scenario = Load().Get("SWEEP-GATHER");
