@@ -23,6 +23,7 @@ public sealed class SimulationLogPolicy : IDisposable
 	private readonly IDisposable factoryOverride;
 	private readonly IDisposable? scenarioScope;
 	private readonly int firstCapturedEntry;
+	private readonly int firstOwnEntry;
 	private readonly int firstFault;
 	private readonly List<SimulationProblem> syntheticProblems = [];
 	private readonly Dictionary<string, Queue<string>> recentPackets = new(StringComparer.Ordinal);
@@ -61,7 +62,8 @@ public sealed class SimulationLogPolicy : IDisposable
 			builder.SetMinimumLevel(LogLevel.Trace);
 			builder.AddProvider(capture);
 		});
-		firstCapturedEntry = includeHistory ? 0 : capture.Entries.Count;
+		firstOwnEntry = capture.Entries.Count;
+		firstCapturedEntry = includeHistory ? 0 : firstOwnEntry;
 		factoryOverride = AionLog.OverrideFactory(factory);
 		scenarioScope = factory.CreateLogger("SIM_SCENARIO").BeginScope(new Dictionary<string, object?>
 		{
@@ -217,18 +219,24 @@ public sealed class SimulationLogPolicy : IDisposable
 	{
 		var problems = new List<SimulationProblem>(syntheticProblems);
 		VirtualThreadPoolFault[] faults = clock.Faults.Skip(firstFault).ToArray();
-		foreach (CapturedLogEntry entry in capture.Entries.Skip(firstCapturedEntry))
+		IReadOnlyList<CapturedLogEntry> entries = capture.Entries;
+		for (int index = firstCapturedEntry; index < entries.Count; index++)
 		{
+			CapturedLogEntry entry = entries[index];
 			if (entry.Exception != null && faults.Any(fault => ReferenceEquals(fault.Exception, entry.Exception)))
 				continue; // Report scheduler failures once, below, with their virtual due time.
 			if (Owns != null && !Owns(entry.Scopes.GetValueOrDefault("bot")))
 				continue; // Another bot's, or the world's.
+			// The history (the boot, and every test the process ran before this policy) is checked for errors only.
+			// A scenario's own options judge its own play: an earlier probe's warnings and audit lines are that probe's,
+			// and its own policy has judged them already.
+			bool own = index >= firstOwnEntry;
 			bool selected = entry.Level >= LogLevel.Error ||
 				(entry.Level == LogLevel.Warning && entry.Exception != null) ||
-				(options.FailOnWarnings && entry.Level == LogLevel.Warning) ||
-				(options.FailOnProtocolWarnings && entry.Level == LogLevel.Warning &&
+				(own && options.FailOnWarnings && entry.Level == LogLevel.Warning) ||
+				(own && options.FailOnProtocolWarnings && entry.Level == LogLevel.Warning &&
 					entry.Category is "BaseClientPacket" or "AionClientPacketFactory" or "AionConnection") ||
-				(options.FailOnAuditLog && entry.Category == "AUDIT_LOG");
+				(own && options.FailOnAuditLog && entry.Category == "AUDIT_LOG");
 			if (!selected)
 				continue;
 			problems.Add(new SimulationProblem(

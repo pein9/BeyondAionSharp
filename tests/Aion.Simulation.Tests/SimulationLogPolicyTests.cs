@@ -110,6 +110,38 @@ public sealed class SimulationLogPolicyTests
 	}
 
 	[Fact]
+	public async Task HistoryIsCheckedForErrorsOnlyWhileTheOptionsJudgeTheScenariosOwnPlay()
+	{
+		await using var clock = new VirtualThreadPool(strict: true);
+		using var capture = new CapturingLoggerProvider();
+		using var factory = LoggerFactory.Create(builder =>
+		{
+			builder.ClearProviders();
+			builder.SetMinimumLevel(LogLevel.Trace);
+			builder.AddProvider(capture);
+		});
+		string allowlist = Path.Combine(RealStaticData.RepoRoot(), "parity-artifacts", "e2e", "log-allowlist.json");
+		using (new SimulationLogPolicy("r1", "earlier-probe", clock, allowlist, captureProvider: capture, loggerFactory: factory))
+		{
+			AionLog.For("AUDIT_LOG").LogInformation("an earlier probe's audit");
+			AionLog.For("AionConnection").LogWarning("an earlier probe's protocol warning");
+			AionLog.For("WARN_LOG").LogWarning("an earlier probe's warning");
+			AionLog.For("WORLD").LogError("an earlier error");
+		}
+
+		using var first = new SimulationLogPolicy("r1", "L8C", clock, allowlist, new SimulationLogPolicyOptions
+		{
+			FailOnWarnings = true,
+			FailOnProtocolWarnings = true,
+			FailOnAuditLog = true,
+		}, capture, factory, includeHistory: true);
+		AionLog.For("AUDIT_LOG").LogInformation("this scenario's audit");
+
+		var error = Assert.Throws<SimulationLogPolicyException>(first.AssertClean);
+		Assert.Equal(["an earlier error", "this scenario's audit"], error.Problems.Select(problem => problem.Message));
+	}
+
+	[Fact]
 	public async Task SimAllowlistHonorsModeServerAndMaxCount()
 	{
 		await using var clock = new VirtualThreadPool(strict: true);
