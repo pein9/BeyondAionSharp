@@ -113,12 +113,15 @@ public sealed record NaturalAltgardContract(
 		// NL-3: "ro" is the Abyss campaign's errands out of the Abyss, in Ishalgen and Pandaemonium (Q24044), by Primum's teleport
 		// device to Morheim and the teleporters on from there, and back by Return.
 		["ro"] = ("natural-reshanta-ro-contract.json", null),
+		// NL-3: "rb" is Q2773, which ends with Horu in Beluslan, by Primum's teleport device and Morheim's teleporter (Q2757 and Q2758,
+		// which end with Etun on Kurngalfberg, wait for NL-4).
+		["rb"] = ("natural-reshanta-rb-contract.json", null),
 	};
 
 	/// <summary>The legs played by a mustered character of level 26 or more: the Morheim leg to level 31
 	/// (docs/natural-morheim-leveling.md), on Morheim, and the leg to 36's (docs/natural-leg-36.md), on Morheim and Brusthonin.</summary>
 	public static readonly IReadOnlySet<string> MusteredLegs = new HashSet<string>
-		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp", "re", "rs", "ru", "rq", "rt", "ro" };
+		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp", "re", "rs", "ru", "rq", "rt", "ro", "rb" };
 
 	/// <summary>NL-2: Brusthonin, the settlers' land south of Morheim.</summary>
 	public const int Brusthonin = 220050000;
@@ -455,9 +458,12 @@ public sealed record NaturalAltgardQuest(int Id, string Category, int MinimumLev
 /// <param name="FlyPathEnd">NL-3: the talk starts a scripted quest flight (Java setFlightTeleportId, SM_EMOTION START_FLYTELEPORT:
 /// Q24045's Gaochinerk and Garkbinerk); the client flies to here in <paramref name="FlightSeconds"/> and lands with
 /// LAND_FLYTELEPORT.</param>
+/// <param name="Hours">NL-3: the NPC keeps hours, [spawn hour, despawn hour] of game time (Java temporary_spawn: Q2773's
+/// Choirinererk in Morheim, 21 to 5); the bot waits at its spot for them.</param>
 public sealed record NaturalAltgardStep(string Key, int QuestId, int? Var, string? Status, int NpcId, float[] Position,
 	int TalkRange, string[] Actions, int[] Pages, int? MovieId, int? ReceivesItemId, string? Area, bool Flight, string? Correction,
-	int? MapId = null, NaturalAscensionTeleport? Teleport = null, int? NextVar = null, float[]? FlyPathEnd = null, int? FlightSeconds = null)
+	int? MapId = null, NaturalAscensionTeleport? Teleport = null, int? NextVar = null, float[]? FlyPathEnd = null, int? FlightSeconds = null,
+	int[]? Hours = null)
 {
 	public string ExpectedStatus => Status ?? "START";
 }

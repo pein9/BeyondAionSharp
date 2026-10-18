@@ -3464,6 +3464,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				// FLY zone holds (Sarinerk's ledge, the crater floor, the Fire Temple's gate) is reached as a player reaches it: the
 				// zone's ground nearest the goal on foot, a flight, and a landing beside the goal; and out the same way.
 				bool crossingFlyZone = false;
+				int flyDowns = 0;
 				bool approachingAirline = false;
 				flyAcross = leg.Flight == null || altgardLegId == null || !NaturalAltgardContract.MusteredLegs.Contains(altgardLegId) ? null : async goal =>
 				{
@@ -3541,7 +3542,11 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							.OrderBy(at => Distance(at, here))];
 						int every = Math.Max(1, nearLanding.Length / 150);
 						BotPosition[] tried = [.. nearLanding.Where((_, index) => index % every == 0)];
-						takeoff = tried.Where(at => NaturalFlightProtocol.DirectlyClear(geometry, map, at, land, HeightFrom(at)))
+						// NL-3: the bot's own island first. Horu stands on a platform of Beluslan Fortress that only a flight joins
+						// to the ground, and a takeoff on the ground below could not be walked to (nl3-rb-d1).
+						takeoff = ground.OrderBy(at => Distance(at, here)).Take(150)
+							.Where(at => NaturalFlightProtocol.DirectlyClear(geometry, map, at, land, HeightFrom(at))).Cast<BotPosition?>().FirstOrDefault()
+							?? tried.Where(at => NaturalFlightProtocol.DirectlyClear(geometry, map, at, land, HeightFrom(at)))
 							.Cast<BotPosition?>().FirstOrDefault() ?? first;
 						session.TraceDiagnostic("fly-zone-takeoff-search", new Dictionary<string, object?>
 						{
@@ -3553,6 +3558,25 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						["zone"] = zone.Name, ["goal"] = goal, ["position"] = here, ["takeoff"] = takeoff, ["landing"] = land,
 					});
 					if (takeoff is not { } off) return false;
+					// NL-3: Horu's platform in Beluslan Fortress has no way down on foot and no clear flight to a far landing, and the
+					// takeoff chosen lies on another island (nl3-rb-d2, d4). The bot flies down to the ground of another island a
+					// checked flight reaches from here, on the takeoff's island and nearest first (it came up 75 m from the courtyard
+					// below; ground of any other island led it from scrap to scrap of the platform, nl3-rb-d6), and crosses from there.
+					if (Distance(here, off) > 3 && !geometry.OnSameIsland(map, here, off) && Inside(here) && flyDowns < 2 &&
+						geometry.GroundNear(map, here, 200, Inside).Where(at => geometry.OnSameIsland(map, at, off))
+							.OrderBy(at => Distance(at, here)).Take(40)
+							.SelectMany(at => new[] { (At: at, Height: MathF.Max(here.Z, at.Z) + 3), (At: at, Height: HeightFrom(here)) })
+							.FirstOrDefault(down => NaturalFlightProtocol.Plan(geometry, map, here, down.At, down.Height).IsUsable) is { At: var downAt } downTo &&
+						downAt != default)
+					{
+						session.TraceDiagnostic("fly-zone-fly-down", new Dictionary<string, object?>
+						{
+							["from"] = here, ["to"] = downTo.At, ["height"] = downTo.Height, ["takeoff"] = off,
+						});
+						flyDowns++;
+						if (!await FlyToAsync(downTo.At, downTo.Height, mayRefuse: true) || session.Api.World.IsDead) return false;
+						return await flyAcross!(goal);
+					}
 					crossingFlyZone = true;
 					try
 					{
@@ -5822,6 +5846,29 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					int npc;
 					int stepMap = leg.StepMap(step);
 					Require.Equal(stepMap, session.Api.World.MapId);
+					// NL-3: an NPC that keeps hours (Java temporary_spawn: Q2773's Choirinererk in Morheim, 21:00 to 05:00 game time)
+					// is waited for at his spot, as a player comes back at night.
+					if (step.Hours is [int opens, int closes] && session.Api.World.GameMinutesAt(session.Api.Timing.Now) is long nowMinutes &&
+						!NaturalGameClock.Within(nowMinutes, opens, closes))
+					{
+						BotPosition spot = new(step.Position[0], step.Position[1], step.Position[2], 0);
+						if (Distance(session.CurrentPosition, spot) > 40)
+							await WalkRoadDefendingAsync(spot, $"hours-road-{step.Key}", within: 25);
+						long waitUntil = runtime.NowMillis + (NaturalGameClock.MinutesUntilHour(nowMinutes, opens) + 2L) * NaturalGameClock.MillisPerGameMinute;
+						session.TraceDiagnostic($"altgard-{altgardLegId}-hours-wait", new Dictionary<string, object?>
+						{
+							["step"] = step.Key, ["opens"] = opens, ["closes"] = closes, ["gameHour"] = NaturalGameClock.HourOf(nowMinutes),
+							["realMinutes"] = (waitUntil - runtime.NowMillis) / 60000, ["position"] = session.CurrentPosition,
+						});
+						while (runtime.NowMillis < waitUntil && !session.Api.World.IsDead)
+						{
+							await DefendAgainstEngagedAsync($"hours-wait-{step.Key}");
+							await session.AdvanceAsync(TimeSpan.FromSeconds(30), token);
+							await session.SynchronizeAsync(token);
+						}
+						ExcuseBoundedWait();
+						if (session.Api.World.IsDead) return;
+					}
 					// NL-3: the Abyss campaign's errands in Pandaemonium are reached by the capital's own ways, its lifts and the
 					// Coliseum, as the capital's talks are.
 					if ((laterCapital != null || altgardLegId != null && NaturalAltgardContract.MusteredLegs.Contains(altgardLegId)) &&
@@ -5834,9 +5881,13 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						// until its budget ran out, for all eight; Altgard's transporter toward him lands on Impetusium, 70 m above
 						// him with no way down.
 						BotPosition far = new(step.Position[0], step.Position[1], step.Position[2], 0);
-						if (altgardLegId != null && NaturalAltgardContract.MusteredLegs.Contains(altgardLegId) && Distance(session.CurrentPosition, far) > 80)
+						// NL-3: a pack that corners the bot on the way can leave it 290 m off its road (Choirinererk, 1.5 km from Morheim's
+						// fortress, nl3-rb-d3); the road is rested and walked again from where the fight left it.
+						for (int roadTry = 0; roadTry < 3 && altgardLegId != null && NaturalAltgardContract.MusteredLegs.Contains(altgardLegId) &&
+							Distance(session.CurrentPosition, far) > 80; roadTry++)
 						{
-							await WalkRoadDefendingAsync(far, $"talk-road-{step.Key}", within: 12);
+							if (roadTry > 0) await RestSafelyAsync(token);
+							if (await WalkRoadDefendingAsync(far, $"talk-road-{step.Key}", within: 12)) break;
 							if (session.Api.World.MapId != stepMap) return;
 						}
 						NaturalNavigationResult reached = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(stepMap, step.NpcId,

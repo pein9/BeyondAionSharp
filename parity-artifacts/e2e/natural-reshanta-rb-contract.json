@@ -1,0 +1,272 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "reshanta-rb-beluslan",
+  "start": {
+    "contract": "natural-reshanta-ro-contract.json",
+    "snapshot": "nl-ro-s1",
+    "mapId": 400010000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 35,
+    "bindNpcId": 730072,
+    "completedQuestIds": [
+      24040,
+      24041,
+      2721,
+      2722,
+      2741,
+      2743,
+      2744,
+      2729,
+      2730,
+      2731,
+      2725,
+      2753,
+      2756,
+      2755,
+      1755,
+      2726,
+      2764,
+      2765,
+      2766,
+      1771,
+      2772
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "primum",
+    "mapId": 400010000,
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "primum",
+      "note": "Primum Fortress, the main island: the teleport devices, the obelisk",
+      "min": [
+        850,
+        2780,
+        1600
+      ],
+      "max": [
+        1160,
+        3160,
+        1675
+      ]
+    },
+    {
+      "key": "kuenunerk",
+      "note": "Kuenunerk's rock on the upper layer (an Elyos guard 26 m away)",
+      "min": [
+        3094,
+        861,
+        2822
+      ],
+      "max": [
+        3134,
+        901,
+        2862
+      ]
+    },
+    {
+      "key": "triminos",
+      "note": "Triminos's rock, 2000 m from Primum",
+      "min": [
+        1623,
+        1112,
+        1473
+      ],
+      "max": [
+        1673,
+        1162,
+        1523
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2773,
+      "category": "QUEST",
+      "minimumLevel": 31,
+      "rewardExperience": 404557,
+      "prerequisite": null,
+      "handler": "quest_script_data/reshanta.xml report_to_many, by steps",
+      "template": null,
+      "startNpcId": null,
+      "area": "kuenunerk",
+      "prerequisites": [
+        2772
+      ]
+    }
+  ],
+  "order": [
+    2773
+  ],
+  "steps": [
+    {
+      "key": "q2773-offer-kuenunerk",
+      "questId": 2773,
+      "status": "OFFER",
+      "npcId": 279019,
+      "position": [
+        3113.9,
+        880.885,
+        2841.67
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "kuenunerk"
+    },
+    {
+      "key": "q2773-v0-choirinererk",
+      "questId": 2773,
+      "var": 0,
+      "npcId": 798110,
+      "position": [
+        1778.9197,
+        1671.5417,
+        197.625
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": null,
+      "mapId": 220020000,
+      "hours": [
+        21,
+        5
+      ]
+    },
+    {
+      "key": "q2773-v1-horu",
+      "questId": 2773,
+      "var": 1,
+      "npcId": 204734,
+      "position": [
+        364.108,
+        387.01,
+        305.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD"
+      ],
+      "pages": [
+        2375
+      ],
+      "area": null,
+      "mapId": 220040000
+    },
+    {
+      "key": "q2773-reward-horu",
+      "questId": 2773,
+      "status": "REWARD",
+      "npcId": 204734,
+      "position": [
+        364.108,
+        387.01,
+        305.0
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        5,
+        5
+      ],
+      "area": null,
+      "mapId": 220040000
+    }
+  ],
+  "objectUses": [],
+  "collections": [],
+  "mapTrips": [
+    {
+      "mapId": 220020000,
+      "fromMapId": 400010000,
+      "teleporterNpcId": 730077,
+      "locationId": 10,
+      "fare": 2500,
+      "talkRange": 6,
+      "useMillis": 3000,
+      "confirm": true
+    },
+    {
+      "mapId": 220040000,
+      "fromMapId": 220020000,
+      "teleporterNpcId": 204399,
+      "locationId": 11,
+      "fare": 3200,
+      "talkRange": 4
+    }
+  ],
+  "bind": {
+    "npcId": 730072,
+    "position": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "onArrival": true,
+    "price": 4071,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "WHOLE_MAP_400010000",
+        "bottom": 500,
+        "top": 4596
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 400010000,
+    "completedQuestIds": [
+      2773
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 35,
+    "snapshot": "nl-rb",
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 30,
+    "bindNpcId": 730072,
+    "heldQuestIds": []
+  }
+}
