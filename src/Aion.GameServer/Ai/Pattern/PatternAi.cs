@@ -17,6 +17,7 @@ using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.SkillEngine.Model;
 using Aion.GameServer.Model.Templates.Npcskill;
 using Aion.GameServer.Model.Templates.Walker;
+using Aion.GameServer.Services.Instance;
 using Aion.GameServer.Utils;
 using Aion.GameServer.World;
 using Aion.GameServer.World.Geo;
@@ -590,7 +591,11 @@ public abstract class PatternAi : AggressiveNpcAI, INpcMessageListener
         ending = true;
         try
         {
-            Evaluate(Pattern.OnDespawn);
+            // InstanceService.destroyInstance takes an instance out of its map before it deletes the npcs in it, so a despawn
+            // branch that places an add there would place it in no instance (World.CreatePosition throws, the spawner logs it).
+            // A destroyed instance runs no despawn branch; everything else despawns as before.
+            if (InstanceService.InstanceExists(GetOwner().GetWorldId(), GetOwner().GetInstanceId()))
+                Evaluate(Pattern.OnDespawn);
         }
         finally
         {

@@ -41697,3 +41697,17 @@ The fix gives 219183 Java's class back as `AshunatalShadowslipEliteAI`, under th
 (`npc_templates.xml`); 217376 keeps the retail class and its name, so the summon audits' AI lists stay as they are. No
 retail pattern names 219183, so Java's behaviour stands for her. Pin:
 `AshunatalShadowslipAiTests.TheEliteAshunatalSpawnsUnderJavasAi`.
+
+## A destroyed instance runs no despawn rung
+
+Found by scenario INSTANCES (P11-01) too: Beshmundir Temple logged `Error during spawn` at every destruction. Its lich
+keys 216586 and 216590 have a generated `on_despawn` rung (`battle_cycles.xml`, variant 0) that places an add 281697 at
+(979, 130, 245) for the fight. `InstanceService.destroyInstance`, as in Java, takes the instance out of its map first and
+then deletes the npcs in it; each deletion despawns its npc, `PatternAi.HandleDespawned` ran the rung, and the add was
+spawned into no instance — `World.CreatePosition` threw and the spawner logged it.
+
+Java has no despawn rungs, so there is nothing of Java's to keep here, and retail's rung is about an npc leaving a live
+fight, not a world being torn down. `PatternAi.HandleDespawned` now runs the despawn branches only while the npc's
+instance is still in its map; a despawn in a live instance, or anywhere in the open world, is as before. Pins:
+`DestroyedInstanceDespawnTests` (the add appears when a key despawns in a live temple, and nothing runs or is logged when
+the temple is destroyed).
