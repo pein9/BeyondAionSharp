@@ -74,7 +74,7 @@ public class AutoGroupService
         AutoGroupType agt = agtN.Value;
         lock (queuedParties)
         {
-            queuedParties.Sort();
+            SortQueue(queuedParties);
 
             for (int i = 0; i < queuedParties.Count; i++)
             {
@@ -106,6 +106,18 @@ public class AutoGroupService
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Java: <c>queuedParties.sort(null)</c>. Java's List.sort is a stable merge sort, so parties that compare equal (the same
+    /// entry type, member count and registration millisecond) keep their queue order. List&lt;T&gt;.Sort is not stable: with
+    /// three parties its sorting network moves an equal one past another.
+    /// </summary>
+    internal static void SortQueue(List<LookingForParty> queuedParties)
+    {
+        List<LookingForParty> sorted = queuedParties.OrderBy(lfp => lfp).ToList();
+        queuedParties.Clear();
+        queuedParties.AddRange(sorted);
     }
 
     private void CreateNewInstance(AutoInstance autoInstance, AutoGroupType agt, List<LookingForParty> filteredParties, int maskId)
