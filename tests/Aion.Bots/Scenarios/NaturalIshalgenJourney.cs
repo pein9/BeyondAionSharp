@@ -4131,7 +4131,11 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							if (options.SoloCompanion != null) await DismissSoloCompanionAsync(token);
 							int portal = await ApproachShippedSpawnAsync(room.PortalNpcId, withinRange: TalkRange(room.PortalNpcId));
 							if (session.Api.World.IsDead || session.Api.World.MapId != leg.Hub.MapId) break;
-							await UseInstancePortalAsync(portal, rooms.UseMillis, rooms.MapId);
+							if (!await UseInstancePortalAsync(portal, rooms.UseMillis, rooms.MapId))
+							{
+								await DefendAgainstEngagedAsync("room-portal");
+								break;
+							}
 							session.TraceDiagnostic($"altgard-{altgardLegId}-room-entered", new Dictionary<string, object?>
 							{
 								["room"] = room.Key, ["instance"] = session.Api.World.InstanceId, ["position"] = session.CurrentPosition,
@@ -4154,7 +4158,11 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							try { exit = await ApproachShippedSpawnAsync(room.ExitNpcId, withinRange: TalkRange(room.ExitNpcId)); }
 							catch (NaturalLeftInstanceRoomException) { break; }
 							if (session.Api.World.IsDead || session.Api.World.MapId != rooms.MapId) break;
-							await UseInstancePortalAsync(exit, rooms.UseMillis, leg.Hub.MapId);
+							if (!await UseInstancePortalAsync(exit, rooms.UseMillis, leg.Hub.MapId))
+							{
+								await DefendAgainstEngagedAsync("room-exit");
+								break;
+							}
 							session.TraceDiagnostic($"altgard-{altgardLegId}-room-left", new Dictionary<string, object?>
 							{
 								["room"] = room.Key, ["position"] = session.CurrentPosition,
@@ -5815,17 +5823,40 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					throw new InvalidDataException($"No chain of the leg's map trips leads from map {from} to map {to}.");
 				}
 
-				async Task UseInstancePortalAsync(int objectId, int duration, int destination, bool confirm = false)
+				// NL-4: false when the use was cut off (Java ItemUseObserver aborts the bar on an attack, a move or a cast and sends
+				// SM_USE_OBJECT with action 0: the round nl4-vs-c1's Templar, hit at the water portal, waited for a teleport that never
+				// came); the caller defends and the leg plans the use again.
+				async Task<bool> UseInstancePortalAsync(int objectId, int duration, int destination, bool confirm = false)
 				{
 					int beforeUse = session.PacketHistory.Count;
 					await NaturalDialogProtocol.OpenAsync(session, objectId, token);
 					DecodedBotServerPacket started = await session.WaitForPacketAsync(typeof(SM_USE_OBJECT), token,
 						packet => packet.Get<int>("targetObjectId") == objectId && packet.Get<byte>("actionType") == 1);
 					Require.Equal(duration, started.Get<int>("durationMs"));
+					bool Aborted() => session.PacketHistory.Skip(Math.Min(beforeUse, session.PacketHistory.Count)).Any(packet =>
+						packet.PacketType == typeof(SM_USE_OBJECT) && packet.Get<int>("targetObjectId") == objectId && packet.Get<byte>("actionType") == 0);
+					bool Cut()
+					{
+						session.TraceDiagnostic("quest-instance-portal-aborted", new Dictionary<string, object?>
+						{
+							["object"] = objectId, ["position"] = session.CurrentPosition, ["hp"] = session.Api.World.CurrentHp,
+						});
+						return false;
+					}
+					long barEnd = runtime.NowMillis + duration;
+					while (runtime.NowMillis < barEnd - 100)
+					{
+						await session.AdvanceAsync(TimeSpan.FromMilliseconds(Math.Min(250, barEnd - 100 - runtime.NowMillis)), token);
+						await session.SynchronizeAsync(token);
+						if (Aborted()) return Cut();
+					}
+					duration = (int)Math.Max(0, barEnd - runtime.NowMillis);
 					if (confirm)
 					{
 						// Java PortalRequestAI.handleUseItemFinish: the question comes when the bar ends, and yes teleports.
 						await session.AdvanceAsync(TimeSpan.FromMilliseconds(duration + 1), token);
+						await session.SynchronizeAsync(token);
+						if (Aborted()) return Cut();
 						static bool Asks(DecodedBotServerPacket packet) => packet.PacketType == typeof(SM_QUESTION_WINDOW) &&
 							packet.Get<int>("code") == SM_QUESTION_WINDOW.STR_TELEPORT_NEED_CONFIRM;
 						DecodedBotServerPacket question = session.PacketHistory.Skip(Math.Min(beforeUse, session.PacketHistory.Count)).LastOrDefault(Asks)
@@ -5837,7 +5868,18 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					else
 						session.Api.World.BeginWorldReload();
 					await session.AdvanceAsync(TimeSpan.FromMilliseconds(duration + 1), token);
-					await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token, packet => packet.Get<int>("worldId") == destination);
+					DecodedBotServerPacket? spawned = null;
+					for (int wait = 0; spawned == null && wait < 20; wait++)
+					{
+						spawned = await session.WaitForPacketWithinAsync(typeof(SM_PLAYER_SPAWN), TimeSpan.FromSeconds(5), token,
+							packet => packet.Get<int>("worldId") == destination);
+						if (spawned == null)
+						{
+							if (Aborted()) return Cut();
+							await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
+						}
+					}
+					if (spawned == null) return Cut();
 					await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
 					session.AcceptTeleportPosition();
 					await session.SynchronizeAsync(token);
@@ -5846,6 +5888,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					{
 						["object"] = objectId, ["duration"] = duration, ["map"] = session.Api.World.MapId, ["position"] = session.CurrentPosition,
 					});
+					return true;
 				}
 
 				async Task PrepareRebirthAsync()
