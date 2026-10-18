@@ -278,6 +278,44 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
   check-in at 36 (Elite Rank 5); the level-36 companion profiles; then Q24023 (the leg engine collects inside an
   instance, room by room, and goes down between the Sky Temple Interior's floors as a player does, by a glide or a
   drop), Q2355 and the quests a step left for a higher level.
+  - 2026-10-18 (`d4faa31ee`): the list is [natural-morheim-quests-36.md](natural-morheim-quests-36.md). Morheim's quests
+    from 31 to 35, by hub:
+    - Alsig Village 16, the Morheim Observatory 7, Halabana Outpost 2, the Ice Fortress 2 and Slag Bulwark 2 (group).
+    - Q24024 to Q24026 among them wait for the next phase.
+    - The legs go hub by hub, each bound at its hub's obelisk: `va` Alsig Village, `vo` the Observatory, then Halabana
+      and the fortress.
+  - 2026-10-18: leg `va` (Alsig Village's fifteen quests from 31 to 35; Q2369 is a group quest and waits for the group
+    pass).
+    - The plans are compiled into `natural-morheim-va-plans`, and Q2392 is played by steps and a feather from the
+      virago looters.
+    - The bots come from Primum. While a bot is bound off its hub's map, the leg's travel to the hub takes its trips
+      (Primum's teleport device to Morheim) instead of Return, then the fortress's flight to Alsig.
+    - Diagnostic `nl4-va-d1` played all fifteen with the Cleric. Committed as `0e8cc4afd`; captured round `nl4-va-c1`
+      from `nl-rb-s3`: all eight reached the end. Every bot is now at 36 or more: the Spirit Master and the Assassin at
+      36, the others at 37 (`nl-va-s1`).
+  - 2026-10-18: legs `vo` and `vh`, committed as `3ffa7aa05`, each played by the Cleric in one try (diagnostics
+    `nl4-vo-d1` and `nl4-vh-d1`):
+    - `vo` is the Observatory's five template quests and Q2411 by steps (Tyr's choice, Angreboda's reward); two of them
+      end in Alsig Village. Captured round `nl4-vo-c1` from `nl-va-s1`: all eight (`nl-vo-s1`).
+    - `vh` is Halabana's two and the fortress's Q2401, offered by Neior and handed in to Modgud at Halabana. Captured
+      round `nl4-vh-c1` from `nl-vo-s1`: all eight (`nl-vh-s1`).
+
+    Morheim's quests from 31 to 35 are now played by all eight, but for Q24024 to Q24026 (the next phase) and the three
+    group quests (Q2369, Q2371, Q2378), which go to the group pass.
+  - 2026-10-18, the gear check-in at 36:
+    - Leg `mg` took all eight back to the fortress and bound them there (`nl4-mg-c1` from `nl-vh-s1`, captured
+      `nl-mg-s2`: the name `nl-mg-s1` was an earlier leg's).
+    - Stage `check-in-36` (`3ffa7aa05`, its receipt `f6bc245fb`) is the muster's coin step at 36, from the fortress's
+      Silver Coin vendors. Round `nl4-g36-c2`, captured **`nl-g36-s2`**: every class bought the whole Elite Rank 5 set,
+      five armor pieces and its weapon. The Templar also took the shield and the Assassin a second dagger; nothing was
+      left at a tie.
+    - The levels there: the Cleric, the Chanter and the Gladiator at 38, the others at 37.
+  - 2026-10-18, the companion profiles (`0594f2a33`): make-companion-profiles.py now takes the original eight from
+    `nl-g36-s2` too, and `--check` passes for all 27 profiles. The companion server tests pass. They are at 37 and 38
+    (decision 14).
+    - Round `nl4-c38-t1` from `nl-g36-s2`: the Gladiator at 38 as the stand-in player called five companions (Cleric,
+      Templar, Ranger, Sorcerer, Chanter). They came at 37 and 38, followed him, killed his marked targets in fifteen
+      fights and left when he looted.
 - [ ] **NL-5 The report.** Per class its level, quests, deaths and time; what was not played and why.
 
 ## Decisions
@@ -364,6 +402,12 @@ Mine, where the operator gave none; each is his to change:
      Reshanta's islands ask for hops, so the group has to hop together; that is built once, for NL-4's pass.
    - Q2762's mirrorglass waterworms float where no navmesh lies. They are a kill in the air (the leg engine's air kills,
      `NaturalAltgardAirKills`), not a matter of numbers, and are tried there too.
+14. **The "level-36" companion profiles are at 37 and 38 (NL-4, 2026-10-18).** The quests carried every bot past 36 before
+   its check-in, and a profile is its character as the world has it.
+   - The server gives a companion at the highest level it has a profile for that is not above its player's.
+   - So a player at 36 still has the level-31 companions; a player at 37 has five new ones and the level-31 Cleric,
+     Chanter and Gladiator; a player at 38 has all eight new ones.
+   - Profiles at exactly 36 would need characters held at 36, which the leg's quests do not allow.
 
 ## Loop prompt
 
