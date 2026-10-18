@@ -119,6 +119,10 @@ function Write-RunMetadata {
 			'reset-HOUSING' { '2026-09-20T23:58:00.0000000+00:00' }
 			'reset-RIFT' { '2026-10-03T15:58:00.0000000+00:00' }
 			'reset-ARENA' { '2026-10-10T09:58:00.0000000+00:00' }
+			'reset-INSTANCES' { '2026-10-13T09:01:00.0000000+00:00' }
+			'reset-INSTANCES-PVP' { '2026-10-17T19:55:00.0000000+00:00' }
+			'reset-INSTANCES-TOMB' { '2024-08-13T09:01:00.0000000+00:00' }
+			'reset-INSTANCES-CIRCUS' { '2024-10-29T09:01:00.0000000+00:00' }
 			default { '2026-09-16T08:59:00.0000000+00:00' }
 		})
 		timeZone = 'UTC'
@@ -146,6 +150,12 @@ function Write-RunMetadata {
 			@{ RIFT = @{ setup = 'Ordinary Gladiators, four at level 55 (two Elyos, two Asmodians) and two at level 30; setup teleports to where each waits (the bases of Cygnea and Enshar, beside the vortex spots of Kaisinel Academy and Marchutan Priory, quiet ground inside the invasion zones of Brusthonin and Theobomos, the obelisks of Verteron and Altgard), beside a rift before using it, beside the rift generator and the raid boss before fighting them; the Brusthonin rift generator and one Altgard raid boss lowered to 4 HP; everyone logged out from Saturday 19:00 to Sunday 15:50' } }
 		} elseif ($scenarioIds.Contains('ARENA')) {
 			@{ ARENA = @{ setup = 'Ordinary level-46 Asmodian Gladiators, one made level 51 before noon and five level 56 before 20:00; the arena tickets given (186000135 to four; 186000184 to all six, one only after his group is refused; three 186000185 to five, one first given two); setup teleports beside the arena gates of Marchutan Priory and beside Rukbar in Reshanta, and, inside an arena, beside the opponent before a fight; the monsters aggressive to the players deleted from each arena once they are inside and after each round''s ports; the victim of each fight lowered to 20 HP before each blow' } }
+		} elseif ($scenarioIds.Contains('INSTANCES-PVP')) {
+			@{ 'INSTANCES-PVP' = @{ setup = 'Ordinary Gladiators (24 Elyos, 24 Asmodians) given each auto-group row''s level; the arena tickets given (186000135, 186000184, three 186000185 for each entry); setup teleports beside the arena gates of Marchutan Priory; the monsters aggressive to a subject within 40 m of a gate deleted before he stands there; the registrations the calendar does not open in the run opened by the GM''s //instance open (Engulfed Ophidan Bridge on Saturday, Kamar Battlefield and Idgel Dome on Sunday); everyone logged out from Sunday 00:00 to 11:58' } }
+		} elseif ($scenarioIds.Contains('INSTANCES-TOMB') -or $scenarioIds.Contains('INSTANCES-CIRCUS')) {
+			@{ 'INSTANCES-EVENT' = @{ setup = 'Ordinary Asmodian Gladiators given the row''s level; setup teleports beside the event''s entry NPC in Pandaemonium; the monsters aggressive to a subject within 40 m of the entry deleted before he stands there' } }
+		} elseif ($scenarioIds.Contains('INSTANCES')) {
+			@{ INSTANCES = @{ setup = 'Ordinary Gladiators (six Asmodians, one Elyos) given each instance row''s level; the siege location whose Asmodian peace group holds an Abyss or Gelkmaros entry given to the Asmodians by the GM capture and given back after the row; the entry items a portal path or entry AI takes (186000236, 185000223, 185000230); the Asmodians'' legion, made with their own packets, given legion dominion 1; the Elyos given Q1922 at step 4; setup teleports beside each entry NPC; the handlers no player reaches in Java 4.8 entered by the GM''s //goto' } }
 		} elseif ($scenarioIds.Contains('SWEEP-TRADE')) {
 			@{ 'SWEEP-TRADE' = @{ setup = 'Ordinary race-specific subjects; level, legion, kinah/AP/rank, required materials and dialog prerequisites; shipped siege/base spawns, matching Panesterra faction and director game-calendar changes; director clears nearby hostile NPCs when a vendor is fighting, then waits for normal AI return; previous-row supplied inventory/products cleaned between independent catalogs' } }
 		} else { @{} })

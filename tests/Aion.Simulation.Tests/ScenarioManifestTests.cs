@@ -158,6 +158,52 @@ public sealed class ScenarioManifestTests
 	}
 
 	[Fact]
+	public void InstanceMatrixPlaysTuesdayToThursdayInAnIsolatedProcess()
+	{
+		var scenario = Load().Get("INSTANCES");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(ScenarioTier.Full, scenario.Tier); Assert.Equal(ScenarioChannelNeeds.Exclusive, scenario.ChannelNeeds);
+		Assert.Equal(ScenarioRace.Both, scenario.Race); Assert.Equal(7, scenario.Bots);
+		Assert.Equal([ScenarioRequirement.Db, ScenarioRequirement.D7], scenario.Requires);
+		DateTimeOffset epoch = SimulationWorldFixture.EpochForProcess("reset-INSTANCES");
+		Assert.Equal(new DateTimeOffset(2026, 10, 13, 9, 1, 0, TimeSpan.Zero), epoch);
+		// instance_cooltimes.xml resets the daily entries at 09:00 and most weekly ones on Wednesday at 09:00, the Eternal Bastion's
+		// (Tuesday, Thursday, Saturday, Sunday) on Thursday at 09:00; the run starts after Tuesday's reset and ends after Thursday's.
+		Assert.Equal(DayOfWeek.Tuesday, epoch.DayOfWeek);
+		Assert.True(epoch.TimeOfDay > TimeSpan.FromHours(9));
+		Assert.True(epoch + scenario.VirtualDuration > new DateTimeOffset(2026, 10, 15, 9, 30, 0, TimeSpan.Zero));
+	}
+
+	[Fact]
+	public void AutoGroupInstanceMatrixPlaysSaturdayEveningToSundayNoonInAnIsolatedProcess()
+	{
+		var scenario = Load().Get("INSTANCES-PVP");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(ScenarioTier.Full, scenario.Tier); Assert.Equal(48, scenario.Bots);
+		Assert.Equal([ScenarioRequirement.Db, ScenarioRequirement.D7], scenario.Requires);
+		DateTimeOffset epoch = SimulationWorldFixture.EpochForProcess("reset-INSTANCES-PVP");
+		Assert.Equal(new DateTimeOffset(2026, 10, 17, 19, 55, 0, TimeSpan.Zero), epoch);
+		// autogroup.properties opens the dredgions and Kamar Battlefield at Saturday 20:00, Idgel Dome at 23:00, Iron Wall Warfront
+		// at Sunday 00:00, and the dredgions and Engulfed Ophidan Bridge again at Sunday 12:00, after the 09:00 resets.
+		Assert.Equal(DayOfWeek.Saturday, epoch.DayOfWeek);
+		Assert.True(epoch + scenario.VirtualDuration > new DateTimeOffset(2026, 10, 18, 12, 10, 0, TimeSpan.Zero));
+	}
+
+	[Theory]
+	[InlineData("INSTANCES-TOMB", "reset-INSTANCES-TOMB", 2024, 8, 13)]
+	[InlineData("INSTANCES-CIRCUS", "reset-INSTANCES-CIRCUS", 2024, 10, 29)]
+	public void EventInstanceRowsPlayATuesdayOfTheirEventInAnIsolatedProcess(string id, string processKey, int year, int month, int day)
+	{
+		var scenario = Load().Get(id);
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(ScenarioTier.Full, scenario.Tier);
+		DateTimeOffset epoch = SimulationWorldFixture.EpochForProcess(processKey);
+		Assert.Equal(new DateTimeOffset(year, month, day, 9, 1, 0, TimeSpan.Zero), epoch);
+		Assert.Equal(DayOfWeek.Tuesday, epoch.DayOfWeek);
+		Assert.True(epoch + scenario.VirtualDuration > new DateTimeOffset(year, month, day, 9, 0, 0, TimeSpan.Zero).AddDays(1));
+	}
+
+	[Fact]
 	public void GatherSweepIsFullOnlyAndDeclaresTheCompleteSourceInventory()
 	{
 		var scenario = Load().Get("SWEEP-GATHER");

@@ -150,6 +150,7 @@ every future run, including director/setup accounts.
 | Housing: auction, bids, acquisition, rent and maintenance, decoration, house gate, door settings, sale, impoundment | HOUSING | Implemented (P11-06, 2026-10-18); own epoch, two weeks from a Sunday | Not selected |
 | Rifts, the dimensional vortex and world raids: hourly rifts and their close, crossings both ways, a volatile rift, two invasions (ended by the generator and by the timer), invaders and defenders, world raid start, boss kill and end | RIFT | Implemented (P11-04, 2026-10-18); own epoch, a Saturday the 3rd and the Sunday after | Not selected |
 | PvP arenas and the auto-group queue: entry windows and refusals, registrations alone and as a group, matches of the arenas of discipline, harmony and glory, a quick entry, a relog inside an arena, rewards and exits, the dredgions' periodic registration | ARENA | Implemented (P11-03, 2026-10-18); own epoch, a Saturday from 09:58 to 20:13 | Not selected |
+| Instance entries: every instance handler entered through its own entry by the team its cooltime row asks for, left by `CM_INSTANCE_LEAVE` or as Java lets a party out, refused at its entry limit and entered again after its reset; the auto-group instances matched by the queue | INSTANCES, INSTANCES-PVP, INSTANCES-TOMB, INSTANCES-CIRCUS | Implemented (P11-01, 2026-10-18); own epochs: Tuesday to Thursday, a Saturday evening to Sunday noon, a Tuesday of each 2024 event | Not selected |
 | Whole-instance and broader journey | No current manifest scenario | Phase 11 remains future work | Natural journey remains separate policy work |
 
 ## 2. Target design
@@ -2616,9 +2617,105 @@ Phase 10's done-when.
 GM commands force scheduled content without waiting for cron (`//siege`, `//rift`, `//vortexraid`, `//worldraid`,
 `//instance`), and SIM's virtual cron (P4-07) covers the schedules themselves.
 
-- [ ] **P11-01** [SIM] M — Instance entry matrix: for each of the 78 instance handlers, a GM-levelled group enters and the
-  handler's create path runs with zero problems; the group leaves via `CM_INSTANCE_LEAVE`; the `instance_cooltimes`
-  entry blocks re-entry, and re-entry succeeds once the cooldown passes on the virtual clock.
+- [x] **P11-01** [SIM] M — Instance entry matrix: for each of the 78 instance handlers, a GM-levelled group enters and the
+  handler's create path runs with zero problems; the group leaves via `CM_INSTANCE_LEAVE`; the `instance_cooltimes` entry
+  blocks re-entry, and re-entry succeeds once the cooldown passes on the virtual clock. **Done 2026-10-18 in SIM (scenarios
+  `INSTANCES`, `INSTANCES-PVP`, `INSTANCES-TOMB`, `INSTANCES-CIRCUS`); no LIVE run is claimed.** The 78 are the files of Java
+  4.8's `data/handlers/instance`: 73 handlers with an `@InstanceID` and five abstract bases
+  (`AbstractInnerUpperAbyssInstance`, `CrucibleInstance`, `DredgionInstance`, `BasicPvpInstance`, `PvPArenaInstance`). The
+  port has those 73 and D38's two quest arenas (Sanctum 310080000, Triniel 320090000), 75 in all; each is a row of one of the
+  four scenarios, and `INSTANCES` asserts that the rows are exactly the maps of the handlers' `InstanceID`s.
+  `SimulationInstanceMatrixTests.cs` plays the 61 instances outside the auto-group queue, 59 of them from the process's own
+  epoch, Tuesday 2026-10-13 09:01 UTC (`reset-INSTANCES`), with six ordinary Asmodian Gladiators and an Elyos one, every
+  expected value from the Java code. Each row's team is the one `PortalService.port` asks for by the cooltime row's member
+  count: alone (1), a group of six or of three (3, 6), an alliance of the six (12, 24), a league of two alliances of three
+  (48). It enters through the instance's own entry: the portal NPC's dialog action (`PortalDialogAI`,
+  `OccupiedRentusBasePortalAI`, `SealedDanuarMysticariumPortals`, `LegionDominionPortalAI`), its use bar (`PortalAI`),
+  Beshmundir's walk (`BeshmundirsWalkAI`: page 10, `INSTANCE_ENTRY`, the leader's safer path and its question, the members
+  behind him), Epeios's quest dialog for the Sanctum arena (`_1922DeliveronYourPromises`, SETPRO3 at step 4), or, for the six
+  handlers no player reaches in Java 4.8, the GM's `//goto` (`GoTo.goTo`: `InstanceService.getOrRegisterInstance` and a plain
+  teleport). Every member lands in the same new instance, whose handler is the row's class; the instance's player limit, its
+  registered team (the group, the alliance or the league) and every member are checked, and each entry is counted as
+  `PortalService.transfer` counts it: the player's `PortalCooldown` has the entry count and the reset
+  `InstanceCooltimeData.calculateInstanceEntranceCooltime` gives (computed by the scenario's own calendar), and
+  `PortalCooldownList.sendEntryInfo`'s `SM_INSTANCE_INFO` (update 2) is read field by field. Every member then sends
+  `CM_INSTANCE_LEAVE` and gets what the handler's `leaveInstance` gives: the exit (Empyrean Crucible, Sealed Danuar
+  Mysticarium, Illuminary Obelisk and its infernal twin, Drakenspire Depths, Shugo Imperial Tomb, the Shugo Emperor's Vault),
+  the instance destroyed (Crucible Challenge), the legion dominion's point in Enshar (Stonespear Reach), or nothing (see
+  below). Where nothing happens the party leaves as Java lets it: a group or an alliance leaves its team (`PlayerLeavedEvent`:
+  `STR_MSG_LEAVE_INSTANCE_NOT_PARTY`, the exit 30 s later); a player alone, a league (whose leave sends nobody out) or a GM's
+  guest dissolves its teams, logs out until the empty instance is destroyed and logs back in at the exit
+  (`InstanceService.onPlayerLogin`). Each exit lands on instance_exit.xml's point for the race. A row is entered as many times
+  as its cooltime row counts (two times for a row that counts nothing: maxcount 0, or a relative cooltime of 0; once for a
+  GM's guest), each time in a new instance after the last is destroyed (`EmptyInstanceCheckerTask`: at once when its team
+  disbanded, 600 s after the last player left otherwise; a party sent out by `leaveInstance` disbands, except Stonespear
+  Reach's, below); then every member's next entry is refused before any instance is made
+  (`STR_MSG_CANNOT_MAKE_INSTANCE_COOL_TIME`, once, nobody moves). On Wednesday after 09:00 (11:00 for Stonespear Reach, whose
+  entry is closed on Wednesdays from 08:00 to 10:59) nobody is refused any more and every counted row is entered again from a
+  count of one; the Eternal Bastion's Tuesday-Thursday-Saturday-Sunday row on Thursday after 09:00. A row's own play fails on
+  any warning as well as on errors (in both classes). `INSTANCES-TOMB` (Tuesday 2024-08-13, inside the Shugo Imperial Tomb
+  event) and `INSTANCES-CIRCUS` (Tuesday 2024-10-29, inside the Nightmare Circus event) play the same way the two instances
+  whose entry NPC (831117 Indianerk, 831714 Saia in Pandaemonium) is an event spawn, each in a process of its own.
+  `SimulationInstancePvpMatrixTests.cs` plays the 14 auto-group instances from Saturday 2026-10-17 19:55 UTC
+  (`reset-INSTANCES-PVP`) with 24 ordinary Elyos and 24 ordinary Asmodian Gladiators: the three dredgions, Kamar Battlefield,
+  Engulfed Ophidan Bridge, Iron Wall Warfront and Idgel Dome (`AutoPvpInstance`: both races fill their sides, 6, 12 or 24
+  each), the arenas of chaos, discipline, harmony and glory and the three training grounds (`AutoPvPFFAInstance`,
+  `AutoHarmonyInstance`). Each player registers alone (window 100) from the icon of the opening registration (window 104),
+  from the arena's gate in Marchutan Priory (`INSTANCE_PARTY_MATCH`) or, for a training ground, whose gate 4.8's data never
+  spawns, with the registration that gate's window sends; the last registration makes the match (window 4 to everyone, the
+  instance of the row's handler), every player enters (window 102: window 5, the ticket taken, the entry counted by
+  `AutoInstance.onPressEnter` for a battleground, none for an arena) and leaves by `CM_INSTANCE_LEAVE`, which every one of
+  these handlers implements (the exit, or the bind point for Kamar Battlefield, which has no instance_exit row); the last one
+  out has the match's instance destroyed (`AutoGroupService.destroyIfPossible`). The registrations open by
+  autogroup.properties' crons where they fall (the dredgions and Kamar Battlefield at Saturday 20:00, Idgel Dome at 23:00,
+  Iron Wall Warfront at Sunday 00:00, the dredgions and Engulfed Ophidan Bridge at Sunday 12:00) and otherwise by the GM's
+  `//instance open` (`PeriodicInstanceManager.openRegistration`, as this phase's preamble allows): Engulfed Ophidan Bridge on
+  Saturday, Kamar Battlefield and Idgel Dome on Sunday. After as many matches as a battleground's row allows (three a day for
+  each dredgion, two for Kamar, Engulfed Ophidan Bridge and Idgel Dome) every player's next registration is refused; after the
+  Sunday 09:00 resets each is matched again. Director setup, recorded in both classes and in run-sim-tier's metadata: class
+  and level per row, the siege location whose Asmodian peace group holds an Abyss or Gelkmaros entry given to the Asmodians by
+  the GM capture and given back after the row, the entry items (186000236, 185000223, 185000230) and arena tickets, the
+  Asmodians' legion made with their own packets and given legion dominion 1, Q1922 at step 4 for the Elyos, setup teleports
+  beside each entry NPC or gate with the monsters aggressive to the subject within 40 m deleted first (Adma Stronghold's, the
+  Hexway's and the Eternal Bastion's use bars were interrupted by the camps beside them), the GM's `//goto` and `//instance
+  open`. Found and fixed: §7/176–180 (the daily and weekly resets across a daylight-saving change; the abyss ranking's
+  qualified column labels and its nested reader, which the matrix's legion hit at midnight; the elite Ashunatal Shadowslip's
+  AI; retail despawn rungs in a destroyed instance). Seen and kept as Java has it: `CM_INSTANCE_LEAVE` does nothing in 50 of
+  the 75 handlers (`GeneralInstanceHandler.leaveInstance` is empty), nor in Dark Poeta and the Eternal Bastion before the end
+  of their progress, so a party in those leaves by its team or by a relog; each auto group and alliance is made with
+  `createGroup(player, player, ...)` or `createAlliance(player, player, ...)`, which adds the leader twice, so
+  `GeneralTeam.onEvent` warns `[TEAM] skipped event` once for each (allowlisted in INSTANCES-PVP, as are Kamar Battlefield's
+  exit warnings below); `DredgionInstance.startInstanceTask` does not keep its 120 s door task, so a dredgion match everyone
+  leaves in its first two minutes is destroyed with its doors and the task then warns that each door does not exist
+  (allowlisted too); `StonespearReachInstance.onInstanceDestroy` does not cancel the three-minute start timer of
+  `onInstanceCreate` (`cancelAllTasks` cancels the fail task and the stages' tasks only), so a Stonespear Reach destroyed in
+  its first three minutes starts its stage afterwards and spawns into nothing (`Error during spawn` from
+  `World.createPosition`, then the stage's `points.get` out of range): the scenario's alliance keeps together after the
+  dominion leave until the empty instance is destroyed 600 s later, so the timer starts the empty instance's stage and the
+  destruction cancels what it scheduled; Iron Wall Warfront ports nobody: `IronWallWarfrontInstance` has no
+  `portToStartPosition` (its `portToPosition(Player, WorldMapInstance)` is never called), so the first entry (window 102)
+  counts the entry in `AutoInstance.onPressEnter` and then throws `GeneralInstanceHandler.portToStartPosition`'s
+  `UnsupportedOperationException`, logged as the packet's error (allowlisted for this one press); the scenario asserts that
+  press, everyone declines and the empty match is destroyed, so its limit and reset are not reached; Kamar Battlefield has no
+  instance_exit row (each leave logs `No instance exit found` and sends the player to his bind point); the legion barracks'
+  entries (730892–730897) carry the aggressive AI, which never reads their portal path, the lucky Ophidan Bridge and Danuar
+  Reliquary have no entry and the Shugo Emperor's Vault's entry 832920 has the general AI, so only the GM reaches those six,
+  and `//goto`'s point for the lucky Danuar Reliquary (750, 554, 574) lies outside its 512 m map (the director uses Danuar
+  Reliquary's entry point instead); the training grounds' gates (207056–207059, 207097–207098) are not spawned; Shugo Imperial
+  Tomb and the Nightmare Circus can be entered only while their 2024 events run; the Asmodians' Anguished Dragon Lord's Refuge
+  is entered at 832997 in Cygnea (the race-swapped paths of the two crystal balls). Open questions for the maintainer, not
+  settled by Java or this plan: whether `CM_INSTANCE_LEAVE` should take a player out of every instance, as the client's leave
+  button suggests (a retail decision); and whether to correct two Java-shared defects, as D26–D38 corrected others: Iron Wall
+  Warfront's entry, and Stonespear Reach's start timer, which outlives a destroyed instance. Run them with
+  `AION_SIM_DB_INTEGRATION=1 AION_SIM_TIER=Full AION_SIM_PROCESS_KEY=reset-<ID> AION_SIM_SCENARIO=<ID> dotnet test
+  tests/Aion.Simulation.Tests --filter
+  "FullyQualifiedName~SimulationFastScenarioTests.ManifestScenariosRunInFixedProcessOrder"` for each of the four ids
+  (INSTANCES about 21 minutes, INSTANCES-PVP about 4, the event ones about 5 each, with the boot; passed with seeds 1 and 2);
+  `AION_SIM_INSTANCE_ROWS` narrows a development run to some maps. Not covered: a LIVE run; full alliances and leagues (six
+  players enter an instance of 12, 24 or 48); `PortalService`'s other refusals (mentor, race, rank, title, quest, level,
+  items, a full instance) and a re-entry into a still registered instance past the limit (`reenter`); Beshmundir's dangerous
+  path; every handler past its creation (bosses, timers, rewards: P11-02); the battlegrounds' group, quick and alliance
+  registrations and the arenas' difficulties 2 to 4; the instance recruitment (`CM_FIND_GROUP`); `//instance close`.
 - [ ] **P11-02** [BOTH] L — Full clears of two low-level instances, one per race: boss kill, loot, exit.
 - [x] **P11-03** [BOTH] M — PvP arena and auto-group queue (`CM_AUTO_GROUP`) with 2–6 bots. **Done 2026-10-18 in SIM
   (scenario `ARENA`); no LIVE run is claimed.** Java 4.8's queue is `AutoGroupService` with `AutoGroupType`'s 32 masks (the
@@ -2684,7 +2781,8 @@ GM commands force scheduled content without waiting for cron (`//siege`, `//rift
   boot; passed with seeds 1, 2 and 3). Not covered: a LIVE run; the Arena of Chaos and the chaos training grounds (eight
   players), the training grounds of discipline and harmony (their NPCs 207056–207059 are not spawned in 4.8's data), the
   difficulties 2 to 4 (levels 51 to 65); a dredgion, Kamar, Engulfed Ophidan Bridge, Iron Wall Warfront or Idgel Dome match
-  (six to 24 players a side), and with them `AutoPvpInstance`'s teams and entry cooldown; the arenas' monsters, relics, flame
+  (six to 24 players a side), and with them `AutoPvpInstance`'s teams and entry cooldown (all since matched by P11-01's
+  INSTANCES-PVP); the arenas' monsters, relics, flame
   throwers, fly rings and gathering points and their points; Harmony's quick entry; a queued leader's logout; a logout
   between the entry window and the entry; `gameserver.autogroup.announce_battleground_registrations`; the GM command
   `//instance`; the instance recruitment (`OPEN_INSTANCE_RECRUIT`, `CM_FIND_GROUP`), which is not the auto-group queue.
@@ -2820,6 +2918,8 @@ GM commands force scheduled content without waiting for cron (`//siege`, `//rift
 - [ ] **P11-07** [SIM] S — Flight transporters, teleporters and day/night spawns (after P4-09).
 
 **Done when:** P11-01 passes for all 78 handlers in the SIM Full tier, and P11-02 and P11-04 pass in the LIVE Full tier.
+(P11-01 is done: the 78 are Java's 73 handlers and five abstract bases, and Iron Wall Warfront's entry fails as it does in
+Java, pending the maintainer.)
 
 **Follow-up checkpoint:** use the [natural journey design](natural-ishalgen-journey.md) to define the
 broader character-to-endgame milestones and group requirements for implemented content.
@@ -2916,7 +3016,7 @@ exits (`docker compose events`) and MySQL errors.
 | D4 | Allowed production changes | (a) parity fixes citing `upstream/4.8`; (b) gameplay-neutral seams: logging bridge, `SystemClock` routing, socketless connection, login-link interface, `Rnd` seed, deterministic-mode switches, virtual cron | **Approved** 2026-09-17: (b) counts as infrastructure under CLAUDE.md |
 | D5 | GM usage | Director account (level 9) for setup; subjects at level 0; each system also gets at least one play-through scenario | Proposed |
 | D6 | Anti-hack checks in bot runs | Test-only oracle profile | **Declined** 2026-09-17: no anti-cheat checks; bot runs keep production security defaults (P6-04 dropped) |
-| D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Approved** 2026-10-17, reversing the 2026-09-17 decline: the maintainer said "We DO NEED the siege enabled ... to get all those missing features working on this server fully and enabled. (housing, sieges, etc)". P10-05 is done (2026-10-17, `eccae23af` to `4bf50584a`); P11-05 is done in SIM (scenario SIEGE, 2026-10-17) and with it BA-005's gate repair and fortress assault; P11-06 is done in SIM (scenario HOUSING, 2026-10-18); P11-04's rifts, vortex and world raids, which the boot already ran, are played in SIM by scenario RIFT (2026-10-18); P11-03's arenas and auto-group queue, which the boot also already ran, are played in SIM by scenario ARENA (2026-10-18). His answers to the open questions, the same day: "Don't re-record the baseline because it doesn't change that much, keep Java's siege calendar"; "Keep whatever server time, doesn't matter"; on housing rent in the live world, "yes, we want parity so yes". So the neutral gate is not re-recorded, Java's siege schedule runs in SIM and LIVE, the time zone is not changed, and housing auctions and rent are on as Java has them |
+| D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Approved** 2026-10-17, reversing the 2026-09-17 decline: the maintainer said "We DO NEED the siege enabled ... to get all those missing features working on this server fully and enabled. (housing, sieges, etc)". P10-05 is done (2026-10-17, `eccae23af` to `4bf50584a`); P11-05 is done in SIM (scenario SIEGE, 2026-10-17) and with it BA-005's gate repair and fortress assault; P11-06 is done in SIM (scenario HOUSING, 2026-10-18); P11-04's rifts, vortex and world raids, which the boot already ran, are played in SIM by scenario RIFT (2026-10-18); P11-03's arenas and auto-group queue, which the boot also already ran, are played in SIM by scenario ARENA (2026-10-18); P11-01's instance entry matrix is played in SIM by scenarios INSTANCES, INSTANCES-PVP, INSTANCES-TOMB and INSTANCES-CIRCUS (2026-10-18). His answers to the open questions, the same day: "Don't re-record the baseline because it doesn't change that much, keep Java's siege calendar"; "Keep whatever server time, doesn't matter"; on housing rent in the live world, "yes, we want parity so yes". So the neutral gate is not re-recorded, Java's siege schedule runs in SIM and LIVE, the time zone is not changed, and housing auctions and rent are on as Java has them |
 | D8 | Java reference for this work | Keep local `../aion-server` `4.8` at `lastCompletedJavaCommit` | **Done** 2026-09-17 (`6ffedcd4f` → `ce54b7931`) |
 | D9 | Where runs happen | Local scripts | **Decided** 2026-09-17: no GitHub Actions, no n8n or other schedulers (both removed from the repo). The `docker/` compose stack stays as the way the emulator is deployed and run. Runs may create and drop databases on a Docker MySQL freely |
 | D13 | How LIVE mode starts the servers | An isolated docker compose project built from `docker/` | **Decided** 2026-09-17: LIVE runs as its own compose project (own name, images, ports, MySQL and logs), so it tests the same images the emulator is deployed with (P3-00, P3-02, P3-08) |
@@ -3325,6 +3425,17 @@ Take NPC and object positions from server packets at run time; spawn XML positio
 | Rukbar (Baranath Dredgion's Asmodian match maker) | npc 279055 (`400010000`) | (1075.89, 2955.12, 1638.55); MATCH_MAKER 63 |
 | Dredgion registrations | masks 1, 2, 3 (maps 300110000, 300210000, 300440000) | levels 46–50, 51–55, 56–65; names 401193, 401675, 401836; titles 401197, 401677, 401837 |
 | Insignia | items 186000130 (crucible), 186000137 (courage) | |
+
+### Instance entries (INSTANCES, INSTANCES-PVP, INSTANCES-TOMB, INSTANCES-CIRCUS; P11-01)
+
+| What | Id | Position / notes |
+|---|---|---|
+| Entry NPCs and their dialog actions | `InstanceRows`, `EventInstanceRows` in `SimulationInstanceMatrixTests.cs` | one row per handler: map, class, entry NPC and the map it stands in (the main instance), the portal path's dialog action (SETPRO1 10000, SETPRO2 10001, SETPRO3 10002 with quest 1922, SELECT1_1 1012, 1015), the level given, what `CM_INSTANCE_LEAVE` does |
+| Abyss entries | npcs 700529–700533, 730356, 730366, 730902–730904 (`400010000`) | in the Asmodian peace groups of fortresses 1011, 1131, 1132, 1141, 1211, 1221, 1231, 1241, 1251; Esoterrace's 730409 in 3011's (`220070000`) |
+| Auto-group rows | `AutoInstanceRows` in `SimulationInstancePvpMatrixTests.cs` | map, class, mask, level, kind; gates 730482 (chaos), 730484 (discipline), 730577 (harmony), 730645 (glory) in Marchutan Priory; tickets 186000135, 186000184, 186000185 ×3 |
+| The GM's `//goto` points | `GoTo.java` | legion barracks (528, 121, 176), lucky Ophidan Bridge (750, 554, 574), the Shugo Emperor's Vault (542.94, 299.99, 401, heading 22); the lucky Danuar Reliquary's (750, 554, 574) lies outside its 512 m map, so Danuar Reliquary's entry point (255.74, 243.61, 241.91) instead |
+| Event entries | 831117 Indianerk (Shugo Imperial Tomb, page 1012, dialog 1015), 831714 Saia (Nightmare Circus) (`120010000`) | event spawns of retail_events.xml; 2024-08-12 to 25 and 2024-10-28 to 11-03 |
+| Stonespear Reach | 833025 (`220080000`), `LegionDominionPortalAI` | the alliance's captain first, his legion with a legion dominion, key 185000230; closed on Wednesdays 08:00–10:59; leaving goes to dominion 1's point (1770, 2556, 300) |
 
 ### Skills and items
 

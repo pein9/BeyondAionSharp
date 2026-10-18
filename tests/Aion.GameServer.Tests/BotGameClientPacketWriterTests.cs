@@ -217,6 +217,7 @@ public sealed partial class BotGameClientPacketWriterTests
 			new Dictionary<string, object?> { ["instanceMaskId"] = 33, ["windowId"] = (byte)100, ["entryRequestId"] = (byte)2 });
 		yield return C("auto-group-enter", GameClientPackets.AutoGroup(24, 102), game,
 			new Dictionary<string, object?> { ["instanceMaskId"] = 24, ["windowId"] = (byte)102, ["entryRequestId"] = (byte)0 });
+		yield return C("instance-leave", GameClientPackets.InstanceLeave(), game);
 	}
 
 	private static object[] C(string name, BotClientPacket packet, AionConnection.State state,

@@ -43,6 +43,13 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 		"reset-RIFT" => SimulationFastScenarioTests.RiftEpoch,
 		// P11-03: two minutes before the Saturday 10:00 opening of the arenas whose queue and matches ARENA plays.
 		"reset-ARENA" => SimulationFastScenarioTests.ArenaEpoch,
+		// P11-01: Tuesday 09:01, after the day's 09:00 entry reset, so that every instance's limit is reached before Wednesday's.
+		"reset-INSTANCES" => SimulationFastScenarioTests.InstancesEpoch,
+		// P11-01: Saturday 19:55, before the 20:00 registrations of the dredgions and Kamar Battlefield and the Arena of Glory's hours.
+		"reset-INSTANCES-PVP" => SimulationFastScenarioTests.InstancesPvpEpoch,
+		// P11-01: the Tuesday 09:01 of the events whose NPC is an instance's entry (Shugo Imperial Tomb, the Nightmare Circus).
+		"reset-INSTANCES-TOMB" => SimulationFastScenarioTests.InstancesTombEpoch,
+		"reset-INSTANCES-CIRCUS" => SimulationFastScenarioTests.InstancesCircusEpoch,
 		_ => FixedEpoch,
 	};
 	public DateTimeOffset Epoch { get; private set; }
