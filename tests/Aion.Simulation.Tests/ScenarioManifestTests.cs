@@ -124,6 +124,23 @@ public sealed class ScenarioManifestTests
 	}
 
 	[Fact]
+	public void RiftJourneyPlaysASaturdayAndSundayInAnIsolatedProcess()
+	{
+		var scenario = Load().Get("RIFT");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(ScenarioTier.Full, scenario.Tier); Assert.Equal(ScenarioChannelNeeds.Exclusive, scenario.ChannelNeeds);
+		Assert.Equal(ScenarioRace.Both, scenario.Race); Assert.Equal(6, scenario.Bots);
+		Assert.Equal([ScenarioRequirement.Db, ScenarioRequirement.D7], scenario.Requires);
+		DateTimeOffset epoch = SimulationWorldFixture.EpochForProcess("reset-RIFT");
+		Assert.Equal(new DateTimeOffset(2026, 10, 3, 15, 58, 0, TimeSpan.Zero), epoch);
+		// The Brusthonin vortex opens on Saturdays at 16:00 and world_raid_schedule.xml starts Verteron's and Altgard's raids
+		// on the 3rd at 17:30; Theobomos' vortex opens on Sundays at 16:00 and its end timer runs out at 18:00.
+		Assert.Equal(DayOfWeek.Saturday, epoch.DayOfWeek);
+		Assert.Equal(3, epoch.Day);
+		Assert.True(epoch + scenario.VirtualDuration > new DateTimeOffset(2026, 10, 4, 18, 0, 1, TimeSpan.Zero));
+	}
+
+	[Fact]
 	public void GatherSweepIsFullOnlyAndDeclaresTheCompleteSourceInventory()
 	{
 		var scenario = Load().Get("SWEEP-GATHER");

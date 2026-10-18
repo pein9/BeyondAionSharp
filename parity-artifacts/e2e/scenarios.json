@@ -2028,6 +2028,20 @@
     "resetEpoch": true
   },
   {
+    "id": "RIFT",
+    "modes": ["Sim"],
+    "tier": "Full",
+    "race": "Both",
+    "map": 220050000,
+    "channelNeeds": "Exclusive",
+    "bots": 6,
+    "virtualDuration": "1.02:05:00",
+    "consumes": [],
+    "requires": ["Db", "D7"],
+    "expectedFail": null,
+    "resetEpoch": true
+  },
+  {
     "id": "SOAK",
     "modes": ["Live"],
     "tier": "Soak",

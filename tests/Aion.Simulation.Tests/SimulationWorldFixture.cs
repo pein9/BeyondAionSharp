@@ -39,6 +39,8 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 		"reset-SIEGE" => SimulationFastScenarioTests.SiegeEpoch,
 		// P11-06: two minutes before the Monday 00:00 auto-fill of the house auction that HOUSING plays.
 		"reset-HOUSING" => SimulationFastScenarioTests.HousingEpoch,
+		// P11-04: two minutes before the 16:00 rifts and Brusthonin invasion of the Saturday (the 3rd) whose world raids RIFT plays.
+		"reset-RIFT" => SimulationFastScenarioTests.RiftEpoch,
 		_ => FixedEpoch,
 	};
 	public DateTimeOffset Epoch { get; private set; }

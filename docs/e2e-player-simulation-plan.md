@@ -148,6 +148,7 @@ every future run, including director/setup accounts.
 | Sustained mixed activities and scale | SOAK | Not selected | Workload exists; small-population evidence is not the deferred larger-capacity acceptance (D17) |
 | Scheduled sieges: preparation, start, capture, end, Balaur assault, gate repair | SIEGE | Implemented (P11-05, 2026-10-17); own epoch, a Thursday's 17:00 Reshanta and 19:00 Gelkmaros slots | Not selected |
 | Housing: auction, bids, acquisition, rent and maintenance, decoration, house gate, door settings, sale, impoundment | HOUSING | Implemented (P11-06, 2026-10-18); own epoch, two weeks from a Sunday | Not selected |
+| Rifts, the dimensional vortex and world raids: hourly rifts and their close, crossings both ways, a volatile rift, two invasions (ended by the generator and by the timer), invaders and defenders, world raid start, boss kill and end | RIFT | Implemented (P11-04, 2026-10-18); own epoch, a Saturday the 3rd and the Sunday after | Not selected |
 | Whole-instance and broader journey | No current manifest scenario | Phase 11 remains future work | Natural journey remains separate policy work |
 
 ## 2. Target design
@@ -2619,7 +2620,57 @@ GM commands force scheduled content without waiting for cron (`//siege`, `//rift
   entry blocks re-entry, and re-entry succeeds once the cooldown passes on the virtual clock.
 - [ ] **P11-02** [BOTH] L — Full clears of two low-level instances, one per race: boss kill, loot, exit.
 - [ ] **P11-03** [BOTH] M — PvP arena and auto-group queue (`CM_AUTO_GROUP`) with 2–6 bots.
-- [ ] **P11-04** [BOTH] M — Rift open, cross-race entry and close; vortex and world raid start and stop.
+- [x] **P11-04** [BOTH] M — Rift open, cross-race entry and close; vortex and world raid start and stop. **Done 2026-10-18 in
+  SIM (scenario `RIFT`); no LIVE run is claimed.** Java 4.8 has all three and boots them as the C# boot does, in Java's order
+  (`GameServer.main`: the locations of world raids, the vortex and rifts before the spawns, `RiftService.initRifts` after
+  them, `WorldRaidService.initWorldRaids` after the bases) with Java's settings (custom.properties: rifts on, 1 hour; vortex
+  on, Brusthonin Saturday 16:00, Theobomos Sunday 16:00, 2 hours; events.properties: world raids on, spawn message on);
+  nothing had to be wired. `SimulationRiftScenarioTests.cs` plays the three schedules on the virtual clock from the
+  process's own epoch, Saturday 2026-10-03 15:58 UTC (`reset-RIFT`), with six ordinary Gladiators (two Elyos and two
+  Asmodians at level 55, one of each at 30), every expected value from the Java code: rift_schedule.xml's hourly openings
+  at 16:00, 17:00 and 18:00 in its eight maps (only locations without spawns that close by themselves, none past the map's
+  maximum, at least one in Cygnea and Enshar, which skip the coin toss; each rift's master and exit with its `RiftEnum`
+  entries and levels; Java's `Rift opened` line) and their close 59 minutes later (`duration * 3540` s), with
+  `SM_RIFT_ANNOUNCE` read field by field (the twelve counts and every master's two entries to each map's players, the entry
+  count to both worlds after a crossing, each rift NPC's despawn); a crossing each way, an Elyos from Cygnea into Enshar and
+  an Asmodian from Enshar into Cygnea, by `CM_SHOW_DIALOG` and the answer to `STR_ASK_PASS_BY_DIRECT_PORTAL` (landing at the
+  exit's spawn, the entry counted, the arrival's announce of the new map); Enshar's Saturday 17:00 opening with guards (one
+  of 2286–2288, volatile: announce slot 4 and type 4; its rift_spawn group spawned at the exit's side in Cygnea and gone at
+  17:59); the Brusthonin invasion: the PEACE group out, the INVASION group and the vortex rift in (Kaisinel Academy, 24
+  entries, levels 45–65, two hours), the defender inside the invasion zones asked to defend (904306) at the start and the
+  second on arrival, their defence alliance, the level-30 refusal by the vortex with Java's audit line, two Elyos through
+  the vortex (904304 naming the rift and 5 m, the start point, `STR_MSG_INVADE_DIRECT_PORTAL_OPEN_NOTICE`, the passed players
+  and used entries announced to Brusthonin) and their offence alliance on the second; a defender's auto-attacks destroying
+  the rift generator, whose death observer ends the invasion: the invaders told and sent to the home point
+  (`STR_MSG_INVADE_DIRECT_PORTAL_OUT_COMPULSION`; 1401452 to the first kicked, whose leaving disbands the offence alliance),
+  the PEACE group back, the vortex rift's despawn announced, the defence alliance left standing, and the 18:00 end timer
+  finding nothing to stop; the world raids of the 3rd at 17:30 (`veteron_all` and `altgard_all`, two of three locations each,
+  `WorldRaidRunnable`'s lines): the flag, `STR_MSG_WORLDRAID_MESSAGE_01`, the vortex 40 m up and `_02` at 17:40, the markers
+  and `_03` at 17:55, `STR_MSG_WORLDRAID_INVADE_VRITRA` at 17:59, the boss (`world_raid_aggressive`) and `_04` at 18:00, each
+  message once per map because the second raid of a map started within 30 s does not speak; the silent Altgard raid's boss
+  killed by the level-30 Asmodian (its death message forced to the whole map, `WorldRaidAI`'s effect NPC, the raid ended) and
+  the other three ended by their hour at 19:00 (flag, boss and markers gone, no message); then, after a night with everyone
+  logged out, the Theobomos invasion of Sunday 16:00, the two Elyos inside Fregion's Flame asked and allied at the start, the
+  two Asmodians through Marchutan Priory's vortex rift and allied, and its two-hour timer ending it at 18:00 with the same
+  messages and the same return home. Director setup, recorded in the class and in run-sim-tier's metadata: class and level,
+  setup teleports to where each subject waits and beside a rift, 30 m from the generator's camp and beside the boss before a
+  fight, the generator and one boss lowered to 4 HP, and the night logged out. Found and fixed: §7/170–171 (log text; no
+  gameplay divergence turned up). Seen and kept as Java has it: `VortexLocation.onLeaveZone`'s kick timer (see the note after
+  §7), which is why the defenders wait out their teleport's timer 30 m from the camp and the striker walks in;
+  `RiftManager`'s "spawned N Npcs" counts the location's list before the last instance's pair, guards included (0 with one
+  instance and no guards, 106 for each of 2286–2288); a rift that is not a vortex counts its entries but never refuses at
+  its maximum; an invasion's end leaves its defenders and their alliance as they are; `RiftInformer.sendRiftsInfo(player)`,
+  sent at every `CM_LEVEL_READY`, also sends the twin map's players their announce. Run it with `AION_SIM_DB_INTEGRATION=1 AION_SIM_TIER=Full
+  AION_SIM_PROCESS_KEY=reset-RIFT AION_SIM_SCENARIO=RIFT dotnet test tests/Aion.Simulation.Tests --filter
+  "FullyQualifiedName~SimulationFastScenarioTests.ManifestScenariosRunInFixedProcessOrder"` (about 5 minutes; passed with
+  seeds 1 and 2). Not covered: a LIVE run; Legion Dominion's invasion rifts (`*_VIL*`, opened by `LegionDominionService`,
+  not by the schedule) and the guarded openings of Inggison, Gelkmaros and Cygnea (they fall in the night or while nobody is
+  in those maps); the vortex's entry cap; a vortex entry from a group; invaders' kisks at the end; the battlefield kick of a
+  player who leaves the invasion zones (904305, 10 s); an invader logging in or reviving inside the invasion world
+  (`PlayerEnterWorldService.validateVortexZone`, the resurrection point); the vortex rules of `PlayerRestrictions` and the
+  quest templates (`KillInWorld`, `MonsterHunt`); the special raid (`beritra_great_invasion` on the 11th,
+  `STR_MSG_WORLDRAID_INVADE_VRITRA_SPECIAL`) and the other maps' raids; a raid boss's drops; the GM commands `//rift`,
+  `//vortexraid` and `//worldraid`.
 - [x] **P11-05** [BOTH] L — Siege start, capture and end. **Done 2026-10-17 in SIM (scenario `SIEGE`); no LIVE run is
   claimed.** `SimulationSiegeScenarioTests.cs` plays Java's siege calendar through on the virtual clock from the
   process's own epoch, Thursday 2026-09-17 15:58 UTC (`reset-SIEGE`), with three ordinary bots (two level-50 Asmodian
@@ -2797,7 +2848,7 @@ exits (`docker compose events`) and MySQL errors.
 | D4 | Allowed production changes | (a) parity fixes citing `upstream/4.8`; (b) gameplay-neutral seams: logging bridge, `SystemClock` routing, socketless connection, login-link interface, `Rnd` seed, deterministic-mode switches, virtual cron | **Approved** 2026-09-17: (b) counts as infrastructure under CLAUDE.md |
 | D5 | GM usage | Director account (level 9) for setup; subjects at level 0; each system also gets at least one play-through scenario | Proposed |
 | D6 | Anti-hack checks in bot runs | Test-only oracle profile | **Declined** 2026-09-17: no anti-cheat checks; bot runs keep production security defaults (P6-04 dropped) |
-| D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Approved** 2026-10-17, reversing the 2026-09-17 decline: the maintainer said "We DO NEED the siege enabled ... to get all those missing features working on this server fully and enabled. (housing, sieges, etc)". P10-05 is done (2026-10-17, `eccae23af` to `4bf50584a`); P11-05 is done in SIM (scenario SIEGE, 2026-10-17) and with it BA-005's gate repair and fortress assault; P11-06 is done in SIM (scenario HOUSING, 2026-10-18). His answers to the open questions, the same day: "Don't re-record the baseline because it doesn't change that much, keep Java's siege calendar"; "Keep whatever server time, doesn't matter"; on housing rent in the live world, "yes, we want parity so yes". So the neutral gate is not re-recorded, Java's siege schedule runs in SIM and LIVE, the time zone is not changed, and housing auctions and rent are on as Java has them |
+| D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Approved** 2026-10-17, reversing the 2026-09-17 decline: the maintainer said "We DO NEED the siege enabled ... to get all those missing features working on this server fully and enabled. (housing, sieges, etc)". P10-05 is done (2026-10-17, `eccae23af` to `4bf50584a`); P11-05 is done in SIM (scenario SIEGE, 2026-10-17) and with it BA-005's gate repair and fortress assault; P11-06 is done in SIM (scenario HOUSING, 2026-10-18); P11-04's rifts, vortex and world raids, which the boot already ran, are played in SIM by scenario RIFT (2026-10-18). His answers to the open questions, the same day: "Don't re-record the baseline because it doesn't change that much, keep Java's siege calendar"; "Keep whatever server time, doesn't matter"; on housing rent in the live world, "yes, we want parity so yes". So the neutral gate is not re-recorded, Java's siege schedule runs in SIM and LIVE, the time zone is not changed, and housing auctions and rent are on as Java has them |
 | D8 | Java reference for this work | Keep local `../aion-server` `4.8` at `lastCompletedJavaCommit` | **Done** 2026-09-17 (`6ffedcd4f` → `ce54b7931`) |
 | D9 | Where runs happen | Local scripts | **Decided** 2026-09-17: no GitHub Actions, no n8n or other schedulers (both removed from the repo). The `docker/` compose stack stays as the way the emulator is deployed and run. Runs may create and drop databases on a Docker MySQL freely |
 | D13 | How LIVE mode starts the servers | An isolated docker compose project built from `docker/` | **Decided** 2026-09-17: LIVE runs as its own compose project (own name, images, ports, MySQL and logs), so it tests the same images the emulator is deployed with (P3-00, P3-02, P3-08) |
@@ -3040,11 +3091,20 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 167 | `SM_INSTANCE_SCORE` wrote the instance progression type's C# value (0 to 3) for the same reason | `SM_INSTANCE_SCORE.java:35` writes `InstanceProgressionType.getId()` (12, 1, 2 or 3 × 1024 × 1024) | Fixed (found by the test of 166) |
 | 168 | `PlayerScripts` stored nothing: `CM_HOUSE_SCRIPT` changed the slot in memory only, a removal left the row, and an owner change kept the old owner's scripts in `house_scripts` | `PlayerScripts.set` stores through `HouseScriptsDAO.storeScript` (inserting a NEW house first), `remove` and `removeAll` delete; a script that does not decompress or has the wrong size is logged and refused | Fixed (P11-06); scenario HOUSING checks the row after setting and after removing a script (it needs the world and the database, so no unit test) |
 | 169 | `HouseController.teleportNearHouseDoor` computed the door with an unsigned heading: where a house's relationship crystal sees its butler at a heading below 30 (132 of the 468 HOUSE addresses), `h - 30` wrapped to 226–255, so the point outside the door was 2 m off (48° wrong) and the heading inside the house wrong | Java's byte is signed: `convertHeadingToAngle(-20)` is 300°, and `-20 < 60` turns it into 40 | Fixed (P11-06); scenario HOUSING sends its friend out of and back into a house chosen for such a door (it needs the world, so no unit test) |
+| 170 | `RiftManager.spawnRift`'s "Rift opened: ..., spawned N Npcs (guards=...)" line printed the flag as C# does (`guards=False`) | Java concatenates the boolean (`guards=false`) | Fixed (P11-04) with `JavaString.ValueOf`; scenario RIFT checks the line of every rift and vortex it opens (it needs the world, so no unit test) |
+| 171 | `WorldRaidRunnable`'s two debug lines ("... and location pool: ...", "... at the following raid locations: ...") printed the lists as a C# type name | Java concatenates the `List<Integer>`s (`AbstractCollection.toString`: `[4, 5, 6]`) | Fixed (P11-04) with `JavaString.ValueOf`; `WorldRaidLogParityTests` pins the first, scenario RIFT checks both from the raids of the 3rd |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `TribeRelationService.checkSiegeRelation` makes every siege NPC whose base tribe is GENERAL_DRAGON hostile to every
 creature, so a fortress boss's area attack (Ulsaruk's 17552, five times its damage on NPCs by `FortressProtectorNpcAI`)
 strikes the Balaur lead scouts beside him, and they strike back and can kill him (seen in SIEGE, P11-05).
+`VortexLocation.onLeaveZone` gives a defender, or a passed invader, who leaves the invasion zones of an active invasion a
+10-second kick timer whose body calls `getActiveVortex().kickPlayer(...)` without a null check. Every teleport despawns the
+player first (`TeleportService.sendLoc`, `World.despawn`, which revalidates the region's zones with the player not spawned),
+so even a teleport inside the zones starts the timer; back inside after 10 s, nothing happens, but when the invasion has
+ended in those 10 s (a defender teleported beside the generator who destroys it at once) the timer throws a
+NullPointerException, which Java's and the port's thread pools log (seen in RIFT, P11-04, whose strict virtual pool counts
+it as a failure, so its defenders wait the timer out 30 m from the camp and the striker walks in).
 `HouseController.teleportNearHouseDoor`'s point outside a house's door lies inside the house's `HOUSE_<address>` zone,
 which takes in the yard, so a visitor the door settings or a kick send out still counts as inside the house (seen in
 HOUSING, P11-06).
@@ -3153,6 +3213,21 @@ Take NPC and object positions from server packets at run time; spawn XML positio
 | Table | item 170000005 | passive house object 3000006, no use days |
 | Sky Blue Doodle Patterned Wallpaper | item 171110023 | house part 3524001, INWALL_ANY: line 8 is room 0 |
 | Friend invitation | question 1401498 | |
+
+### Rifts, the vortex and world raids (RIFT, P11-04)
+
+| What | Id | Position / notes |
+|---|---|---|
+| Hourly rifts of Cygnea and Enshar | locations 2170–2175 (CYGNEA_AM–FM) and 2280–2285 (ENSHAR_AM–FM) | rift NPCs 700137 (master) and 700138 (exit); levels 50 or 55 to 65; no coin toss, one to four an hour |
+| Enshar's Saturday 17:00 rift with guards | locations 2286–2288 (ENSHAR_GM–IM, volatile) | rift NPC 702723; its `rift_spawn` group, 106 NPCs, stands in Cygnea by the exit |
+| Rift question | 160019 (`STR_ASK_PASS_BY_DIRECT_PORTAL`) | no sender, no range |
+| Brusthonin invasion | vortex location 1 | vortex rift 831141 (Kaisinel Academy 452.40, 232.43, 128.21) to 831142; start point (2242, 2797, 75.4) in WAILING_CLIFFS_220050000; home point (452.6, 237.1, 127.0) |
+| Brusthonin rift generator | npc 209486 | (2239.51, 2798.01, 74.07), 4,291,925 HP; PEACE group Surt 205150 |
+| Quiet ground of Wailing Cliffs | — | (2238.8, 2924.3), 57 m from any spawn; 30 m from the camp: (2256.7, 2773.4); a clear line to the generator from its east side |
+| Theobomos invasion | vortex location 0 | vortex rift 831143 (Marchutan Priory 563.94, 207.79, 94.55) to 831144; start point (951, 2433, 107) in FREGIONS_FLAME_210060000; home point (559.4, 207.8, 93.5); generator 209487; PEACE group Jamanok 798176 |
+| Quiet ground of Fregion's Flame | — | (818.9, 1998.7), 100 m from any spawn |
+| Vortex questions | 904304 (pass, names the rift, 5 m), 904306 (defend) | messages 1401454 open notice, 1401474 sent out, 1401452 offence alliance left |
+| World raids of the 3rd, 17:30 | Verteron 1–3 (bosses 234558–234560), Altgard 4–6 (234561–234563) | flag 832819, vortex 702550 (40 m up), markers 702548, advent effect 702549; messages 1402383–1402386, 1402459 |
 
 ### Skills and items
 
