@@ -2112,6 +2112,20 @@
     "resetEpoch": true
   },
   {
+    "id": "TRAVEL",
+    "modes": ["Sim"],
+    "tier": "Full",
+    "race": "Both",
+    "map": 210010000,
+    "channelNeeds": "Exclusive",
+    "bots": 2,
+    "virtualDuration": "03:30:00",
+    "consumes": [],
+    "requires": ["Db"],
+    "expectedFail": null,
+    "resetEpoch": true
+  },
+  {
     "id": "SOAK",
     "modes": ["Live"],
     "tier": "Soak",

@@ -151,6 +151,7 @@ every future run, including director/setup accounts.
 | Rifts, the dimensional vortex and world raids: hourly rifts and their close, crossings both ways, a volatile rift, two invasions (ended by the generator and by the timer), invaders and defenders, world raid start, boss kill and end | RIFT | Implemented (P11-04, 2026-10-18); own epoch, a Saturday the 3rd and the Sunday after | Not selected |
 | PvP arenas and the auto-group queue: entry windows and refusals, registrations alone and as a group, matches of the arenas of discipline, harmony and glory, a quick entry, a relog inside an arena, rewards and exits, the dredgions' periodic registration | ARENA | Implemented (P11-03, 2026-10-18); own epoch, a Saturday from 09:58 to 20:13 | Not selected |
 | Instance entries: every instance handler entered through its own entry by the team its cooltime row asks for, left by `CM_INSTANCE_LEAVE` or as Java lets a party out, refused at its entry limit and entered again after its reset; the auto-group instances matched by the queue | INSTANCES, INSTANCES-PVP, INSTANCES-TOMB, INSTANCES-CIRCUS | Implemented (P11-01, 2026-10-18); own epochs: Tuesday to Thursday, a Saturday evening to Sunday noon, a Tuesday of each 2024 event | Not selected |
+| Flight transporters, teleporters and day/night spawns: the airline service's refusals, flights out and back, a teleport to the second zone, spawns that come and go with the game hour | TRAVEL | Implemented (P11-07, 2026-10-18); own process on the shared epoch, a game night and day | Not selected |
 | Whole-instance and broader journey | No current manifest scenario | Phase 11 remains future work | Natural journey remains separate policy work |
 
 ## 2. Target design
@@ -2915,7 +2916,47 @@ GM commands force scheduled content without waiting for cron (`//siege`, `//rift
   (`CM_HOUSE_EDIT` 14–16); the butler's and the sign's dialogs; the random friend teleport (3); a cancelled auction; a
   second bid inside a prolongation; legion members as friends at the door; `AuctionEndTask.shouldRunOnStart` after a
   restart.
-- [ ] **P11-07** [SIM] S — Flight transporters, teleporters and day/night spawns (after P4-09).
+- [x] **P11-07** [SIM] S — Flight transporters, teleporters and day/night spawns (after P4-09). **Done 2026-10-18 in SIM
+  (scenario `TRAVEL`); no LIVE run is claimed.** Java 4.8's airline service is `DialogService`'s AIRLINE_SERVICE (44,
+  `TeleportService.showMap`'s `SM_TELEPORT_MAP`), `CM_TELEPORT_SELECT` and `TeleportService.teleport`: a flight transporter's
+  route is the client's fly path (`START_FLYTELEPORT`, `CM_MOVE_IN_AIR`, `LAND_FLYTELEPORT`, `PlayerController.onFlyTeleportEnd`),
+  a teleporter's is `sendLoc` (`SM_TELEPORT_LOC`, `CM_TELEPORT_ANIMATION_DONE`). Day/night spawns are
+  `TemporarySpawnEngine.onHourChange`, which P4-09 wired to the game clock's hour change. `SimulationTravelScenarioTests.cs`
+  plays them in a process of its own (`reset-TRAVEL`, on the shared epoch: the hours are the game clock's, a game minute
+  every 5 s) with an ordinary Elyos and an ordinary Asmodian, every expected value from the Java code: each starter
+  village's teleporter (Daines 203194 in Akarios Village, Osmar 203679 in Aldelle Village) answering AIRLINE_SERVICE with
+  the NO_RIGHT page (27) to a player who is not a Daeva, and refusing its capital for the Ascension quest (Q1006, Q2008)
+  before the fare; the village's flight transporter (start page 10, `DialogPage.getStartPageId`) refusing a player
+  without the fare (`STR_MSG_NOT_ENOUGH_KINA` with the fare), a location it does not fly (`STR_CANNOT_MOVE_TO_AIRPORT_NO_ROUTE`
+  and Java's audit line, its text checked) and a player out of talk range (`FAR_FROM_NPC`), then flying the route:
+  `SM_TELEPORT_MAP` read field by field, the fare (`PricesService.getPriceForService`), `START_FLYTELEPORT` with the route's
+  teleport id and the state with FLYING set and ACTIVE unset, the FLIGHT_TRANSPORTER flight path, `CM_MOVE_IN_AIR` along the
+  fly path for its time (the path keeps each one's distance), `LAND_FLYTELEPORT` back with the landed state and the path
+  cleared; the other village's transporter flying him back (fly paths 5 and 6 in Poeta, 11 and 12 in Ishalgen); made a
+  Daeva, the teleporter's map and the teleport to the second zone: `SM_TELEPORT_LOC` with JUMP_IN, the map as its own
+  instance id and the telelocation's point and heading, the main instance of Verteron or Altgard, the fare; the Asmodian's
+  flight on from Altgard Fortress to Trader's Berth (fly path 13); then a game night and day: Stone (203121) by Verteron
+  Citadel and Disguised Germir (798041) in Trader's Berth appearing to the player who watches at 04:00 (`SM_NPC_INFO`) and
+  disappearing at 21:00 (`SM_DELETE`, FADE_OUT), the same objects in between; Verteron's Eninte spot, a night monster (210743)
+  and a day NPC (203161), changing places at 04:00 and 21:00, the night one killed at 03:30 having its pending respawn
+  cancelled at 04:00 (`deleteIfAliveOrCancelRespawn`), still gone after its respawn time and back as a new object only at
+  21:00; Morheim's Igraine (204347) and Virashak (204348), whose spots carry their own hours under their group's empty
+  `temporary_spawn`, moving to their day spots at 05:00 and back at 21:00; both players logging out with their positions
+  saved. Director setup, recorded in the class and in run-sim-tier's metadata: a setup teleport between the village's
+  transporter and teleporter, the 1,000 Kinah of player_initial_data.xml taken before the fare refusal and 10,000 given
+  after it, the class change to a level-10 Gladiator (`ClassChangeService.setClass` with the Daeva status, which completes
+  the Ascension quest as Java's does), and the night Eninte killed by the GM's `//kill` (`Kill.kill`). The scenario turned
+  up no divergence, so it adds no §7 row. Seen and kept as Java has it: `CM_TELEPORT_SELECT` checks no Daeva status (the
+  starter teleporters' NO_RIGHT is their dialog's alone), so the capital's quest refusal is reached by a select without the
+  map; and, dormant as shipped, the fly path validator's lookup by location id (see the note after §7). Run it with
+  `AION_SIM_DB_INTEGRATION=1 AION_SIM_TIER=Full AION_SIM_PROCESS_KEY=reset-TRAVEL AION_SIM_SCENARIO=TRAVEL dotnet test
+  tests/Aion.Simulation.Tests --filter "FullyQualifiedName~SimulationFastScenarioTests.ManifestScenariosRunInFixedProcessOrder"`
+  (about one minute with the boot; from a fresh database's game time 00:00 it plays 21 game hours; passed with seeds 1 and
+  2). Not covered: a LIVE run; another player seeing a flight (the `SM_EMOTION` broadcast, `SM_PLAYER_INFO`'s flight path id
+  and distance, which the bot does not decode); windstreams (M7 rides one); the fly path validator switched on; HiPass's
+  1-Kinah fare; siege-held destinations (`isCanTeleport`, set up by SWEEP-TELEPORT); `teleportToFirstTeleportLocation`; a
+  temporary spawn bound to weekdays, days or months, or with a pool; a corpse still lying when its hours end (the GM's kill
+  leaves no drop, so it decays in 2 s); the weather at a day-time change (`WeatherService.checkWeathersTime`).
 
 **Done when:** P11-01 passes for all 78 handlers in the SIM Full tier, and P11-02 and P11-04 pass in the LIVE Full tier.
 (P11-01 is done: the 78 are Java's 73 handlers and five abstract bases, and Iron Wall Warfront's entry fails as it does in
@@ -3016,7 +3057,7 @@ exits (`docker compose events`) and MySQL errors.
 | D4 | Allowed production changes | (a) parity fixes citing `upstream/4.8`; (b) gameplay-neutral seams: logging bridge, `SystemClock` routing, socketless connection, login-link interface, `Rnd` seed, deterministic-mode switches, virtual cron | **Approved** 2026-09-17: (b) counts as infrastructure under CLAUDE.md |
 | D5 | GM usage | Director account (level 9) for setup; subjects at level 0; each system also gets at least one play-through scenario | Proposed |
 | D6 | Anti-hack checks in bot runs | Test-only oracle profile | **Declined** 2026-09-17: no anti-cheat checks; bot runs keep production security defaults (P6-04 dropped) |
-| D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Approved** 2026-10-17, reversing the 2026-09-17 decline: the maintainer said "We DO NEED the siege enabled ... to get all those missing features working on this server fully and enabled. (housing, sieges, etc)". P10-05 is done (2026-10-17, `eccae23af` to `4bf50584a`); P11-05 is done in SIM (scenario SIEGE, 2026-10-17) and with it BA-005's gate repair and fortress assault; P11-06 is done in SIM (scenario HOUSING, 2026-10-18); P11-04's rifts, vortex and world raids, which the boot already ran, are played in SIM by scenario RIFT (2026-10-18); P11-03's arenas and auto-group queue, which the boot also already ran, are played in SIM by scenario ARENA (2026-10-18); P11-01's instance entry matrix is played in SIM by scenarios INSTANCES, INSTANCES-PVP, INSTANCES-TOMB and INSTANCES-CIRCUS (2026-10-18). His answers to the open questions, the same day: "Don't re-record the baseline because it doesn't change that much, keep Java's siege calendar"; "Keep whatever server time, doesn't matter"; on housing rent in the live world, "yes, we want parity so yes". So the neutral gate is not re-recorded, Java's siege schedule runs in SIM and LIVE, the time zone is not changed, and housing auctions and rent are on as Java has them |
+| D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Approved** 2026-10-17, reversing the 2026-09-17 decline: the maintainer said "We DO NEED the siege enabled ... to get all those missing features working on this server fully and enabled. (housing, sieges, etc)". P10-05 is done (2026-10-17, `eccae23af` to `4bf50584a`); P11-05 is done in SIM (scenario SIEGE, 2026-10-17) and with it BA-005's gate repair and fortress assault; P11-06 is done in SIM (scenario HOUSING, 2026-10-18); P11-04's rifts, vortex and world raids, which the boot already ran, are played in SIM by scenario RIFT (2026-10-18); P11-03's arenas and auto-group queue, which the boot also already ran, are played in SIM by scenario ARENA (2026-10-18); P11-01's instance entry matrix is played in SIM by scenarios INSTANCES, INSTANCES-PVP, INSTANCES-TOMB and INSTANCES-CIRCUS (2026-10-18); P11-07's flight transporters, teleporters and day/night spawns, which the boot and P4-09 already ran, are played in SIM by scenario TRAVEL (2026-10-18). His answers to the open questions, the same day: "Don't re-record the baseline because it doesn't change that much, keep Java's siege calendar"; "Keep whatever server time, doesn't matter"; on housing rent in the live world, "yes, we want parity so yes". So the neutral gate is not re-recorded, Java's siege schedule runs in SIM and LIVE, the time zone is not changed, and housing auctions and rent are on as Java has them |
 | D8 | Java reference for this work | Keep local `../aion-server` `4.8` at `lastCompletedJavaCommit` | **Done** 2026-09-17 (`6ffedcd4f` → `ce54b7931`) |
 | D9 | Where runs happen | Local scripts | **Decided** 2026-09-17: no GitHub Actions, no n8n or other schedulers (both removed from the repo). The `docker/` compose stack stays as the way the emulator is deployed and run. Runs may create and drop databases on a Docker MySQL freely |
 | D13 | How LIVE mode starts the servers | An isolated docker compose project built from `docker/` | **Decided** 2026-09-17: LIVE runs as its own compose project (own name, images, ports, MySQL and logs), so it tests the same images the emulator is deployed with (P3-00, P3-02, P3-08) |
@@ -3292,6 +3333,12 @@ arrival calls `PvPArenaPlayerReward.updateBonusTime` with no logout time: his ti
 on 2026-10-10). His score points (bonus plus points) are then negative, his time bonus and participation show as 0, and the
 score share of the rewards comes out close to an even split; a Harmony group's reward is not touched (seen in ARENA, P11-03,
 which computes every expected value with Java's formula).
+`TeleportService.teleport` and `PlayerController.onFlyTeleportEnd` look a flight's fly path up by the route's location id
+(`FLY_PATH.getPathTemplate(location.getLocId())`), but a flight route's path is its teleport id / 1000, the path the client
+flies (`HiddenTeleportNpcAI` sends `teleId * 1000 + 1` for its path `teleId`): 139 of npc_teleporter.xml's 142 FLIGHT routes
+have another location id, so with `gameserver.security.validation.flypath` on almost every flight would be refused for a
+start point too far away or in another world. The validator is off as shipped (security.properties), so nothing runs that
+lookup (seen in TRAVEL, P11-07).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the
 packet's `1/1` fallback rather than the real channel (`PlayerEnterWorldService`, `TeleportService`,
 `SM_CHANNEL_INFO` at `ce54b7931`). Soak gathering distributes cohorts across existing indices 0–4,
@@ -3436,6 +3483,19 @@ Take NPC and object positions from server packets at run time; spawn XML positio
 | The GM's `//goto` points | `GoTo.java` | legion barracks (528, 121, 176), lucky Ophidan Bridge (750, 554, 574), the Shugo Emperor's Vault (542.94, 299.99, 401, heading 22); the lucky Danuar Reliquary's (750, 554, 574) lies outside its 512 m map, so Danuar Reliquary's entry point (255.74, 243.61, 241.91) instead |
 | Event entries | 831117 Indianerk (Shugo Imperial Tomb, page 1012, dialog 1015), 831714 Saia (Nightmare Circus) (`120010000`) | event spawns of retail_events.xml; 2024-08-12 to 25 and 2024-10-28 to 11-03 |
 | Stonespear Reach | 833025 (`220080000`), `LegionDominionPortalAI` | the alliance's captain first, his legion with a legion dominion, key 185000230; closed on Wednesdays 08:00–10:59; leaving goes to dominion 1's point (1770, 2556, 300) |
+
+### Flight transporters, teleporters and day/night spawns (TRAVEL, P11-07)
+
+| What | Id | Position / notes |
+|---|---|---|
+| Akarios Village (`210010000`) | teleporter Daines 203194 (teleport id 2: Sanctum 2 with Q1006, Verteron 4); transporter Kustanon 203070 (103: Melponeh's Campsite 13, flight 5001) | Daines (804.92, 1244.6), Kustanon (803.92, 1242.15); the subject stands at (805.6, 1242.6); talk distance 3 (+1) |
+| Melponeh's Campsite | transporter Aero 203083 (104: Akarios Village 12, flight 6001) | (425.43, 1739.61); fly paths 5 and 6, 38 s each |
+| Aldelle Village (`220010000`) | teleporter Osmar 203679 (51: Pandaemonium 7 with Q2008, Altgard 9); transporter Sheofin 203513 (203: Anturoon Crossing 18, flight 11001) | Osmar (525.53, 2450.73), Sheofin (525.23, 2448.83); the subject stands at (526.9, 2449.6) |
+| Anturoon Crossing | transporter Garhara 203545 (204: Aldelle Village 17, flight 12001) | (942, 1707), 5 m from the landing; fly paths 11 (42 s) and 12 (35 s) |
+| Altgard Fortress (`220030000`) | transporter Lenat 203561 (205: Trader's Berth 20, flight 13001) | (1754.35, 1807.72), beside teleport location 9; fly path 13, 49.5 s |
+| Day spawns, 04:00 to 21:00 | Stone 203121 (`210030000`), Disguised Germir 798041 (`220030000`) | (1670.84, 1496.70, 119.19), 30 m from teleport location 4; (2588, 953, 306), watched from (2650.1, 1001.0) |
+| Eninte's spot (`210030000`) | day 203161 (04:00 to 21:00), night 210743 (21:00 to 04:00, respawn 295 s) | (1977.17, 2632.55, 301.34), in a field of aggressive monsters, so nobody watches it |
+| Spot-level hours (`220020000`) | Igraine 204347, Virashak 204348 | day spots (2522.29, 1703.93), (2493, 1713) from 05:00; night spots (2479.46, 1801.02), (2488.72, 1795.96) from 21:00 |
 
 ### Skills and items
 

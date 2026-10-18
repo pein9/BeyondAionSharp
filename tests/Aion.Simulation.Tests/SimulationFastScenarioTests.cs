@@ -327,6 +327,9 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			case "INSTANCES-PVP":
 				await RunInstancesPvpAsync(execution.Scenario, includeHistory);
 				break;
+			case "TRAVEL":
+				await RunTravelAsync(execution.Scenario, includeHistory);
+				break;
 			default:
 				throw new InvalidOperationException($"SIM scenario '{execution.Scenario.Id}' has no runner.");
 		}

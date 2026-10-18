@@ -204,6 +204,21 @@ public sealed class ScenarioManifestTests
 	}
 
 	[Fact]
+	public void TravelPlaysAGameNightAndDayInAnIsolatedProcess()
+	{
+		var scenario = Load().Get("TRAVEL");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(ScenarioTier.Full, scenario.Tier); Assert.Equal(ScenarioChannelNeeds.Exclusive, scenario.ChannelNeeds);
+		Assert.Equal(ScenarioRace.Both, scenario.Race); Assert.Equal(2, scenario.Bots);
+		Assert.Equal([ScenarioRequirement.Db], scenario.Requires);
+		// The hours are the game clock's (a game minute every 5 s), not the server's, so the process keeps the shared epoch. From
+		// any game time the run reaches the next 03:30 within a game day and then plays to 21:00: at most 41.5 game hours, which
+		// are 207.5 minutes; from a fresh database's 00:00 it plays about 21 game hours (105 minutes) after the travel.
+		Assert.Equal(SimulationWorldFixture.EpochForProcess("shard-00"), SimulationWorldFixture.EpochForProcess("reset-TRAVEL"));
+		Assert.True(scenario.VirtualDuration >= TimeSpan.FromMinutes(41.5 * 5));
+	}
+
+	[Fact]
 	public void GatherSweepIsFullOnlyAndDeclaresTheCompleteSourceInventory()
 	{
 		var scenario = Load().Get("SWEEP-GATHER");
