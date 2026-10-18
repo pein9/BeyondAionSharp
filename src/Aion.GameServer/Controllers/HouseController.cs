@@ -152,22 +152,24 @@ public class HouseController : VisibleObjectController<House>
     {
         SpawnTemplate butler = GetOwner().GetButler().GetSpawn(), relationshipCrystal = GetOwner().GetRelationshipCrystal().GetSpawn();
         float x, y, z; // midpoint between butler and relationship crystal, since we currently have no door coordinates in templates
-        byte h = PositionUtil.GetHeadingTowards(GetOwner().GetRelationshipCrystal(), butler.GetX(), butler.GetY());
+        // Java's byte is signed: below 30 the heading towards the door is negative, and Java converts and compares it as such
+        // (convertHeadingToAngle(-20) is 300 degrees, and -20 < 60 turns it to 40).
+        sbyte h = (sbyte)PositionUtil.GetHeadingTowards(GetOwner().GetRelationshipCrystal(), butler.GetX(), butler.GetY());
         h -= 30; // this is the supposed heading towards the door (crystal is right from the door, so offset direction towards butler by 90 degrees)
         x = (butler.GetX() + relationshipCrystal.GetX()) / 2;
         y = (butler.GetY() + relationshipCrystal.GetY()) / 2;
         z = Math.Max(butler.GetZ(), relationshipCrystal.GetZ());
         if (outsideHouse) // offset the midpoint 2.5m behind the butler, to get coords outside the house, near the door
         {
-            double radian = PositionUtil.ConvertHeadingToAngle(h) * Math.PI / 180;
+            double radian = PositionUtil.NormalizeAngle(h * 3f) * Math.PI / 180; // Math.toRadians(PositionUtil.convertHeadingToAngle(h))
             x += (float)(Math.Cos(radian) * 2.5f);
             y += (float)(Math.Sin(radian) * 2.5f);
         }
         else
         {
-            h += (byte)(h < 60 ? 60 : -60); // opposite direction (player should look inside house)
+            h += (sbyte)(h < 60 ? 60 : -60); // opposite direction (player should look inside house)
         }
-        TeleportService.TeleportTo(player, GetOwner().GetWorldId(), GetOwner().GetInstanceId(), x, y, z, h, TeleportAnimation.FADE_OUT_BEAM);
+        TeleportService.TeleportTo(player, GetOwner().GetWorldId(), GetOwner().GetInstanceId(), x, y, z, unchecked((byte)h), TeleportAnimation.FADE_OUT_BEAM);
     }
 
     public void UpdateSign()
