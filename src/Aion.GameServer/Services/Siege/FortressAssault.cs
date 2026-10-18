@@ -138,8 +138,10 @@ public class FortressAssault : Assault<FortressSiege, FortressLocation>
         if (minSpawnDelay < 30) // just in case SIEGE_DIFFICULTY_MULTIPLIER is set beyond 1.0 (100%)
             minSpawnDelay = 30;
 
-        log.LogInformation("Initialized fortress assault on [locationID=" + locationId + "] with [difficulty=" + difficulty + "] [factionBalance=" + factionBalance
-            + "] [influence=" + influence + "] [difficultyMultiplier=" + SiegeConfig.SIEGE_DIFFICULTY_MULTIPLIER + "]");
+        // Java parity: string concatenation prints a float as Float.toString does (1.0, not C#'s 1).
+        log.LogInformation("Initialized fortress assault on [locationID=" + locationId + "] with [difficulty=" + JavaString.ValueOf(difficulty) + "] [factionBalance="
+            + JavaString.ValueOf(factionBalance) + "] [influence=" + JavaString.ValueOf(influence) + "] [difficultyMultiplier="
+            + JavaString.ValueOf(SiegeConfig.SIEGE_DIFFICULTY_MULTIPLIER) + "]");
     }
 
     private float GetFactionBalanceMultiplier()
