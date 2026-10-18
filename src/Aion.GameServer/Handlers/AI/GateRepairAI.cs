@@ -23,7 +23,8 @@ namespace Aion.GameServer.Handlers.AI;
 [AIName("siege_gaterepair")]
 public class GateRepairAI : NpcAI
 {
-    private static readonly ILogger log = AionLog.For(nameof(GateRepairAI));
+    // Java parity: LoggerFactory.getLogger("SIEGE_LOG"), Java's siege.log.
+    private static readonly ILogger log = AionLog.For("SIEGE_LOG");
     private long nextActivationTime = 0;
 
     public GateRepairAI(Npc owner)

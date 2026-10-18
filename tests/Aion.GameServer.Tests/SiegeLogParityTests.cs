@@ -1,9 +1,11 @@
 using Aion.Commons.Logging;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Dataholders.LoadingUtils;
+using Aion.GameServer.Handlers.AI;
 using Aion.GameServer.Model.Siege;
 using Aion.GameServer.Services.Siege;
 using Microsoft.Extensions.Logging;
+using System.Reflection;
 
 namespace Aion.GameServer.Tests;
 
@@ -33,6 +35,25 @@ public sealed class SiegeLogParityTests
 		CapturedLogEntry line = Assert.Single(capture.Entries, entry => entry.Category == "SIEGE_LOG");
 		Assert.Equal("Initialized fortress assault on [locationID=1141] with [difficulty=0.33333334] [factionBalance=1.0] [influence=0.0] [difficultyMultiplier=1.0]",
 			line.Message);
+	}
+
+	/// <summary>
+	/// The siege AIs whose Java logger is LoggerFactory.getLogger("SIEGE_LOG") write to that category (siege.log), not to one
+	/// named after the class: GateRepairAI's repair line, ArtifactAI's activation line and AhserionAI's kill line.
+	/// </summary>
+	[Theory]
+	[InlineData(typeof(GateRepairAI))]
+	[InlineData(typeof(ArtifactAI))]
+	[InlineData(typeof(AhserionAI))]
+	public void SiegeAisWriteToTheSiegeLog(Type ai)
+	{
+		var log = (ILogger)ai.GetField("log", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
+		using var capture = new CapturingLoggerProvider();
+		using var factory = LoggerFactory.Create(builder => builder.AddProvider(capture));
+		using (AionLog.OverrideFactory(factory))
+			log.LogInformation("probe");
+
+		Assert.Equal("SIEGE_LOG", Assert.Single(capture.Entries).Category);
 	}
 
 	private static SiegeLocationData LoadRealSiegeLocations() =>

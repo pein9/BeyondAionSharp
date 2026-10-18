@@ -23,7 +23,8 @@ namespace Aion.GameServer.Handlers.AI;
 [AIName("ahserion")]
 public class AhserionAI : AggressiveNpcAI
 {
-    private static readonly ILogger log = AionLog.For(nameof(AhserionAI));
+    // Java parity: LoggerFactory.getLogger("SIEGE_LOG"), Java's siege.log.
+    private static readonly ILogger log = AionLog.For("SIEGE_LOG");
 
     public AhserionAI(Npc owner) : base(owner)
     {

@@ -27,7 +27,8 @@ namespace Aion.GameServer.Handlers.AI;
 [AIName("artifact")]
 public class ArtifactAI : NpcAI
 {
-    private static readonly ILogger log = AionLog.For(nameof(ArtifactAI));
+    // Java parity: LoggerFactory.getLogger("SIEGE_LOG"), Java's siege.log; the missing-skill error goes to the class's own logger.
+    private static readonly ILogger log = AionLog.For("SIEGE_LOG");
 
     public ArtifactAI(Npc owner)
         : base(owner)
@@ -63,7 +64,7 @@ public class ArtifactAI : NpcAI
 
         if (skillTemplate == null)
         {
-            log.LogError("No skill template for artifact effect id : " + skillId);
+            AionLog.For(nameof(ArtifactAI)).LogError("No skill template for artifact effect id : " + skillId);
             return;
         }
 
