@@ -101,6 +101,11 @@ public static class NaturalHelpItemAllowlist
 		new("ax", 186000007, "bronze-coin", null, "AX-Q5 revision, no limit"),
 		new("ax", 186000008, "silver-coin", null, "MR-i: the check-ins at 31 and 36, no limit", MusterOnly: true),
 		new("ax", 188053787, "stigma-bundle", 1, "MR-g: Q2900's bundle, which the cleanup threw away, once more", MusterOnly: true),
+		// The operator, 2026-10-17: "Seed our bots with a temporal stone when needed and Greater Wind Serum for them to use", then
+		// "We CAN drink the flight potion while on the move, and should drink it when we get the max flight time out of it, also
+		// have our bots use a greater whatever scroll for flight speed boosts." Tigraki Island stands 705 m from any other island.
+		new("rt", 162000026, "wind-serum", 20, "the operator, 2026-10-17: Greater Wind Serums for the crossing past one flight"),
+		new("rt", 164000079, "flight-speed", 10, "the operator, 2026-10-17: a greater flight speed scroll before such a crossing"),
 	];
 }
 

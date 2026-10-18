@@ -1,0 +1,444 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "reshanta-rq-the-siege-quests",
+  "start": {
+    "contract": "natural-reshanta-rt-contract.json",
+    "snapshot": "nl-rt-s1",
+    "mapId": 400010000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 34,
+    "bindNpcId": 730072,
+    "completedQuestIds": [
+      24040,
+      24041,
+      2721,
+      2722,
+      2741,
+      2743,
+      2744,
+      2729,
+      2730,
+      2731,
+      2725,
+      2753,
+      2756,
+      2755,
+      1755,
+      2726,
+      2764,
+      2765,
+      2766,
+      1771,
+      2772
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "primum",
+    "mapId": 400010000,
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "primum",
+      "note": "Primum Fortress, the main island: Jebal, Lakadi, Grunn, Kaoranerk, the obelisk",
+      "min": [
+        850,
+        2780,
+        1600
+      ],
+      "max": [
+        1160,
+        3160,
+        1675
+      ]
+    },
+    {
+      "key": "sulfur-tower",
+      "note": "the Sulfur isle guard tower: Sinjah, and the ashikar assaulters drawn to him (Q24043)",
+      "min": [
+        1062,
+        1930,
+        1575
+      ],
+      "max": [
+        1203,
+        2015,
+        1635
+      ]
+    },
+    {
+      "key": "sulfur-nest",
+      "note": "Sulfur Fortress (1141): the captured prisoners and the way out west to the escort's goal (Q24042)",
+      "min": [
+        1275,
+        1479,
+        1527
+      ],
+      "max": [
+        1530,
+        1589,
+        1591
+      ]
+    },
+    {
+      "key": "eastern-shard",
+      "note": "the Eastern Shard of Latesran, lower: Mure (Q2724)",
+      "min": [
+        1620,
+        2856,
+        1642
+      ],
+      "max": [
+        1670,
+        2906,
+        1692
+      ]
+    },
+    {
+      "key": "ganglot-isle",
+      "note": "Gjalf and Ganglot",
+      "min": [
+        1994,
+        3203,
+        1632
+      ],
+      "max": [
+        2038,
+        3250,
+        1672
+      ]
+    },
+    {
+      "key": "amundi",
+      "note": "Amundi at Siel's Eastern Fortress (1132), placed by the siege boot",
+      "min": [
+        3129,
+        3378,
+        1521
+      ],
+      "max": [
+        3169,
+        3418,
+        1561
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 24043,
+      "category": "MISSION",
+      "minimumLevel": 25,
+      "rewardExperience": 404426,
+      "prerequisite": null,
+      "handler": "reshanta/_24043LazyLanguageLessons.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "sulfur-tower",
+      "stopsAtVar": 5
+    },
+    {
+      "id": 24042,
+      "category": "MISSION",
+      "minimumLevel": 25,
+      "rewardExperience": 450488,
+      "prerequisite": null,
+      "handler": "reshanta/_24042AReadyRescue.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "sulfur-nest"
+    },
+    {
+      "id": 2724,
+      "category": "QUEST",
+      "minimumLevel": 25,
+      "rewardExperience": 155871,
+      "prerequisite": null,
+      "handler": "reshanta/_2724MissingInAction.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "amundi"
+    }
+  ],
+  "order": [
+    24043,
+    24042,
+    2724
+  ],
+  "steps": [
+    {
+      "key": "q24043-v3-grunn",
+      "questId": 24043,
+      "var": 3,
+      "npcId": 278039,
+      "position": [
+        908.979,
+        3017.65,
+        1655.44
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO4"
+      ],
+      "pages": [
+        2034
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q24043-v4-kaoranerk",
+      "questId": 24043,
+      "var": 4,
+      "npcId": 279027,
+      "position": [
+        870.0,
+        3102.0,
+        1642.93
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO5"
+      ],
+      "pages": [
+        2375
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q24042-v3-prisoner",
+      "questId": 24042,
+      "var": 3,
+      "npcId": 253626,
+      "position": [
+        1496.997,
+        1538.251,
+        1547.213
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT4_1",
+        "SETPRO4"
+      ],
+      "pages": [
+        2034,
+        2035
+      ],
+      "area": "sulfur-nest",
+      "movieId": 294
+    },
+    {
+      "key": "q24042-reward-lakadi",
+      "questId": 24042,
+      "status": "REWARD",
+      "npcId": 278019,
+      "position": [
+        1110.1,
+        2961.53,
+        1639.93
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        10002,
+        5
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2724-offer-jebal",
+      "questId": 2724,
+      "status": "OFFER",
+      "npcId": 278002,
+      "position": [
+        924.903,
+        2993.79,
+        1646.4
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2724-v0-mure",
+      "questId": 2724,
+      "var": 0,
+      "npcId": 278014,
+      "position": [
+        1644.75,
+        2881.42,
+        1667.14
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "eastern-shard"
+    },
+    {
+      "key": "q2724-v1-ganglot",
+      "questId": 2724,
+      "var": 1,
+      "npcId": 278089,
+      "position": [
+        2014.26,
+        3223.02,
+        1651.65
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "ganglot-isle"
+    },
+    {
+      "key": "q2724-v2-amundi",
+      "questId": 2724,
+      "var": 2,
+      "npcId": 278097,
+      "position": [
+        3148.968,
+        3398.08,
+        1540.571
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        2375,
+        5
+      ],
+      "area": "amundi"
+    }
+  ],
+  "objectUses": [],
+  "collections": [],
+  "escorts": [
+    {
+      "key": "q24042-prisoner",
+      "questId": 24042,
+      "followerNpcId": 253626,
+      "goalNpcId": 0,
+      "goal": [
+        1295.0565,
+        1499.0419,
+        1571.1864
+      ],
+      "goalRadius": 20,
+      "startStep": "q24042-v3-prisoner",
+      "restartStep": "q24042-v3-prisoner",
+      "followVar": 4,
+      "successVar": 4,
+      "lostVar": 3,
+      "leash": 50,
+      "checkMillis": 1000,
+      "movieId": 290,
+      "followerRespawnSeconds": 295,
+      "followerRunSpeed": 6,
+      "clearAreas": [
+        "sulfur-nest"
+      ],
+      "maxAttempts": 3,
+      "area": "sulfur-nest",
+      "startVar": 3
+    }
+  ],
+  "hunts": [
+    {
+      "questId": 24043,
+      "npcIds": [
+        253610,
+        253611
+      ],
+      "fromVar": 2,
+      "toVar": 3,
+      "area": "sulfur-tower",
+      "note": "Java _24043 onAttackEvent: a hit on an ashikar assaulter within 15 m of Sinjah's first spawn kills it and sets var 3",
+      "lure": [
+        1172.83,
+        1959.83,
+        1605.35
+      ],
+      "lureRadius": 15
+    }
+  ],
+  "bind": {
+    "npcId": 730072,
+    "position": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "onArrival": true,
+    "price": 4071,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "WHOLE_MAP_400010000",
+        "bottom": 500,
+        "top": 4596
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 400010000,
+    "completedQuestIds": [
+      24042,
+      2724
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 34,
+    "snapshot": "nl-rq",
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 30,
+    "bindNpcId": 730072,
+    "heldQuestIds": []
+  }
+}

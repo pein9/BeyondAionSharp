@@ -1,0 +1,412 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "reshanta-rt-tigraki",
+  "start": {
+    "contract": "natural-reshanta-ru-contract.json",
+    "snapshot": "nl-ru-s1",
+    "mapId": 400010000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 34,
+    "bindNpcId": 730072,
+    "completedQuestIds": [
+      24040,
+      24041,
+      2721,
+      2722,
+      2741,
+      2743,
+      2744,
+      2729,
+      2730,
+      2731,
+      2725,
+      2753,
+      2756,
+      2755,
+      1755,
+      2726,
+      2764,
+      2765,
+      2766,
+      1771,
+      2772
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "primum",
+    "mapId": 400010000,
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 200
+  },
+  "areas": [
+    {
+      "key": "primum",
+      "note": "Primum Fortress, the main island: Holm (walks), Tierunerk, the obelisk",
+      "min": [
+        850,
+        2780,
+        1600
+      ],
+      "max": [
+        1160,
+        3160,
+        1675
+      ]
+    },
+    {
+      "key": "tigraki",
+      "note": "Tigraki Island, the shugo workshop: Gaochinerk and Jarumonerk (705 m from any other island)",
+      "min": [
+        463,
+        1014,
+        2822
+      ],
+      "max": [
+        623,
+        1174,
+        2853
+      ]
+    },
+    {
+      "key": "black-cloud",
+      "note": "Black Cloud Island: Garkbinerk, at the end of flypath 55",
+      "min": [
+        3365,
+        2422,
+        2742
+      ],
+      "max": [
+        3415,
+        2472,
+        2792
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2767,
+      "category": "QUEST",
+      "minimumLevel": 29,
+      "rewardExperience": 233824,
+      "prerequisite": null,
+      "handler": "reshanta/_2767AFruitfulPartnership.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "tigraki"
+    },
+    {
+      "id": 24045,
+      "category": "MISSION",
+      "minimumLevel": 33,
+      "rewardExperience": 5391316,
+      "prerequisite": null,
+      "handler": "reshanta/_24045ASpeedyErrand.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "tigraki",
+      "prerequisites": [
+        24041
+      ]
+    }
+  ],
+  "order": [
+    2767,
+    24045
+  ],
+  "steps": [
+    {
+      "key": "q2767-offer-tierunerk",
+      "questId": 2767,
+      "status": "OFFER",
+      "npcId": 279004,
+      "position": [
+        924.334,
+        3033.85,
+        1646.44
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2767-v0-gaochinerk",
+      "questId": 2767,
+      "var": 0,
+      "npcId": 279024,
+      "position": [
+        587.0,
+        1155.0,
+        2836.5127
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "tigraki"
+    },
+    {
+      "key": "q2767-v1-jarumonerk",
+      "questId": 2767,
+      "var": 1,
+      "npcId": 279022,
+      "position": [
+        567.07294,
+        1132.4623,
+        2836.513
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO2"
+      ],
+      "pages": [
+        1693
+      ],
+      "area": "tigraki"
+    },
+    {
+      "key": "q2767-v2-tierunerk",
+      "questId": 2767,
+      "var": 2,
+      "npcId": 279004,
+      "position": [
+        924.334,
+        3033.85,
+        1646.44
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD"
+      ],
+      "pages": [
+        2375
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q2767-reward-tierunerk",
+      "questId": 2767,
+      "status": "REWARD",
+      "npcId": 279004,
+      "position": [
+        924.334,
+        3033.85,
+        1646.44
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        5,
+        5
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q24045-v0-holm",
+      "questId": 24045,
+      "var": 0,
+      "npcId": 278034,
+      "position": [
+        1075.98,
+        2841.05,
+        1636.0677
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1011
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q24045-v1-tierunerk",
+      "questId": 24045,
+      "var": 1,
+      "npcId": 279004,
+      "position": [
+        924.334,
+        3033.85,
+        1646.44
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO2"
+      ],
+      "pages": [
+        1352
+      ],
+      "area": "primum"
+    },
+    {
+      "key": "q24045-v2-gaochinerk",
+      "questId": 24045,
+      "var": 2,
+      "npcId": 279024,
+      "position": [
+        587.0,
+        1155.0,
+        2836.5127
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO3"
+      ],
+      "pages": [
+        1693
+      ],
+      "area": "tigraki",
+      "flyPathEnd": [
+        3395,
+        2446,
+        2767
+      ],
+      "flightSeconds": 33
+    },
+    {
+      "key": "q24045-v3-garkbinerk",
+      "questId": 24045,
+      "var": 3,
+      "npcId": 279006,
+      "position": [
+        3389.64,
+        2447.05,
+        2766.7
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO4"
+      ],
+      "pages": [
+        2034
+      ],
+      "area": "black-cloud",
+      "flyPathEnd": [
+        589,
+        1160,
+        2837
+      ],
+      "flightSeconds": 33
+    },
+    {
+      "key": "q24045-v4-gaochinerk",
+      "questId": 24045,
+      "var": 4,
+      "npcId": 279024,
+      "position": [
+        587.0,
+        1155.0,
+        2836.5127
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO5"
+      ],
+      "pages": [
+        2375
+      ],
+      "area": "tigraki"
+    },
+    {
+      "key": "q24045-reward-holm",
+      "questId": 24045,
+      "status": "REWARD",
+      "npcId": 278034,
+      "position": [
+        1075.98,
+        2841.05,
+        1636.0677
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        10002,
+        5
+      ],
+      "area": "primum"
+    }
+  ],
+  "objectUses": [],
+  "collections": [],
+  "bind": {
+    "npcId": 730072,
+    "position": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "onArrival": true,
+    "price": 4071,
+    "acceptRange": 5
+  },
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [],
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "WHOLE_MAP_400010000",
+        "bottom": 500,
+        "top": 4596
+      }
+    ],
+    "waterLevel": 16,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [],
+  "endpoint": {
+    "mapId": 400010000,
+    "completedQuestIds": [
+      2767,
+      24045
+    ],
+    "inHub": false,
+    "alive": true,
+    "minimumLevel": 34,
+    "snapshot": "nl-rt",
+    "anchor": [
+      928.648,
+      3000.48,
+      1655.77
+    ],
+    "radius": 30,
+    "bindNpcId": 730072,
+    "heldQuestIds": []
+  }
+}

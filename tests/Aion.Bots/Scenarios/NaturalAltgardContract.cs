@@ -106,12 +106,16 @@ public sealed record NaturalAltgardContract(
 		["re"] = ("natural-reshanta-re-contract.json", "natural-reshanta-re-plans"),
 		["rs"] = ("natural-reshanta-rs-contract.json", "natural-reshanta-rs-plans"),
 		["ru"] = ("natural-reshanta-ru-contract.json", "natural-reshanta-ru-plans"),
+		// NL-3: "rq" plays what the restored sieges open (Q24042's prisoner, Q2724's Amundi) and Q24043's lure.
+		["rq"] = ("natural-reshanta-rq-contract.json", null),
+		// NL-3: "rt" is Tigraki Island (Q24045, Q2767), 705 m from any other island, reached on Wind Serums.
+		["rt"] = ("natural-reshanta-rt-contract.json", null),
 	};
 
 	/// <summary>The legs played by a mustered character of level 26 or more: the Morheim leg to level 31
 	/// (docs/natural-morheim-leveling.md), on Morheim, and the leg to 36's (docs/natural-leg-36.md), on Morheim and Brusthonin.</summary>
 	public static readonly IReadOnlySet<string> MusteredLegs = new HashSet<string>
-		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp", "re", "rs", "ru" };
+		{ "mf", "mk", "md", "mc", "ms", "ma", "mg", "mgk", "mgd", "mgs", "mb", "bs", "rw", "rp", "re", "rs", "ru", "rq", "rt" };
 
 	/// <summary>NL-2: Brusthonin, the settlers' land south of Morheim.</summary>
 	public const int Brusthonin = 220050000;
@@ -397,7 +401,8 @@ public sealed record NaturalAltgardContract(
 				.Concat(plan.Steps.SelectMany(step => step.Npcs.Concat(step.Sources.Select(source => source.Npc).OfType<QuestRunNpc>())))
 				.Select(npc => npc.Id)))
 			.Concat(ObjectUseList.Select(use => use.NpcId))
-			.Concat(EscortList.SelectMany(escort => new[] { escort.FollowerNpcId, escort.GoalNpcId }))
+			// NL-3: an escort to coordinates (Q24042's, Java CoordinateDestinationChecker) names no goal npc.
+			.Concat(EscortList.SelectMany(escort => escort.GoalNpcId == 0 ? [escort.FollowerNpcId] : new[] { escort.FollowerNpcId, escort.GoalNpcId }))
 			.Concat(HuntList.SelectMany(hunt => hunt.NpcIds))
 			.Concat(SpawnList.Select(spawn => spawn.TriggerNpcId))
 			.Concat(TimedSpawnList.Select(spawn => spawn.NpcId))
@@ -444,9 +449,12 @@ public sealed record NaturalAltgardQuest(int Id, string Category, int MinimumLev
 }
 
 /// <summary>One scripted dialog step. <c>OFFER</c> is a quest the player has not taken yet.</summary>
+/// <param name="FlyPathEnd">NL-3: the talk starts a scripted quest flight (Java setFlightTeleportId, SM_EMOTION START_FLYTELEPORT:
+/// Q24045's Gaochinerk and Garkbinerk); the client flies to here in <paramref name="FlightSeconds"/> and lands with
+/// LAND_FLYTELEPORT.</param>
 public sealed record NaturalAltgardStep(string Key, int QuestId, int? Var, string? Status, int NpcId, float[] Position,
 	int TalkRange, string[] Actions, int[] Pages, int? MovieId, int? ReceivesItemId, string? Area, bool Flight, string? Correction,
-	int? MapId = null, NaturalAscensionTeleport? Teleport = null, int? NextVar = null)
+	int? MapId = null, NaturalAscensionTeleport? Teleport = null, int? NextVar = null, float[]? FlyPathEnd = null, int? FlightSeconds = null)
 {
 	public string ExpectedStatus => Status ?? "START";
 }
@@ -554,7 +562,10 @@ public sealed record NaturalAltgardBind(int NpcId, float[] Position, bool OnArri
 
 /// <summary>AB-01: a custom handler's kill counter: each kill of <paramref name="NpcIds"/> moves the var from
 /// <paramref name="FromVar"/> toward <paramref name="ToVar"/> (Q2288, Q2289, Q24112, Q24013).</summary>
-public sealed record NaturalAltgardHunt(int QuestId, int[] NpcIds, int FromVar, int ToVar, string Area, string? Note = null, int? MapId = null);
+/// <param name="Lure">NL-3: the point a monster is drawn to before the blow that counts (Java _24043's onAttackEvent counts a
+/// hit on an ashikar assaulter within <paramref name="LureRadius"/> m of Sinjah's first spawn, and none stands that near).</param>
+public sealed record NaturalAltgardHunt(int QuestId, int[] NpcIds, int FromVar, int ToVar, string Area, string? Note = null, int? MapId = null,
+	float[]? Lure = null, float LureRadius = 0);
 
 /// <summary>NR-R18a: a class's own entries of one quest, for a quest whose server handler branches on the class (Java
 /// <c>_24016AStrangeNewThread</c> gives the Rider other pages, another boss and other vars). A leg's steps, object uses,

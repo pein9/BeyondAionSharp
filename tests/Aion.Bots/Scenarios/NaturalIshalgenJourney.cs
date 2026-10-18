@@ -3368,6 +3368,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				long? lastTakeoff = null;
 				// NL-3: the speed the server announced with the last takeoff (a hop's range is flight time by speed).
 				float lastFlightSpeed = 9f;
+				// NL-3: what this leg's approved supply has given so far, by item (its limits count the whole leg).
+				var legItemsSupplied = new Dictionary<int, long>();
 				// The operator, 2026-10-13: "If stuck on lake, can always FLY back."
 				flyOutOfStrand = leg.Flight == null ? null : async () =>
 				{
@@ -3486,6 +3488,67 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						// NL-3: Reshanta's islands stand farther apart than one flight's time: the bot hops by the island ground in
 						// range nearest the landing, lands, lets its flight time come back (FlyToAsync waits for it) and flies on.
 						BotPosition[] hostile = HostileSpotsOf(map);
+						// NL-3 (the operator, 2026-10-17): a landing past every stone (Tigraki Island, 705 m from any other island) is
+						// flown to on Greater Wind Serums, drunk on the move once their whole restore fits, with a flight speed scroll
+						// read on the ground first. Both are the leg's approved supply; a leg without it does not try.
+						bool SerumsApproved() => runtime.SupplyHelpItemAsync != null &&
+							NaturalHelpItemAllowlist.LegApproved.Any(entry => entry.Leg == altgardLegId && entry.Family == "wind-serum");
+						async Task<bool> SerumCrossingAsync(BotPosition from, BotPosition target, float height)
+						{
+							if (NaturalHelpItemAllowlist.LegApproved.FirstOrDefault(entry => entry.Leg == altgardLegId && entry.Family == "wind-serum") is not { } serumApproval ||
+								runtime.SupplyHelpItemAsync is not { } supply || !NaturalFlightProtocol.Plan(geometry, map, from, target, height).IsUsable)
+								return false;
+							async Task<BotInventoryItem?> SupplyAsync(NaturalHelpLegSupply approval, long wanted)
+							{
+								long owned = ItemCount(session.Api.World, approval.ItemId);
+								if (owned < wanted)
+								{
+									long already = legItemsSupplied.GetValueOrDefault(approval.ItemId);
+									NaturalHelpItemSupply.RequireApproved(approval.ItemId, wanted - owned, altgardLegId, already);
+									await supply(approval.ItemId, wanted - owned, token);
+									await session.SynchronizeAsync(token);
+									legItemsSupplied[approval.ItemId] = already + wanted - owned;
+									session.TraceDiagnostic("help-item-supplied", new Dictionary<string, object?>
+									{
+										["trigger"] = "serum-crossing", ["itemId"] = approval.ItemId, ["family"] = approval.Family, ["count"] = wanted - owned,
+										["before"] = owned, ["after"] = ItemCount(session.Api.World, approval.ItemId), ["decision"] = approval.Decision,
+									});
+								}
+								return session.Api.World.Inventory.Values.FirstOrDefault(item => item.ItemId == approval.ItemId);
+							}
+							var serumTemplate = runtime.Data.ItemDataDh.GetItemTemplate(serumApproval.ItemId)
+								?? throw new InvalidDataException($"Serum {serumApproval.ItemId} has no item template.");
+							await SupplyAsync(serumApproval, 4);
+							if (NaturalHelpItemAllowlist.LegApproved.FirstOrDefault(entry => entry.Leg == altgardLegId && entry.Family == "flight-speed") is { } scrollApproval &&
+								await SupplyAsync(scrollApproval, 1) is { } scroll && runtime.Data.ItemDataDh.GetItemTemplate(scrollApproval.ItemId) is { } scrollTemplate)
+							{
+								await session.SendPacketAsync(session.Api.UseItem(scroll.ObjectId, scrollTemplate), token);
+								await session.AdvanceAsync(TimeSpan.FromMilliseconds(scrollTemplate.GetCastingDelay() + 500), token);
+								await session.SynchronizeAsync(token);
+							}
+							// Skill 9911 restores 12 flight time a skill level (procfphealinstant delta 12); the Greater serum is level 3.
+							int restore = 12 * 3;
+							long lastDrink = long.MinValue / 2;
+							async Task DrinkWhenDueAsync()
+							{
+								BotWorldModel world = session.Api.World;
+								if (world.CurrentFlightTime > world.MaxFlightTime - restore || runtime.NowMillis - lastDrink < 54_000 ||
+									world.Inventory.Values.FirstOrDefault(item => item.ItemId == serumApproval.ItemId) is not { } serum) return;
+								int before = world.CurrentFlightTime;
+								await session.SendPacketAsync(session.Api.UseItem(serum.ObjectId, serumTemplate), token);
+								lastDrink = runtime.NowMillis;
+								session.TraceDiagnostic("wind-serum-drunk", new Dictionary<string, object?>
+								{
+									["fp"] = before, ["position"] = session.CurrentPosition, ["left"] = ItemCount(world, serumApproval.ItemId) - 1,
+								});
+							}
+							int serums = (int)Math.Min(ItemCount(session.Api.World, serumApproval.ItemId), 2);
+							session.TraceDiagnostic("serum-crossing", new Dictionary<string, object?>
+							{
+								["from"] = session.CurrentPosition, ["target"] = target, ["landing"] = land, ["serums"] = serums, ["extraFp"] = restore * serums,
+							});
+							return await FlyToAsync(target, height, mayRefuse: true, extraFp: restore * serums, inFlight: DrinkWhenDueAsync);
+						}
 						for (int hop = 0; ; hop++)
 						{
 							// On a stone the bot waits for its flight time as a player does, answering what attacks it: the Cleric sat
@@ -3513,26 +3576,37 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							// confirmed by its planned route; from Ganglot's island nothing clears 15 m over the higher end, so a higher
 							// cruise is tried next. It has open sky above it: a ledge 100 m under Primum is nearest Primum's landing
 							// and no flight leaves it upward. Ground 30 m or more from every aggressive monster's spawn comes first.
-							(BotPosition At, float Rise)? stone = null;
-							foreach ((bool calm, float rise) in new[] { (true, 15f), (true, 60f), (false, 15f), (false, 60f) })
+							(BotPosition At, float Rise)? FindStone(float reach)
 							{
-								foreach (BotPosition at in geometry.GroundNear(map, from, range, Inside)
-									.Where(at => Across(at, land) + 30 < Across(from, land) && Flown(from, at, rise) <= range * 0.95f)
-									.OrderBy(at => Across(at, land)).Take(400)
-									.Where(at => (!calm || !hostile.Any(spot => Distance(spot, at) < 30)) && SkyAbove(at) &&
-										NaturalFlightProtocol.DirectlyClear(geometry, map, from, at, Over(from, at, rise))).Take(4))
-								{
-									NaturalFlightRoute planned = NaturalFlightProtocol.Plan(geometry, map, from, at, Over(from, at, rise));
-									if (planned.IsUsable && planned.Meters <= range) { stone = (at, rise); break; }
-								}
-								if (stone != null) break;
+								foreach ((bool calm, float rise) in new[] { (true, 15f), (true, 60f), (false, 15f), (false, 60f) })
+									foreach (BotPosition at in geometry.GroundNear(map, from, reach, Inside)
+										.Where(at => Across(at, land) + 30 < Across(from, land) && Flown(from, at, rise) <= reach * 0.95f)
+										.OrderBy(at => Across(at, land)).Take(400)
+										.Where(at => (!calm || !hostile.Any(spot => Distance(spot, at) < 30)) && SkyAbove(at) &&
+											NaturalFlightProtocol.DirectlyClear(geometry, map, from, at, Over(from, at, rise))).Take(4))
+									{
+										NaturalFlightRoute planned = NaturalFlightProtocol.Plan(geometry, map, from, at, Over(from, at, rise));
+										if (planned.IsUsable && planned.Meters <= reach) return (at, rise);
+									}
+								return null;
 							}
+							(BotPosition At, float Rise)? stone = FindStone(range);
 							session.TraceDiagnostic("fly-hop", new Dictionary<string, object?>
 							{
 								["hop"] = hop, ["from"] = from, ["landing"] = land, ["range"] = range, ["meters"] = route is { IsUsable: true } ? route.Meters : null,
 								["stone"] = stone?.At, ["rise"] = stone?.Rise,
 							});
-							if (stone is not { } next) return false;
+							if (stone is not { } next)
+							{
+								// Past every stone: the landing, or the stone nearest it, within what two serums add to one flight.
+								if (!SerumsApproved()) return false;
+								float reach = range + 2 * 12 * 3 * lastFlightSpeed;
+								(BotPosition At, float Height)? target = Distance(from, land) <= reach ? (land, height)
+									: FindStone(reach) is { } far ? (far.At, Over(from, far.At, far.Rise)) : null;
+								if (target is not { } go || !await SerumCrossingAsync(from, go.At, go.Height)) return false;
+								if (Distance(session.CurrentPosition, land) < 3) return true;
+								continue;
+							}
 							await FlyToAsync(next.At, Over(from, next.At, next.Rise), mayRefuse: true);
 						}
 					}
@@ -4154,6 +4228,58 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 									await RestSafelyAsync(token);
 									break;
 								}
+								// NL-3: a lure (Q24043): the monster is drawn into the radius of the point first, by walking into its aggro
+								// range without a blow and back to the point with it following, and struck once it stands inside.
+								if (hunt.Lure is { Length: 3 } lure)
+								{
+									BotPosition point = new(lure[0], lure[1], lure[2], 0);
+									for (int attempt = 0; attempt < 6 && !Counted() && !session.Api.World.IsDead; attempt++)
+									{
+										// aioncodex /48/ (Sinjah): "Once it's badly wounded, bring it close, and we'll capture it." The monster
+										// follows once it has taken the bot as its target: the bot waits for that, closer if it has not.
+										int drawn = await ApproachShippedSpawnAsync(hunt.NpcIds.First(SpawnsOnMap), withinRange: 9);
+										bool Drawn() => Engaged() is var engaged && (engaged.Attackers.Contains(drawn) || engaged.Pursuers.Contains(drawn));
+										for (int wait = 0; wait < 12 && !Drawn() && !session.Api.World.IsDead; wait++)
+										{
+											if (wait == 6) await ApproachShippedSpawnAsync(hunt.NpcIds.First(SpawnsOnMap), withinRange: 4);
+											await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
+											await session.SynchronizeAsync(token);
+										}
+										await NaturalIshalgenNavigator.ExploreAnchorAsync(contract.MapId, -1, point, navigator, "lure-point", token);
+										float? closest = null;
+										// The blow comes from where the bot stands, the moment the monster is inside the radius: the guards
+										// by Sinjah kill it if it lingers, and a guard's kill does not count.
+										for (int wait = 0; wait < 40 && !Counted() && !session.Api.World.IsDead; wait++)
+										{
+											await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+											await session.SynchronizeAsync(token);
+											if (!session.Api.World.Objects.TryGetValue(drawn, out BotKnownObject? follower)) break;
+											float gap = Distance(follower.Position, point);
+											closest = MathF.Min(closest ?? gap, gap);
+											if (gap > hunt.LureRadius - 1) continue;
+											// The blow that counts is an auto-attack: Java's PlayerController.attackTarget calls the quest's
+											// attack event before the swing, and skill damage has not reached NpcController.onAttack since
+											// Java's 47ec44faf8 (the Cleric's spells at 5 m from Sinjah counted for nothing). The monster has
+											// come to fight the bot, so it stands within reach or soon will.
+											await session.SendPacketAsync(session.Api.Target(drawn), token);
+											for (int swing = 0; swing < 4 && !Counted() && session.Api.World.Objects.ContainsKey(drawn); swing++)
+											{
+												await session.SendPacketAsync(session.Api.Attack(drawn, 1500, (byte)swing), token);
+												await session.AdvanceAsync(TimeSpan.FromMilliseconds(1600), token);
+												await session.SynchronizeAsync(token);
+											}
+											if (!Counted()) await DefendAgainstEngagedAsync("lure-strike");
+											break;
+										}
+										session.TraceDiagnostic($"altgard-{altgardLegId}-lure", new Dictionary<string, object?>
+										{
+											["quest"] = next.QuestId, ["attempt"] = attempt, ["monster"] = drawn, ["closest"] = closest, ["counted"] = Counted(),
+										});
+										if (!Counted()) await RestSafelyAsync(token);
+									}
+									Require.True(Counted(), $"Q{next.QuestId}: no lured monster was struck within {hunt.LureRadius} m of the point.");
+									break;
+								}
 								int huntKind = hunt.NpcIds.First(SpawnsOnMap);
 								int target;
 								// NR-R7b: the hunt ends when the quest has counted its kill. Comrade Sumarhon fell as an attacker in his own
@@ -4517,8 +4643,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				// Fly from wherever the Cleric stands (AF-05): wait out the takeoff reuse and a refill, check the policy first.
 				// NL-3: with mayRefuse, a flight that the speed the bot took off at cannot carry (Soul Sickness after a revive
 				// slows it: 592 m cost 77 FP of 72) lands again where it rose and answers false; the hops plan again at that speed.
+				// NL-3: extraFp is the flight time the bot's Wind Serums will add on the way (drunk by inFlight between the flight's
+				// pieces), counted when the flight is planned.
 				async Task<bool> FlyToAsync(BotPosition destination, float? cruiseHeight = null, NaturalAltgardFlight? flightRules = null, bool land = true,
-					bool mayRefuse = false)
+					bool mayRefuse = false, int extraFp = 0, Func<Task>? inFlight = null)
 				{
 					// Java PlayerController.updateSoulSickness applies 8291 on bind revival. Its speed penalty
 					// doubles the pillar descent's FP cost; wait for the real icon removal before taking off.
@@ -4559,7 +4687,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					lastTakeoff = runtime.NowMillis;
 					float speed = await NaturalFlightProtocol.TakeOffAsync(session, token);
 					lastFlightSpeed = speed;
-					NaturalFlightDecision go = NaturalFlightPolicy.CanFly(NaturalFlightProtocol.ToPlan(route, from, speed), world.CurrentFlightTime, zones);
+					NaturalFlightDecision go = NaturalFlightPolicy.CanFly(NaturalFlightProtocol.ToPlan(route, from, speed), world.CurrentFlightTime + extraFp, zones);
 					session.TraceDiagnostic($"altgard-{altgardLegId}-flight", new Dictionary<string, object?>
 					{
 						["from"] = from, ["to"] = destination, ["meters"] = route.Meters, ["fp"] = world.CurrentFlightTime, ["decision"] = go.Reason,
@@ -4571,7 +4699,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						return false;
 					}
 					Require.True(go.Allowed, go.Reason);
-					await NaturalFlightProtocol.FlyAsync(session, flightMap, from, route.Waypoints, speed, token);
+					await NaturalFlightProtocol.FlyAsync(session, flightMap, from, route.Waypoints, speed, token, inFlight);
 					if (land) await NaturalFlightProtocol.LandAsync(session, token);
 					await session.SynchronizeAsync(token);
 					return true;
@@ -5560,11 +5688,45 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					{
 						try
 						{
+							int beforeTalk = session.PacketHistory.Count;
 							string change = await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token);
 							session.TraceDiagnostic($"altgard-{altgardLegId}-step", new Dictionary<string, object?> { ["step"] = step.Key, ["change"] = change });
+							// NL-3: the talk started a scripted quest flight; the client flies its path and lands, as Hagen's flight is
+							// flown on the bridge. The start can come back inside the talk itself.
+							if (step.FlyPathEnd is { Length: 3 } pathEnd && step.FlightSeconds is int pathSeconds)
+							{
+								static bool Started(DecodedBotServerPacket packet, int self) => packet.PacketType == typeof(SM_EMOTION) &&
+									packet.Get<int>("senderObjectId") == self && packet.Get<byte>("emotionType") == (byte)EmotionType.START_FLYTELEPORT;
+								if (!session.PacketHistory.Skip(Math.Min(beforeTalk, session.PacketHistory.Count)).Any(packet => Started(packet, session.CharacterId)))
+									await session.WaitForPacketAsync(packet => Started(packet, session.CharacterId), token);
+								await session.ExecuteMovementAsync(CapitalAscensionScenario.CreateQuestFlight(session.CurrentPosition,
+									new BotPosition(pathEnd[0], pathEnd[1], pathEnd[2], 0), contract.MapId, TimeSpan.FromSeconds(pathSeconds)), token);
+								await session.SendPacketAsync(GameClientPackets.Emotion((byte)EmotionType.LAND_FLYTELEPORT), token);
+								await session.SynchronizeAsync(token);
+								session.TraceDiagnostic($"altgard-{altgardLegId}-quest-flight", new Dictionary<string, object?>
+								{
+									["step"] = step.Key, ["landing"] = session.CurrentPosition, ["seconds"] = pathSeconds,
+								});
+							}
 							return;
 						}
 						catch (NaturalDialogTooFarException) when (attempt < 3 && !step.Flight) { await ReapproachForDialogAsync(npc); }
+						// NL-3: Q24042's hand-in at Lakadi after the escort: the server answered the reward page and took no notice of
+						// the selection that ends it (no packet at all). The talk is played once more.
+						// The second run lost the reward page request the same way: a page awaited for the real-time limit.
+						catch (Exception unmoved) when (attempt < 3 && step.ExpectedStatus == "REWARD" &&
+							(unmoved is InvalidDataException && unmoved.Message.Contains("did not move", StringComparison.Ordinal) ||
+							 unmoved is TimeoutException && unmoved.Message.Contains("SM_DIALOG_WINDOW", StringComparison.Ordinal)))
+						{
+							session.TraceDiagnostic("reward-talk-again", new Dictionary<string, object?>
+							{
+								["step"] = step.Key, ["reason"] = unmoved.Message, ["position"] = session.CurrentPosition,
+							});
+							await session.SendPacketAsync(session.Api.CloseDialog(npc), token);
+							await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+							await session.SynchronizeAsync(token);
+							await ReapproachForDialogAsync(npc);
+						}
 						catch (NaturalDialogNpcFightingException fighting) when (fightsWaitedOut < 12)
 						{
 							// NR-R11b: the NPC is fighting a monster and takes no dialog request. Let the fight end, as a player stands by
@@ -5814,9 +5976,19 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					{
 						WalkToAsync = async (to, walkToken) =>
 						{
+							BotPosition beforeWalk = session.CurrentPosition;
 							IReadOnlyList<BotPosition> path = geometry.FindJourneyPath(map, session.CurrentPosition, to);
-							await navigator.MoveAsync(path.Count > 0 ? path : [to], walkToken);
+							// NL-3: a follower on another island (Q24042's prisoners in Sulfur Fortress, two islands from Primum) is
+							// flown to before the follow starts; once he follows, the bot only walks.
+							if (path.Count == 0 && flyAcross != null && Distance(beforeWalk, to) > 30 &&
+								NaturalAltgardQuestSteps.State(session.Api.World, escort.QuestId)?.Var != escort.FollowVar)
+								await flyAcross(to);
+							else
+								await navigator.MoveAsync(path.Count > 0 ? path : [to], walkToken);
 							await session.SynchronizeAsync(walkToken);
+							// A walk that moved nothing still takes game time: the escort ticks again at once otherwise, and the SIM
+							// clock stood still at 2 s while the trace grew.
+							if (Distance(beforeWalk, session.CurrentPosition) < 0.5f) await session.AdvanceAsync(TimeSpan.FromSeconds(1), walkToken);
 						},
 						Route = () => escortRoute,
 						FightAsync = async _ => await DefendAgainstEngagedAsync($"escort-{escort.Key}"),
@@ -5828,7 +6000,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						{
 							long? firstKill = null;
 							int kills = 0;
-							foreach (int anchorNpc in new[] { escort.GoalNpcId, escort.FollowerNpcId })
+							foreach (int anchorNpc in new[] { escort.GoalNpcId, escort.FollowerNpcId }.Where(id => id != 0))
 							{
 								// NR-R8d: a follower that keeps hours (Java temporary_spawn; Q2284's, 04:00-21:00) can be gone when the
 								// clearing comes back to him: the Bard's clearing ran into the night after another bot's escort had cost it
@@ -6652,6 +6824,12 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					.Where(waypoint => !UsesProvenWarlockSpawn(templateId) ||
 						Distance(waypoint.Position, new BotPosition(2400.88f, 2171.88f, 270.328f, 2)) < 1)
 					.OrderByDescending(Connected).ThenBy(waypoint => Distance(session.CurrentPosition, waypoint.Position)).ToArray();
+				// NL-3: a siege spawn (Q24042's prisoners at Sulfur Fortress) is in no spawn graph; the leg's own steps name where it
+				// stands.
+				if (anchors.Length == 0 && altgardLeg != null)
+					anchors = [.. altgardLeg.Steps.Where(step => step.NpcId == templateId && altgardLeg.StepMap(step) == contract.MapId)
+						.Select(step => new BotWaypoint(-1, contract.MapId, new BotPosition(step.Position[0], step.Position[1], step.Position[2], 0),
+							BotWaypointSource.QuestNpc, templateId))];
 				if (anchors.Length == 0) throw new InvalidDataException($"Shipped spawn graph has no NPC {templateId}.");
 				await BuffForStarterTravelLegAsync(anchors[0].Position);
 				// AG-07: from far off, the navigator's hazard replanning can circle over monster ground for its whole budget (the

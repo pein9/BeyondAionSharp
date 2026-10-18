@@ -152,18 +152,28 @@ public static class NaturalFlightProtocol
 	}
 
 	/// <summary>Fly the waypoints at <paramref name="speed"/>, one <c>CM_MOVE_IN_AIR</c> sample every half second.</summary>
+	/// <param name="betweenPieces">NL-3: when given, each leg is flown in pieces of at most four seconds and this runs between
+	/// them (a Wind Serum drunk on the move once its full restore fits).</param>
 	public static async Task FlyAsync(INaturalJourneySession session, int mapId, BotPosition start, IReadOnlyList<BotPosition> waypoints,
-		float speed, CancellationToken token)
+		float speed, CancellationToken token, Func<Task>? betweenPieces = null)
 	{
 		BotPosition current = start;
 		foreach (BotPosition point in waypoints)
 		{
 			float meters = NaturalFlightPolicy.Distance(current, point);
 			if (meters <= 0.01f) continue;
-			TimeSpan duration = TimeSpan.FromSeconds(meters / speed);
-			if (duration < SampleInterval) duration = SampleInterval;
-			await session.ExecuteMovementAsync(CapitalAscensionScenario.CreateQuestFlight(current, point, mapId, duration), token);
-			current = point;
+			int pieces = betweenPieces == null ? 1 : Math.Max(1, (int)MathF.Ceiling(meters / speed / 4f));
+			for (int piece = 1; piece <= pieces; piece++)
+			{
+				float share = (float)piece / pieces;
+				BotPosition next = piece == pieces ? point : new BotPosition(current.X + (point.X - current.X) / (pieces - piece + 1),
+					current.Y + (point.Y - current.Y) / (pieces - piece + 1), current.Z + (point.Z - current.Z) / (pieces - piece + 1), point.Heading);
+				TimeSpan duration = TimeSpan.FromSeconds(NaturalFlightPolicy.Distance(current, next) / speed);
+				if (duration < SampleInterval) duration = SampleInterval;
+				await session.ExecuteMovementAsync(CapitalAscensionScenario.CreateQuestFlight(current, next, mapId, duration), token);
+				current = next;
+				if (betweenPieces != null && share < 1) await betweenPieces();
+			}
 		}
 	}
 
