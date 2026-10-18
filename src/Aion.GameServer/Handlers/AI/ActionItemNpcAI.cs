@@ -77,10 +77,12 @@ public class ActionItemNpcAI : NpcAI
         base.HandleDied();
         lock (observers)
         {
-            for (int i = observers.Count - 1; i >= 0; i--)
+            // Java walks the list from its first observer, taking each out before aborting it (iter.remove(), then abort()),
+            // so the players who started using the object first are told first.
+            while (observers.Count > 0)
             {
-                ItemUseObserver observer = observers[i];
-                observers.RemoveAt(i);
+                ItemUseObserver observer = observers[0];
+                observers.RemoveAt(0);
                 observer.Abort();
             }
         }
