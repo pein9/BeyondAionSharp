@@ -35,6 +35,29 @@ public static class ServerTime
         new(localDateTime, _timeZone.GetUtcOffset(localDateTime));
 
     /// <summary>
+    /// Java parity: ZonedDateTime.ofLocal(localDateTime, GSConfig.TIME_ZONE_ID, preferredOffset), the way a ZonedDateTime's
+    /// with(LocalTime) and plusDays(n) resolve their new local date-time: by the zone's rules at that date-time, not by the
+    /// offset the old value had. In a daylight-saving gap the time moves later by the gap's length and takes the offset after
+    /// it; in an overlap the preferred offset is kept when it is one of the two, otherwise the earlier (larger) one is taken.
+    /// </summary>
+    public static DateTimeOffset OfLocal(DateTime localDateTime, TimeSpan preferredOffset)
+    {
+        DateTime local = DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified);
+        if (_timeZone.IsInvalidTime(local))
+        {
+            TimeSpan before = _timeZone.GetUtcOffset(local.AddDays(-1));
+            TimeSpan after = _timeZone.GetUtcOffset(local.AddDays(1));
+            return new DateTimeOffset(local + (after - before), after);
+        }
+        if (_timeZone.IsAmbiguousTime(local))
+        {
+            TimeSpan[] offsets = _timeZone.GetAmbiguousTimeOffsets(local);
+            return new DateTimeOffset(local, offsets.Contains(preferredOffset) ? preferredOffset : offsets.Max());
+        }
+        return new DateTimeOffset(local, _timeZone.GetUtcOffset(local));
+    }
+
+    /// <summary>
     /// Java parity: ServerTime.atDate(Date) → ZonedDateTime.ofInstant(date.toInstant(), GSConfig.TIME_ZONE_ID)
     /// </summary>
     public static DateTimeOffset AtDate(DateTimeOffset date) =>

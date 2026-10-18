@@ -2677,7 +2677,7 @@ GM commands force scheduled content without waiting for cron (`//siege`, `//rift
   (`LookingForParty`'s `HashMap`). Emulating Java's hash orders would be a change across the port; the scenario compares those
   rows as sets and does not log a queued leader out. Seen, not fixed, outside P11-03: `InstanceCooltimeData`'s daily and
   weekly entry resets keep the current UTC offset where Java's `ZonedDateTime` applies the zone's rules, so a reset across a
-  DST change is an hour off (SIM runs in UTC; it belongs with P11-01's cooldowns); `PeriodicInstanceRegistrationService` is a
+  DST change is an hour off (SIM runs in UTC; fixed with P11-01's cooldowns, §7/176); `PeriodicInstanceRegistrationService` is a
   C#-only class nothing calls. Run it with `AION_SIM_DB_INTEGRATION=1 AION_SIM_TIER=Full AION_SIM_PROCESS_KEY=reset-ARENA
   AION_SIM_SCENARIO=ARENA dotnet test tests/Aion.Simulation.Tests --filter
   "FullyQualifiedName~SimulationFastScenarioTests.ManifestScenariosRunInFixedProcessOrder"` (about 1.5 minutes with the
@@ -3165,6 +3165,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 173 | `AutoInstance.removeItem` sorted the ticket's stacks with `List<T>.Sort`: with three stacks that expire alike, another stack paid the ticket | Java sorts them with the stable `List.sort(Comparator.comparingInt(Item::getExpireTime))` | Fixed (P11-03); `AutoGroupParityTests.TicketStacksThatExpireAlikeArePaidInInventoryOrderAsJavaListSortDoes` |
 | 174 | `PvPArenaScore.reachedScoreGap` threw `InvalidOperationException` (LINQ's `Max` of nothing) when no player reward was left, skipping the rest of the point update | Java's `IntSummaryStatistics` of nothing gives `MIN_VALUE - MAX_VALUE`, which overflows to 1: no gap | Fixed (P11-03); `PvPArenaParityTests.NoRewardsReachNoScoreGapAsJavaSummaryStatisticsAnswer` (the scenario cannot reach it: a point update after every player left) |
 | 175 | `ActionItemNpcAI.handleDied` aborted the players using a dying object (an arena relic or flame thrower, any action item) from the last to start to the first, so their packets went out in reverse | Java iterates the observers forward (`iter.remove()`, then `abort()`) | Fixed (P11-03); no test (it needs the world, and the scenario uses no such object) |
+| 176 | `InstanceCooltimeData.calculateInstanceEntranceCooltime`'s daily and weekly resets kept the offset of the moment of entry: a reset after a daylight-saving change came an hour early or late (an entry on Saturday 2026-10-31 at 10:00 New York time reset at 08:00 local the next day, not 09:00) | Java resolves the reset with `ZonedDateTime.with(LocalTime)` and `plusDays`, which apply the zone's rules at the new local date-time (`ZonedDateTime.ofLocal` with the old offset preferred) | Fixed (P11-01) with `ServerTime.OfLocal`; `InstanceCooltimeParityTests` (the gap and the overlap pinned too). SIM runs in UTC, so no scenario sees it |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `TribeRelationService.checkSiegeRelation` makes every siege NPC whose base tribe is GENERAL_DRAGON hostile to every

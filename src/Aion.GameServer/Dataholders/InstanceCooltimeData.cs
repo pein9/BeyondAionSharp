@@ -75,11 +75,13 @@ public class InstanceCooltimeData
                 int hour = clt.GetEntCoolTime() / 100;
                 int minute = clt.GetEntCoolTime() % 100;
                 DateTimeOffset now = ServerTime.Now();
-                DateTimeOffset repeatDate = new DateTimeOffset(now.Year, now.Month, now.Day, hour, minute, 0, now.Offset);
+                // Java's ZonedDateTime.with(LocalTime) and plusDays resolve each new local date-time by the zone's rules, so
+                // a reset across a daylight-saving change keeps its local time (ServerTime.OfLocal), not today's offset.
+                DateTimeOffset repeatDate = ServerTime.OfLocal(new DateTime(now.Year, now.Month, now.Day, hour, minute, 0), now.Offset);
                 if (now > repeatDate)
-                    repeatDate = repeatDate.AddDays(1);
+                    repeatDate = ServerTime.OfLocal(repeatDate.DateTime.AddDays(1), repeatDate.Offset);
                 if (clt.GetCoolTimeType() == InstanceCoolTimeType.WEEKLY)
-                    repeatDate = repeatDate.AddDays(CalculateDaysUntilReset(clt, repeatDate.DayOfWeek));
+                    repeatDate = ServerTime.OfLocal(repeatDate.DateTime.AddDays(CalculateDaysUntilReset(clt, repeatDate.DayOfWeek)), repeatDate.Offset);
                 instanceCoolTime = repeatDate.ToUnixTimeSeconds() * 1000;
                 break;
             }
