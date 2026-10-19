@@ -18,16 +18,22 @@ public class MegaphoneAction : AbstractItemAction
 
     public override bool CanAct(Aion.GameServer.Model.GameObjects.Players.Player player, Item item, Item targetItem, params object[] @params)
     {
-        return true;
+        return @params.Length > 0 && @params[0] is string;
     }
 
     public override void Act(Aion.GameServer.Model.GameObjects.Players.Player player, Item item, Item targetItem, params object[] @params)
     {
+        if (!player.GetInventory().DecreaseByObjectId(item.GetObjectId(), 1)) return;
         string message = (string)@params[0];
         Aion.GameServer.Model.Templates.Items.ItemTemplate itemTemplate = item.GetItemTemplate();
         Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), item.GetObjectId(), itemTemplate.GetTemplateId()), true);
         Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_USE_ITEM(item.GetL10n()));
-        player.GetInventory().DecreaseByObjectId(item.GetObjectId(), 1);
-        Aion.GameServer.Utils.PacketSendUtility.BroadcastToWorld(new Aion.GameServer.Network.Aion.ServerPackets.SM_MEGAPHONE(player, message, item.GetItemId()));
+        if (IsCrossFaction(item.GetItemId()))
+            Aion.GameServer.Utils.PacketSendUtility.BroadcastToWorld(new Aion.GameServer.Network.Aion.ServerPackets.SM_MEGAPHONE(player, message, item.GetItemId()));
+        else
+            Aion.GameServer.Utils.PacketSendUtility.BroadcastToWorld(new Aion.GameServer.Network.Aion.ServerPackets.SM_MEGAPHONE(Aion.GameServer.Network.Aion.ServerPackets.SM_MEGAPHONE.FactionLabel.NONE, player.GetName(), message, item.GetItemId()),
+                Aion.GameServer.Utils.Collections.Predicates.Players.SameRace(player));
     }
+
+    private static bool IsCrossFaction(int itemId) => itemId / 10000 == 18893;
 }

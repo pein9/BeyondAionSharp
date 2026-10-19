@@ -8,6 +8,7 @@ using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Restrictions;
 using Aion.GameServer.Utils;
+using Aion.GameServer.Utils.Audit;
 using State = global::Aion.GameServer.Network.Aion.AionConnection.State;
 
 namespace Aion.GameServer.Network.Aion.ClientPackets;
@@ -15,6 +16,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/CM_MEGAPHONE (Artur, ginho1, Neon). Sends a global faction-chat message via a megaphone item. MegaphoneAction/PlayerRestrictions red-tolerated.</summary>
 public class CM_MEGAPHONE : AionClientPacket
 {
+    private const int MAX_MESSAGE_LENGTH = 512;
     private string message;
     private int itemObjId;
 
@@ -33,11 +35,17 @@ public class CM_MEGAPHONE : AionClientPacket
     {
         Player player = GetConnection().GetActivePlayer();
 
+        if (message.Length > MAX_MESSAGE_LENGTH)
+        {
+            AuditLogger.Log(player, "sent megaphone message with " + message.Length + " chars, max is " + MAX_MESSAGE_LENGTH);
+            return;
+        }
+
         Item item = player.GetInventory().GetItemByObjId(itemObjId);
         if (item == null)
             return;
 
-        if (!PlayerRestrictions.CanUseItem(player, item))
+        if (!PlayerRestrictions.CanChat(player) || !PlayerRestrictions.CanUseItem(player, item))
             return;
 
         MegaphoneAction megaphoneAction = item.GetItemTemplate().GetActions().GetItemActions()
