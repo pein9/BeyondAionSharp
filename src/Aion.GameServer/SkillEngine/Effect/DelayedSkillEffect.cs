@@ -19,6 +19,6 @@ public class DelayedSkillEffect : EffectTemplate
     {
         base.EndEffect(effect);
         if (effect.IsEndedByTime())
-            Aion.GameServer.SkillEngine.SkillEngine.GetInstance().ApplyEffectsDirectly(skillId, effect.GetEffector(), effect.GetEffected(), effect.GetTargetX(), effect.GetTargetY(), effect.GetTargetZ());
+            Aion.GameServer.SkillEngine.SkillEngine.GetInstance().ApplyEffects(skillId, effect.GetEffector(), effect.GetEffected(), effect.GetTargetX(), effect.GetTargetY(), effect.GetTargetZ(), effect.GetForceType());
     }
 }

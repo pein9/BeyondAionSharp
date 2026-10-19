@@ -134,8 +134,8 @@ public class SkillEngine
         return ApplyEffect(effector, effected, skillTemplate, skillLevel, null, ForceType.DEFAULT);
     }
 
-    /// <summary>Applies the skill's effects to one or multiple targets, depending on its template properties. Returns affected targets.</summary>
-    public List<Creature> ApplyEffectsDirectly(int skillId, Creature effector, Creature firstTarget, float x, float y, float z)
+    /// <summary>Applies effects to the template's targets. A null force type checks current stats for dodge/resist.</summary>
+    public List<Creature> ApplyEffects(int skillId, Creature effector, Creature firstTarget, float x, float y, float z, ForceType forceType)
     {
         SkillTemplate skillTemplate = DataManager.SKILL_DATA.GetSkillTemplate(skillId);
         Aion.GameServer.SkillEngine.Properties.Properties properties = skillTemplate.GetProperties();
@@ -144,7 +144,7 @@ public class SkillEngine
         if (properties != null) // add valid targets in range
             properties.ValidateEffectedList(targets, firstTarget, effector, skillTemplate, x, y, z);
         foreach (Creature target in targets)
-            ApplyEffect(effector, target, skillTemplate, skillTemplate.GetLvl(), null, ForceType.DEFAULT);
+            ApplyEffect(effector, target, skillTemplate, skillTemplate.GetLvl(), null, forceType);
         return targets;
     }
 
