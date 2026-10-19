@@ -67,7 +67,7 @@ public class Deleteskill : ConsoleCommand
 
     private void Info(Player admin, string message)
     {
-        PacketSendUtility.SendMessage(admin, "syntax ///addcskill <skill name>");
+        PacketSendUtility.SendMessage(admin, "syntax ///deleteskill <skill name>");
     }
 
     [XmlRoot("skill")]

@@ -28,7 +28,7 @@ public class SkillEntryWriter : global::Aion.GameServer.Network.PacketWriteHelpe
     public override void WriteMe(ByteBuffer buf)
     {
         WriteH(buf, skillEntry.GetSkillId());
-        WriteH(buf, skillEntry.IsNormalSkill() ? 1 : skillEntry.GetSkillLevel());
+        WriteH(buf, skillEntry.GetSkillLevel());
         WriteC(buf, 0x00);
         WriteC(buf, skillEntry.GetProfessionSkillBarSize());
         WriteD(buf, skillEntry.IsProfessionSkill() ? skillEntry.GetProfessionFlag() : skillEntry.GetFlag());

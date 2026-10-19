@@ -64,16 +64,6 @@ public sealed class PlayerSkillList : SkillList<Aion.GameServer.Model.GameObject
             else
             {
                 skills[skillId] = new PlayerSkillEntry(player, skillId, skillLevel, isTemporary ? IPersistable.PersistentState.NOACTION : IPersistable.PersistentState.NEW);
-                List<Aion.GameServer.SkillEngine.Model.SkillLearnTemplate> learnTemplates = Aion.GameServer.Dataholders.DataManager.SKILL_TREE_DATA.GetSkillsForSkill(skillId, player.GetPlayerClass(), player.GetRace(),
-                    player.GetLevel());
-                foreach (Aion.GameServer.SkillEngine.Model.SkillLearnTemplate learnTemplate in learnTemplates)
-                {
-                    if (learnTemplate.GetLearnSkill() != null && GetSkillEntry(learnTemplate.GetLearnSkill().Value) != null)
-                    {
-                        isNew = false;
-                        break;
-                    }
-                }
             }
             Aion.GameServer.Services.SkillLearnService.OnLearnSkill(player, skillId, skillLevel, isNew);
             return true;

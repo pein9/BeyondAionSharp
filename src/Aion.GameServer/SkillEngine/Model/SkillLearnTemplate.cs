@@ -1,6 +1,5 @@
 using System;
 using System.Xml.Serialization;
-using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
 
 namespace Aion.GameServer.SkillEngine.Model;
@@ -34,6 +33,7 @@ public class SkillLearnTemplate
     [XmlAttribute("skillId")] public int skillId;
     [XmlAttribute("race")] public Race race = Race.PC_ALL;
     [XmlAttribute("minLevel")] public int minLevel;
+    [XmlAttribute("skillLevel")] public int skillLevel = 1;
     [XmlAttribute("autolearn")] public bool autolearn;
     [XmlAttribute("stigma")] public sbyte stigma = 0;
 
@@ -49,7 +49,7 @@ public class SkillLearnTemplate
 
     public int GetSkillLevel()
     {
-        return DataManager.SKILL_DATA.GetSkillTemplate(skillId).GetLvl();
+        return skillLevel;
     }
 
     public int GetMinLevel()

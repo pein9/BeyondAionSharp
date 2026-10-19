@@ -17,11 +17,11 @@ public sealed class PlayerEffectsMagicalCriticalsPortTests
     }
 
     [Fact]
-    public void SchemaAndMigrationAddTheColumn()
+    public void SchemaRetainsTheColumnAfterTheMigrationBaselineAdvances()
     {
         Assert.Contains("`magical_criticals` tinyint NOT NULL DEFAULT '0',", File.ReadAllText(RepoFile("game-server", "sql", "aion_gs.sql")));
-        Assert.Contains("ADD COLUMN `magical_criticals` TINYINT NOT NULL DEFAULT '0' AFTER `force_type`;",
-            File.ReadAllText(RepoFile("game-server", "sql", "update.sql")));
+        // Upstream 267ce6033 replaces update.sql with the next migration baseline.
+        // Fresh database initialization must still contain the completed column.
     }
 
     [Theory]
