@@ -196,7 +196,7 @@ public class SiegeLocation : IZoneHandler
         if (zones.Count == 0)
             return false;
         foreach (SiegeZoneInstance zone in zones)
-            if (zone.IsInsideCordinate(x, y, z))
+            if (zone.IsInsideCoordinate(x, y, z))
                 return true;
         return false;
     }

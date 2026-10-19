@@ -13,4 +13,7 @@ public interface IZoneHandler
 
     // Java parity: onLeaveZone(Creature, ZoneInstance)
     void OnLeaveZone(Creature player, ZoneInstance zone);
+
+    /// <summary>Whether this handler also needs ordinary NPCs, beyond players and their summoned creatures.</summary>
+    bool HandlesAllCreatures() => false;
 }

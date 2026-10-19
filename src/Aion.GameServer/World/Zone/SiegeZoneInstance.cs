@@ -1,4 +1,6 @@
 using Aion.GameServer.Model.Templates.Zone;
+using Aion.GameServer.Model.GameObjects;
+using Aion.GameServer.Model.GameObjects.Siege;
 
 namespace Aion.GameServer.World.Zone;
 
@@ -9,4 +11,6 @@ public class SiegeZoneInstance : ZoneInstance
         : base(mapId, template)
     {
     }
+
+    public override bool IsIgnored(Creature creature) => base.IsIgnored(creature) && creature is not SiegeNpc;
 }

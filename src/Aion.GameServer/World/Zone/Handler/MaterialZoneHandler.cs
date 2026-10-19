@@ -20,6 +20,8 @@ namespace Aion.GameServer.World.Zone.Handler;
 /// </summary>
 public class MaterialZoneHandler : IZoneHandler
 {
+    public bool HandlesAllCreatures() => true;
+
     private readonly ConcurrentDictionary<int, AbstractMaterialSkillActor> observed = new ConcurrentDictionary<int, AbstractMaterialSkillActor>();
     private readonly Spatial geometry;
     private readonly MaterialTemplate template;

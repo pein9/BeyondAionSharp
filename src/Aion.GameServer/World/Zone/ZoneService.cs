@@ -53,17 +53,17 @@ public sealed class ZoneService : GameEngine
         log.LogInformation("Loaded " + zoneHandlers.Count + " zone handlers.");
     }
 
-    public IZoneHandler GetNewZoneHandler(ZoneName zoneName)
+    public IZoneHandler? GetNewZoneHandler(ZoneName zoneName)
     {
-        IZoneHandler zoneHandler = collidableHandlers.GetValueOrDefault(zoneName);
+        IZoneHandler? zoneHandler = collidableHandlers.GetValueOrDefault(zoneName);
         if (zoneHandler != null)
             return zoneHandler;
-        Type zoneClass = zoneHandlers.GetValueOrDefault(zoneName);
+        Type? zoneClass = zoneHandlers.GetValueOrDefault(zoneName);
         if (zoneClass != null)
         {
             try
             {
-                zoneHandler = (IZoneHandler)Activator.CreateInstance(zoneClass);
+                zoneHandler = (IZoneHandler?)Activator.CreateInstance(zoneClass);
             }
             catch (Exception ex)
             {
@@ -71,7 +71,7 @@ public sealed class ZoneService : GameEngine
             }
         }
 
-        return zoneHandler != null ? zoneHandler : new GeneralZoneHandler();
+        return zoneHandler;
     }
 
     public void AddZoneHandlerClass(Type handler)
@@ -85,7 +85,7 @@ public sealed class ZoneService : GameEngine
                 try
                 {
                     ZoneName zoneName = ZoneName.Get(zoneNameString.Trim());
-                    if (zoneName == ZoneName.Get("NONE"))
+                    if (zoneName == ZoneName.None)
                         throw new Exception();
                     zoneHandlers[zoneName] = handler;
                 }
@@ -109,7 +109,6 @@ public sealed class ZoneService : GameEngine
         WorldZoneTemplate zone = new WorldZoneTemplate(worldSize, mapId);
         PolyArea fullArea = new PolyArea(zone.GetName(), mapId, zone.GetPoints().GetPoint(), zone.GetPoints().GetBottom(), zone.GetPoints().GetTop());
         ZoneInstance fullMap = new ZoneInstance(mapId, new ZoneInfo(fullArea, zone));
-        fullMap.AddHandler(GetNewZoneHandler(zone.GetName()));
         zones[zone.GetName()] = fullMap;
 
         List<ZoneInfo> areas = this.zoneByMapIdMap.GetValueOrDefault(mapId);
@@ -166,7 +165,9 @@ public sealed class ZoneService : GameEngine
                     }
                     break;
             }
-            instance.AddHandler(GetNewZoneHandler(area.GetZoneTemplate().GetName()));
+            IZoneHandler? zoneHandler = GetNewZoneHandler(area.GetZoneTemplate().GetName());
+            if (zoneHandler != null)
+                instance.AddHandler(zoneHandler);
             zones[area.GetZoneTemplate().GetName()] = instance;
         }
         return zones;

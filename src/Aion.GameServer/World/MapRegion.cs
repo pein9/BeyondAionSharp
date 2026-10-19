@@ -196,6 +196,8 @@ public class MapRegion
         bool enteredPriorityZone = false;
         foreach (ZoneInstance zone in zonesSortedByTypeAndPriority)
         {
+            if (zone.IsIgnored(creature))
+                continue;
             if (zoneType != zone.GetZoneTemplate().GetZoneType())
             {
                 zoneType = zone.GetZoneTemplate().GetZoneType();
@@ -246,7 +248,7 @@ public class MapRegion
         {
             if (zone.GetZoneTemplate().GetName() != zoneName)
                 continue;
-            return zone.IsInsideCordinate(x, y, z);
+            return zone.IsInsideCoordinate(x, y, z);
         }
         return false;
     }

@@ -14,8 +14,9 @@ public class ZoneInstance
 {
     private readonly ZoneInfo _template;
     private readonly int _mapId;
-    protected readonly Dictionary<int, Creature> Creatures = new();
-    protected List<IZoneHandler> Handlers = new();
+    private readonly Dictionary<int, Creature> Creatures = new();
+    private readonly List<IZoneHandler> Handlers = new();
+    private bool ignoreRegularNpcs = true;
 
     public ZoneInstance(int mapId, ZoneInfo template)
     {
@@ -33,16 +34,18 @@ public class ZoneInstance
     public bool Revalidate(Creature creature) =>
         _mapId == creature.GetWorldId() && _template.GetArea().IsInside3D(creature.GetX(), creature.GetY(), creature.GetZ());
 
+    /// <summary>Whether this zone is irrelevant to the creature and should not track it.</summary>
+    public virtual bool IsIgnored(Creature creature) =>
+        ignoreRegularNpcs && creature is Npc && creature is not SummonedObject;
+
     // Java parity: synchronized onEnter(Creature) — non-final in Java (Fly/NoFly/PvP ZoneInstance override), so virtual.
     public virtual bool OnEnter(Creature creature)
     {
         lock (this)
         {
-            if (Creatures.ContainsKey(creature.ObjectId))
+            if (!Creatures.TryAdd(creature.ObjectId, creature))
                 return false;
-            Creatures[creature.ObjectId] = creature;
-            if (creature is Player)
-                creature.GetController().OnEnterZone(this);
+            creature.GetController().OnEnterZone(this);
             foreach (IZoneHandler handler in Handlers)
                 handler.OnEnterZone(creature, this);
             return true;
@@ -54,9 +57,8 @@ public class ZoneInstance
     {
         lock (this)
         {
-            if (!Creatures.ContainsKey(creature.ObjectId))
+            if (!Creatures.Remove(creature.ObjectId))
                 return false;
-            Creatures.Remove(creature.ObjectId);
             creature.GetController().OnLeaveZone(this);
             foreach (IZoneHandler handler in Handlers)
                 handler.OnLeaveZone(creature, this);
@@ -83,11 +85,16 @@ public class ZoneInstance
     // Java parity: isInsideCreature(Creature)
     public bool IsInsideCreature(Creature creature) => Creatures.ContainsKey(creature.ObjectId);
 
-    // Java parity: isInsideCordinate(float, float, float)
-    public bool IsInsideCordinate(float x, float y, float z) => _template.GetArea().IsInside3D(x, y, z);
+    // Java parity: isInsideCoordinate(float, float, float)
+    public bool IsInsideCoordinate(float x, float y, float z) => _template.GetArea().IsInside3D(x, y, z);
 
     // Java parity: addHandler(IZoneHandler)
-    public void AddHandler(IZoneHandler handler) => Handlers.Add(handler);
+    public void AddHandler(IZoneHandler handler)
+    {
+        if (handler.HandlesAllCreatures())
+            ignoreRegularNpcs = false;
+        Handlers.Add(handler);
+    }
 
     private WorldMap Map => Aion.GameServer.World.World.GetInstance().GetWorldMap(_mapId);
     private int Flags => _template.GetZoneTemplate().GetFlags();
