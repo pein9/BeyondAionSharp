@@ -3418,6 +3418,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					return known;
 				}
 				IReadOnlyList<NaturalFlyZone> zones = FlyZonesOf(contract.MapId);
+				var flightRings = new NaturalFlightRings(runtime.RepoRoot);
 				// NL-3: the spawn spots of a map's aggressive monsters, which a hop's stone keeps away from.
 				var hostileByMap = new Dictionary<int, BotPosition[]>();
 				BotPosition[] HostileSpotsOf(int mapId)
@@ -3668,6 +3669,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							});
 							return await FlyToAsync(target, height, mayRefuse: true, extraFp: restore * serums, inFlight: DrinkWhenDueAsync);
 						}
+						// A ring chain can carry the whole crossing without landing on intermediate islands or drinking serums.
+						if (map == NaturalFlightRings.AbyssMap && await FlyToAsync(land, HeightFrom(session.CurrentPosition), mayRefuse: true)) return true;
 						for (int hop = 0; ; hop++)
 						{
 							// On a stone the bot waits for its flight time as a player does, answering what attacks it: the Cleric sat
@@ -4983,21 +4986,31 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					Require.True(ready.Allowed, $"Cannot take off: {ready.Reason}");
 					int flightMap = session.Api.World.MapId ?? leg.Hub.MapId;
 					NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, flightMap, from, destination, cruiseHeight ?? cruise);
-					if (!route.IsUsable && mayRefuse) return false;
-					Require.True(route.IsUsable, $"No flight to {destination}: {route.Refusal}");
+					if (!route.IsUsable && flightMap != NaturalFlightRings.AbyssMap && mayRefuse) return false;
+					if (flightMap != NaturalFlightRings.AbyssMap) Require.True(route.IsUsable, $"No flight to {destination}: {route.Refusal}");
 					lastTakeoff = runtime.NowMillis;
 					float speed = await NaturalFlightProtocol.TakeOffAsync(session, token);
 					lastFlightSpeed = speed;
-					NaturalFlightDecision go = NaturalFlightPolicy.CanFly(NaturalFlightProtocol.ToPlan(route, from, speed), world.CurrentFlightTime + extraFp, zones);
+					NaturalFlightDecision go = route.IsUsable
+						? NaturalFlightPolicy.CanFly(NaturalFlightProtocol.ToPlan(route, from, speed), world.CurrentFlightTime + extraFp, zones)
+						: new(false, route.Refusal ?? "No direct flight.");
+					if (!go.Allowed && flightRings.Plan(geometry, flightMap, from, destination, speed,
+						world.CurrentFlightTime, world.MaxFlightTime, zones) is { } ringRoute)
+					{
+						if (!await NaturalFlightRings.FlyAsync(session, geometry, zones, ringRoute, token)) return false;
+						if (land) await NaturalFlightProtocol.LandAsync(session, token);
+						await session.SynchronizeAsync(token);
+						return true;
+					}
 					session.TraceDiagnostic($"altgard-{altgardLegId}-flight", new Dictionary<string, object?>
 					{
 						["from"] = from, ["to"] = destination, ["meters"] = route.Meters, ["fp"] = world.CurrentFlightTime, ["decision"] = go.Reason,
 					});
-					if (!go.Allowed && mayRefuse)
+					if (!go.Allowed)
 					{
 						await NaturalFlightProtocol.LandAsync(session, token);
 						await session.SynchronizeAsync(token);
-						return false;
+						if (mayRefuse) return false;
 					}
 					Require.True(go.Allowed, go.Reason);
 					await NaturalFlightProtocol.FlyAsync(session, flightMap, from, route.Waypoints, speed, token, inFlight);

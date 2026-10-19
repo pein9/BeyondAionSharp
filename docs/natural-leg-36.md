@@ -1,6 +1,9 @@
 # Natural leg to 36: what was left, Brusthonin, the first Abyss quests and the check-in at 36
 
-Status: being played, 2026-10-17: NL-0 to NL-2 done; the world is `nl-gb-s2-w1`. The plan was written the same day. The operator, the same day, after the level-31 profiles:
+Status: paused, 2026-10-18: NL-0 to NL-3 done; NL-4 waits for the operator's manually recorded Fire Room path. The world
+is `nl-vs-s1-w1`; the Cleric finished Q24023 and the other seven have not been replayed with the committed portal-abort
+fix. Abyss flight-ring routing is implemented separately while the loop stays paused (the operator's decisions below).
+The plan was written on 2026-10-17. The operator, that day, after the level-31 profiles:
 
 > 1. Finish anything we were in the middle of, unless we were waiting until we leveled up a bit (like lvl 36 with better
 >    gear).
@@ -323,8 +326,8 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
     - Captured round `nl4-vs-c1` from `nl-g36-s2`, capturing `nl-vs-s1`: only the Cleric reached the end, with no
       deaths. Of the other seven:
       - The Templar, the Ranger, the Sorcerer and the Assassin stopped at a room portal: a hit cut off the 3-second
-        use (Java `ItemUseObserver`), and the bot waited for a teleport that never came. The fix is written: the use
-        watches for the abort, and the bot fights and tries again. Its checks are chain 39.
+        use (Java `ItemUseObserver`), and the bot waited for a teleport that never came. The fix is committed as
+        `b4201bfcf`: the use watches for the abort, and the bot fights and tries again. Its checks are chain 39.
       - The Fire Room's ordinary monsters are elites of 21,557 to 32,358 HP, standing in pairs; the other classes died
         there again and again.
         - The Gladiator stopped at 20 deaths on its top tier. Twice it was out longer than the copy's 600 s, and its
@@ -336,6 +339,13 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
     - **Paused on the operator's word (2026-10-18)** until he settles the Fire Room. Open: how players go down it in
       the 4.8 client (the quest text speaks of three floating disks), and what the classes that cannot clear it alone
       should do.
+    - 2026-10-18, picking up the handoff: the operator will manually record the Fire Room path. No further descent
+      trials while waiting for that recording. The choice for classes that cannot clear it alone remains open; the
+      recorded path must be assessed before drawing a new conclusion about their soloability.
+    - 2026-10-18, the operator added Abyss flight rings to navigation's requirements, then authorized implementing
+      them while keeping this loop paused. Solo and field-group flights now share ring routing and repeated crossings
+      to replenish FP. A separate, uncaptured SIM diagnostic shows the routing and failed-ring landing; it does not
+      complete any NL quest or the Abyss group pass. See the decision and evidence below.
 - [ ] **NL-5 The report.** Per class its level, quests, deaths and time; what was not played and why.
 
 ## Decisions
@@ -353,6 +363,58 @@ greater whatever scroll for flight speed boosts": a serum is drunk in flight onc
 the Greater Raging Wind Scroll (164000079) speeds long crossings. And: "We DO NEED the siege enabled", with housing and
 the rest of the boot tail D7 declined, delegated to other agents while this leg goes on; decision 9's three quests are
 played once the sieges stand.
+
+The operator's, 2026-10-18, on picking up the handoff:
+
+- **Q24023's Fire Room waits for a manually recorded path.** "I will have to record a path manually instead of you
+  wasting time." Keep the NL loop paused and do not spend further trials guessing the descent. Resume the seven
+  from `nl-vs-s1` once the recording resolves the route and the remaining class decision is settled. There is no new
+  decision yet to improve their fights, declare the quest not soloable, or leave it for a higher level. The other
+  questions in HANDOFF.md section 6 remain unanswered.
+- **Use flight rings when planning Abyss travel.** The operator says each pass adds flight time and players can
+  pass back and forth through a ring to stay airborne indefinitely. Routes must look for reachable rings and
+  account for replenishment instead of assuming every long crossing needs a ground hop or serum. This applies to
+  solo travel and the group pass of decision 13.
+  - Source check on 2026-10-18: Java's `FlyRingObserver.moved` applies skill 265 (Wings of Aether) on every detected
+    crossing in Reshanta (400010000), without a per-ring reuse check. C#'s `FlyRingObserver.Moved` mirrors it.
+    Both skill templates specify `fphealinstant value="9"` and a six-second flight-speed effect; the shipped
+    `fly_rings/fly_rings.xml` defines 55 rings on that map. A crossing is a movement segment through the ring's
+    plane within its radius (`FlyRing.isCrossed`), not merely approaching its center.
+  - The operator then authorized implementing this separately, running the existing checks and committing by path
+    to main without pushing; **the NL loop stays paused.** `NaturalFlightRings` loads those definitions, derives
+    approach and exit points on opposite sides of each plane and searches a chain within the flight-time budget.
+    Each ring stop reserves enough FP for a checked ground landing if its refill fails. The route budgets at most
+    9 m/s rather than relying on the temporary ring speed boost, and rechecks its remaining cost during flight.
+  - Solo leg crossings try a ring chain before their ground-hop/serum fallback. Field-group members use the same
+    planner with their own FP and takeoff speed; an unaffordable group flight now lands instead of flying anyway.
+    Their flight-zone lookup also uses the shared map-aware policy, which recognizes Reshanta's world-wide FLY flag
+    even though its zone file defines no FLY polygon.
+    A ring stop recrosses until the observed bar is full, checks fresh `SM_FLY_TIME` updates before continuing and
+    lands on checked ground if no refill arrives. Movement and refill loops are bounded and advance game time.
+    No server behavior, generated data, companion-following flight code or existing baseline was changed.
+  - **Focused SIM evidence:** `run/flight-rings-probe/probe4.log` and
+    `run/capital-pass/flight-rings-probe-4-flightrings.trace.jsonl`. A scratch console reuses the existing SIM fixture
+    and client session, with no new unit test. Setup teleports a disposable Cleric onto real Abyss ground, removes
+    the map's NPCs to isolate flight from combat, and depletes FP for the refill case. After setup, flight and ring
+    interactions use ordinary client movement; the server supplies every refill.
+    - Ground (2741.85, 864.97504, 1475.4896) to (3153, 1432.5, 1396.3896), 705.3 m apart: a 60-FP character uses
+      `TEMINON_LANDING_400010000_4` and `RESHANTA_400010000_1`, then lands exactly at the destination with 13 FP.
+    - Beside the first ring with 12 FP: three back-and-forth passes give observed bars 29, 47 and 60, then a landing
+      with 58 FP. The planner credits only the skill's 9-FP minimum per crossing; fresh packets confirm the refill.
+    - The first ring removed from that disposable world: its expected crossing gives 48 to 47 FP, is rejected as
+      no refill, and the bot lands on the planned nearby ground with 46 FP.
+    - Earlier diagnostic attempts met Elyos guards as a level-10 Asmodian; those are setup failures, not evidence
+      that routing passed. The final diagnostic isolates flight explicitly. No retained character was changed.
+  - The real Abyss group pass, companion flight-following and the paused seven's Q24023 replay are not claimed by
+    this diagnostic. The group pass still needs the other travel work of decision 13 when the NL loop resumes.
+  - **Checks before the commit:** evidence in `run/flight-rings-probe/checks/` and `checks-final/`. The solution's
+    unit suites, four CI checks (warning count 4,242, baseline unchanged), structural fidelity, plan compiler,
+    snapshot contract, baked navmeshes, profile validation and the remaining script checks passed. Fast passed all
+    eleven scenarios with no failure or flakiness. All five starter journeys show `Passed: 1`; each trace comparison
+    still starts with D7's known object-id difference (133266 versus 135000), accepted under the standing interim
+    criterion, without re-recording a baseline. Group NTC rounds `ntc-replay` and `ntc-final` both reached the end
+    with all six; the latter uses the final map-aware group lookup. The NL loop remains paused and no snapshot was
+    captured for this work.
 
 Mine, where the operator gave none; each is his to change:
 
@@ -418,8 +480,9 @@ Mine, where the operator gave none; each is his to change:
 13. **Reshanta's group quests go to NL-4's group pass, with Q2355 (NL-3, 2026-10-18).**
    - They are Q2728 (Ladacus, an Elyos guard of 77,859 HP, 2,750 m from Primum) and what bots left for the group:
      Q2753 and Q2754 for the Sorcerer and the Ranger, and Q2762 and Q2763 for four bots.
-   - The group stage (`group-field`) flies its members across a fly zone in one flight. Morheim's craters ask no more.
-     Reshanta's islands ask for hops, so the group has to hop together; that is built once, for NL-4's pass.
+   - The group stage (`group-field`) originally flew its members across a fly zone in one flight. It now also shares
+     the separately implemented ring routing above. Reshanta still needs coordinated ground hops where no ring chain
+     reaches the destination; that work remains for NL-4's group pass.
    - Q2762's mirrorglass waterworms float where no navmesh lies. They are a kill in the air (the leg engine's air kills,
      `NaturalAltgardAirKills`), not a matter of numbers, and are tried there too.
 14. **The "level-36" companion profiles are at 37 and 38 (NL-4, 2026-10-18).** The quests carried every bot past 36 before

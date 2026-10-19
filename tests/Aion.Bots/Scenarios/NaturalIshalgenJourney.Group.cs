@@ -169,6 +169,7 @@ public sealed partial class NaturalIshalgenJourney
 		long portalAgainAt = 0, offLavaAgainAt = 0;
 		var badDryGround = new List<BotPosition>();
 		var refusedFlights = new List<(BotPosition From, BotPosition To, long Until)>();
+		var flightRings = new NaturalFlightRings(runtime.RepoRoot);
 		long hereSaidAt = long.MinValue / 2, leaderHereAt = long.MinValue / 2, rejoinAgainAt = 0, plannedWayAt = 0;
 		(BotPosition From, BotPosition To)? plannedNoWay = null;
 		long backOnMeshAt = 0, leaderSeenAt = 0;
@@ -723,8 +724,7 @@ public sealed partial class NaturalIshalgenJourney
 		{
 			if (flyZonesMap != world.MapId && world.MapId is int map)
 			{
-				string file = Path.Combine(runtime.RepoRoot, $"game-server/data/static_data/zones/zones_{map}.xml");
-				flyZones = File.Exists(file) ? NaturalFlyZone.Load(file) : [];
+				flyZones = NaturalFlyZone.ForMap(runtime.RepoRoot, runtime.Data.WorldMaps2.GetTemplate(map), map);
 				flyZonesMap = map;
 			}
 			return flyZones;
@@ -910,9 +910,11 @@ public sealed partial class NaturalIshalgenJourney
 					return planned;
 				}
 				NaturalFlightRoute route = PlanFrom(session.CurrentPosition);
+				NaturalFlightRings.Route? ringPreview = !route.IsUsable ? flightRings.Plan(geometry, map, session.CurrentPosition,
+					land, 6f, world.MaxFlightTime, world.MaxFlightTime, zones) : null;
 				// From under an overhang the climb itself is shut (the Templar by the drakes' ledge): the zone's ground nearby, as
 				// a player steps out before taking off.
-				if (!route.IsUsable)
+				if (!route.IsUsable && ringPreview == null)
 				{
 					BotPosition standing = session.CurrentPosition;
 					// Where its leader last stood first, which a flight has just left (the Sorcerer on a rock top under the skyrock east
@@ -949,7 +951,7 @@ public sealed partial class NaturalIshalgenJourney
 					session.TraceDiagnostic("group-field-fly-step-out", new Dictionary<string, object?>
 					{ ["position"] = standing, ["looked"] = looked, ["plannable"] = plannable, ["usable"] = route.IsUsable });
 				}
-				if (!route.IsUsable)
+				if (!route.IsUsable && ringPreview == null)
 				{
 					session.TraceDiagnostic("group-field-fly-refused", new Dictionary<string, object?> { ["reason"] = route.Refusal });
 					refusedFlights.Add((here, land, runtime.NowMillis + 60_000));
@@ -957,7 +959,8 @@ public sealed partial class NaturalIshalgenJourney
 				}
 				// The flight time this flight needs, not a full bar: after four flights in the crater the members waited for theirs
 				// to fill while their leader flew on, and the group did not gather. Six metres a second is slower than any flight.
-				int needed = (int)MathF.Ceiling(route.Meters / 6f) + NaturalFlightPolicy.LandingReserveFp;
+				int needed = ringPreview != null ? world.MaxFlightTime : Math.Min(world.MaxFlightTime,
+					(int)MathF.Ceiling(route.Meters / 6f) + NaturalFlightPolicy.LandingReserveFp);
 				long wait = NaturalFlightPolicy.RestoreMillis(world.CurrentFlightTime, needed, world.MaxFlightTime);
 				if (lastTakeoff is long last) wait = Math.Max(wait, last + NaturalFlightPolicy.TakeoffReuseMillis - runtime.NowMillis);
 				if (wait > 0)
@@ -976,9 +979,21 @@ public sealed partial class NaturalIshalgenJourney
 					session.TraceDiagnostic("group-field-fly-refused", new Dictionary<string, object?> { ["reason"] = refused.Message });
 					return false;
 				}
-				NaturalFlightDecision go = NaturalFlightPolicy.CanFly(NaturalFlightProtocol.ToPlan(route, from, speed), world.CurrentFlightTime, zones);
-				if (!go.Allowed) session.TraceDiagnostic("group-field-fly-short", new Dictionary<string, object?> { ["reason"] = go.Reason });
-				await NaturalFlightProtocol.FlyAsync(session, map, from, route.Waypoints, speed, token);
+				NaturalFlightDecision go = route.IsUsable
+					? NaturalFlightPolicy.CanFly(NaturalFlightProtocol.ToPlan(route, from, speed), world.CurrentFlightTime, zones)
+					: new(false, route.Refusal ?? "No direct flight.");
+				if (!go.Allowed)
+				{
+					if (flightRings.Plan(geometry, map, from, land, speed, world.CurrentFlightTime, world.MaxFlightTime, zones) is not { } ringRoute)
+					{
+						session.TraceDiagnostic("group-field-fly-short", new Dictionary<string, object?> { ["reason"] = go.Reason });
+						await NaturalFlightProtocol.LandAsync(session, token);
+						await session.SynchronizeAsync(token);
+						return false;
+					}
+					if (!await NaturalFlightRings.FlyAsync(session, geometry, zones, ringRoute, token)) return false;
+				}
+				else await NaturalFlightProtocol.FlyAsync(session, map, from, route.Waypoints, speed, token);
 				await NaturalFlightProtocol.LandAsync(session, token);
 				await session.SynchronizeAsync(token);
 				// A step's stop on the ground where it landed: the others saw each member where it took off, 189 m below at the
