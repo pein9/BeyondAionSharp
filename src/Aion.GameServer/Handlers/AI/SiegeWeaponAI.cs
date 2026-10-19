@@ -30,7 +30,7 @@ public class SiegeWeaponAI : AITemplate<Summon>
     {
         this.SetStateIfNot(AIState.IDLE);
         SummonsService.DoMode(SummonMode.GUARD, GetOwner());
-        NpcSkillTemplate skillTemplate = GetNpcSkillTemplates().GetNpcSkills()[0];
+        NpcSkillTemplate skillTemplate = DataManager.NPC_SKILL_DATA.GetNpcSkillTemplates(GetOwner().GetNpcId())[0];
         skill = skillTemplate.GetSkillId();
         skillLvl = skillTemplate.GetSkillLevel();
         duration = DataManager.SKILL_DATA.GetSkillTemplate(skill).GetDuration();
@@ -62,11 +62,6 @@ public class SiegeWeaponAI : AITemplate<Summon>
     {
         GetOwner().GetController().OnMove();
         GetOwner().GetMoveController().MoveToTargetObject();
-    }
-
-    private NpcSkillTemplates GetNpcSkillTemplates()
-    {
-        return ((SiegeWeaponController)GetOwner().GetController()).GetNpcSkillTemplates();
     }
 
     protected override void HandleAttack(Creature creature)

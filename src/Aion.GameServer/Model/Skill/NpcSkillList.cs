@@ -1,133 +1,66 @@
-using System.Collections.Generic;
-using System.Linq;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Dataholders;
-using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Templates.Npcskill;
 using Microsoft.Extensions.Logging;
 
 namespace Aion.GameServer.Model.Skill;
 
-/// <summary>Java parity: model/skill/NpcSkillList (ATracer, Yeats, Neon). Collections.emptyList→new List; iterator+remove→backward-index removal; prios.sort(reverseOrder)→OrderByDescending; mapToInt.toArray→ToArray. DataManager/NpcSkillTemplate(s)/Rnd red-tolerated.</summary>
+/// <summary>Java parity: model/skill/NpcSkillList. Shared stateless entries, stably sorted by descending priority.</summary>
 public class NpcSkillList
 {
     private static readonly ILogger log = AionLog.For(nameof(NpcSkillList));
+    private readonly List<NpcSkillEntry> skillsSortedByPrioDescending;
 
-    private List<NpcSkillEntry> skills;
-    private int[] priorities;
-
-    public NpcSkillList(Npc owner)
+    public NpcSkillList(List<NpcSkillTemplate> npcSkills)
     {
-        InitSkillList(owner.GetNpcId());
-    }
-
-    private void InitSkillList(int npcId)
-    {
-        NpcSkillTemplates npcSkillTemplates = DataManager.NPC_SKILL_DATA.GetNpcSkillList(npcId);
-        List<NpcSkillTemplate> npcSkills = npcSkillTemplates == null ? null : npcSkillTemplates.GetNpcSkills();
-        if (npcSkills == null || npcSkills.Count == 0)
+        var entries = new List<NpcSkillEntry>(npcSkills.Count);
+        foreach (NpcSkillTemplate template in npcSkills)
         {
-            skills = new List<NpcSkillEntry>();
-        }
-        else
-        {
-            skills = new List<NpcSkillEntry>(npcSkills.Count);
-            List<int> prios = new();
-            for (int i = npcSkills.Count - 1; i >= 0; i--)
+            if (DataManager.SKILL_DATA.GetSkillTemplate(template.GetSkillId()) == null)
             {
-                NpcSkillTemplate template = npcSkills[i];
-                if (DataManager.SKILL_DATA.GetSkillTemplate(template.GetSkillId()) == null)
-                {
-                    log.LogWarning("Missing skill " + template.GetSkillId() + " for npc " + npcId);
-                    npcSkills.RemoveAt(i);
-                    continue;
-                }
-                skills.Add(new NpcSkillTemplateEntry(template));
-                if (!prios.Contains(template.GetPriority()))
-                {
-                    prios.Add(template.GetPriority());
-                }
+                log.LogWarning("Missing skill data for skill " + template.GetSkillId() + " in npc skill list");
+                continue;
             }
-            // Java iterated forward (skills/prios preserve npcSkills order); restore by reversing the backward pass
-            skills.Reverse();
-            prios.Reverse();
-            prios.Sort((a, b) => b.CompareTo(a));
-            priorities = prios.ToArray();
+            entries.Add(new NpcSkillTemplateEntry(template));
         }
+        // Java List.sort is stable; preserve XML order among equal priorities.
+        skillsSortedByPrioDescending = entries.OrderByDescending(entry => entry.GetPriority()).ToList();
     }
 
-    public bool IsEmpty()
-    {
-        return skills.Count == 0;
-    }
-
-    public NpcSkillEntry GetRandomSkill()
-    {
-        return Rnd.Get(skills);
-    }
+    public int Size() => skillsSortedByPrioDescending.Count;
+    public bool IsEmpty() => skillsSortedByPrioDescending.Count == 0;
+    public NpcSkillEntry GetRandomSkill() => Rnd.Get(skillsSortedByPrioDescending);
 
     public NpcSkillEntry GetSkillOnPosition(int position)
     {
-        if (skills.Count == 0)
+        if (skillsSortedByPrioDescending.Count == 0)
             return null;
-        if (position >= skills.Count)
-            position = skills.Count - 1;
-
-        return skills[position];
+        if (position >= skillsSortedByPrioDescending.Count)
+            position = skillsSortedByPrioDescending.Count - 1;
+        return skillsSortedByPrioDescending[position];
     }
 
-    public List<NpcSkillEntry> GetPostSpawnSkills()
-    {
-        List<NpcSkillEntry> filteredSkills = new();
-        foreach (NpcSkillEntry skill in skills)
-            if (skill.HasPostSpawnCondition())
-                filteredSkills.Add(skill);
-        return filteredSkills;
-    }
+    public List<NpcSkillEntry> GetPostSpawnSkills() =>
+        skillsSortedByPrioDescending.Where(skill => skill.HasPostSpawnCondition()).ToList();
 
-    public List<NpcSkillEntry> GetNpcSkills()
+    public List<NpcSkillEntry> GetSkillsSortedByPriority(int priority)
     {
-        return skills;
-    }
-
-    public List<NpcSkillEntry> GetSkillsByPriority(int priority)
-    {
-        if (skills.Count == 0)
-            return new List<NpcSkillEntry>();
-
-        List<NpcSkillEntry> skillsByPriority = new();
-        foreach (NpcSkillEntry skill in skills)
+        var result = new List<NpcSkillEntry>();
+        foreach (NpcSkillEntry skill in skillsSortedByPrioDescending)
         {
             if (skill.GetPriority() == priority)
-            {
-                skillsByPriority.Add(skill);
-            }
+                result.Add(skill);
+            else if (skill.GetPriority() < priority)
+                break;
         }
-        return skillsByPriority;
+        return result;
     }
 
-    public int[] GetPriorities()
-    {
-        return priorities;
-    }
+    public int[] GetPriorities() => skillsSortedByPrioDescending.Select(skill => skill.GetPriority()).Distinct().ToArray();
 
-    public List<NpcSkillEntry> GetChainSkills(NpcSkillEntry curSkill)
+    public List<NpcSkillEntry> GetChainSkillsSortedByPriority(NpcSkillEntry current)
     {
-        if (skills.Count == 0)
-            return new List<NpcSkillEntry>();
-
-        List<NpcSkillEntry> chainSkills = new();
-        int id = curSkill.GetNextChainId();
-        if (id > 0)
-        {
-            foreach (NpcSkillEntry skill in skills)
-            {
-                if (skill.GetChainId() == id)
-                {
-                    chainSkills.Add(skill);
-                }
-            }
-        }
-        return chainSkills;
+        int id = current.GetNextChainId();
+        return id > 0 ? skillsSortedByPrioDescending.Where(skill => skill.GetChainId() == id).ToList() : new List<NpcSkillEntry>();
     }
 }

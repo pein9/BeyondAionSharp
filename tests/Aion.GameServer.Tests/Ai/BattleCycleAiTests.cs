@@ -1156,9 +1156,10 @@ public sealed class BattleCycleAiTests
 		// And once it has been used, its cooldown must actually block the branch. Without this the
 		// condition could be a constant true and every assertion above would still pass -- which a
 		// mutation demonstrated.
-		Aion.GameServer.Model.Skill.NpcSkillEntry entry = Assert.Single(
-			guard.GetSkillList().GetNpcSkills(), e => e.GetSkillId() == GuardSkill);
-		entry.SetLastTimeUsed();
+		var entry = Assert.Single(
+			guard.GetSkillList().GetPriorities().SelectMany(priority => guard.GetSkillList().GetSkillsSortedByPriority(priority)),
+			e => e.GetSkillId() == GuardSkill);
+		guard.SetSkillCoolDown(GuardSkill, Aion.GameServer.Utils.SystemClock.CurrentMillis() + entry.GetTemplate().GetCooldown());
 		Assert.False(When.SkillReady(GuardSkill)(guardAi),
 			"a skill used a moment ago is still counted as ready");
 	}

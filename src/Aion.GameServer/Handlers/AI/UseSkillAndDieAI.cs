@@ -30,15 +30,15 @@ public class UseSkillAndDieAI : NpcAI
 
     private void ScheduleSkill()
     {
-        NpcSkillList skillList = GetOwner().GetSkillList();
-        if (skillList.GetNpcSkills().Count == 0)
+        NpcSkillEntry skill = GetOwner().GetSkillList().GetSkillOnPosition(0);
+        if (skill == null)
         {
             log.LogWarning(GetOwner() + " has no skill list");
             GetOwner().GetController().Delete();
             return;
         }
 
-        NpcSkillConditionTemplate conditionTemplate = skillList.GetNpcSkills()[0].GetConditionTemplate();
+        NpcSkillConditionTemplate conditionTemplate = skill.GetConditionTemplate();
         if (conditionTemplate != null)
         {
             canDie = conditionTemplate.CanDie();
@@ -50,7 +50,7 @@ public class UseSkillAndDieAI : NpcAI
                     if (GetCreatorId() == 0 || (GetKnownList().GetObject(GetCreatorId()) is Creature creator && !creator.IsDead()))
                     {
                         SkillEngine.SkillEngine.GetInstance()
-                            .GetSkill(GetOwner(), skillList.GetNpcSkills()[0].GetSkillId(), skillList.GetNpcSkills()[0].GetSkillLevel(), GetOwner())
+                            .GetSkill(GetOwner(), skill.GetSkillId(), skill.GetSkillLevel(), GetOwner())
                             .UseSkill();
                     }
 

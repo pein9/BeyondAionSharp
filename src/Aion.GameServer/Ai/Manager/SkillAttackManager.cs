@@ -171,42 +171,28 @@ public class SkillAttackManager
             NpcSkillEntry lastSkill = owner.GetGameStats().GetLastSkill();
             if (lastSkill != null && lastSkill.HasChain() && lastSkill.CanUseNextChain(owner))
             {
-                List<NpcSkillEntry> chainSkills = skillList.GetChainSkills(lastSkill);
-                if (chainSkills.Count > 1)
-                {
-                    if (chainSkills.Any(cs => cs.GetPriority() > 0))
-                    {
-                        chainSkills.Sort((a, b) => b.GetPriority().CompareTo(a.GetPriority()));
-                    }
-                    else
-                    {
-                        Shuffle(chainSkills);
-                    }
-                }
+                List<NpcSkillEntry> chainSkills = skillList.GetChainSkillsSortedByPriority(lastSkill);
+                if (chainSkills.Count > 1 && chainSkills[0].GetPriority() == 0)
+                    Shuffle(chainSkills);
                 foreach (NpcSkillEntry entry in chainSkills)
                 {
-                    if (entry != null && IsReady(owner, entry))
+                    if (IsReady(owner, entry))
                     {
                         return GetNpcSkillEntryIfNotTooFarAway(owner, entry);
                     }
                 }
             }
 
-            int[] priorities = skillList.GetPriorities();
-            if (priorities != null)
+            foreach (int priority in skillList.GetPriorities())
             {
-                foreach (int priority in priorities)
+                List<NpcSkillEntry> skillsByPriority = skillList.GetSkillsSortedByPriority(priority);
+                if (skillsByPriority.Count > 1)
+                    Shuffle(skillsByPriority);
+                foreach (NpcSkillEntry entry in skillsByPriority)
                 {
-                    List<NpcSkillEntry> skillsByPriority = skillList.GetSkillsByPriority(priority);
-                    if (skillsByPriority.Count > 1)
-                        Shuffle(skillsByPriority);
-
-                    foreach (NpcSkillEntry entry in skillsByPriority)
+                    if (entry.GetChainId() == 0 && IsReady(owner, entry))
                     {
-                        if (entry.GetChainId() == 0 && IsReady(owner, entry))
-                        {
-                            return GetNpcSkillEntryIfNotTooFarAway(owner, entry);
-                        }
+                        return GetNpcSkillEntryIfNotTooFarAway(owner, entry);
                     }
                 }
             }
@@ -233,6 +219,8 @@ public class SkillAttackManager
         if (owner.IsDead() || owner.GetLifeStats().IsAboutToDie())
             return false;
         if (CantUseSkill(entry, owner))
+            return false;
+        if (owner.GetSkillCoolDown(entry.GetSkillId()) > SystemClock.CurrentMillis())
             return false;
         if (!entry.IsReady(owner.GetLifeStats().GetHpPercentage(), SystemClock.CurrentMillis() - owner.GetGameStats().GetFightStartingTime()))
             return false;

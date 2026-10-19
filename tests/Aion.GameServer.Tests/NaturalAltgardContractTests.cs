@@ -226,10 +226,9 @@ public sealed class NaturalAltgardContractTests
 	}
 
 	[Fact]
-	public void ContractJavaReferenceMatchesThePortState()
+	public void ContractJavaReferenceIsInCompletedPortHistory()
 	{
-		using var state = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(Root(), "docs/upstream-port-state.json")));
-		Assert.Equal(NaturalAltgardContract.LoadDefault().JavaReference, state.RootElement.GetProperty("lastCompletedJavaCommit").GetString());
+		UpstreamContractReference.AssertCompleted(Root(), NaturalAltgardContract.LoadDefault().JavaReference);
 	}
 
 	private static XElement[] FlyZonePoints(string name) =>

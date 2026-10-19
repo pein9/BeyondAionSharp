@@ -35,11 +35,10 @@ public class ShugoTombBossAI : ShugoTombAttackerAI
     protected override void HandleAttack(Creature creature)
     {
         base.HandleAttack(creature);
-        List<NpcSkillEntry> skills = GetSkillList().GetNpcSkills();
-        if (GetOwner().GetEffectController().IsInAnyAbnormalState(AbnormalState.CANT_ATTACK_STATE) || usedSkills.Get() >= skills.Count)
+        if (GetOwner().GetEffectController().IsInAnyAbnormalState(AbnormalState.CANT_ATTACK_STATE) || usedSkills.Get() >= GetSkillList().Size())
             return;
 
-        NpcSkillEntry entry = skills[usedSkills.Get()];
+        NpcSkillEntry entry = GetSkillList().GetSkillOnPosition(usedSkills.Get());
         if (GetLifeStats().GetHpPercentage() <= entry.GetTemplate().GetMaxhp() && isCasting.CompareAndSet(false, true))
         {
             if (GetMoveController().IsInMove())

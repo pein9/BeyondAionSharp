@@ -217,10 +217,9 @@ public sealed class NaturalAscensionContractTests
 	}
 
 	[Fact]
-	public void ContractJavaReferenceMatchesThePortState()
+	public void ContractJavaReferenceIsInCompletedPortHistory()
 	{
-		using JsonDocument state = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root(), "docs/upstream-port-state.json")));
-		Assert.Equal(NaturalAscensionContract.LoadDefault().JavaReference, state.RootElement.GetProperty("lastCompletedJavaCommit").GetString());
+		UpstreamContractReference.AssertCompleted(Root(), NaturalAscensionContract.LoadDefault().JavaReference);
 	}
 
 	private static void AssertSpawn(int mapId, int npcId, float[] position) =>

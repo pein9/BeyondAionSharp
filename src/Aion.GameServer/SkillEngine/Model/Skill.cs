@@ -294,7 +294,7 @@ public class Skill
             NpcSkillEntry currentNpcSkillEntry = npc.GetGameStats().GetLastSkill();
             if (currentNpcSkillEntry != null)
             {
-                currentNpcSkillEntry.SetLastTimeUsed();
+                npc.SetSkillCoolDown(currentNpcSkillEntry.GetSkillId(), SystemClock.CurrentMillis() + currentNpcSkillEntry.GetTemplate().GetCooldown());
                 npc.GetGameStats().SetNextSkillDelay(currentNpcSkillEntry.GetNextSkillTime());
             }
             else

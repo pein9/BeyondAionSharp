@@ -34,7 +34,7 @@ public class NpcSkillTemplateEntry : NpcSkillEntry
 
     public override bool IsReady(int hpPercentage, long fightingTimeInMSec)
     {
-        if (HasCooldown() || !ChanceReady())
+        if (!ChanceReady())
             return false;
 
         return template.GetConjunctionType() switch
@@ -66,11 +66,6 @@ public class NpcSkillTemplateEntry : NpcSkillEntry
         long minTime = template.GetMinTime();
         long maxTime = template.GetMaxTime();
         return maxTime == 0 && minTime == 0 || maxTime == 0 && minTime <= elapsedFightTime || maxTime >= elapsedFightTime && minTime <= elapsedFightTime;
-    }
-
-    public override bool HasCooldown()
-    {
-        return template.GetCooldown() > (SystemClock.CurrentMillis() - lastTimeUsed);
     }
 
     public override bool HasPostSpawnCondition()

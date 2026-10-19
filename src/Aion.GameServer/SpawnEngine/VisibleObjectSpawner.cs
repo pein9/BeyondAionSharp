@@ -261,7 +261,7 @@ public class VisibleObjectSpawner
         NpcTemplate npcTemplate = DataManager.NPC_DATA.GetNpcTemplate(npcId);
 
         bool isSiegeWeapon = "siege_weapon".Equals(npcTemplate.GetAiName());
-        Summon summon = new Summon(IDFactory.GetInstance().NextId(), isSiegeWeapon ? new SiegeWeaponController(npcId) : new SummonController(), spawn,
+        Summon summon = new Summon(IDFactory.GetInstance().NextId(), isSiegeWeapon ? new SiegeWeaponController() : new SummonController(), spawn,
             npcTemplate, creator, time);
         summon.SetKnownlist(new CreatureAwareKnownList(summon));
         summon.SetEffectController(new EffectController(summon));

@@ -5,11 +5,9 @@ using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Model.Skill;
 
-/// <summary>Java parity: model/skill/NpcSkillEntry (ATracer, nrg, Yeats). Abstract NpcSkillEntry : SkillEntry; setLastTimeUsed→System.currentTimeMillis()→SystemClock.CurrentMillis(). NpcSkillConditionTemplate/NpcSkillTemplate red-tolerated.</summary>
+/// <summary>Java parity: model/skill/NpcSkillEntry. Shared stateless metadata; cooldowns belong to each NPC.</summary>
 public abstract class NpcSkillEntry : SkillEntry
 {
-    protected long lastTimeUsed = 0;
-
     protected NpcSkillEntry(int skillId, int skillLevel) : base(skillId, skillLevel)
     {
     }
@@ -22,19 +20,7 @@ public abstract class NpcSkillEntry : SkillEntry
 
     public abstract bool TimeReady(long fightingTimeInMSec);
 
-    public abstract bool HasCooldown();
-
     public abstract bool HasPostSpawnCondition();
-
-    public long GetLastTimeUsed()
-    {
-        return lastTimeUsed;
-    }
-
-    public void SetLastTimeUsed()
-    {
-        this.lastTimeUsed = SystemClock.CurrentMillis();
-    }
 
     public abstract int GetPriority();
 

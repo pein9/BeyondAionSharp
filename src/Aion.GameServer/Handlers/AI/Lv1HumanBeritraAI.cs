@@ -114,13 +114,11 @@ public class Lv1HumanBeritraAI : AggressiveNoLootNpcAI
     /// <summary>Retail sequence => Beritra will immediately execute 21604 + 21603 (Rending Shadow);</summary>
     protected void HandleBuffsRemovedByNpc()
     {
-        int chainId = GetOwner().GetGameStats().GetLastSkill().GetNextChainId();
-        NpcSkillEntry entry = GetOwner().GetSkillList().GetNpcSkills().FirstOrDefault(nse => nse.GetChainId() == chainId);
-
+        List<NpcSkillEntry> nextChainSkills = GetOwner().GetSkillList().GetChainSkillsSortedByPriority(GetOwner().GetGameStats().GetLastSkill());
         GetOwner().QueueSkill(21604, 56, 0);
-        GetOwner().QueueSkill(21603, 56, entry == null ? -1 : 0);
-        if (entry != null)
-            GetOwner().QueueSkill(entry);
+        GetOwner().QueueSkill(21603, 56, nextChainSkills.Count == 0 ? -1 : 0);
+        if (nextChainSkills.Count != 0)
+            GetOwner().QueueSkill(nextChainSkills[0]);
     }
 
     /// <summary>One of retail's eight rapid-breath marks: its npc and where it stands.</summary>

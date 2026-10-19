@@ -1,6 +1,7 @@
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Skill;
 using Aion.GameServer.Model.Templates.Npcskill;
+using Aion.GameServer.Dataholders;
 
 namespace Aion.GameServer.Ai;
 
@@ -64,9 +65,11 @@ public static class NpcSkillCasting
         NpcSkillList? skills = owner.GetSkillList();
         if (skills == null)
             return fallbackLevel;
-        foreach (NpcSkillEntry entry in skills.GetNpcSkills())
+        // Preserve the retail helper's first XML entry when an id has several levels/conditions.
+        // The shared runtime list is now priority-sorted for Java's automatic selection.
+        foreach (NpcSkillTemplate entry in DataManager.NPC_SKILL_DATA.GetNpcSkillTemplates(owner.GetNpcId()))
         {
-            if (entry.GetSkillId() == skillId)
+            if (entry.GetSkillId() == skillId && DataManager.SKILL_DATA.GetSkillTemplate(skillId) != null)
                 return entry.GetSkillLevel();
         }
         return fallbackLevel;

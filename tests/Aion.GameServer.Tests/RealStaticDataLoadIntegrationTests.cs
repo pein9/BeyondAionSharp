@@ -185,9 +185,9 @@ public sealed class RealStaticDataLoadIntegrationTests
 
 		// NPC_SKILL_DATA: faithful NpcSkillData merges npc_skills/ recursively at boot.
 		Assert.True(sd.NpcSkillDataDh.Size() > 0, "NpcSkillDataDh empty after boot");
-		var nsk = sd.NpcSkillDataDh.GetNpcSkillList(201010);
-		Assert.NotNull(nsk);
-		Assert.Contains(nsk!.GetNpcSkills()!, s => s.GetSkillId() == 17424);
+		var nsk = sd.NpcSkillDataDh.GetNpcSkillTemplates(201010);
+		Assert.NotEmpty(nsk);
+		Assert.Contains(nsk, s => s.GetSkillId() == 17424);
 
 		// WALKER_DATA: faithful WalkerData merges npc_walker/ recursively at boot (route-step indexing applied).
 		Assert.True(sd.WalkerDataDh.Size() > 0, "WalkerDataDh empty after boot");

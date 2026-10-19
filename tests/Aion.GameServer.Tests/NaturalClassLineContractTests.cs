@@ -96,10 +96,9 @@ public sealed class NaturalClassLineContractTests
 	}
 
 	[Fact]
-	public void ContractJavaReferenceMatchesThePortState()
+	public void ContractJavaReferenceIsInCompletedPortHistory()
 	{
-		using JsonDocument state = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root(), "docs/upstream-port-state.json")));
-		Assert.Equal(Contract.Value.JavaReference, state.RootElement.GetProperty("lastCompletedJavaCommit").GetString());
+		UpstreamContractReference.AssertCompleted(Root(), Contract.Value.JavaReference);
 	}
 
 	private static void AssertStarter(NaturalStarterClass row)

@@ -1,4 +1,3 @@
-using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Summons;
@@ -8,13 +7,6 @@ namespace Aion.GameServer.Controllers;
 /// <summary>Java parity: controllers/SiegeWeaponController (xTz).</summary>
 public class SiegeWeaponController : SummonController
 {
-    private Aion.GameServer.Model.Templates.Npcskill.NpcSkillTemplates skills;
-
-    public SiegeWeaponController(int npcId)
-    {
-        skills = DataManager.NPC_SKILL_DATA.GetNpcSkillList(npcId);
-    }
-
     public override void Release(UnsummonType unsummonType)
     {
         GetMaster().GetController().CancelTask(TaskId.SUMMON_FOLLOW);
@@ -98,8 +90,4 @@ public class SiegeWeaponController : SummonController
         base.OnDie(lastAttacker);
     }
 
-    public Aion.GameServer.Model.Templates.Npcskill.NpcSkillTemplates GetNpcSkillTemplates()
-    {
-        return skills;
-    }
 }

@@ -414,11 +414,13 @@ public abstract class PatternAi : AggressiveNpcAI, INpcMessageListener
     /// </remarks>
     internal bool SkillAvailable(int skillId)
     {
-        foreach (NpcSkillEntry entry in GetOwner().GetSkillList().GetNpcSkills())
+        NpcSkillList skills = GetOwner().GetSkillList();
+        foreach (int priority in skills.GetPriorities())
+        foreach (NpcSkillEntry entry in skills.GetSkillsSortedByPriority(priority))
         {
             if (entry.GetSkillId() == skillId)
             {
-                return !entry.HasCooldown();
+                return GetOwner().GetSkillCoolDown(skillId) <= SystemClock.CurrentMillis();
             }
         }
 
@@ -1716,10 +1718,10 @@ public abstract class PatternAi : AggressiveNpcAI, INpcMessageListener
     public void CastOnlySkillOnSelf()
     {
         Aion.GameServer.Model.Skill.NpcSkillList? skills = GetOwner().GetSkillList();
-        if (skills == null || skills.GetNpcSkills().Count != 1)
+        if (skills == null || skills.Size() != 1)
             return;
 
-        CastSkillNow(skills.GetNpcSkills()[0].GetSkillId());
+        CastSkillNow(skills.GetSkillOnPosition(0).GetSkillId());
     }
 
     /// <summary>

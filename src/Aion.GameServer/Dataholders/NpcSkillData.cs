@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Xml.Serialization;
+using Aion.GameServer.Model.Skill;
 using Aion.GameServer.Model.Templates.Npcskill;
 using Microsoft.Extensions.Logging;
 
@@ -10,10 +12,12 @@ namespace Aion.GameServer.Dataholders;
 public class NpcSkillData
 {
     private static readonly ILogger log = AionLog.For(nameof(NpcSkillData));
+    private static readonly NpcSkillList EMPTY = new(new List<NpcSkillTemplate>());
 
     [XmlElement("npc_skills")] public List<NpcSkillTemplates> npcSkills;
 
     [XmlIgnore] private readonly Dictionary<int, NpcSkillTemplates> npcSkillData = new();
+    [XmlIgnore] private readonly ConcurrentDictionary<NpcSkillTemplates, Lazy<NpcSkillList>> skillListByTemplate = new();
 
     /// <summary>
     /// Java parity: the static_data import graph merges every &lt;npc_skill_templates&gt; source under
@@ -47,20 +51,24 @@ public class NpcSkillData
         return npcSkillData.Count;
     }
 
-    public NpcSkillTemplates GetNpcSkillList(int id)
+    public List<NpcSkillTemplate> GetNpcSkillTemplates(int npcId)
     {
-        return npcSkillData.TryGetValue(id, out var v) ? v : null;
+        return npcSkillData.TryGetValue(npcId, out var templates) ? templates.GetNpcSkills() : new List<NpcSkillTemplate>();
     }
 
-    public void SetNpcSkillTemplates(List<NpcSkillTemplates> template)
+    public void SetSkillData(List<NpcSkillData> data)
     {
-        this.npcSkills = template;
+        npcSkills = data.SelectMany(holder => holder.npcSkillData.Values.Distinct()).ToList();
         npcSkillData.Clear();
+        skillListByTemplate.Clear();
         AfterUnmarshal(null);
     }
 
-    public ICollection<NpcSkillTemplates> GetAllNpcSkillTemplates()
+    public NpcSkillList GetOrCreateNpcSkillList(int npcId)
     {
-        return npcSkillData.Values;
+        if (!npcSkillData.TryGetValue(npcId, out var templates) || templates.GetNpcSkills().Count == 0)
+            return EMPTY;
+        // Lazy preserves Java computeIfAbsent's single initialization under concurrent first access.
+        return skillListByTemplate.GetOrAdd(templates, value => new Lazy<NpcSkillList>(() => new NpcSkillList(value.GetNpcSkills()))).Value;
     }
 }

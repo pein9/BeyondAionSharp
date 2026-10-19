@@ -1704,14 +1704,11 @@ public sealed class JaxbHolderLoaderTests
         Assert.True(data!.Size() > 0);
 
         // Known row (npc_skills.xml): <npc_skills npc_ids="201010"><npc_skill id="17424" lv="9" prob="25"/>...
-        var list = data.GetNpcSkillList(201010);
-        Assert.NotNull(list);
-        Assert.Contains(201010, list!.GetNpcIds());
-        var skills = list.GetNpcSkills();
+        var skills = data.GetNpcSkillTemplates(201010);
         Assert.NotNull(skills);
         Assert.Contains(skills!, s => s.GetSkillId() == 17424 && s.GetSkillLevel() == 9 && s.GetProbability() == 25);
 
-        Assert.Null(data.GetNpcSkillList(-99999));
+        Assert.Empty(data.GetNpcSkillTemplates(-99999));
     }
 
     [Fact]

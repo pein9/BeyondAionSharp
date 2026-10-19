@@ -268,8 +268,8 @@ public static class When
     /// <remarks>
     /// 832 uses, and in every one the branch it guards goes on to cast that same skill. So the
     /// question is "can I use it now", and this port answers it with the skill's own cooldown:
-    /// <c>NpcSkillEntry.HasCooldown()</c> compares the template cooldown against when it was last
-    /// used. An entry the NPC does not have is not available.
+    /// The NPC's cooldown map stores the deadline for each skill; shared skill entries are stateless.
+    /// An unknown entry remains available because the retail data lists skills absent from npc_skills.
     /// <para>
     /// <b>Retail's word is "count", not "cooldown", and the difference is worth stating.</b> If retail
     /// means a per-fight budget rather than a recharge, this is a close reading and not an exact one —
