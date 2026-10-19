@@ -48,23 +48,10 @@ public abstract class AbstractCollisionObserver : ActionObserver
                     Vector3f dir;
                     if (checkType == CheckType.TOUCH) // check if we are standing on the geometry (either top or bottom)
                     {
-                        float x = creature.GetX();
-                        float y = creature.GetY();
                         float z = creature.GetZ();
-                        float zMax = z + 0.05f + creature.GetObjectTemplate().GetBoundRadius().GetUpper();
-                        float zMin = z - 0.11f;
-                        if (creature is Player)
-                        {
-                            if (((Player) creature).GetMoveController().IsJumping() || !((Player) creature).IsInGlidingState() && !creature.IsFlying())
-                            {
-                                float geoZ = GeoService.GetInstance().GetZ(creature.GetWorldId(), x, y, z, creature.GetInstanceId());
-                                if (!float.IsNaN(geoZ))
-                                {
-                                    zMin = geoZ - 0.11f;
-                                }
-                            }
-                        }
-                        pos = new Vector3f(x, y, zMax);
+                        float zMax = z + Math.Max(2f, 0.05f + creature.GetObjectTemplate().GetBoundRadius().GetUpper());
+                        float zMin = z - 2f;
+                        pos = new Vector3f(creature.GetX(), creature.GetY(), zMax);
                         dir = new Vector3f(pos.GetX(), pos.GetY(), zMin);
                     }
                     else // check if we passed the geometry (either entering or leaving)

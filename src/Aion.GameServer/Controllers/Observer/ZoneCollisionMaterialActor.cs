@@ -13,9 +13,17 @@ namespace Aion.GameServer.Controllers.Observer;
 /// <summary>Java parity: controllers/observer/ZoneCollisionMaterialActor (Rolandas) : AbstractMaterialSkillActor. CollisionIntention.MATERIAL.getId()→(sbyte) (base sbyte intentions); collisionResults.size()→Size(); instanceof Player→is Player. CollisionResults/Spatial red-tolerated.</summary>
 public class ZoneCollisionMaterialActor : AbstractMaterialSkillActor
 {
-    public ZoneCollisionMaterialActor(Creature creature, Spatial geometry, List<MaterialSkill> matchingSkills, CheckType checkType)
-        : base(creature, geometry, (sbyte)CollisionIntention.MATERIAL.GetId(), checkType, TaskId.ZONE_MATERIAL_ACTION, matchingSkills)
+    private volatile bool isTouched;
+
+    public ZoneCollisionMaterialActor(Creature creature, Spatial geometry, MaterialTemplate template, CheckType checkType, List<MaterialSkill> skills)
+        : base(creature, geometry, (sbyte)CollisionIntention.MATERIAL.GetId(), checkType, TaskId.ZONE_MATERIAL_ACTION, template.GetId(), skills)
     {
+    }
+
+    public override void Died(Creature creature)
+    {
+        base.Died(creature);
+        isTouched = false;
     }
 
     public override void OnMoved(CollisionResults collisionResults)

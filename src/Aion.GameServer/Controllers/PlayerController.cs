@@ -425,9 +425,6 @@ public class PlayerController : CreatureController<Player>
         if (GetOwner().IsDead())
             return;
 
-        if (GetOwner().IsProtectionActive())
-            return;
-
         // avoid killing players after duel
         if (!GetOwner().Equals(attacker) && attacker.GetMaster() is Player && !GetOwner().IsEnemy(attacker))
             return;

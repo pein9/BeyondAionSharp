@@ -25,7 +25,7 @@ public class PlayerLifeStats : CreatureLifeStats<Player>
         this.currentFp = owner.GetGameStats().GetFlyTime().GetCurrent();
     }
 
-    protected override void OnHpChanged(int previousHp, int newHp, Creature effector)
+    protected override void OnHpChanged(TYPE type, int previousHp, int newHp, Creature effector)
     {
         if (IsFullyRestoredHp()) // FIXME: Temp Fix: Reset aggro list when hp is full
             owner.GetAggroList().Clear();
@@ -33,24 +33,35 @@ public class PlayerLifeStats : CreatureLifeStats<Player>
         {
             SendHpPacketUpdate();
             SendGroupPacketUpdate();
+            if (newHp < previousHp) EndProtectionOnDamage(type);
             if (previousHp == 0 || newHp < previousHp)
                 TriggerRestoreTask();
             if (previousHp == 0)
                 TriggerFpRestore();
         }
-        base.OnHpChanged(previousHp, newHp, effector);
+        base.OnHpChanged(type, previousHp, newHp, effector);
     }
 
-    protected override void OnMpChanged(int previousMp, int newMp)
+    protected override void OnMpChanged(TYPE type, int previousMp, int newMp)
     {
-        base.OnMpChanged(previousMp, newMp);
+        base.OnMpChanged(type, previousMp, newMp);
         if (owner.IsSpawned())
         {
             SendMpPacketUpdate();
             SendGroupPacketUpdate();
             if (newMp < previousMp)
+            {
+                EndProtectionOnDamage(type);
                 TriggerRestoreTask();
+            }
         }
+    }
+
+    // Direct assignments and skill costs do not end spawn protection; damage does.
+    private void EndProtectionOnDamage(TYPE type)
+    {
+        if (type == TYPE.HP || type == TYPE.HEAL_MP || type == TYPE.USED_HP || type == TYPE.USED_MP) return;
+        if (owner.IsProtectionActive()) owner.GetController().StopProtectionActiveTask();
     }
 
     private void SendGroupPacketUpdate()

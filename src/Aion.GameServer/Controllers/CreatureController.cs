@@ -32,6 +32,8 @@ public abstract class CreatureController : VisibleObjectController
     private volatile Aion.GameServer.Controllers.Observer.TerrainZoneCollisionMaterialActor actor;
     private readonly ConcurrentDictionary<int, ScheduledTask> tasks = new ConcurrentDictionary<int, ScheduledTask>();
 
+    private Aion.GameServer.Controllers.Observer.MaterialSkillUsage? materialSkillUsage;
+
     private static int JRound(float a) => (int)Math.Floor(a + 0.5f);
 
     protected Creature GetOwner() => (Creature)GetOwnerObject();
@@ -544,6 +546,12 @@ public abstract class CreatureController : VisibleObjectController
     /// <summary>Cancel use Item.</summary>
     public virtual void CancelUseItem()
     {
+    }
+
+    public Aion.GameServer.Controllers.Observer.MaterialSkillUsage GetOrCreateMaterialSkillUsage()
+    {
+        lock (this)
+            return materialSkillUsage ??= new Aion.GameServer.Controllers.Observer.MaterialSkillUsage();
     }
 
     public override void OnAfterSpawn()

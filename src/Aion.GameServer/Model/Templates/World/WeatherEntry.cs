@@ -16,6 +16,15 @@ public class WeatherEntry
     [XmlAttribute("before")] public bool isBefore;
     [XmlAttribute("after")] public bool isAfter;
 
+    [XmlIgnore] public WeatherState? state;
+    [XmlAttribute("state")]
+    public string? StateRaw
+    {
+        get => state?.ToString();
+        set => state = string.IsNullOrEmpty(value) ? null : Enum.Parse<WeatherState>(value);
+    }
+    public WeatherState? GetState() => state;
+
     // Public parameterless ctor required by XmlSerializer (JAXB used the implicit no-arg ctor).
     public WeatherEntry()
     {

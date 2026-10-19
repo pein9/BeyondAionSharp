@@ -265,8 +265,8 @@ public class GeoMap : Node
         if (matId > 0)
         {
             CollisionResults results = new CollisionResults(CollisionIntention.PHYSICAL.GetId(), instanceId);
-            float zMax = z + 1;
-            float zMin = z - 1;
+            float zMax = z + 2;
+            float zMin = z - 2;
             Vector3f origin = new Vector3f(x, y, zMax);
             Vector3f target = new Vector3f(x, y, zMin);
             target.SubtractLocal(origin).NormalizeLocal(); // convert to direction vector
@@ -274,10 +274,15 @@ public class GeoMap : Node
             r.SetLimit(zMax - zMin);
             terrain!.CollideAtOrigin(r, results);
             CollisionResult? terrainCollision = results.GetClosestCollision();
-            if (terrainCollision != null && (CollideWith(r, results) == 0 || results.GetClosestCollision()!.Equals(terrainCollision)))
+            if (terrainCollision == null) return 0;
+            float terrainZ = terrainCollision.GetContactPoint().GetZ();
+            CollideWith(r, results);
+            foreach (CollisionResult result in results)
             {
-                return matId;
+                float surfaceZ = result.GetContactPoint().GetZ();
+                if (!result.Equals(terrainCollision) && surfaceZ > terrainZ && surfaceZ <= z + 0.1f) return 0;
             }
+            return matId;
         }
         return 0;
     }

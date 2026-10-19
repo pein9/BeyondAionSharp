@@ -42,17 +42,12 @@ public class MaterialZoneHandler : IZoneHandler
     {
         if (ownerRace == creature.GetRace())
             return;
-        List<MaterialSkill> matchingSkills = new List<MaterialSkill>();
-        foreach (MaterialSkill skill in template.GetSkills())
-        {
-            if (skill.GetTarget().Matches(creature))
-                matchingSkills.Add(skill);
-        }
+        List<MaterialSkill> matchingSkills = template.GetSkills(creature);
         if (matchingSkills.Count == 0)
             return;
         // Teminon/Primum Landing shield 14 & 15, abyss core 16
         CheckType checkType = geometry.GetMaterialId() >= 14 && geometry.GetMaterialId() <= 16 ? CheckType.PASS : CheckType.TOUCH;
-        ZoneCollisionMaterialActor actor = new ZoneCollisionMaterialActor(creature, geometry, matchingSkills, checkType);
+        ZoneCollisionMaterialActor actor = new ZoneCollisionMaterialActor(creature, geometry, template, checkType, matchingSkills);
         creature.GetObserveController().AddObserver(actor);
         observed[creature.GetObjectId()] = actor;
         if (GeoDataConfig.GEO_MATERIALS_SHOWDETAILS && creature is Player player && player.IsStaff())

@@ -21,7 +21,7 @@ public static class MaterialTargetExtensions
         MaterialTarget.ALL => true,
         MaterialTarget.NPC => creature is Aion.GameServer.Model.GameObjects.Npc,
         MaterialTarget.PLAYER => creature is Player,
-        MaterialTarget.PLAYER_WITH_PET => MaterialTarget.PLAYER.Matches(creature) || (creature is Summon summon && summon.GetMaster() != null),
+        MaterialTarget.PLAYER_WITH_PET => MaterialTarget.PLAYER.Matches(creature) || creature is Summon,
         _ => false,
     };
 }

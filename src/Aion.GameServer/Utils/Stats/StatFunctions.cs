@@ -469,6 +469,7 @@ public class StatFunctions
     public static float AdjustDamageByPvpOrPveModifiers(Creature attacker, Creature target, float baseDamage, int pvpDamage, bool useTemplateDmg,
         SkillElement element)
     {
+        if (attacker.Equals(target)) return baseDamage; // Material skills are cast on the creature itself.
         int attackBonus = 0;
         int defenseBonus = 0;
         float damage = baseDamage;

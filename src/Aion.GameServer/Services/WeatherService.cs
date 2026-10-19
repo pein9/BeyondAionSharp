@@ -214,6 +214,25 @@ public class WeatherService
         return WeatherEntry.NONE;
     }
 
+    /// <summary>All conditions must match. Material night lasts from 20:00 through 06:59.</summary>
+    public bool MatchesMaterialActConditions(Creature creature, List<Aion.GameServer.Model.Templates.Materials.MaterialActCondition> conditions)
+    {
+        foreach (var condition in conditions)
+        {
+            if (condition == Aion.GameServer.Model.Templates.Materials.MaterialActCondition.NIGHT)
+            {
+                int hour = GameTimeService.GetInstance().GetGameTime().GetHour();
+                if (hour >= 7 && hour < 20) return false;
+            }
+            else if (condition == Aion.GameServer.Model.Templates.Materials.MaterialActCondition.SUNNY)
+            {
+                WeatherState? state = FindWeatherEntry(creature).GetState();
+                if (state == WeatherState.RAIN || state == WeatherState.SNOW) return false;
+            }
+        }
+        return true;
+    }
+
     public WeatherEntry GetWeatherEntry(int mapId, int weatherZoneId)
     {
         WeatherEntry[] weatherEntries = worldZoneWeathers.GetValueOrDefault(mapId);

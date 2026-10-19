@@ -121,7 +121,7 @@ public abstract class CreatureLifeStats
         if (newHp != previousHp || skillId != 0)
             SendAttackStatusPacketUpdate(type, previousHp - newHp, skillId, log, criticalHit);
         if (newHp != previousHp)
-            OnHpChanged(previousHp, newHp, attacker);
+            OnHpChanged(type, previousHp, newHp, attacker);
         return newHp;
     }
 
@@ -144,7 +144,7 @@ public abstract class CreatureLifeStats
         if (newMp != previousMp || skillId != 0)
             SendAttackStatusPacketUpdate(type, previousMp - newMp, skillId, log);
         if (newMp != previousMp)
-            OnMpChanged(previousMp, newMp);
+            OnMpChanged(type, previousMp, newMp);
         return newMp;
     }
 
@@ -198,7 +198,7 @@ public abstract class CreatureLifeStats
         if (newHp != previousHp || skillId != 0)
             SendAttackStatusPacketUpdate(type, newHp - previousHp, skillId, log);
         if (newHp != previousHp)
-            OnHpChanged(previousHp, newHp, effector == null ? GetOwner() : effector);
+            OnHpChanged(type, previousHp, newHp, effector == null ? GetOwner() : effector);
         return newHp;
     }
 
@@ -223,7 +223,7 @@ public abstract class CreatureLifeStats
         if (newMp != previousMp || skillId != 0)
             SendAttackStatusPacketUpdate(type, newMp - previousMp, skillId, log);
         if (newMp != previousMp)
-            OnMpChanged(previousMp, newMp);
+            OnMpChanged(type, previousMp, newMp);
         return currentMp;
     }
 
@@ -323,14 +323,14 @@ public abstract class CreatureLifeStats
         return (int)(100f * currentMp / GetMaxMp());
     }
 
-    protected virtual void OnHpChanged(int previousHp, int newHp, Creature effector)
+    protected virtual void OnHpChanged(TYPE type, int previousHp, int newHp, Creature effector)
     {
         if (newHp == 0)
             GetOwner().GetController().OnDie(effector);
         GetOwner().GetObserveController().NotifyHPChangeObservers(newHp);
     }
 
-    protected virtual void OnMpChanged(int previousMp, int newMp)
+    protected virtual void OnMpChanged(TYPE type, int previousMp, int newMp)
     {
     }
 
@@ -382,7 +382,7 @@ public abstract class CreatureLifeStats
         {
             // broadcast current hp percentage to others
             PacketSendUtility.BroadcastToSightedPlayers(owner, new SM_ATTACK_STATUS(owner, TYPE.HP, 0, 0, LOG.REGULAR));
-            OnHpChanged(previousHp, newHp, effector);
+            OnHpChanged(TYPE.HP, previousHp, newHp, effector);
         }
     }
 
@@ -399,7 +399,7 @@ public abstract class CreatureLifeStats
         if (newMp != previousMp)
         {
             PacketSendUtility.BroadcastToSightedPlayers(owner, new SM_ATTACK_STATUS(owner, TYPE.HEAL_MP, 0, 0, LOG.MPHEAL));
-            OnMpChanged(previousMp, newMp);
+            OnMpChanged(TYPE.HEAL_MP, previousMp, newMp);
         }
     }
 

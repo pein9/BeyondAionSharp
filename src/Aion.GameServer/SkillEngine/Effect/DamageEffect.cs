@@ -69,7 +69,7 @@ public abstract class DamageEffect : EffectTemplate
 
     public virtual bool ShouldApplyMagicalSkillBoostBonus(Effect effect)
     {
-        return effect.GetSkillTemplate().IsApplyMagicalSkillBoostBonus();
+        return effect.GetSkillTemplate().IsApplyMagicalSkillBoostBonus() && !effect.GetEffector().Equals(effect.GetEffected());
     }
 
     public virtual bool ShouldUseKnowledge()

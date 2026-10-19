@@ -27,6 +27,9 @@ public class MaterialTemplate
         return skills;
     }
 
+    public List<MaterialSkill> GetSkills(Aion.GameServer.Model.GameObjects.Creature creature) =>
+        skills.Where(skill => skill.GetTarget().Matches(creature)).ToList();
+
     public int? GetSkillObstacle()
     {
         return skillObstacle;

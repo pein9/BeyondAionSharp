@@ -17,18 +17,19 @@ using Aion.GameServer.Utils.Time.Gametime;
 
 namespace Aion.GameServer.Controllers.Observer;
 
-/// <summary>Java parity: controllers/observer/AbstractMaterialSkillActor (Yeats, Neon) : AbstractCollisionObserver. AtomicReference&lt;Future&lt;?&gt;&gt;→ScheduledTask field + Interlocked (compareAndSet→CompareExchange==null, getAndSet→Exchange); scheduleAtFixedRate(Runnable)→ScheduleAtFixedRateTask(ct=>{task.Run();...}); stateful inner MaterialSkillTask→nested class capturing outer; synchronized(skills)→lock; volatile fields; enum ==; getClass().getSimpleName()→GetType().Name; sbyte intentions (matches base). MaterialSkill/Effect.ForceType/SkillEngine red-tolerated.</summary>
+/// <summary>Java material actor: all eligible skills use per-creature periods and conjunctive conditions.</summary>
 public abstract class AbstractMaterialSkillActor : AbstractCollisionObserver
 {
-    private ScheduledTask task;
+    private ScheduledTask? task;
     private readonly TaskId taskId;
     protected volatile List<MaterialSkill> skills;
-    protected volatile bool isTouched = false;
+    protected volatile int materialId;
 
-    public AbstractMaterialSkillActor(Creature creature, Spatial geometry, sbyte intentions, CheckType checkType, TaskId taskId, List<MaterialSkill> skills)
+    public AbstractMaterialSkillActor(Creature creature, Spatial geometry, sbyte intentions, CheckType checkType, TaskId taskId, int materialId, List<MaterialSkill> skills)
         : base(creature, geometry, intentions, checkType, ObserverType.DEATH)
     {
         this.taskId = taskId;
+        this.materialId = materialId;
         this.skills = skills;
     }
 
@@ -39,7 +40,7 @@ public abstract class AbstractMaterialSkillActor : AbstractCollisionObserver
             MaterialSkillTask msTask = new MaterialSkillTask(this);
             ScheduledTask t = ThreadPoolManager.GetInstance().ScheduleAtFixedRateTask(ct => { msTask.Run(); return ValueTask.CompletedTask; }, TimeSpan.FromMilliseconds(0), TimeSpan.FromMilliseconds(1000));
             if (Interlocked.CompareExchange(ref task, t, null) == null)
-                creature.GetController().AddTask(taskId, task);
+                creature.GetController().AddTask(taskId, task!);
             else // should not happen
                 t.Cancel(false);
         }
@@ -47,54 +48,19 @@ public abstract class AbstractMaterialSkillActor : AbstractCollisionObserver
 
     public void Abort()
     {
-        ScheduledTask t = Interlocked.Exchange(ref task, (ScheduledTask)null);
+        ScheduledTask? t = Interlocked.Exchange(ref task, null);
         if (t != null)
             creature.GetController().CancelTaskIfPresent(taskId, t);
     }
 
     public override void Died(Creature creature)
     {
-        isTouched = false;
         Abort();
-    }
-
-    private MaterialSkill FindFirstSkillWithMatchingCondition()
-    {
-        lock (skills)
-        {
-            foreach (MaterialSkill skill in skills)
-            {
-                if (MatchActConditions(skill))
-                    return skill;
-            }
-        }
-        return null;
-    }
-
-    private bool MatchActConditions(MaterialSkill skill)
-    {
-        if (skill.GetConditions().Count == 0)
-            return true;
-        foreach (MaterialActCondition condition in skill.GetConditions())
-        {
-            if (condition == MaterialActCondition.NIGHT && GameTimeService.GetInstance().GetGameTime().GetDayTime() == DayTime.NIGHT)
-                return true;
-            if (condition == MaterialActCondition.SUNNY) // sunny actually means "not raining" (fireplaces don't burn during rain)
-            {
-                WeatherEntry weatherEntry = WeatherService.GetInstance().FindWeatherEntry(creature);
-                bool isRain = weatherEntry.GetWeatherName() != null && weatherEntry.GetWeatherName().StartsWith("RAIN");
-                if (!isRain || weatherEntry.IsBefore()) // before means "before" the weather (e.g. clouds before rain)
-                    return true;
-            }
-        }
-        return false;
     }
 
     private class MaterialSkillTask
     {
         private readonly AbstractMaterialSkillActor outer;
-        private MaterialSkill skill;
-        private int secondsElapsed;
 
         public MaterialSkillTask(AbstractMaterialSkillActor outer)
         {
@@ -103,19 +69,20 @@ public abstract class AbstractMaterialSkillActor : AbstractCollisionObserver
 
         public void Run()
         {
-            if (secondsElapsed++ % (skill == null ? 1 : skill.GetFrequency()) != 0)
-                return;
-            if (!outer.isTouched)
-                return;
-            if (!outer.creature.IsSpawned() || outer.creature.IsDead())
-                return;
-            if (outer.creature.IsProtectionActive())
-                return;
-            if ((skill = outer.FindFirstSkillWithMatchingCondition()) == null) // skip if currently nothing matches (fires are off while raining)
-                return;
-            if (GeoDataConfig.GEO_MATERIALS_SHOWDETAILS && outer.creature is Player player2 && player2.IsStaff())
-                PacketSendUtility.SendMessage(player2, outer.GetType().Name + " use skill=" + skill.GetId());
-            Aion.GameServer.SkillEngine.SkillEngine.GetInstance().ApplyEffectDirectly(skill.GetId(), skill.GetSkillLevel(), outer.creature, outer.creature, null, Effect.ForceType.MATERIAL_SKILL);
+            if (!outer.creature.IsSpawned() || outer.creature.IsDead()) return;
+            if (outer.creature is Player player && (player.IsInFlyingState() || player.IsUsingFlightTransporterOrWindstream())) return;
+            int materialId = outer.materialId;
+            List<MaterialSkill> skills = outer.skills;
+            MaterialSkillUsage usage = outer.creature.GetController().GetOrCreateMaterialSkillUsage();
+            for (int slot = 0; slot < skills.Count; slot++)
+            {
+                MaterialSkill skill = skills[slot];
+                if (!WeatherService.GetInstance().MatchesMaterialActConditions(outer.creature, skill.GetConditions()) || !usage.TryUse(materialId, slot, skill.GetFrequency()))
+                    continue;
+                if (GeoDataConfig.GEO_MATERIALS_SHOWDETAILS && outer.creature is Player staff && staff.IsStaff())
+                    PacketSendUtility.SendMessage(staff, outer.GetType().Name + " use skill=" + skill.GetId());
+                Aion.GameServer.SkillEngine.SkillEngine.GetInstance().ApplyEffectDirectly(skill.GetId(), skill.GetSkillLevel(), outer.creature, outer.creature, null, Effect.ForceType.MATERIAL_SKILL);
+            }
         }
     }
 }
