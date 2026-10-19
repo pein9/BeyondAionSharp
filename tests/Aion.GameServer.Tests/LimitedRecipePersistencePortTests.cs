@@ -32,6 +32,7 @@ public sealed class LimitedRecipePersistencePortTests
             Execute(connection, "CREATE TABLE player_skills (skill_id int, skill_level int)");
             Execute(connection, "CREATE TABLE player_appearance (jaw_height int NOT NULL, chin_jut int NOT NULL)");
             Execute(connection, "INSERT INTO player_skills VALUES(29999,5),(30000,7),(40009,300)");
+            Execute(connection, "CREATE TABLE house_scripts (house_id int, script_id tinyint, script mediumtext NOT NULL)");
             Execute(connection, File.ReadAllText(Path.Combine(PvpExpPortTests.Root(), "game-server/sql/update.sql")));
             Assert.Equal(1L, Convert.ToInt64(Scalar(connection, "SELECT skill_level FROM player_skills WHERE skill_id=29999")));
             Assert.Equal(1L, Convert.ToInt64(Scalar(connection, "SELECT skill_level FROM player_skills WHERE skill_id=40009")));

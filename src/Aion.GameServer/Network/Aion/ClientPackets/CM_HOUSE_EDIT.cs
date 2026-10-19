@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -23,7 +24,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/CM_HOUSE_EDIT (Rolandas). House decoration/renovation editor (enter/exit modes, add/delete/spawn/move/despawn objects, switch building). HouseObject&lt;?&gt; -> &lt;PlaceableHouseObject&gt;. HousingService/HouseObjectFactory/SM_HOUSE_EDIT red-tolerated.</summary>
 public class CM_HOUSE_EDIT : AionClientPacket
 {
-    private int action;
+    private HousingCommand? action;
     private int itemObjectId;
     private float x, y, z;
     private int rotation;
@@ -36,59 +37,61 @@ public class CM_HOUSE_EDIT : AionClientPacket
 
     protected override void ReadImpl()
     {
-        action = ReadUC();
-        if (action == 3)
+        int actionId = ReadUC();
+        action = HousingCommandExtensions.GetById(actionId);
+        if (action == null)
         {
-            itemObjectId = ReadD();
+            AionLog.For(nameof(CM_HOUSE_EDIT)).LogWarning("{Player} sent unknown house edit action {Action}", GetConnection().GetActivePlayer(), actionId);
+            return;
         }
-        else if (action == 4)
+        switch (action.Value)
         {
-            itemObjectId = ReadD();
-        }
-        else if (action == 5)
-        {
-            itemObjectId = ReadD();
-            x = ReadF();
-            y = ReadF();
-            z = ReadF();
-            rotation = ReadUH();
-        }
-        else if (action == 6)
-        {
-            itemObjectId = ReadD();
-            x = ReadF();
-            y = ReadF();
-            z = ReadF();
-            rotation = ReadUH();
-        }
-        else if (action == 7)
-        {
-            itemObjectId = ReadD();
-        }
-        else if (action == 16)
-        {
-            buildingId = ReadD();
+            case HousingCommand.REGISTER_ITEM:
+            case HousingCommand.REMOVE_ITEM:
+            case HousingCommand.WITHDRAW_OBJECT:
+                itemObjectId = ReadD();
+                break;
+            case HousingCommand.PUT_OBJECT:
+            case HousingCommand.MOVE_OBJECT:
+                itemObjectId = ReadD();
+                x = ReadF();
+                y = ReadF();
+                z = ReadF();
+                rotation = ReadUH();
+                break;
+            case HousingCommand.CHANGE_BUILDING:
+                buildingId = ReadD();
+                break;
         }
     }
 
     protected override void RunImpl()
     {
         Player player = GetConnection().GetActivePlayer();
-        if (player == null)
+        if (player == null || action == null)
             return;
         House house = player.GetActiveHouse();
+        if (house == null)
+            return;
+        if (action != HousingCommand.END_EDIT && action != HousingCommand.END_BUILDING_EDIT && !house.IsOnLand(player))
+            return;
+        if ((action == HousingCommand.PUT_OBJECT || action == HousingCommand.MOVE_OBJECT) && !house.IsInsideLand(x, y))
+        {
+            AuditLogger.Log(player, "tried to place a house object at " + x + ", " + y + ", " + z + " outside of house " + house.GetAddress().GetId());
+            return;
+        }
 
-        if (action == 1)
+        if (action == HousingCommand.BEGIN_EDIT)
         { // Enter Decoration mode
-            SendPacket(new SM_HOUSE_EDIT(action));
-            SendPacket(new SM_HOUSE_REGISTRY(action));
-            SendPacket(new SM_HOUSE_REGISTRY(action + 1));
+            SendPacket(new SM_HOUSE_EDIT(action.Value));
+            SendPacket(new SM_HOUSE_REGISTRY(HousingContainer.OBJECTS));
+            SendPacket(new SM_HOUSE_REGISTRY(HousingContainer.DECORATIONS));
         }
-        else if (action == 2)
+        else if (action == HousingCommand.END_EDIT)
         { // Exit Decoration mode
-            SendPacket(new SM_HOUSE_EDIT(action));
+            SendPacket(new SM_HOUSE_EDIT(action.Value));
         }
-        else if (action == 3)
+        else if (action == HousingCommand.REGISTER_ITEM)
         { // Add item
             Item item = player.GetInventory().GetItemByObjId(itemObjectId);
             if (item == null)
@@ -102,22 +105,22 @@ public class CM_HOUSE_EDIT : AionClientPacket
             {
                 HouseDecoration decor = new HouseDecoration(IDFactory.GetInstance().NextId(), decorateAction.GetTemplateId());
                 house.GetRegistry().PutDecor(decor, true);
-                SendPacket(new SM_HOUSE_EDIT(action, 2, decor.GetObjectId()));
+                SendPacket(new SM_HOUSE_EDIT(action.Value, HousingContainer.DECORATIONS, decor.GetObjectId()));
             }
             else
             {
                 HouseObject obj = HouseObjectFactory.CreateNew(house, template);
                 house.GetRegistry().PutObject(obj, true);
-                SendPacket(new SM_HOUSE_EDIT(action, 1, obj.GetObjectId()));
+                SendPacket(new SM_HOUSE_EDIT(action.Value, HousingContainer.OBJECTS, obj.GetObjectId()));
             }
         }
-        else if (action == 4)
+        else if (action == HousingCommand.REMOVE_ITEM)
         { // Delete item
             house.GetRegistry().DiscardObject(house.GetRegistry().GetObjectByObjId(itemObjectId), false);
-            SendPacket(new SM_HOUSE_EDIT(action, 1, itemObjectId));
-            SendPacket(new SM_HOUSE_EDIT(4, 1, itemObjectId));
+            SendPacket(new SM_HOUSE_EDIT(action.Value, HousingContainer.OBJECTS, itemObjectId));
+            SendPacket(new SM_HOUSE_EDIT(HousingCommand.REMOVE_ITEM, HousingContainer.OBJECTS, itemObjectId));
         }
-        else if (action == 5)
+        else if (action == HousingCommand.PUT_OBJECT)
         { // spawn object
             HouseObject obj = house.GetRegistry().GetObjectByObjId(itemObjectId);
             if (obj == null)
@@ -126,18 +129,18 @@ public class CM_HOUSE_EDIT : AionClientPacket
             obj.SetY(y);
             obj.SetZ(z);
             obj.SetRotation(rotation);
-            SendPacket(new SM_HOUSE_EDIT(action, itemObjectId, x, y, z, rotation));
+            SendPacket(new SM_HOUSE_EDIT(action.Value, itemObjectId, x, y, z, rotation));
             obj.Spawn();
             house.GetRegistry().SetPersistentState(PersistentState.UPDATE_REQUIRED);
-            SendPacket(new SM_HOUSE_EDIT(4, 1, itemObjectId));
+            SendPacket(new SM_HOUSE_EDIT(HousingCommand.REMOVE_ITEM, HousingContainer.OBJECTS, itemObjectId));
             global::Aion.GameServer.QuestEngine.QuestEngine.GetInstance().OnHouseItemUseEvent(new QuestEnv(null, player, 0));
         }
-        else if (action == 6)
+        else if (action == HousingCommand.MOVE_OBJECT)
         { // move object
             HouseObject obj = house.GetRegistry().GetObjectByObjId(itemObjectId);
             if (obj == null)
                 return;
-            SendPacket(new SM_HOUSE_EDIT(action + 1, 0, itemObjectId));
+            SendPacket(new SM_HOUSE_EDIT(HousingCommand.WITHDRAW_OBJECT, itemObjectId));
             obj.GetController().Delete();
             obj.SetX(x);
             obj.SetY(y);
@@ -145,28 +148,33 @@ public class CM_HOUSE_EDIT : AionClientPacket
             obj.SetRotation(rotation);
             if (obj.GetPersistentState() == PersistentState.UPDATE_REQUIRED)
                 house.GetRegistry().SetPersistentState(PersistentState.UPDATE_REQUIRED);
-            SendPacket(new SM_HOUSE_EDIT(action - 1, itemObjectId, x, y, z, rotation));
+            SendPacket(new SM_HOUSE_EDIT(HousingCommand.PUT_OBJECT, itemObjectId, x, y, z, rotation));
             obj.Spawn();
         }
-        else if (action == 7)
+        else if (action == HousingCommand.WITHDRAW_OBJECT)
         { // despawn object
             HouseObject obj = house.GetRegistry().GetObjectByObjId(itemObjectId);
             if (obj == null)
                 return;
-            SendPacket(new SM_HOUSE_EDIT(action, 0, itemObjectId));
+            SendPacket(new SM_HOUSE_EDIT(action.Value, itemObjectId));
             obj.RemoveFromHouse();
-            SendPacket(new SM_HOUSE_EDIT(3, 1, itemObjectId)); // place it back
+            SendPacket(new SM_HOUSE_EDIT(HousingCommand.REGISTER_ITEM, HousingContainer.OBJECTS, itemObjectId)); // place it back
         }
-        else if (action == 14)
+        else if (action == HousingCommand.BEGIN_BUILDING_EDIT)
         { // enter renovation mode
-            SendPacket(new SM_HOUSE_EDIT(14));
+            SendPacket(new SM_HOUSE_EDIT(HousingCommand.BEGIN_BUILDING_EDIT));
         }
-        else if (action == 15)
+        else if (action == HousingCommand.END_BUILDING_EDIT)
         { // exit renovation mode
-            SendPacket(new SM_HOUSE_EDIT(15));
+            SendPacket(new SM_HOUSE_EDIT(HousingCommand.END_BUILDING_EDIT));
         }
-        else if (action == 16)
+        else if (action == HousingCommand.CHANGE_BUILDING)
         {
+            if (!house.GetLand().GetBuildings().Any(building => building.GetId() == buildingId))
+            {
+                AuditLogger.Log(player, "attempted house renovation to building " + buildingId + " which doesn't belong to " + house.GetLand().GetId());
+                return;
+            }
             if (!RemoveRenovationCoupon(player, house))
             {
                 AuditLogger.Log(player, "attempted house renovation without coupon");

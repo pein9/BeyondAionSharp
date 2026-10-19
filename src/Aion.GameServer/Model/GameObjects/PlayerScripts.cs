@@ -1,4 +1,3 @@
-using System.Text;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.House;
@@ -45,15 +44,17 @@ public sealed class PlayerScripts
 	{
 		if (IsInvalidScriptId(id))
 			return false;
-		string? scriptXML = DecompressAndValidate(compressedXML, uncompressedSize);
-		if (scriptXML == null)
+		if (!IsValid(compressedXML, uncompressedSize))
+		{
+			log.LogWarning("Invalid housing script data for house {House}: {CompressedSize} bytes declared to inflate to {Size} bytes", houseObjId, compressedXML == null ? 0 : compressedXML.Length, uncompressedSize);
 			return false;
+		}
 		if (storeInDb)
 		{
 			Aion.GameServer.Model.House.House house = HousingService.GetInstance().FindHouseOrStudio(houseObjId);
 			if (house.GetPersistentState() == IPersistable.PersistentState.NEW)
 				house.Save(); // new houses must be inserted first, due to foreign key constraints
-			HouseScriptsDAO.StoreScript(houseObjId, id, scriptXML);
+			HouseScriptsDAO.StoreScript(houseObjId, id, compressedXML!, uncompressedSize);
 		}
 		scripts[id] = new PlayerScript(id, compressedXML, uncompressedSize);
 		return true;
@@ -85,28 +86,11 @@ public sealed class PlayerScripts
 		return scriptId < 0 || scriptId >= scripts.Length;
 	}
 
-	private string? DecompressAndValidate(byte[]? compressedXML, int uncompressedSize)
+	private bool IsValid(byte[]? compressedXML, int uncompressedSize)
 	{
 		if (compressedXML == null || compressedXML.Length == 0)
-			return "";
-		byte[] bytes;
-		try
-		{
-			bytes = CompressUtil.Decompress(compressedXML);
-		}
-		catch (Exception ex)
-		{
-			log.LogError(ex, "Housing script data for house {HouseObjId} could not be decompressed", houseObjId);
-			return null;
-		}
-		string scriptXML = Encoding.Unicode.GetString(bytes);
-		if (bytes.Length != uncompressedSize)
-		{
-			log.LogWarning("Unexpected housing script size after decompression for house {HouseObjId}: Expected {Expected} bytes, got {Actual} bytes:\n{Script}",
-				houseObjId, uncompressedSize, bytes.Length, scriptXML);
-			return null;
-		}
-		return scriptXML;
+			return uncompressedSize == 0;
+		return CompressUtil.InflatesTo(compressedXML, uncompressedSize);
 	}
 
 	public void SendToPlayer(Player player, int houseAddress)

@@ -1,0 +1,202 @@
+{
+  "sourceJavaCommit": "46e8d00b923d83820e32e0bbe67835de32b6c81d",
+  "sourceHashes": {
+    "game-server/src/com/aionemu/gameserver/model/house/HousingCommand.java": "7159e9d92c7001ddfcd00e165dc77e5cc84fb80ed1c981f2fafb38bbc9695081",
+    "game-server/src/com/aionemu/gameserver/model/house/HousingContainer.java": "c1104a447726115c7685a923fdb54803a720e561b00f4cfca0f53d0d4e268e89",
+    "game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_HOUSE_EDIT.java": "34d88849ec63845486df84d10c9d9bffdda93bb701650e6d1dc1d584d314d3f7",
+    "game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_HOUSE_REGISTRY.java": "b8ffa7ff2448513a92aa29c7513fa81292e49f52cbd40fd55a7cf70a90b61037",
+    "game-server/src/com/aionemu/gameserver/network/aion/AionServerPacket.java": "574bf823f66b9bc592cb52b6af672f15f428ab232f165b913841a18ff6f8e532"
+  },
+  "captureBoundary": "Compile exact 46e8d00b9 complete house edit/registry writers and dye writer with declared scalar collaborators.\nNo full Java constructors, world, usage-object bodies or server boot are claimed.",
+  "cases": [
+    {
+      "kind": "edit",
+      "command": 1,
+      "color": null,
+      "expiry": 0,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "01"
+    },
+    {
+      "kind": "edit",
+      "command": 2,
+      "color": null,
+      "expiry": 0,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "02"
+    },
+    {
+      "kind": "edit",
+      "command": 4,
+      "color": null,
+      "expiry": 0,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "0401DE110F00"
+    },
+    {
+      "kind": "edit",
+      "command": 7,
+      "color": null,
+      "expiry": 0,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "07DE110F00"
+    },
+    {
+      "kind": "edit",
+      "command": 14,
+      "color": null,
+      "expiry": 0,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "0E"
+    },
+    {
+      "kind": "edit",
+      "command": 15,
+      "color": null,
+      "expiry": 0,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "0F"
+    },
+    {
+      "kind": "edit",
+      "command": 3,
+      "color": null,
+      "expiry": 0,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "0301DE110F0001B6350041000000000000000000000005"
+    },
+    {
+      "kind": "edit",
+      "command": 5,
+      "color": null,
+      "expiry": 0,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "05C9810100105C0C00DE110F0001B635000000A03F000020C000007040FFFF0000000041000000000000000000000005"
+    },
+    {
+      "kind": "registry",
+      "command": 1,
+      "color": null,
+      "expiry": 0,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "010100DE110F0001B635000000000041000000000000000000000005"
+    },
+    {
+      "kind": "edit",
+      "command": 3,
+      "color": 1193046,
+      "expiry": 1792411200,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "0301DE110F0001B6350041000000011234564006D66A05"
+    },
+    {
+      "kind": "edit",
+      "command": 5,
+      "color": 1193046,
+      "expiry": 1792411200,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "05C9810100105C0C00DE110F0001B635000000A03F000020C000007040FFFF0000000041000000011234564006D66A05"
+    },
+    {
+      "kind": "registry",
+      "command": 1,
+      "color": 1193046,
+      "expiry": 1792411200,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "010100DE110F0001B635000000000041000000011234564006D66A05"
+    },
+    {
+      "kind": "edit",
+      "command": 3,
+      "color": 0,
+      "expiry": -2147483648,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "0301DE110F0001B6350041000000010000000000008005"
+    },
+    {
+      "kind": "edit",
+      "command": 5,
+      "color": 0,
+      "expiry": -2147483648,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "05C9810100105C0C00DE110F0001B635000000A03F000020C000007040FFFF0000000041000000010000000000008005"
+    },
+    {
+      "kind": "registry",
+      "command": 1,
+      "color": 0,
+      "expiry": -2147483648,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "010100DE110F0001B635000000000041000000010000000000008005"
+    },
+    {
+      "kind": "edit",
+      "command": 3,
+      "color": 16777215,
+      "expiry": 2147483647,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "0301DE110F0001B635004100000001FFFFFFFFFFFF7F05"
+    },
+    {
+      "kind": "edit",
+      "command": 5,
+      "color": 16777215,
+      "expiry": 2147483647,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "05C9810100105C0C00DE110F0001B635000000A03F000020C000007040FFFF000000004100000001FFFFFFFFFFFF7F05"
+    },
+    {
+      "kind": "registry",
+      "command": 1,
+      "color": 16777215,
+      "expiry": 2147483647,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "010100DE110F0001B63500000000004100000001FFFFFFFFFFFF7F05"
+    },
+    {
+      "kind": "edit",
+      "command": 3,
+      "color": null,
+      "expiry": 0,
+      "container": 2,
+      "objectId": 987615,
+      "payloadHex": "0302DF110F00E9B9350000000000000000000000000000"
+    },
+    {
+      "kind": "edit",
+      "command": 4,
+      "color": null,
+      "expiry": 0,
+      "container": 2,
+      "objectId": 987615,
+      "payloadHex": "0402DF110F00"
+    },
+    {
+      "kind": "registry",
+      "command": 2,
+      "color": null,
+      "expiry": 0,
+      "container": 1,
+      "objectId": 987614,
+      "payloadHex": "020300000000006F00000000000000DE000000DF110F00E9B93500"
+    }
+  ]
+}

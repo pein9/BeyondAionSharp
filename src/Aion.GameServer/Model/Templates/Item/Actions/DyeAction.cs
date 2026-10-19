@@ -2,6 +2,7 @@ using System;
 using System.Xml.Serialization;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Utils;
+using Aion.GameServer.Model.House;
 
 namespace Aion.GameServer.Model.Templates.Items.Actions;
 
@@ -100,12 +101,13 @@ public class DyeAction : AbstractItemAction
         if (!player.GetInventory().DecreaseByObjectId(dyeItem.GetObjectId(), 1))
             return;
         houseObject.SetColor(GetColor());
+        houseObject.SetColorExpireEnd(minutes == null ? 0 : unchecked((int)(SystemClock.CurrentMillis() / 1000 + unchecked(minutes.Value * 60))));
         float x = houseObject.GetX();
         float y = houseObject.GetY();
         float z = houseObject.GetZ();
         int rotation = houseObject.GetRotation();
-        Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_HOUSE_EDIT(7, 0, houseObject.GetObjectId()));
-        Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_HOUSE_EDIT(5, houseObject.GetObjectId(), x, y, z, rotation));
+        Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_HOUSE_EDIT(HousingCommand.WITHDRAW_OBJECT, houseObject.GetObjectId()));
+        Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_HOUSE_EDIT(HousingCommand.PUT_OBJECT, houseObject.GetObjectId(), x, y, z, rotation));
         houseObject.Spawn();
         string objectName = houseObject.GetObjectTemplate().GetL10n();
         if (houseObject.GetColor() == null)

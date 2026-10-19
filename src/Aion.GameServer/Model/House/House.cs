@@ -455,6 +455,25 @@ public class House : VisibleObject, IPersistable
         return race == Race.ELYOS && isEly || race == Race.ASMODIANS && !isEly;
     }
 
+    /// <summary>Whether the player stands on this house's land or inside this studio instance.</summary>
+    public bool IsOnLand(Player player)
+    {
+        if (GetPosition() == null || !IsSpawned() || player.GetWorldId() != address.GetMapId())
+            return false;
+        if (address.GetExitMapId() != null && player.GetInstanceId() != GetInstanceId())
+            return false;
+        return IsInsideLand(player.GetX(), player.GetY());
+    }
+
+    public bool IsInsideLand(float x, float y)
+    {
+        string zoneName = "HOUSE_" + address.GetId();
+        foreach (var zone in DataManager.ZONE_DATA.GetZones(address.GetMapId()))
+            if (zone.GetZoneTemplate().GetName() == zoneName)
+                return zone.GetArea().IsInside2D(x, y);
+        return false;
+    }
+
     public void SendScripts(Player player)
     {
         if (playerScripts == null)

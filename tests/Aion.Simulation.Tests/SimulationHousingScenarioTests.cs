@@ -760,7 +760,8 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.True(stored.HasData());
 		Assert.Equal(compressed, stored.CompressedBytes);
 		Assert.Equal(script.Length, stored.UncompressedSize);
-		Assert.Equal([(1, Encoding.Unicode.GetString(script))], HouseScriptRows(house.GetObjectId()));
+		var row = Assert.Single(HouseScriptRows(house.GetObjectId()));
+		Assert.Equal(1, row.ScriptId); Assert.Equal(compressed, row.Script); Assert.Equal(script.Length, row.UncompressedSize);
 		await owner.Session.SendPacketAsync(GameClientPackets.HouseScript(address, 1, null, 0), token);
 		await owner.Session.SynchronizeAsync(token);
 		Assert.False(Assert.IsType<PlayerScript>(house.GetPlayerScripts().Get(1)).HasData());
@@ -1209,17 +1210,17 @@ public sealed partial class SimulationFastScenarioTests
 		return (reader.GetInt32(0), reader.IsDBNull(1) ? null : reader.GetString(1));
 	}
 
-	private static (int ScriptId, string Script)[] HouseScriptRows(int houseId)
+	private static (int ScriptId, byte[] Script, int UncompressedSize)[] HouseScriptRows(int houseId)
 	{
 		using var connection = DatabaseFactory.GetConnection();
 		connection.Open();
 		using var command = connection.CreateCommand();
-		command.CommandText = "SELECT script_id, script FROM house_scripts WHERE house_id = @id ORDER BY script_id";
+		command.CommandText = "SELECT script_id, script, uncompressed_size FROM house_scripts WHERE house_id = @id ORDER BY script_id";
 		command.Parameters.AddWithValue("@id", houseId);
 		using var reader = command.ExecuteReader();
-		var rows = new List<(int, string)>();
+		var rows = new List<(int, byte[], int)>();
 		while (reader.Read())
-			rows.Add((reader.GetInt32(0), reader.GetString(1)));
+			rows.Add((reader.GetInt32(0), (byte[])reader[1], reader.GetInt32(2)));
 		return rows.ToArray();
 	}
 

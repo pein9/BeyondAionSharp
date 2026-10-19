@@ -127,7 +127,7 @@ public sealed class SkillGradeLevelPortTests
     {
         string root = RealStaticData.RepoRoot();
         Assert.Equal("UPDATE `player_skills` SET `skill_level` = 1 WHERE (`skill_id` < 30000 OR `skill_id` = 40009);",
-            File.ReadAllLines(Path.Combine(root, "game-server/sql/update.sql")).Single(line => line.StartsWith("UPDATE")));
+            File.ReadAllLines(Path.Combine(root, "game-server/sql/update.sql")).Single(line => line.StartsWith("UPDATE `player_skills`")));
         string schema = File.ReadAllText(Path.Combine(root, "game-server/sql/aion_gs.sql"));
         Assert.Contains("`magical_criticals` tinyint NOT NULL DEFAULT '0'", schema);
         Assert.Contains("`rank_limit_expire_time` int NOT NULL DEFAULT '0'", schema);

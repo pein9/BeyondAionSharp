@@ -41,6 +41,7 @@ public sealed class CharacterAppearancePersistencePortTests
             values[Array.IndexOf(columns, "chin_height")] = 65537; values[Array.IndexOf(columns, "cheek_bones")] = -1234;
             using (var seed = new MySqlCommand("INSERT INTO player_appearance VALUES(" + string.Join(',', columns.Select((_, i) => "@p" + i)) + ")", connection))
             { for (int i = 0; i < values.Length; i++) seed.Parameters.AddWithValue("@p" + i, values[i]); seed.ExecuteNonQuery(); }
+            Execute(connection, "CREATE TABLE house_scripts (house_id int, script_id tinyint, script mediumtext NOT NULL)");
             Execute(connection, File.ReadAllText(Path.Combine(PvpExpPortTests.Root(), "game-server/sql/update.sql")));
             Assert.Equal(1L, Convert.ToInt64(Scalar(connection, "SELECT skill_level FROM player_skills WHERE skill_id=29999")));
             Assert.Equal(1L, Convert.ToInt64(Scalar(connection, "SELECT skill_level FROM player_skills WHERE skill_id=40009")));

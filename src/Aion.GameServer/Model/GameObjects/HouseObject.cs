@@ -96,10 +96,10 @@ public abstract class HouseObject : VisibleObject, IExpirable, IPersistable
     {
         if (IsSpawnedByPlayer())
         {
-            PacketSendUtility.SendPacket(player, new SM_HOUSE_EDIT(7, 0, GetObjectId()));
+            PacketSendUtility.SendPacket(player, new SM_HOUSE_EDIT(HousingCommand.WITHDRAW_OBJECT, GetObjectId()));
             GetController().Delete();
         }
-        PacketSendUtility.SendPacket(player, new SM_HOUSE_EDIT(4, 1, GetObjectId()));
+        PacketSendUtility.SendPacket(player, new SM_HOUSE_EDIT(HousingCommand.REMOVE_ITEM, HousingContainer.OBJECTS, GetObjectId()));
         if (isExpired)
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_HOUSING_OBJECT_DELETE_EXPIRE_TIME(GetObjectTemplate().GetL10n()));
         else

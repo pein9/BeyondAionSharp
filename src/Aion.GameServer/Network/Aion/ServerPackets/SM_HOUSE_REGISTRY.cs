@@ -8,14 +8,13 @@ using Aion.GameServer.Model.Templates.Housing;
 namespace Aion.GameServer.Network.Aion.ServerPackets;
 
 /// <summary>Java parity: network/aion/serverpackets/SM_HOUSE_REGISTRY (Rolandas). Lists not-spawned house objects (action 1) or default+unused decorations (action 2). HouseObject&lt;?&gt; erased to HouseObject&lt;PlaceableHouseObject&gt;; instanceof UseableItemObject->is+cast; getBuf()->GetBuf(). HouseRegistry/HouseObject/HouseDecoration red-tolerated.</summary>
-// Java parity (writeImpl audited 1:1 vs game-server/.../SM_HOUSE_REGISTRY.java): 2026-06-17
 public class SM_HOUSE_REGISTRY : AionServerPacket
 {
-    private readonly int action;
+    private readonly HousingContainer container;
 
-    public SM_HOUSE_REGISTRY(int action)
+    public SM_HOUSE_REGISTRY(HousingContainer container)
     {
-        this.action = action;
+        this.container = container;
     }
 
     protected override void WriteImpl(AionConnection con)
@@ -25,8 +24,8 @@ public class SM_HOUSE_REGISTRY : AionServerPacket
             return;
         HouseRegistry houseRegistry = player.GetActiveHouse().GetRegistry();
 
-        WriteC(action);
-        if (action == 1)
+        WriteC(container.GetId());
+        if (container == HousingContainer.OBJECTS)
         { // Display registered objects
             if (houseRegistry == null)
             {
@@ -45,7 +44,7 @@ public class SM_HOUSE_REGISTRY : AionServerPacket
                 WriteD(obj.SecondsUntilExpiration());
 
                 WriteDyeInfo(obj.GetColor());
-                WriteD(0); // expiration as for armor ?
+                WriteD(obj.GetColorExpireEnd());
 
                 WriteC(obj.GetObjectTemplate().GetTypeId());
                 if (obj is UseableItemObject)
@@ -54,7 +53,7 @@ public class SM_HOUSE_REGISTRY : AionServerPacket
                 }
             }
         }
-        else if (action == 2)
+        else if (container == HousingContainer.DECORATIONS)
         { // Display default and registered decoration items
             List<int> defaultDecorIds = houseRegistry.GetOwner().GetBuilding().GetDefaultPartIds();
             List<HouseDecoration> unusedDecors = houseRegistry.GetUnusedDecors();

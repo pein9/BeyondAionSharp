@@ -6,6 +6,7 @@ using Aion.GameServer.Model.Templates.Housing;
 using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Services;
+using Aion.GameServer.Utils.Audit;
 using State = global::Aion.GameServer.Network.Aion.AionConnection.State;
 
 namespace Aion.GameServer.Network.Aion.ClientPackets;
@@ -29,6 +30,11 @@ public class CM_REGISTER_HOUSE : AionClientPacket
     protected override void RunImpl()
     {
         Player player = GetConnection().GetActivePlayer();
+        if (bidKinah <= 0)
+        {
+            AuditLogger.Log(player, "tried to auction their house for " + bidKinah + " kinah");
+            return;
+        }
         if (!HousingBidService.GetInstance().IsRegisteringAllowed())
         {
             SendPacket(SM_SYSTEM_MESSAGE.STR_MSG_HOUSING_CANT_AUCTION_TIMEOUT());

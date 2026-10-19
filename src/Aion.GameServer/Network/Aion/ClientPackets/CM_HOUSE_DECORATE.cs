@@ -36,6 +36,8 @@ public class CM_HOUSE_DECORATE : AionClientPacket
             return;
 
         House house = player.GetActiveHouse();
+        if (house == null || !house.IsOnLand(player))
+            return;
 
         PartType? partType = PartTypeExtensions.GetForLineNr(lineNo);
         if (partType == null) // client may send lineNos which are not even implemented on client side (like 20-26)
@@ -49,11 +51,13 @@ public class CM_HOUSE_DECORATE : AionClientPacket
         else
         { // apply decor and remove it from registry
             HouseDecoration decor = house.GetRegistry().GetDecorByObjId(objectId);
+            if (decor == null)
+                return;
             house.GetRegistry().SetUsed(decor, roomNo);
-            SendPacket(new SM_HOUSE_EDIT(4, 2, objectId)); // yes, in retail it's sent twice!
+            SendPacket(new SM_HOUSE_EDIT(HousingCommand.REMOVE_ITEM, HousingContainer.DECORATIONS, objectId)); // yes, in retail it's sent twice!
         }
 
-        SendPacket(new SM_HOUSE_EDIT(4, 2, objectId));
+        SendPacket(new SM_HOUSE_EDIT(HousingCommand.REMOVE_ITEM, HousingContainer.DECORATIONS, objectId));
         house.GetController().UpdateAppearance();
         global::Aion.GameServer.QuestEngine.QuestEngine.GetInstance().OnHouseItemUseEvent(new QuestEnv(null, player, 0));
     }

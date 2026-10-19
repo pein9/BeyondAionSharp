@@ -13,6 +13,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/CM_HOUSE_SCRIPT (Rolandas, Neon, Sykra). Uploads/removes a house script (sign script) with size limits. PlayerScripts/SM_HOUSE_SCRIPTS red-tolerated.</summary>
 public class CM_HOUSE_SCRIPT : AionClientPacket
 {
+    private const int MAX_SCRIPT_BLOCK_SIZE = 3072;
     private int address;
     private int scriptId;
     private int totalSize;
@@ -30,23 +31,26 @@ public class CM_HOUSE_SCRIPT : AionClientPacket
         address = ReadD();
         scriptId = ReadUC();
         totalSize = ReadUH();
-        if (totalSize > 0)
+        if (totalSize > 0 && totalSize <= MAX_SCRIPT_BLOCK_SIZE)
         {
             compressedSize = ReadD();
-            if (compressedSize <= SM_HOUSE_SCRIPTS.MAX_COMPRESSED_SCRIPT_SIZE)
-            {
-                uncompressedSize = ReadD();
+            uncompressedSize = ReadD();
+            if (compressedSize >= 0 && compressedSize <= totalSize - 8)
                 scriptContent = ReadB(compressedSize);
-            }
         }
     }
 
     protected override void RunImpl()
     {
         Player player = GetConnection().GetActivePlayer();
-        if (compressedSize > SM_HOUSE_SCRIPTS.MAX_COMPRESSED_SCRIPT_SIZE)
+        if (totalSize > MAX_SCRIPT_BLOCK_SIZE)
         {
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_HOUSING_SCRIPT_OVERFLOW());
+            return;
+        }
+        if (totalSize > 0 && scriptContent == null)
+        {
+            AuditLogger.Log(player, "sent a house script of " + compressedSize + " bytes in a block of " + totalSize + " bytes");
             return;
         }
         House house = player.GetActiveHouse();
@@ -55,6 +59,8 @@ public class CM_HOUSE_SCRIPT : AionClientPacket
             AuditLogger.Log(player, "tried to modify script of house they don't own (address " + address + ")");
             return;
         }
+        if (!house.IsOnLand(player))
+            return;
         PlayerScripts scripts = house.GetPlayerScripts();
         if (totalSize == 0)
             scripts.Remove(scriptId);

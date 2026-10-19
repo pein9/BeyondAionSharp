@@ -199,10 +199,10 @@ public sealed partial class BotGameClientPacketWriterTests
 		yield return C("house-teleport", GameClientPackets.HouseTeleport(2, 153, 154), game,
 			new Dictionary<string, object?> { ["actionId"] = 2, ["playerId1"] = 153, ["playerId2"] = 154 });
 		yield return C("house-teleport-back", GameClientPackets.HouseTeleportBack(), game);
-		yield return C("house-edit-mode", GameClientPackets.HouseEdit(1), game, "action", 1);
-		yield return C("house-edit-add", GameClientPackets.HouseEdit(3, 155), game, new Dictionary<string, object?> { ["action"] = 3, ["itemObjectId"] = 155 });
+		yield return C("house-edit-mode", GameClientPackets.HouseEdit(1), game, "action", Aion.GameServer.Model.House.HousingCommand.BEGIN_EDIT);
+		yield return C("house-edit-add", GameClientPackets.HouseEdit(3, 155), game, new Dictionary<string, object?> { ["action"] = Aion.GameServer.Model.House.HousingCommand.REGISTER_ITEM, ["itemObjectId"] = 155 });
 		yield return C("house-edit-place", GameClientPackets.HouseEdit(5, 156, 1.5f, 2.5f, 3.5f, 90), game,
-			new Dictionary<string, object?> { ["action"] = 5, ["itemObjectId"] = 156, ["x"] = 1.5f, ["y"] = 2.5f, ["z"] = 3.5f, ["rotation"] = 90 });
+			new Dictionary<string, object?> { ["action"] = Aion.GameServer.Model.House.HousingCommand.PUT_OBJECT, ["itemObjectId"] = 156, ["x"] = 1.5f, ["y"] = 2.5f, ["z"] = 3.5f, ["rotation"] = 90 });
 		yield return C("house-decorate", GameClientPackets.HouseDecorate(157, 3524001, 8), game, new Dictionary<string, object?> { ["objectId"] = 157, ["lineNo"] = 8 });
 		yield return C("house-settings", GameClientPackets.HouseSettings(2, false, "Welcome"), game,
 			new Dictionary<string, object?> { ["doorState"] = (byte)2, ["showOwnerName"] = false, ["signNotice"] = "Welcome" });
