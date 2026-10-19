@@ -175,7 +175,7 @@ public class AionConnection : AConnection<AionServerPacket>
                         if (diff < msBetweenPackets)
                         {
                             log.LogWarning("{This} is flooding {PckGetClassGetSimpleName} (last diff: {Diff} ms)", this, pck.GetType().Name, diff);
-                            if (PffConfig.PFF_MODE == 1) // disconnect
+                            if (PffConfig.PFF_MODE == 2) // disconnect
                             {
                                 if (recordedPayload != null)
                                     recorder!.OnClientPacketHandled(this, recordedPayload, pck, "flood-disconnect", stateBefore);

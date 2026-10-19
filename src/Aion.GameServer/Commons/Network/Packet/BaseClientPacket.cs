@@ -8,6 +8,12 @@ using Aion.GameServer.Commons.Utils;
 
 namespace Aion.GameServer.Commons.Network.Packet;
 
+// Java erases T: its static warning set is shared by every closed client-packet type in this process.
+internal static class ClientPacketReadWarnings
+{
+    internal static readonly ConcurrentDictionary<int, bool> TooShortPackets = new();
+}
+
 /// <summary>
 /// Java parity: commons/network/packet/BaseClientPacket (-Nemesiss-). Base for every client packet.
 /// Connection owner T is unconstrained, supporting native transports. implements
@@ -37,7 +43,11 @@ public abstract class BaseClientPacket<T> : BasePacket, Runnable
     public void SetConnection(T client) => this.client = client;
 
     /// <summary>Clears process-wide warning suppression between isolated simulation scenarios.</summary>
-    internal static void ResetPartiallyReadPacketWarnings() => partiallyReadPackets.Clear();
+    internal static void ResetPartiallyReadPacketWarnings()
+    {
+        partiallyReadPackets.Clear();
+        ClientPacketReadWarnings.TooShortPackets.Clear();
+    }
 
     /// <summary>Reads data from the packet buffer. On error the connection is closed.</summary>
     public bool Read()
@@ -55,8 +65,9 @@ public abstract class BaseClientPacket<T> : BasePacket, Runnable
         catch (InvalidOperationException ex) when (ex.Message == "BufferUnderflow")
         {
             // The shared Nio shim uses this exception/message for Java BufferUnderflowException.
-            log.LogWarning("{Packet} from {Client} is shorter than expected:\n{Content}", this, client,
-                NetworkUtils.ToHex(buf, startPos, buf.Limit()));
+            if (ClientPacketReadWarnings.TooShortPackets.TryAdd(GetOpCode(), true))
+                log.LogWarning("{Packet} from {Client} is shorter than expected:\n{Content}", this, client,
+                    NetworkUtils.ToHex(buf, startPos, buf.Limit()));
             return false;
         }
         catch (Exception ex)

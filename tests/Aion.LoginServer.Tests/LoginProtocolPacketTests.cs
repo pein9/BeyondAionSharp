@@ -60,6 +60,7 @@ public class LoginProtocolPacketTests
 	[Fact]
 	public void AionFactory_LogsUnknownAndMalformedPacketsWithWireData()
 	{
+		ResetShortWarnings();
 		using var provider = new RecordingProvider();
 		using var factory = LoggerFactory.Create(builder =>
 		{
@@ -88,6 +89,26 @@ public class LoginProtocolPacketTests
 		Assert.Null(truncated.Exception);
 		Assert.DoesNotContain(provider.Entries, entry => entry.Level == LogLevel.Error);
 	}
+
+	[Fact]
+	public void ShortPacketWarningsAreOncePerOpcodeWhileAllMalformedPacketsStillFail()
+	{
+		ResetShortWarnings();
+		using var provider = new RecordingProvider();
+		using var factory = LoggerFactory.Create(b => b.ClearProviders().SetMinimumLevel(LogLevel.Trace).AddProvider(provider));
+		using var logging = AionLog.OverrideFactory(factory);
+		for (int i = 0; i < 3; i++)
+		{
+			Assert.Null(AionClientPacketFactory.Create(new PacketBuffer(new byte[] { 7, 0xAA }), LoginClientState.Connected));
+			Assert.Null(AionClientPacketFactory.Create(new PacketBuffer(new byte[] { 8 }), LoginClientState.Connected));
+		}
+		Assert.Equal(2, provider.Entries.Count(e => e.Message.Contains("shorter than expected")));
+		Assert.Contains(provider.Entries, e => e.Message.Contains("Packet [007]") && e.Message.Contains("AA"));
+		Assert.Contains(provider.Entries, e => e.Message.Contains("Packet [008]"));
+	}
+
+	private static void ResetShortWarnings() =>
+		((ConcurrentDictionary<int, byte>)typeof(AionClientPacketFactory).GetField("TooShortPackets", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!.GetValue(null)!).Clear();
 
 	[Fact]
 	public void AionFactory_ReadsJavaClientPacketShapes()

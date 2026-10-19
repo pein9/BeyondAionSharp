@@ -1,5 +1,6 @@
 using Aion.Commons.Network;
 using Aion.Commons.Logging;
+using System.Collections.Concurrent;
 using Aion.LoginServer.Network.Aion.ClientPackets;
 using Microsoft.Extensions.Logging;
 
@@ -8,6 +9,7 @@ namespace Aion.LoginServer.Network.Aion;
 public static class AionClientPacketFactory
 {
 	private static readonly ILogger Log = AionLog.For(nameof(AionClientPacketFactory));
+	private static readonly ConcurrentDictionary<int, byte> TooShortPackets = new();
 
 	public static AionClientPacket? Create(PacketBuffer payload, LoginClientState state)
 	{
@@ -54,8 +56,9 @@ public static class AionClientPacketFactory
 		}
 		catch (EndOfStreamException)
 		{
-			Log.LogWarning("Packet [{Opcode:D3}] {Packet} is shorter than expected:{NewLine}{Content}",
-				opCode, packet.GetType().Name, Environment.NewLine, FormatHex(payload, payloadStart));
+			if (TooShortPackets.TryAdd(opCode, 0))
+				Log.LogWarning("Packet [{Opcode:D3}] {Packet} is shorter than expected:{NewLine}{Content}",
+					opCode, packet.GetType().Name, Environment.NewLine, FormatHex(payload, payloadStart));
 			return null;
 		}
 		catch (Exception ex)
