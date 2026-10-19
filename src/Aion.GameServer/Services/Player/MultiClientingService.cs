@@ -11,7 +11,7 @@ using Aion.GameServer.World;
 
 namespace Aion.GameServer.Services.Players;
 
-/// <summary>Java parity: services/player/MultiClientingService. Enforces multi-clienting restriction modes: FULL (block same IP + (MAC|HDD) already online), SAME_FACTION (per-account session tracking with faction-switch cooldown). Nested AccountSession (synchronized identifier list, last-online-per-race) + Identifiers record. ConcurrentHashMap->ConcurrentDictionary; values().removeIf->ToArray()+TryRemove; computeIfAbsent->GetOrAdd; synchronized->lock; LinkedList addFirst/removeLast/getFirst; Duration.ofMinutes(x).toMillis()->x*60000; currentTimeMillis->UtcNow; Integer->int?; stream findAny.map.orElse->LINQ FirstOrDefault. SecurityConfig nested enum / AionConnection red-tolerated.</summary>
+/// <summary>Java parity: services/player/MultiClientingService. Enforces multi-clienting restriction modes: FULL (block same IP + (MAC|HDD) already online), SAME_FACTION (per-account session tracking with faction-switch cooldown). Nested AccountSession (synchronized identifier list, last-online-per-race) + Identifiers record. ConcurrentHashMap->ConcurrentDictionary; values().removeIf->ToArray()+TryRemove; computeIfAbsent->GetOrAdd; synchronized->lock; array-backed List Insert(0)/RemoveAt(last)/[0] for the bounded deque; Duration.ofMinutes(x).toMillis()->x*60000; currentTimeMillis->UtcNow; Integer->int?; stream findAny.map.orElse->LINQ FirstOrDefault. SecurityConfig nested enum / AionConnection red-tolerated.</summary>
 public class MultiClientingService
 {
     private static readonly ILogger log = AionLog.For(nameof(MultiClientingService));
@@ -80,7 +80,7 @@ public class MultiClientingService
     {
         internal readonly int accountId;
         private readonly ConcurrentDictionary<Race, long> lastCharOnlineTimeMillis = new ConcurrentDictionary<Race, long>();
-        private readonly LinkedList<Identifiers> identifiers = new LinkedList<Identifiers>();
+        private readonly List<Identifiers> identifiers = new List<Identifiers>(2);
 
         public AccountSession(int accountId)
         {
@@ -91,7 +91,7 @@ public class MultiClientingService
         {
             lock (this)
             {
-                return identifiers.Count != 0 && SecurityConfig.MULTI_CLIENTING_IGNORED_MAC_ADDRESSES.Contains(identifiers.First.Value.mac);
+                return identifiers.Count != 0 && SecurityConfig.MULTI_CLIENTING_IGNORED_MAC_ADDRESSES.Contains(identifiers[0].mac);
             }
         }
 
@@ -102,9 +102,9 @@ public class MultiClientingService
                 Identifiers ids = new Identifiers(connection.GetIP(), connection.GetMacAddress());
                 if (!identifiers.Contains(ids))
                 {
-                    identifiers.AddFirst(ids);
+                    identifiers.Insert(0, ids);
                     while (identifiers.Count > 3)
-                        identifiers.RemoveLast();
+                        identifiers.RemoveAt(identifiers.Count - 1);
                 }
             }
         }

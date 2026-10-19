@@ -37,7 +37,7 @@ public class NpcMoveController : CreatureMoveController<Npc>
     private bool nextPointFromGeo;
     private bool isStop;
 
-    private LinkedList<Point3D> lastSteps;
+    private List<Point3D> lastSteps;
 
     private WalkerTemplate walkerTemplate;
     private RouteStep currentStep;
@@ -481,17 +481,17 @@ public class NpcMoveController : CreatureMoveController<Npc>
         lock (this)
         {
             if (lastSteps == null)
-                lastSteps = new LinkedList<Point3D>();
-            Point3D lastStep = lastSteps.Count == 0 ? null : lastSteps.Last.Value;
+                lastSteps = new List<Point3D>(3);
+            Point3D lastStep = lastSteps.Count == 0 ? null : lastSteps[^1];
             if (lastStep == null || !PositionUtil.IsInRange(lastStep.GetX(), lastStep.GetY(), lastStep.GetZ(), x, y, z, 10))
             {
                 if (Owner.GetAi().IsLogging())
                 {
                     AILogger.Moveinfo(Owner, "store back step: X=" + Owner.GetX() + " Y=" + Owner.GetY() + " Z=" + Owner.GetZ());
                 }
-                lastSteps.AddLast(new Point3D(x, y, z));
+                lastSteps.Add(new Point3D(x, y, z));
                 if (lastSteps.Count > 10)
-                    lastSteps.RemoveFirst();
+                    lastSteps.RemoveAt(0);
             }
         }
     }
@@ -509,13 +509,13 @@ public class NpcMoveController : CreatureMoveController<Npc>
             Point3D step = null;
             if (lastSteps != null && lastSteps.Count != 0)
             {
-                step = lastSteps.Last.Value;
-                lastSteps.RemoveLast();
+                step = lastSteps[^1];
+                lastSteps.RemoveAt(lastSteps.Count - 1);
             }
             if (step != null && lastSteps.Count != 0 && PositionUtil.IsInRange(Owner, step.GetX(), step.GetY(), step.GetZ(), 2))
             {
-                step = lastSteps.Last.Value;
-                lastSteps.RemoveLast();
+                step = lastSteps[^1];
+                lastSteps.RemoveAt(lastSteps.Count - 1);
             }
             if (step == null || GeoService.GetInstance().CanSee(Owner, spawn.GetX(), spawn.GetY(), spawn.GetZ(), IgnoreProperties.ANY_RACE))
             {

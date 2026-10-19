@@ -17,7 +17,7 @@ namespace Aion.GameServer.Model.GameObjects;
 public class Npc : Creature
 {
     private readonly Aion.GameServer.Model.Skill.NpcSkillList skillList;
-    private readonly Queue<Aion.GameServer.Model.Skill.NpcSkillEntry> queuedSkills = new Queue<Aion.GameServer.Model.Skill.NpcSkillEntry>();
+    private Queue<Aion.GameServer.Model.Skill.NpcSkillEntry>? queuedSkills;
     private Aion.GameServer.SpawnEngine.WalkerGroup walkerGroup;
     private string masterName;
     private int creatorId = 0;
@@ -113,43 +113,43 @@ public class Npc : Creature
 
     public Aion.GameServer.Model.Skill.NpcSkillEntry GetNextQueuedSkill()
     {
-        lock (queuedSkills)
+        lock (this)
         {
-            return queuedSkills.Count == 0 ? null : queuedSkills.Peek();
+            return queuedSkills == null || queuedSkills.Count == 0 ? null : queuedSkills.Peek();
         }
     }
 
     public bool HasQueuedSkill(Predicate<Aion.GameServer.Model.Skill.NpcSkillEntry> filter)
     {
-        lock (queuedSkills)
+        lock (this)
         {
-            return queuedSkills.Any(s => filter(s));
+            return queuedSkills != null && queuedSkills.Any(s => filter(s));
         }
     }
 
     public void RemoveNextQueuedSkill(Aion.GameServer.Model.Skill.NpcSkillEntry skill)
     {
-        lock (queuedSkills)
+        lock (this)
         {
-            if (queuedSkills.Count > 0 && queuedSkills.Peek() == skill)
-            {
+            if (queuedSkills != null && queuedSkills.Count > 0 && ReferenceEquals(queuedSkills.Peek(), skill))
                 queuedSkills.Dequeue();
-            }
         }
     }
 
     public void ClearQueuedSkills()
     {
-        lock (queuedSkills)
+        lock (this)
         {
-            queuedSkills.Clear();
+            queuedSkills?.Clear();
         }
     }
 
     public void QueueSkill(Aion.GameServer.Model.Skill.NpcSkillEntry skill)
     {
-        lock (queuedSkills)
+        lock (this)
         {
+            queuedSkills ??= new Queue<Aion.GameServer.Model.Skill.NpcSkillEntry>(3);
+            ArgumentNullException.ThrowIfNull(skill); // Java ArrayDeque rejects null elements.
             queuedSkills.Enqueue(skill);
         }
     }
