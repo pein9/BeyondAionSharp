@@ -20,6 +20,11 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 	private readonly ILoginSessionRegistry _sessionRegistry;
 	private readonly IGameServerRegistry _gameServerRegistry;
 	private readonly SemaphoreSlim _sendLock = new(1, 1);
+	private readonly object _sendQueueGuard = new();
+	private readonly TimeProvider _timeProvider;
+	private int _pendingServerPackets;
+	private long _lastWriteProgressMillis;
+	private volatile bool _sendQueueClosed;
 	private readonly SemaphoreSlim _closeLock = new(1, 1);
 	private LoginClientState _state = LoginClientState.Connected;
 	private readonly int _sessionId;
@@ -34,9 +39,11 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 		ILoginKeyGenerator keyGenerator,
 		ILoginAuthService authService,
 		ILoginSessionRegistry sessionRegistry,
-		IGameServerRegistry gameServerRegistry)
+		IGameServerRegistry gameServerRegistry,
+		TimeProvider? timeProvider = null)
 		: base(logger, client, clientId)
 	{
+		_timeProvider = timeProvider ?? TimeProvider.System;
 		_authService = authService;
 		_sessionRegistry = sessionRegistry;
 		_gameServerRegistry = gameServerRegistry;
@@ -256,19 +263,55 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 
 	public async Task SendPacketAsync(AionServerPacket packet)
 	{
+		bool abort = false;
+		lock (_sendQueueGuard)
+		{
+			if (!_isConnected || _sendQueueClosed) return;
+			long now = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds();
+			if (_pendingServerPackets == 0)
+				_lastWriteProgressMillis = now;
+			else if (_pendingServerPackets >= 100)
+			{
+				_logger.LogWarning("{ClientId} has {Count} server packets waiting to be sent, disconnecting", _clientId, _pendingServerPackets);
+				abort = true;
+			}
+			else if (unchecked(now - _lastWriteProgressMillis) > 60_000)
+			{
+				_logger.LogWarning("{ClientId} hasn't received any data for {Millis} ms while {Count} server packets are waiting to be sent, disconnecting",
+					_clientId, unchecked(now - _lastWriteProgressMillis), _pendingServerPackets);
+				abort = true;
+			}
+			if (abort) _sendQueueClosed = true;
+			else _pendingServerPackets++;
+		}
+		if (abort)
+		{
+			// Break a stalled socket write before CloseAsync waits for its send lock.
+			_client.Close();
+			await CloseAsync();
+			return;
+		}
+
 		await _sendLock.WaitAsync();
 		try
 		{
-			if (!_isConnected)
-				return;
-
+			lock (_sendQueueGuard) _pendingServerPackets--;
+			if (!_isConnected || _sendQueueClosed) return;
 			var frame = packet.SerializeEncryptedFrame(_cryptEngine);
-			await WriteAsync(frame, 0, frame.Length);
+			int offset = 0;
+			while (offset < frame.Length)
+			{
+				int sent = await _client.Client.SendAsync(frame.AsMemory(offset), SocketFlags.None);
+				if (sent <= 0) throw new IOException("Login client socket write made no progress.");
+				offset += sent;
+				lock (_sendQueueGuard) _lastWriteProgressMillis = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds();
+			}
 		}
-		finally
+		catch (Exception ex) when (_sendQueueClosed && ex is IOException or SocketException or ObjectDisposedException)
 		{
-			_sendLock.Release();
+			// The send-queue guard deliberately aborted this connection; cleanup owns the close.
 		}
+		finally { _sendLock.Release(); }
 	}
 
 	public async Task CloseWithPacketAsync(AionServerPacket packet)

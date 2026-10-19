@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Microsoft.Extensions.Logging;
+using Aion.GameServer.Utils;
 using Aion.Commons.Concurrent;
 using Aion.Commons.Diagnostics;
 using Aion.Commons.Nio;
@@ -18,6 +21,8 @@ namespace Aion.GameServer.Commons.Network;
 /// </summary>
 public abstract class AConnection
 {
+    private static readonly ILogger log = AionLog.For(nameof(AConnection));
+    private long lastWriteProgressMillis;
     protected readonly SocketChannel socketChannel;
     protected readonly Dispatcher dispatcher;
     protected SelectionKey key = null!;
@@ -129,6 +134,27 @@ public abstract class AConnection
 
     public string GetIP() => ip;
 
+    internal void OnDataWritten() => Interlocked.Exchange(ref lastWriteProgressMillis, SystemClock.CurrentMillis());
+    protected virtual int GetMaxSendQueueSize() => int.MaxValue;
+    protected virtual long GetMaxSendStallMillis() => long.MaxValue;
+
+    protected bool IsSendQueueStuck(int queuedPackets)
+    {
+        if (queuedPackets >= GetMaxSendQueueSize())
+        {
+            log.LogWarning("{Connection} has {Count} server packets waiting to be sent, disconnecting", this, queuedPackets);
+            return true;
+        }
+        long millisWithoutProgress = unchecked(SystemClock.CurrentMillis() - Interlocked.Read(ref lastWriteProgressMillis));
+        if (millisWithoutProgress > GetMaxSendStallMillis())
+        {
+            log.LogWarning("{Connection} hasn't received any data for {Millis} ms while {Count} server packets are waiting to be sent, disconnecting",
+                this, millisWithoutProgress, queuedPackets);
+            return true;
+        }
+        return false;
+    }
+
     /// <summary>Closes this connection (regular, no close packet).</summary>
     public abstract void Close();
 
@@ -176,6 +202,15 @@ public abstract class AConnection<T> : AConnection where T : BaseServerPacket
 
             if (IsConnected())
             {
+                int queuedPackets = GetSendMsgQueue().Count;
+                if (queuedPackets == 0)
+                    OnDataWritten();
+                else if (IsSendQueueStuck(queuedPackets))
+                {
+                    ClearPendingPackets();
+                    Close();
+                    return;
+                }
                 EnqueuePacket(serverPacket, closing: false);
             }
             else

@@ -100,6 +100,8 @@ public sealed class GameServerOptions
 				PacketProcessorThreadKillThreshold = GetIntWithEnvironment(loader, "gameserver.network.packet.processor.threshold.kill", 3),
 				PacketProcessorThreadSpawnThreshold = GetIntWithEnvironment(loader, "gameserver.network.packet.processor.threshold.spawn", 50),
 				PacketProcessorMaxPendingPacketsPerConnection = GetIntWithEnvironment(loader, "gameserver.network.packet.processor.max_pending_per_connection", 500),
+				MaxPendingServerPackets = GetIntWithEnvironment(loader, "gameserver.network.client.max_pending_server_packets", 20000),
+				MaxSendStallSeconds = GetIntWithEnvironment(loader, "gameserver.network.client.max_send_stall_seconds", 60),
 				LogUnknownPackets = GetBoolWithEnvironment(loader, "gameserver.network.logging.unknown_packets", false),
 				LogIgnoredPackets = GetBoolWithEnvironment(loader, "gameserver.network.logging.ignored_packets", false),
 				EnableFloodConnections = GetBoolWithEnvironment(loader, "gameserver.network.flood.connections", false),
@@ -882,6 +884,10 @@ public sealed class GameServerNetworkOptions
 	public int PacketProcessorThreadSpawnThreshold { get; init; } = 50;
 
 	public int PacketProcessorMaxPendingPacketsPerConnection { get; init; } = 500;
+
+	public int MaxPendingServerPackets { get; init; } = 20000;
+
+	public int MaxSendStallSeconds { get; init; } = 60;
 
 	public bool LogUnknownPackets { get; init; }
 

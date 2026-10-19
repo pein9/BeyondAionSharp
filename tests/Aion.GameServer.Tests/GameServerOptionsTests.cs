@@ -73,6 +73,8 @@ public class GameServerOptionsTests
 		Assert.Equal(4, options.Network.PacketProcessorMinThreads);
 		Assert.Equal(4, options.Network.PacketProcessorMaxThreads);
 		Assert.Equal(500, options.Network.PacketProcessorMaxPendingPacketsPerConnection);
+		Assert.Equal(20000, options.Network.MaxPendingServerPackets);
+		Assert.Equal(60, options.Network.MaxSendStallSeconds);
 	}
 
 	[Fact]

@@ -805,6 +805,115 @@ public sealed class SocketServerSmokeTests
 		await AssertTaskCompletedAsync(serverTask);
 	}
 
+	[Fact]
+	public async Task LoginSendQueueLimitAbortsTransportBeforeWaitingForTheSendLock()
+	{
+		var clock = new SendQueueClock();
+		await using var fixture = await SendQueueSocket.CreateAsync(clock);
+		await fixture.SendLock.WaitAsync();
+		Task[] pending = Enumerable.Range(0, 100).Select(_ => fixture.Connection.SendPacketAsync(new SendQueuePacket(0))).ToArray();
+		Task close = Task.CompletedTask;
+		try
+		{
+			Assert.All(pending, task => Assert.False(task.IsCompleted));
+			close = fixture.Connection.SendPacketAsync(new SendQueuePacket(0));
+			await AssertClientClosedAsync(fixture.Peer.GetStream());
+			Assert.Contains(fixture.Logger.Messages, message => message.Contains("100 server packets waiting"));
+		}
+		finally { fixture.SendLock.Release(); }
+		await Task.WhenAll(pending.Append(close)).WaitAsync(TimeSpan.FromSeconds(5));
+	}
+
+	[Theory]
+	[InlineData(60000, false)]
+	[InlineData(60001, true)]
+	public async Task LoginSendQueueStallUsesStrictGreaterThanAndDoesNotRefreshWhenNonEmpty(int elapsed, bool closes)
+	{
+		var clock = new SendQueueClock();
+		await using var fixture = await SendQueueSocket.CreateAsync(clock);
+		await fixture.SendLock.WaitAsync();
+		Task first = fixture.Connection.SendPacketAsync(new SendQueuePacket(0));
+		clock.Millis += elapsed;
+		Task second = fixture.Connection.SendPacketAsync(new SendQueuePacket(0));
+		try
+		{
+			if (closes) await AssertClientClosedAsync(fixture.Peer.GetStream());
+			else
+			{
+				Assert.False(second.IsCompleted);
+				Assert.False(fixture.Peer.Client.Poll(0, SelectMode.SelectRead));
+			}
+		}
+		finally { fixture.SendLock.Release(); }
+		await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(5));
+		if (!closes)
+		{
+			_ = await ReadFrameAsync(fixture.Peer.GetStream());
+			_ = await ReadFrameAsync(fixture.Peer.GetStream());
+		}
+	}
+
+	[Fact]
+	public async Task LoginSendQueueEmptyAfterProgressStartsANewStallWindow()
+	{
+		var clock = new SendQueueClock();
+		await using var fixture = await SendQueueSocket.CreateAsync(clock);
+		await fixture.Connection.SendPacketAsync(new SendQueuePacket(0));
+		clock.Millis += 600000;
+		await fixture.Connection.SendPacketAsync(new SendQueuePacket(0));
+		_ = await ReadFrameAsync(fixture.Peer.GetStream());
+		_ = await ReadFrameAsync(fixture.Peer.GetStream());
+		Assert.DoesNotContain(fixture.Logger.Messages, message => message.Contains("disconnecting"));
+	}
+
+	[Fact]
+	public async Task LoginSendQueueBreaksAnActualStalledSocketWriteAndCompletesWaitingSends()
+	{
+		await using var fixture = await SendQueueSocket.CreateAsync(new SendQueueClock());
+		// The peer never reads. Small real socket buffers force an in-flight write to stall.
+		var tasks = Enumerable.Range(0, 200).Select(_ => fixture.Connection.SendPacketAsync(new SendQueuePacket(8000))).ToArray();
+		await Task.WhenAll(tasks).WaitAsync(TimeSpan.FromSeconds(10));
+		Assert.Contains(fixture.Logger.Messages, message => message.Contains("100 server packets waiting"));
+		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+		var buffer = new byte[16384];
+		while (await fixture.Peer.GetStream().ReadAsync(buffer, timeout.Token) != 0) { }
+	}
+
+	private sealed class SendQueueClock : TimeProvider
+	{
+		public long Millis = 1000;
+		public override DateTimeOffset GetUtcNow() => DateTimeOffset.FromUnixTimeMilliseconds(Millis);
+	}
+	private sealed class SendQueuePacket(int size) : AionServerPacket(1)
+	{
+		protected override void WritePayload(PacketBuffer buffer) => buffer.WriteB(new byte[size]);
+	}
+	private sealed class SendQueueSocket : IAsyncDisposable
+	{
+		public TcpClient Peer = null!;
+		public LoginClientConnection Connection = null!;
+		public MessageRecordingLogger<LoginClientConnection> Logger = new();
+		public SemaphoreSlim SendLock => (SemaphoreSlim)typeof(LoginClientConnection).GetField("_sendLock", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(Connection)!;
+		private readonly LoginKeyGenerator keys = new();
+		public static async Task<SendQueueSocket> CreateAsync(TimeProvider clock)
+		{
+			using var listener = new TcpListener(IPAddress.Loopback, 0);
+			listener.Start();
+			var fixture = new SendQueueSocket { Peer = new TcpClient { ReceiveBufferSize = 1024 } };
+			var connecting = fixture.Peer.ConnectAsync((IPEndPoint)listener.LocalEndpoint);
+			var accepted = await listener.AcceptTcpClientAsync();
+			await connecting;
+			accepted.SendBufferSize = 1024;
+			fixture.Connection = new LoginClientConnection(fixture.Logger, accepted, "send-queue-probe", fixture.keys,
+				new SuccessfulLoginAuthService(), new LoginSessionRegistry(), new GameServerRegistry(), clock);
+			return fixture;
+		}
+		public async ValueTask DisposeAsync()
+		{
+			Peer.Dispose(); await Connection.DisposeAsync(); keys.Dispose();
+		}
+	}
+
 	private static GameServerSocketServer CreateGameServerSocketServer(int port, GameServerRegistry registry)
 	{
 		return new GameServerSocketServer(

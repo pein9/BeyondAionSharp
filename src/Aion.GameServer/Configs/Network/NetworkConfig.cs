@@ -78,6 +78,12 @@ public static class NetworkConfig
     [Property(key: "gameserver.network.packet.processor.max_pending_per_connection", defaultValue: "500")]
     public static int PACKET_PROCESSOR_MAX_PENDING_PACKETS_PER_CONNECTION = 500;
 
+    [Property(key: "gameserver.network.client.max_pending_server_packets", defaultValue: "20000")]
+    public static int MAX_PENDING_SERVER_PACKETS = 20000;
+
+    [Property(key: "gameserver.network.client.max_send_stall_seconds", defaultValue: "60")]
+    public static int MAX_SEND_STALL_SECONDS = 60;
+
     /// <summary>If aion client packets unknown by the server should be logged. Key: gameserver.network.logging.unknown_packets</summary>
     [Property(key: "gameserver.network.logging.unknown_packets", defaultValue: "false")]
     public static bool LOG_UNKNOWN_PACKETS;

@@ -126,6 +126,28 @@ public sealed class ClientPacketBoundsPortTests
     }
 
     [Fact]
+    public async Task DispatcherRefreshesSendProgressOnlyAfterPositiveWritesInBothBufferPaths()
+    {
+        long now = 1000;
+        Aion.GameServer.Utils.SystemClock.UseSource(() => now);
+        try
+        {
+            await using var fixture = await SocketFixture.CreateAsync();
+            var field = typeof(AConnection).GetField("lastWriteProgressMillis", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            fixture.Connection.writeBuffer.Clear();
+            fixture.Connection.writeBuffer.Put(new byte[] { 1, 2 }).Flip();
+            now = 2000; fixture.WriteOnce();
+            Assert.Equal(now, (long)field.GetValue(fixture.Connection)!);
+            now = 3000; fixture.WriteOnce();
+            Assert.Equal(2000, (long)field.GetValue(fixture.Connection)!); // empty queue makes no socket write
+            fixture.Connection.Outgoing.Enqueue(new byte[] { 3, 4 });
+            now = 4000; fixture.WriteOnce();
+            Assert.Equal(now, (long)field.GetValue(fixture.Connection)!);
+        }
+        finally { Aion.GameServer.Utils.SystemClock.UseSystemClock(); }
+    }
+
+    [Fact]
     public void NativeServerFrameAdapterUsesStrictReadsByDefault()
     {
         using var payload = ServerPacketFrameCodec.CreatePayloadBuffer(ServerPacketFrameCodec.CreateFrame(new byte[] { 1 }));
@@ -156,13 +178,18 @@ public sealed class ClientPacketBoundsPortTests
     {
         public List<byte[]> Bodies { get; } = new();
         public int Disconnects;
+        public Queue<byte[]> Outgoing { get; } = new();
         public override void Close() => Disconnect(new InlineExecutor());
         internal override bool IsSendQueueEmpty() => true;
         protected override bool ProcessData(ByteBuffer data)
         {
             var body = new byte[data.Remaining()]; data.Get(body); Bodies.Add(body); return true;
         }
-        protected override bool WriteData(ByteBuffer data) => false;
+        protected override bool WriteData(ByteBuffer data)
+        {
+            if (!Outgoing.TryDequeue(out var bytes)) return false;
+            data.Put(bytes).Flip(); return true;
+        }
         protected override void Initialized() { }
         protected override void OnDisconnect() => Disconnects++;
         public override void OnServerClose() => Close();
@@ -199,6 +226,7 @@ public sealed class ClientPacketBoundsPortTests
             while (server.Available < available) await Task.Delay(1, timeout.Token);
             dispatcher.Read(channel.KeyFor(dispatcher.Selector())!);
         }
+        public void WriteOnce() => dispatcher.Write(channel.KeyFor(dispatcher.Selector())!);
         public ValueTask DisposeAsync()
         {
             Connection.Close(); Client.Dispose(); server.Dispose(); dispatcher.Selector().Close();

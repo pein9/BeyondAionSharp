@@ -192,6 +192,9 @@ public abstract class Dispatcher
                 return;
             }
 
+            if (numWrite > 0)
+                con.OnDataWritten();
+
             if (numWrite == 0)
             {
                 log.LogInformation("Write " + numWrite + " ip: " + con.GetIP());
@@ -222,6 +225,9 @@ public abstract class Dispatcher
                 CloseConnectionImpl(con);
                 return;
             }
+
+            if (numWrite > 0)
+                con.OnDataWritten();
 
             if (numWrite == 0)
             {

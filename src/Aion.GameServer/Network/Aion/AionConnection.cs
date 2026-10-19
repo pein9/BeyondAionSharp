@@ -101,6 +101,9 @@ public class AionConnection : AConnection<AionServerPacket>
             pffRequests = new Dictionary<int, long>();
     }
 
+    protected override int GetMaxSendQueueSize() => NetworkConfig.MAX_PENDING_SERVER_PACKETS;
+    protected override long GetMaxSendStallMillis() => NetworkConfig.MAX_SEND_STALL_SECONDS * 1000L;
+
     protected override void Initialized()
     {
         SendPacket(new SM_KEY());
