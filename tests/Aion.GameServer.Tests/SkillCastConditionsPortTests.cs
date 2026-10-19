@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Aion.GameServer.Controllers;
+using Aion.GameServer.Dataholders;
 using Aion.GameServer.Handlers.AI;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -25,6 +26,52 @@ namespace Aion.GameServer.Tests;
 [Collection("GoldenDataManager")]
 public sealed class SkillCastConditionsPortTests
 {
+    [Theory]
+    [InlineData("ALL", true)]
+    [InlineData("ENEMY", true)]
+    [InlineData("FRIEND", false)]
+    [InlineData("MYPARTY", false)]
+    [InlineData("NONE", false)]
+    [InlineData(null, false)]
+    public void DuelPartnersAreValidForAllAndEnemySkillsButExcludedFromFriendOnlySkills(string? relation, bool expected)
+    {
+        // Java 558677569: use the shipped Shield of Compassion template for the affected ALL case.
+        using var harness = Harness();
+        var caster = harness.SpawnPlayer();
+        var target = harness.SpawnPlayer();
+        var connection = Attach(caster);
+        var skill = relation == "ALL"
+            ? new Skill(DataManager.SKILL_DATA.GetSkillTemplate(276), caster, 1, target, null!)
+            : NewSkill(caster, target);
+        var properties = Assert.IsType<SkillProperties>(skill.GetSkillTemplate().GetProperties());
+        if (relation != "ALL") properties.TargetRelationRaw = relation;
+        Assert.Equal(relation, properties.GetTargetRelation()?.ToString());
+        var duels = (ConcurrentDictionary<int, int>)typeof(DuelService)
+            .GetField("duels", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(DuelService.GetInstance())!;
+        Assert.True(duels.TryAdd(caster.ObjectId, target.ObjectId));
+        Assert.True(duels.TryAdd(target.ObjectId, caster.ObjectId));
+        connection.Sent.Clear();
+        try
+        {
+            bool valid = (bool)typeof(Skill).GetMethod("IsValidTarget", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(skill, new object[] { caster, target })!;
+            Assert.Equal(expected, valid);
+            if (expected)
+                Assert.Empty(connection.Sent.OfType<SM_SYSTEM_MESSAGE>());
+            else
+                Assert.Contains(connection.Sent.OfType<SM_SYSTEM_MESSAGE>(), message =>
+                    MessageId(message) == MessageId(SM_SYSTEM_MESSAGE.STR_SKILL_TARGET_IS_NOT_VALID()));
+            target.SetVisualState(CreatureVisualState.BLINKING);
+            Assert.False((bool)typeof(Skill).GetMethod("IsValidTarget", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(skill, new object[] { caster, target })!);
+        }
+        finally
+        {
+            duels.TryRemove(caster.ObjectId, out _);
+            duels.TryRemove(target.ObjectId, out _);
+        }
+    }
+
     [Theory]
     [InlineData("dead")]
     [InlineData("hidden")]

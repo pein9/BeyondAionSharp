@@ -229,6 +229,13 @@ public class Skill
         return true;
     }
 
+    /// <summary>Whether the skill excludes enemies, including a duel partner.</summary>
+    private bool IsFriendOnlySkill()
+    {
+        var relation = GetSkillTemplate().GetProperties().GetTargetRelation();
+        return relation != TargetRelationAttribute.ENEMY && relation != TargetRelationAttribute.ALL;
+    }
+
     private bool IsValidTarget(Player player, Creature target)
     {
         if (target.IsSpawnProtectedFrom(player))
@@ -242,7 +249,7 @@ public class Skill
                 if (!target.IsEnemyFrom(player))
                     return false;
             }
-            else if (targetPlayer.IsDueling(player) && GetSkillTemplate().GetProperties().GetTargetRelation() != TargetRelationAttribute.ENEMY)
+            else if (targetPlayer.IsDueling(player) && IsFriendOnlySkill())
             {
                 PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_SKILL_TARGET_IS_NOT_VALID());
                 return false;
