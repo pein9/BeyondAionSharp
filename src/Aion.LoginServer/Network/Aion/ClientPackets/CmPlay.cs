@@ -20,7 +20,5 @@ public sealed class CmPlay : AionClientPacket
 		AccountId = buffer.ReadD();
 		LoginOk = buffer.ReadD();
 		ServerId = buffer.ReadC();
-		buffer.ReadB(6);
-		buffer.ReadQ();
 	}
 }

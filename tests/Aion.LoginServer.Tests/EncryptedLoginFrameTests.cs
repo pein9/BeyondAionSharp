@@ -22,7 +22,7 @@ public class EncryptedLoginFrameTests
 
 		using var decrypted = new PacketBuffer(payload);
 		Assert.Equal(0x01, decrypted.ReadC());
-		Assert.Equal((int)AionAuthResponse.STR_L2AUTH_S_SYSTEM_ERROR, decrypted.ReadD());
+		Assert.Equal((int)AionAuthResponse.STR_L2AUTH_S_SYSTEM_ERROR, decrypted.ReadC());
 	}
 
 	private static LoginCryptEngine PrimedEngine(byte[] sessionKey)

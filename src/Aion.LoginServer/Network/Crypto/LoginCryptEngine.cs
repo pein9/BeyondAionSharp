@@ -48,6 +48,7 @@ public sealed class LoginCryptEngine
 
 	public int Encrypt(byte[] data, int offset, int length)
 	{
+		int dataLength = length;
 		length += 4;
 
 		if (!_updatedKey)
@@ -55,6 +56,7 @@ public sealed class LoginCryptEngine
 			length += 4;
 			length += 8 - length % 8;
 			EnsureCapacity(data, offset, length);
+			Array.Clear(data, offset + dataLength, length - dataLength);
 			EncXorPass(data, offset, length, _nextInt());
 			_cipher.Cipher(data, offset, length);
 			_cipher.UpdateKey(_key);
@@ -64,6 +66,7 @@ public sealed class LoginCryptEngine
 		{
 			length += 8 - length % 8;
 			EnsureCapacity(data, offset, length);
+			Array.Clear(data, offset + dataLength, length - dataLength);
 			AppendChecksum(data, offset, length);
 			_cipher.Cipher(data, offset, length);
 		}
@@ -106,7 +109,7 @@ public sealed class LoginCryptEngine
 		unchecked
 		{
 			long chksum = 0;
-			var count = length - 4;
+			var count = offset + length - 4;
 			long ecx;
 			int i;
 
@@ -134,7 +137,7 @@ public sealed class LoginCryptEngine
 	{
 		unchecked
 		{
-			var stop = length - 8;
+			var stop = offset + length - 8;
 			var pos = 4 + offset;
 			var ecx = key;
 

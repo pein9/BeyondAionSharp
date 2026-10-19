@@ -16,16 +16,9 @@ public sealed class SmLoginOk : AionServerPacket
 	{
 		buffer.WriteD(_sessionKey.AccountId);
 		buffer.WriteD(_sessionKey.LoginOk);
-		buffer.WriteD(0);
-		buffer.WriteD(0);
-		buffer.WriteD(0x000003EA);
-		buffer.WriteD(0);
-		buffer.WriteD(0);
-		buffer.WriteD(0);
-		buffer.WriteD(0);
-		buffer.WriteD(0);
-		buffer.WriteD(0);
-		buffer.WriteD(0);
-		buffer.WriteB(new byte[0x13]);
+		buffer.WriteB(new byte[20]);
+		buffer.WriteD(0); // penalty flags
+		buffer.WriteB(new byte[16]);
+		buffer.WriteD(0); // fatigue warning
 	}
 }

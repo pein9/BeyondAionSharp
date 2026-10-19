@@ -10,9 +10,13 @@ public static class AionClientPacketFactory
 {
 	private static readonly ILogger Log = AionLog.For(nameof(AionClientPacketFactory));
 	private static readonly ConcurrentDictionary<int, byte> TooShortPackets = new();
+	private static readonly ConcurrentDictionary<int, byte> PartiallyReadPackets = new();
 
-	public static AionClientPacket? Create(PacketBuffer payload, LoginClientState state)
+	public static AionClientPacket? Create(PacketBuffer payload, LoginClientState state) => Create(payload, state, out _);
+
+	public static AionClientPacket? Create(PacketBuffer payload, LoginClientState state, out bool readFailed)
 	{
+		readFailed = false;
 		var opCode = payload.ReadC();
 		var payloadStart = payload.Position;
 		AionClientPacket? packet = state switch
@@ -52,10 +56,14 @@ public static class AionClientPacketFactory
 		try
 		{
 			packet.Read(payload);
+			if (payload.Remaining > 0 && PartiallyReadPackets.TryAdd(opCode, 0))
+				Log.LogWarning("Packet [{Opcode:D3}] {Packet} was not fully read! Last {Remaining} bytes were not read from buffer:{NewLine}{Content}",
+					opCode, packet.GetType().Name, payload.Remaining, Environment.NewLine, FormatHex(payload, payloadStart));
 			return packet;
 		}
 		catch (EndOfStreamException)
 		{
+			readFailed = true;
 			if (TooShortPackets.TryAdd(opCode, 0))
 				Log.LogWarning("Packet [{Opcode:D3}] {Packet} is shorter than expected:{NewLine}{Content}",
 					opCode, packet.GetType().Name, Environment.NewLine, FormatHex(payload, payloadStart));
@@ -63,6 +71,7 @@ public static class AionClientPacketFactory
 		}
 		catch (Exception ex)
 		{
+			readFailed = true;
 			var remaining = payload.Remaining > 0
 				? $" (last {payload.Remaining} bytes were not read)"
 				: string.Empty;

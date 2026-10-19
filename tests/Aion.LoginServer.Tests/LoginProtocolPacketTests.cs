@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Aion.LoginServer.Tests;
 
+[Collection("Login packet diagnostics")]
 public class LoginProtocolPacketTests
 {
 	[Fact]
@@ -37,7 +38,7 @@ public class LoginProtocolPacketTests
 		payload.WriteD(0);
 		payload.WriteD(0);
 		payload.WriteD(0);
-		payload.WriteB(new byte[0x0B]);
+		payload.WriteB(new byte[3]);
 
 		var packet = AionClientPacketFactory.Create(new PacketBuffer(payload.ToArray()), LoginClientState.Connected);
 
@@ -50,7 +51,7 @@ public class LoginProtocolPacketTests
 	{
 		using var payload = new PacketBuffer();
 		payload.WriteC(0x00);
-		payload.WriteB(new byte[128 + 55]);
+		payload.WriteB(new byte[128 + 43]);
 
 		var packet = AionClientPacketFactory.Create(new PacketBuffer(payload.ToArray()), LoginClientState.Connected);
 
@@ -111,6 +112,25 @@ public class LoginProtocolPacketTests
 		((ConcurrentDictionary<int, byte>)typeof(AionClientPacketFactory).GetField("TooShortPackets", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!.GetValue(null)!).Clear();
 
 	[Fact]
+	public void WholeExtraBlocksWarnOnceWithoutRejectingThePacket()
+	{
+		((ConcurrentDictionary<int, byte>)typeof(AionClientPacketFactory).GetField("PartiallyReadPackets", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!.GetValue(null)!).Clear();
+		using var provider = new RecordingProvider();
+		using var factory = LoggerFactory.Create(b => b.ClearProviders().SetMinimumLevel(LogLevel.Trace).AddProvider(provider));
+		using var logging = AionLog.OverrideFactory(factory);
+		for (int i = 0; i < 3; i++)
+		{
+			using var data = new PacketBuffer();
+			data.WriteC(7); data.WriteD(123); data.WriteB(new byte[16]); data.WriteB(new byte[8]);
+			using var input = new PacketBuffer(data.ToArray());
+			Assert.IsType<CmAuthGameGuard>(AionClientPacketFactory.Create(input, LoginClientState.Connected, out bool failed));
+			Assert.False(failed);
+			Assert.Equal(8, input.Remaining);
+		}
+		Assert.Single(provider.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("was not fully read") && e.Message.Contains("Last 8 bytes"));
+	}
+
+	[Fact]
 	public void AionFactory_ReadsJavaClientPacketShapes()
 	{
 		using var loginPayload = new PacketBuffer();
@@ -120,9 +140,7 @@ public class LoginProtocolPacketTests
 		loginPayload.WriteB(new byte[16]);
 		loginPayload.WriteB(new byte[] { 0x20, 0, 0, 0, 0, 0, 1 });
 		loginPayload.WriteB(new byte[] { 0x9D, 0xDA, 0x47, 0xA7, 0x21, 0xC0, 0xA6, 0xA5, 0x4B, 0xB7, 0x5E, 0xE3, 0xCE, 0xC9, 0x26, 0xAA });
-		loginPayload.WriteD(0);
-		loginPayload.WriteD(unchecked((int)0x88776655));
-		loginPayload.WriteD(0);
+
 
 		var login = Assert.IsType<CmLogin>(AionClientPacketFactory.Create(new PacketBuffer(loginPayload.ToArray()), LoginClientState.AuthedGameGuard));
 		Assert.Equal(Enumerable.Range(0, 128).Select(i => (byte)i), login.EncryptedLoginData);
@@ -133,9 +151,7 @@ public class LoginProtocolPacketTests
 		serverListPayload.WriteD(1001);
 		serverListPayload.WriteD(0x11223344);
 		serverListPayload.WriteC(7);
-		serverListPayload.WriteB(new byte[] { 1, 2, 3, 4, 5, 6 });
-		serverListPayload.WriteD(0x01020304);
-		serverListPayload.WriteD(60222);
+
 
 		var serverList = Assert.IsType<CmServerList>(AionClientPacketFactory.Create(new PacketBuffer(serverListPayload.ToArray()), LoginClientState.AuthedLogin));
 		Assert.Equal(1001, serverList.AccountId);
@@ -146,8 +162,7 @@ public class LoginProtocolPacketTests
 		playPayload.WriteD(1001);
 		playPayload.WriteD(0x11223344);
 		playPayload.WriteC(3);
-		playPayload.WriteB(new byte[] { 6, 5, 4, 3, 2, 1 });
-		playPayload.WriteQ(0x0102030405060708);
+
 
 		var play = Assert.IsType<CmPlay>(AionClientPacketFactory.Create(new PacketBuffer(playPayload.ToArray()), LoginClientState.AuthedLogin));
 		Assert.Equal(1001, play.AccountId);
@@ -163,11 +178,7 @@ public class LoginProtocolPacketTests
 		payload.WriteD(1001);
 		payload.WriteD(0x11223344);
 		payload.WriteD(0x55667788);
-		payload.WriteC(68);
-		payload.WriteB(new byte[] { 1, 2, 3, 4, 5, 6 });
-		payload.WriteC(4);
-		payload.WriteC(68);
-		payload.WriteH(0x7788);
+
 
 		var update = Assert.IsType<CmUpdateSession>(AionClientPacketFactory.Create(new PacketBuffer(payload.ToArray()), LoginClientState.Connected));
 
@@ -179,21 +190,22 @@ public class LoginProtocolPacketTests
 	[Fact]
 	public void SmAuthGameGuard_MatchesJavaGeneratedPayloadVector()
 	{
-		var payload = new SmAuthGameGuard(0x11223344).SerializePayload();
+		var payload = new SmAuthGameGuard().SerializePayload();
 
 		Assert.Equal(
-			Convert.FromHexString("0B44332211000000000000000000000000000000000050CD00000000000000000B4463EF11000000"),
+			LoginPipelinePortTests.Golden("gameGuard"),
 			payload);
 	}
 
 	[Fact]
 	public void AionFailureAndControlPackets_MatchJavaGeneratedPayloadVectors()
 	{
-		Assert.Equal(Convert.FromHexString("0103000000"), new SmLoginFail(AionAuthResponse.STR_L2AUTH_S_INCORRECT_PWD).SerializePayload());
-		Assert.Equal(Convert.FromHexString("0608000000"), new SmPlayFail(AionAuthResponse.STR_L2AUTH_S_SERVER_DOWN).SerializePayload());
-		Assert.Equal(Convert.FromHexString("0816000000"), new SmAccountKick(AionAuthResponse.STR_L2AUTH_S_BLOCKED_IP).SerializePayload());
-		Assert.Equal(Convert.FromHexString("02"), new SmAccountBanned().SerializePayload());
-		Assert.Equal(Convert.FromHexString("09"), new SmAccountBanned2().SerializePayload());
+		Assert.Equal(LoginPipelinePortTests.Golden("loginFail"), new SmLoginFail(AionAuthResponse.STR_L2AUTH_S_INCORRECT_PWD).SerializePayload());
+		Assert.Equal(LoginPipelinePortTests.Golden("playFail"), new SmPlayFail(AionAuthResponse.STR_L2AUTH_S_SERVER_DOWN).SerializePayload());
+		Assert.Equal(LoginPipelinePortTests.Golden("kick"), new SmAccountKick(AionAuthResponse.STR_L2AUTH_S_BLOCKED_IP).SerializePayload());
+		Assert.Equal(LoginPipelinePortTests.Golden("banned"), new SmAccountBanned().SerializePayload());
+		Assert.Equal(LoginPipelinePortTests.Golden("banned2"), new SmAccountBanned2().SerializePayload());
+		Assert.Equal(LoginPipelinePortTests.Golden("bannedReasonFlags"), new SmAccountBanned(26, unchecked((int)0x80000002)).SerializePayload());
 	}
 
 	[Fact]
@@ -203,9 +215,7 @@ public class LoginProtocolPacketTests
 		var payload = new SmLoginOk(sessionKey).SerializePayload();
 
 		Assert.Equal(
-			Convert.FromHexString(
-				"03E9030000443322110000000000000000EA030000000000000000000000000000" +
-				"0000000000000000000000000000000000000000000000000000000000000000000000"),
+			LoginPipelinePortTests.Golden("loginOk"),
 			payload);
 	}
 
@@ -215,7 +225,7 @@ public class LoginProtocolPacketTests
 		var sessionKey = new SessionKey(1001, 0x11223344, 0x01020304, 0x55667788);
 		var payload = new SmPlayOk(sessionKey, 7).SerializePayload();
 
-		Assert.Equal(Convert.FromHexString("070403020188776655070000000000000000000000000000"), payload);
+		Assert.Equal(LoginPipelinePortTests.Golden("playOk"), payload);
 	}
 
 	[Fact]
@@ -235,7 +245,7 @@ public class LoginProtocolPacketTests
 		var payload = new SmServerList(new[] { server }, new Dictionary<byte, int> { [1] = 2 }, lastServer: 1).SerializePayload();
 
 		Assert.Equal(
-			Convert.FromHexString("040101017F000001611E00000000000064000101000000000200010200000000000000000000000000"),
+			LoginPipelinePortTests.Golden("serverList"),
 			payload);
 	}
 

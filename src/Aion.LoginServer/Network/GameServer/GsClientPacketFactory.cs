@@ -5,8 +5,11 @@ namespace Aion.LoginServer.Network.GameServer;
 
 public static class GsClientPacketFactory
 {
-	public static GsClientPacket? Create(PacketBuffer payload, GameServerConnectionState state)
+	public static GsClientPacket? Create(PacketBuffer payload, GameServerConnectionState state) => Create(payload, state, out _);
+
+	public static GsClientPacket? Create(PacketBuffer payload, GameServerConnectionState state, out bool readFailed)
 	{
+		readFailed = false;
 		var opCode = payload.ReadC();
 		GsClientPacket? packet = state switch
 		{
@@ -41,6 +44,7 @@ public static class GsClientPacketFactory
 		}
 		catch (Exception)
 		{
+			readFailed = true;
 			return null;
 		}
 	}

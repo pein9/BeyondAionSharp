@@ -132,7 +132,12 @@ public sealed class GameServerConnection : BaseClientConnection, IGameServerSess
 
 	protected override async Task ProcessPacketAsync(PacketBuffer packet)
 	{
-		var parsed = GsClientPacketFactory.Create(packet, _state);
+		var parsed = GsClientPacketFactory.Create(packet, _state, out bool readFailed);
+		if (readFailed)
+		{
+			await CloseAsync();
+			return;
+		}
 		if (parsed == null)
 		{
 			_logger.LogWarning("Unknown gameserver packet from {ClientId} in state {State}", _clientId, _state);

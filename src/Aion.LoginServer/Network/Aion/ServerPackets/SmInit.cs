@@ -28,12 +28,6 @@ public sealed class SmInit : AionServerPacket
 		buffer.WriteB(_publicRsaKey);
 		buffer.WriteB(new byte[16]);
 		buffer.WriteB(_blowfishKey);
-		buffer.WriteB(new byte[7]);
-		buffer.WriteC(0);
-		buffer.WriteD(0);
-		buffer.WriteH(0);
-		buffer.WriteC(0);
-		buffer.WriteD(0x3FCE09ED);
-		buffer.WriteD(0);
+		buffer.WriteC(0); // password login mode
 	}
 }

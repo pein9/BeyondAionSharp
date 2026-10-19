@@ -17,9 +17,6 @@ public sealed class CmServerList : AionClientPacket
 	{
 		AccountId = buffer.ReadD();
 		LoginOk = buffer.ReadD();
-		buffer.ReadC();
-		buffer.ReadB(6);
-		buffer.ReadD();
-		buffer.ReadD();
+		buffer.ReadC(); // always 7 in the 4.8 client
 	}
 }

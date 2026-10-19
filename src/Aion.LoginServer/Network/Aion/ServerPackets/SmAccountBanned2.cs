@@ -11,5 +11,6 @@ public sealed class SmAccountBanned2 : AionServerPacket
 
 	protected override void WritePayload(PacketBuffer buffer)
 	{
+		buffer.WriteC(0); // no block message entries
 	}
 }

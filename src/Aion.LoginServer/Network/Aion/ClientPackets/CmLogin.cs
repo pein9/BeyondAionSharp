@@ -13,19 +13,22 @@ public sealed class CmLogin : AionClientPacket
 
 	public int SessionId { get; private set; }
 
+	public ushort PackageId { get; private set; }
+
+	public byte OpenClientWindows { get; private set; }
+
+	public byte[] PcInfoMd5 { get; private set; } = Array.Empty<byte>();
+
 	protected override void ReadPayload(PacketBuffer buffer)
 	{
-		var encryptedLength = buffer.Remaining - 55;
-		if (encryptedLength < 0 || encryptedLength % 128 != 0)
-			throw new InvalidOperationException($"Invalid CM_LOGIN encrypted credential length: {encryptedLength}.");
-
+		const int fieldsAfterCredentials = 43;
+		var encryptedLength = (buffer.Remaining - fieldsAfterCredentials) / 128 * 128;
 		EncryptedLoginData = buffer.ReadB(encryptedLength);
 		SessionId = buffer.ReadD();
-		buffer.ReadB(16);
-		buffer.ReadB(7);
-		buffer.ReadB(16);
-		buffer.ReadD();
-		buffer.ReadD();
-		buffer.ReadD();
+		buffer.ReadB(16); // password zeros or external-token data
+		buffer.ReadD(); // 32 in the 4.8 client
+		PackageId = buffer.ReadH();
+		OpenClientWindows = buffer.ReadC();
+		PcInfoMd5 = buffer.ReadB(16);
 	}
 }

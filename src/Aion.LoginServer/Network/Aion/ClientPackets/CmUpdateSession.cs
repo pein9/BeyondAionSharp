@@ -20,10 +20,5 @@ public sealed class CmUpdateSession : AionClientPacket
 		AccountId = buffer.ReadD();
 		LoginOk = buffer.ReadD();
 		ReconnectKey = buffer.ReadD();
-		buffer.ReadC();
-		buffer.ReadB(6);
-		buffer.ReadC();
-		buffer.ReadC();
-		buffer.ReadH();
 	}
 }

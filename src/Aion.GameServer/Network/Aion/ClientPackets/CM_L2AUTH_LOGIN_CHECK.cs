@@ -18,8 +18,8 @@ public class CM_L2AUTH_LOGIN_CHECK : AionClientPacket
     /// <summary>loginOk is part of session key - its used for security purposes we will check if this is the key what login server sends.</summary>
     private int loginOk;
 
-    private int unk1;
-    private int unk2;
+    // Key from S_RESULT_PASSPORT; zero for an ordinary login.
+    private long passportKey;
 
     public CM_L2AUTH_LOGIN_CHECK(int opcode, ISet<State> validStates)
         : base(opcode, validStates)
@@ -32,8 +32,7 @@ public class CM_L2AUTH_LOGIN_CHECK : AionClientPacket
         playOk1 = ReadD();
         accountId = ReadD();
         loginOk = ReadD();
-        unk1 = ReadD();
-        unk2 = ReadD();
+        passportKey = ReadQ();
     }
 
     protected override void RunImpl()

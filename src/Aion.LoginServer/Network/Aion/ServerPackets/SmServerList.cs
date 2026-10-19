@@ -37,16 +37,13 @@ public sealed class SmServerList : AionServerPacket
 			buffer.WriteH(server.CurrentPlayers);
 			buffer.WriteH(server.MaxPlayers);
 			buffer.WriteC(server.IsOnline ? 1 : 0);
-			buffer.WriteC(1);
-			buffer.WriteC(0);
-			buffer.WriteH(0);
-			buffer.WriteC(0);
+			buffer.WriteD(1); // visible normal server type mask
+			buffer.WriteC(0); // all countries
 		}
 
 		buffer.WriteH(maxIdWithChars + 1);
 		buffer.WriteC(1);
 		for (byte serverId = 1; serverId <= maxIdWithChars; serverId++)
 			buffer.WriteC(_characterCountsByServer.GetValueOrDefault(serverId, 0));
-		buffer.WriteB(new byte[13]);
 	}
 }

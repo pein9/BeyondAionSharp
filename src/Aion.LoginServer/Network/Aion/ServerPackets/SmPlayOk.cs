@@ -19,6 +19,5 @@ public sealed class SmPlayOk : AionServerPacket
 		buffer.WriteD(_sessionKey.PlayOk1);
 		buffer.WriteD(_sessionKey.PlayOk2);
 		buffer.WriteC(_serverId);
-		buffer.WriteB(new byte[0x0E]);
 	}
 }

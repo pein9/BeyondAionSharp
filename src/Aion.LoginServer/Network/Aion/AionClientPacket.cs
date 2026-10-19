@@ -14,6 +14,9 @@ public abstract class AionClientPacket
 	public void Read(PacketBuffer buffer)
 	{
 		ReadPayload(buffer);
+		// The checksum trailer was removed by the connection; only 0..7 padding bytes belong here.
+		if (buffer.Remaining < 8)
+			buffer.ReadB(buffer.Remaining);
 	}
 
 	protected abstract void ReadPayload(PacketBuffer buffer);

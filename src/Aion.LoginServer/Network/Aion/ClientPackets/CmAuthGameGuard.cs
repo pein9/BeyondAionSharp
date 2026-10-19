@@ -14,10 +14,6 @@ public sealed class CmAuthGameGuard : AionClientPacket
 	protected override void ReadPayload(PacketBuffer buffer)
 	{
 		SessionId = buffer.ReadD();
-		buffer.ReadD();
-		buffer.ReadD();
-		buffer.ReadD();
-		buffer.ReadD();
-		buffer.ReadB(0x0B);
+		buffer.ReadB(16);
 	}
 }

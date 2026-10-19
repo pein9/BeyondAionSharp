@@ -75,7 +75,7 @@ public sealed class LoginClientProtocol
 	{
 		await stream.WriteAsync(Crypto.CreateAuthGameGuardFrame(Init.SessionId), cancellationToken);
 		var gameGuard = Crypto.DecryptServerFrame(await ReadFrameAsync(stream, cancellationToken));
-		if (gameGuard[0] != 0x0B || BinaryPrimitives.ReadInt32LittleEndian(gameGuard.AsSpan(1, 4)) != Init.SessionId)
+		if (gameGuard[0] != 0x0B)
 			throw new InvalidDataException("Login server rejected or corrupted the CM_AUTH_GG exchange.");
 
 		await stream.WriteAsync(Crypto.CreateLoginFrame(PublicParameters, Init.SessionId, username, password), cancellationToken);
@@ -178,7 +178,6 @@ public sealed class LoginClientCrypto
 		payload.WriteD(0);
 		payload.WriteD(0);
 		payload.WriteD(0);
-		payload.WriteB(new byte[0x0B]);
 		return EncryptFrame(payload.ToArray());
 	}
 
@@ -200,7 +199,6 @@ public sealed class LoginClientCrypto
 		payload.WriteB(new byte[16]);
 		payload.WriteB(new byte[] { 0x20, 0, 0, 0, 0, 0, 1 });
 		payload.WriteB(new byte[] { 0x9D, 0xDA, 0x47, 0xA7, 0x21, 0xC0, 0xA6, 0xA5, 0x4B, 0xB7, 0x5E, 0xE3, 0xCE, 0xC9, 0x26, 0xAA });
-		payload.WriteD(0);
 		return EncryptFrame(payload.ToArray());
 	}
 
@@ -210,10 +208,7 @@ public sealed class LoginClientCrypto
 		payload.WriteC(0x05);
 		payload.WriteD(accountId);
 		payload.WriteD(loginOk);
-		payload.WriteC(0);
-		payload.WriteB(new byte[6]);
-		payload.WriteD(0);
-		payload.WriteD(0);
+		payload.WriteC(7);
 		return EncryptFrame(payload.ToArray());
 	}
 
@@ -224,8 +219,6 @@ public sealed class LoginClientCrypto
 		payload.WriteD(accountId);
 		payload.WriteD(loginOk);
 		payload.WriteC(serverId);
-		payload.WriteB(new byte[6]);
-		payload.WriteQ(0);
 		return EncryptFrame(payload.ToArray());
 	}
 
@@ -236,11 +229,6 @@ public sealed class LoginClientCrypto
 		payload.WriteD(accountId);
 		payload.WriteD(loginOk);
 		payload.WriteD(reconnectKey);
-		payload.WriteC(68);
-		payload.WriteB(new byte[] { 1, 2, 3, 4, 5, 6 });
-		payload.WriteC(4);
-		payload.WriteC(68);
-		payload.WriteH(0x7788);
 		return EncryptFrame(payload.ToArray());
 	}
 

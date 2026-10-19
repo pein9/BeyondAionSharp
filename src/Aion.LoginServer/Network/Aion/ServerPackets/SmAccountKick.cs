@@ -14,6 +14,6 @@ public sealed class SmAccountKick : AionServerPacket
 
 	protected override void WritePayload(PacketBuffer buffer)
 	{
-		buffer.WriteD((int)_response);
+		buffer.WriteC((int)_response);
 	}
 }

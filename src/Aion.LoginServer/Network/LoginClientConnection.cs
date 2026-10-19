@@ -155,13 +155,18 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 			return null;
 		}
 
-		return new PacketBuffer(payload);
+		return new PacketBuffer(payload[..^8]); // client checksum and final unused word are not packet fields
 	}
 
 	protected override async Task ProcessPacketAsync(PacketBuffer packet)
 	{
 		using var connectionScope = _logger.BeginScope(CreateConnectionScope());
-		var parsed = AionClientPacketFactory.Create(packet, _state);
+		var parsed = AionClientPacketFactory.Create(packet, _state, out bool readFailed);
+		if (readFailed)
+		{
+			await CloseAsync();
+			return;
+		}
 		using var packetScope = parsed == null
 			? null
 			: _logger.BeginScope(new Dictionary<string, string>
@@ -195,7 +200,7 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 				break;
 			case CmAuthGameGuard auth when auth.SessionId == _sessionId:
 				_state = LoginClientState.AuthedGameGuard;
-				await SendPacketAsync(new SmAuthGameGuard(_sessionId));
+				await SendPacketAsync(new SmAuthGameGuard());
 				break;
 			case CmAuthGameGuard:
 				await SendPacketAsync(new SmLoginFail(AionAuthResponse.STR_L2AUTH_S_SYSTEM_ERROR));
