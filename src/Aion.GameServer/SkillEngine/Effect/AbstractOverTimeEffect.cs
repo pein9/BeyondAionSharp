@@ -43,10 +43,14 @@ public abstract class AbstractOverTimeEffect : EffectTemplate
         // TODO figure out what to do with such cases
         if (checktime == 0)
             return;
-        // Some skills have an effective duration of 2000 (see getDuration2) and a checktime of 1000 (e.g. Ripple of Purification).
-        // On retail, these skills are applied once instead of twice, so we slightly increase the initialDelay to prevent this from happening.
-        long initialDelay = 300 + checktime;
-        ScheduledTask task = ThreadPoolManager.GetInstance().ScheduleAtFixedRateTask(ct => { OnPeriodicAction(effect); return ValueTask.CompletedTask; }, System.TimeSpan.FromMilliseconds(initialDelay), System.TimeSpan.FromMilliseconds(checktime));
+        int remainingTicks = effect.GetDuration() > 0 ? GetTickCount(effect.GetDuration()) : int.MaxValue;
+        ScheduledTask task = ThreadPoolManager.GetInstance().ScheduleAtFixedRateTask(ct =>
+        {
+            // Java AtomicInteger.getAndDecrement returns the old value, including on overflow.
+            int previousTicks = unchecked(System.Threading.Interlocked.Decrement(ref remainingTicks) + 1);
+            if (previousTicks > 0) OnPeriodicAction(effect);
+            return ValueTask.CompletedTask;
+        }, System.TimeSpan.FromMilliseconds(checktime), System.TimeSpan.FromMilliseconds(checktime));
         effect.SetPeriodicTask(task, Position);
     }
 
@@ -56,8 +60,9 @@ public abstract class AbstractOverTimeEffect : EffectTemplate
             effect.GetEffected().GetEffectController().UnsetAbnormal(abnormal.Value);
     }
 
-    public override int GetDuration2()
-    {
-        return Duration2 + 1000; // on retail these effects last one sec more than their template Value of duration2
-    }
+    /// <summary>Round after all duration multipliers: whole intervals plus one second.</summary>
+    public long RoundDurationToTicks(long duration) => duration <= 0 || checktime <= 0
+        ? duration : unchecked(duration + 1000 - duration % checktime);
+
+    public int GetTickCount(int duration) => duration <= 0 || checktime <= 0 ? 0 : (duration - 1) / checktime;
 }

@@ -743,17 +743,6 @@ public class Effect : IStatOwner
             if (successEffects.IsEmpty)
                 return;
 
-            SchedulePeriodicActions();
-
-            if (!successEffects.IsEmpty)
-            {
-                foreach (EffectTemplate template in successEffects.Values)
-                    template.StartEffect(this);
-                AddCancelOnDmgObserver();
-            }
-
-            BroadcastHate();
-
             if (duration == null)
             {
                 if (IsToggle())
@@ -767,6 +756,18 @@ public class Effect : IStatOwner
                     duration = CalculateEffectsDuration();
                 }
             }
+
+            SchedulePeriodicActions();
+
+            if (!successEffects.IsEmpty)
+            {
+                foreach (EffectTemplate template in successEffects.Values)
+                    template.StartEffect(this);
+                AddCancelOnDmgObserver();
+            }
+
+            BroadcastHate();
+
             if (duration == 0)
                 return;
             endTime = SystemClock.CurrentMillis() + duration.Value;
@@ -1045,7 +1046,19 @@ public class Effect : IStatOwner
 
     private int CalculateEffectsDuration()
     {
-        long duration = CalculateTemplateDuration();
+        EffectTemplate? durationTemplate = null;
+        long duration = 0;
+        // The first positive duration wins, even when later effects last longer.
+        foreach (EffectTemplate et in successEffects.Values)
+        {
+            long templateDuration = et.GetDuration2() + (long)et.GetDuration1() * GetSkillLevel();
+            if (templateDuration > 0)
+            {
+                durationTemplate = et;
+                duration = et.GetRandomTime() > 0 ? templateDuration - Rnd.Get(0, et.GetRandomTime()) : templateDuration;
+                break;
+            }
+        }
 
         if (GetEffected() is Player effectedPlayer)
         {
@@ -1059,23 +1072,9 @@ public class Effect : IStatOwner
                 duration = duration * skillTemplate.GetPvpDuration() / 100;
             }
         }
+        if (durationTemplate is AbstractOverTimeEffect overTimeEffect)
+            duration = overTimeEffect.RoundDurationToTicks(duration);
         return (int)Math.Min(int.MaxValue, duration);
-    }
-
-    private long CalculateTemplateDuration()
-    {
-        // retail sets the first effect duration > 0 as the skill duration, ignoring longer durations of other effects (see 620 Armor of Attrition)
-        foreach (EffectTemplate et in successEffects.Values)
-        {
-            long effectDuration = et.GetDuration2() + (long)et.GetDuration1() * GetSkillLevel(); // some event skills would produce an int overflow
-            if (effectDuration > 0)
-            {
-                if (et.GetRandomTime() > 0)
-                    effectDuration -= Rnd.Get(0, et.GetRandomTime());
-                return effectDuration;
-            }
-        }
-        return 0;
     }
 
     private long ApplyCumulativeResistDurationMultiplier(long duration, Player effected)
