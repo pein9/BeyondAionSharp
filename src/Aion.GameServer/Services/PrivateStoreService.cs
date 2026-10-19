@@ -133,7 +133,11 @@ public class PrivateStoreService
         if (!seller.IsOnline() || !buyer.IsOnline() || seller.GetRace() != buyer.GetRace())
             return;
 
-        List<TradePSItem> boughtItems = GetBoughtItems(seller, tradeList);
+        PrivateStore store = seller.GetStore();
+        if (store == null)
+            return;
+
+        List<TradePSItem>? boughtItems = GetBoughtItems(seller, store, tradeList);
         if (boughtItems == null || boughtItems.Count == 0)
             return; // Invalid items found or store was empty
 
@@ -144,8 +148,16 @@ public class PrivateStoreService
         }
 
         long price = 0;
-        foreach (TradePSItem boughtItem in boughtItems)
-            price += boughtItem.GetPrice() * boughtItem.GetCount();
+        try
+        {
+            foreach (TradePSItem boughtItem in boughtItems)
+                price = checked(price + checked(boughtItem.GetPrice() * boughtItem.GetCount()));
+        }
+        catch (System.OverflowException)
+        {
+            AuditLogger.Log(buyer, "tried to buy items for more than " + long.MaxValue + " kinah from private store of " + seller);
+            return;
+        }
 
         if (price < 0) // Kinah dupe
         {
@@ -153,76 +165,68 @@ public class PrivateStoreService
             return;
         }
 
-        if (price > buyer.GetInventory().GetKinah())
+        if (!buyer.GetInventory().TryDecreaseKinah(price))
             return;
 
         foreach (TradePSItem boughtItem in boughtItems)
         {
             Item item = seller.GetInventory().GetItemByObjId(boughtItem.GetItemObjId());
-            if (item != null)
-            {
-                // Fix "Private store stackable items dupe" by Asanka
-                if (item.GetItemCount() < boughtItem.GetCount())
-                {
-                    AuditLogger.Log(buyer, "tried to buy more than players private store item stack count");
-                    return;
-                }
+            DecreaseItemFromPlayer(seller, store, item, boughtItem);
+            // unpack
+            if (item.GetPackCount() > 0)
+                item.SetPackCount(item.GetPackCount() - 1);
 
-                DecreaseItemFromPlayer(seller, item, boughtItem);
-                // unpack
-                if (item.GetPackCount() > 0)
-                    item.SetPackCount(item.GetPackCount() - 1);
+            ItemService.AddItem(buyer, item, boughtItem.GetCount());
 
-                ItemService.AddItem(buyer, item, boughtItem.GetCount());
-
-                if (boughtItem.GetCount() == 1)
-                    PacketSendUtility.SendPacket(seller, SM_SYSTEM_MESSAGE.STR_MSG_PERSONAL_SHOP_SELL_ITEM(item.GetL10n()));
-                else
-                    PacketSendUtility.SendPacket(seller, SM_SYSTEM_MESSAGE.STR_MSG_PERSONAL_SHOP_SELL_ITEM_MULTI(boughtItem.GetCount(), item.GetL10n()));
-                log.LogInformation("[PRIVATE STORE] > [Seller: {SellerGetName}] sold [Item: {ItemGetItemId}][Amount: {BoughtItemGetCount}] to [Buyer: {BuyerGetName}] for [Price: {BoughtItemGetPriceBoughtItemGetCount}]", seller.GetName(), item.GetItemId(), boughtItem.GetCount(), buyer.GetName(), boughtItem.GetPrice() * boughtItem.GetCount());
-            }
+            if (boughtItem.GetCount() == 1)
+                PacketSendUtility.SendPacket(seller, SM_SYSTEM_MESSAGE.STR_MSG_PERSONAL_SHOP_SELL_ITEM(item.GetL10n()));
+            else
+                PacketSendUtility.SendPacket(seller, SM_SYSTEM_MESSAGE.STR_MSG_PERSONAL_SHOP_SELL_ITEM_MULTI(boughtItem.GetCount(), item.GetL10n()));
+            log.LogInformation("[PRIVATE STORE] > [Seller: {SellerGetName}] sold [Item: {ItemGetItemId}][Amount: {BoughtItemGetCount}] to [Buyer: {BuyerGetName}] for [Price: {BoughtItemGetPriceBoughtItemGetCount}]", seller.GetName(), item.GetItemId(), boughtItem.GetCount(), buyer.GetName(), boughtItem.GetPrice() * boughtItem.GetCount());
         }
-        buyer.GetInventory().DecreaseKinah(price);
         seller.GetInventory().IncreaseKinah(price);
 
-        if (seller.GetStore().GetSoldItems().Count == 0)
+        if (store.GetSoldItems().Count == 0)
             ClosePrivateStore(seller);
     }
 
     /// <summary>Decrease item count and update inventory.</summary>
-    private static void DecreaseItemFromPlayer(Player seller, Item item, TradePSItem boughtItem)
+    private static void DecreaseItemFromPlayer(Player seller, PrivateStore store, Item item, TradePSItem boughtItem)
     {
         seller.GetInventory().DecreaseItemCount(item, boughtItem.GetCount());
-        TradePSItem storeItem = seller.GetStore().GetTradeItemByObjId(item.GetObjectId());
+        TradePSItem storeItem = store.GetTradeItemByObjId(item.GetObjectId());
         storeItem.DecreaseCount(boughtItem.GetCount());
         if (storeItem.GetCount() == 0)
-            seller.GetStore().RemoveItem(item.GetObjectId());
+            store.RemoveItem(item.GetObjectId());
     }
 
-    private static List<TradePSItem> GetBoughtItems(Player seller, TradeList tradeList)
+    /// <summary>Entries are unique indexes into the seller's store list.</summary>
+    private static List<TradePSItem>? GetBoughtItems(Player seller, PrivateStore store, TradeList tradeList)
     {
-        ICollection<TradePSItem> storeList = seller.GetStore().GetSoldItems().Values;
+        ICollection<TradePSItem> storeList = store.GetSoldItems().Values;
         // we need index based access since tradeList holds index values (this will work since underlying LinkedHashMap preserves insertion order)
         TradePSItem[] storeItems = storeList.ToArray();
         List<TradePSItem> boughtItems = new List<TradePSItem>();
 
         foreach (TradeItem tradeItem in tradeList.GetTradeItems())
         {
-            if (tradeItem.GetItemId() >= 0 && tradeItem.GetItemId() < storeItems.Length) // itemId is index! blame the one who implemented this
+            int index = tradeItem.GetItemId(); // itemId is a store index.
+            if (index < 0 || index >= storeItems.Length)
             {
-                TradePSItem storeItem = storeItems[tradeItem.GetItemId()];
-                if (tradeItem.GetCount() > storeItem.GetCount())
-                {
-                    log.LogWarning("[Private Store] Attempt to buy more than for sale: {TradeItemGetCount} vs. {StoreItemGetCount}", tradeItem.GetCount(), storeItem.GetCount());
-                    return null;
-                }
-                boughtItems.Add(new TradePSItem(storeItem.GetItemObjId(), storeItem.GetItemId(), tradeItem.GetCount(), storeItem.GetPrice()));
-            }
-            else
-            {
-                log.LogWarning("[Private Store] Attempt to buy from invalid store index: {TradeItemGetItemId}", tradeItem.GetItemId());
+                log.LogWarning("[Private Store] Attempt to buy item with invalid index: {Index}", index);
                 return null;
             }
+            TradePSItem storeItem = storeItems[index];
+            long count = tradeItem.GetCount();
+            if (count > storeItem.GetCount())
+            {
+                log.LogWarning("[Private Store] Attempt to buy more than for sale: {Count} vs. {StoreItemGetCount}", count, storeItem.GetCount());
+                return null;
+            }
+            Item item = seller.GetInventory().GetItemByObjId(storeItem.GetItemObjId());
+            if (item == null || item.GetItemCount() < count)
+                return null;
+            boughtItems.Add(new TradePSItem(storeItem.GetItemObjId(), storeItem.GetItemId(), count, storeItem.GetPrice()));
         }
 
         return boughtItems;

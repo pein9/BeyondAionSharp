@@ -12,7 +12,8 @@ def block(text,signature):
     while depth:depth+=(text[end]=='{')-(text[end]=='}');end+=1
     return text[start:end]
 
-def main():
+def capture(sha=SHA,package=PKG):
+    SHA,PKG=sha,package
     PKG.mkdir(parents=True,exist_ok=True);texts={};hashes={}
     for name,path in [('TradeList','model/trade/TradeList'),('CM_BUY_ITEM','network/aion/clientpackets/CM_BUY_ITEM')]:
         file=BASE+path+'.java';raw=subprocess.check_output(['git','-C',str(ROOT.parent/'aion-server'),'show',SHA+':'+file]);texts[name]=raw.decode('utf-8');hashes[file]=hashlib.sha256(raw).hexdigest()
@@ -75,7 +76,11 @@ class RepurchaseList {List<Integer> rows=new ArrayList<>();RepurchaseList(int se
     for value in (float('nan'),float('inf'),float('-inf'),0.,-0.,1.9,-1.9,float(9223372036854775807),-float(9223372036854775808),1e30,-1e30):
         bits=struct.unpack('<q',struct.pack('<d',value))[0];casts.append(dict(bits=bits,value=int(run('cast',bits))))
     fixture=dict(source='Java',sourceJavaCommit=SHA,sourceHashes=hashes,captureBoundary='Exact TradeList class, CM_BUY_ITEM.readImpl and both enums. Player/price/inventory/audit boundary doubles; repurchase eligibility fixed to object401. No runImpl capture.',packetCases=packets,apCases=ap,castCases=casts)
+    return fixture
+
+def main():
+    fixture=capture()
     (ROOT/'parity-artifacts/golden/formulas/NpcShop.e2b0c35e2.json').write_text(json.dumps(fixture,indent=2)+'\n',encoding='utf-8')
-    print('Captured',len(packets),'packet reads,',len(ap),'AP totals and',len(casts),'Java long casts')
+    print('Captured',len(fixture['packetCases']),'packet reads,',len(fixture['apCases']),'AP totals and',len(fixture['castCases']),'Java long casts')
 
 if __name__=='__main__':main()

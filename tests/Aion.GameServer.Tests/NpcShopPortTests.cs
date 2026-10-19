@@ -35,7 +35,7 @@ public sealed class NpcShopPortTests
     [Fact]
     public void ActualPacketReaderMatchesAllCompiledJavaDecisions()
     {
-        using var s = new Scope(); using var fixture = Fixture();
+        using var s = new Scope(); using var fixture = Fixture("f0c1a3695", "f0c1a36950f7a8aa11dbc3a5f12d179fe293ba85");
         RepurchaseService.GetInstance().AddRepurchaseItems(s.Player, [s.Item(162000052)]);
         var cases = fixture.RootElement.GetProperty("packetCases"); Assert.Equal(57, cases.GetArrayLength());
         foreach (var c in cases.EnumerateArray())
@@ -162,10 +162,10 @@ public sealed class NpcShopPortTests
         w.Write(51); w.Write(action); w.Write((byte)0); w.Write((ushort)1); w.Write(id); w.Write(count); return stream.ToArray();
     }
     private static T Get<T>(object target, string field) => (T)target.GetType().GetField(field, Fields)!.GetValue(target)!;
-    private static JsonDocument Fixture()
+    private static JsonDocument Fixture(string revision = "e2b0c35e2", string sha = "e2b0c35e2bd364366821db65cdfa274a38aa71b8")
     {
-        var fixture = JsonDocument.Parse(File.ReadAllText(Path.Combine(RealStaticData.RepoRoot(), "parity-artifacts/golden/formulas/NpcShop.e2b0c35e2.json")));
-        Assert.Equal("e2b0c35e2bd364366821db65cdfa274a38aa71b8", fixture.RootElement.GetProperty("sourceJavaCommit").GetString()); return fixture;
+        var fixture = JsonDocument.Parse(File.ReadAllText(Path.Combine(RealStaticData.RepoRoot(), $"parity-artifacts/golden/formulas/NpcShop.{revision}.json")));
+        Assert.Equal(sha, fixture.RootElement.GetProperty("sourceJavaCommit").GetString()); return fixture;
     }
     private sealed class DirectKnownList : KnownList
     {

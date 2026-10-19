@@ -3,7 +3,7 @@
   "solution": "AionServer.slnx",
   "build": "dotnet build -t:Rebuild -v:minimal",
   "sdkVersion": "10.0.301",
-  "total": 4108,
+  "total": 4106,
   "codes": {
     "CS0105": 2,
     "CS0108": 2,
@@ -15,7 +15,7 @@
     "CS8600": 708,
     "CS8601": 74,
     "CS8602": 384,
-    "CS8603": 681,
+    "CS8603": 679,
     "CS8604": 399,
     "CS8618": 1083,
     "CS8619": 3,
