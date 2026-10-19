@@ -97,3 +97,36 @@ the known defects in the name of parity. These are not new upstream queue items.
 | `GeoWorldLoader.load` / `GeoService.init` | `GeoWorldLoader.Load` / `GeoService.Init` | Load real binary meshes/placements, terrain, material zones and background parallel collision data. Empty C# `gameserver.geodata.map.ids` preserves all-map production loading; the optional explicit map filter is a SIM infrastructure seam. Measurement tests wait for collision preloading; production retains Java's background behavior. |
 | `services.craft.CraftSkillUpdateService` | `Services.Craft.CraftSkillUpdateService` | Single canonical implementation; `getProfessionByNpc` maps to `Profession?` (unknown NPC is null, not enum ordinal zero). `EconomyServiceParityTests` and `NullableEnumEdgeParityTests` guard consolidation and all 36 trainer mappings. |
 | `InventoryDAO.store` catches `SQLException` | `InventoryDAO.Store` catches `MySqlException` | Do not catch programming/infrastructure exceptions as SQL failures; `EconomyServiceParityTests` pins the catch contract and non-SQL propagation. |
+
+## Follow-up after the merged Java queue is ported
+
+Maintainer decision, 2026-10-19: retain these findings and revisit them after the
+remaining merged Java commits have been ported in order. Do not bundle fixes for
+them into an unrelated upstream port.
+
+The extra Fast run during the `83b9e3322` port (`1a6fe36cf`) finished with **85
+passed, 30 failed and 98 skipped**. Three representative failures also reproduced
+with the exact pre-port `TeleportService`; that establishes that they predate this
+port, not that every failure is a Java defect.
+
+| Failures | Finding | Follow-up |
+|---:|---|---|
+| 14 | Thirteen world-entry refusals with message 6 (`REENTRY_TIME`), plus one character still online after `CM_QUIT`. C# follows Java's older delayed logout. | Recheck after `6f5feaceb` (#215), which makes a valid explicit quit leave immediately. Bots must also obey its new `CM_MAY_QUIT` and countdown protocol. The fix has not yet been validated against all fourteen failures. |
+| 14 | Thirteen disposed bot transports and one unexpectedly ended transport. A diagnostic of `AbyssEntryFlightMeasuresTimeSpeedScrollAndTheFirstRing` confirmed a send-stall disconnect after **60,200 ms**, with **524 packets queued**. The simulator drains packets only after advancing virtual time. | Preserve the already-ported Java send-stall guard; investigate pumping/draining the simulator during long time advances. The other thirteen closed-session cases have not been individually instrumented. No remaining Java commit changes that guard. |
+| 1 | `EastGateSpiritDialogsAndPollenTimerPlayThroughTheContract(203, 0)` found no Q2263 pollen after twelve attempts (`SimulationAltgardEastGateScriptTests.cs:108`). | Root cause unresolved. Java has the Q2263 handler and 80% drop configuration; neither is changed by the remaining queue. A Java-shared defect has not been established. |
+| 1 | `FreshPriestCanCastLearnedReturnToNaturalBindLocation` timed out waiting for the opening `SM_PLAY_MOVIE` (`SimulationNaturalRoadTests.cs:25`), before casting Return. | Investigate the movie expectation/entry path; this does not establish a Return-skill defect. No direct fix was found in the remaining queue. |
+
+Also retain the separate local validation drift: the clock-read check counts 22
+direct reads against a baseline of 20 (three `Stopwatch.StartNew` sites versus
+one), and generated custom quest-handler drafts differ from their checked-in
+baseline. Both were present before `83b9e3322`; neither is a confirmed Java
+gameplay defect. Review the drift without raising baselines merely to make checks
+green.
+
+Evidence is under ignored `artifacts/upstream/83b9e3322-fixed-the-pvp-price-of-teleports-to-vulnerable-f/`:
+`fast-failures.json`, `failure-investigation.json`, `baseline-sim-comparison.log`,
+and `diagnostic-{flight,reentry,pollen}.json`. The original Fast run is
+`run/port-83b9e3322-20261019-135045/`.
+
+After the queue is complete, rerun Fast, compare the remaining failures with this
+record, and investigate each unresolved cause before claiming full validation.
