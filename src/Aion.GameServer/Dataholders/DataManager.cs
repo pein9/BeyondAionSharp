@@ -124,7 +124,6 @@ public sealed class DataManager
 	public static TeleLocationData TELELOCATION_DATA => SD.TeleLocationDataDh;
 	public static SkillAliasLocationData SKILL_ALIAS_LOCATION_DATA => SD.SkillAliasLocationDataDh;
 	public static SignetDataTemplates SIGNET_DATA_TEMPLATES => SD.SignetDataTemplatesDh;
-	public static ShieldData SHIELD_DATA => SD.ShieldDataDh;
 	public static RoadData ROAD_DATA => SD.RoadDataDh;
 	public static MultiReturnItemData MULTIRETURN_DATA => SD.MultiReturnItemDataDh;
 	public static KillBountyData KILL_BOUNTY_DATA => SD.KillBountyDataDh;
@@ -135,7 +134,6 @@ public sealed class DataManager
 	public static GatherableData GATHERABLE_DATA => SD.GatherableDataDh;
 	public static FlyRingData FLY_RING_DATA => SD.FlyRingDataDh;
 	public static FlyPathData FLY_PATH => SD.FlyPathDataDh;
-	public static CuringObjectsData CURING_OBJECTS_DATA => SD.CuringObjectsDataDh;
 	public static BaseData BASE_DATA => SD.BaseDataDh;
 	public static AssembledNpcsData ASSEMBLED_NPC_DATA => SD.AssembledNpcsDataDh;
 

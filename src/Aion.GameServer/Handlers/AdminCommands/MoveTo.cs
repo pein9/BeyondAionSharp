@@ -50,7 +50,7 @@ public class MoveTo : AdminCommand
             return;
         }
         else if (paramsArr.Length > 1 || paramsArr[0].StartsWith("[pos:"))
-            errorMsg = $"Invalid map position or {(GeoDataConfig.GEO_ENABLE ? "missing" : "deactivated")} geo.";
+            errorMsg = $"Invalid map position or {(GeoDataConfig.MODE == GeoDataConfig.Mode.ON ? "missing" : "deactivated")} geo.";
 
         string nameOrId = string.Join(" ", paramsArr).ToLowerInvariant();
         Player player = World.World.GetInstance().GetPlayer(Util.ConvertName(nameOrId));

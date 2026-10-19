@@ -209,7 +209,6 @@ public sealed partial class StaticData
 	public TeleLocationData TeleLocationDataDh { get; private set; } = new();
 	public SkillAliasLocationData SkillAliasLocationDataDh { get; private set; } = new();
 	public SignetDataTemplates SignetDataTemplatesDh { get; private set; } = new();
-	public ShieldData ShieldDataDh { get; private set; } = new();
 	public RoadData RoadDataDh { get; private set; } = new();
 	public MultiReturnItemData MultiReturnItemDataDh { get; private set; } = new();
 	public KillBountyData KillBountyDataDh { get; private set; } = new();
@@ -220,7 +219,6 @@ public sealed partial class StaticData
 	public GatherableData GatherableDataDh { get; private set; } = new();
 	public FlyRingData FlyRingDataDh { get; private set; } = new();
 	public FlyPathData FlyPathDataDh { get; private set; } = new();
-	public CuringObjectsData CuringObjectsDataDh { get; private set; } = new();
 	public BaseData BaseDataDh { get; private set; } = new();
 	public AssembledNpcsData AssembledNpcsDataDh { get; private set; } = new();
 	public TitleData TitleDataDh { get; private set; } = new();
@@ -281,7 +279,7 @@ public sealed partial class StaticData
 	/// The C# model-A streaming parser does not touch these holders, so this loads the proven leaf holders
 	/// directly from their per-feature XML files (game-server/data/static_data/...) via
 	/// <see cref="LoadingUtils.JaxbHolderLoader"/> and assigns them into the *Dh slots that
-	/// <see cref="DataManager"/> delegates to (BIND_POINT_DATA, CHEST_DATA, CURING_OBJECTS_DATA, ROAD_DATA,
+	/// <see cref="DataManager"/> delegates to (BIND_POINT_DATA, CHEST_DATA, ROAD_DATA,
 	/// HOTSPOT_DATA). A holder whose source participates in the active <c>static_data.xml</c> import graph is
 	/// required, matching Java's single JAXB graph: missing files, binding/callback failures, and core-holder
 	/// integrity failures abort boot. A source outside that graph is explicitly an optional C# extension; its
@@ -306,7 +304,6 @@ public sealed partial class StaticData
 	{
 		BindPointDataDh = TryLoadHolder(BindPointDataDh, Path.Combine(staticDataDirectory, "bind_points", "bind_points.xml"), logger);
 		ChestDataDh = TryLoadHolder(ChestDataDh, Path.Combine(staticDataDirectory, "chests", "chest_templates.xml"), logger);
-		CuringObjectsDataDh = TryLoadHolder(CuringObjectsDataDh, Path.Combine(staticDataDirectory, "curing_objects", "curing_objects.xml"), logger);
 		RoadDataDh = TryLoadHolder(RoadDataDh, Path.Combine(staticDataDirectory, "roads", "roads.xml"), logger);
 		HotspotDataDh = TryLoadHolder(HotspotDataDh, Path.Combine(staticDataDirectory, "hotspot_template.xml"), logger);
 		MapWeathers = TryLoadHolder(MapWeathers, Path.Combine(staticDataDirectory, "weather_table.xml"), logger);
@@ -320,7 +317,6 @@ public sealed partial class StaticData
 		TeleLocationDataDh = TryLoadHolder(TeleLocationDataDh, Path.Combine(staticDataDirectory, "teleport_location.xml"), logger);
 		PetDopingDataDh = TryLoadHolder(PetDopingDataDh, Path.Combine(staticDataDirectory, "pets", "pet_doping.xml"), logger);
 		FlyPathDataDh = TryLoadHolder(FlyPathDataDh, Path.Combine(staticDataDirectory, "flypath_template.xml"), logger);
-		ShieldDataDh = TryLoadHolder(ShieldDataDh, Path.Combine(staticDataDirectory, "siege", "siege_shields.xml"), logger);
 		PortalLocDataDh = TryLoadHolder(PortalLocDataDh, Path.Combine(staticDataDirectory, "portals", "portal_loc.xml"), logger);
 		SkillAliasLocationDataDh = TryLoadHolder(SkillAliasLocationDataDh, Path.Combine(staticDataDirectory, "skills", "alias_locations.xml"), logger);
 		InstanceBuffDataDh = TryLoadHolder(InstanceBuffDataDh, Path.Combine(staticDataDirectory, "instance_bonusattr", "instance_bonusattr.xml"), logger);

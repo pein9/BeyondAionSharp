@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
 using Aion.Commons.Logging;
+using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.GeoEngine;
 using Aion.GameServer.GeoEngine.Collision;
@@ -28,6 +29,12 @@ public sealed class GoldenGeoFixtureTests
         foreach (var input in manifest.RootElement.GetProperty("sha256").EnumerateObject())
         {
             string path = Path.Combine(data, input.Name);
+            if (input.Name == "data/static_data/siege/siege_shields.xml")
+            {
+                // Java 84d3f7559 removed this runtime input. Keep the original capture's source and hash immutable.
+                Assert.False(File.Exists(path));
+                path = Path.Combine(fixture, "inputs", "siege_shields.xml");
+            }
             byte[] bytes = path.EndsWith(".xml", StringComparison.Ordinal) ? Encoding.UTF8.GetBytes(File.ReadAllText(path).Replace("\r\n", "\n")) : File.ReadAllBytes(path);
             Assert.Equal(input.Value.GetString(), Convert.ToHexStringLower(SHA256.HashData(bytes)));
         }
@@ -38,8 +45,10 @@ public sealed class GoldenGeoFixtureTests
         var errors = new List<string>();
         int visible = 0, occluded = 0, finiteHeights = 0, missingHeights = 0;
         var previous = DataManager.GetRegisteredInstance();
+        var previousMode = GeoDataConfig.MODE;
         try
         {
+            GeoDataConfig.MODE = GeoDataConfig.Mode.ON;
             DataManager.RegisterInstance(await RealStaticData.LoadAsync());
             var maps = new[] { new GeoMap(210010000), new GeoMap(220010000) };
             using var logs = new CapturingLoggerProvider();
@@ -104,7 +113,7 @@ public sealed class GoldenGeoFixtureTests
             Assert.All(logs.Entries.Where(entry => entry.Level == LogLevel.Warning), entry => Assert.Equal("No terrain materials were loaded", entry.Message));
             Assert.True(errors.Count == 0, $"{errors.Count} Java/C# geo mismatches (first 20):\n" + string.Join('\n', errors.Take(20)));
         }
-        finally { DataManager.RestoreInstance(previous); }
+        finally { GeoDataConfig.MODE = previousMode; DataManager.RestoreInstance(previous); }
     }
 
     // Absolute 1mm tolerance for single-precision arithmetic; NaN/hit topology and LOS must match exactly.

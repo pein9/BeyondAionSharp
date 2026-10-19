@@ -39,16 +39,18 @@ public class GeoService : GameEngine
     {
         foreach (var map in DataManager.WORLD_MAPS_DATA)
             geoMaps[map.GetMapId()] = new GeoMap(map.GetMapId());
-        if (GeoDataConfig.GEO_ENABLE)
+        switch (GeoDataConfig.MODE)
         {
-            var ids = GeoDataConfig.GEO_MAP_IDS.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            GeoWorldLoader.Load(geoMaps.Values, ids.Length == 0 ? null
-                : ids.Select(id => int.Parse(id, System.Globalization.CultureInfo.InvariantCulture)).ToHashSet());
+            case GeoDataConfig.Mode.MATERIALS_ONLY:
+                log.LogWarning("Geo data is disabled with only materials active. Obstacle detection, terrain checks and terrain-based effects, such as lava damage, will not work.");
+                break;
+            case GeoDataConfig.Mode.OFF:
+                log.LogWarning("Geo data is disabled. Obstacle detection, terrain checks and environment effects, such as lava damage, fortress shields or EoR recovery zones will not work.");
+                return;
         }
-        else
-        {
-            log.LogWarning("Geo data is disabled");
-        }
+        var ids = GeoDataConfig.GEO_MAP_IDS.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        GeoWorldLoader.Load(geoMaps.Values, ids.Length == 0 ? null
+            : ids.Select(id => int.Parse(id, System.Globalization.CultureInfo.InvariantCulture)).ToHashSet());
     }
 
     /// <summary>The surface Z at the object's position, nearest to zMax (NaN if not found / less than zMin).</summary>
@@ -213,12 +215,12 @@ public class GeoService : GameEngine
 
     public bool WorldHasTerrainMaterials(int worldId)
     {
-        return GeoDataConfig.GEO_MATERIALS_ENABLE && geoMaps[worldId].HasTerrainMaterials();
+        return geoMaps[worldId].HasTerrainMaterials();
     }
 
     public int GetTerrainMaterialAt(int worldId, float x, float y, float z, int instanceId)
     {
-        return GeoDataConfig.GEO_MATERIALS_ENABLE ? geoMaps[worldId].GetTerrainMaterialAt(x, y, z, instanceId) : 0;
+        return geoMaps[worldId].GetTerrainMaterialAt(x, y, z, instanceId);
     }
 
     public static GeoService GetInstance()

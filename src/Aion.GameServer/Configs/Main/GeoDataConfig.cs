@@ -8,9 +8,9 @@ namespace Aion.GameServer.Configs.Main;
 /// </summary>
 public static class GeoDataConfig
 {
-    /// <summary>Geodata enable. Property key: gameserver.geodata.enable (default true).</summary>
-    [Property(key: "gameserver.geodata.enable", defaultValue: "true")]
-    public static bool GEO_ENABLE = true;
+    /// <summary>Load all geo data, only skill-bearing geometry, or none.</summary>
+    [Property(key: "gameserver.geodata.mode", defaultValue: "ON")]
+    public static Mode MODE = Mode.ON;
 
     /// <summary>C# host filter for SIM: empty loads all production maps; comma-separated IDs load a subset.</summary>
     [Property(key: "gameserver.geodata.map.ids", defaultValue: "")]
@@ -28,15 +28,14 @@ public static class GeoDataConfig
     [Property(key: "gameserver.geodata.npc.move", defaultValue: "true")]
     public static bool GEO_NPC_MOVE = true;
 
-    /// <summary>Enable geo materials using skills. Property key: gameserver.geodata.materials.enable (default true).</summary>
-    [Property(key: "gameserver.geodata.materials.enable", defaultValue: "true")]
-    public static bool GEO_MATERIALS_ENABLE = true;
-
     /// <summary>Show collision zone name and skill id. Property key: gameserver.geodata.materials.showdetails (default false).</summary>
     [Property(key: "gameserver.geodata.materials.showdetails", defaultValue: "false")]
     public static bool GEO_MATERIALS_SHOWDETAILS = false;
 
-    /// <summary>Enable geo shields. Property key: gameserver.geodata.shields.enable (default true).</summary>
-    [Property(key: "gameserver.geodata.shields.enable", defaultValue: "true")]
-    public static bool GEO_SHIELDS_ENABLE = true;
+    public enum Mode
+    {
+        OFF,
+        MATERIALS_ONLY,
+        ON
+    }
 }

@@ -10,7 +10,6 @@ using Aion.GameServer.GeoEngine.Scene;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Geometry;
 using Aion.GameServer.Model.Siege;
-using Aion.GameServer.Model.Templates.Shield;
 
 namespace Aion.GameServer.Services;
 
@@ -23,15 +22,10 @@ public class ShieldService
         { 310100000, new HashSet<string> { "BU_AB_CASTLESHIELD_SAMJUNG_03C_TYPE2_487543" } }, // Azoturan Fortress
         { 400010000, new HashSet<string> { "BU_AB_SAMJUNG_BASE_01_SHIELD_313626", "BU_AB_SAMJUNG_BASE_01_SHIELD_299314", "BU_AB_SAMJUNG_BASE_01_SHIELD_137227" } } // artifact
     };
-    private readonly ConcurrentDictionary<int, ShieldTemplate> sphereShields = new ConcurrentDictionary<int, ShieldTemplate>();
     private readonly ConcurrentDictionary<int, List<SiegeShield>> registeredShields = new ConcurrentDictionary<int, List<SiegeShield>>();
 
     private ShieldService()
     {
-        foreach (ShieldTemplate template in DataManager.SHIELD_DATA.GetShieldTemplates())
-        {
-            sphereShields[template.GetId()] = template;
-        }
     }
 
     public void LogDetachedShields()
@@ -43,16 +37,10 @@ public class ShieldService
         }
     }
 
-    public ShieldObserver CreateShieldObserver(FortressLocation location, Creature observed)
-    {
-        ShieldTemplate template = sphereShields.GetValueOrDefault(location.GetLocationId());
-        return template == null ? null : new ShieldObserver(location, template, observed);
-    }
-
     /// <summary>Registers geo shield for zone lookup</summary>
     public SiegeShield TryRegisterShield(int worldId, Spatial geometry)
     {
-        if (!GeoDataConfig.GEO_SHIELDS_ENABLE || IsIgnored(worldId, geometry.GetName()))
+        if (IsIgnored(worldId, geometry.GetName()))
             return null;
         SiegeShield shield = new SiegeShield(geometry);
         registeredShields.GetOrAdd(worldId, _ => new List<SiegeShield>()).Add(shield);
@@ -76,7 +64,6 @@ public class ShieldService
             {
                 attached.Add(shield);
                 mapShields.RemoveAt(i);
-                sphereShields.TryRemove(location.GetLocationId(), out _);
                 shield.SetSiegeLocationId(location.GetLocationId());
             }
         }

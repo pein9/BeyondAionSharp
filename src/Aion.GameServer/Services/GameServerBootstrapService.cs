@@ -105,7 +105,7 @@ public sealed class GameServerBootstrapService : IHostedService
 		}
 
 		// Java parity: GameServer.main initUtilityServicesAndConfig initializes ThreadPoolManager.getInstance()
-		// early (before the services that schedule tasks through it: DebugService/CuringZoneService/CronJobService).
+        // early (before the services that schedule tasks through it: DebugService/CronJobService).
 		// Bind the Java-style static accessor to the DI-created instance here so those boot-wired services resolve it.
 		// Idempotent (RegisterInstance overwrites) so a re-entrant boot in one process is safe; production also binds
 		// it in Program.cs before host.RunAsync.
@@ -418,14 +418,12 @@ public sealed class GameServerBootstrapService : IHostedService
 		_ = Aion.GameServer.Services.AtreianPassportService.GetInstance();
 
 		// CronJobService: Java parity GameServer.main starts it after AtreianPassportService.getInstance(),
-		// before CuringZoneService/RoadService. Its ctor schedules the Moltenus spawn + Ahserion flight cron
+        // before RoadService. Its ctor schedules the Moltenus spawn + Ahserion flight cron
 		// jobs (SiegeConfig.MOLTENUS_SPAWN_SCHEDULE / AHSERION_START_SCHEDULE, now initialized from the Java
 		// @Property defaultValue cron strings via CronExpressions.GetOrCreate), the IdianDepthPortal spawner,
 		// and the weekly LegionDominion calculation. Must run after CronService.InitSingleton above.
 		_ = Aion.GameServer.Services.CronJobService.GetInstance();
-		// CuringZoneService: Java only starts it when geo materials are disabled (GeoDataConfig.GEO_MATERIALS_ENABLE).
-		if (!Aion.GameServer.Configs.Main.GeoDataConfig.GEO_MATERIALS_ENABLE)
-			Aion.GameServer.Services.CuringZoneService.GetInstance();
+
 		// RoadService: spawns every roads/ template into each available instance of its world map.
 		Aion.GameServer.Services.RoadService.GetInstance();
 

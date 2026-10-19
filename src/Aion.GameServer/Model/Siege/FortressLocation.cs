@@ -18,8 +18,6 @@ namespace Aion.GameServer.Model.Siege;
 /// <summary>Java parity: model/siege/FortressLocation.</summary>
 public class FortressLocation : SiegeLocation
 {
-    private readonly ConcurrentDictionary<int, ShieldObserver> shieldObservers = new ConcurrentDictionary<int, ShieldObserver>();
-
     public FortressLocation(SiegeLocationTemplate template)
         : base(template)
     {
@@ -44,23 +42,12 @@ public class FortressLocation : SiegeLocation
     {
         base.OnEnterZone(creature, zone);
         CheckForBalanceBuff(creature, SiegeBuffAction.ADD);
-        if (IsUnderShield() && GetRace() != SiegeRaceExtensions.GetByRace(creature.GetRace()))
-        {
-            ShieldObserver observer = ShieldService.GetInstance().CreateShieldObserver(this, creature);
-            if (observer != null)
-            {
-                creature.GetObserveController().AddObserver(observer);
-                shieldObservers[creature.GetObjectId()] = observer;
-            }
-        }
     }
 
     public override void OnLeaveZone(Creature creature, ZoneInstance zone)
     {
         base.OnLeaveZone(creature, zone);
         CheckForBalanceBuff(creature, SiegeBuffAction.LEAVE_ZONE_REMOVE);
-        if (shieldObservers.TryRemove(creature.GetObjectId(), out ShieldObserver observer) && observer != null)
-            creature.GetObserveController().RemoveObserver(observer);
     }
 
     public void CheckForBalanceBuff(Creature creature, SiegeBuffAction siegeBuffAction)

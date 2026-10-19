@@ -710,7 +710,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		Assert.Contains("SM_PLAY_MOVIE", session.PacketTypes);
 
 		Player navigatingPlayer = fixture.World.GetPlayer(session.CharacterId);
-		Assert.True(GeoDataConfig.GEO_ENABLE && GeoDataConfig.CANSEE_ENABLE && GeoDataConfig.GEO_NPC_MOVE);
+		Assert.True(GeoDataConfig.MODE == GeoDataConfig.Mode.ON && GeoDataConfig.CANSEE_ENABLE && GeoDataConfig.GEO_NPC_MOVE);
 		BotNavigationGraph graph = BotNavigationGraphFactory.Build(fixture.DataManager.StaticData, [203500, 203504],
 			BotNavigationGeometry.ForServerWorld(navigatingPlayer.GetInstanceId(), navigatingPlayer.GetRace()));
 		session.BeginStep("s04", "walk-to-asak");

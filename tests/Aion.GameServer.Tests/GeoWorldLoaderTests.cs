@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Aion.Commons.Logging;
+using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.GeoEngine;
 using Aion.GameServer.GeoEngine.Math;
@@ -14,8 +15,58 @@ using Microsoft.Extensions.Logging;
 namespace Aion.GameServer.Tests;
 
 [Collection("GoldenDataManager")]
-public sealed class GeoWorldLoaderTests
+public sealed class GeoWorldLoaderTests : IDisposable
 {
+    private readonly GeoDataConfig.Mode previousMode = GeoDataConfig.MODE;
+    public GeoWorldLoaderTests() => GeoDataConfig.MODE = GeoDataConfig.Mode.ON;
+    public void Dispose() => GeoDataConfig.MODE = previousMode;
+
+    [Theory]
+    [InlineData(GeoDataConfig.Mode.ON, 3, 4)]
+    [InlineData(GeoDataConfig.Mode.MATERIALS_ONLY, 2, 2)]
+    public async Task MaterialsOnlySkipsTerrainAndZeroMaterialMeshesButConsumesEveryBinaryRecord(
+        GeoDataConfig.Mode mode, int expectedNodes, int expectedGeometries)
+    {
+        var previous = DataManager.GetRegisteredInstance();
+        string root = Directory.CreateTempSubdirectory("aion-geo-mode-").FullName;
+        try
+        {
+            DataManager.RegisterInstance(await RealStaticData.LoadAsync());
+            GeoDataConfig.MODE = mode;
+            using var meshes = new MemoryStream();
+            MeshRecord(meshes, "world/ordinary.cgf|world/ordinary-alias.cgf", 1, 0);
+            Name(meshes, "world/mixed.cgf"); meshes.WriteByte(2);
+            MeshBody(meshes, 2, 0); MeshBody(meshes, 1, 200);
+            MeshRecord(meshes, "world/material.cgf", 2, 200);
+            File.WriteAllBytes(Path.Combine(root, "models.mesh"), meshes.ToArray());
+            using var placements = new MemoryStream();
+            Placement(placements, "world/ordinary-alias.cgf", 0, 0, 0);
+            Placement(placements, "world/mixed.cgf", 0, 0, 0);
+            Placement(placements, "world/material.cgf", 0, 0, 0);
+            Placement(placements, "world/missing.cgf", 0, 0, 0);
+            File.WriteAllBytes(Path.Combine(root, "1.geo"), placements.ToArray());
+            File.WriteAllBytes(Path.Combine(root, "1.png"), PngReaderTests.Encode(3, 3, Enumerable.Repeat((ushort)320, 9).ToArray(), 16, 0, [0]));
+            if (mode == GeoDataConfig.Mode.MATERIALS_ONLY)
+                File.WriteAllText(Path.Combine(root, "1.bad.png"), "must not decode terrain in materials-only mode");
+            using var logs = new CapturingLoggerProvider();
+            using var factory = LoggerFactory.Create(builder => builder.AddProvider(logs));
+            using var logging = AionLog.OverrideFactory(factory);
+            var map = new GeoMap(1);
+            GeoWorldLoader.Load([map], root, new HashSet<int> { 1 }, true);
+            Assert.Equal(mode == GeoDataConfig.Mode.ON, map.HasTerrain());
+            Assert.Equal(expectedNodes, map.GetEntityCount());
+            Assert.Equal(expectedGeometries, map.GetGeometries().Count());
+            if (mode == GeoDataConfig.Mode.MATERIALS_ONLY)
+            {
+                Assert.All(map.GetGeometries(), geometry => Assert.NotEqual(0, geometry.GetMaterialId()));
+                Assert.DoesNotContain(logs.Entries, entry => entry.Message.Contains("meshes are missing"));
+            }
+            else
+                Assert.Contains(logs.Entries, entry => entry.Message.Contains("meshes are missing"));
+        }
+        finally { DataManager.RestoreInstance(previous); Directory.Delete(root, recursive: true); }
+    }
+
     [Fact]
     public async Task BinaryPlacementAliasesTownLevelsAndMapFilteringRetainSourceSemantics()
     {
@@ -135,13 +186,19 @@ public sealed class GeoWorldLoaderTests
         finally { DataManager.RestoreInstance(previous); }
     }
 
-    private static void MeshRecord(Stream stream, string name, int indexSize)
+    private static void MeshRecord(Stream stream, string name, int indexSize, byte material = 200)
     {
-        Name(stream, name); stream.WriteByte(1); Short(stream, 3);
+        Name(stream, name); stream.WriteByte(1);
+        MeshBody(stream, indexSize, material);
+    }
+
+    private static void MeshBody(Stream stream, int indexSize, byte material)
+    {
+        Short(stream, 3);
         foreach (float value in new float[] { 0, 0, 0, 1, 0, 0, 0, 1, 0 }) Float(stream, value);
         Short(stream, 1); stream.WriteByte((byte)indexSize);
         for (short i = 0; i < 3; i++) if (indexSize == 1) stream.WriteByte((byte)i); else Short(stream, i);
-        stream.WriteByte(200); stream.WriteByte(129);
+        stream.WriteByte(material); stream.WriteByte(129);
     }
 
     private static void Placement(Stream stream, string name, byte type, short id, byte level)

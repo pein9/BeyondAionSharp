@@ -55,9 +55,8 @@ public sealed class BossAiHarness : IDisposable
 	private readonly GameWorld? _previousWorld;
 	private readonly ThreadPoolManager? _previousThreadPool;
 	private readonly bool _previousCanSee;
-	private readonly bool _previousGeoEnable;
+	private readonly GeoDataConfig.Mode _previousGeoMode;
 	private readonly bool _previousGeoNpcMove;
-	private readonly bool _previousGeoMaterials;
 	private readonly bool _previousInstanceScaling;
 	private readonly bool _previousShouts;
 	private readonly int _mapId;
@@ -73,9 +72,8 @@ public sealed class BossAiHarness : IDisposable
 		_previousWorld = TryGetWorld();
 		_previousThreadPool = TryGetThreadPool();
 		_previousCanSee = GeoDataConfig.CANSEE_ENABLE;
-		_previousGeoEnable = GeoDataConfig.GEO_ENABLE;
+		_previousGeoMode = GeoDataConfig.MODE;
 		_previousGeoNpcMove = GeoDataConfig.GEO_NPC_MOVE;
-		_previousGeoMaterials = GeoDataConfig.GEO_MATERIALS_ENABLE;
 		_previousInstanceScaling = InstanceConfig.INSTANCE_SCALING_ENABLE;
 		_previousShouts = AIConfig.SHOUTS_ENABLE;
 	}
@@ -743,9 +741,8 @@ public sealed class BossAiHarness : IDisposable
 	public void Dispose()
 	{
 		GeoDataConfig.CANSEE_ENABLE = _previousCanSee;
-		GeoDataConfig.GEO_ENABLE = _previousGeoEnable;
+		GeoDataConfig.MODE = _previousGeoMode;
 		GeoDataConfig.GEO_NPC_MOVE = _previousGeoNpcMove;
-		GeoDataConfig.GEO_MATERIALS_ENABLE = _previousGeoMaterials;
 		InstanceConfig.INSTANCE_SCALING_ENABLE = _previousInstanceScaling;
 		AIConfig.SHOUTS_ENABLE = _previousShouts;
 		DataManager.RestoreInstance(_previousDataManager);
@@ -901,12 +898,11 @@ public sealed class BossAiHarness : IDisposable
 		public BossAiHarness Build()
 		{
 			GeoDataConfig.CANSEE_ENABLE = false;
-			GeoDataConfig.GEO_MATERIALS_ENABLE = false;
 			// No geo data is loaded, and GeoService indexes its map dictionary directly. Any NPC that
 			// actually moves — an add walking to the player, say — reaches GeoService.GetZ through
 			// NpcMoveController and throws KeyNotFoundException on the map id, inside MoveTaskManager's
 			// parallel loop where it surfaces as an AggregateException from an unrelated clock advance.
-			GeoDataConfig.GEO_ENABLE = false;
+			GeoDataConfig.MODE = GeoDataConfig.Mode.OFF;
 			GeoDataConfig.GEO_NPC_MOVE = false;
 			InstanceConfig.INSTANCE_SCALING_ENABLE = false;
 			AIConfig.SHOUTS_ENABLE = false;
@@ -973,7 +969,7 @@ public sealed class BossAiHarness : IDisposable
 
 			// GeoService indexes its map dictionary directly, and not every caller checks the geo config
 			// first — StaggerEffect resolves a knockback position through it unconditionally, so any skill
-			// carrying that effect throws KeyNotFoundException on the map id. Init() with GEO_ENABLE off
+			// carrying that effect throws KeyNotFoundException on the map id. Init() with MODE OFF
 			// puts an empty GeoMap in for each world map and loads no geo files, which is exactly what a
 			// headless fight wants: the lookups resolve and return nothing.
 			GeoService.GetInstance().Init();

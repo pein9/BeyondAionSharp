@@ -2137,7 +2137,7 @@ public abstract class PatternAi : AggressiveNpcAI, INpcMessageListener
             // WalkManager guards it: the destination's z is the terrain at the end, and a wall or a cliff
             // edge on the way stops it short. Aiming at the start height instead sent a sentry fleeing
             // uphill into the slope (2.8 m under the player standing over it), out of line of sight.
-            if (GeoDataConfig.GEO_ENABLE && GeoDataConfig.GEO_NPC_MOVE)
+            if (GeoDataConfig.MODE == GeoDataConfig.Mode.ON && GeoDataConfig.GEO_NPC_MOVE)
             {
                 float angle = (float)(Math.Atan2(dy, dx) * 180.0 / Math.PI);
                 Vector3f end = GeoService.GetInstance().FindMovementCollision(GetOwner(), angle, distance);

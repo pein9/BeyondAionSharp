@@ -36,7 +36,6 @@ public sealed class RealStaticDataLoadIntegrationTests
 		// the DataManager singleton bridge (RegisterInstance) / cross-test contamination.
 		Assert.True(sd.BindPointDataDh.Size() > 0, "BindPointDataDh empty after boot");
 		Assert.True(sd.ChestDataDh.Size() > 0, "ChestDataDh empty after boot");
-		Assert.True(sd.CuringObjectsDataDh.Size() > 0, "CuringObjectsDataDh empty after boot");
 		Assert.True(sd.RoadDataDh.Size() > 0, "RoadDataDh empty after boot");
 		Assert.True(sd.HotspotDataDh.Size() > 0, "HotspotDataDh empty after boot");
 		Assert.True(sd.MapWeathers.Size() > 0, "MapWeathers empty after boot");
@@ -50,7 +49,6 @@ public sealed class RealStaticDataLoadIntegrationTests
 		Assert.True(sd.TeleLocationDataDh.Size() > 0, "TeleLocationDataDh empty after boot");
 		Assert.True(sd.PetDopingDataDh.Size() > 0, "PetDopingDataDh empty after boot");
 		Assert.True(sd.FlyPathDataDh.Size() > 0, "FlyPathDataDh empty after boot");
-		Assert.True(sd.ShieldDataDh.Size() > 0, "ShieldDataDh empty after boot");
 		Assert.True(sd.PortalLocDataDh.Size() > 0, "PortalLocDataDh empty after boot");
 		Assert.True(sd.SkillAliasLocationDataDh.Size() > 0, "SkillAliasLocationDataDh empty after boot");
 		Assert.True(sd.InstanceBuffDataDh.Size() > 0, "InstanceBuffDataDh empty after boot");

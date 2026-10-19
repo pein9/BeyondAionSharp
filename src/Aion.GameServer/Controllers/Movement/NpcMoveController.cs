@@ -292,7 +292,7 @@ public class NpcMoveController : CreatureMoveController<Npc>
         float newX = (TargetDestX - ownerX) * distFraction + ownerX;
         float newY = (TargetDestY - ownerY) * distFraction + ownerY;
         float newZ = (TargetDestZ - ownerZ) * distFraction + ownerZ;
-        if (GeoDataConfig.GEO_NPC_MOVE && GeoDataConfig.GEO_ENABLE && Owner.GetAi().GetSubState() != AISubState.WALK_PATH
+        if (GeoDataConfig.GEO_NPC_MOVE && GeoDataConfig.MODE == GeoDataConfig.Mode.ON && Owner.GetAi().GetSubState() != AISubState.WALK_PATH
             && Owner.GetAi().GetState() != AIState.RETURNING && Owner.GetGameStats().GetNextGeoZUpdate() < SystemClock.CurrentMillis())
         {
             // fix Z if npc doesn't move to spawn point

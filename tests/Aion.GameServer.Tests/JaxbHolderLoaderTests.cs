@@ -38,25 +38,6 @@ public sealed class JaxbHolderLoaderTests
     }
 
     [Fact]
-    public void LoadFromFile_PopulatesCuringObjectsDataFromRealXml()
-    {
-        var path = ResolveStaticDataFile("curing_objects", "curing_objects.xml");
-
-        var data = JaxbHolderLoader.LoadFromFile<CuringObjectsData>(path);
-
-        // AfterUnmarshal copied every curing_object row into the list.
-        Assert.True(data.Size() > 0);
-
-        var objects = data.GetCuringObject();
-        Assert.NotNull(objects);
-
-        // First row: <curing_object map_id="710010000" x="1765.6873" y="2601.5105" z="231.19335" range="10.3"/>
-        var first = objects[0];
-        Assert.Equal(710010000, first.GetMapId());
-        Assert.Equal(10.3f, first.GetRange(), 3);
-    }
-
-    [Fact]
     public void LoadFromFile_PopulatesChestDataFromRealXml()
     {
         var path = ResolveStaticDataFile("chests", "chest_templates.xml");
@@ -421,29 +402,6 @@ public sealed class JaxbHolderLoaderTests
         Assert.Equal(45000, path1.GetTimeInMs());
 
         Assert.Null(data.GetPathTemplate(-99999));
-    }
-
-    [Fact]
-    public void LoadFromFile_PopulatesShieldDataFromRealXml()
-    {
-        var path = ResolveStaticDataFile("siege", "siege_shields.xml");
-
-        var data = JaxbHolderLoader.LoadFromFile<ShieldData>(path);
-
-        Assert.True(data.Size() > 0);
-
-        var shields = data.GetShieldTemplates();
-        Assert.NotNull(shields);
-
-        // <shield id="1011" map="400010000" name="DIVINE_FORTRESS" radius="86.0">
-        //   <center x="2137.505" y="1930.4448" z="2334.0"/></shield>
-        var divine = shields.First(s => s.GetId() == 1011);
-        Assert.Equal("DIVINE_FORTRESS", divine.GetName());
-        Assert.Equal(400010000, divine.GetMap());
-        Assert.Equal(86.0f, divine.GetRadius(), 3);
-        Assert.NotNull(divine.GetCenter());
-        Assert.Equal(2137.505f, divine.GetCenter().GetX(), 3);
-        Assert.Equal(2334.0f, divine.GetCenter().GetZ(), 3);
     }
 
     [Fact]

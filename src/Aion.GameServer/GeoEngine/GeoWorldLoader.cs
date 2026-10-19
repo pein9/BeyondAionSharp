@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
 using Aion.Commons.Nio;
+using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.GeoEngine.Collision;
 using Aion.GameServer.GeoEngine.Math;
@@ -28,7 +29,8 @@ public static class GeoWorldLoader
         if (mapIds != null && (mapIds.Count == 0 || mapIds.Except(maps.Select(m => m.GetMapId())).Any()))
             throw new ArgumentException("Geo map filter must name existing maps.", nameof(mapIds));
         var selected = maps.Where(m => mapIds == null || mapIds.Contains(m.GetMapId())).ToArray();
-        LoadTerrains(selected, directory, mapIds != null);
+        if (GeoDataConfig.MODE == GeoDataConfig.Mode.ON)
+            LoadTerrains(selected, directory, mapIds != null);
         var models = LoadMeshes(Path.Combine(directory, "models.mesh"));
         var missing = new ConcurrentDictionary<string, byte>(StringComparer.Ordinal);
         Parallel.ForEach(selected, map => LoadWorld(map, models, missing, directory));
@@ -106,11 +108,15 @@ public static class GeoWorldLoader
                     mesh.SetMaterialId(unchecked((sbyte)data.Get()));
                     mesh.SetCollisionIntentions(unchecked((sbyte)data.Get()));
                     intentions |= mesh.GetCollisionIntentions();
+                    if (GeoDataConfig.MODE == GeoDataConfig.Mode.MATERIALS_ONLY && mesh.GetMaterialId() == 0)
+                        continue;
                     if (node.GetName() == null && (mesh.GetMaterialId() == 11 || DataManager.MATERIAL_DATA.GetTemplate(mesh.GetMaterialId()) != null))
                         node.SetName(name);
                     if (count == 1) singleMaterial = mesh.GetMaterialId();
                     node.AttachChild(new Geometry(name, mesh));
                 }
+                if (node.GetChildren().Count == 0)
+                    continue;
                 node.SetCollisionIntentions(intentions);
                 node.SetMaterialId(unchecked((sbyte)singleMaterial));
                 if (!name.Contains('|')) models[name] = node;
@@ -163,7 +169,11 @@ public static class GeoWorldLoader
                 sbyte type = unchecked((sbyte)data.Get());
                 short id = data.GetShort();
                 sbyte level = unchecked((sbyte)data.Get());
-                if (!models.TryGetValue(name, out var node)) { missing.TryAdd(name, 0); continue; }
+                if (!models.TryGetValue(name, out var node))
+                {
+                    if (GeoDataConfig.MODE != GeoDataConfig.Mode.MATERIALS_ONLY) missing.TryAdd(name, 0);
+                    continue;
+                }
                 if (type > 0)
                 {
                     var despawnable = new DespawnableNode();

@@ -79,9 +79,8 @@ public class GameServerOptionsTests
 	{
 		var options = GameServerOptions.LoadFromJavaConfig(AppContext.BaseDirectory);
 
-		Assert.True(options.GeoData.Enabled);
+		Assert.Equal(Aion.GameServer.Configs.Main.GeoDataConfig.Mode.ON, options.GeoData.Mode);
 		Assert.True(options.GeoData.CanSeeEnabled);
-		Assert.True(options.GeoData.MaterialsEnabled);
 		Assert.False(options.GeoData.MaterialsShowDetails);
 
 		Assert.True(options.Ai.NpcMovementEnabled);
@@ -295,8 +294,8 @@ public class GameServerOptionsTests
 				"""
 				gameserver.chatserver.enable 1
 				gameserver.analysis.quest_handlers:0
-				gameserver.geodata.enable = tr\
-				    ue
+				gameserver.geodata.mode = O\
+				    N
 				gameserver.network.login.gsid = \u0034\u0032
 				gameserver.network.login.max_players = 0x141
 				gameserver.network.login.password = pa\=ss\:word
@@ -311,7 +310,7 @@ public class GameServerOptionsTests
 
 			Assert.True(options.Core.EnableChatServer);
 			Assert.False(options.Core.AnalyzeQuestHandlers);
-			Assert.True(options.GeoData.Enabled);
+			Assert.Equal(Aion.GameServer.Configs.Main.GeoDataConfig.Mode.ON, options.GeoData.Mode);
 			Assert.Equal(42, options.Network.GameServerId);
 			Assert.Equal(321, options.Network.MaxOnlinePlayers);
 			Assert.Equal("pa=ss:word", options.Network.LoginPassword);

@@ -146,7 +146,7 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 					NetworkConfig.LOG_IGNORED_PACKETS = true;
 					WorldConfig.WORLD_MAX_TWINS_USUAL = 5;
 					WorldConfig.WORLD_EMULATE_FASTTRACK = false;
-					GeoDataConfig.GEO_ENABLE = true;
+					GeoDataConfig.MODE = GeoDataConfig.Mode.ON;
 					GeoDataConfig.CANSEE_ENABLE = true;
 					GeoDataConfig.FEAR_ENABLE = true;
 					GeoDataConfig.GEO_NPC_MOVE = true;

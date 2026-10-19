@@ -117,8 +117,7 @@ public sealed class GameServerBootstrapTests
 			_ = Aion.GameServer.Services.AtreianPassportService.GetInstance();
 			_ = Aion.GameServer.Services.CronJobService.GetInstance();
 			// main:159-176.
-			if (!Aion.GameServer.Configs.Main.GeoDataConfig.GEO_MATERIALS_ENABLE)
-				Aion.GameServer.Services.CuringZoneService.GetInstance();
+
 			Aion.GameServer.Services.RoadService.GetInstance();
 			Aion.GameServer.Cache.HTMLCache.GetInstance();
 			Aion.GameServer.Services.Abyss.AbyssRankingCache.GetInstance();
@@ -529,7 +528,7 @@ public sealed class GameServerBootstrapTests
 	private sealed class RealGeoBootstrapScope : IDisposable
 	{
 		private readonly string previousDirectory = Directory.GetCurrentDirectory();
-		private readonly bool previousEnabled = Aion.GameServer.Configs.Main.GeoDataConfig.GEO_ENABLE;
+		private readonly Aion.GameServer.Configs.Main.GeoDataConfig.Mode previousMode = Aion.GameServer.Configs.Main.GeoDataConfig.MODE;
 		private readonly string previousFilter = Aion.GameServer.Configs.Main.GeoDataConfig.GEO_MAP_IDS;
 		private readonly Dictionary<int, Aion.GameServer.GeoEngine.Models.GeoMap> maps;
 		private readonly KeyValuePair<int, Aion.GameServer.GeoEngine.Models.GeoMap>[] previousMaps;
@@ -541,14 +540,14 @@ public sealed class GameServerBootstrapTests
 			previousMaps = maps.ToArray();
 			maps.Clear();
 			Directory.SetCurrentDirectory(Path.Combine(RealStaticData.RepoRoot(), "game-server"));
-			Aion.GameServer.Configs.Main.GeoDataConfig.GEO_ENABLE = true;
+			Aion.GameServer.Configs.Main.GeoDataConfig.MODE = Aion.GameServer.Configs.Main.GeoDataConfig.Mode.ON;
 			Aion.GameServer.Configs.Main.GeoDataConfig.GEO_MAP_IDS = "";
 		}
 		public void Dispose()
 		{
 			maps.Clear();
 			foreach (var pair in previousMaps) maps.Add(pair.Key, pair.Value);
-			Aion.GameServer.Configs.Main.GeoDataConfig.GEO_ENABLE = previousEnabled;
+			Aion.GameServer.Configs.Main.GeoDataConfig.MODE = previousMode;
 			Aion.GameServer.Configs.Main.GeoDataConfig.GEO_MAP_IDS = previousFilter;
 			Directory.SetCurrentDirectory(previousDirectory);
 		}

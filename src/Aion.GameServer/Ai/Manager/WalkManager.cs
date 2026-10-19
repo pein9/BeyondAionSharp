@@ -244,7 +244,7 @@ public class WalkManager
             int diameter = randomWalkRange * 2;
             float nextX = Rnd.NextFloat(diameter) - randomWalkRange + owner.GetSpawn().GetX();
             float nextY = Rnd.NextFloat(diameter) - randomWalkRange + owner.GetSpawn().GetY();
-            if (GeoDataConfig.GEO_ENABLE && GeoDataConfig.GEO_NPC_MOVE)
+            if (GeoDataConfig.MODE == GeoDataConfig.Mode.ON && GeoDataConfig.GEO_NPC_MOVE)
             {
                 Vector3f loc = GeoService.GetInstance().GetClosestCollision(owner, nextX, nextY, owner.GetZ(), true, (sbyte)RANDOM_WALK_GEO_FLAGS, IgnoreProperties.Of(owner.GetRace()));
                 owner.GetMoveController().MoveToPoint(loc.X, loc.Y, loc.Z);

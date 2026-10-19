@@ -159,7 +159,7 @@ public class TargetRangeProperty
     private static bool CheckGeo(VisibleObject obj, Creature firstTarget, SkillTemplate skillTemplate)
     {
         // If creature is at least 2 meters above the terrain, ground skill cannot be applied
-        if (GeoDataConfig.GEO_ENABLE)
+        if (GeoDataConfig.MODE == GeoDataConfig.Mode.ON)
         {
             if (skillTemplate.IsGroundSkill())
             {

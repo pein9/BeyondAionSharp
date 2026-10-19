@@ -320,7 +320,7 @@ public class GeoMap : Node
     {
         if (!despawnableDoors.TryGetValue(doorId, out DespawnableNode[]? doors))
         {
-            if (GeoDataConfig.GEO_ENABLE && !GetIgnorableDoorIds().Contains(doorId))
+            if (GeoDataConfig.MODE == GeoDataConfig.Mode.ON && !GetIgnorableDoorIds().Contains(doorId))
                 log.LogWarning("No geometry found for door " + doorId + " in world " + mapId);
         }
         else

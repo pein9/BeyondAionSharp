@@ -105,7 +105,7 @@ public sealed class GameServerConfigPropertyOverrideTests
             Assert.Equal("./data/handlers/ai", AIConfig.HANDLER_DIRECTORY);
             Assert.Equal(365, CleaningConfig.MIN_ACCOUNT_INACTIVITY_DAYS);
             Assert.Equal(1.0f, FallDamageConfig.FALL_DAMAGE_PERCENTAGE);
-            Assert.True(GeoDataConfig.GEO_ENABLE);
+            Assert.True(GeoDataConfig.MODE == GeoDataConfig.Mode.ON);
             Assert.Equal(new[] { "Premium" }, MembershipConfig.MEMBERSHIP_TYPES);
             Assert.NotNull(NameConfig.CHAR_NAME_PATTERN);
             Assert.Equal(900, PeriodicSaveConfig.PLAYER_GENERAL);

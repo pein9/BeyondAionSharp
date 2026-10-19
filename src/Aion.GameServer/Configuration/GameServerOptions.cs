@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Text.RegularExpressions;
 using Aion.Commons.Configuration;
+using Aion.GameServer.Configs.Main;
 
 namespace Aion.GameServer.Configuration;
 
@@ -111,13 +112,11 @@ public sealed class GameServerOptions
 			},
 			GeoData = new GeoDataOptions
 			{
-				Enabled = GetBoolWithEnvironment(loader, "gameserver.geodata.enable", true),
+				Mode = TransformJavaProperty<GeoDataConfig.Mode>(GetWithEnvironment(loader, "gameserver.geodata.mode", "ON")),
 				CanSeeEnabled = GetBoolWithEnvironment(loader, "gameserver.geodata.cansee.enable", true),
 				FearEnabled = GetBoolWithEnvironment(loader, "gameserver.geodata.fear.enable", true),
 				NpcMoveEnabled = GetBoolWithEnvironment(loader, "gameserver.geodata.npc.move", true),
-				MaterialsEnabled = GetBoolWithEnvironment(loader, "gameserver.geodata.materials.enable", true),
 				MaterialsShowDetails = GetBoolWithEnvironment(loader, "gameserver.geodata.materials.showdetails", false),
-				ShieldsEnabled = GetBoolWithEnvironment(loader, "gameserver.geodata.shields.enable", true),
 			},
 			Ai = new GameServerAiOptions
 			{
@@ -903,7 +902,7 @@ public sealed class GameServerNetworkOptions
 
 public sealed class GeoDataOptions
 {
-	public bool Enabled { get; init; } = true;
+	public GeoDataConfig.Mode Mode { get; init; } = GeoDataConfig.Mode.ON;
 
 	public bool CanSeeEnabled { get; init; } = true;
 
@@ -911,11 +910,7 @@ public sealed class GeoDataOptions
 
 	public bool NpcMoveEnabled { get; init; } = true;
 
-	public bool MaterialsEnabled { get; init; } = true;
-
 	public bool MaterialsShowDetails { get; init; }
-
-	public bool ShieldsEnabled { get; init; } = true;
 }
 
 public sealed class GameServerAiOptions
