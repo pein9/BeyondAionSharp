@@ -61,6 +61,40 @@ public class PlayerMoveController : PlayableMoveController<Player>
             lastPositionFromClient = new WorldPosition(Owner.GetWorldId(), Owner.GetX(), Owner.GetY(), Owner.GetZ(), Owner.GetHeading());
         else
             lastPositionFromClient.SetXYZH(Owner.GetX(), Owner.GetY(), Owner.GetZ(), Owner.GetHeading());
+        UpdateMovementModifiers();
+    }
+
+    private void UpdateMovementModifiers()
+    {
+        switch (GetMoveRequest(GetMovementMask()))
+        {
+            case MoveRequest.DIRECTION:
+                UpdateMovementModifierDirection();
+                break;
+            case MoveRequest.POINT:
+                SetMovementModifierDirection(MovementModifierDirection.FORWARD);
+                break;
+            case MoveRequest.STOP:
+                OnMovementStopped();
+                break;
+        }
+    }
+
+    internal static MoveRequest GetMoveRequest(byte movementMask)
+    {
+        if ((movementMask & MovementMask.POSITION) == MovementMask.POSITION && (movementMask & MovementMask.MANUAL) == MovementMask.MANUAL)
+            return (movementMask & MovementMask.ABSOLUTE) == MovementMask.ABSOLUTE ? MoveRequest.POINT : MoveRequest.DIRECTION;
+        if ((movementMask & MovementMask.POSITION) == 0 && (movementMask & MovementMask.FALL) == 0)
+            return MoveRequest.STOP;
+        return MoveRequest.CONTINUE;
+    }
+
+    internal enum MoveRequest
+    {
+        DIRECTION,
+        POINT,
+        CONTINUE,
+        STOP
     }
 
     public void ResetToLastPositionFromClient()

@@ -247,20 +247,18 @@ public sealed class GoldenPlayerFormulaFixtureTests
         }
     }
 
-    // Fixed movement direction, no world/timing. GetMovementDirection() is non-virtual in the C# port; it returns the
-    // private movementModifierDirection field provided the "not moving and stale" guard doesn't short-circuit to NONE.
-    // We set that field directly and force IsInMove()=true so the guard always falls through to the fixed direction
-    // (for NONE the field IS NONE, so it returns NONE too) — deterministic regardless of timing.
+    // Seed the real two-slot state with a direction that has already passed its activation delay.
+    // Its pending direction has no idle expiry, so fixture evaluation stays deterministic.
     internal sealed class HarnessMoveController : PlayerMoveController
     {
-        private static readonly FieldInfo DirField =
-            typeof(PlayableMoveController<Player>).GetField("movementModifierDirection",
+        private static readonly FieldInfo StateField =
+            typeof(PlayableMoveController<Player>).GetField("movementModifierState",
                 BindingFlags.Instance | BindingFlags.NonPublic)!;
 
         public HarnessMoveController(Player owner, MovementModifierDirection dir) : base(owner)
         {
-            DirField.SetValue(this, dir);
-            SetInMove(true);
+            var state = (MovementModifierState)StateField.GetValue(this)!;
+            state.SetMoveState(dir.GetMoveStateFlag(), unchecked(Aion.GameServer.Utils.SystemClock.CurrentMillis() - 667));
         }
     }
 }

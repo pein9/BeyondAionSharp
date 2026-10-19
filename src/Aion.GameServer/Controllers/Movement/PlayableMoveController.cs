@@ -1,6 +1,5 @@
 using System;
 using Aion.GameServer.Model.GameObjects;
-using Aion.GameServer.Model.Stats.Container;
 using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Controllers.Movement;
@@ -24,7 +23,7 @@ public interface IPlayableMoveController
 public abstract class PlayableMoveController<T> : CreatureMoveController<T>, IPlayableMoveController where T : Creature
 {
     private bool sendMovePacket = true;
-    private MovementModifierDirection movementModifierDirection = MovementModifierDirection.NONE;
+    private readonly MovementModifierState movementModifierState = new();
 
     public float vehicleX;
     public float vehicleY;
@@ -84,6 +83,7 @@ public abstract class PlayableMoveController<T> : CreatureMoveController<T>, IPl
             {
                 SetAndSendStopMove(Owner);
                 UpdateLastMove();
+                OnMovementStopped();
             }
             return;
         }
@@ -101,7 +101,8 @@ public abstract class PlayableMoveController<T> : CreatureMoveController<T>, IPl
         if (dist < 0.01f)
             return;
 
-        float currentSpeed = Aion.GameServer.Utils.Stats.StatFunctions.AdjustStatByMovementModifier(Owner, StatEnum.SPEED, Owner.GetGameStats().GetMovementSpeedFloat());
+        // Fear/confuse movement takes the speed penalty immediately, without client combat-modifier delays.
+        float currentSpeed = Aion.GameServer.Utils.Stats.StatFunctions.AdjustSpeedByMovementModifier(CalculateMovementDirection(), Owner.GetGameStats().GetMovementSpeedFloat());
         long msElapsed = SystemClock.CurrentMillis() - LastMoveUpdate;
         float futureXYDistPassed = Math.Min(currentSpeed * msElapsed / 1000f, dist);
         float futureZDistPassed = IsJumping() ? Math.Min(2 * msElapsed / 1000f, dist) : futureXYDistPassed;
@@ -123,6 +124,7 @@ public abstract class PlayableMoveController<T> : CreatureMoveController<T>, IPl
     public override void AbortMove()
     {
         Started.Set(false);
+        OnMovementStopped();
         Aion.GameServer.Taskmanager.Tasks.PlayerMoveTaskManager.GetInstance().RemovePlayer(Owner);
         TargetDestX = 0;
         TargetDestY = 0;
@@ -137,29 +139,35 @@ public abstract class PlayableMoveController<T> : CreatureMoveController<T>, IPl
             sendMovePacket = true;
         }
         base.SetNewDirection(x, y, z);
-
-        float relativeMovementAngle = Aion.GameServer.Utils.PositionUtil.CalculateAngleTowards(Owner.GetX(), Owner.GetY(), Heading, TargetDestX, TargetDestY);
-        if (relativeMovementAngle >= -67.5 && relativeMovementAngle <= 67.5)
-            movementModifierDirection = MovementModifierDirection.FORWARD;
-        else if (relativeMovementAngle <= -112.5 || relativeMovementAngle >= 112.5)
-            movementModifierDirection = MovementModifierDirection.BACKWARD;
-        else
-            movementModifierDirection = MovementModifierDirection.SIDEWAYS;
     }
 
-    public MovementModifierDirection GetMovementDirection()
+    /// <summary>Feed only client-requested movement, after the position update, using the requested destination.</summary>
+    public void UpdateMovementModifierDirection() => SetMovementModifierDirection(CalculateMovementDirection());
+
+    protected void SetMovementModifierDirection(MovementModifierDirection direction)
     {
-        if (!IsInMove() && SystemClock.CurrentMillis() - LastMoveUpdate > 1000)
-            return MovementModifierDirection.NONE;
-        return movementModifierDirection;
+        movementModifierState.SetMoveState(direction.GetMoveStateFlag());
     }
 
-}
+    private MovementModifierDirection CalculateMovementDirection()
+    {
+        if (PositionUtil.GetDistance(Owner.GetX(), Owner.GetY(), TargetDestX, TargetDestY) < MOVE_CHECK_OFFSET)
+            return MovementModifierDirection.NONE;
+        return CalculateDirection(PositionUtil.GetHeadingTowards(Owner.GetX(), Owner.GetY(), TargetDestX, TargetDestY), Heading);
+    }
 
-public enum MovementModifierDirection
-{
-    NONE,
-    FORWARD,
-    SIDEWAYS,
-    BACKWARD
+    internal static MovementModifierDirection CalculateDirection(byte destinationHeading, byte ownHeading)
+    {
+        // Java byte is signed; quantize both headings before comparing the symmetric 45/135 degree boundaries.
+        int headingDiff = (unchecked((sbyte)destinationHeading) + 120 - unchecked((sbyte)ownHeading)) % 120;
+        if (headingDiff > 60)
+            headingDiff = 120 - headingDiff;
+        if (headingDiff <= 15)
+            return MovementModifierDirection.FORWARD;
+        return headingDiff >= 45 ? MovementModifierDirection.BACKWARD : MovementModifierDirection.SIDEWAYS;
+    }
+
+    public void OnMovementStopped() => movementModifierState.SetMoveState(MovementModifierState.MoveState.NONE);
+
+    public int GetMoveState() => movementModifierState.GetMoveState();
 }

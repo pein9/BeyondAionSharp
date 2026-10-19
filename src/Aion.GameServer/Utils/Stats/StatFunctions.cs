@@ -656,59 +656,54 @@ public class StatFunctions
         return fallDamage;
     }
 
+    // Java's authored combinations: forward loses defense penalties when combined with another direction.
+    private static readonly int[][] MOVEMENT_MODIFIERS =
+    [
+        [0, 0, 0, 0, 0, 0, 0],
+        [10, -20, -50, 0, 0, 0, 0],
+        [-20, 0, 0, 500, 500, 0, 0],
+        [10, 0, 0, 500, 500, 0, 0],
+        [-20, 0, 0, 0, 0, 300, 0],
+        [10, 0, 0, 0, 0, 300, 0],
+        [-20, 0, 0, 500, 500, 300, 0],
+        [0, 0, 0, 0, 0, 0, 0]
+    ];
+    private const int COLUMN_ATTACK = 0, COLUMN_DEFENSE = 1, COLUMN_ELEMENTAL_DEFENSE = 2,
+        COLUMN_PARRY = 3, COLUMN_BLOCK = 4, COLUMN_DODGE = 5;
+
     public static float AdjustStatByMovementModifier(Creature creature, StatEnum? stat, float value)
     {
-        if (!(creature is Player player) || stat == null)
+        if (stat == null || creature is not Player player)
             return value;
-
-        // https://web.archive.org/web/20170429204823/gameguide.na.aiononline.com/aion/Combat
-        switch (player.GetMoveController().GetMovementDirection())
-        {
-            case MovementModifierDirection.FORWARD:
-                switch (stat)
-                {
-                    case StatEnum.PHYSICAL_ATTACK:
-                    case StatEnum.MAGICAL_ATTACK:
-                        return value * 1.1f; // verified on 4.6 PTS
-                    case StatEnum.FIRE_RESISTANCE:
-                    case StatEnum.EARTH_RESISTANCE:
-                    case StatEnum.WATER_RESISTANCE:
-                    case StatEnum.WIND_RESISTANCE:
-                    case StatEnum.LIGHT_RESISTANCE:
-                    case StatEnum.DARK_RESISTANCE:
-                        return value - 50; // verified on 4.6 PTS
-                    case StatEnum.MAGICAL_DEFEND:
-                    case StatEnum.PHYSICAL_DEFENSE:
-                        return value * 0.8f; // verified on 4.6 PTS
-                }
-                break;
-            case MovementModifierDirection.SIDEWAYS:
-                switch (stat)
-                {
-                    case StatEnum.PHYSICAL_ATTACK:
-                    case StatEnum.MAGICAL_ATTACK:
-                    case StatEnum.SPEED:
-                        return value * 0.8f; // verified on 4.6 PTS
-                    case StatEnum.EVASION:
-                        return value + 300;
-                }
-                break;
-            case MovementModifierDirection.BACKWARD:
-                switch (stat)
-                {
-                    case StatEnum.PHYSICAL_ATTACK:
-                    case StatEnum.MAGICAL_ATTACK:
-                        return value * 0.8f; // verified on 4.6 PTS
-                    case StatEnum.SPEED:
-                        return value * 0.6f; // verified on 4.6 PTS
-                    case StatEnum.PARRY:
-                    case StatEnum.BLOCK:
-                        return value + 500;
-                }
-                break;
-        }
-        return value;
+        int moveState = player.GetMoveController().GetMoveState();
+        if (moveState == MovementModifierState.MoveState.NONE)
+            return value;
+        return AdjustStatByMoveState(moveState, stat.Value, value);
     }
+
+    internal static float AdjustStatByMoveState(int moveState, StatEnum stat, float value)
+    {
+        int[] modifiers = MOVEMENT_MODIFIERS[moveState];
+        return stat switch
+        {
+            StatEnum.PHYSICAL_ATTACK or StatEnum.MAGICAL_ATTACK => value * (1 + modifiers[COLUMN_ATTACK] / 100f),
+            StatEnum.PHYSICAL_DEFENSE or StatEnum.MAGICAL_DEFEND => value * (1 + modifiers[COLUMN_DEFENSE] / 100f),
+            StatEnum.FIRE_RESISTANCE or StatEnum.EARTH_RESISTANCE or StatEnum.WATER_RESISTANCE or
+                StatEnum.WIND_RESISTANCE or StatEnum.LIGHT_RESISTANCE or StatEnum.DARK_RESISTANCE => value + modifiers[COLUMN_ELEMENTAL_DEFENSE],
+            StatEnum.PARRY => value + modifiers[COLUMN_PARRY],
+            StatEnum.BLOCK => value + modifiers[COLUMN_BLOCK],
+            StatEnum.EVASION => value + modifiers[COLUMN_DODGE],
+            _ => value
+        };
+    }
+
+    /// <summary>Speed changes immediately; it is independent of the delayed combat modifier slots.</summary>
+    public static float AdjustSpeedByMovementModifier(MovementModifierDirection direction, float speed) => direction switch
+    {
+        MovementModifierDirection.SIDEWAYS => speed * 0.8f,
+        MovementModifierDirection.BACKWARD => speed * 0.6f,
+        _ => speed
+    };
 
     private static float GetNpcLevelDiffMod(Creature target, Creature attacker)
     {
