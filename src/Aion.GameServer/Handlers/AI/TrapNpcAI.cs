@@ -45,12 +45,20 @@ public class TrapNpcAI : NpcAI
             && IsInRange(creature, GetOwner().GetGameStats().GetAttackRange().GetCurrent()))
         {
             Creature creator = (Creature)GetCreator();
-            if (!creator.IsEnemy(creature))
+            if (!IsHostile(creator, creature))
             {
                 return;
             }
             Explode(creature);
         }
+    }
+
+    // Zone checks belong to the skill, so a hostile trap is spent even where its effect is dropped.
+    private static bool IsHostile(Creature creator, Creature creature)
+    {
+        if (creator.GetMaster() is Player owner && creature.GetMaster() is Player victim)
+            return owner.IsEnemyFrom(victim) || owner.IsPvPEnemyOf(victim);
+        return creator.IsEnemy(creature);
     }
 
     protected override void HandleSpawned()

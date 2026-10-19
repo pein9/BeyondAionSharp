@@ -48,9 +48,7 @@ public class SummonedObject : Npc
 
     public sealed override Creature GetMaster()
     {
-        if (creator is Creature)
-            return (Creature)GetCreator();
-        return this;
+        return creator is Creature owner ? owner : this;
     }
 
     public override CreatureType GetTypeValue(Creature creature)
@@ -60,33 +58,35 @@ public class SummonedObject : Npc
 
     public override bool IsEnemy(Creature creature)
     {
-        if (creator is Creature)
-            return ((Creature)creator).IsEnemy(creature);
+        if (creator is Creature owner)
+            return owner.IsEnemy(creature);
         return base.IsEnemy(creature);
     }
 
     public override bool IsEnemyFrom(Npc npc)
     {
-        if (creator is Creature)
-            return ((Creature)creator).IsEnemyFrom(npc);
+        if (creator is Creature owner)
+            return owner.IsEnemyFrom(npc);
         return base.IsEnemyFrom(npc);
     }
 
     public override bool IsEnemyFrom(Player player)
     {
-        if (creator is Creature)
-            return ((Creature)creator).IsEnemyFrom(player);
+        if (creator is Player owner)
+            return owner.IsEnemyFrom(player, this);
+        if (creator is Creature creatureOwner)
+            return creatureOwner.IsEnemyFrom(player);
         return base.IsEnemyFrom(player);
     }
 
     public override Race GetRace()
     {
-        return creator is Creature ? ((Creature)creator).GetRace() : base.GetRace();
+        return creator is Creature owner ? owner.GetRace() : base.GetRace();
     }
 
     public override bool IsPvpTarget(Creature creature)
     {
-        return (GetActingCreature() is Player) && (creature.GetActingCreature() is Player);
+        return creator is Player && creature.GetMaster() is Player;
     }
 }
 

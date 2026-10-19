@@ -133,12 +133,12 @@ public class Summon : Creature
 
     public override bool IsEnemyFrom(Player player)
     {
-        return master.IsEnemyFrom(player);
+        return master.IsEnemyFrom(player, this);
     }
 
     public override bool IsPvpTarget(Creature creature)
     {
-        return creature.GetActingCreature() is Player;
+        return creature.GetMaster() is Player;
     }
 
     public override TribeClass GetTribe()
@@ -159,11 +159,6 @@ public class Summon : Creature
     public override Aion.GameServer.Controllers.Movement.SummonMoveController GetMoveController()
     {
         return (Aion.GameServer.Controllers.Movement.SummonMoveController)base.GetMoveController();
-    }
-
-    public override Player GetActingCreature()
-    {
-        return GetMaster();
     }
 
     public override Race GetRace()

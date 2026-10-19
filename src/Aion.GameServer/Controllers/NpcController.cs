@@ -301,7 +301,7 @@ public class NpcController : CreatureController<Npc>
         if (attacker is Summon && attacker.IsSpawned())
             actingCreature = attacker;
         else
-            actingCreature = attacker.GetActingCreature();
+            actingCreature = attacker.GetMaster();
 
         base.OnAttack(actingCreature, effect, type, damage, notifyAttack, logId, attackStatus, hopType);
 

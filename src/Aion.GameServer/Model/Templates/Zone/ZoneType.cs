@@ -5,6 +5,6 @@ public enum ZoneType
 {
     FLY,
     NO_FLY,
-    SIEGE,
     PVP,
+    DISABLE_PVP,
 }

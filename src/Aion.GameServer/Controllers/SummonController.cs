@@ -59,11 +59,15 @@ public class SummonController : CreatureController<Summon>
 
     public override void AttackTarget(Creature target, int time, bool skipChecks)
     {
-        if (target.IsDead() || target.GetLifeStats().IsAboutToDie() || !GetOwner().IsEnemy(target))
+        if (target.IsDead() || target.GetLifeStats().IsAboutToDie())
         {
             PacketSendUtility.SendPacket(GetMaster(), SM_SYSTEM_MESSAGE.STR_INVALID_TARGET());
             return;
         }
+
+        // The client keeps its summon attacking; an attack that isn't allowed right now is dropped silently.
+        if (!GetOwner().IsEnemy(target))
+            return;
 
         int attackSpeed = GetOwner().GetGameStats().GetAttackSpeed().GetCurrent();
         long now = SystemClock.CurrentMillis();

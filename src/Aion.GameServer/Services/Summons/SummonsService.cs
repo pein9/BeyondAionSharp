@@ -203,7 +203,11 @@ public class SummonsService
             if (summon.IsReleaseUncancelable())
                 return;
             if (summonMode == SummonMode.ATTACK && !summon.GetController().CanAttack(targetObjId))
+            {
+                PacketSendUtility.SendPacket(summon.GetMaster(), SM_SYSTEM_MESSAGE.STR_SKILL_SUMMON_IS_NOT_VALID());
+                PacketSendUtility.SendPacket(summon.GetMaster(), new SM_SUMMON_UPDATE(summon));
                 return; // don't cancel a pending release for an order that won't be carried out
+            }
             // UNK leaves the summons mode untouched, so it must not take back a pending release either
             if (summonMode == SummonMode.ATTACK || summonMode == SummonMode.GUARD || summonMode == SummonMode.REST)
                 summon.CancelReleaseByMaster();

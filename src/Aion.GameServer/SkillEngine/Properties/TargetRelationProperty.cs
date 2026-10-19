@@ -7,7 +7,7 @@ using Aion.GameServer.Model.Templates.Npc;
 
 namespace Aion.GameServer.SkillEngine.Properties;
 
-/// <summary>Java parity: skillengine/properties/TargetRelationProperty (ATracer). Static set: switch ALL/ENEMY (removeIf !isEnemy unless material)/FRIEND (removeIf enemy||!buffAllowed unless material; empty→self; else firstTarget=first)/MYPARTY (iterator keep same-team buff-allowed else remove; firstTarget=first); isBuffAllowed (SiegeNpc abyss-type deny ARTIFACT/CORE/DOOR/DOORREPAIR else sameAreaType); isSameAreaType=isInsidePvPZone equality. removeIf→RemoveAll, getFirst→[0]. Properties/SiegeNpc red-tolerated.</summary>
+/// <summary>Java parity: skillengine/properties/TargetRelationProperty (ATracer). Static set: switch ALL/ENEMY (removeIf !isEnemy unless material)/FRIEND (removeIf enemy||!buffAllowed unless material; empty→self; else firstTarget=first)/MYPARTY (iterator keep same-team buff-allowed else remove; firstTarget=first); isBuffAllowed (SiegeNpc abyss-type deny ARTIFACT/CORE/DOOR/DOORREPAIR else sameAreaType); isSameAreaType compares the source player owner and target creature zones, with NPCs exempt. removeIf→RemoveAll, getFirst→[0]. Properties/SiegeNpc red-tolerated.</summary>
 public class TargetRelationProperty
 {
     public static bool Set(Properties properties, Properties.ValidationResult result, Creature effector, SkillTemplate skillTemplate)
@@ -87,6 +87,8 @@ public class TargetRelationProperty
 
     public static bool IsSameAreaType(Creature source, Creature target)
     {
-        return source.IsInsidePvPZone() == target.IsInsidePvPZone();
+        if (source.GetMaster() is not Player sourceOwner || target.GetMaster() is not Player)
+            return true;
+        return sourceOwner.IsInsidePvPZone() == target.IsInsidePvPZone();
     }
 }

@@ -408,15 +408,6 @@ public abstract class Creature : VisibleObject
         return this;
     }
 
-    /// <summary>
-    /// For summons returns summon object and for servants returns player object. Used to find attackable target for npcs.
-    /// Returns acting master - player in case of servants.
-    /// </summary>
-    public virtual Creature GetActingCreature()
-    {
-        return GetMaster();
-    }
-
     public virtual bool IsSkillDisabled(SkillTemplate template)
     {
         if (skillCoolDowns == null)
@@ -549,15 +540,7 @@ public abstract class Creature : VisibleObject
 
     public bool IsInsidePvPZone()
     {
-        lock (zoneTypes)
-        {
-            if (zoneTypes[(int)Aion.GameServer.Model.Templates.Zone.ZoneType.SIEGE] > 0)
-            {
-                return true;
-            }
-            int pvpValue = zoneTypes[(int)Aion.GameServer.Model.Templates.Zone.ZoneType.PVP];
-            return pvpValue == 0 || pvpValue == 2;
-        }
+        return !IsInsideZoneType(Aion.GameServer.Model.Templates.Zone.ZoneType.DISABLE_PVP);
     }
 
     public virtual Aion.GameServer.Model.Race GetRace()

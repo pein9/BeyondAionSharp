@@ -147,7 +147,7 @@ public partial class Player
 
     public override bool IsPvpTarget(Creature creature)
     {
-        return creature.GetActingCreature() is Player;
+        return creature.GetMaster() is Player;
     }
 
     public bool IsTargetingNpcWithFunction(int objectId, int dialogActionId)

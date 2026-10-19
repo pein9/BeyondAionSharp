@@ -437,7 +437,7 @@ public class PlayerController : CreatureController<Player>
             return;
 
         // avoid killing players after duel
-        if (!GetOwner().Equals(attacker) && attacker.GetActingCreature() is Player && !GetOwner().IsEnemy(attacker))
+        if (!GetOwner().Equals(attacker) && attacker.GetMaster() is Player && !GetOwner().IsEnemy(attacker))
             return;
 
         CancelUseItem();

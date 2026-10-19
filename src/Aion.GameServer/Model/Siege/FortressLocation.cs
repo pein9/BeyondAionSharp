@@ -11,7 +11,6 @@ using Aion.GameServer.Services;
 using Aion.GameServer.World.Zone;
 using Aion.GameServer.Controllers.Observer;
 using Aion.GameServer.Utils;
-using Aion.GameServer.Model.Templates.Zone;
 using Aion.GameServer.Services.Teleport;
 
 namespace Aion.GameServer.Model.Siege;
@@ -44,7 +43,6 @@ public class FortressLocation : SiegeLocation
     public override void OnEnterZone(Creature creature, ZoneInstance zone)
     {
         base.OnEnterZone(creature, zone);
-        creature.SetInsideZoneType(ZoneType.SIEGE);
         CheckForBalanceBuff(creature, SiegeBuffAction.ADD);
         if (IsUnderShield() && GetRace() != SiegeRaceExtensions.GetByRace(creature.GetRace()))
         {
@@ -60,7 +58,6 @@ public class FortressLocation : SiegeLocation
     public override void OnLeaveZone(Creature creature, ZoneInstance zone)
     {
         base.OnLeaveZone(creature, zone);
-        creature.UnsetInsideZoneType(ZoneType.SIEGE);
         CheckForBalanceBuff(creature, SiegeBuffAction.LEAVE_ZONE_REMOVE);
         if (shieldObservers.TryRemove(creature.GetObjectId(), out ShieldObserver observer) && observer != null)
             creature.GetObserveController().RemoveObserver(observer);

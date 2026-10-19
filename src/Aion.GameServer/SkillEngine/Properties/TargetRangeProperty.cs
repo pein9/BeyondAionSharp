@@ -6,15 +6,13 @@ using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.GameObjects.State;
 using Aion.GameServer.Model.Team;
-using Aion.GameServer.Model.Templates.Zone;
 using Aion.GameServer.SkillEngine.Model;
 using Aion.GameServer.Utils;
 using Aion.GameServer.World.Geo;
-using Aion.GameServer.World.Zone;
 
 namespace Aion.GameServer.SkillEngine.Properties;
 
-/// <summary>Java parity: skillengine/properties/TargetRangeProperty (ATracer, Yeats, Neon). Static set: Trap effectiveRange=attackRange; switch ONLYONE/AREA (knownList stream filters→LINQ Where chain: commonReqs, altitude, !flight-transporter, !trap-self, checkRange, checkGeo → add)/PARTY+PARTY_WITHPET (TemporaryPlayerTeam&lt;TeamMember&lt;Player&gt;&gt;, clear+rebuild, tryAddSummon)/POINT (knownList in targetDistance+1). Helpers checkCommonRequirements (resurrect→dead else !dead; BLINKING deny), isInsideDisablePvpZone (unused), checkRange (POINT/ineffective/effectiveDist angle BACK/front/cylinder), checkGeo (groundSkill geoZ NaN, canSee), tryAddSummon. streams→LINQ, Float.isNaN→float.IsNaN. Properties/AreaDirections/Trap red-tolerated.</summary>
+/// <summary>Java parity: skillengine/properties/TargetRangeProperty (ATracer, Yeats, Neon). Static set: Trap effectiveRange=attackRange; switch ONLYONE/AREA (knownList stream filters→LINQ Where chain: commonReqs, altitude, !flight-transporter, !trap-self, checkRange, checkGeo → add)/PARTY+PARTY_WITHPET (TemporaryPlayerTeam&lt;TeamMember&lt;Player&gt;&gt;, clear+rebuild, tryAddSummon)/POINT (knownList in targetDistance+1). Helpers checkCommonRequirements (resurrect→dead else !dead; BLINKING deny), checkRange (POINT/ineffective/effectiveDist angle BACK/front/cylinder), checkGeo (groundSkill geoZ NaN, canSee), tryAddSummon. streams→LINQ, Float.isNaN→float.IsNaN. Properties/AreaDirections/Trap red-tolerated.</summary>
 public class TargetRangeProperty
 {
     public static bool Set(Properties properties, Properties.ValidationResult result, Creature skillEffector, SkillTemplate skillTemplate, float x,
@@ -40,7 +38,6 @@ public class TargetRangeProperty
                     .Where(knownObject => knownObject.Get() is Creature)
                     .Select(knownObject => (Creature)knownObject.Get())
                     .Where(creature => CheckCommonRequirements(creature, skillTemplate))
-                    // .Where(creature => !(creature is Kisk && IsInsideDisablePvpZone(creature)))
                     .Where(creature => Math.Abs(firstTarget.GetZ() - creature.GetZ()) <= altitude)
                     .Where(creature => !(creature is Player player && player.IsUsingFlightTransporterOrWindstream()))
                     .Where(creature => !(skillEffector is Trap trap && trap.GetCreator() == creature)) // TODO this is a temporary hack for traps
@@ -122,19 +119,6 @@ public class TargetRangeProperty
             return false;
 
         return true;
-    }
-
-    private static bool IsInsideDisablePvpZone(Creature creature)
-    {
-        if (creature.IsInsideZoneType(ZoneType.PVP))
-        {
-            foreach (ZoneInstance zone in creature.FindZones())
-            {
-                if (zone.GetZoneTemplate().GetFlags() == 0)
-                    return true;
-            }
-        }
-        return false;
     }
 
     private static bool CheckRange(Properties properties, Creature skillEffector, float x, float y, float z, Creature creature, int effectiveRange, Creature firstTarget)

@@ -38,13 +38,19 @@ public partial class Player
     /// </summary>
     public override bool IsEnemyFrom(Player enemy)
     {
+        return IsEnemyFrom(enemy, this);
+    }
+
+    /// <param name="ownedCreature">This player or its summoned creature, whose position decides whether PvP is allowed on this side.</param>
+    public bool IsEnemyFrom(Player enemy, Creature ownedCreature)
+    {
         if (Equals(enemy))
             return false;
         if (IsInCustomState(Aion.GameServer.Model.GameObjects.Players.CustomPlayerState.ENEMY_OF_ALL_PLAYERS) || enemy.IsInCustomState(Aion.GameServer.Model.GameObjects.Players.CustomPlayerState.ENEMY_OF_ALL_PLAYERS))
         {
             return !isInFfaTeamMode || !enemy.IsInFfaTeamMode() || !IsInSameTeam(enemy);
         }
-        return CanPvP(enemy) || IsDueling(enemy);
+        return ownedCreature.IsInsidePvPZone() && enemy.IsInsidePvPZone() && IsPvPEnemyOf(enemy) || IsDueling(enemy);
     }
 
     public bool IsAggroIconTo(Player enemy)
@@ -75,17 +81,16 @@ public partial class Player
         return false;
     }
 
-    private bool CanPvP(Player enemy)
+    /// <summary>Whether the relation permits PvP, independent of the players' positions.</summary>
+    public bool IsPvPEnemyOf(Player enemy)
     {
-        int worldId = enemy.GetWorldId();
+        if (Equals(enemy))
+            return false;
         if (enemy.GetRace() != GetRace() || IsHostileInPanesterra(enemy))
-        {
-            return IsInsidePvPZone() && enemy.IsInsidePvPZone();
-        }
-        else if (worldId == 110010000 || worldId == 120010000 || IsInInstance())
-        {
+            return true;
+        int worldId = enemy.GetWorldId();
+        if (worldId == 110010000 || worldId == 120010000 || IsInInstance())
             return IsInsideZoneType(Aion.GameServer.Model.Templates.Zone.ZoneType.PVP) && enemy.IsInsideZoneType(Aion.GameServer.Model.Templates.Zone.ZoneType.PVP) && !IsInSameTeam(enemy);
-        }
         return false;
     }
 

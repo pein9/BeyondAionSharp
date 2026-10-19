@@ -249,7 +249,7 @@ public class ArtifactAI : NpcAI
             bool pc = skill.GetProperties().GetTargetSpecies() == TargetSpeciesAttribute.PC;
             artifact.ForEachCreature(creature =>
             {
-                if (creature.GetActingCreature() is Player || (creature is SiegeNpc && !pc))
+                if (creature.GetMaster() is Player || (creature is SiegeNpc && !pc))
                 {
                     switch (skill.GetProperties().GetTargetRelation())
                     {

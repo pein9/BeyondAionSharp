@@ -152,7 +152,7 @@ public sealed class ZoneService : GameEngine
                     }
                     break;
                 case ZoneClassName.PVP:
-                    instance = new PvPZoneInstance(mapId, area);
+                    instance = area.GetZoneTemplate().GetFlags() == 0 ? new DisablePvPZoneInstance(mapId, area) : new PvPZoneInstance(mapId, area);
                     break;
                 default:
                     InvasionZoneInstance invasionZone = GetIZI(area);
