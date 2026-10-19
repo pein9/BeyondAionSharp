@@ -109,7 +109,7 @@ public abstract class AbstractMaterialSkillActor : AbstractCollisionObserver
                 return;
             if (!outer.creature.IsSpawned() || outer.creature.IsDead())
                 return;
-            if (outer.creature is Player player && player.IsProtectionActive())
+            if (outer.creature.IsProtectionActive())
                 return;
             if ((skill = outer.FindFirstSkillWithMatchingCondition()) == null) // skip if currently nothing matches (fires are off while raining)
                 return;

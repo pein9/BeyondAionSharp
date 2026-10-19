@@ -4,7 +4,6 @@ using System.Linq;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
-using Aion.GameServer.Model.GameObjects.State;
 using Aion.GameServer.Model.Team;
 using Aion.GameServer.SkillEngine.Model;
 using Aion.GameServer.Utils;
@@ -37,7 +36,7 @@ public class TargetRangeProperty
                 foreach (Creature creature in firstTarget.GetKnownList().Stream()
                     .Where(knownObject => knownObject.Get() is Creature)
                     .Select(knownObject => (Creature)knownObject.Get())
-                    .Where(creature => CheckCommonRequirements(creature, skillTemplate))
+                    .Where(creature => CheckCommonRequirements(creature, skillEffector, skillTemplate))
                     .Where(creature => Math.Abs(firstTarget.GetZ() - creature.GetZ()) <= altitude)
                     .Where(creature => !(creature is Player player && player.IsUsingFlightTransporterOrWindstream()))
                     .Where(creature => !(skillEffector is Trap trap && trap.GetCreator() == creature)) // TODO this is a temporary hack for traps
@@ -71,7 +70,7 @@ public class TargetRangeProperty
                         {
                             if (!member.IsOnline())
                                 continue;
-                            if (!CheckCommonRequirements(member, skillTemplate))
+                            if (!CheckCommonRequirements(member, skillEffector, skillTemplate))
                                 continue;
                             if (PositionUtil.IsInRange(effector, member, effectiveRange, false))
                             {
@@ -88,7 +87,7 @@ public class TargetRangeProperty
                 foreach (Creature creature in skillEffector.GetKnownList().Stream()
                     .Where(knownObject => knownObject.Get() is Creature)
                     .Select(knownObject => (Creature)knownObject.Get())
-                    .Where(creature => CheckCommonRequirements(creature, skillTemplate))
+                    .Where(creature => CheckCommonRequirements(creature, skillEffector, skillTemplate))
                     .Where(creature => !(creature is Trap trap) || trap.GetMaster().IsEnemy(skillEffector))
                     .Where(creature => PositionUtil.IsInRange(creature, x, y, z, properties.GetTargetDistance() + 1))
                     .Where(creature => CheckGeo(creature, result.GetFirstTarget(), skillTemplate)))
@@ -101,7 +100,7 @@ public class TargetRangeProperty
         return true;
     }
 
-    private static bool CheckCommonRequirements(Creature creature, SkillTemplate skillTemplate)
+    private static bool CheckCommonRequirements(Creature creature, Creature skillEffector, SkillTemplate skillTemplate)
     {
         if (skillTemplate.HasResurrectEffect())
         {
@@ -114,8 +113,7 @@ public class TargetRangeProperty
                 return false;
         }
 
-        // blinking state means protection is active (no interaction with creature is possible)
-        if (creature.IsInVisualState(CreatureVisualState.BLINKING))
+        if (creature.IsSpawnProtectedFrom(skillEffector))
             return false;
 
         return true;

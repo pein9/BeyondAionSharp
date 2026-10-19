@@ -267,11 +267,6 @@ public partial class Player
         return durationSeconds;
     }
 
-    public bool IsProtectionActive()
-    {
-        return IsInVisualState(CreatureVisualState.BLINKING);
-    }
-
     public override bool IsInvulnerable()
     {
         return IsInCustomState(Aion.GameServer.Model.GameObjects.Players.CustomPlayerState.INVULNERABLE);

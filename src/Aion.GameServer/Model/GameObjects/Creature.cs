@@ -376,6 +376,20 @@ public abstract class Creature : VisibleObject
         return Aion.GameServer.Model.TribeClass.GENERAL;
     }
 
+    public bool IsProtectionActive()
+    {
+        return IsInVisualState(CreatureVisualState.BLINKING);
+    }
+
+    /// <summary>Spawn protection permits targeting only by the owner and its non-dueling team.</summary>
+    public bool IsSpawnProtectedFrom(Creature other)
+    {
+        if (!IsProtectionActive() || other.Equals(GetMaster()))
+            return false;
+        return !(GetMaster() is Player master && other is Player otherPlayer
+            && otherPlayer.IsInSameTeam(master) && !otherPlayer.IsDueling(master));
+    }
+
     public override bool CanSee(VisibleObject obj)
     {
         if (obj is Creature creature)

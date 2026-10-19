@@ -583,18 +583,6 @@ public class AttackUtil
         return AttackStatus.NORMALHIT;
     }
 
-    public static void CancelCastOn(Creature target)
-    {
-        target.GetKnownList().ForEachObject(visibleObject =>
-        {
-            if (visibleObject is Creature creature && visibleObject.GetTarget() == target)
-            {
-                if (creature.GetCastingSkill() != null && creature.GetCastingSkill().GetFirstTarget().Equals(target))
-                    creature.GetController().CancelCurrentSkill(null);
-            }
-        });
-    }
-
     /// <summary>
     /// Send a packet to everyone who is targeting creature.
     /// </summary>

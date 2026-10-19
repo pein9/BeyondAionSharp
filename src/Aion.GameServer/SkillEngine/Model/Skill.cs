@@ -60,7 +60,6 @@ public class Skill
     private string chainCategory = null;
     private int chainUsageDuration = 0;
     private int hate;
-    private volatile DeathObserver firstTargetDieObserver;
 
     public enum SkillMethod
     {
@@ -181,9 +180,29 @@ public class Skill
         if (effector is Player player)
         {
             if (CanUseSkill(player))
+            {
+                if (!CanTargetFirstTarget())
+                {
+                    if (GetTargetRangeAttribute() != TargetRangeAttribute.AREA)
+                    {
+                        PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_SKILL_TARGET_IS_NOT_VALID());
+                        return false;
+                    }
+                    effectedList.Remove(firstTarget);
+                }
                 effectedList.RemoveAll(effected => !IsValidTarget(player, effected));
+            }
             else
                 effectedList.Clear();
+        }
+        else if (IsFirstTargetGone())
+        {
+            return false;
+        }
+        else if (!CanTargetFirstTarget())
+        {
+            effectedList.Remove(firstTarget);
+            return true; // Non-player casts still go off without an unusable first target.
         }
 
         if (targetType == 0 && effectedList.Count == 0)
@@ -212,6 +231,8 @@ public class Skill
 
     private bool IsValidTarget(Player player, Creature target)
     {
+        if (target.IsSpawnProtectedFrom(player))
+            return false;
         if (target is Player targetPlayer)
         {
             if (targetPlayer.IsUsingFlightTransporterOrWindstream())
@@ -559,19 +580,6 @@ public class Skill
             PacketSendUtility.BroadcastPacketAndReceive(effector, new SM_ITEM_USAGE_ANIMATION(effector.GetObjectId(), firstTarget.GetObjectId(),
                 itemObjectId, itemTemplate.GetTemplateId(), castDuration, ItemUseAnimation.USE_START));
         }
-
-        if (firstTarget != null && !firstTarget.Equals(effector) && !skillTemplate.HasResurrectEffect() && (castDuration > 0)
-            && skillTemplate.GetProperties().GetFirstTarget() != FirstTargetAttribute.POINT
-            && skillTemplate.GetProperties().GetFirstTarget() != FirstTargetAttribute.ME)
-        {
-            if ((effector is Npc && ((Npc)effector).IsBoss())
-                || (skillTemplate.GetProperties().GetFirstTarget() == FirstTargetAttribute.TARGET && skillTemplate.GetProperties().GetEffectiveDist() > 0))
-            {
-                return;
-            }
-            firstTargetDieObserver = new DeathObserver(_ => GetEffector().GetController().CancelCurrentSkill(null, SM_SYSTEM_MESSAGE.STR_SKILL_TARGET_LOST()));
-            firstTarget.GetObserveController().Attach(firstTargetDieObserver);
-        }
     }
 
     public void CancelCast()
@@ -588,11 +596,50 @@ public class Skill
             effector.GetController().CancelCurrentSkill(null, null);
     }
 
+    /// <summary>A player loses an unusable first target unless this is an area skill.</summary>
+    protected bool CancelOnUnusableFirstTarget()
+    {
+        if (effector is not Player || CanTargetFirstTarget() || GetTargetRangeAttribute() == TargetRangeAttribute.AREA)
+            return false;
+        effector.GetController().CancelCurrentSkill(null!, SM_SYSTEM_MESSAGE.STR_SKILL_TARGET_LOST());
+        return true;
+    }
+
+    private bool EndOnGoneFirstTarget()
+    {
+        if (effector is Player || !IsFirstTargetGone())
+            return false;
+        effector.GetController().AbortCast();
+        effector.SetTarget(null!);
+        effector.GetAi().OnGeneralEvent(Aion.GameServer.Ai.Event.AiEventType.ATTACK_COMPLETE);
+        return true;
+    }
+
+    private bool IsFirstTargetGone()
+    {
+        if (firstTarget == null || firstTarget.Equals(effector))
+            return false;
+        var properties = skillTemplate.GetProperties();
+        int range = (properties == null ? 0 : properties.GetFirstTargetRange()) + 30;
+        return !firstTarget.IsSpawned() || !PositionUtil.IsInRange(effector, firstTarget, range, false);
+    }
+
+    private bool CanTargetFirstTarget()
+    {
+        if (firstTarget == null || firstTarget.Equals(effector))
+            return true;
+        if (!firstTarget.IsSpawned() || firstTarget.IsDead() != skillTemplate.HasResurrectEffect())
+            return false;
+        return effector.CanSee(firstTarget) && !firstTarget.IsSpawnProtectedFrom(effector);
+    }
+
     /// <summary>Apply effects and perform actions specified in skill template.</summary>
     protected void EndCast()
     {
         RemoveObservers();
         if (!effector.IsCasting() || isCancelled)
+            return;
+        if (CancelOnUnusableFirstTarget() || EndOnGoneFirstTarget())
             return;
         // check if target is out of skill range or other requirements are not met (anymore)
         var properties = skillTemplate.GetProperties();
@@ -755,8 +802,6 @@ public class Skill
 
     private void RemoveObservers()
     {
-        if (firstTargetDieObserver != null)
-            firstTarget.GetObserveController().RemoveObserver(firstTargetDieObserver);
         effector.GetObserveController().RemoveObserver(moveListener);
     }
 

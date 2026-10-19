@@ -28,6 +28,8 @@ public class ChargeSkill : Skill
 
     public override bool UseSkill()
     {
+        if (CancelOnUnusableFirstTarget())
+            return false;
         if (!CanUseSkill(Properties.Properties.CastState.CAST_END))
         {
             effector.GetController().CancelCurrentSkill(null);

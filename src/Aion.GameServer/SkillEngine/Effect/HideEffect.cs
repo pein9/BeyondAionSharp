@@ -51,9 +51,6 @@ public class HideEffect : BufEffect
 
         effected.SetVisualState(state);
 
-        // Cancel targeted enemy cast
-        AttackUtil.CancelCastOn(effected);
-
         // send all to set new 'effected' visual state (remove all visual targetting from 'effected')
         PacketSendUtility.BroadcastPacketAndReceive(effected, new SM_PLAYER_STATE(effected));
 

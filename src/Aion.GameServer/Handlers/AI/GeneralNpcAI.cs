@@ -54,7 +54,7 @@ public class GeneralNpcAI : NpcAI, INpcMessageListener
 
     protected override void HandleCreatureNotSee(Creature creature)
     {
-        if (creature.Equals(GetTarget()))
+        if (creature.Equals(GetTarget()) && !GetOwner().IsCasting()) // A started cast checks its target when it ends.
         {
             GetOwner().GetController().AbortCast();
             OnGeneralEvent(AiEventType.TARGET_TOOFAR);

@@ -637,7 +637,6 @@ public class PlayerController : CreatureController<Player>
         if (!GetOwner().IsProtectionActive())
         {
             GetOwner().SetVisualState(CreatureVisualState.BLINKING);
-            AttackUtil.CancelCastOn(GetOwner());
             AttackUtil.RemoveTargetFrom(GetOwner());
             PacketSendUtility.BroadcastToSightedPlayers(GetOwner(), new SM_PLAYER_STATE(GetOwner()), true);
         }
