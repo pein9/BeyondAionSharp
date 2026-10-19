@@ -77,7 +77,7 @@ public sealed class GoldenSocialPacketFixtureTests
             case "SM_EXCHANGE_ADD_KINAH":
                 return (new SM_EXCHANGE_ADD_KINAH(inputs.GetProperty("kinahCount").GetInt64(), inputs.GetProperty("action").GetInt32()), null);
             case "SM_EXCHANGE_CONFIRMATION":
-                return (new SM_EXCHANGE_CONFIRMATION(inputs.GetProperty("action").GetInt32()), null);
+                return (new SM_EXCHANGE_CONFIRMATION((SM_EXCHANGE_CONFIRMATION.Action)inputs.GetProperty("action").GetInt32()), null);
             case "SM_LEGION_LEAVE_MEMBER":
             {
                 var msgId = inputs.GetProperty("msgId").GetInt32();

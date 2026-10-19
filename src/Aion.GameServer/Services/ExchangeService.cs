@@ -189,7 +189,7 @@ public class ExchangeService
         {
             exchange.Lock();
             Player currentParter = GetCurrentParter(activePlayer);
-            PacketSendUtility.SendPacket(currentParter, new SM_EXCHANGE_CONFIRMATION(3));
+            PacketSendUtility.SendPacket(currentParter, new SM_EXCHANGE_CONFIRMATION(SM_EXCHANGE_CONFIRMATION.Action.PARTNER_LOCKED));
         }
     }
 
@@ -201,7 +201,7 @@ public class ExchangeService
         if (currentPartner != null)
         {
             ReturnItems(currentPartner);
-            PacketSendUtility.SendPacket(currentPartner, new SM_EXCHANGE_CONFIRMATION(1));
+            PacketSendUtility.SendPacket(currentPartner, new SM_EXCHANGE_CONFIRMATION(SM_EXCHANGE_CONFIRMATION.Action.CANCELED));
         }
 
         CleanUpExchanges(true, activePlayer, currentPartner);
@@ -250,11 +250,14 @@ public class ExchangeService
         currentExchange.Confirm();
 
         Player currentPartner = GetCurrentParter(activePlayer);
-        PacketSendUtility.SendPacket(currentPartner, new SM_EXCHANGE_CONFIRMATION(2));
+        Exchange? partnerExchange = currentPartner == null ? null : GetCurrentExchange(currentPartner);
+        if (partnerExchange == null)
+            return;
+        PacketSendUtility.SendPacket(currentPartner!, new SM_EXCHANGE_CONFIRMATION(SM_EXCHANGE_CONFIRMATION.Action.PARTNER_CONFIRMED));
 
-        if (GetCurrentExchange(currentPartner).IsConfirmed())
+        if (partnerExchange.IsConfirmed())
         {
-            PerformTrade(activePlayer, currentPartner);
+            PerformTrade(activePlayer, currentPartner!);
         }
     }
 
@@ -273,6 +276,13 @@ public class ExchangeService
             return;
         }
 
+        if (!CanGive(activePlayer, exchange1) || !CanGive(currentPartner, exchange2))
+        {
+            PacketSendUtility.SendPacket(activePlayer, new SM_EXCHANGE_CONFIRMATION(SM_EXCHANGE_CONFIRMATION.Action.CANCELED));
+            CancelExchange(activePlayer);
+            return;
+        }
+
         if (!RemoveItemsFromInventory(activePlayer, exchange1) || !RemoveItemsFromInventory(currentPartner, exchange2))
         {
             CleanUpExchanges(true, activePlayer, currentPartner);
@@ -280,8 +290,8 @@ public class ExchangeService
             return;
         }
 
-        PacketSendUtility.SendPacket(activePlayer, new SM_EXCHANGE_CONFIRMATION(0));
-        PacketSendUtility.SendPacket(currentPartner, new SM_EXCHANGE_CONFIRMATION(0));
+        PacketSendUtility.SendPacket(activePlayer, new SM_EXCHANGE_CONFIRMATION(SM_EXCHANGE_CONFIRMATION.Action.COMPLETED));
+        PacketSendUtility.SendPacket(currentPartner, new SM_EXCHANGE_CONFIRMATION(SM_EXCHANGE_CONFIRMATION.Action.COMPLETED));
 
         PutItemToInventory(activePlayer, currentPartner, exchange1, exchange2);
         PutItemToInventory(currentPartner, activePlayer, exchange2, exchange1);
@@ -308,6 +318,18 @@ public class ExchangeService
                 }
             }
         }
+    }
+
+    // Offered items and kinah may have been used, equipped, deleted or spent before confirmation.
+    private bool CanGive(Player player, Exchange exchange)
+    {
+        foreach (ExchangeItem exchangeItem in exchange.GetItems().Values)
+        {
+            Item item = player.GetInventory().GetItemByObjId(exchangeItem.GetItemObjId());
+            if (item == null || item.GetItemCount() < exchangeItem.GetItemCount())
+                return false;
+        }
+        return player.GetInventory().GetKinah() >= exchange.GetKinahCount();
     }
 
     private bool RemoveItemsFromInventory(Player player, Exchange exchange)

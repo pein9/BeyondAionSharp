@@ -1,0 +1,170 @@
+{
+  "source": "Java",
+  "sourceJavaCommit": "ea257e5e9bd8e6e6e091feb607a56d5fa187ef0a",
+  "sourceHashes": {
+    "game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_EXCHANGE_CONFIRMATION.java": "f70c0395efb40640db9688e419c576b8bfa4ba7f733a93e8b91fa2acd553962c",
+    "game-server/src/com/aionemu/gameserver/services/ExchangeService.java": "3a872ad9d88a7d93a09cf93859e5fbf6ef3bd66e1185b0a3d81e0cf23d24e49a"
+  },
+  "captureBoundary": "Exact canGive method with inventory/offer boundary doubles; exact confirmation packet class with writeC byte sink.",
+  "preflightCases": [
+    {
+      "balance": 0,
+      "offeredKinah": 0,
+      "items": [],
+      "accepted": true
+    },
+    {
+      "balance": 5,
+      "offeredKinah": 5,
+      "items": [],
+      "accepted": true
+    },
+    {
+      "balance": 4,
+      "offeredKinah": 5,
+      "items": [],
+      "accepted": false
+    },
+    {
+      "balance": 100,
+      "offeredKinah": 20,
+      "items": [
+        {
+          "id": 1,
+          "stock": 3,
+          "offered": 3
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "balance": 100,
+      "offeredKinah": 20,
+      "items": [
+        {
+          "id": 1,
+          "stock": 2,
+          "offered": 3
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "balance": 100,
+      "offeredKinah": 20,
+      "items": [
+        {
+          "id": 1,
+          "stock": null,
+          "offered": 3
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "balance": 100,
+      "offeredKinah": 20,
+      "items": [
+        {
+          "id": 1,
+          "stock": 3,
+          "offered": 3
+        },
+        {
+          "id": 2,
+          "stock": 4,
+          "offered": 4
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "balance": 100,
+      "offeredKinah": 20,
+      "items": [
+        {
+          "id": 1,
+          "stock": 3,
+          "offered": 3
+        },
+        {
+          "id": 2,
+          "stock": null,
+          "offered": 4
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "balance": 100,
+      "offeredKinah": 20,
+      "items": [
+        {
+          "id": 1,
+          "stock": 3,
+          "offered": 3
+        },
+        {
+          "id": 2,
+          "stock": 3,
+          "offered": 4
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "balance": 100,
+      "offeredKinah": 101,
+      "items": [
+        {
+          "id": 1,
+          "stock": 3,
+          "offered": 3
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "balance": 0,
+      "offeredKinah": 0,
+      "items": [
+        {
+          "id": 1,
+          "stock": 0,
+          "offered": 0
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "balance": 9223372036854775807,
+      "offeredKinah": 9223372036854775807,
+      "items": [
+        {
+          "id": 1,
+          "stock": 9223372036854775807,
+          "offered": 9223372036854775807
+        }
+      ],
+      "accepted": true
+    }
+  ],
+  "packetCases": [
+    {
+      "action": "COMPLETED",
+      "payloadHex": "00"
+    },
+    {
+      "action": "CANCELED",
+      "payloadHex": "01"
+    },
+    {
+      "action": "PARTNER_CONFIRMED",
+      "payloadHex": "02"
+    },
+    {
+      "action": "PARTNER_LOCKED",
+      "payloadHex": "03"
+    }
+  ]
+}
