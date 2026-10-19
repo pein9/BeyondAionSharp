@@ -74,6 +74,10 @@ public static class NetworkConfig
     [Property(key: "gameserver.network.packet.processor.threshold.spawn", defaultValue: "50")]
     public static int PACKET_PROCESSOR_THREAD_SPAWN_THRESHOLD = 50;
 
+    /// <summary>Maximum packets of one client waiting for execution.</summary>
+    [Property(key: "gameserver.network.packet.processor.max_pending_per_connection", defaultValue: "500")]
+    public static int PACKET_PROCESSOR_MAX_PENDING_PACKETS_PER_CONNECTION = 500;
+
     /// <summary>If aion client packets unknown by the server should be logged. Key: gameserver.network.logging.unknown_packets</summary>
     [Property(key: "gameserver.network.logging.unknown_packets", defaultValue: "false")]
     public static bool LOG_UNKNOWN_PACKETS;

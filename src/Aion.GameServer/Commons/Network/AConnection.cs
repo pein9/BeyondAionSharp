@@ -28,7 +28,9 @@ public abstract class AConnection
     public readonly ByteBuffer readBuffer;
     private readonly string ip;
     private readonly bool socketless;
-    private bool locked = false;
+    // Guarded by the owning PacketProcessor lock. Runnable erases BaseClientPacket<?> here.
+    internal readonly Queue<Aion.Commons.Lang.Runnable> pendingPackets = new();
+    internal bool scheduledForProcessing;
     private static readonly DispatchLatencyMetrics writeLatencyMetrics = new();
     private volatile PendingDispatchProbe? writeLatency;
 
@@ -126,15 +128,6 @@ public abstract class AConnection
     public bool IsClosed() => closed;
 
     public string GetIP() => ip;
-
-    internal bool TryLockConnection()
-    {
-        if (locked)
-            return false;
-        return locked = true;
-    }
-
-    internal void UnlockConnection() => locked = false;
 
     /// <summary>Closes this connection (regular, no close packet).</summary>
     public abstract void Close();

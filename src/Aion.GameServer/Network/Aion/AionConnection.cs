@@ -36,6 +36,7 @@ public class AionConnection : AConnection<AionServerPacket>
     private static readonly Lazy<PacketProcessor<AionConnection>> packetProcessor = new(() => new PacketProcessor<AionConnection>(
         NetworkConfig.PACKET_PROCESSOR_MIN_THREADS, NetworkConfig.PACKET_PROCESSOR_MAX_THREADS,
         NetworkConfig.PACKET_PROCESSOR_THREAD_SPAWN_THRESHOLD, NetworkConfig.PACKET_PROCESSOR_THREAD_KILL_THRESHOLD,
+        NetworkConfig.PACKET_PROCESSOR_MAX_PENDING_PACKETS_PER_CONNECTION,
         new ExecuteWrapper(ThreadConfig.MAXIMUM_RUNTIME_IN_MILLISEC_WITHOUT_WARNING)));
 
     /// <summary>Client packets waiting in the faithful packet processor, without forcing its worker threads to start.</summary>
@@ -184,7 +185,14 @@ public class AionConnection : AConnection<AionServerPacket>
                 if (recordedPayload != null)
                     recorder!.OnClientPacketHandled(this, recordedPayload, pck, "executed", stateBefore);
                 SendPacketInfo(pck);
-                ExecutePacket(pck);
+                if (!ExecutePacket(pck))
+                {
+                    log.LogWarning("{Connection} has more than {Limit} packets waiting for execution, disconnecting", this,
+                        NetworkConfig.PACKET_PROCESSOR_MAX_PENDING_PACKETS_PER_CONNECTION);
+                    if (recordedPayload != null)
+                        recorder!.OnClientPacketHandled(this, recordedPayload, pck, "queue-refused", stateBefore);
+                    return false;
+                }
             }
             else if (recordedPayload != null)
                 recorder!.OnClientPacketHandled(this, recordedPayload, pck, "read-failed", stateBefore);
@@ -194,7 +202,7 @@ public class AionConnection : AConnection<AionServerPacket>
     }
 
     /// <summary>Runs a decoded client packet. Socketless transports override this to execute inline.</summary>
-    protected virtual void ExecutePacket(AionClientPacket packet) => packetProcessor.Value.ExecutePacket(packet);
+    protected virtual bool ExecutePacket(AionClientPacket packet) => packetProcessor.Value.ExecutePacket(packet);
 
     internal IDisposable? BeginLogScope(AionClientPacket packet)
     {

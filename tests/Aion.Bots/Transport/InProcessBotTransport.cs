@@ -290,7 +290,7 @@ public sealed class InProcessBotTransport : IBotTransport
 			Disconnect(InlineExecutor.Instance);
 		}
 
-		protected override void ExecutePacket(AionClientPacket packet) => packet.Run();
+		protected override bool ExecutePacket(AionClientPacket packet) { packet.Run(); return true; }
 	}
 
 	private sealed class InlineExecutor : Executor

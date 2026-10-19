@@ -72,6 +72,7 @@ public class GameServerOptionsTests
 		Assert.False(options.Network.NioReadWriteThreadsUnsafeAllow);
 		Assert.Equal(4, options.Network.PacketProcessorMinThreads);
 		Assert.Equal(4, options.Network.PacketProcessorMaxThreads);
+		Assert.Equal(500, options.Network.PacketProcessorMaxPendingPacketsPerConnection);
 	}
 
 	[Fact]

@@ -160,7 +160,7 @@ public sealed class SocketlessAionConnectionTests
 			SentPackets.Clear();
 		}
 
-		protected override void ExecutePacket(AionClientPacket packet) => packet.Run();
+		protected override bool ExecutePacket(AionClientPacket packet) { packet.Run(); return true; }
 
 		protected override void ResetPlayerPositionAfterDisconnect(Player player)
 		{

@@ -20,9 +20,12 @@ public class PacketProcessor<T> where T : AConnection
 
     private readonly int threadSpawnThreshold;
     private readonly int threadKillThreshold;
+    private readonly int maxPendingPacketsPerConnection;
 
     private readonly object lockObj = new object();
-    private readonly LinkedList<BaseClientPacket<T>> packets = new LinkedList<BaseClientPacket<T>>();
+    private readonly Queue<AConnection> readyConnections = new();
+    private int pendingPacketCount;
+    private readonly HashSet<Thread> retiringThreads = new();
     private readonly List<Thread> threads = new List<Thread>();
 
     private readonly int minThreads;
@@ -34,22 +37,24 @@ public class PacketProcessor<T> where T : AConnection
         public void Execute(Runnable command) => command.Run();
     }
 
-    public PacketProcessor(int minThreads, int maxThreads, int threadSpawnThreshold, int threadKillThreshold)
-        : this(minThreads, maxThreads, threadSpawnThreshold, threadKillThreshold, new DummyExecutor())
+    public PacketProcessor(int minThreads, int maxThreads, int threadSpawnThreshold, int threadKillThreshold, int maxPendingPacketsPerConnection)
+        : this(minThreads, maxThreads, threadSpawnThreshold, threadKillThreshold, maxPendingPacketsPerConnection, new DummyExecutor())
     {
     }
 
-    public PacketProcessor(int minThreads, int maxThreads, int threadSpawnThreshold, int threadKillThreshold, Executor executor)
+    public PacketProcessor(int minThreads, int maxThreads, int threadSpawnThreshold, int threadKillThreshold, int maxPendingPacketsPerConnection, Executor executor)
     {
         CheckArgument(minThreads > 0, "Min Threads must be positive");
         CheckArgument(maxThreads >= minThreads, "Max Threads must be >= Min Threads");
         CheckArgument(threadSpawnThreshold > 0, "Thread Spawn Threshold must be positive");
         CheckArgument(threadKillThreshold > 0, "Thread Kill Threshold must be positive");
+        CheckArgument(maxPendingPacketsPerConnection > 0, "Max pending packets per connection must be positive");
 
         this.minThreads = minThreads;
         this.maxThreads = maxThreads;
         this.threadSpawnThreshold = threadSpawnThreshold;
         this.threadKillThreshold = threadKillThreshold;
+        this.maxPendingPacketsPerConnection = maxPendingPacketsPerConnection;
         this.executor = executor;
 
         if (minThreads != maxThreads)
@@ -88,76 +93,92 @@ public class PacketProcessor<T> where T : AConnection
 
     private void KillThread()
     {
-        if (threads.Count > minThreads)
+        lock (lockObj)
         {
-            Thread t = threads[threads.Count - 1];
+            if (threads.Count <= minThreads) return;
+            Thread t = threads[^1];
             threads.RemoveAt(threads.Count - 1);
-            log.LogDebug("Killing PacketProcessor Thread: " + t.Name);
+            retiringThreads.Add(t);
+            log.LogDebug("Killing PacketProcessor Thread: {Name}", t.Name);
             t.Interrupt();
         }
     }
 
-    /// <summary>Add a packet to the execution queue; it will be executed asap on another thread.</summary>
-    public void ExecutePacket(BaseClientPacket<T> packet)
+    /// <summary>Queues in receive order; false means the per-connection pending limit was reached.</summary>
+    public bool ExecutePacket(BaseClientPacket<T> packet)
     {
+        AConnection connection = packet.GetConnection();
         lock (lockObj)
         {
-            packets.AddLast(packet);
-            Monitor.Pulse(lockObj);
-        }
-    }
-
-    /// <summary>Number of client packets waiting for an execution slot.</summary>
-    public int QueueDepth
-    {
-        get
-        {
-            lock (lockObj)
-                return packets.Count;
-        }
-    }
-
-    /// <summary>First packet available for execution (1 packet/client at a time, in received order). Caller holds the lock.</summary>
-    private BaseClientPacket<T> GetFirstAvailable()
-    {
-        for (;;)
-        {
-            while (packets.Count == 0)
-                Monitor.Wait(lockObj);
-
-            for (LinkedListNode<BaseClientPacket<T>>? node = packets.First; node != null; node = node.Next)
+            if (connection.pendingPackets.Count >= maxPendingPacketsPerConnection)
+                return false;
+            connection.pendingPackets.Enqueue(packet);
+            pendingPacketCount++;
+            if (!connection.scheduledForProcessing)
             {
-                BaseClientPacket<T> packet = node.Value;
-                if (packet.GetConnection().TryLockConnection())
-                {
-                    packets.Remove(node);
-                    return packet;
-                }
+                connection.scheduledForProcessing = true;
+                readyConnections.Enqueue(connection);
+                Monitor.Pulse(lockObj);
             }
+            return true;
+        }
+    }
+
+    /// <summary>Number waiting, excluding packets currently executing.</summary>
+    public int QueueDepth { get { lock (lockObj) return pendingPacketCount; } }
+
+    // Caller holds the processor lock. A connection remains scheduled during execution.
+    private (AConnection Connection, Runnable Packet) TakeNextPacket()
+    {
+        while (readyConnections.Count == 0)
             Monitor.Wait(lockObj);
+        pendingPacketCount--;
+        AConnection connection = readyConnections.Dequeue();
+        return (connection, connection.pendingPackets.Dequeue());
+    }
+
+    private void FinishPacket(AConnection connection)
+    {
+        if (connection.pendingPackets.Count == 0)
+            connection.scheduledForProcessing = false;
+        else
+        {
+            readyConnections.Enqueue(connection);
+            Monitor.Pulse(lockObj);
         }
     }
 
     private void PacketProcessorTask()
     {
-        BaseClientPacket<T>? packet = null;
+        AConnection? connection = null;
         try
         {
             for (;;)
             {
+                Runnable packet;
                 lock (lockObj)
                 {
-                    if (packet != null)
-                        packet.GetConnection().UnlockConnection();
-
-                    packet = GetFirstAvailable();
+                    if (connection != null)
+                    {
+                        FinishPacket(connection);
+                        connection = null;
+                    }
+                    // C# interrupt flags are observed only at blocking calls. Track retirement
+                    // explicitly so a busy worker finishes/requeues its connection before exiting.
+                    if (retiringThreads.Remove(Thread.CurrentThread)) return;
+                    (connection, packet) = TakeNextPacket();
                 }
                 executor.Execute(packet);
             }
         }
-        catch (ThreadInterruptedException)
+        catch (ThreadInterruptedException) { }
+        finally
         {
-            // thread killed
+            lock (lockObj)
+            {
+                retiringThreads.Remove(Thread.CurrentThread);
+                if (connection != null) FinishPacket(connection);
+            }
         }
     }
 
@@ -175,7 +196,8 @@ public class PacketProcessor<T> where T : AConnection
                 return;
             }
 
-            int packetsWaitingForExecution = packets.Count;
+            int packetsWaitingForExecution;
+            lock (lockObj) packetsWaitingForExecution = pendingPacketCount;
             if (packetsWaitingForExecution <= previousPacketCount && packetsWaitingForExecution <= threadKillThreshold)
             {
                 KillThread();
