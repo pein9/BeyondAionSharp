@@ -1,4 +1,5 @@
 using System;
+using Aion.GameServer.GeoEngine.Bounding;
 using System.Collections.Generic;
 using System.Linq;
 using Aion.GameServer.Configs.Main;
@@ -347,6 +348,15 @@ public class GeoMap : Node
                 log.LogWarning("Door state 2 not available for door {DoorId} in world {MapId}", doorId, mapId);
             }
         }
+    }
+
+    /// <summary>Bounds of door geometry, preferring its closed state; null when it has no box.</summary>
+    public BoundingBox? GetDoorBounds(int doorId)
+    {
+        if (!despawnableDoors.TryGetValue(doorId, out DespawnableNode[]? doors))
+            return null;
+        DespawnableNode? door = doors[0] != null ? doors[0] : doors[1];
+        return door?.GetWorldBound() is BoundingBox box ? box : null;
     }
 
     private ISet<int> GetIgnorableDoorIds()

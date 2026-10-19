@@ -1,4 +1,8 @@
 using Aion.GameServer.Configs.Administration;
+using Aion.GameServer.GeoEngine.Bounding;
+using Aion.GameServer.GeoEngine.Math;
+using Aion.GameServer.Utils.Audit;
+using Aion.GameServer.World.Geo;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion.ServerPackets;
@@ -11,6 +15,8 @@ namespace Aion.GameServer.Services;
 public class StaticDoorService
 {
     private static readonly ILogger log = AionLog.For(nameof(StaticDoorService));
+    private const float MAX_DOOR_DISTANCE = 5;
+    private const float MAX_DOOR_POSITION_DISTANCE = 20;
 
     public static StaticDoorService GetInstance()
     {
@@ -31,6 +37,12 @@ public class StaticDoorService
 
         if (player.HasAccess(AdminConfig.INSTANCE_DOOR_INFO))
             PacketSendUtility.SendMessage(player, "Door ID: " + doorId + ", key ID: " + keyId);
+
+        if (!IsNearDoor(player, door, doorId))
+        {
+            AuditLogger.Log(player, "tried to open door " + doorId + " from " + player.GetPosition());
+            return;
+        }
 
         bool opened = false;
         lock (door)
@@ -66,6 +78,17 @@ public class StaticDoorService
             return null;
         }
         return (StaticDoor) @object;
+    }
+
+    private bool IsNearDoor(Player player, StaticDoor door, int doorId)
+    {
+        BoundingBox? box = GeoService.GetInstance().GetDoorBounds(door.GetWorldId(), doorId);
+        if (box == null)
+            return PositionUtil.IsInRange(player, door, MAX_DOOR_POSITION_DISTANCE);
+        Vector3f center = box.GetCenter();
+        return System.Math.Abs(player.GetX() - center.X) <= box.GetXExtent() + MAX_DOOR_DISTANCE
+            && System.Math.Abs(player.GetY() - center.Y) <= box.GetYExtent() + MAX_DOOR_DISTANCE
+            && System.Math.Abs(player.GetZ() - center.Z) <= box.GetZExtent() + MAX_DOOR_DISTANCE;
     }
 
     private bool CheckStaticDoorKey(Player player, StaticDoor door, int keyId)

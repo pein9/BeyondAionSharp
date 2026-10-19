@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Aion.GameServer.GeoEngine.Bounding;
 using Aion.GameServer.Ai.Poll;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
@@ -212,6 +213,8 @@ public class GeoService : GameEngine
     {
         geoMaps[worldId].SetDoorState(instanceId, doorId, open);
     }
+
+    public BoundingBox? GetDoorBounds(int worldId, int doorId) => geoMaps[worldId].GetDoorBounds(doorId);
 
     public bool WorldHasTerrainMaterials(int worldId)
     {

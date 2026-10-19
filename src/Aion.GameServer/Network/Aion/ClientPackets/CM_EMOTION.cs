@@ -11,6 +11,7 @@ using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.SkillEngine.Effects;
 using Aion.GameServer.Utils;
+using Aion.GameServer.Utils.Audit;
 using State = global::Aion.GameServer.Network.Aion.AionConnection.State;
 
 namespace Aion.GameServer.Network.Aion.ClientPackets;
@@ -20,6 +21,7 @@ public class CM_EMOTION : AionClientPacket
 {
     /// <summary>Logger</summary>
     private static readonly ILogger log = AionLog.For(nameof(CM_EMOTION));
+    private const float MAX_CHAIR_DISTANCE = 10;
     /// <summary>Emotion number</summary>
     private EmotionType emotionType;
     /// <summary>Emotion number</summary>
@@ -107,6 +109,12 @@ public class CM_EMOTION : AionClientPacket
         if (player.IsInState(CreatureState.PRIVATE_SHOP) || player.IsInAttackMode()
             && (emotionType == EmotionType.CHAIR_SIT || emotionType == EmotionType.JUMP))
             return;
+
+        if ((emotionType == EmotionType.CHAIR_SIT || emotionType == EmotionType.CHAIR_UP) && !PositionUtil.IsInRange(player, x, y, z, MAX_CHAIR_DISTANCE))
+        {
+            AuditLogger.Log(player, "tried to " + emotionType + " at " + x + ", " + y + ", " + z + " from " + player.GetPosition());
+            return;
+        }
 
         if (emotionType == EmotionType.SELECT_TARGET)
         {
