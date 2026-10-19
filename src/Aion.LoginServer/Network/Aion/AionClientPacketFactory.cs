@@ -52,6 +52,12 @@ public static class AionClientPacketFactory
 			packet.Read(payload);
 			return packet;
 		}
+		catch (EndOfStreamException)
+		{
+			Log.LogWarning("Packet [{Opcode:D3}] {Packet} is shorter than expected:{NewLine}{Content}",
+				opCode, packet.GetType().Name, Environment.NewLine, FormatHex(payload, payloadStart));
+			return null;
+		}
 		catch (Exception ex)
 		{
 			var remaining = payload.Remaining > 0

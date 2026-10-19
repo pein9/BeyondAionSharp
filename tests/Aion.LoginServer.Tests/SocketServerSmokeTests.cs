@@ -19,6 +19,28 @@ namespace Aion.LoginServer.Tests;
 
 public sealed class SocketServerSmokeTests
 {
+	[Theory]
+	[InlineData(16385)]
+	[InlineData(65535)]
+	public async Task LoginClientSocketServerClosesAnOversizedAnnouncementBeforeReadingItsBody(int size)
+	{
+		var port = GetFreeLoopbackPort();
+		using var keyGenerator = new LoginKeyGenerator();
+		var authService = new SuccessfulLoginAuthService();
+		await using var server = new LoginClientSocketServer(
+			NullLogger<LoginClientSocketServer>.Instance,
+			new LoginServerOptions { ClientEndPoint = new IPEndPoint(IPAddress.Loopback, port), MaxClientConnections = 10 },
+			keyGenerator, authService, new LoginSessionRegistry(), new GameServerRegistry());
+		var serverTask = server.StartAsync();
+		using var client = await ConnectWithRetryAsync(port);
+		_ = await ReadFrameAsync(client.GetStream()); // consume SM_INIT before checking EOF
+		await client.GetStream().WriteAsync(new byte[] { (byte)size, (byte)(size >> 8) });
+		await AssertClientClosedAsync(client.GetStream());
+		Assert.Equal(0, authService.LoginAttempts);
+		await server.StopAsync(TimeSpan.FromSeconds(1));
+		await AssertTaskCompletedAsync(serverTask);
+	}
+
 	[Fact]
 	public async Task LoginClientSocketServer_CompletesGameGuardAndLoginHandshakeThenClosesActiveConnectionOnStop()
 	{
@@ -731,7 +753,7 @@ public sealed class SocketServerSmokeTests
 	}
 
 	[Fact]
-	public async Task GameServerSocketServer_ShortAuthPacketUsesJavaDefaultReadsAndClosesWithNotAuthed()
+	public async Task GameServerSocketServer_DropsShortAuthPacketAndAcceptsSubsequentValidAuth()
 	{
 		var port = GetFreeLoopbackPort();
 		var registry = new GameServerRegistry();
@@ -742,13 +764,15 @@ public sealed class SocketServerSmokeTests
 
 		using var client = await ConnectWithRetryAsync(port);
 		await client.GetStream().WriteAsync(PacketFrameCodec.CreateFrame(new byte[] { 0 }));
+		// Java drops the malformed body, so the next complete packet must still authenticate.
+		await client.GetStream().WriteAsync(CreateGameServerAuthFrame());
 		var frame = await ReadFrameAsync(client.GetStream());
-
-		Assert.Equal(CreateGameServerAuthResponseFrame(GsAuthResponse.NOT_AUTHED, 1), frame);
-		await AssertClientClosedAsync(client.GetStream());
-		Assert.False(gameServer.IsOnline);
+		Assert.Equal(CreateGameServerAuthResponseFrame(GsAuthResponse.AUTHED, 1), frame);
+		Assert.True(gameServer.IsOnline);
 
 		await server.StopAsync(TimeSpan.FromSeconds(1));
+		await AssertClientClosedAsync(client.GetStream());
+		Assert.False(gameServer.IsOnline);
 		Assert.Equal(0, server.GetActiveConnections());
 		await AssertTaskCompletedAsync(serverTask);
 	}

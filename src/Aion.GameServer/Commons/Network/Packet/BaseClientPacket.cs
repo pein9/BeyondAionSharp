@@ -12,8 +12,8 @@ namespace Aion.GameServer.Commons.Network.Packet;
 /// <summary>
 /// Java parity: commons/network/packet/BaseClientPacket (-Nemesiss-). Base for every client packet.
 /// &lt;T extends AConnection&lt;?&gt;&gt; -> where T : AConnection (the non-generic erasure base). implements
-/// Runnable -> Runnable (Run() left abstract for AionClientPacket). BufferUnderflowException ->
-/// catch (Exception) (the read helpers log and return a default on under-read). ConcurrentHashMap.newKeySet
+/// Runnable -> Runnable (Run() left abstract for AionClientPacket). Nio BufferUnderflow becomes one failed Read,
+/// with no default values or partial strings returned from helpers. ConcurrentHashMap.newKeySet
 /// -> ConcurrentDictionary used as a once-set.
 /// </summary>
 public abstract class BaseClientPacket<T> : BasePacket, Runnable where T : AConnection
@@ -53,6 +53,13 @@ public abstract class BaseClientPacket<T> : BasePacket, Runnable where T : AConn
 
             return true;
         }
+        catch (InvalidOperationException ex) when (ex.Message == "BufferUnderflow")
+        {
+            // The shared Nio shim uses this exception/message for Java BufferUnderflowException.
+            log.LogWarning("{Packet} from {Client} is shorter than expected:\n{Content}", this, client,
+                NetworkUtils.ToHex(buf, startPos, buf.Limit()));
+            return false;
+        }
         catch (Exception ex)
         {
             string msg = "Reading failed for packet " + this + ". Buffer Info";
@@ -71,78 +78,59 @@ public abstract class BaseClientPacket<T> : BasePacket, Runnable where T : AConn
 
     protected int ReadD()
     {
-        try { return buf.GetInt(); }
-        catch (Exception) { log.LogError("Missing D for: " + this + " (sent from " + client + ")"); }
-        return 0;
+        return buf.GetInt();
     }
 
     protected byte ReadC()
     {
-        try { return buf.Get(); }
-        catch (Exception) { log.LogError("Missing C for: " + this + " (sent from " + client + ")"); }
-        return 0;
+        return buf.Get();
     }
 
     protected int ReadUC()
     {
-        try { return buf.Get() & 0xFF; }
-        catch (Exception) { log.LogError("Missing C for: " + this + " (sent from " + client + ")"); }
-        return 0;
+        return buf.Get() & 0xFF;
     }
 
     protected short ReadH()
     {
-        try { return buf.GetShort(); }
-        catch (Exception) { log.LogError("Missing H for: " + this + " (sent from " + client + ")"); }
-        return 0;
+        return buf.GetShort();
     }
 
     protected int ReadUH()
     {
-        try { return buf.GetShort() & 0xFFFF; }
-        catch (Exception) { log.LogError("Missing H for: " + this + " (sent from " + client + ")"); }
-        return 0;
+        return buf.GetShort() & 0xFFFF;
     }
 
     protected double ReadDF()
     {
-        try { return buf.GetDouble(); }
-        catch (Exception) { log.LogError("Missing DF for: " + this + " (sent from " + client + ")"); }
-        return 0;
+        return buf.GetDouble();
     }
 
     protected float ReadF()
     {
-        try { return buf.GetFloat(); }
-        catch (Exception) { log.LogError("Missing F for: " + this + " (sent from " + client + ")"); }
-        return 0;
+        return buf.GetFloat();
     }
 
     protected long ReadQ()
     {
-        try { return buf.GetLong(); }
-        catch (Exception) { log.LogError("Missing Q for: " + this + " (sent from " + client + ")"); }
-        return 0;
+        return buf.GetLong();
     }
 
     protected string ReadS()
     {
         StringBuilder sb = new StringBuilder();
         char ch;
-        try
-        {
-            while ((ch = buf.GetChar()) != 0)
-                sb.Append(ch);
-        }
-        catch (Exception) { log.LogError("Missing S for: " + this + " (sent from " + client + ")"); }
+        while ((ch = buf.GetChar()) != 0)
+            sb.Append(ch);
         return sb.ToString();
     }
 
     protected byte[] ReadB(int length)
     {
+        if (length < 0 || length > buf.Remaining())
+            throw new InvalidOperationException("BufferUnderflow");
         byte[] result = new byte[length];
-        try { buf.Get(result); }
-        catch (Exception) { log.LogError("Missing byte[] for: " + this + " (sent from " + client + ")"); }
+        buf.Get(result);
         return result;
     }
 

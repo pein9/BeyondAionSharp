@@ -99,9 +99,8 @@ internal static class LoginServerInboundPacketFactory
 
 	private static void ValidateBanListCount(int count, int remainingBytes, int minimumEntrySize, string listName)
 	{
-		// Java's packet helpers return empty/zero values after buffer underflow, which the production
-		// lenient PacketBuffer mirrors. Bound positive peer counts before looping so a malformed frame
-		// cannot turn that parity behavior into unbounded CPU work or collection growth. Negative counts
+		// Bound positive peer counts before looping, in addition to strict primitive reads, so a malformed
+		// frame cannot cause unbounded CPU work or collection growth. Negative counts
 		// intentionally remain empty loops, matching both Java readers.
 		if (count > remainingBytes / minimumEntrySize)
 			throw new EndOfStreamException(

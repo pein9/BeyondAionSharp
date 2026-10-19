@@ -25,6 +25,6 @@ public static class ChatPacketFrameCodec
 		if (declaredLength != frame.Length)
 			throw new InvalidOperationException($"Frame length mismatch. Declared {declaredLength}, actual {frame.Length}.");
 
-		return new PacketBuffer(frame[2..], strictReads: false);
+		return new PacketBuffer(frame[2..], strictReads: true);
 	}
 }

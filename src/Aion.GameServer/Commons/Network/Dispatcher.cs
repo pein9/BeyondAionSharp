@@ -122,8 +122,17 @@ public abstract class Dispatcher
         }
 
         rb.Flip();
-        while (rb.Remaining() > 2 && rb.Remaining() >= (rb.GetShort(rb.Position()) & 0xFFFF))
+        while (rb.Remaining() > 2)
         {
+            int size = rb.GetShort(rb.Position()) & 0xFFFF;
+            if (size > rb.Capacity())
+            {
+                log.LogWarning("{Connection} announced a packet of {Size} bytes, which exceeds the read buffer size of {Capacity} bytes", con, size, rb.Capacity());
+                CloseConnectionImpl(con);
+                return;
+            }
+            if (rb.Remaining() < size)
+                break;
             if (!Parse(con, rb))
             {
                 CloseConnectionImpl(con);

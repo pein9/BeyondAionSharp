@@ -25,13 +25,13 @@ public sealed class SimulationHarnessSelfTests
 		clock.Advance(TimeSpan.Zero);
 
 		var move = NewMovePacket([0x00]);
-		Assert.True(move.Read()); // Java-shaped scalar helpers log under-read errors and return defaults.
+		Assert.False(move.Read()); // A truncated field now aborts the packet with one warning.
 
 		SimulationLogPolicyException error = Assert.Throws<SimulationLogPolicyException>(policy.AssertClean);
 		Assert.Contains(error.Problems, problem =>
 			problem.Kind == "virtual-timer" && problem.ExceptionText!.Contains("spawn probe boom", StringComparison.Ordinal));
 		Assert.Contains(error.Problems, problem =>
-			problem.Kind == "log" && problem.Message.Contains("Missing F for", StringComparison.Ordinal));
+			problem.Kind == "log" && problem.Message.Contains("shorter than expected", StringComparison.Ordinal));
 		Assert.Contains("System.ApplicationException: spawn probe boom", error.Message, StringComparison.Ordinal);
 		Assert.Contains("ThrowingSpawnProbe.HandleSpawned", error.Message, StringComparison.Ordinal);
 	}
@@ -59,7 +59,8 @@ public sealed class SimulationHarnessSelfTests
 		"harness-self-test",
 		scenario,
 		clock,
-		Path.Combine(RealStaticData.RepoRoot(), "parity-artifacts", "e2e", "log-allowlist.json"));
+		Path.Combine(RealStaticData.RepoRoot(), "parity-artifacts", "e2e", "log-allowlist.json"),
+		new SimulationLogPolicyOptions { FailOnProtocolWarnings = true });
 
 	private static CM_MOVE NewMovePacket(byte[] body)
 	{

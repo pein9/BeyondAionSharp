@@ -322,8 +322,8 @@ namespace Aion.Commons.Network
 		/// </summary>
 		public byte[] ReadB(int length)
 		{
-			if (length < 0)
-				throw new EndOfStreamException("Invalid negative byte array length");
+			if (length < 0 || (_strictReads && length > Remaining))
+				throw new EndOfStreamException("Not enough data to read bytes");
 			var result = new byte[length];
 			ReadB(result, 0, length);
 			return result;

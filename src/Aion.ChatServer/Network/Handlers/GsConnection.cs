@@ -44,7 +44,7 @@ public sealed class GsConnection : BaseClientConnection
 			return null;
 
 		var payload = await ReadExactOrNullAsync(frameLength - 2);
-		return payload == null ? null : new PacketBuffer(payload, strictReads: false);
+		return payload == null ? null : new PacketBuffer(payload, strictReads: true);
 	}
 
 	protected override async Task ProcessPacketAsync(PacketBuffer packet)

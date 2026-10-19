@@ -78,14 +78,15 @@ public class LoginProtocolPacketTests
 
 		Assert.Null(unknown);
 		Assert.Null(malformed);
-		var warning = Assert.Single(provider.Entries, entry => entry.Level == LogLevel.Warning);
+		var warning = Assert.Single(provider.Entries, entry => entry.Level == LogLevel.Warning && entry.Message.Contains("Unknown packet"));
 		Assert.Contains("opCode=0x7F", warning.Message);
 		Assert.Contains("state=Connected", warning.Message);
 		Assert.Contains("data=[AA BB]", warning.Message);
-		var error = Assert.Single(provider.Entries, entry => entry.Level == LogLevel.Error);
-		Assert.Contains("Reading failed for packet [007] CmAuthGameGuard", error.Message);
-		Assert.Contains("01 02", error.Message);
-		Assert.IsType<EndOfStreamException>(error.Exception);
+		var truncated = Assert.Single(provider.Entries, entry => entry.Level == LogLevel.Warning && entry.Message.Contains("shorter than expected"));
+		Assert.Contains("Packet [007] CmAuthGameGuard", truncated.Message);
+		Assert.Contains("01 02", truncated.Message);
+		Assert.Null(truncated.Exception);
+		Assert.DoesNotContain(provider.Entries, entry => entry.Level == LogLevel.Error);
 	}
 
 	[Fact]

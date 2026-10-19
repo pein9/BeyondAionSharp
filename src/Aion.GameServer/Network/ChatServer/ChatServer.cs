@@ -464,7 +464,7 @@ public sealed class ChatServer : IAsyncDisposable
 			return null;
 
 		var payload = await ReadExactOrNullAsync(session, frameLength - 2, cancellationToken);
-		return payload == null ? null : new PacketBuffer(payload, strictReads: false);
+		return payload == null ? null : new PacketBuffer(payload, strictReads: true);
 	}
 
 	internal static bool IsSupportedFrameLength(int frameLength)

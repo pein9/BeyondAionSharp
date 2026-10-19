@@ -65,7 +65,7 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 			return null;
 
 		var frameLength = BinaryPrimitives.ReadUInt16LittleEndian(header);
-		if (frameLength < 3)
+		if (frameLength < 3 || frameLength > 8192 * 2) // Java LoginConnection read-buffer capacity
 			return null;
 
 		var payload = await ReadExactOrNullAsync(frameLength - 2);

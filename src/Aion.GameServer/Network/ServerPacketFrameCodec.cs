@@ -16,7 +16,7 @@ public static class ServerPacketFrameCodec
 		return frame;
 	}
 
-	public static PacketBuffer CreatePayloadBuffer(byte[] frame, bool strictReads = false)
+	public static PacketBuffer CreatePayloadBuffer(byte[] frame, bool strictReads = true)
 	{
 		if (frame.Length < 3)
 			throw new ArgumentException("Frame must include a two-byte length and at least one opcode byte.", nameof(frame));

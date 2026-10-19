@@ -952,7 +952,7 @@ public sealed class LoginServer : IAsyncDisposable, ILoginServerLink
 			return null;
 
 		var payload = await ReadExactOrNullAsync(session, frameLength - 2, cancellationToken);
-		return payload == null ? null : new PacketBuffer(payload, strictReads: false);
+		return payload == null ? null : new PacketBuffer(payload, strictReads: true);
 	}
 
 	private static async Task<byte[]?> ReadExactOrNullAsync(
