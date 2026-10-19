@@ -34,7 +34,7 @@ public class CM_SUBZONE_CHANGE : AionClientPacket
             int foundZones = 0;
             foreach (ZoneInstance zone in player.FindZones())
             {
-                if (zone.GetZoneTemplate().GetZoneType() == ZoneClassName.DUMMY || zone.GetZoneTemplate().GetZoneType() == ZoneClassName.WEATHER)
+                if (zone.GetZoneTemplate().GetZoneType() == ZoneClassName.WEATHER)
                     continue;
                 foundZones++;
                 PacketSendUtility.SendMessage(player, "Passed zone: unk=" + unk + "; " + zone.GetZoneTemplate().GetZoneType() + " "

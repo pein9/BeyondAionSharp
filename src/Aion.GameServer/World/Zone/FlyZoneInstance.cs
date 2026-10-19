@@ -15,19 +15,12 @@ public class FlyZoneInstance : ZoneInstance
     {
         lock (this)
         {
-            if (base.OnEnter(creature))
-            {
-                creature.SetInsideZoneType(ZoneType.FLY);
-                if (creature is Player)
-                {
-                    ((Player)creature).GetController().OnEnterFlyArea();
-                }
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            if (!base.OnEnter(creature)) return false;
+            bool wasInFlyZone = creature.IsInsideFlyZone();
+            creature.SetInsideZoneType(ZoneType.FLY);
+            if (!wasInFlyZone && creature is Player player && player.IsInsideFlyZone())
+                player.GetController().OnEnterFlyArea();
+            return true;
         }
     }
 
@@ -35,15 +28,12 @@ public class FlyZoneInstance : ZoneInstance
     {
         lock (this)
         {
-            if (base.OnLeave(creature))
-            {
-                creature.UnsetInsideZoneType(ZoneType.FLY);
-                if (!creature.IsInsideZoneType(ZoneType.FLY) && creature is Player)
-                    ((Player)creature).GetController().OnLeaveFlyArea();
-                return true;
-            }
-            else
-                return false;
+            if (!base.OnLeave(creature)) return false;
+            bool wasInFlyZone = creature.IsInsideFlyZone();
+            creature.UnsetInsideZoneType(ZoneType.FLY);
+            if (wasInFlyZone && creature is Player player && !player.IsInsideFlyZone())
+                player.GetController().OnLeaveFlyArea();
+            return true;
         }
     }
 }

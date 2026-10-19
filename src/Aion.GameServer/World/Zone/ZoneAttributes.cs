@@ -5,7 +5,7 @@ namespace Aion.GameServer.World.Zone;
 /// <summary>
 /// Bit-flag attributes for zone templates.
 /// Java parity: world/zone/ZoneAttributes.
-/// Note: Java's getId() = (int)value in C#; fromList() mirrors the Java static method.
+/// Java getId() is the explicit bit value; enum ordinals are not bit masks.
 /// </summary>
 [Flags]
 [XmlType("ZoneAttributes")]
@@ -31,20 +31,4 @@ public enum ZoneAttributes
     DuelOtherRaceEnabled = 1 << 8,
     // Java parity: NO_RETURN_BATTLE(1 << 9)
     NoReturnBattle = 1 << 9,
-}
-
-/// <summary>
-/// Extension methods mirroring ZoneAttributes Java static methods.
-/// Java parity: world/zone/ZoneAttributes::fromList.
-/// </summary>
-public static class ZoneAttributesExtensions
-{
-    // Java parity: ZoneAttributes::fromList(List<ZoneAttributes> flagValues)
-    public static int FromList(IEnumerable<ZoneAttributes> flagValues)
-    {
-        int result = 0;
-        foreach (var attribute in flagValues)
-            result |= (int)attribute;
-        return result;
-    }
 }

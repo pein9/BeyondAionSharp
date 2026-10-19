@@ -56,17 +56,8 @@ public class HouseGateAI : NpcAI
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_HOUSING_CANT_ENTER_NO_RIGHT2());
             return;
         }
-        bool returnBattle = true;
-        foreach (ZoneInstance zone in player.FindZones())
-        {
-            if (!zone.CanReturnToBattle())
-            {
-                returnBattle = false;
-                break;
-            }
-        }
         int requestId = SM_QUESTION_WINDOW.STR_ASK_GROUP_GATE_DO_YOU_ACCEPT_MOVE;
-        if (!returnBattle)
+        if (player.GetWorldMapInstance().GetTemplate().HasAttribute(ZoneAttributes.NoReturnBattle))
             requestId = SM_QUESTION_WINDOW.STR_HOUSE_GATE_ACCEPT_MOVE_DONT_RETURN;
 
         AIActions.AddRequest(this, player, requestId, 9, new HouseGateRequest(house));
@@ -88,16 +79,7 @@ public class HouseGateAI : NpcAI
                 return;
 
             WorldMapInstance instance = InstanceService.GetOrCreateHouseInstance(house);
-            bool canReturnToBattle = true;
-            foreach (ZoneInstance zone in responder.FindZones())
-            {
-                if (!zone.CanReturnToBattle())
-                {
-                    canReturnToBattle = false;
-                    break;
-                }
-            }
-            if (!canReturnToBattle)
+            if (responder.GetWorldMapInstance().GetTemplate().HasAttribute(ZoneAttributes.NoReturnBattle))
             {
                 responder.SetBattleReturnCoords(0, null);
             }

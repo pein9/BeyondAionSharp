@@ -361,7 +361,7 @@ public sealed class RealStaticDataLoadIntegrationTests
 		var sanctumMap = sd.WorldMaps2.GetTemplate(110010000);
 		Assert.NotNull(sanctumMap);
 		Assert.Equal(World.WorldType.ELYSEA, sanctumMap!.GetWorldType());
-		Assert.True(sanctumMap.IsPvpAllowed());
+		Assert.True(sanctumMap.HasAttribute(World.Zone.ZoneAttributes.PvpEnabled));
 
 		// enchants/tempering_templates.xml: faithful TemperingData (Java parity DataManager.init binds data.temperingData).
 		// Previously hollow new() -> always empty -> TemperingEffect granted no stats. The item_group -> level -> stats map

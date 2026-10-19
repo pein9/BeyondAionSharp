@@ -8,8 +8,8 @@ using Aion.GameServer.World.Zone.Handler;
 
 namespace Aion.GameServer.Handlers.Zone.PvpZones;
 
-/// <summary>Java parity: zone/pvpZones/PvPAreaZone (MrPoke) : PvPZone. @ZoneNameAnnotation("LC1_PVP_SUB_C_110010000 DC1_PVP_ZONE_120010000"); instanceof Player&&cond→is Player p&&cond; getEffectController()→(PlayerEffectController)GetEffectController() (Java covariant Player.getEffectController); ZoneInstance.Matches uses exact names.</summary>
-[ZoneNameAnnotation("LC1_PVP_SUB_C_110010000 DC1_PVP_ZONE_120010000")]
+/// <summary>Java PvPAreaZone: handles the capital PvP areas by their exact zone names.</summary>
+[ZoneHandlerArea("LC1_PVP_SUB_C_110010000", "DC1_PVP_ZONE_120010000")]
 public class PvPAreaZone : PvPZone
 {
     public override void OnEnterZone(Creature creature, ZoneInstance zone)

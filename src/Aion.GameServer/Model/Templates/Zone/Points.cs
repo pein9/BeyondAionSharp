@@ -10,20 +10,7 @@ public class Points
     [XmlAttribute("top")]    public float           Top    { get; set; }
     [XmlAttribute("bottom")] public float           Bottom { get; set; }
 
-    public Points() { }
-
-    public Points(float bottom, float top)
-    {
-        Bottom = bottom;
-        Top = top;
-    }
-
-    /// <summary>Java parity: getPoint() — returns list, initialising if null.</summary>
-    public List<Point2D> GetPoint()
-    {
-        Point ??= [];
-        return Point;
-    }
+    public List<Point2D> GetPoints() => Point!;
 
     public float GetTop()    => Top;
     public float GetBottom() => Bottom;

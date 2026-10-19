@@ -25,16 +25,10 @@ public class RideAction : AbstractItemAction
             if (parentItem == null)
                 return false;
 
-            if (Aion.GameServer.Configs.Main.CustomConfig.ENABLE_RIDE_RESTRICTION)
+            if (!IsInRideZone(player))
             {
-                foreach (Aion.GameServer.World.Zone.ZoneInstance zone in player.FindZones())
-                {
-                    if (!zone.CanRide())
-                    {
-                        Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_CANNOT_RIDE_INVALID_LOCATION());
-                        return false;
-                    }
-                }
+                Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_CANNOT_RIDE_INVALID_LOCATION());
+                return false;
             }
             if (player.IsInState(CreatureState.RESTING))
             {
@@ -46,6 +40,18 @@ public class RideAction : AbstractItemAction
                 Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_CANNOT_RIDE_ABNORMAL_STATE());
                 return false;
             }
+        }
+        return true;
+    }
+
+    public static bool IsInRideZone(Aion.GameServer.Model.GameObjects.Players.Player player)
+    {
+        if (Aion.GameServer.Configs.Main.CustomConfig.ENABLE_RIDE_RESTRICTION)
+        {
+            if (!player.GetWorldMapInstance().GetTemplate().HasAttribute(Aion.GameServer.World.Zone.ZoneAttributes.Ride)) return false;
+            foreach (var zone in player.FindZones())
+                if (zone.GetZoneTemplate().GetFlags() > 0 && !zone.GetZoneTemplate().HasZoneAttribute(Aion.GameServer.World.Zone.ZoneAttributes.Ride))
+                    return false;
         }
         return true;
     }

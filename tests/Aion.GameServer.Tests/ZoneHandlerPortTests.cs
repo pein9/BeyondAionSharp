@@ -30,7 +30,7 @@ public sealed class ZoneHandlerPortTests
         Assert.False(siege.IsIgnored(siegeNpc));
         Assert.True(siege.IsIgnored(npc));
 
-        zone.AddHandler(new GeneralZoneHandler());
+        zone.AddHandler(new ZoneProbeHandler());
         Assert.True(zone.IsIgnored(npc));
         zone.AddHandler(Bare<MaterialZoneHandler>());
         Assert.False(zone.IsIgnored(npc)); // Material hazards must still affect ordinary NPCs.
@@ -76,7 +76,7 @@ public sealed class ZoneHandlerPortTests
         Assert.IsType<ZoneProbeHandler>(service.GetNewZoneHandler(name));
     }
 
-    [ZoneNameAnnotation("PORT_ZONE_TRACKING")]
+    [ZoneHandlerArea("PORT_ZONE_TRACKING")]
     public sealed class ZoneProbeHandler : IZoneHandler
     {
         public void OnEnterZone(Creature creature, ZoneInstance zone) { }

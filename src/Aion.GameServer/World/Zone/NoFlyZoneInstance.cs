@@ -17,9 +17,9 @@ public class NoFlyZoneInstance : ZoneInstance
         {
             if (!base.OnEnter(creature))
                 return false;
-            bool wasInNoFlyZone = creature.IsInsideZoneType(ZoneType.NO_FLY);
+            bool wasInFlyZone = creature.IsInsideFlyZone();
             creature.SetInsideZoneType(ZoneType.NO_FLY);
-            if (!wasInNoFlyZone && creature.IsInsideZoneType(ZoneType.FLY) && creature is Player player)
+            if (wasInFlyZone && creature is Player player)
                 player.GetController().OnLeaveFlyArea();
             return true;
         }
@@ -32,7 +32,7 @@ public class NoFlyZoneInstance : ZoneInstance
             if (!base.OnLeave(creature))
                 return false;
             creature.UnsetInsideZoneType(ZoneType.NO_FLY);
-            if (!creature.IsInsideZoneType(ZoneType.NO_FLY) && creature.IsInsideZoneType(ZoneType.FLY) && creature is Player player)
+            if (creature is Player player && player.IsInsideFlyZone())
                 player.GetController().OnEnterFlyArea();
             return true;
         }

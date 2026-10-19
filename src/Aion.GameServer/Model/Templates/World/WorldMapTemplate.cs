@@ -28,27 +28,23 @@ public class WorldMapTemplate : IL10n
     [XmlAttribute("pve_attack_ratio")] public int PveAttackRatio  { get; set; }
     [XmlAttribute("pve_defend_ratio")] public int PveDefendRatio  { get; set; }
 
-    // Java: @XmlList @XmlAttribute("flags") List<ZoneAttributes>
-    // C# XmlSerializer cannot serialize List<T> as an XmlAttribute directly → string backing
-    private List<ZoneAttributes>? _flagValues;
-    private int _flags;
+    // Java EnumSet: membership uses the enum value, not its bit mask or ordinal.
+    private HashSet<ZoneAttributes> zoneAttributes = new();
 
     [XmlAttribute("flags")]
     public string? FlagsRaw
     {
-        get => _flagValues is { Count: > 0 } ? string.Join(" ", _flagValues) : null;
-        set
+        get => zoneAttributes.Count == 0 ? null : string.Join(" ", zoneAttributes.OrderBy(a => (int)a).Select(a => a switch
         {
-            if (value is null) { _flagValues = null; _flags = 0; return; }
-            // Java parity: ZoneAttributes carries @XmlEnumValue wire names ("PVP","DUEL_SAME_RACE",
-            // "NO_RETURN_BATTLE", ...) that differ from the C# member identifiers, so map the wire tokens
-            // explicitly rather than Enum.Parse (which would throw on "PVP"/"DUEL_SAME_RACE"/...).
-            _flagValues = value.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                               .Select(ParseFlagToken)
-                               .ToList();
-            // Java afterUnmarshal: flags = ZoneAttributes.fromList(flagValues)
-            _flags = ZoneAttributesExtensions.FromList(_flagValues);
-        }
+            ZoneAttributes.PvpEnabled => "PVP",
+            ZoneAttributes.DuelSameRaceEnabled => "DUEL_SAME_RACE",
+            ZoneAttributes.DuelOtherRaceEnabled => "DUEL_OTHER_RACE",
+            ZoneAttributes.FlyRide => "FLY_RIDE",
+            ZoneAttributes.NoReturnBattle => "NO_RETURN_BATTLE",
+            _ => a.ToString().ToUpperInvariant()
+        }));
+        set => zoneAttributes = value == null ? new() : value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
+            .Select(ParseFlagToken).ToHashSet();
     }
 
     // Java parity: @XmlEnumValue wire-token → ZoneAttributes constant.
@@ -84,7 +80,7 @@ public class WorldMapTemplate : IL10n
     public WorldDropType GetWorldDropType() => DropWorldType;
     public bool   IsExceptBuff()      => ExceptBuff;
     public AiInfo GetAiInfo()         => AiInfo;
-    public int    GetFlags()          => _flags;
+    public bool HasAttribute(ZoneAttributes attribute) => zoneAttributes.Contains(attribute);
     public int    GetMaxUser()        => MaxUser;
     public int    GetPvEAttackRatio() => PveAttackRatio;
     public int    GetPvEDefendRatio() => PveDefendRatio;
@@ -107,15 +103,4 @@ public class WorldMapTemplate : IL10n
         return System.Math.Min(Configs.Main.WorldConfig.WorldMaxTwinsBeginner, BeginnerTwinCount);
     }
 
-    // ── flag bit-checks ───────────────────────────────────────────────────────
-    public bool IsFly()                    => (_flags & (int)ZoneAttributes.Fly)                  != 0;
-    public bool CanGlide()                 => (_flags & (int)ZoneAttributes.Glide)                != 0;
-    public bool CanPutKisk()               => (_flags & (int)ZoneAttributes.Bind)                 != 0;
-    public bool CanRecall()                => (_flags & (int)ZoneAttributes.Recall)               != 0;
-    public bool CanRide()                  => (_flags & (int)ZoneAttributes.Ride)                 != 0;
-    public bool CanFlyRide()               => (_flags & (int)ZoneAttributes.FlyRide)              != 0;
-    public bool IsPvpAllowed()             => (_flags & (int)ZoneAttributes.PvpEnabled)           != 0;
-    public bool IsSameRaceDuelsAllowed()   => (_flags & (int)ZoneAttributes.DuelSameRaceEnabled)  != 0;
-    public bool IsOtherRaceDuelsAllowed()  => (_flags & (int)ZoneAttributes.DuelOtherRaceEnabled) != 0;
-    public bool CanReturnToBattle()        => (_flags & (int)ZoneAttributes.NoReturnBattle)       != 0;
 }

@@ -9,8 +9,6 @@ namespace Aion.GameServer.Model.Templates.Zone;
 [XmlType("ZoneClassName")]
 public enum ZoneClassName
 {
-    // Java parity: DUMMY
-    DUMMY,
     // Java parity: SUB
     SUB,
     // Java parity: FLY

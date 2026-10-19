@@ -169,7 +169,7 @@ public class PlayerController : CreatureController<Player>
     public override void OnEnterZone(Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         Player player = GetOwner();
-        if (!zone.CanRide() && player.IsInPlayerMode(Aion.GameServer.Model.Actions.PlayerMode.RIDE))
+        if (player.IsInPlayerMode(Aion.GameServer.Model.Actions.PlayerMode.RIDE) && !Aion.GameServer.Model.Templates.Items.Actions.RideAction.IsInRideZone(player))
             player.UnsetPlayerMode(Aion.GameServer.Model.Actions.PlayerMode.RIDE);
         Aion.GameServer.Services.ConquerorAndProtectorSystem.ConquerorAndProtectorService.GetInstance().OnEnterZone(player, zone);
         Aion.GameServer.Services.Instance.InstanceService.OnEnterZone(player, zone);
@@ -185,7 +185,7 @@ public class PlayerController : CreatureController<Player>
     }
 
     /// <summary>Called when leaving a fly zone or a fly map.</summary>
-    public void OnLeaveFlyArea()
+    public virtual void OnLeaveFlyArea()
     {
         Player player = GetOwner();
         if (!player.HasAccess(Aion.GameServer.Configs.Administration.AdminConfig.FREE_FLIGHT))
@@ -214,7 +214,7 @@ public class PlayerController : CreatureController<Player>
         }
     }
 
-    public void OnEnterFlyArea()
+    public virtual void OnEnterFlyArea()
     {
         GetOwner().GetLifeStats().TriggerFpReduce();
     }

@@ -50,12 +50,12 @@ public class Zone : AdminCommand
             foreach (ZoneInstance zone in zones)
             {
                 SendInfo(admin, zone.GetZoneTemplate().GetName());
-                SendInfo(admin, "Fly: " + JavaString.ValueOf(zone.CanFly()) + "; Glide: " + JavaString.ValueOf(zone.CanGlide()));
-                SendInfo(admin, "Ride: " + JavaString.ValueOf(zone.CanRide()) + "; Fly-ride: " + JavaString.ValueOf(zone.CanFlyRide()));
-                SendInfo(admin, "Kisk: " + JavaString.ValueOf(zone.CanPutKisk()) + "; Recall: " + JavaString.ValueOf(zone.CanRecall()));
-                SendInfo(admin, "Same race duels: " + JavaString.ValueOf(zone.IsSameRaceDuelsAllowed()) + "; Other race duels: " + JavaString.ValueOf(zone.IsOtherRaceDuelsAllowed()));
-                SendInfo(admin, "PvP: " + JavaString.ValueOf(zone.IsPvpAllowed()));
-                SendInfo(admin, "canReturnBattle: " + JavaString.ValueOf(zone.CanReturnToBattle()));
+                SendInfo(admin, "Fly: " + JavaString.ValueOf(zone.GetZoneTemplate().HasZoneAttribute(ZoneAttributes.Fly)) + "; Glide: " + JavaString.ValueOf(zone.GetZoneTemplate().HasZoneAttribute(ZoneAttributes.Glide)));
+                SendInfo(admin, "Ride: " + JavaString.ValueOf(zone.GetZoneTemplate().HasZoneAttribute(ZoneAttributes.Ride)) + "; Fly-ride: " + JavaString.ValueOf(zone.GetZoneTemplate().HasZoneAttribute(ZoneAttributes.FlyRide)));
+                SendInfo(admin, "Kisk: " + JavaString.ValueOf(zone.GetZoneTemplate().HasZoneAttribute(ZoneAttributes.Bind)) + "; Recall: " + JavaString.ValueOf(zone.GetZoneTemplate().HasZoneAttribute(ZoneAttributes.Recall)));
+                SendInfo(admin, "Same race duels: " + JavaString.ValueOf(zone.GetZoneTemplate().HasZoneAttribute(ZoneAttributes.DuelSameRaceEnabled)) + "; Other race duels: " + JavaString.ValueOf(zone.GetZoneTemplate().HasZoneAttribute(ZoneAttributes.DuelOtherRaceEnabled)));
+                SendInfo(admin, "PvP: " + JavaString.ValueOf(zone.GetZoneTemplate().HasZoneAttribute(ZoneAttributes.PvpEnabled)));
+                SendInfo(admin, "canReturnBattle: " + JavaString.ValueOf(!zone.GetZoneTemplate().HasZoneAttribute(ZoneAttributes.NoReturnBattle)));
             }
         }
     }

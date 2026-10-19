@@ -5,10 +5,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Aion.GameServer.World.Zone.Handler;
 
-/// <summary>Java parity: world/zone/handler/ZoneHandlerClassListener (MrPoke) : ClassListener. Class&lt;?&gt;[]→Type[]; IZoneHandler.class.isAssignableFrom→typeof(IZoneHandler).IsAssignableFrom; Modifier.isAbstract/isInterface/isPublic→IsAbstract/IsInterface/IsPublic; getName→FullName. ZoneService red-tolerated (logger uses InstanceHandlerClassListener.class per Java).</summary>
+/// <summary>Java parity: world/zone/handler/ZoneHandlerClassListener (MrPoke) : ClassListener. Class&lt;?&gt;[]→Type[]; IZoneHandler.class.isAssignableFrom→typeof(IZoneHandler).IsAssignableFrom; Modifier.isAbstract/isInterface/isPublic→IsAbstract/IsInterface/IsPublic; getName→FullName. ZoneService red-tolerated.</summary>
 public class ZoneHandlerClassListener : ClassListener
 {
-    private static readonly ILogger log = AionLog.For(nameof(Aion.GameServer.Instance.InstanceHandlerClassListener));
+    private static readonly ILogger log = AionLog.For(nameof(ZoneHandlerClassListener));
 
     public void PostLoad(Type[] classes)
     {

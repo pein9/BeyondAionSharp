@@ -9,21 +9,19 @@ using Aion.GameServer.Model.Templates.Zone;
 
 namespace Aion.GameServer.World.Zone.Handler;
 
-/// <summary>Java parity: world/zone/handler/QuestZoneHandler (Rolandas) : GeneralZoneHandler. getClass().getAnnotation(ZoneNameAnnotation.class)→GetType().GetCustomAttribute&lt;ZoneNameAnnotation&gt;(); annotation.questId()→.QuestId; IncompleteAnnotationException→InvalidOperationException; Map→Dictionary; instanceof→is. AbstractQuestZoneObserver red-tolerated.</summary>
-public abstract class QuestZoneHandler : GeneralZoneHandler
+/// <summary>Java QuestZoneHandler: quest observers bound to an explicit validated quest ID.</summary>
+public abstract class QuestZoneHandler : IZoneHandler
 {
     protected readonly Dictionary<int, AbstractQuestZoneObserver> observed = new();
     protected readonly int questId;
 
-    public QuestZoneHandler()
+    public QuestZoneHandler(int questId)
     {
-        ZoneNameAnnotation annotation = GetType().GetCustomAttribute<ZoneNameAnnotation>();
-        if (annotation == null || annotation.QuestId == 0 || DataManager.QUEST_DATA.GetQuestById(annotation.QuestId) == null)
-            throw new InvalidOperationException("Incomplete annotation " + nameof(ZoneNameAnnotation) + ": questId"); // Java IncompleteAnnotationException(ZoneNameAnnotation.class, "questId")
-        questId = annotation.QuestId;
+        if (DataManager.QUEST_DATA.GetQuestById(questId) == null) throw new NullReferenceException();
+        this.questId = questId;
     }
 
-    public override void OnEnterZone(Creature creature, ZoneInstance zone)
+    public virtual void OnEnterZone(Creature creature, ZoneInstance zone)
     {
         if (!(creature is Player))
             return;
@@ -32,7 +30,7 @@ public abstract class QuestZoneHandler : GeneralZoneHandler
         observed[creature.GetObjectId()] = observer;
     }
 
-    public override void OnLeaveZone(Creature creature, ZoneInstance zone)
+    public virtual void OnLeaveZone(Creature creature, ZoneInstance zone)
     {
         if (!(creature is Player))
             return;

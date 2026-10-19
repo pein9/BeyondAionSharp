@@ -128,8 +128,6 @@ public abstract class WorldMapInstance : IEnumerable<VisibleObject>
         }
         if (obj is Player player)
         {
-            if (GetParent().IsFlightAllowed())
-                player.SetInsideZoneType(ZoneType.FLY);
             worldMapPlayers[obj.GetObjectId()] = player;
         }
     }
@@ -140,9 +138,8 @@ public abstract class WorldMapInstance : IEnumerable<VisibleObject>
         if (obj is Player player)
         {
             lastPlayerLeaveTime = SystemClock.CurrentMillis();
-            if (GetParent().IsFlightAllowed())
+            if (player.IsInFlyingState())
             {
-                player.UnsetInsideZoneType(ZoneType.FLY);
                 // necessary for fly maps like the abyss (they don't have FlyZones, so no FlyZoneInstance.onLeave() is called)
                 player.GetController().OnLeaveFlyArea();
             }

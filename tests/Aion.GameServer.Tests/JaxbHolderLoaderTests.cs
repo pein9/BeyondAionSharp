@@ -2210,12 +2210,12 @@ public sealed class JaxbHolderLoaderTests
         Assert.Equal(3072, sanctum.GetWorldSize());
         Assert.Equal(150, sanctum.GetPvEAttackRatio());
         // Wire-token flags mapped via the FlagsRaw proxy.
-        Assert.True(sanctum.CanRecall());
-        Assert.True(sanctum.CanGlide());
-        Assert.True(sanctum.CanRide());
-        Assert.True(sanctum.IsPvpAllowed());
-        Assert.True(sanctum.IsSameRaceDuelsAllowed());
-        Assert.False(sanctum.IsOtherRaceDuelsAllowed()); // DUEL_OTHER_RACE absent
+        Assert.True(sanctum.HasAttribute(Aion.GameServer.World.Zone.ZoneAttributes.Recall));
+        Assert.True(sanctum.HasAttribute(Aion.GameServer.World.Zone.ZoneAttributes.Glide));
+        Assert.True(sanctum.HasAttribute(Aion.GameServer.World.Zone.ZoneAttributes.Ride));
+        Assert.True(sanctum.HasAttribute(Aion.GameServer.World.Zone.ZoneAttributes.PvpEnabled));
+        Assert.True(sanctum.HasAttribute(Aion.GameServer.World.Zone.ZoneAttributes.DuelSameRaceEnabled));
+        Assert.False(sanctum.HasAttribute(Aion.GameServer.World.Zone.ZoneAttributes.DuelOtherRaceEnabled)); // DUEL_OTHER_RACE absent
 
         // Twin counts on a field map: Poeta twin_count="5" beginner_twin_count="6".
         // Assert the raw deserialized XML fields (this test proves XML binding); the GetTwinCount()/

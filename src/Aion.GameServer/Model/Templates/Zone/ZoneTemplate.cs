@@ -60,6 +60,7 @@ public class ZoneTemplate
     public AreaType  GetAreaType() => AreaType;
     public ZoneClassName GetZoneType() => ZoneType;
     public List<int>? GetSiegeId() => SiegeId;
+    public bool HasZoneAttribute(Aion.GameServer.World.Zone.ZoneAttributes attribute) => Flags != -1 && (Flags & (int)attribute) != 0;
     public int       GetFlags()    => Flags;
     public int       GetTownId()   => TownId;
 }

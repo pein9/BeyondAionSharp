@@ -116,9 +116,10 @@ public class ToyPetSpawnAction : AbstractItemAction
 
     private bool IsPutKiskZone(Aion.GameServer.Model.GameObjects.Players.Player player)
     {
+        if (!player.GetWorldMapInstance().GetTemplate().HasAttribute(Aion.GameServer.World.Zone.ZoneAttributes.Bind)) return false;
         foreach (Aion.GameServer.World.Zone.ZoneInstance zone in player.FindZones())
         {
-            if (!zone.CanPutKisk())
+            if (zone.GetZoneTemplate().GetFlags() > 0 && !zone.GetZoneTemplate().HasZoneAttribute(Aion.GameServer.World.Zone.ZoneAttributes.Bind))
                 return false;
         }
         return true;

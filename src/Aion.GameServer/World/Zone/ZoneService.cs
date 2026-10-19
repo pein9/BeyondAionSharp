@@ -65,22 +65,15 @@ public sealed class ZoneService : GameEngine
 
     public void AddZoneHandlerClass(Type handler)
     {
-        var annotation = handler.GetCustomAttribute<ZoneNameAnnotation>();
+        var annotation = handler.GetCustomAttribute<ZoneHandlerArea>();
         if (annotation == null) return;
-        var names = System.Text.RegularExpressions.Regex.Split(annotation.Value, " +").ToList();
-        while (annotation.Value.Length > 0 && names.Count > 0 && names[^1].Length == 0) names.RemoveAt(names.Count - 1);
-        foreach (string name in names)
+        foreach (string name in annotation.Value)
             if (DataManager.ZONE_DATA.ValidateZoneName(name)) zoneHandlers[name] = handler;
     }
 
     public List<ZoneInstance> CreateZoneInstances(int mapId)
     {
         List<ZoneInstance> zones = new();
-        int worldSize = DataManager.WORLD_MAPS_DATA.GetTemplate(mapId).GetWorldSize();
-        WorldZoneTemplate zone = new WorldZoneTemplate(worldSize, mapId);
-        ZoneInstance fullMap = new ZoneInstance(mapId, new ZoneInfo(zone));
-        zones.Add(fullMap);
-
         var vortex = GetAndValidateVortexLocation(mapId);
         foreach (ZoneInfo area in DataManager.ZONE_DATA.GetZones(mapId))
         {
@@ -118,7 +111,7 @@ public sealed class ZoneService : GameEngine
                     }
                     break;
                 case ZoneClassName.PVP:
-                    instance = area.GetZoneTemplate().GetFlags() == 0 ? new DisablePvPZoneInstance(mapId, area) : new PvPZoneInstance(mapId, area);
+                    instance = area.GetZoneTemplate().HasZoneAttribute(ZoneAttributes.PvpEnabled) ? new PvPZoneInstance(mapId, area) : new DisablePvPZoneInstance(mapId, area);
                     break;
                 default:
                     InvasionZoneInstance? invasionZone = TryRegisterInvasionZone(vortex, area);

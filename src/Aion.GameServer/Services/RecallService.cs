@@ -181,9 +181,9 @@ public class RecallService
             if (decisive == null || template.GetPriority() < decisive.GetPriority())
                 decisive = template;
         }
-        if (decisive != null && (decisive.GetFlags() & (int)ZoneAttributes.Recall) == 0)
+        if (decisive != null && !decisive.HasZoneAttribute(ZoneAttributes.Recall))
             return false;
-        return Aion.GameServer.World.World.GetInstance().GetWorldMap(caster.GetWorldId()).CanRecall();
+        return caster.GetWorldMapInstance().GetTemplate().HasAttribute(ZoneAttributes.Recall);
     }
 
     private class Request

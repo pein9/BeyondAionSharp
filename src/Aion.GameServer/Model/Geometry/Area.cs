@@ -30,7 +30,7 @@ public interface Area
 
     static Area Create(ZoneTemplate zone) => zone.GetAreaType() switch
     {
-        AreaType.Polygon => new PolyArea(zone.GetPoints()!.GetPoint(), zone.GetPoints().GetBottom(), zone.GetPoints().GetTop()),
+        AreaType.Polygon => new PolyArea(zone.GetPoints()!.GetPoints(), zone.GetPoints().GetBottom(), zone.GetPoints().GetTop()),
         AreaType.Cylinder => new CylinderArea(zone.GetCylinder()!.GetX()!.Value, zone.GetCylinder().GetY()!.Value,
             zone.GetCylinder().GetR()!.Value, zone.GetCylinder().GetBottom()!.Value, zone.GetCylinder().GetTop()!.Value),
         AreaType.Sphere => new SphereArea(zone.GetSphere()!.GetX()!.Value, zone.GetSphere().GetY()!.Value,

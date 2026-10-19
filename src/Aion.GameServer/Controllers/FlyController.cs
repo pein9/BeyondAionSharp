@@ -89,7 +89,7 @@ public class FlyController
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_GLIDE_ONLY_DEVA_CAN());
             return false;
         }
-        if (!player.HasAccess(Aion.GameServer.Configs.Administration.AdminConfig.FREE_FLIGHT) && (player.IsInsideZoneType(Aion.GameServer.Model.Templates.Zone.ZoneType.NO_FLY) || !player.IsInsideZoneType(Aion.GameServer.Model.Templates.Zone.ZoneType.FLY)))
+        if (!player.HasAccess(Aion.GameServer.Configs.Administration.AdminConfig.FREE_FLIGHT) && !player.IsInsideFlyZone())
         {
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_FLYING_FORBIDDEN_HERE());
             return false;

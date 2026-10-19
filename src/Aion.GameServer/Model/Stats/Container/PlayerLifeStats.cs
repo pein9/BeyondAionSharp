@@ -246,7 +246,7 @@ public class PlayerLifeStats : CreatureLifeStats<Player>
             }
             else if (owner.IsFlying())
             {
-                bool isInFlyArea = owner.IsInsideZoneType(ZoneType.FLY) && !owner.IsInsideZoneType(ZoneType.NO_FLY);
+                bool isInFlyArea = owner.IsInsideFlyZone();
                 flightReduceValue = isInFlyArea ? 1 : 2;
                 flightReducePeriod = isInFlyArea && owner.IsInGlidingState() ? 2 : 1;
             }

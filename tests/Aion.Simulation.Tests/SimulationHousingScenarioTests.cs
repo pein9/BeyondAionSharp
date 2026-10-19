@@ -437,7 +437,7 @@ public sealed partial class SimulationFastScenarioTests
 		buyer.Session.BeginStep("s10", "homeward-bound");
 		float startX = buyerPlayer.GetX(), startY = buyerPlayer.GetY(), startZ = buyerPlayer.GetZ();
 		int startMap = buyerPlayer.GetWorldId();
-		Assert.True(buyerPlayer.GetWorldMapInstance().GetParent().CanReturnToBattle());
+		Assert.False(buyerPlayer.GetWorldMapInstance().GetTemplate().HasAttribute(Aion.GameServer.World.Zone.ZoneAttributes.NoReturnBattle));
 		float gateX = startX + 2, gateY = startY, gateZ = startZ;
 		int gateMark = buyer.Session.PacketHistory.Count;
 		await buyer.Session.SendPacketAsync(buyer.Session.Api.Cast(new SpellCastData(HomewardBound, 1, 1) { X = gateX, Y = gateY, Z = gateZ }), token);

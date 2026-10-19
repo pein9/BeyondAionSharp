@@ -21,12 +21,10 @@ public class WorldMap : IEnumerable<WorldMapInstance>
     private readonly WorldMapTemplate worldMapTemplate;
     private int nextInstanceId = 0;
     private readonly ConcurrentDictionary<int, WorldMapInstance> instances = new ConcurrentDictionary<int, WorldMapInstance>();
-    private int worldOptions;
 
     public WorldMap(WorldMapTemplate worldMapTemplate)
     {
         this.worldMapTemplate = worldMapTemplate;
-        this.worldOptions = worldMapTemplate.GetFlags();
 
         for (int i = 1; i <= GetInstanceCount(); i++)
         {
@@ -72,76 +70,11 @@ public class WorldMap : IEnumerable<WorldMapInstance>
         return worldMapTemplate.GetMapId();
     }
 
-    public bool IsFlightAllowed()
-    {
-        return (worldOptions & (int)ZoneAttributes.Fly) != 0;
-    }
+
 
     public bool IsExceptBuff()
     {
         return worldMapTemplate.IsExceptBuff();
-    }
-
-    public bool CanGlide()
-    {
-        return (worldOptions & (int)ZoneAttributes.Glide) != 0;
-    }
-
-    public bool CanPutKisk()
-    {
-        return (worldOptions & (int)ZoneAttributes.Bind) != 0;
-    }
-
-    public bool CanRecall()
-    {
-        return (worldOptions & (int)ZoneAttributes.Recall) != 0;
-    }
-
-    public bool CanRide()
-    {
-        return (worldOptions & (int)ZoneAttributes.Ride) != 0;
-    }
-
-    public bool CanFlyRide()
-    {
-        return (worldOptions & (int)ZoneAttributes.FlyRide) != 0;
-    }
-
-    public bool IsPvpAllowed()
-    {
-        return (worldOptions & (int)ZoneAttributes.PvpEnabled) != 0;
-    }
-
-    public bool IsSameRaceDuelsAllowed()
-    {
-        return (worldOptions & (int)ZoneAttributes.DuelSameRaceEnabled) != 0;
-    }
-
-    public bool IsOtherRaceDuelsAllowed()
-    {
-        return (worldOptions & (int)ZoneAttributes.DuelOtherRaceEnabled) != 0;
-    }
-
-    public bool CanReturnToBattle()
-    {
-        return (worldOptions & (int)ZoneAttributes.NoReturnBattle) == 0;
-    }
-
-    public void SetWorldOption(ZoneAttributes option)
-    {
-        worldOptions |= (int)option;
-    }
-
-    public void RemoveWorldOption(ZoneAttributes option)
-    {
-        worldOptions &= ~(int)option;
-    }
-
-    public bool HasOverridenOption(ZoneAttributes option)
-    {
-        if ((worldMapTemplate.GetFlags() & (int)option) == 0)
-            return (worldOptions & (int)option) != 0;
-        return (worldOptions & (int)option) == 0;
     }
 
     public int GetInstanceCount()

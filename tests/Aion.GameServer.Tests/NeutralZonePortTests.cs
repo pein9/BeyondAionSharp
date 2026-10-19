@@ -161,6 +161,7 @@ public sealed class NeutralZonePortTests
         common.SetPlayerClass(PlayerClass.GLADIATOR);
         var player = new Player(new PlayerAccountData(common, new PlayerAppearance()), new Account(id));
         player.SetPosition(new WorldPosition(110010000));
+        player.SetInsideZoneType(ZoneType.PVP); // These ownership tests take place in a PvP-enabled area.
         return player;
     }
 
@@ -169,6 +170,7 @@ public sealed class NeutralZonePortTests
     {
         var creature = (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
         SetField(typeof(Creature), creature, "zoneTypes", new byte[Enum.GetValues<ZoneType>().Length]);
+        creature.SetInsideZoneType(ZoneType.PVP);
         return creature;
     }
 

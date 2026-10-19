@@ -552,9 +552,16 @@ public abstract class Creature : VisibleObject
         }
     }
 
+    public bool IsInsideFlyZone()
+    {
+        if (IsInsideZoneType(Aion.GameServer.Model.Templates.Zone.ZoneType.NO_FLY)) return false;
+        return IsInsideZoneType(Aion.GameServer.Model.Templates.Zone.ZoneType.FLY) || GetWorldMapInstance().GetTemplate().HasAttribute(Aion.GameServer.World.Zone.ZoneAttributes.Fly);
+    }
+
     public bool IsInsidePvPZone()
     {
-        return !IsInsideZoneType(Aion.GameServer.Model.Templates.Zone.ZoneType.DISABLE_PVP);
+        if (IsInsideZoneType(Aion.GameServer.Model.Templates.Zone.ZoneType.DISABLE_PVP)) return false;
+        return IsInsideZoneType(Aion.GameServer.Model.Templates.Zone.ZoneType.PVP) || GetWorldMapInstance().GetTemplate().HasAttribute(Aion.GameServer.World.Zone.ZoneAttributes.PvpEnabled);
     }
 
     public virtual Aion.GameServer.Model.Race GetRace()

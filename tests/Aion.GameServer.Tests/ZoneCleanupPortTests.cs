@@ -79,7 +79,7 @@ public sealed class ZoneCleanupPortTests
         Assert.Equal(1, DataManager.ZONE_DATA.Size());
         Assert.False(DataManager.ZONE_DATA.IsValidZoneName("MATERIAL_42"));
         Assert.Single(DataManager.ZONE_DATA.GetZones(1));
-        Assert.Equal(3, first.Count); // Full map, static zone, material area.
+        Assert.Equal(2, first.Count); // Static zone and material area; no synthetic full-map zone.
     }
 
     [Theory]
@@ -199,7 +199,7 @@ public sealed class ZoneCleanupPortTests
         public override bool OnKillInZoneEvent(QuestEnv env, ZoneInstance zone) => Record(zone);
     }
 
-    [ZoneNameAnnotation("MixedCase  MIXEDCASE missing ")]
+    [ZoneHandlerArea("MixedCase", "MIXEDCASE", "missing")]
     public sealed class NamedHandler : IZoneHandler
     {
         public void OnEnterZone(Creature creature, ZoneInstance zone) { }

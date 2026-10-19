@@ -65,14 +65,10 @@ public class DuelService
             PacketSendUtility.SendPacket(requester, SM_SYSTEM_MESSAGE.STR_DUEL_PARTNER_INVALID(targetPlayer.GetName()));
             return;
         }
-        foreach (ZoneInstance zone in targetPlayer.FindZones())
+        if (!IsInDuelZone(requester, targetPlayer))
         {
-            if (!zone.IsOtherRaceDuelsAllowed() && !targetPlayer.GetRace().Equals(requester.GetRace())
-                || (!zone.IsSameRaceDuelsAllowed() && targetPlayer.GetRace().Equals(requester.GetRace())))
-            {
-                PacketSendUtility.SendPacket(requester, SM_SYSTEM_MESSAGE.STR_MSG_DUEL_CANT_IN_THIS_ZONE());
-                return;
-            }
+            PacketSendUtility.SendPacket(requester, SM_SYSTEM_MESSAGE.STR_MSG_DUEL_CANT_IN_THIS_ZONE());
+            return;
         }
 
         RequestResponseHandler<Player> rrh = new DuelRequestHandler(this, requester);
@@ -87,6 +83,16 @@ public class DuelService
         {
             PacketSendUtility.SendPacket(requester, SM_SYSTEM_MESSAGE.STR_DUEL_CANT_REQUEST_WHEN_HE_IS_ASKED_QUESTION(targetPlayer.GetName()));
         }
+    }
+
+    private bool IsInDuelZone(Player requester, Player target)
+    {
+        var attribute = target.GetRace() == requester.GetRace() ? ZoneAttributes.DuelSameRaceEnabled : ZoneAttributes.DuelOtherRaceEnabled;
+        if (!target.GetWorldMapInstance().GetTemplate().HasAttribute(attribute)) return false;
+        foreach (ZoneInstance zone in target.FindZones())
+            if (zone.GetZoneTemplate().GetZoneType() == Aion.GameServer.Model.Templates.Zone.ZoneClassName.DUEL && !zone.GetZoneTemplate().HasZoneAttribute(attribute))
+                return false;
+        return true;
     }
 
     /// <summary>Asks confirmation for the duel request.</summary>
