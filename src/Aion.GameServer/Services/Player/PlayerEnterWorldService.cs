@@ -239,7 +239,7 @@ public sealed class PlayerEnterWorldService
         {
             player.GetTitleList().SetBonusTitle(pcd.GetBonusTitleId());
         }
-        client.SendPacket(new SM_MOTION(player.GetMotions().GetMotions().Values));
+        client.SendPacket(SM_MOTION.List(player.GetMotions().GetMotions().Values));
         client.SendPacket(new SM_AFTER_TIME_CHECK_4_7_5()); // it is also sent after enter world check
 
         byte[] uiSettings = player.GetPlayerSettings().GetUiSettings();
@@ -273,7 +273,7 @@ public sealed class PlayerEnterWorldService
             LegionService.GetInstance().OnLogin(player);
         SendWarehouseItemInfos(client, player);
         client.SendPacket(new SM_TITLE_INFO(player));
-        client.SendPacket(new SM_EMOTION_LIST((byte)0, player.GetEmotions().GetEmotions()));
+        client.SendPacket(new SM_EMOTION_LIST(SM_EMOTION_LIST.Action.LIST, player.GetEmotions().GetEmotions()));
         // SM_BD_UNK h 0
         SiegeService.GetInstance().OnPlayerLogin(player);
         client.SendPacket(new SM_PRICES());

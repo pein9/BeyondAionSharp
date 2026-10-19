@@ -1,0 +1,272 @@
+{
+  "schemaVersion": 1,
+  "source": "Java",
+  "sourceJavaCommit": "f7230c5fa470511f793c1699cc6beeb650e98f94",
+  "sourceHashes": {
+    "game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_MOTION.java": "56dede04922e6c7d829f1a1ae2e999fe44342a0540e3f3c9b55b09b80cacdefc",
+    "game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_EMOTION_LIST.java": "b2d0fe072b80d07a86d1dc982d40caa1cfe986b9228184d2322b6aea26d0e7ac",
+    "game-server/src/com/aionemu/gameserver/model/gameobjects/player/motion/Motion.java": "0835cbd56543b9260eecfae7f16bd323bd619566c54d206696291436e28b2b7e",
+    "game-server/src/com/aionemu/gameserver/model/gameobjects/player/motion/MotionType.java": "a2728991503b5b278b669f3e9265c995d2a8abfdd172aed184a9d8a9abccbbaa",
+    "game-server/src/com/aionemu/gameserver/model/gameobjects/player/emotion/Emotion.java": "7f813c84178b04505e09525a6ae544bc5ecd7d81e6c15c5e5576a1473ad64433",
+    "game-server/src/com/aionemu/gameserver/model/Expirable.java": "de9ee1ae42d749dfd0bde4aa57280733903fe3f1eb8695de19b4cc44b4c99213"
+  },
+  "captureBoundary": "Exact packet/model sources; little-endian payload-only writer, minimal Player/DataManager and frozen expiration subclasses",
+  "cases": [
+    {
+      "name": "emotion-empty-LIST",
+      "kind": "emotion",
+      "inputs": {
+        "action": "LIST",
+        "emotions": []
+      },
+      "payloadHex": "000000"
+    },
+    {
+      "name": "emotion-nonempty-LIST",
+      "kind": "emotion",
+      "inputs": {
+        "action": "LIST",
+        "emotions": [
+          {
+            "id": 64,
+            "seconds": 86400
+          },
+          {
+            "id": 65535,
+            "seconds": -1
+          },
+          {
+            "id": 65536,
+            "seconds": 0
+          }
+        ]
+      },
+      "payloadHex": "000300400080510100FFFFFFFFFFFF000000000000"
+    },
+    {
+      "name": "emotion-empty-ADD",
+      "kind": "emotion",
+      "inputs": {
+        "action": "ADD",
+        "emotions": []
+      },
+      "payloadHex": "010000"
+    },
+    {
+      "name": "emotion-nonempty-ADD",
+      "kind": "emotion",
+      "inputs": {
+        "action": "ADD",
+        "emotions": [
+          {
+            "id": 64,
+            "seconds": 86400
+          },
+          {
+            "id": 65535,
+            "seconds": -1
+          },
+          {
+            "id": 65536,
+            "seconds": 0
+          }
+        ]
+      },
+      "payloadHex": "010300400080510100FFFFFFFFFFFF000000000000"
+    },
+    {
+      "name": "emotion-empty-REMOVE",
+      "kind": "emotion",
+      "inputs": {
+        "action": "REMOVE",
+        "emotions": []
+      },
+      "payloadHex": "020000"
+    },
+    {
+      "name": "emotion-nonempty-REMOVE",
+      "kind": "emotion",
+      "inputs": {
+        "action": "REMOVE",
+        "emotions": [
+          {
+            "id": 64,
+            "seconds": 86400
+          },
+          {
+            "id": 65535,
+            "seconds": -1
+          },
+          {
+            "id": 65536,
+            "seconds": 0
+          }
+        ]
+      },
+      "payloadHex": "020300400000000000FFFF00000000000000000000"
+    },
+    {
+      "name": "emotion-null-list",
+      "kind": "emotion",
+      "inputs": {
+        "action": "LIST",
+        "emotions": null
+      },
+      "payloadHex": "000000"
+    },
+    {
+      "name": "motion-empty-list",
+      "kind": "list",
+      "inputs": {
+        "motions": []
+      },
+      "payloadHex": "010000"
+    },
+    {
+      "name": "motion-mixed-list",
+      "kind": "list",
+      "inputs": {
+        "motions": [
+          {
+            "id": 1001,
+            "seconds": 0,
+            "active": true
+          },
+          {
+            "id": 65535,
+            "seconds": 86400,
+            "active": false
+          },
+          {
+            "id": -1,
+            "seconds": -1,
+            "active": true
+          }
+        ]
+      },
+      "payloadHex": "010300E9030000000001FFFF8051010000FFFFFFFFFFFF01"
+    },
+    {
+      "name": "motion-add-0",
+      "kind": "add",
+      "inputs": {
+        "id": 65535,
+        "seconds": 0
+      },
+      "payloadHex": "02FFFF00000000"
+    },
+    {
+      "name": "motion-add-86400",
+      "kind": "add",
+      "inputs": {
+        "id": 65535,
+        "seconds": 86400
+      },
+      "payloadHex": "02FFFF80510100"
+    },
+    {
+      "name": "motion-add--1",
+      "kind": "add",
+      "inputs": {
+        "id": 65535,
+        "seconds": -1
+      },
+      "payloadHex": "02FFFFFFFFFFFF"
+    },
+    {
+      "name": "motion-add-2147483647",
+      "kind": "add",
+      "inputs": {
+        "id": 65535,
+        "seconds": 2147483647
+      },
+      "payloadHex": "02FFFFFFFFFF7F"
+    },
+    {
+      "name": "motion-add--2147483648",
+      "kind": "add",
+      "inputs": {
+        "id": 65535,
+        "seconds": -2147483648
+      },
+      "payloadHex": "02FFFF00000080"
+    },
+    {
+      "name": "motion-set-slot-1",
+      "kind": "set",
+      "inputs": {
+        "id": 65535,
+        "slot": 1
+      },
+      "payloadHex": "05FFFF01"
+    },
+    {
+      "name": "motion-set-slot-2",
+      "kind": "set",
+      "inputs": {
+        "id": 65535,
+        "slot": 2
+      },
+      "payloadHex": "05FFFF02"
+    },
+    {
+      "name": "motion-set-slot-3",
+      "kind": "set",
+      "inputs": {
+        "id": 65535,
+        "slot": 3
+      },
+      "payloadHex": "05FFFF03"
+    },
+    {
+      "name": "motion-set-slot-4",
+      "kind": "set",
+      "inputs": {
+        "id": 65535,
+        "slot": 4
+      },
+      "payloadHex": "05FFFF04"
+    },
+    {
+      "name": "motion-set-slot-5",
+      "kind": "set",
+      "inputs": {
+        "id": 0,
+        "slot": 5
+      },
+      "payloadHex": "05000005"
+    },
+    {
+      "name": "motion-remove",
+      "kind": "remove",
+      "inputs": {
+        "id": 65535
+      },
+      "payloadHex": "06FFFF"
+    },
+    {
+      "name": "player-empty",
+      "kind": "player",
+      "inputs": {
+        "id": 1,
+        "slots": {}
+      },
+      "payloadHex": "070100000000000000000000000000"
+    },
+    {
+      "name": "player-reverse-insertion",
+      "kind": "player",
+      "inputs": {
+        "id": 1,
+        "slots": {
+          "SHOP": 105,
+          "REST": 104,
+          "JUMP": 103,
+          "RUN": 102,
+          "IDLE": 101
+        }
+      },
+      "payloadHex": "070100000065006600670068006900"
+    }
+  ]
+}

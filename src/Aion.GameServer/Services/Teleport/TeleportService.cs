@@ -213,7 +213,7 @@ public class TeleportService
         PacketSendUtility.SendPacket(player, new SM_CHANNEL_INFO(player.GetPosition()));
         PacketSendUtility.SendPacket(player, new SM_PLAYER_INFO(player));
         PacketSendUtility.SendPacket(player, new SM_STATS_INFO(player));
-        PacketSendUtility.SendPacket(player, new SM_MOTION(player.GetObjectId(), player.GetMotions().GetActiveMotions()));
+        PacketSendUtility.SendPacket(player, SM_MOTION.PlayerMotions(player));
         World.World.GetInstance().Spawn(player);
         World.World.GetInstance().Spawn(player.GetPet());
         player.GetController().StartProtectionActiveTask();

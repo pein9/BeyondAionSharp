@@ -1,29 +1,27 @@
 using System.Collections.Generic;
 using Aion.GameServer.Model.GameObjects.Players.Emotion;
-using Aion.GameServer.Network.Aion;
 
 namespace Aion.GameServer.Network.Aion.ServerPackets;
 
-/// <summary>Java parity: network/aion/serverpackets/SM_EMOTION_LIST. Sends the player's emotion list (id + seconds until expiration) for a given action. Converges PlayerEnterWorldService. Collection->ICollection. Emotion/AionServerPacket red-tolerated.</summary>
+/// <summary>Java parity: explicit emotion actions, unsigned-short IDs and signed-int remaining seconds.</summary>
 public class SM_EMOTION_LIST : AionServerPacket
 {
-    private readonly byte action;
+    public enum Action { LIST = 0, ADD = 1, REMOVE = 2 }
+    private readonly Action action;
     private readonly ICollection<Emotion> emotions;
 
-    public SM_EMOTION_LIST(byte action, ICollection<Emotion> emotions)
+    public SM_EMOTION_LIST(Action action, ICollection<Emotion>? emotions)
     {
         this.action = action;
-        this.emotions = emotions;
+        this.emotions = emotions ?? System.Array.Empty<Emotion>();
     }
 
     protected override void WriteImpl(AionConnection con)
     {
-        WriteC(action);
-        WriteH(emotions.Count);
+        WriteC((int)action); WriteH(emotions.Count);
         foreach (Emotion emotion in emotions)
         {
-            WriteD(emotion.GetId());
-            WriteH(emotion.SecondsUntilExpiration());
+            WriteH(emotion.GetId()); WriteD(action == Action.REMOVE ? 0 : emotion.SecondsUntilExpiration());
         }
     }
 }

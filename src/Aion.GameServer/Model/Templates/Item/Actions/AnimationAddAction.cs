@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Aion.GameServer.Model.GameObjects.Players.Motion;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Aion.GameServer.Model.GameObjects;
@@ -27,11 +29,35 @@ public class AnimationAddAction : AbstractItemAction
     [XmlAttribute("shop")] public string ShopRaw { get => shop?.ToString(); set => shop = value == null ? (int?)null : int.Parse(value); }
     [XmlAttribute("minutes")] public string MinutesRaw { get => minutes?.ToString(); set => minutes = value == null ? (int?)null : int.Parse(value); }
 
+    public IDictionary<MotionType, int> GetMotionIds()
+    {
+        var ids = new SortedDictionary<MotionType, int>();
+        if (idle != null) ids[MotionType.IDLE] = idle.Value;
+        if (run != null) ids[MotionType.RUN] = run.Value;
+        if (jump != null) ids[MotionType.JUMP] = jump.Value;
+        if (rest != null) ids[MotionType.REST] = rest.Value;
+        if (shop != null) ids[MotionType.SHOP] = shop.Value;
+        return ids;
+    }
+
+    private bool HasAnyMotion(Aion.GameServer.Model.GameObjects.Players.Player player)
+    {
+        foreach (int id in GetMotionIds().Values)
+            if (player.GetMotions().GetMotions().ContainsKey(id))
+                return true;
+        return false;
+    }
+
     public override bool CanAct(Aion.GameServer.Model.GameObjects.Players.Player player, Item parentItem, Item targetItem, params object[] @params)
     {
         if (parentItem == null) // no item selected.
         {
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_ITEM_COLOR_ERROR());
+            return false;
+        }
+        if (HasAnyMotion(player))
+        {
+            Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_CUSTOMANIMATION_ALREADY_HAS_MOTION());
             return false;
         }
         return true;
@@ -82,23 +108,22 @@ public class AnimationAddAction : AbstractItemAction
 
     private void FinishUse(Aion.GameServer.Model.GameObjects.Players.Player player, Item parentItem)
     {
+        if (HasAnyMotion(player))
+        {
+            Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_ITEM_IS_NOT_USABLE());
+            Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player,
+                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, ItemUseAnimation.USE_FAIL));
+            return;
+        }
         if (player.GetInventory().DecreaseItemCount(parentItem, 1) != 0)
             return;
         player.StartCooldown(parentItem);
-        if (idle != null)
-            AddMotion(player, idle.Value);
-        if (run != null)
-            AddMotion(player, run.Value);
-        if (jump != null)
-            AddMotion(player, jump.Value);
-        if (rest != null)
-            AddMotion(player, rest.Value);
-        if (shop != null)
-            AddMotion(player, shop.Value);
+        foreach (int motionId in GetMotionIds().Values)
+            AddMotion(player, motionId);
         Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_USE_ITEM(parentItem.GetL10n()));
         Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player,
             new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, ItemUseAnimation.USE_SUCCESS));
-        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_MOTION(player.GetObjectId(), player.GetMotions().GetActiveMotions()), false);
+        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_MOTION.PlayerMotions(player), false);
     }
 
     private void AddMotion(Aion.GameServer.Model.GameObjects.Players.Player player, int motionId)
@@ -106,6 +131,6 @@ public class AnimationAddAction : AbstractItemAction
         Aion.GameServer.Model.GameObjects.Players.Motion.Motion motion = new Aion.GameServer.Model.GameObjects.Players.Motion.Motion(motionId, minutes == null ? 0 : (int)SystemClock.CurrentSeconds() + minutes.Value * 60, true);
         player.GetMotions().Add(motion, true);
         // Java parity: default interface method — C# requires an explicit IExpirable cast (foundational diff).
-        Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_MOTION((short)motion.GetId(), ((Aion.GameServer.Model.IExpirable)motion).SecondsUntilExpiration()));
+        Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_MOTION.Add(motion));
     }
 }

@@ -85,7 +85,7 @@ public class PlayerController : CreatureController<Player>
     private void SendPlayerInfoPackets(Player player)
     {
         PacketSendUtility.SendPacket(GetOwner(), new SM_PLAYER_INFO(player, !player.Equals(GetOwner()) && GetOwner().IsAggroIconTo(player)));
-        PacketSendUtility.SendPacket(GetOwner(), new SM_MOTION(player.GetObjectId(), player.GetMotions().GetActiveMotions()));
+        PacketSendUtility.SendPacket(GetOwner(), SM_MOTION.PlayerMotions(player));
         if (player.IsInPlayerMode(Aion.GameServer.Model.Actions.PlayerMode.RIDE))
             PacketSendUtility.SendPacket(GetOwner(), new SM_EMOTION(player, EmotionType.RIDE, 0, player.ride.GetNpcId()));
         if (player.GetController().IsUnderStance())

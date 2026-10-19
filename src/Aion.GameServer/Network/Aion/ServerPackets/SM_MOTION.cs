@@ -1,91 +1,57 @@
 using System.Collections.Generic;
+using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.GameObjects.Players.Motion;
-using Aion.GameServer.Network.Aion;
 
 namespace Aion.GameServer.Network.Aion.ServerPackets;
 
-/// <summary>Java parity: network/aion/serverpackets/SM_MOTION (MrPoke). Motion list (action 1), add (2), set (5), remove (6), and a player's 5 active motion slots (7). Converges PlayerEnterWorldService. Collection->ICollection; Map->Dictionary; map.get->GetValueOrDefault; switch-on-action. Motion/AionServerPacket red-tolerated.</summary>
+/// <summary>Java parity: explicit packet factories for learned, activated, removed and visible player motions.</summary>
 public class SM_MOTION : AionServerPacket
 {
-    byte action;
-    short motionId;
-    int remainingTime;
+    private enum Action { LIST = 1, ADD = 2, SET = 5, REMOVE = 6, PLAYER_MOTIONS = 7 }
+    private readonly Action action;
+    private readonly int motionId, remainingTime, playerId;
+    private readonly MotionType? type;
+    private readonly IDictionary<MotionType, Motion>? activeMotions;
+    private readonly ICollection<Motion>? motions;
 
-    int playerId;
-    IDictionary<int, Motion> activeMotions;
-
-    ICollection<Motion> motions;
-
-    byte type;
-
-    public SM_MOTION(ICollection<Motion> motions)
+    private SM_MOTION(Action action, int motionId, int remainingTime, MotionType? type, int playerId,
+        IDictionary<MotionType, Motion>? activeMotions, ICollection<Motion>? motions)
     {
-        this.action = 1;
-        this.motions = motions;
+        this.action = action; this.motionId = motionId; this.remainingTime = remainingTime; this.type = type;
+        this.playerId = playerId; this.activeMotions = activeMotions; this.motions = motions;
     }
 
-    public SM_MOTION(short motionId, int remainingTime)
-    {
-        this.action = 2;
-        this.motionId = motionId;
-        this.remainingTime = remainingTime;
-    }
-
-    public SM_MOTION(short motionId, byte type)
-    {
-        this.action = 5;
-        this.motionId = motionId;
-        this.type = type;
-    }
-
-    public SM_MOTION(short motionId)
-    {
-        this.action = 6;
-        this.motionId = motionId;
-    }
-
-    public SM_MOTION(int playerId, IDictionary<int, Motion> activeMotions)
-    {
-        this.action = 7;
-        this.playerId = playerId;
-        this.activeMotions = activeMotions;
-    }
+    public static SM_MOTION List(ICollection<Motion> motions) => new(Action.LIST, 0, 0, null, 0, null, motions);
+    public static SM_MOTION Add(Motion motion) => new(Action.ADD, motion.GetId(), motion.SecondsUntilExpiration(), null, 0, null, null);
+    public static SM_MOTION Set(int motionId, MotionType type) => new(Action.SET, motionId, 0, type, 0, null, null);
+    public static SM_MOTION Remove(int motionId) => new(Action.REMOVE, motionId, 0, null, 0, null, null);
+    public static SM_MOTION PlayerMotions(Player player) => new(Action.PLAYER_MOTIONS, 0, 0, null, player.GetObjectId(), player.GetMotions().GetActiveMotions(), null);
 
     protected override void WriteImpl(AionConnection con)
     {
-        WriteC(action);
+        WriteC((int)action);
         switch (action)
         {
-            case 1:
-                WriteH(motions.Count);
+            case Action.LIST:
+                WriteH(motions!.Count);
                 foreach (Motion motion in motions)
                 {
-                    WriteH(motion.GetId());
-                    WriteD(motion.SecondsUntilExpiration());
-                    WriteC(motion.IsActive() ? 1 : 0);
+                    WriteH(motion.GetId()); WriteD(motion.SecondsUntilExpiration()); WriteC(motion.IsActive() ? 1 : 0);
                 }
                 break;
-            case 2: // Add motion
-                WriteH(motionId);
-                WriteD(remainingTime);
+            case Action.ADD:
+                WriteH(motionId); WriteD(remainingTime);
                 break;
-            case 5: // Set motion
-                WriteH(motionId);
-                WriteC(type);
+            case Action.SET:
+                WriteH(motionId); WriteC(type!.Value.GetId());
                 break;
-            case 6: // remove
+            case Action.REMOVE:
                 WriteH(motionId);
                 break;
-            case 7: // Player motions
+            case Action.PLAYER_MOTIONS:
                 WriteD(playerId);
-                for (int i = 1; i < 6; i++)
-                {
-                    activeMotions.TryGetValue(i, out Motion motion);
-                    if (motion == null)
-                        WriteH(0);
-                    else
-                        WriteH(motion.GetId());
-                }
+                foreach (MotionType slot in System.Enum.GetValues<MotionType>())
+                    WriteH(activeMotions!.TryGetValue(slot, out Motion? motion) ? motion.GetId() : 0);
                 break;
         }
     }

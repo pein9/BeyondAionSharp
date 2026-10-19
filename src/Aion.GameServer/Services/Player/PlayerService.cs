@@ -159,7 +159,7 @@ public class PlayerService
         PlayerEmotionListDAO.LoadEmotions(player);
         if (player.HasPermission(MembershipConfig.EMOTIONS_ALL))
         {
-            foreach (int emotionId in EmotionLearnAction.GetLearnableEmotionIds())
+            foreach (int emotionId in DataManager.ITEM_DATA.GetLearnableEmotionIds())
                 player.GetEmotions().Add(emotionId, 0, false);
         }
 

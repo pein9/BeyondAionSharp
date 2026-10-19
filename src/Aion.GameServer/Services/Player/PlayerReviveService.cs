@@ -202,7 +202,7 @@ public class PlayerReviveService
         PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_REBIRTH_MASSAGE_ME());
         player.GetGameStats().UpdateStatsAndSpeedVisually();
         PacketSendUtility.SendPacket(player, new SM_PLAYER_INFO(player));
-        PacketSendUtility.SendPacket(player, new SM_MOTION(player.GetObjectId(), player.GetMotions().GetActiveMotions()));
+        PacketSendUtility.SendPacket(player, SM_MOTION.PlayerMotions(player));
         if (map.IsInstanceType() && player.GetPosition().GetWorldMapInstance().GetStartPos() != null)
         {
             WorldPosition pos = player.GetPosition().GetWorldMapInstance().GetStartPos();

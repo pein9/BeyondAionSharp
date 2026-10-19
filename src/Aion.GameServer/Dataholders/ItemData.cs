@@ -1,4 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
+using Aion.GameServer.Model.GameObjects.Players.Motion;
+using Aion.GameServer.Model.Templates.Items.Actions;
 using System.Xml.Serialization;
 using Aion.GameServer.Model.Items;
 using Aion.GameServer.Model.Templates.Items;
@@ -17,6 +20,8 @@ public class ItemData
     [XmlIgnore] private readonly Dictionary<int, ItemTemplate> items = new();
     [XmlIgnore] private readonly Dictionary<int, List<ItemTemplate>> manastones = new();
     [XmlIgnore] private readonly Dictionary<int, List<ItemTemplate>> ancientManastones = new();
+    [XmlIgnore] private readonly Dictionary<int, MotionType> motionTypes = new();
+    [XmlIgnore] private readonly HashSet<int> learnableEmotionIds = new();
 
     public void AfterUnmarshal(object parent)
     {
@@ -35,6 +40,17 @@ public class ItemData
             {
                 if (!it.GetName().ToLower().Contains("pvp"))
                     Add(ancientManastones, it, it.GetLevel());
+            }
+            if (it.GetActions() != null)
+            {
+                foreach (AbstractItemAction action in it.GetActions().GetItemActions())
+                {
+                    if (action is AnimationAddAction animation)
+                        foreach (var entry in animation.GetMotionIds())
+                            motionTypes[entry.Value] = entry.Key;
+                    else if (action is EmotionLearnAction emotion)
+                        learnableEmotionIds.Add(emotion.GetEmotionId());
+                }
             }
         }
         its = null;
@@ -120,4 +136,8 @@ public class ItemData
     {
         return ancientManastones.TryGetValue(level, out var v) ? v : null;
     }
+
+    public MotionType? GetMotionType(int motionId) => motionTypes.TryGetValue(motionId, out var type) ? type : null;
+    public bool IsLearnableEmotion(int emotionId) => learnableEmotionIds.Contains(emotionId);
+    public List<int> GetLearnableEmotionIds() => learnableEmotionIds.OrderBy(id => id).ToList();
 }

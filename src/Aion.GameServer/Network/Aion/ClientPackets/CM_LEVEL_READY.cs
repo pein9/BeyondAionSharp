@@ -46,7 +46,7 @@ public class CM_LEVEL_READY : AionClientPacket
         SendPacket(new SM_PLAYER_INFO(activePlayer));
         activePlayer.GetController().StartProtectionActiveTask();
         SendPacket(new SM_ACCOUNT_PROPERTIES());
-        SendPacket(new SM_MOTION(activePlayer.GetObjectId(), activePlayer.GetMotions().GetActiveMotions()));
+        SendPacket(SM_MOTION.PlayerMotions(activePlayer));
 
         WindstreamTemplate template = DataManager.WINDSTREAM_DATA.GetStreamTemplate(activePlayer.GetPosition().GetMapId());
         if (template != null)

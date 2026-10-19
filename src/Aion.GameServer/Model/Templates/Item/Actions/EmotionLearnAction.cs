@@ -11,17 +11,8 @@ namespace Aion.GameServer.Model.Templates.Items.Actions;
 [XmlType("EmotionLearnAction")]
 public class EmotionLearnAction : AbstractItemAction
 {
-    // Java parity: ConcurrentHashMap.newKeySet() — concurrent int set (BCL has no ConcurrentHashSet, use a ConcurrentDictionary as a set).
-    private static readonly ConcurrentDictionary<int, byte> LEARNABLE_IDS = new ConcurrentDictionary<int, byte>();
-
     [XmlAttribute("emotionid")] public int emotionId;
     [XmlAttribute("minutes")] public int minutes;
-
-    // Java parity: afterUnmarshal(Unmarshaller, Object) — invoked by the loader after deserialization.
-    public void AfterUnmarshal()
-    {
-        LEARNABLE_IDS[emotionId] = 0;
-    }
 
     public override bool CanAct(Aion.GameServer.Model.GameObjects.Players.Player player, Item parentItem, Item targetItem, params object[] @params)
     {
@@ -32,7 +23,7 @@ public class EmotionLearnAction : AbstractItemAction
         }
         if (player.GetEmotions() != null && player.GetEmotions().Contains(emotionId))
         {
-            Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_TOOLTIP_LEARNED_EMOTION());
+            Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_SOCIALACTION_ALREADY_HAS_SKILL());
             return false;
         }
         return true;
@@ -47,17 +38,6 @@ public class EmotionLearnAction : AbstractItemAction
         player.GetEmotions().Add(emotionId, minutes == 0 ? 0 : (int)SystemClock.CurrentSeconds() + minutes * 60, true);
         Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_USE_ITEM(parentItem.GetL10n()));
         player.GetInventory().Delete(parentItem);
-    }
-
-    /// <summary>True if there exists a learn template for given emotion.</summary>
-    public static bool IsLearnable(int emotionId)
-    {
-        return LEARNABLE_IDS.ContainsKey(emotionId);
-    }
-
-    public static List<int> GetLearnableEmotionIds()
-    {
-        return LEARNABLE_IDS.Keys.OrderBy(x => x).ToList();
     }
 
     public int GetEmotionId()

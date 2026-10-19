@@ -5,9 +5,9 @@ namespace Aion.GameServer.Model.GameObjects.Players.Motion;
 /// <summary>Java parity: model/gameobjects/player/motion/MotionList.</summary>
 public class MotionList
 {
-    private Aion.GameServer.Model.GameObjects.Players.Player owner;
-    // Java parity: LinkedHashMap — insertion-ordered.
-    private Dictionary<int, Motion> activeMotions;
+    private readonly Aion.GameServer.Model.GameObjects.Players.Player owner;
+    // Java EnumMap iteration follows enum declaration order.
+    private SortedDictionary<MotionType, Motion> activeMotions;
     private Dictionary<int, Motion> motions;
 
     public MotionList(Aion.GameServer.Model.GameObjects.Players.Player owner)
@@ -16,10 +16,10 @@ public class MotionList
     }
 
     /// <summary>the activeMotions</summary>
-    public IDictionary<int, Motion> GetActiveMotions()
+    public IDictionary<MotionType, Motion> GetActiveMotions()
     {
         if (activeMotions == null)
-            return new Dictionary<int, Motion>();
+            return new SortedDictionary<MotionType, Motion>();
         return activeMotions;
     }
 
@@ -40,13 +40,12 @@ public class MotionList
             Remove(motion.GetId());
         }
         motions[motion.GetId()] = motion;
-        if (motion.IsActive())
+        if (motion.IsActive() && motion.GetMotionType() is { } type)
         {
             if (activeMotions == null)
-                activeMotions = new Dictionary<int, Motion>();
-            int key = Motion.motionType[motion.GetId()];
-            activeMotions.TryGetValue(key, out Motion old);
-            activeMotions[key] = motion;
+                activeMotions = new SortedDictionary<MotionType, Motion>();
+            activeMotions.TryGetValue(type, out Motion old);
+            activeMotions[type] = motion;
             if (old != null)
             {
                 old.SetActive(false);
@@ -68,30 +67,33 @@ public class MotionList
             motions.Remove(motionId);
         if (motion != null)
         {
-            Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, new Aion.GameServer.Network.Aion.ServerPackets.SM_MOTION((short)motionId));
+            Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, Aion.GameServer.Network.Aion.ServerPackets.SM_MOTION.Remove(motionId));
             Aion.GameServer.Dao.MotionDAO.DeleteMotion(owner.GetObjectId(), motionId);
             if (motion.IsActive())
             {
-                activeMotions.Remove(Motion.motionType[motionId]);
+                if (activeMotions != null && motion.GetMotionType() is { } type &&
+                    activeMotions.TryGetValue(type, out var current) && ReferenceEquals(current, motion))
+                    activeMotions.Remove(type);
                 return true;
             }
         }
         return false;
     }
 
-    public void SetActive(int motionId, int motionType)
+    public void SetActive(int motionId, MotionType type)
     {
         if (motionId != 0)
         {
-            if (!motions.TryGetValue(motionId, out Motion motion))
+            if (!GetMotions().TryGetValue(motionId, out Motion motion))
                 motion = null;
-            if (motion == null || motion.IsActive())
+            if (motion == null || motion.GetMotionType() == null)
                 return;
             if (activeMotions == null)
-                activeMotions = new Dictionary<int, Motion>();
-            activeMotions.TryGetValue(motionType, out Motion old);
-            activeMotions[motionType] = motion;
-            if (old != null)
+                activeMotions = new SortedDictionary<MotionType, Motion>();
+            MotionType ownType = motion.GetMotionType()!.Value;
+            activeMotions.TryGetValue(ownType, out Motion old);
+            activeMotions[ownType] = motion;
+            if (old != null && !ReferenceEquals(old, motion))
             {
                 old.SetActive(false);
                 Aion.GameServer.Dao.MotionDAO.UpdateMotion(owner.GetObjectId(), old);
@@ -101,13 +103,13 @@ public class MotionList
         }
         else if (activeMotions != null)
         {
-            if (!activeMotions.TryGetValue(motionType, out Motion old))
-                return; // TODO packet hack??
-            activeMotions.Remove(motionType);
-            old.SetActive(false);
-            Aion.GameServer.Dao.MotionDAO.UpdateMotion(owner.GetObjectId(), old);
+            if (activeMotions.Remove(type, out Motion old))
+            {
+                old.SetActive(false);
+                Aion.GameServer.Dao.MotionDAO.UpdateMotion(owner.GetObjectId(), old);
+            }
         }
-        Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, new Aion.GameServer.Network.Aion.ServerPackets.SM_MOTION((short)motionId, (byte)motionType));
-        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(owner, new Aion.GameServer.Network.Aion.ServerPackets.SM_MOTION(owner.GetObjectId(), activeMotions), true);
+        Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, Aion.GameServer.Network.Aion.ServerPackets.SM_MOTION.Set(motionId, type));
+        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(owner, Aion.GameServer.Network.Aion.ServerPackets.SM_MOTION.PlayerMotions(owner), true);
     }
 }

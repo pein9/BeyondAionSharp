@@ -661,17 +661,23 @@ public sealed class GoldenPacketFixtureTests
 		return new SM_CASTSPELL(c, spellId, level, targetType, inputs.GetProperty("targetObjectId").GetInt32(), castDuration, castSpeed, boost);
 	}
 
-	// SM_MOTION scalar branches: action 2 = (motionId, remainingTime); 5 = (motionId, type); 6 = (motionId).
+	// Retain the historical scalar payload captures while using the new Java packet factories.
 	private static SM_MOTION ReconstructMotionScalar(JsonElement inputs)
 	{
-		var motionId = (short)inputs.GetProperty("motionId").GetInt32();
-		return inputs.GetProperty("ctor").GetString() switch
-		{
-			"motionId_remainingTime" => new SM_MOTION(motionId, inputs.GetProperty("remainingTime").GetInt32()),
-			"motionId_type" => new SM_MOTION(motionId, (byte)inputs.GetProperty("type").GetInt32()),
-			"motionId" => new SM_MOTION(motionId),
-			_ => throw new NotSupportedException("Unknown SM_MOTION scalar ctor"),
-		};
+		int motionId = inputs.GetProperty("motionId").GetInt32();
+        Aion.GameServer.Utils.SystemClock.UseSource(() => 0);
+        try
+        {
+            return inputs.GetProperty("ctor").GetString() switch
+            {
+                "motionId_remainingTime" => SM_MOTION.Add(new Aion.GameServer.Model.GameObjects.Players.Motion.Motion(
+                    motionId, inputs.GetProperty("remainingTime").GetInt32(), false)),
+                "motionId_type" => SM_MOTION.Set(motionId, Aion.GameServer.Model.GameObjects.Players.Motion.MotionTypeExtensions.GetById(inputs.GetProperty("type").GetInt32())!.Value),
+                "motionId" => SM_MOTION.Remove(motionId),
+                _ => throw new NotSupportedException("Unknown SM_MOTION scalar factory"),
+            };
+        }
+        finally { Aion.GameServer.Utils.SystemClock.UseSystemClock(); }
 	}
 
 	private static SM_RIFT_ANNOUNCE ReconstructRiftAnnounce(JsonElement inputs)

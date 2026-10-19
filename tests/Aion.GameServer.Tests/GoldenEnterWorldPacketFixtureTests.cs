@@ -84,10 +84,10 @@ public sealed class GoldenEnterWorldPacketFixtureTests
             case "SM_TITLE_INFO":
                 return (ReconstructTitleInfo(inputs), null);
             case "SM_EMOTION_LIST":
-                return (new SM_EMOTION_LIST((byte)inputs.GetProperty("action").GetInt32(),
+                return (new SM_EMOTION_LIST((SM_EMOTION_LIST.Action)inputs.GetProperty("action").GetInt32(),
                     new List<Aion.GameServer.Model.GameObjects.Players.Emotion.Emotion>()), null);
             case "SM_MOTION":
-                return (new SM_MOTION(new List<Aion.GameServer.Model.GameObjects.Players.Motion.Motion>()), null);
+                return (SM_MOTION.List(new List<Aion.GameServer.Model.GameObjects.Players.Motion.Motion>()), null);
             case "SM_QUEST_LIST":
                 return (new SM_QUEST_LIST(new List<Aion.GameServer.QuestEngine.Model.QuestState>()), null);
             case "SM_CHANNEL_INFO":

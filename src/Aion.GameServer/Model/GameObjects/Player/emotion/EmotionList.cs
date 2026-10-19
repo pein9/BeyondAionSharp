@@ -27,15 +27,16 @@ public class EmotionList
         {
             Aion.GameServer.Taskmanager.Tasks.ExpireTimerTask.GetInstance().RegisterExpirable(emotion, owner);
             Aion.GameServer.Dao.PlayerEmotionListDAO.InsertEmotion(owner, emotion);
-            Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, new Aion.GameServer.Network.Aion.ServerPackets.SM_EMOTION_LIST((byte)1, new List<Emotion> { emotion }));
+            Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, new Aion.GameServer.Network.Aion.ServerPackets.SM_EMOTION_LIST(Aion.GameServer.Network.Aion.ServerPackets.SM_EMOTION_LIST.Action.ADD, new List<Emotion> { emotion }));
         }
     }
 
     public void Remove(int emotionId)
     {
-        emotions.Remove(emotionId);
+        emotions.Remove(emotionId, out Emotion emotion);
         Aion.GameServer.Dao.PlayerEmotionListDAO.DeleteEmotion(owner.GetObjectId(), emotionId);
-        Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, new Aion.GameServer.Network.Aion.ServerPackets.SM_EMOTION_LIST((byte)0, GetEmotions()));
+        if (emotion != null)
+            Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, new Aion.GameServer.Network.Aion.ServerPackets.SM_EMOTION_LIST(Aion.GameServer.Network.Aion.ServerPackets.SM_EMOTION_LIST.Action.REMOVE, new List<Emotion> { emotion }));
     }
 
     public bool Contains(int emotionId)
@@ -45,7 +46,7 @@ public class EmotionList
 
     public bool CanUse(int emotionId)
     {
-        return !Aion.GameServer.Model.Templates.Items.Actions.EmotionLearnAction.IsLearnable(emotionId) || Contains(emotionId);
+        return !Aion.GameServer.Dataholders.DataManager.ITEM_DATA.IsLearnableEmotion(emotionId) || Contains(emotionId);
     }
 
     public ICollection<Emotion> GetEmotions()
