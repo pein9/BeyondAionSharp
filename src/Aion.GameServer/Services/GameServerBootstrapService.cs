@@ -516,6 +516,8 @@ public sealed class GameServerBootstrapService : IHostedService
 		// was already created at boot (GameServerBootstrapService.StartAsync, GameServer.main:155), so this just
 		// re-fetches it. Run it before the ThreadPoolManager shutdown below: StoreDataAndCancel cancels each
 		// scheduled save task and then performs the save inline, so the pool must still be intact.
+		// Java d22a9af5b: finish delayed player saves after disconnects and before global saves/pool teardown.
+		Players.PlayerLeaveWorldService.ProcessPendingLeaveWorldTasks();
 		PeriodicSaveService.GetInstance().OnShutdown();
 
 		// Java parity: ShutdownHook.run():77 — GameTimeService.getInstance().saveGameTime().

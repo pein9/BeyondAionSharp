@@ -276,24 +276,16 @@ public class AionConnection : AConnection<AionServerPacket>
         connectionAliveChecker?.Stop();
         SessionRecorder.Current?.OnDisconnect(this);
 
-        if (IsServerShuttingDownSoon())
-        {
-            SafeLogout();
-            return;
-        }
-
         if (!IsSocketless)
             global::Aion.GameServer.Network.LoginServer.LoginServer.GetInstance().OnDisconnect(this);
 
         string msg = GetAccount() == null ? "" : " " + GetAccount();
         Player player = GetActivePlayer();
-        if (player != null)
+        if (player != null && !PlayerLeaveWorldService.IsLeavingWorld(player))
         {
             msg += " " + player + " (client crash or connection loss)";
             ResetPlayerPositionAfterDisconnect(player);
-            long millisSinceLastClientPacket = SystemClock.CurrentMillis() - lastClientMessageTime;
-            long delayMs = Math.Max(0, 10000 - millisSinceLastClientPacket);
-            PlayerLeaveWorldService.LeaveWorldDelayed(player, delayMs);
+            PlayerLeaveWorldService.RegisterLeaveWorld(player);
         }
 
         if (msg.Length == 0)
@@ -302,33 +294,12 @@ public class AionConnection : AConnection<AionServerPacket>
         log.LogInformation("Client disconnected:" + msg);
     }
 
-    protected virtual bool IsServerShuttingDownSoon() => GameServer.IsShuttingDownSoon();
-
     protected virtual void ResetPlayerPositionAfterDisconnect(Player player) =>
         player.GetMoveController().ResetToLastPositionFromClient();
 
     public override void OnServerClose()
     {
         Close();
-        SafeLogout();
-    }
-
-    private void SafeLogout()
-    {
-        lock (this)
-        {
-            Player player = GetActivePlayer();
-            if (player == null) // player was already saved
-                return;
-            try
-            {
-                PlayerLeaveWorldService.LeaveWorld(player);
-            }
-            catch (Exception e)
-            {
-                log.LogError(e, "Error saving " + player);
-            }
-        }
     }
 
     /// <summary>Encrypt packet.</summary>

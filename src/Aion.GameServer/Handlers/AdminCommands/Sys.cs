@@ -21,11 +21,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Sys : AdminCommand
 {
     public Sys()
-        : base("sys", "Shows and controls the system environment.", """
+        : base("sys", "Shows and controls the system environment.", $"""
             <info> - Shows general system information.
             <memory> [gc] - Shows memory usage statistics and optionally runs the garbage collector.
             <threadpool> - Shows thread pool manager info.
-            <restart|shutdown> [delay] - Restarts or shuts down the server after the specified delay in seconds (default: uses delay from config).
+            <restart|shutdown> [delay] - Restarts or shuts down the server after the specified delay in seconds (default: uses delay from config). The delay is skipped when no players{(ShutdownConfig.INSTANT_SHUTDOWN_WITH_ONLY_STAFF_ONLINE ? " or only staff" : "")} are online.
             """)
     {
     }

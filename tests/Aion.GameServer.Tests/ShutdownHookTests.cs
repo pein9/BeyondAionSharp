@@ -10,7 +10,7 @@ public sealed class ShutdownHookTests
 	public async Task ShutdownHook_CountsDownAndStopsApplication()
 	{
 		var lifetime = new FakeApplicationLifetime();
-		var hook = new ShutdownHook(lifetime, NullLogger<ShutdownHook>.Instance, TimeSpan.Zero);
+		var hook = new ShutdownHook(lifetime, NullLogger<ShutdownHook>.Instance, TimeSpan.Zero, () => false);
 
 		hook.InitShutdown(exitCode: 2, delaySeconds: 2);
 

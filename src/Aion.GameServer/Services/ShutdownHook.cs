@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Aion.GameServer.Configs.Main;
+using Aion.GameServer.Model.GameObjects.Players;
 
 namespace Aion.GameServer.Services;
 
@@ -9,6 +11,7 @@ public sealed class ShutdownHook
 	private readonly IHostApplicationLifetime _applicationLifetime;
 	private readonly ILogger<ShutdownHook> _logger;
 	private readonly TimeSpan _tickInterval;
+	private readonly Func<bool> _maySkipCountdown;
 	private int _remainingSeconds = UnsetDelay;
 	private int _exitCode;
 	private Task? _shutdownTask;
@@ -19,10 +22,16 @@ public sealed class ShutdownHook
 	}
 
 	public ShutdownHook(IHostApplicationLifetime applicationLifetime, ILogger<ShutdownHook> logger, TimeSpan tickInterval)
+		: this(applicationLifetime, logger, tickInterval, NoNonStaffPlayersRemain)
+	{
+	}
+
+	internal ShutdownHook(IHostApplicationLifetime applicationLifetime, ILogger<ShutdownHook> logger, TimeSpan tickInterval, Func<bool> maySkipCountdown)
 	{
 		_applicationLifetime = applicationLifetime;
 		_logger = logger;
 		_tickInterval = tickInterval;
+		_maySkipCountdown = maySkipCountdown;
 		_instance = this;
 	}
 
@@ -70,6 +79,11 @@ public sealed class ShutdownHook
 	{
 		while (RemainingSeconds > 0)
 		{
+			if (_maySkipCountdown())
+			{
+				Volatile.Write(ref _remainingSeconds, 0);
+				break;
+			}
 			_logger.LogInformation("Runtime is shutting down in {Seconds} seconds.", RemainingSeconds);
 			await Task.Delay(_tickInterval);
 			Interlocked.Decrement(ref _remainingSeconds);
@@ -84,8 +98,9 @@ public sealed class ShutdownHook
 			return ValueTask.CompletedTask;
 
 		int remaining = RemainingSeconds;
-		if (remaining <= 0)
+		if (remaining <= 0 || _maySkipCountdown())
 		{
+			Volatile.Write(ref _remainingSeconds, 0);
 			_applicationLifetime.StopApplication();
 			return ValueTask.CompletedTask;
 		}
@@ -97,5 +112,16 @@ public sealed class ShutdownHook
 			return DeterministicCountdownTick(pool, CancellationToken.None);
 		}, _tickInterval);
 		return ValueTask.CompletedTask;
+	}
+
+	internal static bool CanSkipCountdown(ICollection<Player> players) =>
+		players.Count == 0 || ShutdownConfig.INSTANT_SHUTDOWN_WITH_ONLY_STAFF_ONLINE && players.All(player => player.IsStaff());
+
+	private static bool NoNonStaffPlayersRemain()
+	{
+		World.World world;
+		try { world = World.World.GetInstance(); }
+		catch (InvalidOperationException) { return false; } // A standalone host/countdown test has no game world yet.
+		return CanSkipCountdown(world.GetAllPlayers());
 	}
 }

@@ -72,7 +72,7 @@ public sealed class DeterministicModeTests
 		{
 			ThreadPoolManager.RegisterInstance(pool);
 			NetFlusher.Add(() => flushes++, 250);
-			var hook = new ShutdownHook(lifetime, NullLogger<ShutdownHook>.Instance, TimeSpan.FromSeconds(1));
+			var hook = new ShutdownHook(lifetime, NullLogger<ShutdownHook>.Instance, TimeSpan.FromSeconds(1), () => false);
 			hook.InitShutdown(exitCode: 2, delaySeconds: 2);
 
 			Assert.Equal(0, flushes);

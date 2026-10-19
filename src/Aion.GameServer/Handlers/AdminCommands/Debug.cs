@@ -37,7 +37,7 @@ public class Debug : AdminCommand
         }
         if ("connections".Equals(paramsArr[0], System.StringComparison.OrdinalIgnoreCase))
         {
-            List<AionConnection> connections = FindAionConnections();
+            IEnumerable<AionConnection> connections = GameServer.FindClientConnections();
             SendInfo(admin, "Online clients:\n\t" + string.Join("\n\t", connections.Select(c => c.ToString())));
         }
         else if ("connectedPlayers".Equals(paramsArr[0], System.StringComparison.OrdinalIgnoreCase))
@@ -85,17 +85,8 @@ public class Debug : AdminCommand
 
     private List<Player> FindConnectedPlayers()
     {
-        List<AionConnection> connections = FindAionConnections();
+        IEnumerable<AionConnection> connections = GameServer.FindClientConnections();
         return connections.Select(c => c.GetActivePlayer()).Where(p => p != null).OrderBy(p => p.GetName(), System.StringComparer.Ordinal).ToList();
     }
 
-    private List<AionConnection> FindAionConnections()
-    {
-        NioServer nioServer = NioServer.GetRegisteredInstance();
-        // Java parity: a failed reflective lookup of GameServer.nioServer throws IllegalArgumentException(e.toString()),
-        // which the framework reports to the admin; the C# equivalent failure is a missing registered instance.
-        if (nioServer == null)
-            throw new System.ArgumentException("NioServer is not running.");
-        return nioServer.GetAllConnections().OfType<AionConnection>().ToList();
-    }
 }

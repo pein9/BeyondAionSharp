@@ -79,7 +79,14 @@ public sealed class GameServerHostedService : IHostedService
 	public async Task StopAsync(CancellationToken cancellationToken)
 	{
 		_logger.LogInformation("Stopping game-server client listener");
-		_nioServer?.Shutdown();
+		if (_nioServer != null)
+		{
+			if (GameServer.ForceStaffClientsToServerSelectionScreen())
+				await Task.Delay(TimeSpan.FromMilliseconds(200)); // Give Login time to accept the reconnect keys.
+			_nioServer.Shutdown();
+			_nioServer = null;
+		}
+		Players.PlayerLeaveWorldService.ProcessPendingLeaveWorldTasks();
 		AionServerPacket.SetCaptureObserver(NoOpServerPacketCaptureObserver.INSTANCE);
 		if (_packetTap != null)
 		{

@@ -6,6 +6,11 @@ using Aion.GameServer.Commons.Utils.Info;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model;
 using Aion.GameServer.Services;
+using Aion.GameServer.Commons.Network;
+using Aion.GameServer.Model.GameObjects.Players;
+using Aion.GameServer.Network.Aion;
+using Aion.GameServer.Network.Aion.ServerPackets;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer;
 
@@ -47,6 +52,30 @@ public static class GameServer
     public static void InitShutdown(int exitCode, int delaySeconds)
     {
         ShutdownHook.Instance?.InitShutdown(exitCode, delaySeconds);
+    }
+
+    public static IEnumerable<AionConnection> FindClientConnections()
+    {
+        NioServer reactor = NioServer.GetRegisteredInstance() ?? throw new ArgumentException("NioServer is not running.");
+        return reactor.FindAllConnections().OfType<AionConnection>();
+    }
+
+    internal static bool ForceStaffClientsToServerSelectionScreen() =>
+        ForceStaffClientsToServerSelectionScreen(FindClientConnections(), (id, client) =>
+            Network.LoginServer.LoginServer.GetInstance().RequestAuthReconnection(id, client));
+
+    internal static bool ForceStaffClientsToServerSelectionScreen(IEnumerable<AionConnection> clients, Action<int, AionConnection> requestReconnect)
+    {
+        var staff = clients.Where(client => client.GetAccount() != null && client.GetAccount().GetAccessLevel() > 0).ToList();
+        if (staff.Count == 0)
+            return false;
+        foreach (AionConnection client in staff)
+        {
+            if (client.GetState() == AionConnection.State.IN_GAME)
+                PacketSendUtility.SendPacket(client.GetActivePlayer(), new SM_QUIT_RESPONSE(true));
+            requestReconnect(client.GetAccount().GetId(), client);
+        }
+        return true;
     }
 
     /// <summary>

@@ -53,7 +53,7 @@ public class CM_QUIT : AionClientPacket
                 foreach (PlayerAccountData plAccData in con.GetAccount().GetPlayerAccDataList())
                     plAccData.SetCharBanInfo(PlayerPunishmentsDAO.GetCharBanInfo(plAccData.GetPlayerCommonData().GetPlayerObjId()));
             }
-            PlayerLeaveWorldService.LeaveWorld(player);
+            PlayerLeaveWorldService.RegisterLeaveWorld(player);
         }
 
         if (stayConnected)

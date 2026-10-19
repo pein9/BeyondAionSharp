@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Aion.GameServer.Configs.Main;
@@ -27,38 +28,54 @@ using LocationData = Aion.GameServer.Dataholders.PlayerInitialData.LocationData;
 
 namespace Aion.GameServer.Services.Players;
 
-/// <summary>Java parity: services/player/PlayerLeaveWorldService (ATracer, Neon). leaveWorldDelayed (schedule disconnect cleanup as DESPAWN task) and leaveWorld (full logout: safe-position fallback, service onLogout hooks, dead->revive, store effects/cooldowns/lifestats, group/alliance/legion logout, release summon/pet/postman, quest onLogout, persist common data + last-online, chat server logout). Future->ScheduledTask; schedule(Runnable,ms)->Schedule(ct-lambda); new Timestamp(currentTimeMillis)->SystemClock.UtcNow. Many service/DAO/model types red-tolerated.</summary>
+/// <summary>Java parity: services/player/PlayerLeaveWorldService. Registers idempotent logout tasks against the last player action and drains them before shutdown saves. The full logout retains the port's SIM capture and companion cleanup.</summary>
 public class PlayerLeaveWorldService
 {
     private static readonly ILogger log = AionLog.For(nameof(PlayerLeaveWorldService));
     private static readonly AsyncLocal<Action<Player, bool>?> ScopedCapture = new();
+    private static readonly AsyncLocal<bool> CaptureRegistration = new();
+    private static readonly ConcurrentDictionary<Player, LeaveWorldTask> leaveWorldTaskByPlayer = new();
 
-    internal static IDisposable CaptureForCurrentContext(Action<Player, bool> capture)
+    internal static IDisposable CaptureForCurrentContext(Action<Player, bool> capture, bool captureRegistration = true)
     {
         ArgumentNullException.ThrowIfNull(capture);
         var previous = ScopedCapture.Value;
+        bool previousRegistration = CaptureRegistration.Value;
         ScopedCapture.Value = capture;
-        return new CaptureScope(previous);
+        CaptureRegistration.Value = captureRegistration;
+        return new CaptureScope(previous, previousRegistration);
     }
 
     /// <summary>
-    /// Called when a player loses client connection. NOTICE: must only be called from AionConnection.OnDisconnect().
+    /// Leave ten seconds after the last movement/combat action, immediately if that interval has elapsed.
+    /// Repeated registrations keep the existing task and deadline.
     /// </summary>
-    public static void LeaveWorldDelayed(Player player, long delayInMillis)
+    public static void RegisterLeaveWorld(Player player)
     {
-        if (ScopedCapture.Value is { } capture)
+        if (CaptureRegistration.Value && ScopedCapture.Value is { } capture)
         {
             capture(player, true);
             return;
         }
-        ScheduledTask leaveWorldTask = ThreadPoolManager.GetInstance().Schedule(ct => { LeaveWorld(player); return ValueTask.CompletedTask; }, TimeSpan.FromMilliseconds(delayInMillis));
-        player.GetController().AddTask(TaskId.DESPAWN, leaveWorldTask);
+        long lastActionTime = Math.Max(player.GetMoveController().GetLastMoveUpdate(), player.GetController().GetLastCombatTime());
+        long delay = Math.Max(0L, 10_000L - (SystemClock.CurrentMillis() - lastActionTime));
+        leaveWorldTaskByPlayer.GetOrAdd(player, value => new LeaveWorldTask(value)).ScheduleOrRun(delay);
+    }
+
+    public static bool IsLeavingWorld(int playerObjectId) => leaveWorldTaskByPlayer.Keys.Any(player => player.GetObjectId() == playerObjectId);
+
+    public static bool IsLeavingWorld(Player player) => leaveWorldTaskByPlayer.ContainsKey(player);
+
+    public static void ProcessPendingLeaveWorldTasks()
+    {
+        foreach (LeaveWorldTask task in leaveWorldTaskByPlayer.Values)
+            task.Run();
     }
 
     /// <summary>
-    /// Saves a player and removes him from the world (char selection or client close). NOTICE: called only from CM_QUIT.
+    /// Saves the player and removes him from the world once the registered task is due.
     /// </summary>
-    public static void LeaveWorld(Player player)
+    private static void LeaveWorld(Player player)
     {
         if (ScopedCapture.Value is { } capture)
         {
@@ -164,14 +181,60 @@ public class PlayerLeaveWorldService
         Aion.GameServer.Custom.Companion.CompanionService.GetInstance().OnLeftWorld(player);
     }
 
-    private sealed class CaptureScope(Action<Player, bool>? previous) : IDisposable
+    private sealed class LeaveWorldTask(Player player)
+    {
+        private ScheduledTask? future;
+        private bool finished;
+
+        public void ScheduleOrRun(long delayMillis)
+        {
+            lock (this)
+            {
+                if (finished || future != null)
+                    return;
+                if (delayMillis <= 0)
+                    Run();
+                else
+                    future = ThreadPoolManager.GetInstance().Schedule(_ => { Run(); return ValueTask.CompletedTask; }, TimeSpan.FromMilliseconds(delayMillis));
+            }
+        }
+
+        public void Run()
+        {
+            lock (this)
+            {
+                if (finished)
+                    return;
+                finished = true;
+                try
+                {
+                    if (player.IsOnline())
+                        LeaveWorld(player);
+                    future?.Cancel(false);
+                }
+                catch (Exception exception)
+                {
+                    log.LogError(exception, "Error while processing leave world task for " + player);
+                }
+                finally
+                {
+                    leaveWorldTaskByPlayer.TryRemove(new KeyValuePair<Player, LeaveWorldTask>(player, this));
+                }
+            }
+        }
+    }
+
+    private sealed class CaptureScope(Action<Player, bool>? previous, bool previousRegistration) : IDisposable
     {
         private int disposed;
 
         public void Dispose()
         {
             if (Interlocked.Exchange(ref disposed, 1) == 0)
+            {
                 ScopedCapture.Value = previous;
+                CaptureRegistration.Value = previousRegistration;
+            }
         }
     }
 }

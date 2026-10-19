@@ -80,7 +80,7 @@ public sealed class PlayerEnterWorldService
             return;
         }
 
-        if (PlayerDAO.IsOnline(objectId))
+        if (PlayerLeaveWorldService.IsLeavingWorld(objectId))
         { // char is still leaving the world and not saved yet (fast reentry from plastic surgery screen or packet hack)
             client.SendPacket(new SM_ENTER_WORLD_CHECK(Msg.REENTRY_TIME));
             return;
@@ -91,7 +91,7 @@ public sealed class PlayerEnterWorldService
             .FirstOrDefault();
         if (onlinePlayerId != null)
         { // a char was online during acc login (double login or client crash), so reload pcd, appearance and acc warehouse
-            if (PlayerDAO.IsOnline(onlinePlayerId.Value))
+            if (PlayerLeaveWorldService.IsLeavingWorld(onlinePlayerId.Value))
             { // the found char is still leaving the world, so the acc wh might still be outdated
                 client.SendPacket(new SM_ENTER_WORLD_CHECK(Msg.REENTRY_TIME));
                 return;

@@ -43,7 +43,7 @@ public sealed class SocketlessAionConnectionTests
 	}
 
 	[Fact]
-	public void QuitReachesLeaveWorldAndClosesInlineWithOnlyTheClosePacket()
+	public void QuitRegistersLeaveWorldAndClosesInlineWithOnlyTheClosePacket()
 	{
 		var connection = new RecordingSocketlessConnection();
 		var player = AttachPlayer(connection);
@@ -64,7 +64,7 @@ public sealed class SocketlessAionConnectionTests
 
 		var call = Assert.Single(calls);
 		Assert.Same(player, call.Player);
-		Assert.False(call.Delayed);
+		Assert.True(call.Delayed);
 		Assert.True(connection.IsClosed());
 		Assert.False(connection.IsConnected());
 		Assert.Equal(Environment.CurrentManagedThreadId, connection.DisconnectThreadId);
@@ -95,9 +95,9 @@ public sealed class SocketlessAionConnectionTests
 	}
 
 	[Fact]
-	public void AbruptDropDuringFinalShutdownSecondsLogsOutImmediately()
+	public void ServerCloseRegistersLogoutForTheShutdownDrain()
 	{
-		var connection = new RecordingSocketlessConnection { ServerShuttingDownSoon = true };
+		var connection = new RecordingSocketlessConnection();
 		var player = AttachPlayer(connection);
 		var calls = new List<(Player Player, bool Delayed)>();
 		using var capture = PlayerLeaveWorldService.CaptureForCurrentContext((captured, delayed) =>
@@ -107,11 +107,11 @@ public sealed class SocketlessAionConnectionTests
 			connection.SetActivePlayer(null!);
 		});
 
-		connection.Disconnect(new FailingExecutor());
+		connection.OnServerClose();
 
 		var call = Assert.Single(calls);
 		Assert.Same(player, call.Player);
-		Assert.False(call.Delayed);
+		Assert.True(call.Delayed);
 		Assert.Null(connection.GetActivePlayer());
 		Assert.True(connection.IsClosed());
 	}
@@ -149,7 +149,6 @@ public sealed class SocketlessAionConnectionTests
 		public List<AionServerPacket> SentPackets { get; } = [];
 		public int DisconnectThreadId { get; private set; }
 		public bool IsBaseQueueEmpty => baseQueue.Count == 0;
-		public bool ServerShuttingDownSoon { get; init; }
 
 		protected override Queue<AionServerPacket> GetSendMsgQueue() => baseQueue;
 
@@ -166,8 +165,6 @@ public sealed class SocketlessAionConnectionTests
 		protected override void ResetPlayerPositionAfterDisconnect(Player player)
 		{
 		}
-
-		protected override bool IsServerShuttingDownSoon() => ServerShuttingDownSoon;
 
 		protected override void OnDisconnect()
 		{

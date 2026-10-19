@@ -10,6 +10,9 @@ public static class ShutdownConfig
     [Property(key: "gameserver.shutdown.delay", defaultValue: "120")]
     public static int DELAY = 120;
 
+    [Property(key: "gameserver.shutdown.instant_shutdown_with_only_staff_online", defaultValue: "true")]
+    public static bool INSTANT_SHUTDOWN_WITH_ONLY_STAFF_ONLINE = true;
+
     /// <summary>Shutdown restart schedule. Key: gameserver.shutdown.restart_schedule (no default — null until configured)</summary>
     [Property(key: "gameserver.shutdown.restart_schedule")]
     public static CronExpression RESTART_SCHEDULE;

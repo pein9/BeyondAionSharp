@@ -134,7 +134,7 @@ public class NioServer
 
     public static NioServer? GetRegisteredInstance() => _instance;
 
-    private HashSet<AConnection> FindAllConnections()
+    public HashSet<AConnection> FindAllConnections()
     {
         HashSet<AConnection> activeConnections = new HashSet<AConnection>();
         if (readWriteDispatchers != null)
