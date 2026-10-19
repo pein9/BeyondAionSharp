@@ -148,6 +148,7 @@ public sealed class GameServerOptions
 				EnableEnchantAnnounce = GetBoolWithEnvironment(loader, "gameserver.enchant.announce.enable", true),
 				SpeakingBetweenFactions = GetBoolWithEnvironment(loader, "gameserver.chat.factions.enable", false),
 				LevelToWhisper = GetIntWithEnvironment(loader, "gameserver.chat.whisper.level", 10),
+				MacrosLimit = GetIntWithEnvironment(loader, "gameserver.macros.limit", 12),
 				BrokerRegistrationExpirationDays = GetIntWithEnvironment(loader, "gameserver.broker.registration_expiration_days", 8),
 				FactionsSearchMode = GetBoolWithEnvironment(loader, "gameserver.search.factions.mode", false),
 				SearchGmList = GetBoolWithEnvironment(loader, "gameserver.search.gm.list", false),
@@ -964,6 +965,8 @@ public sealed class GameServerCustomOptions
 	public bool SpeakingBetweenFactions { get; init; }
 
 	public int LevelToWhisper { get; init; } = 10;
+
+	public int MacrosLimit { get; init; } = 12;
 
 	public int BrokerRegistrationExpirationDays { get; init; } = 8;
 

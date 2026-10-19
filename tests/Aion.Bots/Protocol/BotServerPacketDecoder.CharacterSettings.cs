@@ -78,12 +78,13 @@ public sealed partial class BotServerPacketDecoder
 	private static IReadOnlyDictionary<string, object?> DecodeMacroList(ReadOnlySpan<byte> body)
 	{
 		var r = new PacketBodyReader(body);
-		int playerObjectId = r.ReadInt32(); byte clear = r.ReadByte(); int count = -r.ReadInt16();
-		if (clear > 1 || count < 0 || count > r.Remaining / 3) throw new InvalidDataException("Invalid macro-list flags or count.");
+		int playerObjectId = r.ReadInt32(); byte clear = r.ReadByte(); int signedCount = r.ReadInt16();
+		int count = Math.Abs(signedCount);
+		if (clear > 1 || count > r.Remaining / 3) throw new InvalidDataException("Invalid macro-list flags or count.");
 		var macros = new BotMacro[count];
 		for (int i = 0; i < macros.Length; i++) macros[i] = new(r.ReadByte(), r.ReadString());
 		if (r.Remaining != 0) throw new InvalidDataException("Macro list has unexpected trailing bytes.");
-		return Fields(("playerObjectId", playerObjectId), ("clearList", clear == 1), ("macros", macros));
+		return Fields(("playerObjectId", playerObjectId), ("clearList", clear == 1), ("isLast", signedCount <= 0), ("macros", macros));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeMacroResult(ReadOnlySpan<byte> body)

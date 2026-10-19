@@ -26,6 +26,10 @@ public static class CustomConfig
     [Property(key: "gameserver.chat.whisper.level", defaultValue: "10")]
     public static int LEVEL_TO_WHISPER = 10;
 
+    /// <summary>Maximum number of macros per character.</summary>
+    [Property(key: "gameserver.macros.limit", defaultValue: "12")]
+    public static int MACROS_LIMIT = 12;
+
     /// <summary>
     /// Multiplier applied to every NPC/gatherable respawn delay (the per-spawn respawn_time from the spawn data).
     /// 1.0 = retail/Java behaviour (no change); 0.5 = respawn twice as fast; 2.0 = twice as slow. A spawn with

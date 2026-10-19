@@ -17,6 +17,8 @@ using Aion.GameServer.Model.Team.Legion;
 using Aion.GameServer.Model.Templates.Items;
 using Aion.GameServer.Model.Templates.Items.Actions;
 using Aion.GameServer.Services;
+using Aion.GameServer.Network.Aion.ServerPackets;
+using Aion.GameServer.Utils.Collections;
 using Aion.GameServer.Services.Items;
 using Aion.GameServer.Utils;
 using Aion.GameServer.World;
@@ -325,6 +327,15 @@ public class PlayerService
         {
             PlayerMacrosDAO.DeleteMacro(player.GetObjectId(), macroOrder);
         }
+    }
+
+    /// <summary>Sends the whole macro list, replacing the client's current list.</summary>
+    public static void SendMacroList(Player player)
+    {
+        SplitList<Macros.Macro> parts = new DynamicServerPacketBodySplitList<Macros.Macro>(player.GetMacros().GetAll(), true,
+            SM_MACRO_LIST.STATIC_BODY_SIZE, SM_MACRO_LIST.DYNAMIC_BODY_PART_SIZE_CALCULATOR);
+        foreach (var part in parts)
+            PacketSendUtility.SendPacket(player, new SM_MACRO_LIST(player.GetObjectId(), part, part.IsFirst(), part.IsLast()));
     }
 
     public static string GetPlayerName(int objectId)

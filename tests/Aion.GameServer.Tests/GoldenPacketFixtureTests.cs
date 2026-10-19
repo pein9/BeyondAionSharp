@@ -294,7 +294,7 @@ public sealed class GoldenPacketFixtureTests
 		"SM_CHARACTER_SELECT" => ReconstructCharacterSelect(inputs),
 		"SM_AFTER_SIEGE_LOCINFO_475" => new SM_AFTER_SIEGE_LOCINFO_475(),
 		"SM_NEARBY_QUESTS" => new SM_NEARBY_QUESTS(ReconstructIntIntMap(inputs.GetProperty("entries"))),
-		"SM_MACRO_LIST" => new SM_MACRO_LIST(inputs.GetProperty("playerObjectId").GetInt32(), ReconstructMacros(inputs.GetProperty("macros")), inputs.GetProperty("clearList").GetBoolean()),
+		"SM_MACRO_LIST" => new SM_MACRO_LIST(inputs.GetProperty("playerObjectId").GetInt32(), ReconstructMacros(inputs.GetProperty("macros")), inputs.GetProperty("clearList").GetBoolean(), true),
 		"SM_FIRST_SHOW_DECOMPOSABLE" => new SM_FIRST_SHOW_DECOMPOSABLE(inputs.GetProperty("objectId").GetInt32(), ReconstructResultedItems(inputs.GetProperty("items"))),
 		"SM_SECONDARY_SHOW_DECOMPOSABLE" => new SM_SECONDARY_SHOW_DECOMPOSABLE(inputs.GetProperty("objectId").GetInt32(), ReconstructResultedItems(inputs.GetProperty("items"))),
 		// ----- Batch 11 -----

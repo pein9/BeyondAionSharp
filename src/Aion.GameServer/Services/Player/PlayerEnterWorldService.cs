@@ -313,7 +313,7 @@ public sealed class PlayerEnterWorldService
         MailService.OnPlayerLogin(player);
         HousingBidService.GetInstance().OnPlayerLogin(player); // must ensure player mailbox is initialized first
         AtreianPassportService.GetInstance().OnLogin(player);
-        SendMacroList(client, player);
+        PlayerService.SendMacroList(player);
         client.SendPacket(new SM_RECIPE_LIST(player.GetRecipeList().GetRecipeList()));
         BrokerService.GetInstance().OnPlayerLogin(player);
         HousingService.GetInstance().OnPlayerLogin(player); // must ensure player mailbox is initialized first
@@ -509,13 +509,6 @@ public sealed class PlayerEnterWorldService
             client.SendPacket(new SM_WAREHOUSE_INFO(null, storageType, 0, false, player));
             client.SendPacket(new SM_WAREHOUSE_INFO(null, i, 0, false, player));
         }
-    }
-
-    private static void SendMacroList(AionConnection client, Player player)
-    {
-        SplitList<Macros.Macro> macroSplitList = new DynamicServerPacketBodySplitList<Macros.Macro>(player.GetMacros().GetAll(), true, SM_MACRO_LIST.STATIC_BODY_SIZE,
-            SM_MACRO_LIST.DYNAMIC_BODY_PART_SIZE_CALCULATOR);
-        macroSplitList.ForEach(part => PacketSendUtility.SendPacket(player, new SM_MACRO_LIST(player.GetObjectId(), part, part.IsFirst())));
     }
 }
 

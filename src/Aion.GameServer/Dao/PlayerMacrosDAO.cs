@@ -1,4 +1,6 @@
 using System;
+using System.Data.Common;
+using Aion.GameServer.Configs.Main;
 using Microsoft.Extensions.Logging;
 using MySqlConnector;
 using Aion.Commons.Database;
@@ -110,15 +112,25 @@ public class PlayerMacrosDAO
             stmt.CommandText = SELECT_QUERY;
             stmt.Parameters.Add(new MySqlParameter { Value = playerId });
             using MySqlDataReader rset = stmt.ExecuteReader();
-            while (rset.Read())
-            {
-                macros.Add(rset.GetInt32(rset.GetOrdinal("order")), rset.GetString(rset.GetOrdinal("macro")));
-            }
+            ReadMacros(rset, macros, playerId);
         }
         catch (Exception e)
         {
             log.LogError(e, "Could not load macros for player " + playerId);
         }
         return macros;
+    }
+
+    // Invalid stored IDs must not abort later valid macros in the same load.
+    internal static void ReadMacros(DbDataReader rset, Macros macros, int playerId)
+    {
+        while (rset.Read())
+        {
+            int order = rset.GetInt32(rset.GetOrdinal("order"));
+            if (Macros.IsValidId(order))
+                macros.Add(order, rset.GetString(rset.GetOrdinal("macro")));
+            else
+                log.LogWarning("Skipped macro " + order + " of player " + playerId + " (limit is " + CustomConfig.MACROS_LIMIT + ")");
+        }
     }
 }
