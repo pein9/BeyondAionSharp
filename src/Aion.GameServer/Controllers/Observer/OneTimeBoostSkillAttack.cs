@@ -1,7 +1,9 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Aion.GameServer.Model.Stats.Calc;
 using Aion.GameServer.SkillEngine.Model;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Controllers.Observer;
 
@@ -42,7 +44,13 @@ public sealed class OneTimeBoostSkillAttack
     {
         if (dmgPercent == 0 && dmgFlat == 0)
             return;
-        if (Interlocked.Decrement(ref remainingCount) <= 0)
-            effect.EndEffect();
+        // All targets/effects are calculated in a row; keep the final charge's
+        // bonus available to the rest of the attack before ending the boost.
+        if (Interlocked.Decrement(ref remainingCount) == 0)
+            ThreadPoolManager.GetInstance().Schedule(_ =>
+            {
+                effect.EndEffect();
+                return ValueTask.CompletedTask;
+            }, TimeSpan.FromMilliseconds(10));
     }
 }

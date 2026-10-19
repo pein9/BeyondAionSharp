@@ -66,6 +66,10 @@ public sealed class OneTimeBoostSkillAttackPortTests
             Assert.Same(boost, player.GetObserveController().GetOneTimeBoostSkillAttack(SkillType.MAGICAL));
         }
         boost.ConsumeCharge();
+        Assert.Same(boost, player.GetObserveController().GetOneTimeBoostSkillAttack(SkillType.MAGICAL));
+        harness.Clock.Advance(TimeSpan.FromMilliseconds(9));
+        Assert.Same(boost, player.GetObserveController().GetOneTimeBoostSkillAttack(SkillType.MAGICAL));
+        harness.Clock.Advance(TimeSpan.FromMilliseconds(1));
         Assert.Null(player.GetObserveController().GetOneTimeBoostSkillAttack(SkillType.MAGICAL));
         Assert.Empty(harness.Clock.Faults);
     }
@@ -161,7 +165,7 @@ public sealed class OneTimeBoostSkillAttackPortTests
     }
 
     [Fact]
-    public void RealSkillDamageGetsFlatAndPercentBonusAndConsumesTheLastChargeImmediately()
+    public void RealSkillDamageGetsTheBonusForAllCalculationsBeforeTheDeferredExpiry()
     {
         using var harness = BossAiHarness.For().Build();
         var player = harness.SpawnPlayer();
@@ -175,6 +179,8 @@ public sealed class OneTimeBoostSkillAttackPortTests
         int plain = Damage();
         StartBoost(player, new OneTimeBoostSkillAttackEffect { type = SkillType.MAGICAL, Value = 50, dmgFlat = 10, count = 1 });
         Assert.Equal((int)(plain * 1.5f + 10), Damage());
+        Assert.Equal((int)(plain * 1.5f + 10), Damage());
+        harness.Clock.Advance(TimeSpan.FromMilliseconds(10));
         Assert.Null(player.GetObserveController().GetOneTimeBoostSkillAttack(SkillType.MAGICAL));
         Assert.Equal(plain, Damage());
     }
