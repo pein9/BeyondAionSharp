@@ -29,6 +29,11 @@ public abstract class UseableHouseObject : HouseObject
         return usingPlayer.Get() != 0;
     }
 
+    public bool IsOccupiedBy(Player player)
+    {
+        return usingPlayer.Get() == player.GetObjectId();
+    }
+
     public bool SetOccupant(Player player)
     {
         return usingPlayer.CompareAndSet(0, player.GetObjectId()) || usingPlayer.Get() == player.GetObjectId();

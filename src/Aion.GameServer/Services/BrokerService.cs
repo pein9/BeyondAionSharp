@@ -1,4 +1,5 @@
 using System;
+using Aion.GameServer.Utils.Audit;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -279,6 +280,13 @@ public class BrokerService
                 return;
             }
 
+            if (itemCount > buyingItem.GetItemCount() || itemCount < buyingItem.GetItemCount() && !buyingItem.IsSplittingAvailable())
+            {
+                AuditLogger.Log(player, "tried to buy " + itemCount + " of " + buyingItem.GetItemCount() + " broker items (splitting allowed: "
+                    + buyingItem.IsSplittingAvailable().ToString().ToLowerInvariant() + ")");
+                return;
+            }
+
             Item item = buyingItem.GetItem();
             long price = buyingItem.GetPrice() * itemCount;
             if (player.GetInventory().IsFull(item.GetItemTemplate().GetExtraInventoryId()))
@@ -298,7 +306,9 @@ public class BrokerService
                 BrokerOpSaveTask bost = new BrokerOpSaveTask(buyingItem, buyingItem.GetItem(), player.GetInventory().GetKinahItem(), player.GetObjectId(), buyingItem.GetSellerId());
                 saveManager.Add(bost);
                 // creating new broker item which will be settled
-                BrokerItem soldItem = new BrokerItem(ItemFactory.NewItem(buyingItem.GetItemId(), itemCount), buyingItem.GetPrice(), buyingItem.GetSellerId(),
+                Item soldPart = ItemFactory.NewItem(buyingItem.GetItemId(), itemCount);
+                soldPart.SetExpireTime(item.GetExpireTime());
+                BrokerItem soldItem = new BrokerItem(soldPart, buyingItem.GetPrice(), buyingItem.GetSellerId(),
                     buyingItem.IsSplittingAvailable(), buyingItem.GetItemBrokerRace());
                 buyingItem = soldItem;
                 item = buyingItem.GetItem();

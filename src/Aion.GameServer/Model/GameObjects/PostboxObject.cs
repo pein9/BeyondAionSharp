@@ -1,4 +1,3 @@
-using Aion.GameServer.Services.Players;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.House;
 using Aion.GameServer.Model.Templates.Housing;
@@ -23,7 +22,7 @@ public class PostboxObject : UseableHouseObject<HousingPostbox>
             return;
         }
 
-        player.GetMailbox().mailBoxState = PlayerMailboxState.REGULAR;
+        player.GetMailbox().Open(false, this);
         PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_HOUSING_OBJECT_USE(GetObjectTemplate().GetL10n()));
         PacketSendUtility.SendPacket(player, new SM_DIALOG_WINDOW(GetObjectId(), DialogPage.MAIL.Id()));
         PacketSendUtility.SendPacket(player, new SM_OBJECT_USE_UPDATE(player.GetObjectId(), 0, 0, this));

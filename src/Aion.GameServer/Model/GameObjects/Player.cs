@@ -93,6 +93,7 @@ public partial class Player : Creature
     private int resurrectionSkill = 0;
     private bool isFlyingBeforeDeath = false;
     private Npc postman = null;
+    private StorageManager? storageManager;
     private bool isInResurrectPosState = false;
     private float resPosX = 0;
     private float resPosY = 0;

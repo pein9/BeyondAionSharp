@@ -31,6 +31,11 @@ public class PetFunction
         return ratePrice;
     }
 
+    public int GetPetBagStorageId()
+    {
+        return Aion.GameServer.Model.Items.Storage.StorageType.PET_BAG_MIN - 3 + id;
+    }
+
     public static PetFunction CreateEmpty()
     {
         PetFunction result = new PetFunction();

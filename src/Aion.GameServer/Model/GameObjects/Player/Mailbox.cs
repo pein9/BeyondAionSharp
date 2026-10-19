@@ -21,6 +21,17 @@ public class Mailbox
         this.owner = player;
     }
 
+    public void Open(bool isExpress, VisibleObject mailboxObject)
+    {
+        mailBoxState = isExpress ? Aion.GameServer.Services.Players.PlayerMailboxState.EXPRESS : Aion.GameServer.Services.Players.PlayerMailboxState.REGULAR;
+        owner.SetStorageManager(Aion.GameServer.Model.Items.Storage.StorageType.MAILBOX, mailboxObject);
+    }
+
+    public void Close()
+    {
+        mailBoxState = Aion.GameServer.Services.Players.PlayerMailboxState.CLOSED;
+    }
+
     public void PutLetterToMailbox(Aion.GameServer.Model.GameObjects.Letter letter)
     {
         if (HaveFreeSlots())
@@ -110,11 +121,13 @@ public class Mailbox
         return mails.Count < 100;
     }
 
-    public void RemoveLetter(int letterId)
+    public bool RemoveLetter(int letterId)
     {
-        mails.TryRemove(letterId, out _);
+        if (!mails.TryRemove(letterId, out _))
+            return false;
         UploadReserveLetters();
         owner.GetCommonData().SetMailboxLetters(Size());
+        return true;
     }
 
     /// <summary>Current size of mailbox (including those in overflow storage)</summary>

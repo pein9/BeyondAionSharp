@@ -1,6 +1,8 @@
 using Aion.Bots.Protocol;
 using Aion.GameServer.Model.Team.Legion;
 using Aion.GameServer.Network.Aion;
+using Aion.GameServer.Network.Aion.ClientPackets;
+using System.Reflection;
 
 namespace Aion.GameServer.Tests;
 
@@ -36,6 +38,7 @@ public sealed partial class BotGameClientPacketWriterTests
 				new Dictionary<string, object?> { ["page"] = 2, ["type"] = (LegionHistoryAction.Type)type });
 		foreach (bool deposit in new[] { false, true })
 			yield return C("legion-kinah-" + deposit, GameClientPackets.LegionWarehouseKinah(5_000_000_001L, deposit), game,
-				new Dictionary<string, object?> { ["amount"] = 5_000_000_001L, ["actionType"] = (byte)(deposit ? 1 : 0) });
+                new Dictionary<string, object?> { ["amount"] = 5_000_000_001L,
+                    ["action"] = Enum.Parse(typeof(CM_LEGION_WH_KINAH).GetNestedType("Action", BindingFlags.NonPublic)!, deposit ? "DEPOSIT" : "WITHDRAW") });
 	}
 }

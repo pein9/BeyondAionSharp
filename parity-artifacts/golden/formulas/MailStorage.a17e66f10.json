@@ -1,0 +1,544 @@
+{
+  "sourceJavaCommit": "a17e66f105a67479af04055ef9d143401e13eb19",
+  "sourceHashes": {
+    "model/items/storage/StorageType.java": "6157f6e44ed3aef33895f5d55318b3a1d57f1d35cd95bba61f6b70f180630899",
+    "model/gameobjects/player/StorageManager.java": "6eb42d4aa029832ce2e4504de9100dc3839468aa09f7da14b6c370b29ce5adeb",
+    "model/templates/pet/PetFunction.java": "54971afcf8a65794055c6e2a399bb8a7680678c7bd5a0681eceeb223b4ad9f2f",
+    "services/BrokerService.java": "bc16f5ef7ee062c19b02531f8305e900258757e20c1a6ff12b573d7ce520ea28",
+    "network/aion/clientpackets/CM_READ_EXPRESS_MAIL.java": "acdf8167e4c1485ef68b79eb13183183ab52bde89e85c6d3936ae589b0a419a8",
+    "network/aion/clientpackets/CM_LEGION_WH_KINAH.java": "59f1fb3b9029e31906c98d7f47fc2619716749fd3511811521fbe750a8d3755e"
+  },
+  "captureBoundary": "Exact enum/record, pet method, broker conditional, kinah reader/action enum and cooldown body. Scalar Player/Broker, byte readers and clock stubs; runtime service behavior tested separately in C#.",
+  "storageMatches": [
+    {
+      "opened": 0,
+      "name": "CUBE",
+      "allowed": [
+        0
+      ]
+    },
+    {
+      "opened": 1,
+      "name": "REGULAR_WAREHOUSE",
+      "allowed": [
+        1,
+        2
+      ]
+    },
+    {
+      "opened": 2,
+      "name": "ACCOUNT_WAREHOUSE",
+      "allowed": [
+        2
+      ]
+    },
+    {
+      "opened": 3,
+      "name": "LEGION_WAREHOUSE",
+      "allowed": [
+        3
+      ]
+    },
+    {
+      "opened": 32,
+      "name": "PET_BAG_6",
+      "allowed": [
+        32
+      ]
+    },
+    {
+      "opened": 33,
+      "name": "PET_BAG_12",
+      "allowed": [
+        33
+      ]
+    },
+    {
+      "opened": 34,
+      "name": "PET_BAG_18",
+      "allowed": [
+        34
+      ]
+    },
+    {
+      "opened": 35,
+      "name": "PET_BAG_24",
+      "allowed": [
+        35
+      ]
+    },
+    {
+      "opened": 36,
+      "name": "CASH_PET_BAG_12",
+      "allowed": [
+        36
+      ]
+    },
+    {
+      "opened": 37,
+      "name": "CASH_PET_BAG_18",
+      "allowed": [
+        37
+      ]
+    },
+    {
+      "opened": 38,
+      "name": "CASH_PET_BAG_30",
+      "allowed": [
+        38
+      ]
+    },
+    {
+      "opened": 39,
+      "name": "CASH_PET_BAG_24",
+      "allowed": [
+        39
+      ]
+    },
+    {
+      "opened": 40,
+      "name": "PET_BAG_30",
+      "allowed": [
+        40
+      ]
+    },
+    {
+      "opened": 41,
+      "name": "CASH_PET_BAG_26",
+      "allowed": [
+        41
+      ]
+    },
+    {
+      "opened": 42,
+      "name": "CASH_PET_BAG_32",
+      "allowed": [
+        42
+      ]
+    },
+    {
+      "opened": 43,
+      "name": "CASH_PET_BAG_34",
+      "allowed": [
+        43
+      ]
+    },
+    {
+      "opened": 60,
+      "name": "HOUSE_STORAGE_01",
+      "allowed": [
+        60
+      ]
+    },
+    {
+      "opened": 61,
+      "name": "HOUSE_STORAGE_02",
+      "allowed": [
+        61
+      ]
+    },
+    {
+      "opened": 62,
+      "name": "HOUSE_STORAGE_03",
+      "allowed": [
+        62
+      ]
+    },
+    {
+      "opened": 63,
+      "name": "HOUSE_STORAGE_04",
+      "allowed": [
+        63
+      ]
+    },
+    {
+      "opened": 64,
+      "name": "HOUSE_STORAGE_05",
+      "allowed": [
+        64
+      ]
+    },
+    {
+      "opened": 65,
+      "name": "HOUSE_STORAGE_06",
+      "allowed": [
+        65
+      ]
+    },
+    {
+      "opened": 66,
+      "name": "HOUSE_STORAGE_07",
+      "allowed": [
+        66
+      ]
+    },
+    {
+      "opened": 67,
+      "name": "HOUSE_STORAGE_08",
+      "allowed": [
+        67
+      ]
+    },
+    {
+      "opened": 68,
+      "name": "HOUSE_STORAGE_09",
+      "allowed": [
+        68
+      ]
+    },
+    {
+      "opened": 69,
+      "name": "HOUSE_STORAGE_10",
+      "allowed": [
+        69
+      ]
+    },
+    {
+      "opened": 70,
+      "name": "HOUSE_STORAGE_11",
+      "allowed": [
+        70
+      ]
+    },
+    {
+      "opened": 71,
+      "name": "HOUSE_STORAGE_12",
+      "allowed": [
+        71
+      ]
+    },
+    {
+      "opened": 72,
+      "name": "HOUSE_STORAGE_13",
+      "allowed": [
+        72
+      ]
+    },
+    {
+      "opened": 73,
+      "name": "HOUSE_STORAGE_14",
+      "allowed": [
+        73
+      ]
+    },
+    {
+      "opened": 74,
+      "name": "HOUSE_STORAGE_15",
+      "allowed": [
+        74
+      ]
+    },
+    {
+      "opened": 75,
+      "name": "HOUSE_STORAGE_16",
+      "allowed": [
+        75
+      ]
+    },
+    {
+      "opened": 76,
+      "name": "HOUSE_STORAGE_17",
+      "allowed": [
+        76
+      ]
+    },
+    {
+      "opened": 77,
+      "name": "HOUSE_STORAGE_18",
+      "allowed": [
+        77
+      ]
+    },
+    {
+      "opened": 78,
+      "name": "HOUSE_STORAGE_19",
+      "allowed": [
+        78
+      ]
+    },
+    {
+      "opened": 79,
+      "name": "HOUSE_STORAGE_20",
+      "allowed": [
+        79
+      ]
+    },
+    {
+      "opened": 126,
+      "name": "BROKER",
+      "allowed": [
+        126
+      ]
+    },
+    {
+      "opened": 127,
+      "name": "MAILBOX",
+      "allowed": [
+        127
+      ]
+    }
+  ],
+  "petCases": [
+    {
+      "id": -2147483648,
+      "storage": -2147483619
+    },
+    {
+      "id": -5,
+      "storage": 24
+    },
+    {
+      "id": 0,
+      "storage": 29
+    },
+    {
+      "id": 3,
+      "storage": 32
+    },
+    {
+      "id": 4,
+      "storage": 33
+    },
+    {
+      "id": 5,
+      "storage": 34
+    },
+    {
+      "id": 6,
+      "storage": 35
+    },
+    {
+      "id": 7,
+      "storage": 36
+    },
+    {
+      "id": 8,
+      "storage": 37
+    },
+    {
+      "id": 9,
+      "storage": 38
+    },
+    {
+      "id": 10,
+      "storage": 39
+    },
+    {
+      "id": 11,
+      "storage": 40
+    },
+    {
+      "id": 12,
+      "storage": 41
+    },
+    {
+      "id": 13,
+      "storage": 42
+    },
+    {
+      "id": 14,
+      "storage": 43
+    },
+    {
+      "id": 2147483647,
+      "storage": -2147483620
+    }
+  ],
+  "brokerCases": [
+    {
+      "split": false,
+      "count": -9223372036854775808,
+      "rejected": true
+    },
+    {
+      "split": false,
+      "count": -1,
+      "rejected": true
+    },
+    {
+      "split": false,
+      "count": 0,
+      "rejected": true
+    },
+    {
+      "split": false,
+      "count": 1,
+      "rejected": true
+    },
+    {
+      "split": false,
+      "count": 9,
+      "rejected": true
+    },
+    {
+      "split": false,
+      "count": 10,
+      "rejected": false
+    },
+    {
+      "split": false,
+      "count": 11,
+      "rejected": true
+    },
+    {
+      "split": false,
+      "count": 9223372036854775807,
+      "rejected": true
+    },
+    {
+      "split": true,
+      "count": -9223372036854775808,
+      "rejected": false
+    },
+    {
+      "split": true,
+      "count": -1,
+      "rejected": false
+    },
+    {
+      "split": true,
+      "count": 0,
+      "rejected": false
+    },
+    {
+      "split": true,
+      "count": 1,
+      "rejected": false
+    },
+    {
+      "split": true,
+      "count": 9,
+      "rejected": false
+    },
+    {
+      "split": true,
+      "count": 10,
+      "rejected": false
+    },
+    {
+      "split": true,
+      "count": 11,
+      "rejected": true
+    },
+    {
+      "split": true,
+      "count": 9223372036854775807,
+      "rejected": true
+    }
+  ],
+  "cooldowns": [
+    {
+      "now": 0,
+      "expected": {
+        "1": 600000,
+        "3": 0,
+        "4": 1
+      }
+    },
+    {
+      "now": 1000,
+      "expected": {
+        "1": 601000,
+        "3": 1000,
+        "4": 1001
+      }
+    },
+    {
+      "now": -9223372036854775798,
+      "expected": {
+        "1": -9223372036854175798,
+        "3": -9223372036854775798,
+        "4": -9223372036854775797
+      }
+    },
+    {
+      "now": 9223372036854775797,
+      "expected": {
+        "3": 9223372036854775797,
+        "4": 9223372036854775798
+      }
+    }
+  ],
+  "kinahPackets": [
+    {
+      "bodyHex": "000000000000008000",
+      "amount": -9223372036854775808,
+      "action": "WITHDRAW"
+    },
+    {
+      "bodyHex": "000000000000008001",
+      "amount": -9223372036854775808,
+      "action": "DEPOSIT"
+    },
+    {
+      "bodyHex": "000000000000008002",
+      "amount": -9223372036854775808,
+      "action": null
+    },
+    {
+      "bodyHex": "0000000000000080FF",
+      "amount": -9223372036854775808,
+      "action": null
+    },
+    {
+      "bodyHex": "FFFFFFFFFFFFFFFF00",
+      "amount": -1,
+      "action": "WITHDRAW"
+    },
+    {
+      "bodyHex": "FFFFFFFFFFFFFFFF01",
+      "amount": -1,
+      "action": "DEPOSIT"
+    },
+    {
+      "bodyHex": "FFFFFFFFFFFFFFFF02",
+      "amount": -1,
+      "action": null
+    },
+    {
+      "bodyHex": "FFFFFFFFFFFFFFFFFF",
+      "amount": -1,
+      "action": null
+    },
+    {
+      "bodyHex": "2A0000000000000000",
+      "amount": 42,
+      "action": "WITHDRAW"
+    },
+    {
+      "bodyHex": "2A0000000000000001",
+      "amount": 42,
+      "action": "DEPOSIT"
+    },
+    {
+      "bodyHex": "2A0000000000000002",
+      "amount": 42,
+      "action": null
+    },
+    {
+      "bodyHex": "2A00000000000000FF",
+      "amount": 42,
+      "action": null
+    },
+    {
+      "bodyHex": "FFFFFFFFFFFFFF7F00",
+      "amount": 9223372036854775807,
+      "action": "WITHDRAW"
+    },
+    {
+      "bodyHex": "FFFFFFFFFFFFFF7F01",
+      "amount": 9223372036854775807,
+      "action": "DEPOSIT"
+    },
+    {
+      "bodyHex": "FFFFFFFFFFFFFF7F02",
+      "amount": 9223372036854775807,
+      "action": null
+    },
+    {
+      "bodyHex": "FFFFFFFFFFFFFF7FFF",
+      "amount": 9223372036854775807,
+      "action": null
+    }
+  ]
+}

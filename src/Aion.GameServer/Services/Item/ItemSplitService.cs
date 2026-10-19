@@ -6,6 +6,7 @@ using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Services;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.IdFactory;
+using Aion.GameServer.Taskmanager.Tasks;
 using static Aion.GameServer.Services.Items.ItemPacketService;
 using ItemUpdateType = Aion.GameServer.Services.Items.ItemPacketService.ItemUpdateType;
 
@@ -53,6 +54,12 @@ public class ItemSplitService
             }
         }
 
+        if (sourceStorageType == destinationStorageType && sourceStorage.GetStorageType() == StorageType.LEGION_WAREHOUSE
+            && !ItemRestrictionService.IsLegionWarehouseUser(player))
+            return;
+        if (sourceStorageType == destinationStorageType && !ItemRestrictionService.IsStorageOpen(player, sourceStorage.GetStorageType()))
+            return;
+
         if (sourceStorageType != destinationStorageType
             && (ItemRestrictionService.IsItemRestrictedTo(player, sourceItem, destStorage.GetStorageType()) || ItemRestrictionService.IsItemRestrictedFrom(
                 player, sourceItem, sourceStorage.GetStorageType())))
@@ -85,6 +92,7 @@ public class ItemSplitService
                 LegionService.GetInstance().AddWHItemHistory(player, sourceItem.GetItemId(), splitAmount, sourceStorage, destStorage);
             }
             Item newItem = ItemFactory.NewItem(sourceItem.GetItemTemplate().GetTemplateId(), splitAmount);
+            newItem.SetExpireTime(sourceItem.GetExpireTime());
             if (sourceStorageType == destinationStorageType)
                 newItem.SetEquipmentSlot(slotNum);
             sourceStorage.DecreaseItemCount(sourceItem, splitAmount, sourceStorageType == destinationStorageType ? ItemUpdateType.DEC_ITEM_SPLIT
@@ -94,6 +102,10 @@ public class ItemSplitService
             {
                 // if item was not added - we can release its id
                 IDFactory.GetInstance().ReleaseId(newItem.GetObjectId());
+            }
+            else
+            {
+                ExpireTimerTask.GetInstance().RegisterExpirable(newItem, player);
             }
         }
         else if (targetItem.GetItemId() == sourceItem.GetItemId())
@@ -124,7 +136,7 @@ public class ItemSplitService
 
     private static void MoveKinah(Player player, IStorage source, long splitAmount)
     {
-        if (source.GetKinah() < splitAmount)
+        if (source.GetKinah() < splitAmount || !ItemRestrictionService.IsAtStorageManager(player, StorageType.ACCOUNT_WAREHOUSE))
             return;
         if (source.GetStorageType() == StorageType.CUBE)
         {

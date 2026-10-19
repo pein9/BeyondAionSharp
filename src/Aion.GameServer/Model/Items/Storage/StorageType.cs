@@ -142,6 +142,14 @@ public sealed class StorageType
         return VALUES;
     }
 
+    // Java enum names are used by the storage-access audit messages.
+    private static readonly Dictionary<StorageType, string> NAMES = typeof(StorageType)
+        .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+        .Where(field => field.FieldType == typeof(StorageType))
+        .ToDictionary(field => (StorageType)field.GetValue(null)!, field => field.Name);
+
+    public override string ToString() => NAMES[this];
+
     public static StorageType GetStorageTypeById(int id)
     {
         foreach (StorageType st in VALUES)

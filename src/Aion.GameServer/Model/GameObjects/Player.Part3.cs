@@ -326,6 +326,22 @@ public partial class Player
         this.postman = postman;
     }
 
+    public VisibleObject? GetStorageManager(Aion.GameServer.Model.Items.Storage.StorageType storageType)
+    {
+        return storageManager != null && storageManager.Matches(storageType) ? GetKnownList().GetObject(storageManager.ObjectId) : null;
+    }
+
+    public void UnsetStorageManager(VisibleObject manager)
+    {
+        if (storageManager != null && storageManager.ObjectId == manager.GetObjectId())
+            storageManager = null;
+    }
+
+    public void SetStorageManager(Aion.GameServer.Model.Items.Storage.StorageType storageType, VisibleObject manager)
+    {
+        storageManager = new StorageManager(storageType, manager.GetObjectId());
+    }
+
     public Aion.GameServer.Model.Account.PlayerAccountData GetAccountData()
     {
         return playerAccountData;

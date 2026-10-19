@@ -38,7 +38,7 @@ public class MailService
     public static void SendMail(Player sender, string recipientName, string title, string message, int attachedItemObjId, long attachedItemCount,
         long attachedKinah, LetterType letterType)
     {
-        if (sender.IsTrading() || recipientName.Length > 16)
+        if (sender.IsTrading() || recipientName.Length > 16 || !IsAtMailbox(sender))
             return;
         if (letterType == LetterType.BLACKCLOUD || attachedKinah < 0)
         {
@@ -90,6 +90,11 @@ public class MailService
             itemMailCommission = (long)(senderItem.GetItemTemplate().GetPrice() * GetQualityPriceRate(senderItem) * attachedItemCount * costFactor);
         }
 
+        if (attachedKinah > senderInventory.GetKinah())
+        {
+            PacketSendUtility.SendPacket(sender, SM_SYSTEM_MESSAGE.STR_NOT_ENOUGH_MONEY());
+            return;
+        }
         if (attachedKinah > 0)
             kinahMailCommission = (long)(attachedKinah * 0.01f * costFactor);
 
@@ -203,6 +208,8 @@ public class MailService
     /// </summary>
     public static void ReadMail(Player player, int letterId)
     {
+        if (!IsAtMailbox(player))
+            return;
         Letter letter = player.GetMailbox().GetLetterFromMailbox(letterId);
         if (letter == null)
         {
@@ -216,6 +223,8 @@ public class MailService
 
     public static void GetAttachments(Player player, int letterId, byte attachmentType)
     {
+        if (!IsAtMailbox(player))
+            return;
         Letter letter = player.GetMailbox().GetLetterFromMailbox(letterId);
 
         if (letter == null)
@@ -264,13 +273,32 @@ public class MailService
 
     public static void DeleteMail(Player player, int[] mailObjId)
     {
+        if (!IsAtMailbox(player))
+            return;
         Mailbox mailbox = player.GetMailbox();
         foreach (int letterId in mailObjId)
         {
-            mailbox.RemoveLetter(letterId);
+            if (!mailbox.RemoveLetter(letterId))
+            {
+                AuditLogger.Log(player, "tried to delete letter " + letterId + " which is not in their mailbox");
+                return;
+            }
             MailDAO.DeleteLetter(letterId);
         }
         PacketSendUtility.SendPacket(player, new SM_MAIL_SERVICE(mailObjId));
+    }
+
+    private static bool IsAtMailbox(Player player)
+    {
+        bool isNear = player.GetStorageManager(StorageType.MAILBOX) switch
+        {
+            Npc npc => PositionUtil.IsInTalkRange(player, npc),
+            HouseObject houseObject => PositionUtil.IsInTalkRange(player, houseObject),
+            _ => false
+        };
+        if (!isNear)
+            PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MAIL_CLICK_POSTBOX_TO_USE());
+        return isNear;
     }
 
     public static void OnPlayerLogin(Player player)

@@ -3,7 +3,6 @@ using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion.ServerPackets;
-using Aion.GameServer.Services.Players;
 using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Handlers.AI;
@@ -19,7 +18,7 @@ public class PostboxAI : NpcAI
 
     protected override void HandleDialogStart(Player player)
     {
-        player.GetMailbox().mailBoxState = PlayerMailboxState.REGULAR;
+        player.GetMailbox().Open(false, GetOwner());
         PacketSendUtility.SendPacket(player, new SM_DIALOG_WINDOW(GetObjectId(), DialogPage.MAIL.Id()));
     }
 

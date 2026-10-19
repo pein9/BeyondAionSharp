@@ -7,6 +7,7 @@ using Aion.GameServer.Model.Templates.Items;
 using Aion.GameServer.Model.Templates.Items.Enums;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Utils;
+using Aion.GameServer.Utils.Audit;
 
 namespace Aion.GameServer.Services.Items;
 
@@ -18,6 +19,8 @@ public class ItemRestrictionService
     /// </summary>
     public static bool IsItemRestrictedFrom(Player player, Item item, StorageType storageType)
     {
+        if (!IsStorageOpen(player, storageType))
+            return true;
         if (storageType == StorageType.LEGION_WAREHOUSE)
         {
             if (!LegionConfig.LEGION_WAREHOUSE || !player.IsLegionMember() || !player.GetLegionMember().HasRights(LegionPermissionsMask.WH_WITHDRAWAL))
@@ -25,6 +28,8 @@ public class ItemRestrictionService
                 PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_GUILD_WAREHOUSE_NO_RIGHT());
                 return true;
             }
+            if (!IsLegionWarehouseUser(player))
+                return true;
         }
         return false;
     }
@@ -34,6 +39,8 @@ public class ItemRestrictionService
     /// </summary>
     public static bool IsItemRestrictedTo(Player player, Item item, StorageType storageType)
     {
+        if (!IsStorageOpen(player, storageType))
+            return true;
         if (storageType == StorageType.REGULAR_WAREHOUSE)
         {
             if (!item.IsStorableInWarehouse())
@@ -67,8 +74,61 @@ public class ItemRestrictionService
                 PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_GUILD_WAREHOUSE_NO_RIGHT());
                 return true;
             }
+            if (!IsLegionWarehouseUser(player))
+                return true;
         }
 
+        return false;
+    }
+
+    public static bool IsStorageOpen(Player player, StorageType storageType)
+    {
+        if (storageType == StorageType.REGULAR_WAREHOUSE || storageType == StorageType.ACCOUNT_WAREHOUSE || storageType == StorageType.LEGION_WAREHOUSE)
+            return IsAtStorageManager(player, storageType);
+        if (storageType.GetId() >= StorageType.PET_BAG_MIN && storageType.GetId() <= StorageType.PET_BAG_MAX)
+            return IsPetBagOpen(player, storageType);
+        if (storageType.GetId() >= StorageType.HOUSE_WH_MIN && storageType.GetId() <= StorageType.HOUSE_WH_MAX)
+            return IsCabinetOpen(player, storageType);
+        return true;
+    }
+
+    private static bool IsCabinetOpen(Player player, StorageType storageType)
+    {
+        var house = player.GetActiveHouse();
+        if (house != null)
+        {
+            int warehouseId = storageType.GetId() - StorageType.HOUSE_WH_MIN + 1;
+            foreach (HouseObject obj in house.GetRegistry().GetSpawnedObjects())
+                if (obj is StorageObject cabinet && cabinet.GetObjectTemplate().GetWarehouseId() == warehouseId && cabinet.IsOccupiedBy(player)
+                    && PositionUtil.IsInTalkRange(player, cabinet))
+                    return true;
+        }
+        AuditLogger.Log(player, "tried to use " + storageType + " without using the cabinet");
+        return false;
+    }
+
+    private static bool IsPetBagOpen(Player player, StorageType storageType)
+    {
+        var warehouse = player.GetPet() == null ? null : player.GetPet().GetObjectTemplate().GetWarehouseFunction();
+        if (warehouse != null && warehouse.GetPetBagStorageId() == storageType.GetId())
+            return true;
+        AuditLogger.Log(player, "tried to use " + storageType + " without the pet that carries it");
+        return false;
+    }
+
+    public static bool IsAtStorageManager(Player player, StorageType storageType)
+    {
+        if (player.GetStorageManager(storageType) is Npc npc && PositionUtil.IsInTalkRange(player, npc))
+            return true;
+        AuditLogger.Log(player, "tried to use " + storageType + " away from a storage manager NPC");
+        return false;
+    }
+
+    public static bool IsLegionWarehouseUser(Player player)
+    {
+        if (player.IsLegionMember() && player.GetLegion().GetLegionWarehouse().GetCurrentUser() == player.GetObjectId())
+            return true;
+        AuditLogger.Log(player, "tried to use the legion warehouse without opening it");
         return false;
     }
 

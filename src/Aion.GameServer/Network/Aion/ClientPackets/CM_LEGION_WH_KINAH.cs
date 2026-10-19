@@ -6,6 +6,7 @@ using Aion.GameServer.Model.Team.Legion;
 using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Services;
+using Aion.GameServer.Services.Items;
 using Aion.GameServer.Utils;
 using State = global::Aion.GameServer.Network.Aion.AionConnection.State;
 
@@ -15,7 +16,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 public class CM_LEGION_WH_KINAH : AionClientPacket
 {
     private long amount;
-    private byte actionType;
+    private Action? action;
 
     public CM_LEGION_WH_KINAH(int opcode, ISet<State> validStates)
         : base(opcode, validStates)
@@ -25,18 +26,18 @@ public class CM_LEGION_WH_KINAH : AionClientPacket
     protected override void ReadImpl()
     {
         amount = ReadQ();
-        actionType = ReadC();
+        action = ReadUC() switch { 0 => Action.WITHDRAW, 1 => Action.DEPOSIT, _ => null };
     }
 
     protected override void RunImpl()
     {
         Player activePlayer = GetConnection().GetActivePlayer();
         LegionMember legionMember = activePlayer.GetLegionMember();
-        if (legionMember == null)
+        if (action == null || legionMember == null || !ItemRestrictionService.IsLegionWarehouseUser(activePlayer))
             return;
-        switch (actionType)
+        switch (action.Value)
         {
-            case 0:
+            case Action.WITHDRAW:
                 if (!legionMember.HasRights(LegionPermissionsMask.WH_WITHDRAWAL))
                 {
                     // You do not have the authority to use the Legion warehouse.
@@ -49,7 +50,7 @@ public class CM_LEGION_WH_KINAH : AionClientPacket
                     LegionService.GetInstance().AddHistory(legionMember.GetLegion(), activePlayer.GetName(), LegionHistoryAction.KINAH_WITHDRAW, amount.ToString(CultureInfo.InvariantCulture));
                 }
                 break;
-            case 1:
+            case Action.DEPOSIT:
                 if (!legionMember.HasRights(LegionPermissionsMask.WH_DEPOSIT))
                 {
                     // You do not have the authority to use the Legion warehouse.
@@ -64,4 +65,6 @@ public class CM_LEGION_WH_KINAH : AionClientPacket
                 break;
         }
     }
+
+    private enum Action { WITHDRAW = 0, DEPOSIT = 1 }
 }

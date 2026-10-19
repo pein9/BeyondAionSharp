@@ -475,6 +475,7 @@ public class LegionService
     {
         if (legionRestrictions.CanOpenWarehouse(player, npc))
         {
+            player.SetStorageManager(StorageType.LEGION_WAREHOUSE, npc);
             LegionWhUpdate(player);
             PacketSendUtility.SendPacket(player, new SM_LEGION_EDIT(0x04, player.GetLegion())); // kinah
             int whLvl = player.GetLegion().GetWarehouseExpansions();

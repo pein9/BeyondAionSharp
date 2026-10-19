@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
@@ -11,10 +12,11 @@ using State = global::Aion.GameServer.Network.Aion.AionConnection.State;
 
 namespace Aion.GameServer.Network.Aion.ClientPackets;
 
-/// <summary>Java parity: network/aion/clientpackets/CM_READ_EXPRESS_MAIL (antness, Guapo). Closes postman (0) or summons it on icon click (1) with express/blackcloud unread + cooldown handling. VisibleObjectSpawner/ThreadPoolManager/LetterType red-tolerated.</summary>
+/// <summary>Java parity: network/aion/clientpackets/CM_READ_EXPRESS_MAIL (antness, Guapo). Closes postman (0) or summons it on icon click (1) with express/blackcloud unread + cooldown handling. Timestamp cooldowns use SystemClock; blackcloud mail bypasses refusal.</summary>
 public class CM_READ_EXPRESS_MAIL : AionClientPacket
 {
     private static readonly ILogger log = AionLog.For(nameof(CM_READ_EXPRESS_MAIL));
+    private static readonly ConcurrentDictionary<int, long> cooldownByPlayer = new();
     private byte action;
 
     public CM_READ_EXPRESS_MAIL(int opcode, ISet<State> validStates)
@@ -35,10 +37,7 @@ public class CM_READ_EXPRESS_MAIL : AionClientPacket
         {
             case 0: // window is closed
                 if (player.GetPostman() != null)
-                {
                     player.GetPostman().GetController().Delete();
-                    player.SetPostman(null);
-                }
                 break;
             case 1: // click on icon
                 bool haveUnreadExpress = player.GetMailbox().HaveUnreadByType(LetterType.EXPRESS);
@@ -51,25 +50,31 @@ public class CM_READ_EXPRESS_MAIL : AionClientPacket
                 {
                     PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_POSTMAN_UNABLE_IN_FLIGHT());
                 }
-                else if (haveUnreadBlackcloud)
+                else if (!haveUnreadExpress && !haveUnreadBlackcloud)
                 {
-                    VisibleObjectSpawner.SpawnPostman(player);
+                    return;
                 }
-                else if (haveUnreadExpress)
+                else if (!haveUnreadBlackcloud && cooldownByPlayer.GetValueOrDefault(player.GetObjectId(), 0L) > SystemClock.CurrentMillis())
                 {
-                    if (player.GetController().HasTask(TaskId.EXPRESS_MAIL_USE))
-                    {
-                        PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_POSTMAN_UNABLE_IN_COOLTIME());
-                        return;
-                    }
+                    PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_POSTMAN_UNABLE_IN_COOLTIME());
+                }
+                else
+                {
                     VisibleObjectSpawner.SpawnPostman(player);
-                    player.GetController().AddTask(TaskId.EXPRESS_MAIL_USE,
-                        ThreadPoolManager.GetInstance().Schedule(() => player.GetController().CancelTask(TaskId.EXPRESS_MAIL_USE), 600000)); // 10 min
+                    StartPostmanCooldown(player);
                 }
                 break;
             default:
                 log.LogWarning("{Player} sent unknown read express mail action type: {Action}", player, action);
                 break;
         }
+    }
+    public static void StartPostmanCooldown(Player player)
+    {
+        long now = SystemClock.CurrentMillis();
+        cooldownByPlayer[player.GetObjectId()] = unchecked(now + 600000L);
+        foreach (var entry in cooldownByPlayer)
+            if (entry.Value < now)
+                ((ICollection<KeyValuePair<int, long>>)cooldownByPlayer).Remove(entry);
     }
 }
