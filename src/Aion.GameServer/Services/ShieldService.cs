@@ -88,7 +88,7 @@ public class ShieldService
                     min.Z -= 6;
                     break;
             }
-            RectangleArea rectangleArea = new RectangleArea(null, 0, min.X, min.Y, max.X, max.Y, min.Z, max.Z);
+            RectangleArea rectangleArea = new RectangleArea(min.X, min.Y, max.X, max.Y, min.Z, max.Z);
             if (location.GetZone().Any(z => z.GetAreaTemplate().IntersectsRectangle(rectangleArea)))
             {
                 return true;

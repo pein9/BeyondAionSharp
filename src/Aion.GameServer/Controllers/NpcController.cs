@@ -323,14 +323,6 @@ public class NpcController : CreatureController<Npc>
         Aion.GameServer.Taskmanager.Tasks.MoveTaskManager.GetInstance().RemoveCreature(GetOwner());
     }
 
-    public override void OnEnterZone(Aion.GameServer.World.Zone.ZoneInstance zoneInstance)
-    {
-        if (zoneInstance.GetAreaTemplate().GetZoneName() == null)
-        {
-            log.LogError("No name found for a Zone in the map " + zoneInstance.GetAreaTemplate().GetWorldId());
-        }
-    }
-
     public override bool UseSkill(int skillId, int skillLevel)
     {
         SkillTemplate skillTemplate = DataManager.SKILL_DATA.GetSkillTemplate(skillId);

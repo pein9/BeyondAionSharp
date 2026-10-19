@@ -20,8 +20,8 @@ public class _21080MessageInAWindstream : AbstractQuestHandler
         qe.RegisterQuestNpc(799231).AddOnQuestStart(questId);
         qe.RegisterQuestNpc(799231).AddOnTalkEvent(questId);
         qe.RegisterQuestNpc(799427).AddOnTalkEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("ANTAGOR_CANYON_220070000"), questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("GELKMAROS_FORTRESS_220070000"), questId);
+        qe.RegisterOnEnterZone("ANTAGOR_CANYON_220070000", questId);
+        qe.RegisterOnEnterZone("GELKMAROS_FORTRESS_220070000", questId);
     }
 
     public override bool OnDialogEvent(QuestEnv env)
@@ -69,14 +69,14 @@ public class _21080MessageInAWindstream : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         Player player = env.GetPlayer();
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
         if (qs != null && qs.GetStatus() == QuestStatus.START)
         {
             int var = qs.GetQuestVarById(0);
-            if (zoneName == ZoneName.Get("ANTAGOR_CANYON_220070000"))
+            if (zone.Matches("ANTAGOR_CANYON_220070000"))
             {
                 if (var < 3)
                 {
@@ -84,7 +84,7 @@ public class _21080MessageInAWindstream : AbstractQuestHandler
                     return true;
                 }
             }
-            else if (zoneName == ZoneName.Get("GELKMAROS_FORTRESS_220070000") && var == 4)
+            else if (zone.Matches("GELKMAROS_FORTRESS_220070000") && var == 4)
             {
                 ChangeQuestStep(env, 4, 4, true);
                 return true;

@@ -50,8 +50,8 @@ public class QuestEngine : GameEngine
     private readonly List<int> questOnDie = new();
     private readonly List<int> questOnLogOut = new();
     private readonly List<int> questOnEnterWorld = new();
-    private readonly Dictionary<ZoneName, List<int>> questOnEnterZone = new();
-    private readonly Dictionary<ZoneName, List<int>> questOnLeaveZone = new();
+    private readonly Dictionary<string, List<int>> questOnEnterZone = new();
+    private readonly Dictionary<string, List<int>> questOnLeaveZone = new();
     private readonly Dictionary<string, List<int>> questOnPassFlyingRings = new();
     private readonly List<int> questOnTimerEnd = new();
     private readonly List<int> onInvisibleTimerEnd = new();
@@ -534,11 +534,11 @@ public class QuestEngine : GameEngine
         return true;
     }
 
-    public bool OnKillInZone(QuestEnv env, string zoneName)
+    public bool OnKillInZone(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         try
         {
-            if (questOnKillInZone.TryGetValue(zoneName, out List<int> questIds))
+            if (questOnKillInZone.TryGetValue(zone.GetZoneTemplate().GetName()!, out List<int> questIds))
             {
                 foreach (int questId in questIds)
                 {
@@ -546,7 +546,7 @@ public class QuestEngine : GameEngine
                     if (questHandler != null)
                     {
                         env.SetQuestId(questId);
-                        questHandler.OnKillInZoneEvent(env);
+                        questHandler.OnKillInZoneEvent(env, zone);
                     }
                 }
             }
@@ -559,11 +559,11 @@ public class QuestEngine : GameEngine
         return true;
     }
 
-    public bool OnEnterZone(QuestEnv env, ZoneName zoneName)
+    public bool OnEnterZone(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         try
         {
-            if (questOnEnterZone.TryGetValue(zoneName, out List<int> questIds))
+            if (questOnEnterZone.TryGetValue(zone.GetZoneTemplate().GetName()!, out List<int> questIds))
             {
                 foreach (int questId in questIds)
                 {
@@ -571,7 +571,7 @@ public class QuestEngine : GameEngine
                     if (questHandler != null)
                     {
                         env.SetQuestId(questId);
-                        questHandler.OnEnterZoneEvent(env, zoneName);
+                        questHandler.OnEnterZoneEvent(env, zone);
                     }
                 }
             }
@@ -584,11 +584,11 @@ public class QuestEngine : GameEngine
         return true;
     }
 
-    public bool OnLeaveZone(QuestEnv env, ZoneName zoneName)
+    public bool OnLeaveZone(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         try
         {
-            if (questOnLeaveZone.TryGetValue(zoneName, out List<int> questIds))
+            if (questOnLeaveZone.TryGetValue(zone.GetZoneTemplate().GetName()!, out List<int> questIds))
             {
                 foreach (int questId in questIds)
                 {
@@ -596,7 +596,7 @@ public class QuestEngine : GameEngine
                     if (questHandler != null)
                     {
                         env.SetQuestId(questId);
-                        questHandler.OnLeaveZoneEvent(env, zoneName);
+                        questHandler.OnLeaveZoneEvent(env, zone);
                     }
                 }
             }
@@ -970,19 +970,22 @@ public class QuestEngine : GameEngine
             questOnLogOut.Add(questId);
     }
 
-    public void RegisterOnEnterZone(ZoneName zoneName, int questId)
+    public void RegisterOnEnterZone(string zoneName, int questId)
     {
-        GetOrCreate(questOnEnterZone, zoneName).Add(questId);
+        if (DataManager.ZONE_DATA.ValidateZoneName(zoneName))
+            GetOrCreate(questOnEnterZone, zoneName).Add(questId);
     }
 
     public void RegisterOnKillInZone(string zone, int questId)
     {
-        GetOrCreate(questOnKillInZone, zone).Add(questId);
+        if (DataManager.ZONE_DATA.ValidateZoneName(zone))
+            GetOrCreate(questOnKillInZone, zone).Add(questId);
     }
 
-    public void RegisterOnLeaveZone(ZoneName zoneName, int questId)
+    public void RegisterOnLeaveZone(string zoneName, int questId)
     {
-        GetOrCreate(questOnLeaveZone, zoneName).Add(questId);
+        if (DataManager.ZONE_DATA.ValidateZoneName(zoneName))
+            GetOrCreate(questOnLeaveZone, zoneName).Add(questId);
     }
 
     public void RegisterOnKillRanked(AbyssRankEnum playerRank, int questId)

@@ -285,7 +285,7 @@ public class PvpService
         foreach (Player p in killers)
         {
             foreach (ZoneInstance zone in zones)
-                Aion.GameServer.QuestEngine.QuestEngine.GetInstance().OnKillInZone(new QuestEnv(victim, p, 0), zone.GetAreaTemplate().GetZoneName().ToString());
+                Aion.GameServer.QuestEngine.QuestEngine.GetInstance().OnKillInZone(new QuestEnv(victim, p, 0), zone);
             Aion.GameServer.QuestEngine.QuestEngine.GetInstance().OnKillInWorld(new QuestEnv(victim, p, 0), victim.GetWorldId());
             Aion.GameServer.QuestEngine.QuestEngine.GetInstance().OnKillRanked(new QuestEnv(victim, p, 0), victim.GetAbyssRank().GetRank());
         }

@@ -38,12 +38,11 @@ public class CM_SUBZONE_CHANGE : AionClientPacket
                     continue;
                 foundZones++;
                 PacketSendUtility.SendMessage(player, "Passed zone: unk=" + unk + "; " + zone.GetZoneTemplate().GetZoneType() + " "
-                    + zone.GetAreaTemplate().GetZoneName().ToString());
+                    + zone.GetZoneTemplate().GetName());
             }
             if (foundZones == 0)
             {
                 PacketSendUtility.SendMessage(player, "Passed unknown zone, unk=" + unk);
-                return;
             }
         }
     }

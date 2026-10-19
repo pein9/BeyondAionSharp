@@ -37,7 +37,7 @@ public class _20506MuscleOverMind : AbstractQuestHandler
         int[] mobs = { 219956, 219957 };
         foreach (int mob in mobs)
             qe.RegisterQuestNpc(mob).AddOnKillEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("DF5_SENSORYAREA_Q20506A_206376_2_220080000"), questId); // Mindboggle Waste zone
+        qe.RegisterOnEnterZone("DF5_SENSORYAREA_Q20506A_206376_2_220080000", questId); // Mindboggle Waste zone
         qe.RegisterOnQuestCompleted(questId);
         qe.RegisterOnLevelChanged(questId);
         qe.RegisterOnLogOut(questId);
@@ -123,9 +123,9 @@ public class _20506MuscleOverMind : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
-        if (zoneName == ZoneName.Get("DF5_SENSORYAREA_Q20506A_206376_2_220080000"))
+        if (zone.Matches("DF5_SENSORYAREA_Q20506A_206376_2_220080000"))
         {
             Player player = env.GetPlayer();
             if (player == null)

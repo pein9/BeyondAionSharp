@@ -12,6 +12,7 @@ using Aion.GameServer.World.Zone.Handler;
 
 namespace Aion.GameServer.Tests;
 
+[Collection("GoldenDataManager")]
 public sealed class ZoneHandlerPortTests
 {
     [Fact]
@@ -67,14 +68,15 @@ public sealed class ZoneHandlerPortTests
     public void UnknownZonesHaveNoDummyHandlerAndRegisteredHandlersStillInstantiate()
     {
         var service = Bare<ZoneService>();
-        SetField(typeof(ZoneService), service, "zoneHandlers", new Dictionary<ZoneName, Type>());
-        SetField(typeof(ZoneService), service, "collidableHandlers", new Dictionary<ZoneName, IZoneHandler>());
-        var name = ZoneName.CreateOrGet("PORT_ZONE_HANDLER");
+        SetField(typeof(ZoneService), service, "zoneHandlers", new Dictionary<string, Type>());
+        using var scope = new ZoneCleanupPortTests.DataScope(Info().GetZoneTemplate());
+        var name = "PORT_ZONE_TRACKING";
         Assert.Null(service.GetNewZoneHandler(name));
-        service.AddZoneHandlerClass(name, typeof(ZoneProbeHandler));
+        service.AddZoneHandlerClass(typeof(ZoneProbeHandler));
         Assert.IsType<ZoneProbeHandler>(service.GetNewZoneHandler(name));
     }
 
+    [ZoneNameAnnotation("PORT_ZONE_TRACKING")]
     public sealed class ZoneProbeHandler : IZoneHandler
     {
         public void OnEnterZone(Creature creature, ZoneInstance zone) { }
@@ -99,8 +101,9 @@ public sealed class ZoneHandlerPortTests
 
     private static ZoneInfo Info()
     {
-        var template = new ZoneTemplate { XmlName = "PORT_ZONE_TRACKING", Mapid = 1 };
-        return new ZoneInfo(new SphereArea(template.GetName()!, 1, 0, 0, 0, 1), template);
+        var template = new ZoneTemplate { XmlName = "PORT_ZONE_TRACKING", Mapid = 1,
+            AreaType = AreaType.Sphere, Sphere = new Sphere(0, 0, 0, 1) };
+        return new ZoneInfo(template);
     }
 
     private static T Bare<T>() where T : class => (T)RuntimeHelpers.GetUninitializedObject(typeof(T));

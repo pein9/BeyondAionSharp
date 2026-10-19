@@ -18,7 +18,7 @@ using Aion.GameServer.World.Zone;
 
 namespace Aion.GameServer.Controllers;
 
-/// <summary>Java parity: controllers/HouseController (Rolandas, Neon) : VisibleObjectController&lt;House&gt;. **HouseObject&lt;?&gt;→HouseObject&lt;PlaceableHouseObject&gt;** (matches ported HouseRegistry.GetSpawnedObjects bound). instanceof Player→is Player; enum SpawnType ==; ZoneName.get→ZoneName.Get (class); Math.toRadians→*Math.PI/180; byte compound arithmetic (h-=30); Integer exitMapId→int?. House/HouseObject/SpawnEngine red-tolerated/converged.</summary>
+/// <summary>Java parity: controllers/HouseController (Rolandas, Neon) : VisibleObjectController&lt;House&gt;. **HouseObject&lt;?&gt;→HouseObject&lt;PlaceableHouseObject&gt;** (matches ported HouseRegistry.GetSpawnedObjects bound). instanceof Player→is Player; enum SpawnType ==; zone names use exact strings; Math.toRadians→*Math.PI/180; byte compound arithmetic (h-=30); Integer exitMapId→int?. House/HouseObject/SpawnEngine red-tolerated/converged.</summary>
 public class HouseController : VisibleObjectController<House>
 {
     private static readonly ILogger log = AionLog.For(nameof(HouseController));
@@ -107,7 +107,7 @@ public class HouseController : VisibleObjectController<House>
 
     public void KickVisitors(Player kicker, bool kickFriends, bool ownerChanged)
     {
-        ZoneName houseZone = ZoneName.Get(GetOwner().GetName());
+        string houseZone = GetOwner().GetName();
         GetOwner().GetKnownList().ForEachPlayer(player =>
         {
             if (player.GetObjectId() == GetOwner().GetOwnerId())

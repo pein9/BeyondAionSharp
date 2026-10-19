@@ -81,7 +81,7 @@ public class _13704FonasQuickFix : AbstractQuestHandler
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
         if (qs != null && qs.GetStatus() == QuestStatus.START)
         {
-            if (player.IsInsideZone(ZoneName.Get("LDF4_ADVANCE_ITEMUSEAREA_Q13704_600100000")))
+            if (player.IsInsideZone("LDF4_ADVANCE_ITEMUSEAREA_Q13704_600100000"))
             {
                 return HandlerResultExtensions.FromBoolean(UseQuestItem(env, item, 0, 1, false));
             }

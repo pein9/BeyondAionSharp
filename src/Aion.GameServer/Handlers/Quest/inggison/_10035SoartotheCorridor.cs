@@ -28,7 +28,7 @@ public class _10035SoartotheCorridor : AbstractQuestHandler
         int[] npcs = { 798928, 799025, 798958, 798996, 206363, 702663, 798926 };
         qe.RegisterOnLevelChanged(questId);
         qe.RegisterOnQuestCompleted(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("ANGRIEF_GATE_210050000"), questId);
+        qe.RegisterOnEnterZone("ANGRIEF_GATE_210050000", questId);
         foreach (int mob in mobs)
             qe.RegisterQuestNpc(mob).AddOnKillEvent(questId);
         foreach (int npc in npcs)
@@ -173,14 +173,14 @@ public class _10035SoartotheCorridor : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         Player player = env.GetPlayer();
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
         if (qs != null && qs.GetStatus() == QuestStatus.START)
         {
             int var = qs.GetQuestVarById(0);
-            if (zoneName.Equals(ZoneName.Get("ANGRIEF_GATE_210050000")))
+            if (zone.Equals("ANGRIEF_GATE_210050000"))
             {
                 if (var == 4)
                 {

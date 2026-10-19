@@ -31,7 +31,7 @@ public class _10506MindOverMatter : AbstractQuestHandler
         int[] mobs = { 236259, 236263 };
         foreach (int mob in mobs)
             qe.RegisterQuestNpc(mob).AddOnKillEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("LF5_SENSORYAREA_Q10506_206365_5_210070000"), questId); // Beritra Invasion Corridor zone
+        qe.RegisterOnEnterZone("LF5_SENSORYAREA_Q10506_206365_5_210070000", questId); // Beritra Invasion Corridor zone
         qe.RegisterOnQuestCompleted(questId);
         qe.RegisterOnLevelChanged(questId);
         qe.RegisterOnInvisibleTimerEnd(questId);
@@ -145,9 +145,9 @@ public class _10506MindOverMatter : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName) // Step 2: Look for the Beritra Invasion Corridor.
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone) // Step 2: Look for the Beritra Invasion Corridor.
     {
-        if (zoneName == ZoneName.Get("LF5_SENSORYAREA_Q10506_206365_5_210070000"))
+        if (zone.Matches("LF5_SENSORYAREA_Q10506_206365_5_210070000"))
         {
             Player player = env.GetPlayer();
             if (player == null)

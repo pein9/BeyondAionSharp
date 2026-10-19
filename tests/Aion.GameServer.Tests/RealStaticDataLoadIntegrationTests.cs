@@ -243,7 +243,7 @@ public sealed class RealStaticDataLoadIntegrationTests
 		Assert.NotNull(sd.Motions.GetMotionTime("20ebuff1"));
 
 		Assert.True(sd.ZoneInfo.Size() > 0, "ZoneInfo empty after boot");
-		Assert.True(sd.ZoneInfo.GetZones().ContainsKey(110010000), "ZoneInfo missing map 110010000 after boot");
+		Assert.NotEmpty(sd.ZoneInfo.GetZones(110010000));
 
 		Assert.True(sd.SystemMailTemplates.Size() > 0, "SystemMailTemplates empty after boot");
 		Assert.NotNull(sd.SystemMailTemplates.GetMailTemplate("$$ABYSS_REWARD_MAIL", "", Model.Race.ELYOS));

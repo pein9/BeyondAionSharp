@@ -8,17 +8,13 @@ public abstract class AbstractArea : Area
 {
     private readonly float _minZ;
     private readonly float _maxZ;
-    private readonly ZoneName _zoneName;
-    private readonly int _worldId;
 
-    protected AbstractArea(ZoneName zoneName, int worldId, float minZ, float maxZ)
+    protected AbstractArea(float minZ, float maxZ)
     {
         if (minZ > maxZ)
             throw new ArgumentException($"minZ({minZ}) > maxZ({maxZ})");
         _minZ     = minZ;
         _maxZ     = maxZ;
-        _zoneName = zoneName;
-        _worldId  = worldId;
     }
 
     public bool IsInside2D(Point2D point) => IsInside2D(point.GetX(), point.GetY());
@@ -50,8 +46,6 @@ public abstract class AbstractArea : Area
 
     public float GetMinZ()          => _minZ;
     public float GetMaxZ()          => _maxZ;
-    public int   GetWorldId()       => _worldId;
-    public ZoneName GetZoneName()   => _zoneName;
 
     // Abstract members to be implemented by concrete shapes
     public abstract bool    IsInside2D(float x, float y);

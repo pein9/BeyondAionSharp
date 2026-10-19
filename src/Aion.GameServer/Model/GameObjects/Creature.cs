@@ -511,14 +511,14 @@ public abstract class Creature : VisibleObject
             mapRegion.RevalidateZones(this);
     }
 
-    public bool IsInsideZone(Aion.GameServer.World.Zone.ZoneName zoneName)
+    public bool IsInsideZone(string zoneName)
     {
         if (!IsSpawned())
             return false;
         return GetPosition().GetMapRegion().IsInsideZone(zoneName, this);
     }
 
-    public bool IsInsideItemUseZone(Aion.GameServer.World.Zone.ZoneName zoneName)
+    public bool IsInsideItemUseZone(string zoneName)
     {
         if (!IsSpawned())
             return false;

@@ -28,7 +28,7 @@ public class _1373WaterTherapy : AbstractQuestHandler
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
         if (qs != null && qs.GetStatus() == QuestStatus.START)
         {
-            if (player.IsInsideItemUseZone(ZoneName.Get("LF2_ITEMUSEAREA_Q1373")))
+            if (player.IsInsideItemUseZone("LF2_ITEMUSEAREA_Q1373"))
             {
                 RemoveQuestItem(env, 182201372, 1);
                 UseQuestItem(env, item, 0, 2, false, 182201373, 1, 0);

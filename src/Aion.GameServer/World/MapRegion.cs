@@ -12,7 +12,7 @@ namespace Aion.GameServer.World;
 
 /// <summary>
 /// Java parity: world/MapRegion (-Nemesiss-). Just some part of map. Comparator chain -> Comparison; ArrayUtils.add -> Array.Resize;
-/// ConcurrentHashMap -> ConcurrentDictionary; synchronized methods -> single lock; volatile kept. ZoneClassName/WorldMapType/ZoneName
+/// ConcurrentHashMap -> ConcurrentDictionary; synchronized methods -> single lock; volatile kept. ZoneClassName/WorldMapType/string
 /// confirmed PascalCase ports; AiEventType -> AiEventType.Activate/Deactivate. WorldMap.IsInstanceType red-tolerated.
 /// </summary>
 public class MapRegion
@@ -27,7 +27,7 @@ public class MapRegion
         c = a.GetZoneTemplate().GetPriority().CompareTo(b.GetZoneTemplate().GetPriority());
         if (c != 0)
             return c;
-        return a.GetZoneTemplate().GetName().Id().CompareTo(b.GetZoneTemplate().GetName().Id());
+        return JavaString.HashCode(a.GetZoneTemplate().GetName()!).CompareTo(JavaString.HashCode(b.GetZoneTemplate().GetName()!));
     }
 
     private readonly int regionId;
@@ -242,22 +242,22 @@ public class MapRegion
         return false;
     }
 
-    public bool IsInsideZone(ZoneName zoneName, float x, float y, float z)
+    public bool IsInsideZone(string zoneName, float x, float y, float z)
     {
         foreach (ZoneInstance zone in zonesSortedByTypeAndPriority)
         {
-            if (zone.GetZoneTemplate().GetName() != zoneName)
+            if (!zone.Matches(zoneName))
                 continue;
             return zone.IsInsideCoordinate(x, y, z);
         }
         return false;
     }
 
-    public bool IsInsideZone(ZoneName zoneName, Creature creature)
+    public bool IsInsideZone(string zoneName, Creature creature)
     {
         foreach (ZoneInstance zone in zonesSortedByTypeAndPriority)
         {
-            if (zone.GetZoneTemplate().GetName() == zoneName)
+            if (zone.Matches(zoneName))
                 return zone.IsInsideCreature(creature);
         }
         return false;
@@ -266,9 +266,9 @@ public class MapRegion
     /// <summary>
     /// Item use zones always have the same names instances, while we have unique names; Thus, a special check for item use.
     /// </summary>
-    public bool IsInsideItemUseZone(ZoneName zoneName, Creature creature)
+    public bool IsInsideItemUseZone(string zoneName, Creature creature)
     {
-        bool checkFortresses = "_ABYSS_CASTLE_AREA_".Equals(zoneName.Name); // some items have this special zonename in uselimits
+        bool checkFortresses = "_ABYSS_CASTLE_AREA_".Equals(zoneName); // some items have this special zonename in uselimits
         foreach (ZoneInstance zone in zonesSortedByTypeAndPriority)
         {
             if (checkFortresses)
@@ -276,7 +276,7 @@ public class MapRegion
                 if (zone.GetZoneTemplate().GetZoneType() != ZoneClassName.FORT)
                     continue;
             }
-            else if (!zone.GetZoneTemplate().XmlName.StartsWith(zoneName.ToString()))
+            else if (!zone.GetZoneTemplate().GetName()!.StartsWith(zoneName, StringComparison.Ordinal))
             {
                 continue;
             }

@@ -124,7 +124,7 @@ public class LinkgateFoundryInstance : GeneralInstanceHandler
 
     public override void OnEnterZone(Player player, ZoneInstance zone)
     {
-        if (zone.GetAreaTemplate().GetZoneName() == ZoneName.Get("IDLDF4RE_01_ITEMUSEAREA_BOSS_301270000"))
+        if (zone.Matches("IDLDF4RE_01_ITEMUSEAREA_BOSS_301270000"))
         {
             if (timeCheckTask != null && !timeCheckTask.IsDone())
             {

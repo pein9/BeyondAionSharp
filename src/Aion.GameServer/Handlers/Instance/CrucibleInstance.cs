@@ -61,11 +61,6 @@ public class CrucibleInstance : GeneralInstanceHandler
         return null;
     }
 
-    protected virtual bool IsInZone(ZoneName zone, Player player)
-    {
-        return player.IsInsideZone(zone);
-    }
-
     protected virtual void Teleport(Player player, float x, float y, float z, byte h)
     {
         Aion.GameServer.Services.Teleport.TeleportService.TeleportTo(player, instance, x, y, z, h);

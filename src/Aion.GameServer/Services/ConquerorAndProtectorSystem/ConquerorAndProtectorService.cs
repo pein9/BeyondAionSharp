@@ -152,7 +152,7 @@ public class ConquerorAndProtectorService
         if (player.GetLegion() == null)
             return false;
         LegionDominionLocation loc = LegionDominionService.GetInstance().GetLegionDominionLoc(player.GetLegion().GetOccupiedLegionDominion());
-        return loc != null && loc.GetZoneNameAsString().Equals(zone.GetAreaTemplate().GetZoneName().ToString(), StringComparison.OrdinalIgnoreCase);
+        return loc != null && zone.Matches(loc.GetZoneName());
     }
 
     public void OnKill(Player killer, Player victim)

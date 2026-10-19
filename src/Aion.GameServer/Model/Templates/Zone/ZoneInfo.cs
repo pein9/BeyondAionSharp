@@ -8,12 +8,19 @@ public class ZoneInfo
     private readonly Area _area;
     private readonly ZoneTemplate _zoneTemplate;
 
-    public ZoneInfo(Area area, ZoneTemplate zoneTemplate)
+    public ZoneInfo(ZoneTemplate zoneTemplate)
     {
-        _area         = area;
+        _area         = Area.Create(zoneTemplate);
         _zoneTemplate = zoneTemplate;
     }
 
     public Area         GetArea()         => _area;
     public ZoneTemplate GetZoneTemplate() => _zoneTemplate;
+
+    public bool Matches(string zoneName)
+    {
+        if (_zoneTemplate.GetName()!.Equals(zoneName)) return true;
+        Aion.GameServer.Dataholders.DataManager.ZONE_DATA.ValidateZoneName(zoneName);
+        return false;
+    }
 }

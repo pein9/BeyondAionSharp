@@ -13,7 +13,7 @@ using Aion.GameServer.World.Zone;
 
 namespace Aion.GameServer.Taskmanager.Tasks;
 
-/// <summary>Java parity: taskmanager/tasks/LegionDominionIntruderUpdateTask : AbstractPeriodicTaskManager (override Run). stream filter/collect(groupingBy(getWorldId))→Where.GroupBy.ToDictionary; Map.Entry→KeyValuePair (entry==null check vacuous—dropped); isEmpty→Count==0; ZoneName.get→Get, ZoneName.NONE; forEach→foreach. ConquerorAndProtectorService/CPInfo/LegionDominionService red-tolerated.</summary>
+/// <summary>Java parity: taskmanager/tasks/LegionDominionIntruderUpdateTask : AbstractPeriodicTaskManager (override Run). stream filter/collect(groupingBy(getWorldId))→Where.GroupBy.ToDictionary; Map.Entry→KeyValuePair (entry==null check vacuous—dropped); isEmpty→Count==0; zone names use exact strings; forEach→foreach. ConquerorAndProtectorService/CPInfo/LegionDominionService red-tolerated.</summary>
 public class LegionDominionIntruderUpdateTask : AbstractPeriodicTaskManager
 {
     private LegionDominionIntruderUpdateTask() : base(4000)
@@ -34,17 +34,12 @@ public class LegionDominionIntruderUpdateTask : AbstractPeriodicTaskManager
             List<Player> players = Aion.GameServer.World.World.GetInstance().GetWorldMap(entry.Key).GetMainWorldMapInstance().GetPlayersInside();
             foreach (LegionDominionLocation location in entry.Value)
             {
-                if (location.GetZoneNameAsString().Length == 0)
-                    continue;
-                ZoneName zoneName = ZoneName.Get(location.GetZoneNameAsString());
-                if (zoneName == ZoneName.NONE)
-                    continue;
                 ConquerorAndProtectorService cpService = ConquerorAndProtectorService.GetInstance();
                 List<Player> protectors = new();
                 List<Player> conquerors = new();
                 foreach (Player player in players)
                 {
-                    if (!player.IsInsideZone(zoneName))
+                    if (!player.IsInsideZone(location.GetZoneName()))
                         continue;
                     CPInfo cpInfo = cpService.GetCPInfoForCurrentMap(player);
                     if (cpInfo == null || (cpInfo.GetType_() == CPType.PROTECTOR && cpInfo.GetLDRank() != 3))

@@ -43,13 +43,14 @@ public sealed class HarnessHolderInventoryTests
 		"DeathSpawnTableDh", "WakeIdleTableDh",
 		"GuardAnswerDataDh", "Materials",
 		"NpcDataDh", "NpcSkillDataDh", "SkillCategoryDataDh",
-		"PlayerExperienceTable", "SkillDataDh", "TribeRelations", "WalkerDataDh", "WorldMaps2", "ZoneInfo",
+		"PlayerExperienceTable", "SkillDataDh", "TribeRelations", "VortexDataDh", "WalkerDataDh", "WorldMaps2", "ZoneInfo",
 	];
 
 	// PlayerExperienceTable and CustomNpcDropDh were added for the death path: NpcController.OnDie runs
 	// DoReward() before raising the AI's Died event, and a null XP table or drop registry threw inside
 	// the catch that only logs -- so the death event vanished. They are the reason this list grew, and
 	// this pin is what made the growth visible rather than incidental.
+	// VortexDataDh is empty for AI-only worlds; per-instance zone construction now checks it every time.
 
 	[Fact]
 	public void TheHarnessProvidesExactlyTheHoldersItIsKnownTo()

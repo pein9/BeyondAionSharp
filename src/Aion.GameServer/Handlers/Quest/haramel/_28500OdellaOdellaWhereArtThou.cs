@@ -19,7 +19,7 @@ public class _28500OdellaOdellaWhereArtThou : AbstractQuestHandler
     {
         int[] npcs = { 203560, 203649, 730306, 730307, 799522 };
         qe.RegisterQuestNpc(203560).AddOnQuestStart(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("DF1A_SENSORYAREA_Q28500_206151_3_220030000"), questId);
+        qe.RegisterOnEnterZone("DF1A_SENSORYAREA_Q28500_206151_3_220030000", questId);
         foreach (int npc in npcs)
         {
             qe.RegisterQuestNpc(npc).AddOnTalkEvent(questId);
@@ -115,9 +115,9 @@ public class _28500OdellaOdellaWhereArtThou : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName) // Investigate the Abandoned Relic Site.
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone) // Investigate the Abandoned Relic Site.
     {
-        if (zoneName == ZoneName.Get("DF1A_SENSORYAREA_Q28500_206151_3_220030000"))
+        if (zone.Matches("DF1A_SENSORYAREA_Q28500_206151_3_220030000"))
         {
             Player player = env.GetPlayer();
             if (player == null)

@@ -57,7 +57,7 @@ public partial class ItemTemplate
         return useLimits.GetUseArea() != null;
     }
 
-    public Aion.GameServer.World.Zone.ZoneName? GetUseArea()
+    public string? GetUseArea()
     {
         return useLimits.GetUseArea();
     }

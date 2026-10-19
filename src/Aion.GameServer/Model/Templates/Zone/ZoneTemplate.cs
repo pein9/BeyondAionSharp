@@ -36,9 +36,8 @@ public class ZoneTemplate
     [XmlAttribute("area_type")] public AreaType AreaType { get; set; } = AreaType.Polygon;
     [XmlAttribute("zone_type")] public ZoneClassName ZoneType { get; set; } = ZoneClassName.SUB;
 
-    // Java: @XmlAttribute(name="name") + afterUnmarshal builds ZoneName
+    // Java: @XmlAttribute name is retained exactly as supplied.
     private string? _name;
-    private ZoneName? _zoneName;
 
     [XmlAttribute("name")]
     public string? XmlName
@@ -46,15 +45,12 @@ public class ZoneTemplate
         get => _name;
         set
         {
-            if (value == null) return;
-            _zoneName = ZoneName.CreateOrGet(value);
-            _name = _zoneName.Name;
+            _name = value;
         }
     }
 
-    // Java parity: getXmlName()
-    public string? GetXmlName()    => _name;
-    public ZoneName? GetName()     => _zoneName;
+    // Java parity: getName()
+    public string? GetName()       => _name;
     public Points?   GetPoints()   => Points;
     public Cylinder? GetCylinder() => Cylinder;
     public Sphere?   GetSphere()   => Sphere;

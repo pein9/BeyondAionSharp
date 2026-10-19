@@ -23,7 +23,7 @@ public class LegionDominionLocation
     public LegionDominionLocation(LegionDominionLocationTemplate template)
     {
         this.template = template;
-        this.zoneName = template.GetZone() + "_" + template.GetWorldId();
+        this.zoneName = template.GetZone().ToUpperInvariant() + "_" + template.GetWorldId();
     }
 
     public int GetLocationId()
@@ -46,7 +46,7 @@ public class LegionDominionLocation
         return template.GetL10n();
     }
 
-    public string GetZoneNameAsString()
+    public string GetZoneName()
     {
         return zoneName;
     }

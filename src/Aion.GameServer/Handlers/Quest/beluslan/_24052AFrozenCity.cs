@@ -101,7 +101,7 @@ namespace Aion.GameServer.Handlers.Quest
             int itemObjId = item.GetObjectId();
 
             QuestState qs = player.GetQuestStateList().GetQuestState(questId);
-            if (!player.IsInsideItemUseZone(ZoneName.Get("DF3_ITEMUSEAREA_Q2056")))
+            if (!player.IsInsideItemUseZone("DF3_ITEMUSEAREA_Q2056"))
                 return HandlerResult.FAILED;
 
             if (id != 182215378 && qs.GetQuestVarById(0) == 1 || id != 182215379 && qs.GetQuestVarById(0) == 2

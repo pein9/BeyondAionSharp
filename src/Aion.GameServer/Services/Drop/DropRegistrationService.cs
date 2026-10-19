@@ -417,7 +417,7 @@ public class DropRegistrationService
         if (rule.GetGlobalRuleZones() != null)
         {
             foreach (GlobalDropZone gdZone in rule.GetGlobalRuleZones().GetGlobalDropZones())
-                if (npc.IsInsideZone(ZoneName.Get(gdZone.GetZone())))
+                if (npc.IsInsideZone(gdZone.GetZone()))
                     return true;
             return false;
         }

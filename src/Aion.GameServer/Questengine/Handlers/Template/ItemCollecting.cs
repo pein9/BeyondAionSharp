@@ -11,7 +11,7 @@ using Aion.GameServer.Model;
 
 namespace Aion.GameServer.QuestEngine.Handlers.Template;
 
-/// <summary>Java parity: questEngine/handlers/template/ItemCollecting (MrPoke, vlog, Rolandas, Majka, Pad). Set.addAll→UnionWith; Set.equals→SetEquals; isEmpty→Count==0; ZoneName.get(s).name().equalsIgnoreCase→Name comparison; super.onDialogEvent→base; DataManager/QuestService red-tolerated.</summary>
+/// <summary>Java parity: questEngine/handlers/template/ItemCollecting (MrPoke, vlog, Rolandas, Majka, Pad). Set.addAll→UnionWith; Set.equals→SetEquals; isEmpty→Count==0; ZoneInstance.Matches uses exact names; super.onDialogEvent→base; DataManager/QuestService red-tolerated.</summary>
 public class ItemCollecting : AbstractTemplateQuestHandler
 {
     private static readonly ILogger log = AionLog.For(nameof(ItemCollecting));
@@ -77,8 +77,8 @@ public class ItemCollecting : AbstractTemplateQuestHandler
                 qe.RegisterCanAct(questId, actionItem);
             }
         }
-        if (startZone != null && !ZoneName.Get(startZone).Name.Equals("NONE", StringComparison.OrdinalIgnoreCase))
-            qe.RegisterOnEnterZone(ZoneName.Get(startZone), questId);
+        if (startZone != null && DataManager.ZONE_DATA.ValidateZoneName(startZone))
+            qe.RegisterOnEnterZone(startZone, questId);
     }
 
     public override bool OnDialogEvent(QuestEnv env)
@@ -177,9 +177,9 @@ public class ItemCollecting : AbstractTemplateQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
-        if (zoneName.Name.Equals(startZone, StringComparison.OrdinalIgnoreCase))
+        if (zone.Matches(startZone))
         {
             Player player = env.GetPlayer();
             QuestState qs = player.GetQuestStateList().GetQuestState(questId);

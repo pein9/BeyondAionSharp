@@ -114,12 +114,12 @@ public abstract class AbstractQuestHandler
         return false;
     }
 
-    public virtual bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public virtual bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         return false;
     }
 
-    public virtual bool OnLeaveZoneEvent(QuestEnv env, ZoneName zoneName)
+    public virtual bool OnLeaveZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         return false;
     }
@@ -211,7 +211,7 @@ public abstract class AbstractQuestHandler
         return false;
     }
 
-    public virtual bool OnKillInZoneEvent(QuestEnv env)
+    public virtual bool OnKillInZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         return false;
     }
@@ -1294,25 +1294,6 @@ public abstract class AbstractQuestHandler
                 foreach (XMLStartCondition cond in template.GetXMLStartConditions())
                     if (HasAnyPreQuestFinished(qsl, cond))
                         return true;
-            }
-        }
-        return false;
-    }
-
-    /// <summary>Start a mission on enter the questZone.</summary>
-    public bool DefaultOnEnterZoneEvent(QuestEnv env, ZoneName currentZoneName, ZoneName questZoneName)
-    {
-        if (questZoneName == currentZoneName)
-        {
-            Player player = env.GetPlayer();
-            if (player == null)
-                return false;
-            QuestState qs = player.GetQuestStateList().GetQuestState(questId);
-            if (qs == null)
-            {
-                env.SetQuestId(questId);
-                if (QuestService.StartQuest(env))
-                    return true;
             }
         }
         return false;

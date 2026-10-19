@@ -20,7 +20,7 @@ public class _1393NewFlightPath : AbstractQuestHandler
     {
         qe.RegisterQuestNpc(204041).AddOnQuestStart(questId);
         qe.RegisterQuestNpc(204041).AddOnTalkEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("LEPHARIST_BASTION_210020000"), questId);
+        qe.RegisterOnEnterZone("LEPHARIST_BASTION_210020000", questId);
     }
 
     public override bool OnDialogEvent(QuestEnv env)
@@ -82,7 +82,7 @@ public class _1393NewFlightPath : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         Player player = env.GetPlayer();
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);

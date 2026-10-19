@@ -10,6 +10,14 @@ public class VortexTemplate
     [XmlAttribute("id")] public int id;
     [XmlAttribute("defends_race")] public Race dRace;
     [XmlAttribute("offence_race")] public Race oRace;
+    private HashSet<string>? zones;
+    [XmlAttribute("zones")]
+    public string? ZonesRaw
+    {
+        get => zones == null ? null : string.Join(" ", zones);
+        set => zones = value == null ? null : value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).ToHashSet(StringComparer.Ordinal);
+    }
+    public HashSet<string> GetZones() => zones!;
     [XmlElement("home_point")] public HomePoint home;
     [XmlElement("resurrection_point")] public ResurrectionPoint resurrection;
     [XmlElement("start_point")] public StartPoint start;

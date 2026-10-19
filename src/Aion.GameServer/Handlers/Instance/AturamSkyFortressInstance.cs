@@ -221,7 +221,7 @@ public class AturamSkyFortressInstance : GeneralInstanceHandler
 
     public override void OnEnterZone(Player player, ZoneInstance zone)
     {
-        if (zone.GetAreaTemplate().GetZoneName() == ZoneName.Get("SKY_FORTRESS_WAREHOUSE_ZONE_300240000"))
+        if (zone.Matches("SKY_FORTRESS_WAREHOUSE_ZONE_300240000"))
         {
             // wtf is that? Notify only one player ?
             if (Interlocked.CompareExchange(ref msgIsSent, 1, 0) == 0)

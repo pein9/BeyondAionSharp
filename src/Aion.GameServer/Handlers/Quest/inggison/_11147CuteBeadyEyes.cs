@@ -22,7 +22,7 @@ public class _11147CuteBeadyEyes : AbstractQuestHandler
         qe.RegisterQuestNpc(798997).AddOnTalkEvent(questId);
         qe.RegisterQuestNpc(799079).AddOnTalkEvent(questId);
         qe.RegisterQuestNpc(799081).AddOnTalkEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("KLAWNICKTS_CAVE_210050000"), questId);
+        qe.RegisterOnEnterZone("KLAWNICKTS_CAVE_210050000", questId);
     }
 
     public override bool OnDialogEvent(QuestEnv env)
@@ -113,9 +113,9 @@ public class _11147CuteBeadyEyes : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
-        if (zoneName == ZoneName.Get("KLAWNICKTS_CAVE_210050000"))
+        if (zone.Matches("KLAWNICKTS_CAVE_210050000"))
         {
             Player player = env.GetPlayer();
             if (player == null)

@@ -1060,6 +1060,8 @@ public sealed class BossAiHarness : IDisposable
 			var zoneData = new ZoneData { zoneList = new List<Aion.GameServer.Model.Templates.Zone.ZoneTemplate>() };
 			zoneData.AfterUnmarshal(null!);
 			SetHolder(staticData, nameof(StaticData.ZoneInfo), zoneData);
+			// Every world instance now checks configured vortex zones while creating its own zone list.
+			SetHolder(staticData, nameof(StaticData.VortexDataDh), new VortexData());
 
 			var worldMaps = new WorldMapsData();
 			worldMaps.SetData(new List<WorldMapTemplate>

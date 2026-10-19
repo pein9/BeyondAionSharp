@@ -140,7 +140,7 @@ public sealed class NaturalAltgardLeg2ContractTests
 		// Q24012: the farmland zone step, three cart uses (each cart gone once used), and the drops from var 5.
 		string crop = Handler("altgard/_24012AnOminousCrop.cs");
 		NaturalAltgardZoneStep zone = Assert.Single(Leg2.ZoneStepList);
-		Assert.Contains($"RegisterOnEnterZone(ZoneName.Get(\"{zone.Zone}\"), questId)", crop, StringComparison.Ordinal);
+		Assert.Contains($"RegisterOnEnterZone(\"{zone.Zone}\", questId)", crop, StringComparison.Ordinal);
 		Assert.Contains($"ChangeQuestStep(env, {zone.FromVar}, {zone.ToVar})", crop, StringComparison.Ordinal);
 		Assert.Contains(XDocument.Load(Data("zones", "zones_220030000.xml")).Root!.Elements("zone"), node => (string?)node.Attribute("name") == zone.Zone);
 		NaturalAltgardObjectUse carts = Leg2.ObjectUseList.Single(use => use.QuestId == 24012);

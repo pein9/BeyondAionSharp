@@ -47,7 +47,7 @@ public class QuestTasks
         return Schedule(new FollowingNpcCheckTask(env, new CoordinateDestinationChecker(npc, x, y, z)));
     }
 
-    public static ScheduledTask NewFollowingToTargetCheckTask(QuestEnv env, Npc npc, ZoneName zoneName)
+    public static ScheduledTask NewFollowingToTargetCheckTask(QuestEnv env, Npc npc, string zoneName)
     {
         return Schedule(new FollowingNpcCheckTask(env, new ZoneChecker(npc, zoneName)));
     }

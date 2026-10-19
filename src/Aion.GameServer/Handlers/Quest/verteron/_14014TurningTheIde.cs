@@ -115,7 +115,7 @@ public class _14014TurningTheIde : AbstractQuestHandler
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
         if (qs != null && qs.GetStatus() == QuestStatus.START)
         {
-            if (qs.GetQuestVarById(0) == 1 && player.IsInsideZone(ZoneName.Get("TURSIN_OUTPOST_210030000")))
+            if (qs.GetQuestVarById(0) == 1 && player.IsInsideZone("TURSIN_OUTPOST_210030000"))
             {
                 return HandlerResultExtensions.FromBoolean(UseQuestItem(env, item, 1, 2, false, 18));
             }

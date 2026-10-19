@@ -30,7 +30,7 @@ public class _1573SomeTastyMushrooms : AbstractQuestHandler
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
         if (qs != null && qs.GetStatus() == QuestStatus.START)
         {
-            if (player.IsInsideItemUseZone(ZoneName.Get("LF3_ITEMUSEAREA_Q1573")))
+            if (player.IsInsideItemUseZone("LF3_ITEMUSEAREA_Q1573"))
             {
                 RemoveQuestItem(env, 182201784, 1);
                 return HandlerResultExtensions.FromBoolean(UseQuestItem(env, item, 1, 2, false, 182201735, 1, 0));

@@ -6,9 +6,9 @@ namespace Aion.GameServer.QuestEngine.Task.Checker;
 /// <summary>Java parity: questEngine/task/checker/ZoneChecker.</summary>
 public class ZoneChecker : DestinationChecker
 {
-    protected readonly ZoneName zoneName;
+    protected readonly string zoneName;
 
-    public ZoneChecker(Creature follower, ZoneName zoneName)
+    public ZoneChecker(Creature follower, string zoneName)
         : base(follower)
     {
         this.zoneName = zoneName;

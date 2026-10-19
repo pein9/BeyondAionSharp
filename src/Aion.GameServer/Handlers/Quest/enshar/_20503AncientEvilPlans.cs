@@ -22,7 +22,7 @@ public class _20503AncientEvilPlans : AbstractQuestHandler
         int[] npcs = { 804728, 804729 };
         foreach (int npc in npcs)
             qe.RegisterQuestNpc(npc).AddOnTalkEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("DF5_SENSORYAREA_Q20503A_206394_8_220080000"), questId); // Aetheric Field Stone Findspot zone
+        qe.RegisterOnEnterZone("DF5_SENSORYAREA_Q20503A_206394_8_220080000", questId); // Aetheric Field Stone Findspot zone
         qe.RegisterOnQuestCompleted(questId);
         qe.RegisterOnLevelChanged(questId);
     }
@@ -101,9 +101,9 @@ public class _20503AncientEvilPlans : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
-        if (zoneName == ZoneName.Get("DF5_SENSORYAREA_Q20503A_206394_8_220080000"))
+        if (zone.Matches("DF5_SENSORYAREA_Q20503A_206394_8_220080000"))
         {
             Player player = env.GetPlayer();
             if (player == null)

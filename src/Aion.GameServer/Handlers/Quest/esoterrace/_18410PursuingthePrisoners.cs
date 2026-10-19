@@ -23,16 +23,16 @@ public class _18410PursuingthePrisoners : AbstractQuestHandler
         qe.RegisterQuestNpc(799585).AddOnTalkEvent(questId);
         qe.RegisterQuestNpc(799563).AddOnTalkEvent(questId);
         qe.RegisterQuestNpc(799553).AddOnTalkEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("DRANA_PRODUCTION_LAB_300250000"), questId);
+        qe.RegisterOnEnterZone("DRANA_PRODUCTION_LAB_300250000", questId);
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         Player player = env.GetPlayer();
         if (player == null)
             return false;
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
-        if (zoneName != ZoneName.Get("DRANA_PRODUCTION_LAB_300250000"))
+        if (!zone.Matches("DRANA_PRODUCTION_LAB_300250000"))
             return false;
         if (qs == null || qs.GetQuestVars().GetQuestVars() != 1)
             return false;

@@ -19,7 +19,7 @@ public class _18500BigKinah : AbstractQuestHandler
     {
         int[] npcs = { 203106, 203166, 730304, 730305, 799522, 206150 };
         qe.RegisterQuestNpc(203106).AddOnQuestStart(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("LF1A_SENSORYAREA_Q18500_206150_3_210030000"), questId); // Haramel Entrance Zone
+        qe.RegisterOnEnterZone("LF1A_SENSORYAREA_Q18500_206150_3_210030000", questId); // Haramel Entrance Zone
         foreach (int npc in npcs)
         {
             qe.RegisterQuestNpc(npc).AddOnTalkEvent(questId);
@@ -114,9 +114,9 @@ public class _18500BigKinah : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName) // Investigate Suspicious Relic Site nearby.
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone) // Investigate Suspicious Relic Site nearby.
     {
-        if (zoneName == ZoneName.Get("LF1A_SENSORYAREA_Q18500_206150_3_210030000"))
+        if (zone.Matches("LF1A_SENSORYAREA_Q18500_206150_3_210030000"))
         {
             Player player = env.GetPlayer();
             if (player == null)

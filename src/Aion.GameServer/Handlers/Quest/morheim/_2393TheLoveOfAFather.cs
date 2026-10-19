@@ -35,7 +35,7 @@ public class _2393TheLoveOfAFather : AbstractQuestHandler
 
         if (id != 182204162)
             return HandlerResult.UNKNOWN;
-        if (!player.IsInsideItemUseZone(ZoneName.Get("DF2_ITEMUSEAREA_Q2393")))
+        if (!player.IsInsideItemUseZone("DF2_ITEMUSEAREA_Q2393"))
             return HandlerResult.UNKNOWN;
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
         if (qs == null)

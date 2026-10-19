@@ -378,7 +378,7 @@ public class PlayerRestrictions
 
         if (item.GetItemTemplate().HasAreaRestriction())
         {
-            ZoneName restriction = item.GetItemTemplate().GetUseArea();
+            string restriction = item.GetItemTemplate().GetUseArea();
             if (!player.IsInsideItemUseZone(restriction))
             {
                 PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_CANNOT_USE_ITEM_INVALID_LOCATION());

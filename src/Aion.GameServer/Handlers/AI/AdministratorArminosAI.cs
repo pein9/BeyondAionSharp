@@ -26,13 +26,13 @@ public class AdministratorArminosAI : NpcAI
     {
         if (dialogActionId == DialogAction.SETPRO1)
         {
-            if (player.IsInsideZone(ZoneName.Get("ILLUSION_STADIUM_1_300320000")))
+            if (player.IsInsideZone("ILLUSION_STADIUM_1_300320000"))
             {
                 Spawn(217827, 1250.1598f, 237.97736f, 405.3968f, (sbyte)0);
                 Spawn(217828, 1250.1598f, 239.97736f, 405.3968f, (sbyte)0);
                 Spawn(217829, 1250.1598f, 235.97736f, 405.3968f, (sbyte)0);
             }
-            else if (player.IsInsideZone(ZoneName.Get("ILLUSION_STADIUM_6_300320000")))
+            else if (player.IsInsideZone("ILLUSION_STADIUM_6_300320000"))
             {
                 Spawn(217827, 1265.9661f, 793.5348f, 436.64008f, (sbyte)0);
                 Spawn(217828, 1265.9661f, 789.5348f, 436.6402f, (sbyte)0);

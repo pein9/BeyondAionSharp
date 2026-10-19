@@ -316,11 +316,11 @@ public class KamarBattlefieldInstance : BasicPvpInstance
 
     public override void OnEnterZone(Player player, ZoneInstance zone)
     {
-        if (zone.GetZoneTemplate().GetName() == ZoneName.Get("LAMINA_301120000"))
+        if (zone.Matches("LAMINA_301120000"))
         {
             instance.SetDoorState(144, true); // crash airship
         }
-        else if (zone.GetZoneTemplate().GetName() == ZoneName.Get("SPERO_301120000"))
+        else if (zone.Matches("SPERO_301120000"))
         {
             instance.SetDoorState(5, true); // crash airship
         }

@@ -27,7 +27,7 @@ public class _1345BearerOfBadNews : AbstractQuestHandler
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
         if (qs != null && qs.GetStatus() == QuestStatus.START)
         {
-            if (player.IsInsideItemUseZone(ZoneName.Get("LC1_ITEMUSEAREA_Q1345")))
+            if (player.IsInsideItemUseZone("LC1_ITEMUSEAREA_Q1345"))
                 return HandlerResultExtensions.FromBoolean(UseQuestItem(env, item, 1, 2, true, 0, 0, 0));
         }
         return HandlerResult.SUCCESS; // ??

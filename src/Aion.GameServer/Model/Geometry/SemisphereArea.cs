@@ -7,9 +7,9 @@ namespace Aion.GameServer.Model.Geometry;
 /// <summary>Java parity: model/geometry/SemisphereArea — upper half-sphere (z > center.z only).</summary>
 public class SemisphereArea : SphereArea
 {
-    // Java parity: Semisphere.getX()/getR() return boxed Float (auto-unboxed); accept float? and delegate.
-    public SemisphereArea(ZoneName zoneName, int worldId, float? x, float? y, float? z, float? r)
-        : base(zoneName, worldId, x, y, z, r) { }
+    // Java parity: Semisphere.getX()/getR() return boxed Float (auto-unboxed); accept float and delegate.
+    public SemisphereArea(float x, float y, float z, float r)
+        : base(x, y, z, r) { }
 
     public override bool IsInside3D(Point3D point) =>
         Z < point.GetZ() && PositionUtil.IsInRange(X, Y, Z, point.GetX(), point.GetY(), point.GetZ(), R);

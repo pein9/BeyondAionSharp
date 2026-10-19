@@ -167,21 +167,21 @@ namespace Aion.GameServer.Handlers.Quest
             if (qs != null && qs.GetStatus() == QuestStatus.START)
             {
                 int var = qs.GetQuestVarById(0);
-                if (player.IsInsideItemUseZone(ZoneName.Get("DF1_ITEMUSEAREA_Q24031")))
+                if (player.IsInsideItemUseZone("DF1_ITEMUSEAREA_Q24031"))
                 {
                     if (var == 3)
                     {
                         return HandlerResultExtensions.FromBoolean(UseQuestItem(env, item, 3, 4, false));// 3-4
                     }
                 }
-                if (player.IsInsideItemUseZone(ZoneName.Get("DF1A_ITEMUSEAREA_Q24031")))
+                if (player.IsInsideItemUseZone("DF1A_ITEMUSEAREA_Q24031"))
                 {
                     if (var == 5)
                     {
                         return HandlerResultExtensions.FromBoolean(UseQuestItem(env, item, 5, 6, false));// 5-6
                     }
                 }
-                if (player.IsInsideItemUseZone(ZoneName.Get("DF2_ITEMUSEAREA_Q24031")))
+                if (player.IsInsideItemUseZone("DF2_ITEMUSEAREA_Q24031"))
                 {
                     if (var == 7)
                     {

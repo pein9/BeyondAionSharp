@@ -65,19 +65,7 @@ public class ItemUseLimits
         return useDelay;
     }
 
-    public Aion.GameServer.World.Zone.ZoneName? GetUseArea()
-    {
-        if (usearea == null)
-            return null;
-        try
-        {
-            return Aion.GameServer.World.Zone.ZoneName.CreateOrGet(usearea);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-    }
+    public string? GetUseArea() => usearea;
 
     public List<int> GetOwnershipWorldIds()
     {

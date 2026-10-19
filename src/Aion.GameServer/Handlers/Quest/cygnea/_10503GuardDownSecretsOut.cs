@@ -35,7 +35,7 @@ public class _10503GuardDownSecretsOut : AbstractQuestHandler
         qe.RegisterQuestNpc(mobTargetId).AddOnKillEvent(questId);
         qe.RegisterQuestItem(collectItemId, questId);
         qe.RegisterQuestItem(workItemId, questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("LF5_SENSORYAREA_Q10503_206364_3_210070000"), questId); // Aetheric Field Stone of Earth zone
+        qe.RegisterOnEnterZone("LF5_SENSORYAREA_Q10503_206364_3_210070000", questId); // Aetheric Field Stone of Earth zone
         qe.RegisterOnQuestCompleted(questId);
         qe.RegisterOnLevelChanged(questId);
     }
@@ -144,9 +144,9 @@ public class _10503GuardDownSecretsOut : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName) // Step 6: Examine the Aetheric Field Stone of Earth.
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone) // Step 6: Examine the Aetheric Field Stone of Earth.
     {
-        if (zoneName == ZoneName.Get("LF5_SENSORYAREA_Q10503_206364_3_210070000"))
+        if (zone.Matches("LF5_SENSORYAREA_Q10503_206364_3_210070000"))
         {
             Player player = env.GetPlayer();
             if (player == null)

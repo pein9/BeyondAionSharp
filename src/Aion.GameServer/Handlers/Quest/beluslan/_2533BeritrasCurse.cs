@@ -31,7 +31,7 @@ public class _2533BeritrasCurse : AbstractQuestHandler
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
         if (qs != null && qs.GetStatus() == QuestStatus.START)
         {
-            if (player.IsInsideZone(ZoneName.Get("BERITRAS_WEAPON_220040000")))
+            if (player.IsInsideZone("BERITRAS_WEAPON_220040000"))
             {
                 QuestService.QuestTimerStart(env, 300);
                 return HandlerResultExtensions.FromBoolean(UseQuestItem(env, item, 0, 1, false, 182204426, 1, 0));

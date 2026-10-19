@@ -1,3 +1,4 @@
+using Aion.GameServer.Dataholders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -61,9 +62,7 @@ public class Auction : AdminCommand
             }
             else
             {
-                houses = FindHousesInZone(admin, paramsArr[1], Predicates.AlwaysTrue<House>());
-                if (houses == null)
-                    return;
+                houses = FindHousesInZone(paramsArr[1], Predicates.AlwaysTrue<House>());
             }
 
             int removedHouses = 0;
@@ -135,10 +134,8 @@ public class Auction : AdminCommand
             }
             else
             {
-                houses = FindHousesInZone(admin, paramsArr[1], filter);
+                houses = FindHousesInZone(paramsArr[1], filter);
             }
-            if (houses == null)
-                return;
             if (houses.Count == 0)
             {
                 SendInfo(admin, "No auctionable " + houseType.ToString().ToLower() + "s found.");
@@ -167,20 +164,16 @@ public class Auction : AdminCommand
         }
     }
 
-    private List<House> FindHousesInZone(Player admin, string zoneName, Predicate<House> filter)
+    private List<House> FindHousesInZone(string zoneName, Predicate<House> filter)
     {
-        ZoneName zone = ZoneName.Get(zoneName);
-        if (zone == ZoneName.NONE)
-        {
-            SendInfo(admin, "Invalid zone name");
-            return null;
-        }
+        if (!DataManager.ZONE_DATA.IsValidZoneName(zoneName))
+            throw new ArgumentException("Invalid zone name.");
         List<House> housesToRemove = new List<House>();
         foreach (House house in HousingService.GetInstance().GetCustomHouses())
         {
             if (!filter(house))
                 continue;
-            if (house.GetPosition().GetMapRegion().IsInsideZone(zone, house.GetX(), house.GetY(), house.GetZ()))
+            if (house.GetPosition().GetMapRegion().IsInsideZone(zoneName, house.GetX(), house.GetY(), house.GetZ()))
                 housesToRemove.Add(house);
         }
         return housesToRemove;

@@ -21,11 +21,11 @@ public sealed class JavaStringHashParityTests
 	}
 
 	[Fact]
-	public void ZoneNameId_UsesStableJavaHash()
+	public void ZoneTemplatePreservesNameForStableJavaHash()
 	{
-		var zoneName = ZoneName.CreateOrGet("aion_test_zone");
-
-		Assert.Equal(JavaString.HashCode("AION_TEST_ZONE"), zoneName.Id());
+		var zone = CreateZone("aion_test_zone");
+		Assert.Equal("aion_test_zone", zone.GetZoneTemplate().GetName());
+		Assert.Equal(JavaString.HashCode("aion_test_zone"), JavaString.HashCode(zone.GetZoneTemplate().GetName()!));
 	}
 
 	[Fact]
@@ -51,14 +51,14 @@ public sealed class JavaStringHashParityTests
 
 	private static ZoneInstance CreateZone(string name)
 	{
-		var zoneName = ZoneName.CreateOrGet(name);
 		var template = new ZoneTemplate
 		{
 			XmlName = name,
 			ZoneType = ZoneClassName.SUB,
 			Priority = 1,
+			AreaType = AreaType.Sphere,
+			Sphere = new Sphere(0, 0, 0, 1),
 		};
-		var area = new SphereArea(zoneName, worldId: 1, x: 0, y: 0, z: 0, r: 1);
-		return new ZoneInstance(1, new ZoneInfo(area, template));
+		return new ZoneInstance(1, new ZoneInfo(template));
 	}
 }

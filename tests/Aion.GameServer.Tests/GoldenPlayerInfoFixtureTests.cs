@@ -192,8 +192,8 @@ public sealed class GoldenPlayerInfoFixtureTests
     /// Player SM_* packets that read ONLY the scalar HarnessPlayer's objectId/name plus ctor-stored scalars/strings/zone
     /// names. Mirrors the Java GoldenPlayerInfoFixtureGeneratorTest.generateGoldenPlayerZonePacketFixtures. Java is the
     /// oracle.
-    ///  - SM_PLAYER_REGION(player, subZone): writeD(objId) + 3x writeC(0) + writeD(subZone.name().hashCode()); the C#
-    ///    packet reproduces Java's String.hashCode via JavaStringHashCode. subZone is ZoneName.None / CreateOrGet(name).
+    ///  - SM_PLAYER_REGION(player, subZone): writeD(objId) + 3x writeC(0) + writeD(subZone.hashCode()); the C#
+    ///    packet uses Java's UTF-16 String.hashCode on the exact zone name.
     ///  - SM_RENAME(player, oldName): writeD(0) writeD(0) writeD(objId) writeS(oldName) writeS(player.GetName()).
     ///    GetName() == pcd name pinned on the scalar player ("Scalarharness"). No con.
     /// </summary>
@@ -226,6 +226,16 @@ public sealed class GoldenPlayerInfoFixtureTests
                 $"  Java : {expectedHex}\n  C#   : {actualHex}\n" +
                 $"  firstDiffByte: {FirstDiffByte(expectedHex, actualHex)}");
         }
+    }
+
+    [Fact]
+    public void PlayerRegionPacketHashesTheExactMixedCaseZoneName()
+    {
+        var packet = new SM_PLAYER_REGION(BuildScalarPlayer(), "MixedCase");
+        var payload = CaptureWriteImplPayload(packet, null!);
+        Assert.Equal(11, payload.Length);
+        // Java "MixedCase".hashCode(): 31*h + each UTF-16 code unit, with int overflow.
+        Assert.Equal(-1311300181, System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian(payload.AsSpan(7)));
     }
 
     /// <summary>
@@ -295,11 +305,11 @@ public sealed class GoldenPlayerInfoFixtureTests
         }
     }
 
-    /// <summary>Resolve the same ZoneName both sides use: "NONE" -> ZoneName.None, else ZoneName.CreateOrGet(name).</summary>
-    private static Aion.GameServer.World.Zone.ZoneName ResolveZone(string name) =>
+    /// <summary>Resolve the same string both sides use: "NONE" -> "NONE", else name.</summary>
+    private static string ResolveZone(string name) =>
         name == "NONE"
-            ? Aion.GameServer.World.Zone.ZoneName.None
-            : Aion.GameServer.World.Zone.ZoneName.CreateOrGet(name);
+            ? "NONE"
+            : name;
 
     /// <summary>Pin the same fixed AbyssRank scalar fields as the Java pinAbyssRankScalars (identical values).</summary>
     private static void PinAbyssRankScalars(AbyssRank rank)

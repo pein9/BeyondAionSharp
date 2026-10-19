@@ -920,7 +920,7 @@ public class PvpMapHandler : GeneralInstanceHandler
     {
         foreach (ZoneInstance zone in player.FindZones())
         {
-            int zoneNameL10nId = GetZoneNameL10nId(zone.GetAreaTemplate().GetZoneName().ToString());
+            int zoneNameL10nId = GetZoneNameL10nId(zone.GetZoneTemplate().GetName());
             if (zoneNameL10nId > 0)
             {
                 return ChatUtil.L10n(zoneNameL10nId);

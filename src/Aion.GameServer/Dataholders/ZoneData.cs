@@ -1,123 +1,62 @@
-using System.Collections.Generic;
-using System.IO;
 using System.Xml.Serialization;
-using Aion.GameServer.Model.Geometry;
 using Aion.GameServer.Model.Templates.Zone;
-using Aion.GameServer.Utils.Xml;
 using Microsoft.Extensions.Logging;
 
 namespace Aion.GameServer.Dataholders;
 
-/// <summary>Java parity: dataholders/ZoneData (ATracer). @XmlRootElement(zones)/@XmlType("")→[XmlRoot]/[XmlType("")]; @XmlTransient maps/count→[XmlIgnore]; afterUnmarshal builds Poly/Cylinder/Sphere/Semisphere areas per AreaType + ZoneInfo per zone, weather-zone numbering; saveData JAXB-marshal literal (red-tolerated). All geometry areas/ZoneTemplate/ZoneInfo green.</summary>
+/// <summary>Java ZoneData: static named areas, duplicate validation and weather-zone numbering.</summary>
 [XmlType("")]
 [XmlRoot("zones")]
 public class ZoneData
 {
-    private static readonly ILogger log = AionLog.For(nameof(ZoneData));
+    [XmlElement("zone")] public List<ZoneTemplate> zoneList = null!;
+    [XmlIgnore] private readonly Dictionary<int, List<ZoneInfo>> zoneNameMap = new();
+    [XmlIgnore] private readonly HashSet<string> zoneNames = new(StringComparer.Ordinal);
+    [XmlIgnore] private readonly Dictionary<ZoneTemplate, int> weatherZoneIds = new();
 
-    [XmlElement("zone")]
-    public List<ZoneTemplate> zoneList;
-
-    [XmlIgnore]
-    private readonly Dictionary<int, List<ZoneInfo>> zoneNameMap = new();
-
-    [XmlIgnore]
-    private readonly Dictionary<ZoneTemplate, int> weatherZoneIds = new();
-
-    [XmlIgnore]
-    private int count;
-
-    /// <summary>
-    /// Merge another raw-deserialized ZoneData's pending &lt;zone&gt; rows into this one before AfterUnmarshal runs.
-    /// Java imports the zones/ dir with singleRootTag+recursiveImport, concatenating every file's &lt;zone&gt; list.
-    /// </summary>
+    // C# streaming-loader seam: concatenate imported rows before the single JAXB-style callback.
     public void MergePending(ZoneData other)
     {
-        if (other.zoneList == null)
-            return;
+        if (other.zoneList == null) return;
         zoneList ??= new List<ZoneTemplate>();
         zoneList.AddRange(other.zoneList);
     }
 
     public void AfterUnmarshal(object parent)
     {
-        int lastMapId = 0;
-        int weatherZoneId = 1;
+        int lastMapId = 0, weatherZoneId = 1;
         foreach (ZoneTemplate zone in zoneList)
         {
-            Area area = null;
-            switch (zone.GetAreaType())
+            if (!zoneNameMap.TryGetValue(zone.GetMapid(), out var zones))
+                zoneNameMap[zone.GetMapid()] = zones = new List<ZoneInfo>();
+            if (zone.GetZoneType() == ZoneClassName.WEATHER)
             {
-                case AreaType.Polygon:
-                    area = new PolyArea(zone.GetName(), zone.GetMapid(), zone.GetPoints().GetPoint(), zone.GetPoints().GetBottom(), zone.GetPoints().GetTop());
-                    break;
-                case AreaType.Cylinder:
-                    area = new CylinderArea(zone.GetName(), zone.GetMapid(), zone.GetCylinder().GetX().Value, zone.GetCylinder().GetY().Value, zone.GetCylinder().GetR().Value,
-                        zone.GetCylinder().GetBottom().Value, zone.GetCylinder().GetTop().Value);
-                    break;
-                case AreaType.Sphere:
-                    if (zone.GetSphere().GetR() <= 0)
-                        break;
-                    area = new SphereArea(zone.GetName(), zone.GetMapid(), zone.GetSphere().GetX().Value, zone.GetSphere().GetY().Value, zone.GetSphere().GetZ().Value, zone
-                        .GetSphere().GetR().Value);
-                    break;
-                case AreaType.Semisphere:
-                    area = new SemisphereArea(zone.GetName(), zone.GetMapid(), zone.GetSemisphere().GetX().Value, zone.GetSemisphere().GetY().Value, zone.GetSemisphere()
-                        .GetZ().Value, zone.GetSemisphere().GetR().Value);
-                    break;
-            }
-            if (area != null)
-            {
-                if (!zoneNameMap.TryGetValue(zone.GetMapid(), out List<ZoneInfo> zones))
+                if (lastMapId != zone.GetMapid())
                 {
-                    zones = new List<ZoneInfo>();
-                    zoneNameMap[zone.GetMapid()] = zones;
+                    lastMapId = zone.GetMapid();
+                    weatherZoneId = 1;
                 }
-                if (zone.GetZoneType() == ZoneClassName.WEATHER)
-                {
-                    if (lastMapId != zone.GetMapid())
-                    {
-                        lastMapId = zone.GetMapid();
-                        weatherZoneId = 1;
-                    }
-                    weatherZoneIds[zone] = weatherZoneId++;
-                }
-                zones.Add(new ZoneInfo(area, zone));
-                count++;
+                weatherZoneIds[zone] = weatherZoneId++;
             }
+            var info = new ZoneInfo(zone);
+            zones.Add(info);
+            if (!zoneNames.Add(info.GetZoneTemplate().GetName()!))
+                throw new ArgumentException("Duplicate zone name: " + info.GetZoneTemplate().GetName());
         }
-        zoneList = null;
+        zoneList = null!;
     }
 
-    public Dictionary<int, List<ZoneInfo>> GetZones()
+    public IReadOnlyList<ZoneInfo> GetZones(int mapId) =>
+        zoneNameMap.TryGetValue(mapId, out var zones) ? zones : Array.Empty<ZoneInfo>();
+
+    public bool ValidateZoneName(string zoneName)
     {
-        return zoneNameMap;
+        if (IsValidZoneName(zoneName)) return true;
+        AionLog.For(nameof(ZoneData)).LogWarning("Missing data for zone: " + zoneName);
+        return false;
     }
 
-    public int Size()
-    {
-        return count;
-    }
-
-    /// <summary>Weather zone ID it's an order number (starts from 1)</summary>
-    public int GetWeatherZoneId(ZoneTemplate template)
-    {
-        return weatherZoneIds.GetValueOrDefault(template, 0);
-    }
-
-    public void SaveData()
-    {
-        // Java parity: dataholders/ZoneData.saveData — JAXB marshal → idiomatic C# XmlSerializer (infra).
-        const string xmlPath = "./data/static_data/zones/generated_zones.xml";
-        try
-        {
-            var serializer = new XmlSerializer(typeof(ZoneData));
-            using var writer = new StreamWriter(xmlPath);
-            serializer.Serialize(writer, this);
-        }
-        catch (Exception e)
-        {
-            log.LogError(e, "Error while saving data: " + e.Message);
-        }
-    }
+    public bool IsValidZoneName(string zoneName) => zoneNames.Contains(zoneName);
+    public int Size() => zoneNames.Count;
+    public int GetWeatherZoneId(ZoneTemplate template) => weatherZoneIds.GetValueOrDefault(template, 0);
 }

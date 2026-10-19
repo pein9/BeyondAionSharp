@@ -38,7 +38,6 @@ public abstract class WorldMapInstance : IEnumerable<VisibleObject>
     private readonly ConcurrentDictionary<int, Player> worldMapPlayers = new ConcurrentDictionary<int, Player>(); // All players spawned in this world map instance
     private readonly ISet<int> registeredObjects = new HashSet<int>();
     private readonly ISet<int> questIds = new HashSet<int>();
-    private readonly Dictionary<ZoneName, ZoneInstance> zones;
     private readonly IInstanceHandler instanceHandler;
     private readonly int instanceId; // Id of this instance (channel)
     private readonly int maxPlayers;
@@ -50,7 +49,6 @@ public abstract class WorldMapInstance : IEnumerable<VisibleObject>
     public WorldMapInstance(WorldMap parent, int instanceId, int maxPlayers, Func<WorldMapInstance, IInstanceHandler> instanceHandlerSupplier)
     {
         this.parent = parent;
-        this.zones = ZoneService.GetInstance().GetZoneInstancesByWorldId(parent.GetMapId());
         this.instanceHandler = instanceHandlerSupplier(this);
         this.instanceId = instanceId;
         this.maxPlayers = maxPlayers;
@@ -86,7 +84,10 @@ public abstract class WorldMapInstance : IEnumerable<VisibleObject>
     public abstract MapRegion GetRegion(float x, float y, float z);
 
     /// <summary>Create new MapRegion and add link to neighbours.</summary>
-    protected abstract MapRegion CreateMapRegion(int regionId);
+    protected MapRegion CreateMapRegion(int regionId, IEnumerable<ZoneInstance> allZones, Aion.GameServer.Model.Geometry.RectangleArea area)
+    {
+        return new MapRegion(regionId, this, allZones.Where(zone => zone.GetAreaTemplate().IntersectsRectangle(area)).ToArray());
+    }
 
     protected abstract void InitMapRegions();
 
@@ -298,31 +299,6 @@ public abstract class WorldMapInstance : IEnumerable<VisibleObject>
     public WorldPosition GetStartPos()
     {
         return startPos;
-    }
-
-    protected ZoneInstance[] FilterZones(int mapId, int regionId, float startX, float startY, float minZ, float maxZ)
-    {
-        RegionZone regionZone = new RegionZone(startX, startY, minZ, maxZ);
-        return zones.Values.Where(zoneInstance =>
-        {
-            if (zoneInstance.GetAreaTemplate().IntersectsRectangle(regionZone))
-                return true;
-            if (zoneInstance.GetZoneTemplate().GetZoneType() == ZoneClassName.DUMMY)
-                log.LogError("Region " + regionId + " should intersect with whole map zone!!! (map=" + mapId + ")");
-            return false;
-        }).ToArray();
-    }
-
-    public bool IsInsideZone(VisibleObject obj, ZoneName zoneName)
-    {
-        ZoneInstance zoneTemplate = zones.GetValueOrDefault(zoneName);
-        return zoneTemplate != null && IsInsideZone(obj.GetPosition(), zoneName);
-    }
-
-    public bool IsInsideZone(WorldPosition pos, ZoneName zoneName)
-    {
-        MapRegion mapRegion = this.GetRegion(pos.GetX(), pos.GetY(), pos.GetZ());
-        return mapRegion.IsInsideZone(zoneName, pos.GetX(), pos.GetY(), pos.GetZ());
     }
 
     public int GetMaxPlayers()

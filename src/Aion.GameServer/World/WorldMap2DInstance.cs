@@ -18,18 +18,18 @@ public class WorldMap2DInstance : WorldMapInstance
         this.ownerId = ownerId;
     }
 
-    protected override MapRegion CreateMapRegion(int regionId)
+    private MapRegion CreateMapRegion(int regionId, List<ZoneInstance> zoneInstances)
     {
         float startX = RegionUtil.GetXFrom2dRegionId(regionId);
         float startY = RegionUtil.GetYFrom2dRegionId(regionId);
         int size = this.GetParent().GetWorldSize();
         float maxZ = (float)Math.Floor((float)size / regionSize + 0.5f) * regionSize;
-        ZoneInstance[] zones = FilterZones(this.GetMapId(), regionId, startX, startY, 0, maxZ);
-        return new MapRegion(regionId, this, zones);
+        return CreateMapRegion(regionId, zoneInstances, new RegionZone(startX, startY, 0, maxZ));
     }
 
     protected override void InitMapRegions()
     {
+        var zoneInstances = ZoneService.GetInstance().CreateZoneInstances(GetMapId());
         int size = this.GetParent().GetWorldSize();
         // Create all mapRegion
         for (int x = 0; x <= size; x = x + regionSize)
@@ -37,7 +37,7 @@ public class WorldMap2DInstance : WorldMapInstance
             for (int y = 0; y <= size; y = y + regionSize)
             {
                 int regionId = RegionUtil.Get2dRegionId(x, y);
-                regions[regionId] = CreateMapRegion(regionId);
+                regions[regionId] = CreateMapRegion(regionId, zoneInstances);
             }
         }
 

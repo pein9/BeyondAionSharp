@@ -16,7 +16,7 @@ public class _30011Arachnophobia : AbstractQuestHandler
     {
         qe.RegisterQuestNpc(799031).AddOnQuestStart(questId);
         qe.RegisterQuestNpc(799031).AddOnTalkEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("IDTEMPLE_SENSORYAREA_Q30011_206105_1_300160000"), questId);
+        qe.RegisterOnEnterZone("IDTEMPLE_SENSORYAREA_Q30011_206105_1_300160000", questId);
         qe.RegisterQuestNpc(215792).AddOnKillEvent(questId);
     }
 
@@ -72,7 +72,7 @@ public class _30011Arachnophobia : AbstractQuestHandler
         return DefaultOnKillEvent(env, 215792, 1, true);
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         Player player = env.GetPlayer();
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);

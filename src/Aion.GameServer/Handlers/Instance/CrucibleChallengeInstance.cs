@@ -200,11 +200,11 @@ public class CrucibleChallengeInstance : CrucibleInstance
                 Player p = npc.GetAggroList().GetMostPlayerDamage();
                 if (p != null)
                 {
-                    if (p.IsInsideZone(ZoneName.Get("ILLUSION_STADIUM_1_300320000")))
+                    if (p.IsInsideZone("ILLUSION_STADIUM_1_300320000"))
                     {
                         Sp(217820, 1251.1598f, 237.97736f, 405.3968f, (byte)0, 0);
                     }
-                    else if (p.IsInsideZone(ZoneName.Get("ILLUSION_STADIUM_6_300320000")))
+                    else if (p.IsInsideZone("ILLUSION_STADIUM_6_300320000"))
                     {
                         Sp(217820, 1266.9661f, 791.5348f, 436.64014f, (byte)0, 0);
                     }
@@ -479,31 +479,31 @@ public class CrucibleChallengeInstance : CrucibleInstance
     {
         base.OnDie(player, lastAttacker);
         int place = 0;
-        if (IsInZone(ZoneName.Get("ILLUSION_STADIUM_4_300320000"), player)) // stage 1
+        if (player.IsInsideZone("ILLUSION_STADIUM_4_300320000")) // stage 1
         {
             place = 1;
         }
-        else if (IsInZone(ZoneName.Get("ILLUSION_STADIUM_8_300320000"), player)) // stage 2
+        else if (player.IsInsideZone("ILLUSION_STADIUM_8_300320000")) // stage 2
         {
             place = 2;
         }
-        else if (IsInZone(ZoneName.Get("ILLUSION_STADIUM_5_300320000"), player)) // stage 3
+        else if (player.IsInsideZone("ILLUSION_STADIUM_5_300320000")) // stage 3
         {
             place = 3;
         }
-        else if (IsInZone(ZoneName.Get("ILLUSION_STADIUM_1_300320000"), player)) // stage 4
+        else if (player.IsInsideZone("ILLUSION_STADIUM_1_300320000")) // stage 4
         {
             place = 4;
         }
-        else if (IsInZone(ZoneName.Get("ILLUSION_STADIUM_6_300320000"), player)) // stage 4
+        else if (player.IsInsideZone("ILLUSION_STADIUM_6_300320000")) // stage 4
         {
             place = 5;
         }
-        else if (IsInZone(ZoneName.Get("ILLUSION_STADIUM_2_300320000"), player)) // stage 5
+        else if (player.IsInsideZone("ILLUSION_STADIUM_2_300320000")) // stage 5
         {
             place = 6;
         }
-        else if (IsInZone(ZoneName.Get("ILLUSION_STADIUM_7_300320000"), player)) // stage 6
+        else if (player.IsInsideZone("ILLUSION_STADIUM_7_300320000")) // stage 6
         {
             place = 7;
         }
@@ -808,11 +808,11 @@ public class CrucibleChallengeInstance : CrucibleInstance
                     return;
                 }
                 rewardCount++;
-                if (npc.IsInsideZone(ZoneName.Get("ILLUSION_STADIUM_1_300320000")))
+                if (npc.IsInsideZone("ILLUSION_STADIUM_1_300320000"))
                 {
                     Sp(205667, 1258.8464f, 237.85518f, 405.39673f, (byte)0, 0);
                 }
-                else if (npc.IsInsideZone(ZoneName.Get("ILLUSION_STADIUM_6_300320000")))
+                else if (npc.IsInsideZone("ILLUSION_STADIUM_6_300320000"))
                 {
                     Sp(205677, 1271.5472f, 791.36145f, 436.64017f, (byte)0, 0);
                 }

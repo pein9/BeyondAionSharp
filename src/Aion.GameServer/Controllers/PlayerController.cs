@@ -173,11 +173,7 @@ public class PlayerController : CreatureController<Player>
             player.UnsetPlayerMode(Aion.GameServer.Model.Actions.PlayerMode.RIDE);
         Aion.GameServer.Services.ConquerorAndProtectorSystem.ConquerorAndProtectorService.GetInstance().OnEnterZone(player, zone);
         Aion.GameServer.Services.Instance.InstanceService.OnEnterZone(player, zone);
-        Aion.GameServer.World.Zone.ZoneName zoneName = zone.GetAreaTemplate().GetZoneName();
-        if (zoneName == null)
-            log.LogWarning("No name found for a zone in map " + zone.GetAreaTemplate().GetWorldId() + " with xml name " + zone.GetZoneTemplate().GetXmlName());
-        else
-            Aion.GameServer.QuestEngine.QuestEngine.GetInstance().OnEnterZone(new Aion.GameServer.QuestEngine.Model.QuestEnv(null, player, 0), zoneName);
+        Aion.GameServer.QuestEngine.QuestEngine.GetInstance().OnEnterZone(new Aion.GameServer.QuestEngine.Model.QuestEnv(null, player, 0), zone);
     }
 
     public override void OnLeaveZone(Aion.GameServer.World.Zone.ZoneInstance zone)
@@ -185,11 +181,7 @@ public class PlayerController : CreatureController<Player>
         Player player = GetOwner();
         Aion.GameServer.Services.ConquerorAndProtectorSystem.ConquerorAndProtectorService.GetInstance().OnLeaveZone(player, zone);
         Aion.GameServer.Services.Instance.InstanceService.OnLeaveZone(player, zone);
-        Aion.GameServer.World.Zone.ZoneName zoneName = zone.GetAreaTemplate().GetZoneName();
-        if (zoneName == null)
-            log.LogWarning("No name found for a zone in map " + zone.GetAreaTemplate().GetWorldId() + " with xml name " + zone.GetZoneTemplate().GetXmlName());
-        else
-            Aion.GameServer.QuestEngine.QuestEngine.GetInstance().OnLeaveZone(new Aion.GameServer.QuestEngine.Model.QuestEnv(null, player, 0), zoneName);
+        Aion.GameServer.QuestEngine.QuestEngine.GetInstance().OnLeaveZone(new Aion.GameServer.QuestEngine.Model.QuestEnv(null, player, 0), zone);
     }
 
     /// <summary>Called when leaving a fly zone or a fly map.</summary>

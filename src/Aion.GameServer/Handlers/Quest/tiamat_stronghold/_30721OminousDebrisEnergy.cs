@@ -122,7 +122,7 @@ public class _30721OminousDebrisEnergy : AbstractQuestHandler
 		QuestState qs = player.GetQuestStateList().GetQuestState(questId);
 		if (qs != null && qs.GetStatus() == QuestStatus.START)
 		{
-			if (player.IsInsideItemUseZone(ZoneName.Get("LF5_ITEMUSEAREA_Q30721")))
+			if (player.IsInsideItemUseZone("LF5_ITEMUSEAREA_Q30721"))
 			{
 				int var = qs.GetQuestVarById(0);
 				if (var == 2)

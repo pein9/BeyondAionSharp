@@ -20,7 +20,7 @@ public class _18604MeetingWithRotan : AbstractQuestHandler
 
     public override void Register()
     {
-        qe.RegisterOnEnterZone(ZoneName.Get("GRAND_CAVERN_300230000"), questId);
+        qe.RegisterOnEnterZone("GRAND_CAVERN_300230000", questId);
         qe.RegisterQuestNpc(700961).AddOnTalkEvent(questId); // Grave Robber's Corpse
     }
 
@@ -85,9 +85,9 @@ public class _18604MeetingWithRotan : AbstractQuestHandler
         return env.GetTargetId() == 700961 && questEventType == QuestActionType.ACTION_ITEM_USE;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
-        if (zoneName != ZoneName.Get("GRAND_CAVERN_300230000"))
+        if (!zone.Matches("GRAND_CAVERN_300230000"))
             return false;
 
         QuestState qs = env.GetPlayer().GetQuestStateList().GetQuestState(questId);

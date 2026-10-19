@@ -35,21 +35,21 @@ public class Zone : AdminCommand
             return;
         }
         Creature target = admin.GetTarget() is Creature creature ? creature : admin;
-        string zoneNameParam = paramsArr.Length == 0 ? null : paramsArr[0];
+        string zoneNameParam = paramsArr.Length == 0 ? "" : paramsArr[0].ToUpperInvariant();
         List<ZoneInstance> zones = FindZones(target, zoneNameParam);
         string zoneTypes = string.Join(", ", ((ZoneType[])Enum.GetValues(typeof(ZoneType))).Where(target.IsInsideZoneType).Select(zt => zt.ToString()));
         if (!string.IsNullOrEmpty(zoneTypes))
             SendInfo(admin, Name(target) + "'s zone types: " + zoneTypes);
         if (zones.Count == 0)
         {
-            SendInfo(admin, Name(target) + " is not in " + (zoneNameParam == null ? "any zone" : zoneNameParam) + '.');
+            SendInfo(admin, Name(target) + " is not in " + (zoneNameParam.Length == 0 ? "any zone" : zoneNameParam + "*") + '.');
         }
         else
         {
             SendInfo(admin, Name(target) + "'s " + (zones.Count == 1 ? "zone" : "zones") + ':');
             foreach (ZoneInstance zone in zones)
             {
-                SendInfo(admin, zone.GetAreaTemplate().GetZoneName().Name);
+                SendInfo(admin, zone.GetZoneTemplate().GetName());
                 SendInfo(admin, "Fly: " + JavaString.ValueOf(zone.CanFly()) + "; Glide: " + JavaString.ValueOf(zone.CanGlide()));
                 SendInfo(admin, "Ride: " + JavaString.ValueOf(zone.CanRide()) + "; Fly-ride: " + JavaString.ValueOf(zone.CanFlyRide()));
                 SendInfo(admin, "Kisk: " + JavaString.ValueOf(zone.CanPutKisk()) + "; Recall: " + JavaString.ValueOf(zone.CanRecall()));
@@ -60,16 +60,11 @@ public class Zone : AdminCommand
         }
     }
 
-    private List<ZoneInstance> FindZones(Creature creature, string zoneNameFilter)
+    private List<ZoneInstance> FindZones(Creature creature, string zoneNameUpperCase)
     {
-        List<ZoneInstance> zones = creature.FindZones();
-        if (zoneNameFilter != null)
-        {
-            ZoneName zoneName = ZoneName.Get(zoneNameFilter);
-            if (zoneName == ZoneName.NONE)
-                throw new ArgumentException("Invalid zone name.");
-            zones = zones.Where(zone => zone.GetZoneTemplate().GetName() == zoneName).ToList();
-        }
+        var zones = creature.FindZones();
+        if (zoneNameUpperCase.Length != 0)
+            zones = zones.Where(zone => zone.GetZoneTemplate().GetName()!.ToUpperInvariant().StartsWith(zoneNameUpperCase, StringComparison.Ordinal)).ToList();
         return zones;
     }
 }

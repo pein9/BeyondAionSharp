@@ -11,16 +11,16 @@ public class CylinderArea : AbstractArea
     private readonly float _centerY;
     private readonly float _radius;
 
-    public CylinderArea(ZoneName zoneName, int worldId, Point2D center, float radius, float minZ, float maxZ)
-        : this(zoneName, worldId, center.GetX(), center.GetY(), radius, minZ, maxZ) { }
+    public CylinderArea(Point2D center, float radius, float minZ, float maxZ)
+        : this(center.GetX(), center.GetY(), radius, minZ, maxZ) { }
 
-    // Java parity: Cylinder.getX()/getR()/getTop()/getBottom() return boxed Float (auto-unboxed); accept float?.
-    public CylinderArea(ZoneName zoneName, int worldId, float? x, float? y, float? radius, float? minZ, float? maxZ)
-        : base(zoneName, worldId, minZ ?? 0, maxZ ?? 0)
+    // Java parity: Cylinder.getX()/getR()/getTop()/getBottom() return boxed Float (auto-unboxed); accept float.
+    public CylinderArea(float x, float y, float radius, float minZ, float maxZ)
+        : base(minZ, maxZ)
     {
-        _centerX = x ?? 0;
-        _centerY = y ?? 0;
-        _radius  = radius ?? 0;
+        _centerX = x;
+        _centerY = y;
+        _radius  = radius;
     }
 
     public override bool IsInside2D(float x, float y) =>

@@ -29,7 +29,7 @@ namespace Aion.GameServer.Handlers.Quest
             {
                 qe.RegisterQuestNpc(npc).AddOnTalkEvent(questId);
             }
-            qe.RegisterOnLeaveZone(ZoneName.Get("BALTASAR_HILL_VILLAGE_220050000"), questId);
+            qe.RegisterOnLeaveZone("BALTASAR_HILL_VILLAGE_220050000", questId);
             qe.RegisterOnDie(questId);
             qe.RegisterOnEnterWorld(questId);
         }
@@ -130,14 +130,14 @@ namespace Aion.GameServer.Handlers.Quest
             return false;
         }
 
-        public override bool OnLeaveZoneEvent(QuestEnv env, ZoneName zoneName)
+        public override bool OnLeaveZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
         {
             Player player = env.GetPlayer();
             QuestState qs = player.GetQuestStateList().GetQuestState(env.GetQuestId());
             if (qs != null && qs.GetStatus() == QuestStatus.START)
             {
                 int var = qs.GetQuestVarById(0);
-                if (zoneName == ZoneName.Get("BALTASAR_HILL_VILLAGE_220050000") && var == 1)
+                if (zone.Matches("BALTASAR_HILL_VILLAGE_220050000") && var == 1)
                 {
                     GiveQuestItem(env, 182205502, 1);
                     ChangeQuestStep(env, 1, 2); // 2

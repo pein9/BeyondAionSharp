@@ -52,7 +52,7 @@ public sealed partial class SimulationFastScenarioTests
 			"Event quest did not start: " + Describe(accepted));
 		Assert.Equal(0, ItemCount(session.Api.World, 188100124)); Assert.Equal(0, ItemCount(session.Api.World, 188052626));
 
-		var zones = new[] { "BLACK_FIN_CANYON_210070000", "FROSTSHARD_CAVERN_210070000", "WILTFOG_BRIAR_210070000" }.Select(ZoneName.Get).ToArray();
+		var zones = new[] { "BLACK_FIN_CANYON_210070000", "FROSTSHARD_CAVERN_210070000", "WILTFOG_BRIAR_210070000" };
 		var instance = fixture.World.GetWorldMap(210070000).GetMainWorldMapInstance();
 		var targets = new[] { 235967, 235971 }.Select(id => Assert.Single(instance.GetNpcs(id), n => n.IsSpawned() && !n.IsDead())).ToArray();
 		Assert.Equal(2, targets.Length);

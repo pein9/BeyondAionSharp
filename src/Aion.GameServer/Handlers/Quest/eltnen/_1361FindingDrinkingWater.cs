@@ -33,7 +33,7 @@ public class _1361FindingDrinkingWater : AbstractQuestHandler
 
         if (id != 182201326) // Empty Bucket
             return HandlerResult.UNKNOWN;
-        if (!player.IsInsideItemUseZone(ZoneName.Get("LF2_ITEMUSEAREA_Q1361")))
+        if (!player.IsInsideItemUseZone("LF2_ITEMUSEAREA_Q1361"))
             return HandlerResult.UNKNOWN;
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
         if (qs == null)

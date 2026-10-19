@@ -7,19 +7,16 @@ namespace Aion.GameServer.Model.Geometry;
 /// <summary>Java parity: model/geometry/SphereArea — spherical area (2D checks always return false).</summary>
 public class SphereArea : Area
 {
-    protected float X;
-    protected float Y;
-    protected float Z;
-    protected float R;
-    protected int WorldId;
-    protected ZoneName ZoneName;
+    protected readonly float X;
+    protected readonly float Y;
+    protected readonly float Z;
+    protected readonly float R;
 
-    // Java parity: Sphere.getX()/getR() return boxed Float (auto-unboxed at the call); accept float? and coalesce.
-    public SphereArea(ZoneName zoneName, int worldId, float? x, float? y, float? z, float? r)
+    // Area.Create unboxes the XML Float attributes before constructing the geometry.
+    public SphereArea(float x, float y, float z, float r)
     {
-        X = x ?? 0; Y = y ?? 0; Z = z ?? 0; R = r ?? 0;
-        WorldId  = worldId;
-        ZoneName = zoneName;
+        if (r <= 0) throw new ArgumentException("Radius must be greater than 0");
+        X = x; Y = y; Z = z; R = r;
     }
 
     // Java: @Deprecated — 2D checks always return false for spheres
@@ -61,6 +58,4 @@ public class SphereArea : Area
     public virtual bool IntersectsRectangle(RectangleArea area) =>
         area.GetDistance3D(X, Y, Z) <= R;
 
-    public int      GetWorldId()  => WorldId;
-    public ZoneName GetZoneName() => ZoneName;
 }

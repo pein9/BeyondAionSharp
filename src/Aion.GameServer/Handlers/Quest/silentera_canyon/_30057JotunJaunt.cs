@@ -16,10 +16,10 @@ public class _30057JotunJaunt : AbstractQuestHandler
     {
         qe.RegisterQuestNpc(799381).AddOnQuestStart(questId);
         qe.RegisterQuestNpc(799381).AddOnTalkEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("SILENTERA_WESTGATE_600010000"), questId);
+        qe.RegisterOnEnterZone("SILENTERA_WESTGATE_600010000", questId);
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         Player player = env.GetPlayer();
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);

@@ -9,9 +9,9 @@ namespace Aion.GameServer.World.Zone;
 /// </summary>
 public class RegionZone : RectangleArea
 {
-    // Java parity: passes null ZoneName / worldId 0; spans one WORLD_REGION_SIZE square.
+    // Java parity: spans one WORLD_REGION_SIZE square within the supplied height band.
     public RegionZone(float startX, float startY, float minZ, float maxZ)
-        : base(null!, 0, startX, startY, startX + WorldConfig.WorldRegionSize, startY + WorldConfig.WorldRegionSize, minZ, maxZ)
+        : base(startX, startY, startX + WorldConfig.WorldRegionSize, startY + WorldConfig.WorldRegionSize, minZ, maxZ)
     {
     }
 

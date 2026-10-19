@@ -44,12 +44,12 @@ public abstract class PvPZone : AdvancedZoneHandler
             {
                 player.GetController().GetAndRemoveTask(TaskId.TELEPORT); // remove manually as it won't get removed automatically
                 PlayerReviveService.DuelRevive(player);
-                DoTeleport(player, zone.GetZoneTemplate().GetName());
+                DoTeleport(player, zone);
                 PacketSendUtility.BroadcastToZone(zone, SM_SYSTEM_MESSAGE.STR_PvPZONE_OUT_MESSAGE(player.GetName()));
             }, 5000));
         }
         return true;
     }
 
-    protected abstract void DoTeleport(Player player, ZoneName zoneName);
+    protected abstract void DoTeleport(Player player, ZoneInstance zone);
 }

@@ -24,7 +24,7 @@ public class _20507ItsWorseThanWeThought : AbstractQuestHandler
         int[] npcs = { 804738, 804739, 804740, 804741 };
         foreach (int npc in npcs)
             qe.RegisterQuestNpc(npc).AddOnTalkEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("DF5_SENSORYAREA_Q20507A_206377_9_220080000"), questId); // Uncharted Cave zone
+        qe.RegisterOnEnterZone("DF5_SENSORYAREA_Q20507A_206377_9_220080000", questId); // Uncharted Cave zone
         qe.RegisterOnQuestCompleted(questId);
         qe.RegisterOnLevelChanged(questId);
     }
@@ -108,9 +108,9 @@ public class _20507ItsWorseThanWeThought : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
-        if (zoneName == ZoneName.Get("DF5_SENSORYAREA_Q20507A_206377_9_220080000"))
+        if (zone.Matches("DF5_SENSORYAREA_Q20507A_206377_9_220080000"))
         {
             Player player = env.GetPlayer();
             if (player == null)

@@ -228,15 +228,7 @@ public class PetService
 
     private bool IsPetItemUseAllowed(Player player, Item item)
     {
-        if (item.GetItemTemplate().HasAreaRestriction())
-        {
-            ZoneName restriction = item.GetItemTemplate().GetUseArea();
-            if (restriction != null && !player.IsInsideItemUseZone(restriction))
-            {
-                return false;
-            }
-        }
-        return true;
+        return !item.GetItemTemplate().HasAreaRestriction() || player.IsInsideItemUseZone(item.GetItemTemplate().GetUseArea());
     }
 
     public void ActivateLoot(Pet pet, bool activate)

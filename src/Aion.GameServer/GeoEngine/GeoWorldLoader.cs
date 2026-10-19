@@ -229,8 +229,7 @@ public static class GeoWorldLoader
         string name = path[(path.LastIndexOf('/') + 1)..path.LastIndexOf('.')].ToUpperInvariant();
         if (childNumber > 0) name += "_CHILD" + childNumber;
         geometry.SetName(name + "_" + region.ToString(CultureInfo.InvariantCulture));
-        var zoneName = ZoneName.CreateOrGet(geometry.GetName() + "_" + worldId.ToString(CultureInfo.InvariantCulture));
-        ZoneService.GetInstance().CreateMaterialZoneTemplate(geometry, worldId, zoneName);
+        ZoneService.GetInstance().CreateMaterialZoneTemplate(geometry, worldId);
     }
 
     internal static int GetVectorHash(Vector3f location)

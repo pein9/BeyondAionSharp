@@ -102,7 +102,7 @@ public class EsoterraceInstance : GeneralInstanceHandler
 
     public override void OnEnterZone(Player player, ZoneInstance zone)
     {
-        if (zone.GetAreaTemplate().GetZoneName() == ZoneName.Get("DRANA_PRODUCTION_LAB_300250000"))
+        if (zone.Matches("DRANA_PRODUCTION_LAB_300250000"))
         {
             PacketSendUtility.SendPacket(player, new SM_SYSTEM_MESSAGE(1400919));
         }

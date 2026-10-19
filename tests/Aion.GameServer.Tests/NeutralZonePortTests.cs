@@ -191,9 +191,10 @@ public sealed class NeutralZonePortTests
 
     private static DisablePvPZoneInstance NeutralZone(string name)
     {
-        var template = new ZoneTemplate { XmlName = name, ZoneType = ZoneClassName.PVP, Flags = 0 };
+        var template = new ZoneTemplate { XmlName = name, ZoneType = ZoneClassName.PVP, Flags = 0,
+            AreaType = AreaType.Sphere, Sphere = new Sphere(0, 0, 0, 1) };
         return new DisablePvPZoneInstance(110010000,
-            new ZoneInfo(new SphereArea(ZoneName.CreateOrGet(name), 110010000, 0, 0, 0, 1), template));
+            new ZoneInfo(template));
     }
 
     private static void SetField(Type type, object instance, string name, object value) =>

@@ -10,7 +10,7 @@ using Aion.GameServer.Model;
 
 namespace Aion.GameServer.QuestEngine.Handlers.Template;
 
-/// <summary>Java parity: questEngine/handlers/template/KillInZone (Cheatkiller, Majka, Pad). Set.addAll→UnionWith; Set.equals→SetEquals; isEmpty→Count==0; super.onDialogEvent→base; DataManager.ZONE_DATA.zoneList→ZoneList; DataManager/QuestService red-tolerated.</summary>
+/// <summary>Java parity: questEngine/handlers/template/KillInZone (Cheatkiller, Majka, Pad). Set.addAll→UnionWith; Set.equals→SetEquals; isEmpty→Count==0; super.onDialogEvent→base; DataManager/QuestService red-tolerated.</summary>
 public class KillInZone : AbstractTemplateQuestHandler
 {
     private static readonly ILogger log = AionLog.For(nameof(KillInZone));
@@ -33,15 +33,8 @@ public class KillInZone : AbstractTemplateQuestHandler
             this.endNpcIds.UnionWith(endNpcIds);
         else
             this.endNpcIds.UnionWith(startNpcIds);
-        if (zones != null)
-        {
-            this.zones.UnionWith(zones);
-        }
-        else
-        {
-            foreach (ZoneTemplate template in DataManager.ZONE_DATA.zoneList)
-                this.zones.Add(template.GetXmlName());
-        }
+        foreach (string name in zones)
+            if (DataManager.ZONE_DATA.ValidateZoneName(name)) this.zones.Add(name);
         if (killAmount == 0)
             this.killAmount = 1;
         else
@@ -108,7 +101,7 @@ public class KillInZone : AbstractTemplateQuestHandler
         return false;
     }
 
-    public override bool OnKillInZoneEvent(QuestEnv env)
+    public override bool OnKillInZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         // Rank restriction
         if (minRank > 0 && ((Player)env.GetVisibleObject()).GetAbyssRank().GetRank().GetId() < minRank)

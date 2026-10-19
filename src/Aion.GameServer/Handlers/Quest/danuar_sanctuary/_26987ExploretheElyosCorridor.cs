@@ -18,7 +18,7 @@ public class _26987ExploretheElyosCorridor : AbstractQuestHandler
     {
         qe.RegisterQuestNpc(npcId).AddOnQuestStart(questId);
         qe.RegisterQuestNpc(npcId).AddOnTalkEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("LF5_SENSORYAREA_Q26987_206410_1_210070000"), questId);
+        qe.RegisterOnEnterZone("LF5_SENSORYAREA_Q26987_206410_1_210070000", questId);
     }
 
     public override bool OnDialogEvent(QuestEnv env)
@@ -46,7 +46,7 @@ public class _26987ExploretheElyosCorridor : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         QuestState qs = env.GetPlayer().GetQuestStateList().GetQuestState(questId);
         if (qs != null && qs.GetStatus() == QuestStatus.START)

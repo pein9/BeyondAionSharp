@@ -204,7 +204,7 @@ namespace Aion.GameServer.Handlers.Quest
             QuestState qs = player.GetQuestStateList().GetQuestState(questId);
             if (qs != null && qs.GetStatus() == QuestStatus.START)
             {
-                if (player.IsInsideItemUseZone(ZoneName.Get("LF1_ITEMUSEAREA_Q1006")))
+                if (player.IsInsideItemUseZone("LF1_ITEMUSEAREA_Q1006"))
                 {
                     int var = qs.GetQuestVarById(0);
                     if (var == 1)

@@ -124,7 +124,7 @@ public class _30771ImpendingDebrisEnergy : AbstractQuestHandler
 		QuestState qs = player.GetQuestStateList().GetQuestState(questId);
 		if (qs != null && qs.GetStatus() == QuestStatus.START)
 		{
-			if (player.IsInsideItemUseZone(ZoneName.Get("DF5_ITEMUSEAREA_Q30771")))
+			if (player.IsInsideItemUseZone("DF5_ITEMUSEAREA_Q30771"))
 			{
 				int var = qs.GetQuestVarById(0);
 				if (var == 2)

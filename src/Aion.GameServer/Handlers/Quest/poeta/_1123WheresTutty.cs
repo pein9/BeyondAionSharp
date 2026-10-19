@@ -19,7 +19,7 @@ public class _1123WheresTutty : AbstractQuestHandler
     {
         qe.RegisterQuestNpc(790001).AddOnTalkEvent(questId);
         qe.RegisterQuestNpc(790001).AddOnQuestStart(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("QUEST_1123_210010000"), questId);
+        qe.RegisterOnEnterZone("QUEST_1123_210010000", questId);
     }
 
     public override bool OnDialogEvent(QuestEnv env)
@@ -46,9 +46,9 @@ public class _1123WheresTutty : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
-        if (zoneName != ZoneName.Get("QUEST_1123_210010000"))
+        if (!zone.Matches("QUEST_1123_210010000"))
             return false;
         Player player = env.GetPlayer();
         if (player == null)

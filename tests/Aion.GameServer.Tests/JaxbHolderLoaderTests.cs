@@ -1908,9 +1908,9 @@ public sealed class JaxbHolderLoaderTests
         Assert.True(data!.Size() > 0);
 
         // Known map: 110010000 has <zone name="AIRSHIP_DOCK_1_110010000" area_type="POLYGON" .../> among others.
-        var zones = data.GetZones();
-        Assert.True(zones.ContainsKey(110010000));
-        Assert.NotEmpty(zones[110010000]);
+        var zones = data.GetZones(110010000);
+        Assert.NotEmpty(zones);
+        Assert.Contains(zones, zone => zone.GetZoneTemplate().GetName() == "AIRSHIP_DOCK_1_110010000");
     }
 
     [Fact]

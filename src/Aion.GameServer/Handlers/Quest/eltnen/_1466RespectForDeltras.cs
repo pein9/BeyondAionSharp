@@ -33,7 +33,7 @@ public class _1466RespectForDeltras : AbstractQuestHandler
 
         if (id != 182201385)
             return HandlerResult.UNKNOWN;
-        if (!player.IsInsideZone(ZoneName.Get("EXECUTION_GROUND_OF_DELTRAS_220020000")))
+        if (!player.IsInsideZone("EXECUTION_GROUND_OF_DELTRAS_220020000"))
             return HandlerResult.UNKNOWN;
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
         if (qs == null)

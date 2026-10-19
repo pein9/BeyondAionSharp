@@ -16,7 +16,7 @@ using Aion.GameServer.Model;
 
 namespace Aion.GameServer.QuestEngine.Handlers.Template;
 
-/// <summary>Java parity: questEngine/handlers/template/MonsterHunt (MrPoke, vlog, Bobobear, Pad, Majka). Set.addAll→UnionWith; isEmpty→Count==0; ZoneName.get(s).name().equalsIgnoreCase→Name comparison; bit-packed quest vars preserved; DataManager/QuestService/RiftService/VortexService red-tolerated.</summary>
+/// <summary>Java parity: questEngine/handlers/template/MonsterHunt (MrPoke, vlog, Bobobear, Pad, Majka). Set.addAll→UnionWith; isEmpty→Count==0; ZoneInstance.Matches uses exact names; bit-packed quest vars preserved; DataManager/QuestService/RiftService/VortexService red-tolerated.</summary>
 public class MonsterHunt : AbstractTemplateQuestHandler
 {
     private static readonly ILogger log = AionLog.For(nameof(MonsterHunt));
@@ -86,8 +86,8 @@ public class MonsterHunt : AbstractTemplateQuestHandler
         if (invasionWorldId != 0)
             qe.RegisterOnEnterWorld(questId);
 
-        if (startZone != null && !ZoneName.Get(startZone).Name.Equals("NONE", StringComparison.OrdinalIgnoreCase))
-            qe.RegisterOnEnterZone(ZoneName.Get(startZone), questId);
+        if (startZone != null && DataManager.ZONE_DATA.ValidateZoneName(startZone))
+            qe.RegisterOnEnterZone(startZone, questId);
 
         if (startDistanceNpcId != 0)
             qe.RegisterQuestNpc(startDistanceNpcId, 300).AddOnAtDistanceEvent(questId);
@@ -294,9 +294,9 @@ public class MonsterHunt : AbstractTemplateQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
-        if (zoneName.Name.Equals(startZone, StringComparison.OrdinalIgnoreCase))
+        if (zone.Matches(startZone))
             return StartQuest(env);
         return false;
     }

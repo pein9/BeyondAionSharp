@@ -23,7 +23,7 @@ public class _24015TotemPlowed : AbstractQuestHandler
         qe.RegisterQuestNpc(203669).AddOnTalkEvent(questId); // Taora
         qe.RegisterQuestNpc(203557).AddOnTalkEvent(questId); // Suthran
         qe.RegisterQuestNpc(700099).AddOnKillEvent(questId); // Zemurru's Totem
-        qe.RegisterOnEnterZone(ZoneName.Get("DF1A_SENSORYAREA_Q2021_206013_2_220030000"), questId);
+        qe.RegisterOnEnterZone("DF1A_SENSORYAREA_Q2021_206013_2_220030000", questId);
     }
 
     public override bool OnKillEvent(QuestEnv env)
@@ -96,9 +96,9 @@ public class _24015TotemPlowed : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
-        if (zoneName != ZoneName.Get("DF1A_SENSORYAREA_Q2021_206013_2_220030000"))
+        if (!zone.Matches("DF1A_SENSORYAREA_Q2021_206013_2_220030000"))
             return false;
         Player player = env.GetPlayer();
         if (player == null)

@@ -12,8 +12,7 @@ public class MaterialZoneTemplate : ZoneTemplate
     public MaterialZoneTemplate(Spatial geometry, int mapId)
     {
         Mapid = mapId;
-        Flags = DataManager.WORLD_MAPS_DATA.GetTemplate(mapId).GetFlags();
-        XmlName = geometry.GetName() + "_" + mapId;
+        XmlName = geometry.GetName();
         BoundingBox box = (BoundingBox)geometry.GetWorldBound();
         Vector3f center = box.GetCenter();
         // don't use polygons for small areas, they are bugged in Java API

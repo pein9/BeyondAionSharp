@@ -22,7 +22,7 @@ public class _1194ReducingTursinStrength : AbstractQuestHandler
         qe.RegisterQuestNpc(203098).AddOnTalkEvent(questId);
         qe.RegisterQuestNpc(210185).AddOnKillEvent(questId);
         qe.RegisterQuestNpc(210186).AddOnKillEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("TURSIN_GARRISON_210030000"), questId);
+        qe.RegisterOnEnterZone("TURSIN_GARRISON_210030000", questId);
     }
 
     public override bool OnDialogEvent(QuestEnv env)
@@ -74,9 +74,9 @@ public class _1194ReducingTursinStrength : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
-        if (zoneName != ZoneName.Get("TURSIN_GARRISON_210030000"))
+        if (!zone.Matches("TURSIN_GARRISON_210030000"))
             return false;
 
         Player player = env.GetPlayer();

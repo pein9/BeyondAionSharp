@@ -20,15 +20,15 @@ public class _13744AgentinNeed : AbstractQuestHandler
     public override void Register()
     {
         qe.RegisterQuestNpc(832840).AddOnTalkEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("DRAGON_LORDS_SHRINE_600100000"), questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("FLAMEBERTH_DOWNS_600100000"), questId);
+        qe.RegisterOnEnterZone("DRAGON_LORDS_SHRINE_600100000", questId);
+        qe.RegisterOnEnterZone("FLAMEBERTH_DOWNS_600100000", questId);
         qe.RegisterOnKillInZone("DRAGON_LORDS_SHRINE_600100000", questId);
         qe.RegisterOnKillInZone("FLAMEBERTH_DOWNS_600100000", questId);
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
-        if ((zoneName == ZoneName.Get("DRAGON_LORDS_SHRINE_600100000") || zoneName == ZoneName.Get("FLAMEBERTH_DOWNS_600100000"))
+        if ((zone.Matches("DRAGON_LORDS_SHRINE_600100000") || zone.Matches("FLAMEBERTH_DOWNS_600100000"))
             && SiegeService.GetInstance().IsSiegeInProgress(8011))
         {
             Player player = env.GetPlayer();
@@ -41,7 +41,7 @@ public class _13744AgentinNeed : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnKillInZoneEvent(QuestEnv env)
+    public override bool OnKillInZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         Player player = env.GetPlayer();
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
@@ -50,7 +50,7 @@ public class _13744AgentinNeed : AbstractQuestHandler
 
         VisibleObject target = env.GetVisibleObject();
         if (target is Player
-            && (player.IsInsideZone(ZoneName.Get("DRAGON_LORDS_SHRINE_600100000")) || player.IsInsideZone(ZoneName.Get("FLAMEBERTH_DOWNS_600100000")))
+            && (zone.Matches("DRAGON_LORDS_SHRINE_600100000") || zone.Matches("FLAMEBERTH_DOWNS_600100000"))
             && SiegeService.GetInstance().IsSiegeInProgress(8011))
         {
             if ((player.GetLevel() >= (((Player)target).GetLevel() - 5)) && (player.GetLevel() <= (((Player)target).GetLevel() + 9)))

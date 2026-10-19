@@ -10,11 +10,11 @@ public class PolyArea : AbstractArea
 {
     private readonly Polygon2D _poly;
 
-    public PolyArea(ZoneName zoneName, int worldId, ICollection<Point2D> points, float zMin, float zMax)
-        : this(zoneName, worldId, points.ToArray(), zMin, zMax) { }
+    public PolyArea(ICollection<Point2D> points, float zMin, float zMax)
+        : this(points.ToArray(), zMin, zMax) { }
 
-    public PolyArea(ZoneName zoneName, int worldId, Point2D[] points, float zMin, float zMax)
-        : base(zoneName, worldId, zMin, zMax)
+    public PolyArea(Point2D[] points, float zMin, float zMax)
+        : base(zMin, zMax)
     {
         if (points.Length < 3)
             throw new ArgumentException($"Not enough points, needed at least 3 but got {points.Length}");

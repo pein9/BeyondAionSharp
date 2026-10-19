@@ -25,6 +25,7 @@ public class WorldMap3DInstance : WorldMapInstance
 
     protected override void InitMapRegions()
     {
+        var zoneInstances = ZoneService.GetInstance().CreateZoneInstances(GetMapId());
         int size = GetParent().GetWorldSize();
         float maxZ = (float)Math.Floor((float)size / regionSize + 0.5f) * regionSize;
 
@@ -41,7 +42,7 @@ public class WorldMap3DInstance : WorldMapInstance
         }
         Parallel.ForEach(regionIds, regionId =>
         {
-            MapRegion mapRegion = CreateMapRegion(regionId);
+            MapRegion mapRegion = CreateMapRegion(regionId, zoneInstances);
             lock (regions)
             {
                 regions[regionId] = mapRegion;
@@ -76,13 +77,12 @@ public class WorldMap3DInstance : WorldMapInstance
         }
     }
 
-    protected override MapRegion CreateMapRegion(int regionId)
+    private MapRegion CreateMapRegion(int regionId, List<ZoneInstance> zoneInstances)
     {
         float startX = RegionUtil.GetXFrom3dRegionId(regionId);
         float startY = RegionUtil.GetYFrom3dRegionId(regionId);
         float startZ = RegionUtil.GetZFrom3dRegionId(regionId);
-        ZoneInstance[] zones = FilterZones(this.GetMapId(), regionId, startX, startY, startZ, startZ + regionSize);
-        return new MapRegion(regionId, this, zones);
+        return CreateMapRegion(regionId, zoneInstances, new RegionZone(startX, startY, startZ, startZ + regionSize));
     }
 
     public override bool IsPersonal()

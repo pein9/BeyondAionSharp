@@ -473,7 +473,7 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.Equal(startMap, buyerPlayer.GetBattleReturnMap());
 		Assert.Equal([startX, startY, startZ], buyerPlayer.GetBattleReturnCoords());
 		await SettleHousingZonesAsync(online, token);
-		Assert.True(buyerPlayer.IsInsideZone(Aion.GameServer.World.Zone.ZoneName.Get(house.Name)), "the house gate did not put the owner inside his house");
+		Assert.True(buyerPlayer.IsInsideZone(house.Name), "the house gate did not put the owner inside his house");
 
 		// s11: decoration: the registry, two tables placed, one moved, one taken back and deleted, a wallpaper put on the
 		// first room's walls (line 8, INWALL_ANY room 0).
@@ -773,7 +773,7 @@ public sealed partial class SimulationFastScenarioTests
 	{
 		int address = house.GetAddress().GetId();
 		Player ownerPlayer = fixture.World.GetPlayer(owner.Id), strangerPlayer = fixture.World.GetPlayer(stranger.Id), friendPlayer = fixture.World.GetPlayer(friend.Id);
-		var houseZone = Aion.GameServer.World.Zone.ZoneName.Get(house.Name);
+		var houseZone = house.Name;
 		(float X, float Y, float Z, byte H) outside = HouseDoor(house, outsideHouse: true), inside = HouseDoor(house, outsideHouse: false);
 
 		// Both visitors come to the door and enter (HouseController.teleportNearHouseDoor, inside).

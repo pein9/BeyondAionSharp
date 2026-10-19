@@ -20,7 +20,7 @@ using Aion.GameServer.World.Zone;
 
 namespace Aion.GameServer.Services.Siege;
 
-/// <summary>Java parity: services/siege/AgentSiege (Estrayl, Sykra) extends Siege&lt;AgentLocation&gt;. Levinshor agent (Mastarius/Veille) siege: timed delayStart (recursive 60s task ramps startProgress to 10 -> announce/quest/spawn), onSiegeFinish (capture base 6113 for winner + rewards), broadcastAgentSpawn, distributeQuest (zone-gated quest start), spawnSiegeNpcs (BALAUR/SIEGE boss init), initNpc (race-keyed assignment), AP accrual. schedule(Runnable,ms)->Schedule ct-lambda (return interrupts->return CompletedTask); switch-on-SiegeRace; ZoneName.get->Get. AgentLocation/SiegeNpc/SiegeSpawnTemplate/BaseOccupier/ZoneName red-tolerated.</summary>
+/// <summary>Java parity: services/siege/AgentSiege (Estrayl, Sykra) extends Siege&lt;AgentLocation&gt;. Levinshor agent (Mastarius/Veille) siege: timed delayStart (recursive 60s task ramps startProgress to 10 -> announce/quest/spawn), onSiegeFinish (capture base 6113 for winner + rewards), broadcastAgentSpawn, distributeQuest (zone-gated quest start), spawnSiegeNpcs (BALAUR/SIEGE boss init), initNpc (race-keyed assignment), AP accrual. schedule(Runnable,ms)->Schedule ct-lambda (return interrupts->return CompletedTask); switch-on-SiegeRace; zone names use exact strings. AgentLocation/SiegeNpc/SiegeSpawnTemplate/BaseOccupier red-tolerated.</summary>
 public class AgentSiege : Siege<AgentLocation>
 {
     private byte startProgress = 1;
@@ -85,7 +85,7 @@ public class AgentSiege : Siege<AgentLocation>
     {
         foreach (Player player in Aion.GameServer.World.World.GetInstance().GetWorldMap(600100000).GetMainWorldMapInstance().GetPlayersInside())
         {
-            if (player.IsInsideZone(ZoneName.Get("DRAGON_LORDS_SHRINE_600100000")) || player.IsInsideZone(ZoneName.Get("FLAMEBERTH_DOWNS_600100000")))
+            if (player.IsInsideZone("DRAGON_LORDS_SHRINE_600100000") || player.IsInsideZone("FLAMEBERTH_DOWNS_600100000"))
             {
                 int questId = player.GetRace() == Race.ELYOS ? 13744 : 23744;
                 QuestState qs = player.GetQuestStateList().GetQuestState(questId);
@@ -157,7 +157,7 @@ public class AgentSiege : Siege<AgentLocation>
     public override void OnAbyssPointsAdded(Player player, int abyssPoints)
     {
         if (startProgress >= 10 && GetSiegeLocation().IsVulnerable()
-                && (player.IsInsideZone(ZoneName.Get("FLAMEBERTH_DOWNS_600100000")) || player.IsInsideZone(ZoneName.Get("DRAGON_LORDS_SHRINE_600100000"))))
+                && (player.IsInsideZone("FLAMEBERTH_DOWNS_600100000") || player.IsInsideZone("DRAGON_LORDS_SHRINE_600100000")))
             GetSiegeCounter().AddAbyssPoints(player, abyssPoints);
     }
 }

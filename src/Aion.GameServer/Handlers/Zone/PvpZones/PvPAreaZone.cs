@@ -8,7 +8,7 @@ using Aion.GameServer.World.Zone.Handler;
 
 namespace Aion.GameServer.Handlers.Zone.PvpZones;
 
-/// <summary>Java parity: zone/pvpZones/PvPAreaZone (MrPoke) : PvPZone. @ZoneNameAnnotation("LC1_PVP_SUB_C_110010000 DC1_PVP_ZONE_120010000"); instanceof Player&&cond→is Player p&&cond; getEffectController()→(PlayerEffectController)GetEffectController() (Java covariant Player.getEffectController); ZoneName.get + == 1:1.</summary>
+/// <summary>Java parity: zone/pvpZones/PvPAreaZone (MrPoke) : PvPZone. @ZoneNameAnnotation("LC1_PVP_SUB_C_110010000 DC1_PVP_ZONE_120010000"); instanceof Player&&cond→is Player p&&cond; getEffectController()→(PlayerEffectController)GetEffectController() (Java covariant Player.getEffectController); ZoneInstance.Matches uses exact names.</summary>
 [ZoneNameAnnotation("LC1_PVP_SUB_C_110010000 DC1_PVP_ZONE_120010000")]
 public class PvPAreaZone : PvPZone
 {
@@ -24,11 +24,11 @@ public class PvPAreaZone : PvPZone
             ((PlayerEffectController)player.GetEffectController()).SetKeepBuffsOnDie(false);
     }
 
-    protected override void DoTeleport(Player player, ZoneName zoneName)
+    protected override void DoTeleport(Player player, ZoneInstance zone)
     {
-        if (zoneName == ZoneName.Get("LC1_PVP_SUB_C_110010000"))
+        if (zone.Matches("LC1_PVP_SUB_C_110010000"))
             TeleportService.TeleportTo(player, 110010000, 1, 1470.3f, 1343.5f, 563.7f);
-        else if (zoneName == ZoneName.Get("DC1_PVP_ZONE_120010000"))
+        else if (zone.Matches("DC1_PVP_ZONE_120010000"))
             TeleportService.TeleportTo(player, 120010000, 1, 1005.1f, 1528.9f, 222.1f);
     }
 }

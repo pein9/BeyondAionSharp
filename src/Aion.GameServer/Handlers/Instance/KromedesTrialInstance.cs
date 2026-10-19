@@ -37,7 +37,7 @@ public class KromedesTrialInstance : GeneralInstanceHandler
 
     public override void OnEnterZone(Player player, ZoneInstance zone)
     {
-        switch (zone.GetAreaTemplate().GetZoneName().ToString())
+        switch (zone.GetZoneTemplate().GetName())
         {
             case "MANOR_ENTRANCE_300230000":
                 SendMovie(player, 462);

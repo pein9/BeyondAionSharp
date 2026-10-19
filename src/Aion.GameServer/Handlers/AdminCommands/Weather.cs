@@ -39,7 +39,7 @@ public class Weather : AdminCommand
                         WeatherEntry weatherEntry = WeatherService.GetInstance().GetWeatherEntry(admin.GetWorldId(), weatherZoneId);
                         if (weatherEntry != null)
                         {
-                            string info = "Weather for region " + regionZone.GetZoneTemplate().GetXmlName() + ":";
+                            string info = "Weather for region " + regionZone.GetZoneTemplate().GetName() + ":";
                             if (weatherEntry == WeatherEntry.NONE)
                             {
                                 info += "\n\tcode: " + weatherEntry.GetCode() + " (no weather)";

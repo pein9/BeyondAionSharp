@@ -28,7 +28,7 @@ public class _20501WhattheRuinsSay : AbstractQuestHandler
         int[] npcs = { 731538, 731539, 731540, 804720, 804721, 804722 };
         foreach (int npc in npcs)
             qe.RegisterQuestNpc(npc).AddOnTalkEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("DF5_SENSORYAREA_Q20501A_206375_1_220080000"), questId); // Dreg Findspot zone
+        qe.RegisterOnEnterZone("DF5_SENSORYAREA_Q20501A_206375_1_220080000", questId); // Dreg Findspot zone
         qe.RegisterOnQuestCompleted(questId);
         qe.RegisterOnLevelChanged(questId);
     }
@@ -131,9 +131,9 @@ public class _20501WhattheRuinsSay : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName) // Step 2: Go to Dreg Findspot.
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone) // Step 2: Go to Dreg Findspot.
     {
-        if (zoneName == ZoneName.Get("DF5_SENSORYAREA_Q20501A_206375_1_220080000"))
+        if (zone.Matches("DF5_SENSORYAREA_Q20501A_206375_1_220080000"))
         {
             Player player = env.GetPlayer();
             if (player == null)

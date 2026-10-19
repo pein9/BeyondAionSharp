@@ -22,7 +22,7 @@ public class _30759CountingStatues : AbstractQuestHandler
     {
         qe.RegisterQuestNpc(START_END_NPC_ID).AddOnQuestStart(questId);
         qe.RegisterQuestNpc(START_END_NPC_ID).AddOnTalkEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get(ZONE_NAME), questId);
+        qe.RegisterOnEnterZone(ZONE_NAME, questId);
     }
 
     public override bool OnDialogEvent(QuestEnv env)
@@ -62,9 +62,9 @@ public class _30759CountingStatues : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
-        if (zoneName != ZoneName.Get(ZONE_NAME))
+        if (!zone.Matches(ZONE_NAME))
             return false;
 
         Player player = env.GetPlayer();

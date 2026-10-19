@@ -316,7 +316,7 @@ public class RaksangRuinsInstance : GeneralInstanceHandler
 
     public override void OnEnterZone(Player player, ZoneInstance zone)
     {
-        if (zone.GetZoneTemplate().GetName() == ZoneName.Get("IDRAKSHA_SOLO_WAVE_01_206399_1_300610000"))
+        if (zone.Matches("IDRAKSHA_SOLO_WAVE_01_206399_1_300610000"))
         {
             if (spawnTask == null && Interlocked.CompareExchange(ref isEventStarted, 1, 0) == 0)
             {

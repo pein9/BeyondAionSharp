@@ -174,7 +174,7 @@ namespace Aion.GameServer.Handlers.Quest
             int var = qs.GetQuestVarById(0);
             if (qs.GetStatus() == QuestStatus.START)
             {
-                if (player.IsInsideItemUseZone(ZoneName.Get("LF1_ITEMUSEAREA_Q14031")))
+                if (player.IsInsideItemUseZone("LF1_ITEMUSEAREA_Q14031"))
                 {
                     if (var == 3)
                     {
@@ -182,14 +182,14 @@ namespace Aion.GameServer.Handlers.Quest
                         return HandlerResultExtensions.FromBoolean(UseQuestItem(env, item, 3, 4, false));// 3-4
                     }
                 }
-                if (player.IsInsideItemUseZone(ZoneName.Get("LF1A_ITEMUSEAREA_Q14031")))
+                if (player.IsInsideItemUseZone("LF1A_ITEMUSEAREA_Q14031"))
                 {
                     if (var == 5)
                     {
                         return HandlerResultExtensions.FromBoolean(UseQuestItem(env, item, 5, 6, false));// 5-6
                     }
                 }
-                if (player.IsInsideItemUseZone(ZoneName.Get("LF2_ITEMUSEAREA_Q14031")))
+                if (player.IsInsideItemUseZone("LF2_ITEMUSEAREA_Q14031"))
                 {
                     if (var == 7)
                     {

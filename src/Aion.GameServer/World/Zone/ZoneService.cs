@@ -33,9 +33,8 @@ public sealed class ZoneService : GameEngine
     public System.Threading.Tasks.ValueTask InitAsync(System.Threading.CancellationToken cancellationToken) { Init(); return System.Threading.Tasks.ValueTask.CompletedTask; }
     public System.Threading.Tasks.ValueTask ShutdownAsync(System.Threading.CancellationToken cancellationToken) => System.Threading.Tasks.ValueTask.CompletedTask;
     private static readonly ILogger log = AionLog.For(nameof(ZoneService));
-    private readonly Dictionary<ZoneName, Type> zoneHandlers = new Dictionary<ZoneName, Type>();
-    private readonly Dictionary<ZoneName, IZoneHandler> collidableHandlers = new Dictionary<ZoneName, IZoneHandler>();
-    private readonly Dictionary<int, List<ZoneInfo>> zoneByMapIdMap = DataManager.ZONE_DATA.GetZones();
+    private readonly Dictionary<string, Type> zoneHandlers = new Dictionary<string, Type>();
+    private readonly Dictionary<int, List<MaterialZone>> materialZonesByMapId = new();
     private readonly object sync = new object();
 
     private ZoneService()
@@ -53,69 +52,37 @@ public sealed class ZoneService : GameEngine
         log.LogInformation("Loaded " + zoneHandlers.Count + " zone handlers.");
     }
 
-    public IZoneHandler? GetNewZoneHandler(ZoneName zoneName)
+    public IZoneHandler? GetNewZoneHandler(string zoneName)
     {
-        IZoneHandler? zoneHandler = collidableHandlers.GetValueOrDefault(zoneName);
-        if (zoneHandler != null)
-            return zoneHandler;
         Type? zoneClass = zoneHandlers.GetValueOrDefault(zoneName);
         if (zoneClass != null)
         {
-            try
-            {
-                zoneHandler = (IZoneHandler?)Activator.CreateInstance(zoneClass);
-            }
-            catch (Exception ex)
-            {
-                log.LogWarning(ex, "Can't instantiate zone handler " + zoneName);
-            }
+            try { return (IZoneHandler?)Activator.CreateInstance(zoneClass); }
+            catch (Exception ex) { log.LogWarning(ex, "Can't instantiate zone handler " + zoneName); }
         }
-
-        return zoneHandler;
+        return null;
     }
 
     public void AddZoneHandlerClass(Type handler)
     {
-        ZoneNameAnnotation idAnnotation = handler.GetCustomAttribute<ZoneNameAnnotation>();
-        if (idAnnotation != null)
-        {
-            string[] zoneNames = idAnnotation.Value.Split(' ');
-            foreach (string zoneNameString in zoneNames)
-            {
-                try
-                {
-                    ZoneName zoneName = ZoneName.Get(zoneNameString.Trim());
-                    if (zoneName == ZoneName.None)
-                        throw new Exception();
-                    zoneHandlers[zoneName] = handler;
-                }
-                catch (Exception)
-                {
-                    log.LogWarning("Missing ZoneName: " + idAnnotation.Value);
-                }
-            }
-        }
+        var annotation = handler.GetCustomAttribute<ZoneNameAnnotation>();
+        if (annotation == null) return;
+        var names = System.Text.RegularExpressions.Regex.Split(annotation.Value, " +").ToList();
+        while (annotation.Value.Length > 0 && names.Count > 0 && names[^1].Length == 0) names.RemoveAt(names.Count - 1);
+        foreach (string name in names)
+            if (DataManager.ZONE_DATA.ValidateZoneName(name)) zoneHandlers[name] = handler;
     }
 
-    public void AddZoneHandlerClass(ZoneName zoneName, Type handler)
+    public List<ZoneInstance> CreateZoneInstances(int mapId)
     {
-        zoneHandlers[zoneName] = handler;
-    }
-
-    public Dictionary<ZoneName, ZoneInstance> GetZoneInstancesByWorldId(int mapId)
-    {
-        Dictionary<ZoneName, ZoneInstance> zones = new Dictionary<ZoneName, ZoneInstance>();
+        List<ZoneInstance> zones = new();
         int worldSize = DataManager.WORLD_MAPS_DATA.GetTemplate(mapId).GetWorldSize();
         WorldZoneTemplate zone = new WorldZoneTemplate(worldSize, mapId);
-        PolyArea fullArea = new PolyArea(zone.GetName(), mapId, zone.GetPoints().GetPoint(), zone.GetPoints().GetBottom(), zone.GetPoints().GetTop());
-        ZoneInstance fullMap = new ZoneInstance(mapId, new ZoneInfo(fullArea, zone));
-        zones[zone.GetName()] = fullMap;
+        ZoneInstance fullMap = new ZoneInstance(mapId, new ZoneInfo(zone));
+        zones.Add(fullMap);
 
-        List<ZoneInfo> areas = this.zoneByMapIdMap.GetValueOrDefault(mapId);
-        if (areas == null)
-            return zones;
-
-        foreach (ZoneInfo area in areas)
+        var vortex = GetAndValidateVortexLocation(mapId);
+        foreach (ZoneInfo area in DataManager.ZONE_DATA.GetZones(mapId))
         {
             ZoneInstance instance;
             switch (area.GetZoneTemplate().GetZoneType())
@@ -142,7 +109,7 @@ public sealed class ZoneService : GameEngine
                         SiegeLocation artifact = DataManager.SIEGE_LOCATION_DATA.GetArtifacts().GetValueOrDefault(artifactId);
                         if (artifact == null)
                         {
-                            log.LogWarning("Missing siege location data for zone " + area.GetZoneTemplate().GetName().Name);
+                            log.LogWarning("Missing siege location data for zone " + area.GetZoneTemplate().GetName());
                         }
                         else
                         {
@@ -154,7 +121,7 @@ public sealed class ZoneService : GameEngine
                     instance = area.GetZoneTemplate().GetFlags() == 0 ? new DisablePvPZoneInstance(mapId, area) : new PvPZoneInstance(mapId, area);
                     break;
                 default:
-                    InvasionZoneInstance invasionZone = GetIZI(area);
+                    InvasionZoneInstance? invasionZone = TryRegisterInvasionZone(vortex, area);
                     if (invasionZone != null)
                     {
                         instance = invasionZone;
@@ -168,139 +135,51 @@ public sealed class ZoneService : GameEngine
             IZoneHandler? zoneHandler = GetNewZoneHandler(area.GetZoneTemplate().GetName());
             if (zoneHandler != null)
                 instance.AddHandler(zoneHandler);
-            zones[area.GetZoneTemplate().GetName()] = instance;
+            zones.Add(instance);
         }
+        foreach (var material in materialZonesByMapId.GetValueOrDefault(mapId) ?? new List<MaterialZone>())
+            zones.Add(new ZoneInstance(mapId, material.Info, new List<IZoneHandler> { material.Handler }));
         return zones;
     }
 
-    private InvasionZoneInstance GetIZI(ZoneInfo area)
+    private static VortexLocation? GetAndValidateVortexLocation(int mapId)
     {
-        if (area.GetZoneTemplate().GetName().Name.Equals("WAILING_CLIFFS_220050000")
-            || area.GetZoneTemplate().GetName().Name.Equals("BALTASAR_CEMETERY_220050000")
-            || area.GetZoneTemplate().GetName().Name.Equals("THE_LEGEND_SHRINE_220050000")
-            || area.GetZoneTemplate().GetName().Name.Equals("SUDORVILLE_220050000")
-            || area.GetZoneTemplate().GetName().Name.Equals("BALTASAR_HILL_VILLAGE_220050000")
-            || area.GetZoneTemplate().GetName().Name.Equals("BRUSTHONIN_MITHRIL_MINE_220050000"))
-        {
-            return ValidateZone(area);
-        }
-        else if (area.GetZoneTemplate().GetName().Name.Equals("JAMANOK_INN_210060000")
-            || area.GetZoneTemplate().GetName().Name.Equals("THE_STALKING_GROUNDS_210060000")
-            || area.GetZoneTemplate().GetName().Name.Equals("BLACK_ROCK_HOT_SPRING_210060000")
-            || area.GetZoneTemplate().GetName().Name.Equals("FREGIONS_FLAME_210060000"))
-        {
-            return ValidateZone(area);
-        }
-        return null;
+        var location = DataManager.VORTEX_DATA.GetVortexLocation(mapId);
+        if (location != null)
+            foreach (string name in location.GetTemplate().GetZones()) DataManager.ZONE_DATA.ValidateZoneName(name);
+        return location;
     }
 
-    private InvasionZoneInstance ValidateZone(ZoneInfo area)
+    private InvasionZoneInstance? TryRegisterInvasionZone(VortexLocation? vortex, ZoneInfo area)
     {
-        int mapId = area.GetZoneTemplate().GetMapid();
-        VortexLocation vortex = DataManager.VORTEX_DATA.GetVortexLocation(mapId);
-        if (vortex != null)
+        if (vortex != null && vortex.GetTemplate().GetZones().Contains(area.GetZoneTemplate().GetName()!))
         {
-            InvasionZoneInstance instance = new InvasionZoneInstance(mapId, area);
+            var instance = new InvasionZoneInstance(area.GetZoneTemplate().GetMapid(), area);
             vortex.AddZone(instance);
             return instance;
         }
         return null;
     }
 
-    public void SaveMaterialZones()
-    {
-        List<ZoneTemplate> templates = new List<ZoneTemplate>();
-        foreach (WorldMapTemplate map in DataManager.WORLD_MAPS_DATA)
-        {
-            List<ZoneInfo> areas = this.zoneByMapIdMap.GetValueOrDefault(map.GetMapId());
-            if (areas == null)
-                continue;
-            foreach (ZoneInfo zone in areas)
-            {
-                if (collidableHandlers.ContainsKey(zone.GetArea().GetZoneName()))
-                {
-                    templates.Add(zone.GetZoneTemplate());
-                }
-            }
-        }
-        templates.Sort((a, b) => a.GetMapid().CompareTo(b.GetMapid()));
-
-        ZoneData zoneData = new ZoneData();
-        zoneData.zoneList = templates;
-        zoneData.SaveData();
-    }
-
-    public void CreateMaterialZoneTemplate(Spatial geometry, int worldId, ZoneName zoneName)
+    public void CreateMaterialZoneTemplate(Spatial geometry, int worldId)
     {
         lock (sync)
         {
-            if (zoneName == ZoneName.None)
-                return;
-
-            IZoneHandler handler = collidableHandlers.GetValueOrDefault(zoneName);
-            if (handler == null)
+            IZoneHandler? handler;
+            if (geometry.GetMaterialId() == 11)
             {
-                if (geometry.GetMaterialId() == 11)
-                {
-                    handler = ShieldService.GetInstance().TryRegisterShield(worldId, geometry);
-                    if (handler == null)
-                        return;
-                }
-                else
-                {
-                    MaterialTemplate template = DataManager.MATERIAL_DATA.GetTemplate(geometry.GetMaterialId());
-                    if (template == null)
-                        return;
-                    handler = new MaterialZoneHandler(geometry, template);
-                }
-                collidableHandlers[zoneName] = handler;
+                handler = ShieldService.GetInstance().TryRegisterShield(worldId, geometry);
+                if (handler == null) return;
             }
             else
             {
-                log.LogWarning("Duplicate material mesh: " + zoneName.ToString());
+                var template = DataManager.MATERIAL_DATA.GetTemplate(geometry.GetMaterialId());
+                if (template == null) return;
+                handler = new MaterialZoneHandler(geometry, template);
             }
-
-            List<ZoneInfo> areas = zoneByMapIdMap.GetValueOrDefault(worldId);
-            if (areas == null)
-            {
-                areas = new List<ZoneInfo>();
-                zoneByMapIdMap[worldId] = areas;
-            }
-            ZoneInfo zoneInfo = null;
-            foreach (ZoneInfo area in areas)
-            {
-                if (area.GetZoneTemplate().GetName().Equals(zoneName))
-                {
-                    zoneInfo = area;
-                    break;
-                }
-            }
-            if (zoneInfo == null)
-            {
-                MaterialZoneTemplate zoneTemplate = new MaterialZoneTemplate(geometry, worldId);
-                // maybe add to zone data if needed search ?
-                Area zoneInfoArea = null;
-                if (zoneTemplate.GetSphere() != null)
-                {
-                    zoneInfoArea = new SphereArea(zoneName, worldId, zoneTemplate.GetSphere().GetX(), zoneTemplate.GetSphere().GetY(),
-                        zoneTemplate.GetSphere().GetZ(), zoneTemplate.GetSphere().GetR());
-                }
-                else if (zoneTemplate.GetCylinder() != null)
-                {
-                    zoneInfoArea = new CylinderArea(zoneName, worldId, zoneTemplate.GetCylinder().GetX(), zoneTemplate.GetCylinder().GetY(),
-                        zoneTemplate.GetCylinder().GetR(), zoneTemplate.GetCylinder().GetBottom(), zoneTemplate.GetCylinder().GetTop());
-                }
-                else if (zoneTemplate.GetSemisphere() != null)
-                {
-                    zoneInfoArea = new SemisphereArea(zoneName, worldId, zoneTemplate.GetSemisphere().GetX(), zoneTemplate.GetSemisphere().GetY(),
-                        zoneTemplate.GetSemisphere().GetZ(), zoneTemplate.GetSemisphere().GetR());
-                }
-                if (zoneInfoArea != null)
-                {
-                    zoneInfo = new ZoneInfo(zoneInfoArea, zoneTemplate);
-                    areas.Add(zoneInfo);
-                }
-            }
+            if (!materialZonesByMapId.TryGetValue(worldId, out var zones))
+                materialZonesByMapId[worldId] = zones = new List<MaterialZone>();
+            zones.Add(new MaterialZone(new ZoneInfo(new MaterialZoneTemplate(geometry, worldId)), handler));
         }
     }
 
@@ -313,4 +192,5 @@ public sealed class ZoneService : GameEngine
     {
         internal static readonly ZoneService instance = new ZoneService();
     }
+    private sealed record MaterialZone(ZoneInfo Info, IZoneHandler Handler);
 }

@@ -254,7 +254,7 @@ namespace Aion.GameServer.Handlers.Quest
                 int var = qs.GetQuestVarById(0);
                 if (var == 9)
                 {
-                    if (player.IsInsideZone(ZoneName.Get("DF4_ITEMUSEAREA_Q20031_220070000")))
+                    if (player.IsInsideZone("DF4_ITEMUSEAREA_Q20031_220070000"))
                     {
                         return HandlerResultExtensions.FromBoolean(UseQuestItem(env, item, 9, 10, false, 566));
                         // playQuestMovie(env, 566);

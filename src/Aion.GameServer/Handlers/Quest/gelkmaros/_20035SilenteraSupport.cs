@@ -178,7 +178,7 @@ public class _20035SilenteraSupport : AbstractQuestHandler
     public override HandlerResult OnItemUseEvent(QuestEnv env, Item item)
     {
         Player player = env.GetPlayer();
-        if (player.IsInsideZone(ZoneName.Get("DF4_ITEMUSEAREA_Q20035_220070000")))
+        if (player.IsInsideZone("DF4_ITEMUSEAREA_Q20035_220070000"))
         {
             return HandlerResultExtensions.FromBoolean(UseQuestItem(env, item, 6, 7, false, 182215660, 1)); // 7
         }

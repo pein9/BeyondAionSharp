@@ -21,7 +21,7 @@ namespace Aion.GameServer.Handlers.Quest
             qe.RegisterOnQuestCompleted(questId);
             qe.RegisterOnLevelChanged(questId);
             qe.RegisterQuestNpc(212861).AddOnKillEvent(questId);
-            qe.RegisterOnEnterZone(ZoneName.Get("ALTAR_OF_THE_BLACK_DRAGON_220020000"), questId);
+            qe.RegisterOnEnterZone("ALTAR_OF_THE_BLACK_DRAGON_220020000", questId);
             foreach (int npc_id in npc_ids)
                 qe.RegisterQuestNpc(npc_id).AddOnTalkEvent(questId);
         }
@@ -132,13 +132,13 @@ namespace Aion.GameServer.Handlers.Quest
             return false;
         }
 
-        public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+        public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
         {
             Player player = env.GetPlayer();
             if (player == null)
                 return false;
             QuestState qs = player.GetQuestStateList().GetQuestState(questId);
-            if (zoneName != ZoneName.Get("ALTAR_OF_THE_BLACK_DRAGON_220020000"))
+            if (!zone.Matches("ALTAR_OF_THE_BLACK_DRAGON_220020000"))
                 return false;
             if (qs != null && qs.GetQuestVarById(0) == 2)
             {

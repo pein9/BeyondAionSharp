@@ -272,14 +272,14 @@ public class TiamatStrongHoldInstance : GeneralInstanceHandler
 
     public override void OnEnterZone(Player player, ZoneInstance zone)
     {
-        if (zone.GetAreaTemplate().GetZoneName() == ZoneName.Get("LAKSYAKA_LEGION_HQ_300510000"))
+        if (zone.Matches("LAKSYAKA_LEGION_HQ_300510000"))
         {
             if (Interlocked.CompareExchange(ref startSuramaEvent, 1, 0) == 0)
             {
                 Spawn(800433, 725.93f, 1319.9f, 490.7f, (byte)61);
             }
         }
-        else if (zone.GetAreaTemplate().GetZoneName() == ZoneName.Get("GLORIOUS_NEXUS_300510000"))
+        else if (zone.Matches("GLORIOUS_NEXUS_300510000"))
         {
             player.GetEffectController().RemoveEffect(300);
         }

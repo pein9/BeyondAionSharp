@@ -18,7 +18,7 @@ public class _16987SeekOuttheCorridor : AbstractQuestHandler
     {
         qe.RegisterQuestNpc(npcId).AddOnQuestStart(questId);
         qe.RegisterQuestNpc(npcId).AddOnTalkEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("DANUAR_SANCTUARY_INVESTIGATION_AREA_220080000"), questId);
+        qe.RegisterOnEnterZone("DANUAR_SANCTUARY_INVESTIGATION_AREA_220080000", questId);
     }
 
     public override bool OnDialogEvent(QuestEnv env)
@@ -46,7 +46,7 @@ public class _16987SeekOuttheCorridor : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
         QuestState qs = env.GetPlayer().GetQuestStateList().GetQuestState(questId);
         if (qs != null && qs.GetStatus() == QuestStatus.START)

@@ -12,16 +12,16 @@ public class RectangleArea : AbstractArea
     private readonly float _minY;
     private readonly float _maxY;
 
-    public RectangleArea(ZoneName zoneName, int worldId, float minX, float minY, float maxX, float maxY, float minZ, float maxZ)
-        : base(zoneName, worldId, minZ, maxZ)
+    public RectangleArea(float minX, float minY, float maxX, float maxY, float minZ, float maxZ)
+        : base(minZ, maxZ)
     {
         _minX = minX; _maxX = maxX;
         _minY = minY; _maxY = maxY;
     }
 
-    /// <summary>Java parity: RectangleArea(ZoneName, int, Point, Point, Point, Point, int, int) — from four corner points.</summary>
-    public RectangleArea(ZoneName zoneName, int worldId, (float x, float y) p1, (float x, float y) p2, (float x, float y) p3, (float x, float y) p4, int minZ, int maxZ)
-        : base(zoneName, worldId, minZ, maxZ)
+    /// <summary>Java parity: RectangleArea(Point, Point, Point, Point, int, int) — from four corner points.</summary>
+    public RectangleArea((float x, float y) p1, (float x, float y) p2, (float x, float y) p3, (float x, float y) p4, int minZ, int maxZ)
+        : base(minZ, maxZ)
     {
         _minX = Math.Min(Math.Min(p1.x, p2.x), Math.Min(p3.x, p4.x));
         _maxX = Math.Max(Math.Max(p1.x, p2.x), Math.Max(p3.x, p4.x));

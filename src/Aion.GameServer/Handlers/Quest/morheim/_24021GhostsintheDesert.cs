@@ -146,7 +146,7 @@ public class _24021GhostsintheDesert : AbstractQuestHandler
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
         if (qs != null && qs.GetStatus() == QuestStatus.START)
         {
-            if (item.GetItemTemplate().GetTemplateId() == 182215363 && player.IsInsideItemUseZone(ZoneName.Get("DF2_ITEMUSEAREA_Q2032")))
+            if (item.GetItemTemplate().GetTemplateId() == 182215363 && player.IsInsideItemUseZone("DF2_ITEMUSEAREA_Q2032"))
             {
                 return HandlerResultExtensions.FromBoolean(UseQuestItem(env, item, 4, 4, true, 88)); // reward
             }

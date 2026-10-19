@@ -85,7 +85,7 @@ public class _24013PoisonInTheWaters : AbstractQuestHandler
     public override HandlerResult OnItemUseEvent(QuestEnv env, Item item)
     {
         Player player = env.GetPlayer();
-        if (player.IsInsideZone(ZoneName.Get("DF1A_ITEMUSEAREA_Q2016_220030000")))
+        if (player.IsInsideZone("DF1A_ITEMUSEAREA_Q2016_220030000"))
         {
             // Spawns 2 Feral Black Claw Sharpeye [ID: 210457] far from the player
             ThreadPoolManager.GetInstance().Schedule(ct =>

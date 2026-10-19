@@ -15,14 +15,22 @@ public class ZoneInstance
     private readonly ZoneInfo _template;
     private readonly int _mapId;
     private readonly Dictionary<int, Creature> Creatures = new();
-    private readonly List<IZoneHandler> Handlers = new();
+    private readonly List<IZoneHandler> Handlers;
     private bool ignoreRegularNpcs = true;
 
     public ZoneInstance(int mapId, ZoneInfo template)
+        : this(mapId, template, new List<IZoneHandler>())
+    {
+    }
+
+    public ZoneInstance(int mapId, ZoneInfo template, List<IZoneHandler> handlers)
     {
         _template = template;
         _mapId = mapId;
+        Handlers = handlers;
     }
+
+    public bool Matches(string zoneName) => _template.Matches(zoneName);
 
     // Java parity: getAreaTemplate()
     public Area GetAreaTemplate() => _template.GetArea();

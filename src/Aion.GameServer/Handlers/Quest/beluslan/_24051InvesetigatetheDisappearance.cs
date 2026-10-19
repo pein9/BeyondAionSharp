@@ -25,7 +25,7 @@ namespace Aion.GameServer.Handlers.Quest
             qe.RegisterOnQuestCompleted(questId);
             qe.RegisterOnLevelChanged(questId);
             qe.RegisterQuestItem(182215375, questId);
-            qe.RegisterOnEnterZone(ZoneName.Get("MINE_PORT_220040000"), questId);
+            qe.RegisterOnEnterZone("MINE_PORT_220040000", questId);
             qe.RegisterOnEnterWorld(questId);
             foreach (int npc in npcs)
             {
@@ -134,7 +134,7 @@ namespace Aion.GameServer.Handlers.Quest
             return HandlerResult.FAILED;
         }
 
-        public override bool OnEnterZoneEvent(QuestEnv env, ZoneName name)
+        public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
         {
             Player player = env.GetPlayer();
             if (player == null)
@@ -143,7 +143,7 @@ namespace Aion.GameServer.Handlers.Quest
             if (qs != null && qs.GetStatus() == QuestStatus.START)
             {
                 int var = qs.GetQuestVarById(0);
-                if (name == ZoneName.Get("MINE_PORT_220040000"))
+                if (zone.Matches("MINE_PORT_220040000"))
                 {
                     if (var == 5)
                     {

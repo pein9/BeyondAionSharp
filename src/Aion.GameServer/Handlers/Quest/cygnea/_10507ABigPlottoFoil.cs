@@ -31,7 +31,7 @@ public class _10507ABigPlottoFoil : AbstractQuestHandler
         int[] mobs = { 236264, 236265, 702668 };
         foreach (int mob in mobs)
             qe.RegisterQuestNpc(mob).AddOnKillEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("LF5_SENSORYAREA_Q10507_206366_2_210070000"), questId); // Beritra Guard Captain's Tent zone
+        qe.RegisterOnEnterZone("LF5_SENSORYAREA_Q10507_206366_2_210070000", questId); // Beritra Guard Captain's Tent zone
         qe.RegisterOnLevelChanged(questId);
         qe.RegisterOnQuestCompleted(questId);
     }
@@ -160,9 +160,9 @@ public class _10507ABigPlottoFoil : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName) // Step 7: Infiltrate Beritra Guard Captain's Tent.
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone) // Step 7: Infiltrate Beritra Guard Captain's Tent.
     {
-        if (zoneName == ZoneName.Get("LF5_SENSORYAREA_Q10507_206366_2_210070000"))
+        if (zone.Matches("LF5_SENSORYAREA_Q10507_206366_2_210070000"))
         {
             Player player = env.GetPlayer();
             if (player == null)

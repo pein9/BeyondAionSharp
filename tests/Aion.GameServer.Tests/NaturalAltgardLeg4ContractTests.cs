@@ -190,7 +190,7 @@ public sealed class NaturalAltgardLeg4ContractTests
 		string campaign = Handler("altgard/_24013PoisonInTheWaters.cs");
 		Assert.False(poison.Anywhere);
 		Assert.Contains($"qe.RegisterQuestItem({poison.ItemId}, questId)", campaign, StringComparison.Ordinal);
-		Assert.Contains($"ZoneName.Get(\"{poison.Zone}\")", campaign, StringComparison.Ordinal);
+		Assert.Contains($"\"{poison.Zone}\")", campaign, StringComparison.Ordinal);
 		Assert.Contains($"UseQuestItem(env, item, {poison.Var}, {poison.NextVar}, false)", campaign, StringComparison.Ordinal);
 		Assert.Equal(poison.SpawnCount, CountOf(campaign, $"Spawn({poison.SpawnsNpcId}, player"));
 		XElement zone = Assert.Single(XDocument.Load(Data("zones", "zones_220030000.xml")).Root!.Elements("zone"),

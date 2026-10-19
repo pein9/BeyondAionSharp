@@ -64,7 +64,7 @@ public class PadmarashkasCaveInstance : GeneralInstanceHandler
 
     public override void OnEnterZone(Player player, ZoneInstance zone)
     {
-        if (zone.GetAreaTemplate().GetZoneName() == ZoneName.Get("PADMARASHKAS_NEST_320150000") && Interlocked.CompareExchange(ref moviePlayed, 1, 0) == 0)
+        if (zone.Matches("PADMARASHKAS_NEST_320150000") && Interlocked.CompareExchange(ref moviePlayed, 1, 0) == 0)
             PacketSendUtility.BroadcastToMap(instance, new SM_PLAY_MOVIE(false, 0, 0, 488, true));
     }
 

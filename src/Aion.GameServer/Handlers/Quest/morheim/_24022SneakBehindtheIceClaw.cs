@@ -155,7 +155,7 @@ public class _24022SneakBehindtheIceClaw : AbstractQuestHandler
     public override HandlerResult OnItemUseEvent(QuestEnv env, Item item)
     {
         Player player = env.GetPlayer();
-        if (player.IsInsideZone(ZoneName.Get("ALTAR_OF_TRIAL_220020000")))
+        if (player.IsInsideZone("ALTAR_OF_TRIAL_220020000"))
         {
             return HandlerResultExtensions.FromBoolean(UseQuestItem(env, item, 6, 6, false));
         }

@@ -20,10 +20,10 @@ namespace Aion.GameServer.Handlers.Quest
         {
             qe.RegisterQuestNpc(204578).AddOnTalkEvent(questId);
             qe.RegisterQuestNpc(204574).AddOnTalkEvent(questId);
-            qe.RegisterOnEnterZone(ZoneName.Get("MUDTHORN_EXPERIMENT_LAB_210040000"), questId);
-            qe.RegisterOnEnterZone(ZoneName.Get("ROTRON_EXPERIMENT_LAB_210040000"), questId);
-            qe.RegisterOnEnterZone(ZoneName.Get("PRETOR_EXPERIMENT_LAB_210040000"), questId);
-            qe.RegisterOnEnterZone(ZoneName.Get("POISON_EXTRACTION_LAB_210040000"), questId);
+            qe.RegisterOnEnterZone("MUDTHORN_EXPERIMENT_LAB_210040000", questId);
+            qe.RegisterOnEnterZone("ROTRON_EXPERIMENT_LAB_210040000", questId);
+            qe.RegisterOnEnterZone("PRETOR_EXPERIMENT_LAB_210040000", questId);
+            qe.RegisterOnEnterZone("POISON_EXTRACTION_LAB_210040000", questId);
         }
 
         public override bool OnDialogEvent(QuestEnv env)
@@ -90,7 +90,7 @@ namespace Aion.GameServer.Handlers.Quest
             return false;
         }
 
-        public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+        public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
         {
             Player player = env.GetPlayer();
             if (player == null)
@@ -101,13 +101,13 @@ namespace Aion.GameServer.Handlers.Quest
                 int var = qs.GetQuestVarById(0);
                 if (var == 1)
                 {
-                    if (zoneName == ZoneName.Get("MUDTHORN_EXPERIMENT_LAB_210040000"))
+                    if (zone.Matches("MUDTHORN_EXPERIMENT_LAB_210040000"))
                         return ChangeQuestStep(env, 0, 1, false, 1); // 1: 1
-                    if (zoneName == ZoneName.Get("ROTRON_EXPERIMENT_LAB_210040000"))
+                    if (zone.Matches("ROTRON_EXPERIMENT_LAB_210040000"))
                         return ChangeQuestStep(env, 0, 1, false, 2); // 2: 1
-                    if (zoneName == ZoneName.Get("PRETOR_EXPERIMENT_LAB_210040000"))
+                    if (zone.Matches("PRETOR_EXPERIMENT_LAB_210040000"))
                         return ChangeQuestStep(env, 0, 1, false, 3); // 3: 1
-                    if (zoneName == ZoneName.Get("POISON_EXTRACTION_LAB_210040000"))
+                    if (zone.Matches("POISON_EXTRACTION_LAB_210040000"))
                         return ChangeQuestStep(env, 0, 1, false, 4); // 4: 1
                 }
             }

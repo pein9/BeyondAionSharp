@@ -21,7 +21,7 @@ public class _24012AnOminousCrop : AbstractQuestHandler
         qe.RegisterOnLevelChanged(questId);
         qe.RegisterQuestNpc(203605).AddOnTalkEvent(questId);
         qe.RegisterQuestNpc(700096).AddOnTalkEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("MUMU_FARMLAND_220030000"), questId);
+        qe.RegisterOnEnterZone("MUMU_FARMLAND_220030000", questId);
     }
 
     public override bool OnDialogEvent(QuestEnv env)
@@ -78,9 +78,9 @@ public class _24012AnOminousCrop : AbstractQuestHandler
         return false;
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
-        if (zoneName == ZoneName.Get("MUMU_FARMLAND_220030000"))
+        if (zone.Matches("MUMU_FARMLAND_220030000"))
         {
             Player player = env.GetPlayer();
             if (player == null)

@@ -16,12 +16,12 @@ public class _30158JotunJunket : AbstractQuestHandler
     {
         qe.RegisterQuestNpc(799383).AddOnQuestStart(questId);
         qe.RegisterQuestNpc(799383).AddOnTalkEvent(questId);
-        qe.RegisterOnEnterZone(ZoneName.Get("UNKNOWN_LANDS_600010000"), questId);
+        qe.RegisterOnEnterZone("UNKNOWN_LANDS_600010000", questId);
     }
 
-    public override bool OnEnterZoneEvent(QuestEnv env, ZoneName zoneName)
+    public override bool OnEnterZoneEvent(QuestEnv env, Aion.GameServer.World.Zone.ZoneInstance zone)
     {
-        if (zoneName != ZoneName.Get("UNKNOWN_LANDS_600010000"))
+        if (!zone.Matches("UNKNOWN_LANDS_600010000"))
             return false;
         Player player = env.GetPlayer();
         if (player == null)
