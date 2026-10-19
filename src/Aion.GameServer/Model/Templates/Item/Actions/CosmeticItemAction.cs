@@ -43,6 +43,7 @@ public class CosmeticItemAction : AbstractItemAction
 
     public override void Act(Aion.GameServer.Model.GameObjects.Players.Player player, Item parentItem, Item targetItem, params object[] @params)
     {
+        if (!player.GetInventory().DecreaseByObjectId(parentItem.GetObjectId(), 1)) return;
         Aion.GameServer.Model.Templates.Cosmeticitems.CosmeticItemTemplate template = DataManager.COSMETIC_ITEMS_DATA.GetCosmeticItemsTemplate(cosmeticName);
         Aion.GameServer.Model.GameObjects.Players.PlayerAppearance playerAppearance = player.GetPlayerAppearance();
         string type = template.GetType_();
@@ -78,7 +79,6 @@ public class CosmeticItemAction : AbstractItemAction
             }
         }
         Aion.GameServer.Dao.PlayerAppearanceDAO.Store(player);
-        player.GetInventory().Delete(targetItem);
         player.GetController().OnChangedPlayerAttributes();
     }
 }

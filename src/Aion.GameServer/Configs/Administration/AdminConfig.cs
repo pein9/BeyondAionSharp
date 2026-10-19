@@ -71,10 +71,6 @@ public static class AdminConfig
     [Property(key: "gameserver.administration.dialog_info", defaultValue: "9")]
     public static sbyte DIALOG_INFO = 9;
 
-    /// <summary>Key: gameserver.administration.enchant_info</summary>
-    [Property(key: "gameserver.administration.enchant_info", defaultValue: "9")]
-    public static sbyte ENCHANT_INFO = 9;
-
     /// <summary>Key: gameserver.administration.zone_info</summary>
     [Property(key: "gameserver.administration.zone_info", defaultValue: "9")]
     public static sbyte ZONE_INFO = 9;

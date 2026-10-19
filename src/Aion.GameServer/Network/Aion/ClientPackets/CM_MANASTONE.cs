@@ -4,107 +4,105 @@ using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Templates.Items.Actions;
 using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ServerPackets;
+using Aion.GameServer.Restrictions;
 using Aion.GameServer.Services;
 using Aion.GameServer.Services.Items;
 using Aion.GameServer.Utils;
-using State = global::Aion.GameServer.Network.Aion.AionConnection.State;
+using State = Aion.GameServer.Network.Aion.AionConnection.State;
 
 namespace Aion.GameServer.Network.Aion.ClientPackets;
 
-/// <summary>Java parity: network/aion/clientpackets/CM_MANASTONE (ATracer, Wakizashi). Enchant/manastone/godstone/amplify socket actions on items. EnchantService/StigmaService/ItemSocketService/EnchantItemAction red-tolerated.</summary>
+/// <summary>Explicit enchanting/socket services; actual item actions and restrictions determine eligibility.</summary>
 public class CM_MANASTONE : AionClientPacket
 {
-    private int npcObjId;
-    private int slotNum;
-    private int actionType;
+    private Action? action;
     private int targetFusedSlot;
-    private int stoneUniqueId;
     private int targetItemUniqueId;
+    private int stoneUniqueId;
     private int supplementUniqueId;
+    private int slotNum;
+    private int npcObjId;
 
-    public CM_MANASTONE(int opcode, ISet<State> validStates)
-        : base(opcode, validStates)
-    {
-    }
+    public CM_MANASTONE(int opcode, ISet<State> validStates) : base(opcode, validStates) { }
 
     protected override void ReadImpl()
     {
-        actionType = ReadUC();
+        action = ReadUC() switch {1 => Action.ENCHANT, 2 => Action.SOCKET_MANASTONE, 3 => Action.REMOVE_MANASTONE, 4 => Action.SOCKET_GODSTONE, 8 => Action.AMPLIFY, _ => null};
         targetFusedSlot = ReadUC();
         targetItemUniqueId = ReadD();
-        switch (actionType)
+        if (action == Action.REMOVE_MANASTONE)
         {
-            case 1:
-            case 2:
-            case 4:
-            case 8:
-                stoneUniqueId = ReadD();
-                supplementUniqueId = ReadD();
-                break;
-            case 3:
-                slotNum = ReadUC();
-                ReadC();
-                ReadH();
-                npcObjId = ReadD();
-                break;
+            slotNum = ReadD(); npcObjId = ReadD();
+        }
+        else
+        {
+            stoneUniqueId = ReadD(); supplementUniqueId = ReadD();
         }
     }
 
     protected override void RunImpl()
     {
+        if (action == null) return;
         Player player = GetConnection().GetActivePlayer();
-
-        switch (actionType)
+        player.GetController().CancelCurrentSkill(null!);
+        player.GetController().CancelUseItem();
+        switch (action)
         {
-            case 1: // enchant stone
-            case 2: // add manastone
+            case Action.ENCHANT:
+            case Action.SOCKET_MANASTONE:
+            {
                 Item stone = player.GetInventory().GetItemByObjId(stoneUniqueId);
-                if (stone == null)
-                    return;
+                if (stone == null) return;
+                if (!stone.GetItemTemplate().IsStigma() && !PlayerRestrictions.CanUseItem(player, stone)) return;
                 Item targetItem = player.GetEquipment().GetEquippedItemByObjId(targetItemUniqueId);
                 if (targetItem == null && (targetItem = player.GetInventory().GetItemByObjId(targetItemUniqueId)) == null)
                 {
-                    SendPacket(actionType == 1 ? SM_SYSTEM_MESSAGE.STR_ENCHANT_ITEM_NO_TARGET_ITEM() : SM_SYSTEM_MESSAGE.STR_GIVE_ITEM_OPTION_NO_TARGET_ITEM());
+                    SendPacket(action == Action.ENCHANT ? SM_SYSTEM_MESSAGE.STR_ENCHANT_ITEM_NO_TARGET_ITEM() : SM_SYSTEM_MESSAGE.STR_GIVE_ITEM_OPTION_NO_TARGET_ITEM());
                     return;
                 }
-
                 if (stone.GetItemTemplate().IsStigma() && targetItem.GetItemTemplate().IsStigma())
-                {
                     StigmaService.ChargeStigma(player, targetItem, stone);
-                }
                 else
                 {
-                    EnchantItemAction action = new EnchantItemAction();
-                    if (action.CanAct(player, stone, targetItem))
+                    ItemActions stoneActions = stone.GetItemTemplate().GetActions();
+                    EnchantItemAction? enchantAction = stoneActions == null ? null : stoneActions.GetEnchantAction();
+                    if (enchantAction == null)
                     {
-                        Item supplement = player.GetInventory().GetItemByObjId(supplementUniqueId);
-                        if (supplement != null)
+                        SendPacket(SM_SYSTEM_MESSAGE.STR_ITEM_IS_NOT_USABLE()); return;
+                    }
+                    if (enchantAction.CanAct(player, stone, targetItem))
+                    {
+                        Item? supplement = null;
+                        if (supplementUniqueId != 0)
                         {
-                            if (supplement.GetItemId() / 100000 != 1661) // suppliment id check
-                                return;
+                            supplement = player.GetInventory().GetItemByObjId(supplementUniqueId);
+                            if (supplement == null || supplement.GetItemId() / 100000 != 1661)
+                            {
+                                SendPacket(SM_SYSTEM_MESSAGE.STR_ITEM_ENCHANT_ASSISTANT_CANNOT_FIND()); return;
+                            }
                         }
-                        action.Act(player, stone, targetItem, supplement, targetFusedSlot);
+                        enchantAction.Act(player, stone, targetItem, supplement!, targetFusedSlot);
                     }
                 }
                 break;
-            case 3: // remove manastone
-                VisibleObject visibleObject = player.GetTarget();
-                if (visibleObject.GetObjectId() == npcObjId && visibleObject is Npc npc && PositionUtil.IsInTalkRange(player, npc))
-                    global::Aion.GameServer.Services.Items.ItemSocketService.RemoveManastone(player, targetItemUniqueId, slotNum, targetFusedSlot != 1);
+            }
+            case Action.REMOVE_MANASTONE:
+                if (player.GetTarget() is Npc npc && npc.GetObjectId() == npcObjId && PositionUtil.IsInTalkRange(player, npc))
+                    ItemSocketService.RemoveManastone(player, targetItemUniqueId, slotNum, targetFusedSlot != 1);
                 break;
-            case 4: // add godstone
+            case Action.SOCKET_GODSTONE:
+            {
                 Item weaponItem = player.GetInventory().GetItemByObjId(targetItemUniqueId);
                 if (weaponItem == null)
                 {
                     bool isEquipped = player.GetEquipment().GetEquippedItemByObjId(targetItemUniqueId) != null;
-                    SendPacket(isEquipped ? SM_SYSTEM_MESSAGE.STR_GIVE_ITEM_PROC_CANNOT_GIVE_PROC_TO_EQUIPPED_ITEM() : SM_SYSTEM_MESSAGE.STR_GIVE_ITEM_PROC_NO_TARGET_ITEM());
-                    return;
+                    SendPacket(isEquipped ? SM_SYSTEM_MESSAGE.STR_GIVE_ITEM_PROC_CANNOT_GIVE_PROC_TO_EQUIPPED_ITEM() : SM_SYSTEM_MESSAGE.STR_GIVE_ITEM_PROC_NO_TARGET_ITEM()); return;
                 }
-                global::Aion.GameServer.Services.Items.ItemSocketService.SocketGodstone(player, weaponItem, stoneUniqueId);
-                break;
-            case 8: // amplification
-                EnchantService.AmplifyItem(player, targetItemUniqueId, supplementUniqueId, stoneUniqueId);
-                break;
+                ItemSocketService.SocketGodstone(player, weaponItem, stoneUniqueId); break;
+            }
+            case Action.AMPLIFY:
+                EnchantService.AmplifyItem(player, targetItemUniqueId, supplementUniqueId, stoneUniqueId); break;
         }
     }
+    private enum Action {ENCHANT = 1, SOCKET_MANASTONE = 2, REMOVE_MANASTONE = 3, SOCKET_GODSTONE = 4, AMPLIFY = 8}
 }

@@ -33,21 +33,23 @@ public sealed partial class BotGameClientPacketWriterTests
 		yield return C("break-weapons", GameClientPackets.BreakWeapons(123, 456), game,
 			new Dictionary<string, object?> { ["npcObjId"] = 123, ["weaponObjId"] = 456 });
 		yield return C("enchant-item", GameClientPackets.EnchantItem(123, 456, 789), game,
-			new Dictionary<string, object?> { ["actionType"] = 1, ["targetFusedSlot"] = 1,
+			new Dictionary<string, object?> { ["action"] = ManastoneAction(1), ["targetFusedSlot"] = 1,
 				["targetItemUniqueId"] = 123, ["stoneUniqueId"] = 456, ["supplementUniqueId"] = 789 });
 		foreach (bool fusion in new[] { false, true })
 		{
 			yield return C("socket-manastone-" + fusion, GameClientPackets.SocketManastone(123, 456, fusion, 789), game,
-				new Dictionary<string, object?> { ["actionType"] = 2, ["targetFusedSlot"] = fusion ? 2 : 1,
+				new Dictionary<string, object?> { ["action"] = ManastoneAction(2), ["targetFusedSlot"] = fusion ? 2 : 1,
 					["targetItemUniqueId"] = 123, ["stoneUniqueId"] = 456, ["supplementUniqueId"] = 789 });
 			yield return C("remove-manastone-" + fusion, GameClientPackets.RemoveManastone(789, 123, 255, fusion), game,
-				new Dictionary<string, object?> { ["actionType"] = 3, ["targetFusedSlot"] = fusion ? 2 : 1,
+				new Dictionary<string, object?> { ["action"] = ManastoneAction(3), ["targetFusedSlot"] = fusion ? 2 : 1,
 					["targetItemUniqueId"] = 123, ["slotNum"] = 255, ["npcObjId"] = 789 });
 		}
 		yield return C("socket-godstone-inventory", GameClientPackets.SocketGodstone(123, 456), game,
-			new Dictionary<string, object?> { ["actionType"] = 4, ["targetFusedSlot"] = 1,
+			new Dictionary<string, object?> { ["action"] = ManastoneAction(4), ["targetFusedSlot"] = 1,
 				["targetItemUniqueId"] = 123, ["stoneUniqueId"] = 456, ["supplementUniqueId"] = 0 });
 	}
+
+	private static object ManastoneAction(int id) => Enum.ToObject(typeof(CM_MANASTONE).GetNestedType("Action", System.Reflection.BindingFlags.NonPublic)!, id);
 
 	[Fact]
 	public void GearActionBodiesMatchAuditedJavaFieldOrderAndReservedBytes()

@@ -115,7 +115,7 @@ public class AnimationAddAction : AbstractItemAction
                 new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, ItemUseAnimation.USE_FAIL));
             return;
         }
-        if (player.GetInventory().DecreaseItemCount(parentItem, 1) != 0)
+        if (!player.GetInventory().DecreaseByObjectId(parentItem.GetObjectId(), 1))
             return;
         player.StartCooldown(parentItem);
         foreach (int motionId in GetMotionIds().Values)

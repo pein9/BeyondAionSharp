@@ -11,7 +11,6 @@ using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.SkillEngine.Model;
 using Aion.GameServer.Utils;
 using Aion.GameServer.World.Geo;
-using Microsoft.Extensions.Logging;
 using TYPE = Aion.GameServer.Network.Aion.ServerPackets.SmAttackStatus.TYPE;
 using LOG = Aion.GameServer.Network.Aion.ServerPackets.SmAttackStatus.LOG;
 using Aion.GameServer.Utils.Audit;
@@ -23,7 +22,6 @@ namespace Aion.GameServer.Controllers;
 /// <summary>Java parity: controllers/PlayerController extends CreatureController&lt;Player&gt;.</summary>
 public class PlayerController : CreatureController<Player>
 {
-    private static readonly ILogger log = AionLog.For(nameof(PlayerController));
     private const int PROTECTION_TIME = 60000;
     private long lastAttackMillis = 0;
     private long lastAttackedMillis = 0;
@@ -502,18 +500,15 @@ public class PlayerController : CreatureController<Player>
 
     public override void CancelCurrentSkill(Creature lastAttacker)
     {
-        CancelCurrentSkill(lastAttacker, SM_SYSTEM_MESSAGE.STR_SKILL_CANCELED());
+        if (GetOwner().IsCasting())
+            CancelCurrentSkill(lastAttacker, SM_SYSTEM_MESSAGE.STR_SKILL_CANCELED());
     }
 
     public override void CancelCurrentSkill(Creature lastAttacker, SM_SYSTEM_MESSAGE message)
     {
-        if (GetOwner().GetCastingSkill() == null)
-        {
-            return;
-        }
-
         Player player = GetOwner();
         Skill castingSkill = player.GetCastingSkill();
+        if (castingSkill == null) return;
         castingSkill.CancelCast();
         player.SetCasting(null);
         if (castingSkill.AllowAnimationBoostByCastSpeed())

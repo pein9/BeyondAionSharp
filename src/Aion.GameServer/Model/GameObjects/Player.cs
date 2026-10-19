@@ -136,9 +136,6 @@ public partial class Player : Creature
     private int lootingNpcOid;
     private Aion.GameServer.SkillEngine.Effects.RebirthEffect rebirthEffect;
 
-    // Needed to remove supplements queue
-    private int subtractedSupplementsCount;
-    private int subtractedSupplementId;
     private byte portAnimation;
     private bool isInSprintMode;
     private List<ActionObserver> rideObservers;

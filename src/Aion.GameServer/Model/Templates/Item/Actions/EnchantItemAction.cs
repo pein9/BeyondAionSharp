@@ -81,10 +81,6 @@ public class EnchantItemAction : AbstractItemAction
         var observer = new EnchantItemUseObserver(player, parentItem, targetItem, isEnchantmentStone);
         player.GetObserveController().AddObserver(observer);
 
-        // Current enchant level
-        int currentEnchant = targetItem.GetEnchantLevel();
-        bool isSuccess = IsSuccess(player, parentItem, targetItem, supplementItem, targetWeapon);
-        // Item template
         Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), targetItem.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), enchantDurationMillis, ItemUseAnimation.USE_START));
 
         player.GetController().AddTask(Aion.GameServer.Model.TaskId.ITEM_USE, Aion.GameServer.Utils.ThreadPoolManager.GetInstance().Schedule(ct =>
@@ -98,6 +94,17 @@ public class EnchantItemAction : AbstractItemAction
                 return ValueTask.CompletedTask;
             }
 
+            if (player.GetInventory().GetItemByObjId(parentItem.GetObjectId()) == null)
+                return ValueTask.CompletedTask;
+            if (supplementItem != null && player.GetInventory().GetItemByObjId(supplementItem.GetObjectId()) == null)
+            {
+                Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_ITEM_ENCHANT_ASSISTANT_CANNOT_FIND());
+                Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), 0, ItemUseAnimation.USE_FAIL));
+                return ValueTask.CompletedTask;
+            }
+
+            int currentEnchant = targetItem.GetEnchantLevel();
+            bool isSuccess = IsSuccess(player, parentItem, targetItem, supplementItem, targetWeapon);
             player.StartCooldown(parentItem);
             if (isEnchantmentStone)
                 Aion.GameServer.Services.EnchantService.EnchantItemAct(player, parentItem, targetItem, supplementItem, currentEnchant, isSuccess);
@@ -121,7 +128,7 @@ public class EnchantItemAction : AbstractItemAction
         }, TimeSpan.FromMilliseconds(enchantDurationMillis)));
     }
 
-    /// <summary>Check if the item enchant will be successful.</summary>
+    /// <summary>Roll at completion; supplements raise the chance only when enough are consumed.</summary>
     private bool IsSuccess(Aion.GameServer.Model.GameObjects.Players.Player player, Item parentItem, Item targetItem, Item supplementItem, int targetWeapon)
     {
         if (parentItem.GetItemTemplate() != null)

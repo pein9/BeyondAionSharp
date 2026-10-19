@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Aion.GameServer.Commons.Utils;
-using Aion.GameServer.Configs.Administration;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.Enchants;
@@ -132,6 +131,7 @@ public class EnchantService
                 // Amount of supplement items
                 int supplementUseCount = 1;
                 // Additional success rate for the supplement
+                float supplementChance = 0;
                 ItemTemplate supplementTemplate = supplementItem.GetItemTemplate();
 
                 EnchantItemAction action = supplementTemplate.GetActions().GetEnchantAction();
@@ -139,8 +139,7 @@ public class EnchantService
                 {
                     if (action.IsManastoneOnly())
                         return false;
-                    // Add success rate of the supplement to the overall chance
-                    successChance += action.GetChance();
+                    supplementChance = action.GetChance();
                 }
 
                 action = enchantmentStoneItem.GetItemTemplate().GetActions().GetEnchantAction();
@@ -151,26 +150,19 @@ public class EnchantService
                 if (targetItem.GetEnchantLevel() >= 10)
                     supplementUseCount = supplementUseCount * 2;
 
-                // Check the required amount of the supplements
-                if (player.GetInventory().GetItemCountByItemId(supplementTemplate.GetTemplateId()) < supplementUseCount)
-                    return false;
-
-                // Put supplements to wait for update
-                player.SubtractSupplements(supplementUseCount, supplementTemplate.GetTemplateId());
-
-                // Success can't be higher than 95%
-                if (successChance >= 95)
-                    successChance = 95;
+                if (ConsumeSupplements(player, supplementTemplate.GetTemplateId(), supplementUseCount))
+                {
+                    successChance += supplementChance;
+                    if (successChance >= 95) successChance = 95;
+                }
             }
         }
 
-        bool result = Rnd.Chance() < successChance;
-
-        if (player.HasAccess(AdminConfig.ENCHANT_INFO))
-            PacketSendUtility.SendMessage(player, (result ? "Success" : "Fail") + " (success chance:" + successChance + "%)");
-
-        return result;
+        return Rnd.Chance() < successChance;
     }
+
+    private static bool ConsumeSupplements(Player player, int supplementId, int count) =>
+        player.GetInventory().GetItemCountByItemId(supplementId) >= count && player.GetInventory().DecreaseByItemId(supplementId, count);
 
     public static void EnchantItemAct(Player player, Item parentItem, Item targetItem, Item supplementItem, int currentEnchant, bool success)
     {
@@ -192,8 +184,6 @@ public class EnchantService
             AuditLogger.Log(player, "possibly used enchant hack");
             return;
         }
-        // Decrease required supplements
-        player.UpdateSupplements();
 
         // Items that are Fabled or Eternal can get up to +15.
         if (success)
@@ -401,6 +391,7 @@ public class EnchantService
                 manastoneCount = targetItem.GetFusionStones().Count + 1;
 
             // Additional success rate for the supplement
+            float supplementChance = 0;
             ItemTemplate supplementTemplate = supplementItem.GetItemTemplate();
 
             bool isManastoneOnly = false;
@@ -411,8 +402,7 @@ public class EnchantService
             action = supplementTemplate.GetActions().GetEnchantAction();
             if (action != null)
             {
-                // Add successRate
-                successChance += action.GetChance();
+                supplementChance = action.GetChance();
                 isManastoneOnly = action.IsManastoneOnly();
             }
 
@@ -421,28 +411,17 @@ public class EnchantService
             else if (stoneCount > 0)
                 supplementUseCount = supplementUseCount * manastoneCount;
 
-            if (player.GetInventory().GetItemCountByItemId(supplementTemplate.GetTemplateId()) < supplementUseCount)
-                return false;
-
-            // Put up supplements to wait for update
-            player.SubtractSupplements(supplementUseCount, supplementTemplate.GetTemplateId());
+            if (ConsumeSupplements(player, supplementTemplate.GetTemplateId(), supplementUseCount))
+                successChance += supplementChance;
         }
 
-        bool result = Rnd.Chance() < successChance;
-
-        // For test purpose. To use by administrator
-        if (player.HasAccess(AdminConfig.ENCHANT_INFO))
-            PacketSendUtility.SendMessage(player, (result ? "Success" : "Fail") + " (success chance:" + successChance + "%)");
-
-        return result;
+        return Rnd.Chance() < successChance;
     }
 
     public static bool SocketManastoneAct(Player player, Item parentItem, Item targetItem, Item supplementItem, int targetWeapon, bool result)
     {
         if (!player.GetInventory().DecreaseByObjectId(parentItem.GetObjectId(), 1))
             return false;
-        // Decrease required supplements
-        player.UpdateSupplements();
         if (result)
         {
             PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_GIVE_ITEM_OPTION_SUCCEED(targetItem.GetL10n()));

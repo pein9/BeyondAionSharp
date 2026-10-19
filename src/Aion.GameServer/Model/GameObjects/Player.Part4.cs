@@ -303,26 +303,6 @@ public partial class Player
         return rebirthEffect != null || HasAccess(Aion.GameServer.Configs.Administration.AdminConfig.AUTO_RES);
     }
 
-    /// <summary>
-    /// Put up supplements to subtraction queue, so that when moving they would not decrease, need update as confirmation.
-    /// To update use updateSupplements()
-    /// </summary>
-    public void SubtractSupplements(int count, int supplementId)
-    {
-        subtractedSupplementsCount = count;
-        subtractedSupplementId = supplementId;
-    }
-
-    /// <summary>Update supplements in queue and clear the queue</summary>
-    public void UpdateSupplements()
-    {
-        if (subtractedSupplementId == 0 || subtractedSupplementsCount == 0)
-            return;
-        GetInventory().DecreaseByItemId(subtractedSupplementId, subtractedSupplementsCount);
-        subtractedSupplementsCount = 0;
-        subtractedSupplementId = 0;
-    }
-
     public byte GetPortAnimationId()
     {
         return portAnimation;

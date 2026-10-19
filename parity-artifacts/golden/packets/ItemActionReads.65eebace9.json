@@ -1,0 +1,331 @@
+{
+  "source": "Java",
+  "sourceJavaCommit": "65eebace942c3e7bfb539139a9f6976fe617c9eb",
+  "sourceHashes": {
+    "game-server/src/com/aionemu/gameserver/network/aion/clientpackets/CM_APPEARANCE.java": "a91caace24563a367cc349e8dc65a45c73b2a01b3507d67d38cd06c3f256a4a5",
+    "game-server/src/com/aionemu/gameserver/network/aion/clientpackets/CM_MANASTONE.java": "b04f28647cd51eda8e4c99e211b1f74df0bdfdc0388edfa57c1c3473dea6c997"
+  },
+  "captureBoundary": "Exact readImpl methods and private enums; ByteBuffer LE primitives/UTF16-null-string stub. Native error handling compared only by success/failure, not failed-read cursor.",
+  "cases": [
+    {
+      "kind": "A",
+      "name": "appearance-0",
+      "bodyHex": "00000000443322114E0061006D0065000000",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "service": "RENAME_CHARACTER",
+        "itemObjId": 287454020,
+        "newName": "Name"
+      }
+    },
+    {
+      "kind": "A",
+      "name": "appearance-1",
+      "bodyHex": "0100000044332211C5003DD880DE0000",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "service": "RENAME_LEGION",
+        "itemObjId": 287454020,
+        "newName": "Å🚀"
+      }
+    },
+    {
+      "kind": "A",
+      "name": "appearance-2",
+      "bodyHex": "0200000044332211",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "service": "COSMETIC",
+        "itemObjId": 287454020,
+        "newName": null
+      }
+    },
+    {
+      "kind": "A",
+      "name": "appearance-3",
+      "bodyHex": "0300000044332211",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "service": null,
+        "itemObjId": 287454020,
+        "newName": null
+      }
+    },
+    {
+      "kind": "A",
+      "name": "appearance-256",
+      "bodyHex": "0001000044332211",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "service": null,
+        "itemObjId": 287454020,
+        "newName": null
+      }
+    },
+    {
+      "kind": "A",
+      "name": "appearance-65536",
+      "bodyHex": "0000010044332211",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "service": null,
+        "itemObjId": 287454020,
+        "newName": null
+      }
+    },
+    {
+      "kind": "A",
+      "name": "appearance-65538",
+      "bodyHex": "0200010044332211",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "service": null,
+        "itemObjId": 287454020,
+        "newName": null
+      }
+    },
+    {
+      "kind": "A",
+      "name": "appearance--1",
+      "bodyHex": "FFFFFFFF44332211",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "service": null,
+        "itemObjId": 287454020,
+        "newName": null
+      }
+    },
+    {
+      "kind": "A",
+      "name": "appearance-2147483647",
+      "bodyHex": "FFFFFF7F44332211",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "service": null,
+        "itemObjId": 287454020,
+        "newName": null
+      }
+    },
+    {
+      "kind": "A",
+      "name": "appearance-short-0",
+      "bodyHex": "",
+      "ok": false,
+      "remaining": 0
+    },
+    {
+      "kind": "A",
+      "name": "appearance-short-3",
+      "bodyHex": "020000",
+      "ok": false,
+      "remaining": 3
+    },
+    {
+      "kind": "A",
+      "name": "appearance-short-4",
+      "bodyHex": "02000000",
+      "ok": false,
+      "remaining": 0
+    },
+    {
+      "kind": "A",
+      "name": "appearance-short-7",
+      "bodyHex": "02000000010000",
+      "ok": false,
+      "remaining": 3
+    },
+    {
+      "kind": "A",
+      "name": "appearance-rename-missing-string",
+      "bodyHex": "0000000001000000",
+      "ok": false,
+      "remaining": 0
+    },
+    {
+      "kind": "M",
+      "name": "manastone-0",
+      "bodyHex": "0001443322110403020188776655",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "action": null,
+        "targetFusedSlot": 1,
+        "targetItemUniqueId": 287454020,
+        "stoneUniqueId": 16909060,
+        "supplementUniqueId": 1432778632,
+        "slotNum": 0,
+        "npcObjId": 0
+      }
+    },
+    {
+      "kind": "M",
+      "name": "manastone-1",
+      "bodyHex": "0101443322110403020188776655",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "action": "ENCHANT",
+        "targetFusedSlot": 1,
+        "targetItemUniqueId": 287454020,
+        "stoneUniqueId": 16909060,
+        "supplementUniqueId": 1432778632,
+        "slotNum": 0,
+        "npcObjId": 0
+      }
+    },
+    {
+      "kind": "M",
+      "name": "manastone-2",
+      "bodyHex": "0201443322110403020188776655",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "action": "SOCKET_MANASTONE",
+        "targetFusedSlot": 1,
+        "targetItemUniqueId": 287454020,
+        "stoneUniqueId": 16909060,
+        "supplementUniqueId": 1432778632,
+        "slotNum": 0,
+        "npcObjId": 0
+      }
+    },
+    {
+      "kind": "M",
+      "name": "manastone-3",
+      "bodyHex": "0301443322110403020188776655",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "action": "REMOVE_MANASTONE",
+        "targetFusedSlot": 1,
+        "targetItemUniqueId": 287454020,
+        "stoneUniqueId": 0,
+        "supplementUniqueId": 0,
+        "slotNum": 16909060,
+        "npcObjId": 1432778632
+      }
+    },
+    {
+      "kind": "M",
+      "name": "manastone-4",
+      "bodyHex": "0401443322110403020188776655",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "action": "SOCKET_GODSTONE",
+        "targetFusedSlot": 1,
+        "targetItemUniqueId": 287454020,
+        "stoneUniqueId": 16909060,
+        "supplementUniqueId": 1432778632,
+        "slotNum": 0,
+        "npcObjId": 0
+      }
+    },
+    {
+      "kind": "M",
+      "name": "manastone-8",
+      "bodyHex": "0801443322110403020188776655",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "action": "AMPLIFY",
+        "targetFusedSlot": 1,
+        "targetItemUniqueId": 287454020,
+        "stoneUniqueId": 16909060,
+        "supplementUniqueId": 1432778632,
+        "slotNum": 0,
+        "npcObjId": 0
+      }
+    },
+    {
+      "kind": "M",
+      "name": "manastone-255",
+      "bodyHex": "FF01443322110403020188776655",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "action": null,
+        "targetFusedSlot": 1,
+        "targetItemUniqueId": 287454020,
+        "stoneUniqueId": 16909060,
+        "supplementUniqueId": 1432778632,
+        "slotNum": 0,
+        "npcObjId": 0
+      }
+    },
+    {
+      "kind": "M",
+      "name": "manastone-negative-slot",
+      "bodyHex": "03027B000000FFFFFFFFC8010000",
+      "ok": true,
+      "remaining": 0,
+      "fields": {
+        "action": "REMOVE_MANASTONE",
+        "targetFusedSlot": 2,
+        "targetItemUniqueId": 123,
+        "stoneUniqueId": 0,
+        "supplementUniqueId": 0,
+        "slotNum": -1,
+        "npcObjId": 456
+      }
+    },
+    {
+      "kind": "M",
+      "name": "manastone-short-0",
+      "bodyHex": "",
+      "ok": false,
+      "remaining": 0
+    },
+    {
+      "kind": "M",
+      "name": "manastone-short-1",
+      "bodyHex": "03",
+      "ok": false,
+      "remaining": 0
+    },
+    {
+      "kind": "M",
+      "name": "manastone-short-2",
+      "bodyHex": "0301",
+      "ok": false,
+      "remaining": 0
+    },
+    {
+      "kind": "M",
+      "name": "manastone-short-5",
+      "bodyHex": "0301010000",
+      "ok": false,
+      "remaining": 3
+    },
+    {
+      "kind": "M",
+      "name": "manastone-short-6",
+      "bodyHex": "030101000000",
+      "ok": false,
+      "remaining": 0
+    },
+    {
+      "kind": "M",
+      "name": "manastone-short-9",
+      "bodyHex": "030101000000020000",
+      "ok": false,
+      "remaining": 3
+    },
+    {
+      "kind": "M",
+      "name": "manastone-short-13",
+      "bodyHex": "03010100000002000000030000",
+      "ok": false,
+      "remaining": 3
+    }
+  ]
+}

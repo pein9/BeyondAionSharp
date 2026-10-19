@@ -18,7 +18,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/CM_APPEARANCE (xTz, Neon). Change character name (0), legion name (1), or use cosmetic item (2). PlayerService/LegionService/OldNamesDAO/PlayerDAO red-tolerated.</summary>
 public class CM_APPEARANCE : AionClientPacket
 {
-    private byte type;
+    private Service? service;
     private int itemObjId;
     private string newName;
 
@@ -29,32 +29,27 @@ public class CM_APPEARANCE : AionClientPacket
 
     protected override void ReadImpl()
     {
-        type = ReadC();
-        ReadC();
-        ReadH();
+        int id = ReadD();
+        service = id is >= 0 and <= 2 ? (Service)id : null;
         itemObjId = ReadD();
-        switch (type)
-        {
-            case 0:
-            case 1:
-                newName = ReadS();
-                break;
-        }
+        if (service == Service.RENAME_CHARACTER || service == Service.RENAME_LEGION)
+            newName = ReadS();
     }
 
     protected override void RunImpl()
     {
+        if (service == null) return;
         Player player = GetConnection().GetActivePlayer();
 
-        switch (type)
+        switch (service)
         {
-            case 0: // Change Char Name
+            case Service.RENAME_CHARACTER:
                 TryChangeCharacterName(player, Util.ConvertName(newName), itemObjId);
                 break;
-            case 1: // Change Legion Name
+            case Service.RENAME_LEGION:
                 TryChangeLegionName(player, newName, itemObjId);
                 break;
-            case 2: // cosmetic items
+            case Service.COSMETIC:
                 TryUseCosmeticItem(player, itemObjId);
                 break;
         }
@@ -69,7 +64,7 @@ public class CM_APPEARANCE : AionClientPacket
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_EDIT_CHAR_NAME_ERROR_WRONG_INPUT());
         else if (PlayerService.IsNameUsedOrReserved(oldName, newName))
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_EDIT_CHAR_NAME_ALREADY_EXIST());
-        else if ((player.GetInventory().GetItemByObjId(itemObjId).GetItemId() != 169670000 && player.GetInventory().GetItemByObjId(itemObjId).GetItemId() != 169670001)
+        else if (!IsRenameCoupon(player.GetInventory().GetItemByObjId(itemObjId))
             || !player.GetInventory().DecreaseByObjectId(itemObjId, 1))
             AuditLogger.Log(player, "tried to rename himself without coupon");
         else
@@ -81,6 +76,10 @@ public class CM_APPEARANCE : AionClientPacket
             OnPlayerNameChanged(player, oldName);
         }
     }
+
+    private static bool IsRenameCoupon(Item? item) => item != null && (item.GetItemId() == 169670000 || item.GetItemId() == 169670001);
+
+    private enum Service {RENAME_CHARACTER = 0, RENAME_LEGION = 1, COSMETIC = 2}
 
     public static void OnPlayerNameChanged(Player player, string oldName)
     {
@@ -113,7 +112,7 @@ public class CM_APPEARANCE : AionClientPacket
             {
                 if (action is CosmeticItemAction && action.CanAct(player, null, null))
                 {
-                    action.Act(player, null, item);
+                    action.Act(player, item, null!);
                     break;
                 }
             }
