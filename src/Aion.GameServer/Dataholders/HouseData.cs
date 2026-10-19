@@ -66,4 +66,10 @@ public class HouseData
     {
         return lands.Count;
     }
+
+    public void AddAllManagerNpcIdsToSet(ISet<int> npcIds)
+    {
+        foreach (HousingLand land in lands)
+            npcIds.Add(land.GetManagerNpcId());
+    }
 }

@@ -1,0 +1,218 @@
+{
+  "sourceJavaCommit": "cabd580f3c2a5bd59b274f4ee57e9b467a44bea2",
+  "sourceHashes": {
+    "dataholders/HouseData.java": "95e9e396c64d6d30b51a5135045026b823b6eb415be5cd15bef6d7846e0d919d",
+    "questEngine/QuestSpawnAnalyzer.java": "1d996a658f1ec2bc4f656799d031d3deb0a0078516f3c73973bb7d088cb8bca2",
+    "questEngine/handlers/models/KillSpawnedData.java": "51761aa10bf9b80de1d16edb8a92857413d61531a3d7c19387aaf08813a32c51"
+  },
+  "captureBoundary": "Exact Java regex and method bodies, scalar HousingLand/Monster stubs and explicit superclass sentinel fallback; no full server boot claimed.",
+  "regex": "(?:[^/]{2})\\bsp(?:awn(?:[A-Z][a-z]+)*)?\\([^,]*?(\\d{6})(?: : (\\d{6}))?",
+  "regexCases": [
+    {
+      "javaSource": "  spawn(211621, 1);",
+      "csharpSource": "  Spawn(211621, 1);",
+      "expected": [
+        211621
+      ]
+    },
+    {
+      "javaSource": "  spawnForFiveMinutes(211621, instance);",
+      "csharpSource": "  SpawnForFiveMinutes(211621, instance);",
+      "expected": [
+        211621
+      ]
+    },
+    {
+      "javaSource": "  spawnTemporarily(211622, player);",
+      "csharpSource": "  SpawnTemporarily(211622, player);",
+      "expected": [
+        211622
+      ]
+    },
+    {
+      "javaSource": "  sp(211623, 1);",
+      "csharpSource": "  Sp(211623, 1);",
+      "expected": [
+        211623
+      ]
+    },
+    {
+      "javaSource": "//spawn(211624, 1);",
+      "csharpSource": "//Spawn(211624, 1);",
+      "expected": []
+    },
+    {
+      "javaSource": "// spawn(211625, 1);",
+      "csharpSource": "// Spawn(211625, 1);",
+      "expected": []
+    },
+    {
+      "javaSource": "spawn(211626, 1);",
+      "csharpSource": "Spawn(211626, 1);",
+      "expected": []
+    },
+    {
+      "javaSource": "x spawn(flag ? 211627 : 211628, 1);",
+      "csharpSource": "x Spawn(flag ? 211627 : 211628, 1);",
+      "expected": [
+        211627,
+        211628
+      ]
+    },
+    {
+      "javaSource": "x spawn(211629, 999999);",
+      "csharpSource": "x Spawn(211629, 999999);",
+      "expected": [
+        211629
+      ]
+    },
+    {
+      "javaSource": "x spawnWithDelay(211630, 1);",
+      "csharpSource": "x SpawnWithDelay(211630, 1);",
+      "expected": [
+        211630
+      ]
+    },
+    {
+      "javaSource": "x respawn(211631, 1);",
+      "csharpSource": "x respawn(211631, 1);",
+      "expected": []
+    },
+    {
+      "javaSource": "x spawnnpc(211632, 1);",
+      "csharpSource": "x Spawnnpc(211632, 1);",
+      "expected": []
+    },
+    {
+      "javaSource": "x spawn(\n211633, 1);",
+      "csharpSource": "x Spawn(\n211633, 1);",
+      "expected": [
+        211633
+      ]
+    },
+    {
+      "javaSource": "  spawnForFiveMinutes(211621, instance);  spawn(211634, 1);",
+      "csharpSource": "  SpawnForFiveMinutes(211621, instance);  Spawn(211634, 1);",
+      "expected": [
+        211621,
+        211634
+      ]
+    },
+    {
+      "javaSource": "//  spawn(211635, 1);",
+      "csharpSource": "//  Spawn(211635, 1);",
+      "expected": [
+        211635
+      ]
+    }
+  ],
+  "killCases": [
+    {
+      "query": 211621,
+      "monsters": "203620:211621",
+      "expected": [
+        203620
+      ],
+      "throwsNull": false
+    },
+    {
+      "query": 211621,
+      "monsters": "203620:211621,211622,211621",
+      "expected": [
+        203620,
+        211622
+      ],
+      "throwsNull": false
+    },
+    {
+      "query": 211621,
+      "monsters": "211621:211621",
+      "expected": [
+        211621
+      ],
+      "throwsNull": false
+    },
+    {
+      "query": 211621,
+      "monsters": "0:211621",
+      "expected": [
+        0
+      ],
+      "throwsNull": false
+    },
+    {
+      "query": 211621,
+      "monsters": "211622:211621,211622",
+      "expected": [
+        211622
+      ],
+      "throwsNull": false
+    },
+    {
+      "query": 211621,
+      "monsters": "203620:211621;203621:211621",
+      "expected": [
+        203620
+      ],
+      "throwsNull": false
+    },
+    {
+      "query": 999900,
+      "monsters": "203620:211621",
+      "expected": [
+        999901,
+        999902
+      ],
+      "throwsNull": false
+    },
+    {
+      "query": 999900,
+      "monsters": "empty",
+      "expected": [
+        999901,
+        999902
+      ],
+      "throwsNull": false
+    },
+    {
+      "query": 211621,
+      "monsters": "203620:null",
+      "expected": null,
+      "throwsNull": true
+    }
+  ],
+  "houseCases": [
+    {
+      "managers": [
+        203620
+      ],
+      "expected": [
+        203620,
+        777777
+      ]
+    },
+    {
+      "managers": [
+        203620,
+        203620,
+        204001
+      ],
+      "expected": [
+        203620,
+        204001,
+        777777
+      ]
+    },
+    {
+      "managers": [
+        0,
+        204001
+      ],
+      "expected": [
+        0,
+        204001,
+        777777
+      ]
+    }
+  ]
+}

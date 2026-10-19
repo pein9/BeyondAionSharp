@@ -15,7 +15,9 @@ HANDLER_ROOTS = (
     REPO_ROOT / "src/Aion.GameServer/Handlers/AI",
 )
 OUTPUT = REPO_ROOT / "src/Aion.GameServer/Questengine/HandlerSpawnedNpcIds.cs"
-SPAWN_ARGUMENT = re.compile(r"\bSpawn\s*\((?P<argument>[^,\r\n]*)")
+# cabd580f3: recognize Sp/Spawn and named helpers, and exclude the adjacent // prefix.
+# Keep native PascalCase, whitespace and all IDs in a conditional first argument.
+SPAWN_ARGUMENT = re.compile(r"(?:[^/]{2})\bSp(?:awn(?:[A-Z][a-z]+)*)?\s*\((?P<argument>[^,]*)")
 NPC_ID = re.compile(r"(?<!\d)\d{6}(?!\d)")
 
 

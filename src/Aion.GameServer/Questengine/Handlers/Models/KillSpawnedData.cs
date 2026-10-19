@@ -22,8 +22,12 @@ public class KillSpawnedData : MonsterHuntData
         foreach (Monster m in monster)
         {
             List<int> npcIds = m.GetNpcIds();
-            if (npcIds != null && npcIds.Count > 1 && npcIds.Contains(npcId))
-                return new HashSet<int>(npcIds.Where(id => id != npcId));
+            if (npcIds.Contains(npcId))
+            {
+                HashSet<int> alternativeNpcIds = new(npcIds.Where(id => id != npcId));
+                alternativeNpcIds.Add(m.GetSpawnerNpcId());
+                return alternativeNpcIds;
+            }
         }
         return base.GetAlternativeNpcs(npcId);
     }

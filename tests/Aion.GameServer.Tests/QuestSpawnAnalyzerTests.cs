@@ -43,7 +43,7 @@ public sealed partial class QuestSpawnAnalyzerTests
         Assert.Equal([1101, 1102], result.MissingSpawns[0].QuestIds);
     }
 
-    [GeneratedRegex(@"\bSpawn\s*\((?<argument>[^,\r\n]*)")]
+    [GeneratedRegex(@"(?:[^/]{2})\bSp(?:awn(?:[A-Z][a-z]+)*)?\s*\((?<argument>[^,]*)")]
     private static partial Regex SpawnArgumentRegex();
 
     [GeneratedRegex(@"(?<!\d)\d{6}(?!\d)")]

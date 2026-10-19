@@ -33,6 +33,7 @@ public class QuestSpawnAnalyzer
         HashSet<int> allSpawns = LoadNpcIdsSpawnedByHandlers();
         DataManager.SPAWNS_DATA.AddAllNpcIdsToSet(allSpawns);
         DataManager.TOWN_SPAWNS_DATA.AddAllNpcIdsToSet(allSpawns);
+        DataManager.HOUSE_DATA.AddAllManagerNpcIdsToSet(allSpawns);
         DataManager.EVENT_DATA.AddAllNpcIdsToSet(allSpawns);
         foreach (NpcFactionTemplate nft in DataManager.NPC_FACTIONS_DATA.GetNpcFactionsData())
         {
