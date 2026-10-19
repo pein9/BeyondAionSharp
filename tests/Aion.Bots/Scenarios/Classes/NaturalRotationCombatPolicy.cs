@@ -547,23 +547,22 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 	private static bool ChainOpen(NaturalPriestSkill skill, bool self, NaturalCombatObservation state, DateTimeOffset now)
 	{
 		if (state.OpenChainCategory == null || !self && state.OpenChainTargetId != state.TargetObjectId) return false;
-		bool repeat = skill.ChainCategory == state.OpenChainCategory;
-		if (repeat && (state.OpenChainUseCount ?? 1) >= Math.Max(1, skill.SelfCount)) return false;
-		bool category = repeat ? skill.RequiresChainCategory == state.PreviousChainCategory
-			: skill.RequiresChainCategory == state.OpenChainCategory || skill.RequiresChainCategory == state.PreviousChainCategory;
-		if (!category) return false;
-		if (!repeat && skill.RequiresChainCategory == state.OpenChainCategory && (state.OpenChainUseCount ?? 1) < skill.PreCount) return false;
-		if (skill.ChainWindowMillis <= 0) return state.ChainExpiresAt is not DateTimeOffset expires || expires > now;
-		return state.ChainStepAt is DateTimeOffset at ? now <= at.AddMilliseconds(skill.ChainWindowMillis) : state.ChainExpiresAt > now;
+		int count = state.OpenChainUseCount ?? 1;
+		bool repeat = skill.SelfCount > 1 && skill.ChainCategory == state.OpenChainCategory && count < skill.SelfCount;
+		bool follows = skill.RequiresChainCategory == state.OpenChainCategory && count >= skill.PreCount;
+		if (!repeat && !follows) return false;
+		return state.ChainStepAt is DateTimeOffset hit
+			? now < hit.AddMilliseconds(NaturalChainState.ActivationWindow(skill))
+			: state.ChainExpiresAt > now;
 	}
 
 	/// <summary>The skill's cooldown ends no later than its step of the open chain does: the follow-up's own chain time
 	/// counted from the step before it, or the observed expiry when the step's time is not known.</summary>
 	private static bool ClearsInsideChain(NaturalPriestSkill skill, NaturalCombatObservation state)
 	{
-		DateTimeOffset? deadline = skill.ChainWindowMillis > 0 && state.ChainStepAt is DateTimeOffset at
-			? at.AddMilliseconds(skill.ChainWindowMillis) : state.ChainExpiresAt;
-		return deadline is DateTimeOffset end && state.Cooldowns.TryGetValue(skill.CooldownId, out DateTimeOffset until) && until <= end;
+		DateTimeOffset? deadline = state.ChainStepAt is DateTimeOffset hit
+			? hit.AddMilliseconds(NaturalChainState.ActivationWindow(skill)) : state.ChainExpiresAt;
+		return deadline is DateTimeOffset end && state.Cooldowns.TryGetValue(skill.CooldownId, out DateTimeOffset until) && until < end;
 	}
 
 	/// <summary>The mana kept back from attacks: the best learned recovery skill's cost and the run's extra. A class with no

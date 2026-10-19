@@ -57,8 +57,7 @@ public class Skill
     private int hitTime; // time when effect is applied
     private float castSpeedForAnimationBoostAndChargeSkills; // cast speed can boost the animation time of the current skill and the hit time of the following skill
     private long castStartTime;
-    private string chainCategory = null;
-    private int chainUsageDuration = 0;
+    private bool chainResetOnCastStart;
     private int hate;
 
     public enum SkillMethod
@@ -127,9 +126,6 @@ public class Skill
         // check for counter skill
         if (effector is Player player)
         {
-            if (skillMethod == SkillMethod.CAST && chainCategory == null) // category gets set in preCastCheck()
-                player.GetChainSkills().ResetChain();
-
             if (skillTemplate.GetCounterSkill() != null)
             {
                 long time = player.GetLastCounterSkill(skillTemplate.GetCounterSkill().Value);
@@ -295,6 +291,9 @@ public class Skill
 
         if (checkproperties && !CanUseSkill(CastState.CAST_START))
             return false;
+
+        if (chainResetOnCastStart && effector is Player player)
+            player.GetChainSkills().ResetChain();
 
         UpdateCastDurationAndSpeed();
         UpdateHitTime(checkAnimation);
@@ -670,7 +669,6 @@ public class Skill
         // Create effects and precalculate result
         int dashStatus = 0;
         int resistCount = 0;
-        bool blockedChain = false;
         bool blockedStance = false;
         List<Effect> effects = new List<Effect>();
         if (skillTemplate.GetEffects() != null)
@@ -697,15 +695,12 @@ public class Skill
             }
 
             if (resistCount == effectedList.Count)
-            {
-                blockedChain = true;
                 blockedPenaltySkill = true;
-            }
 
-            // exception for point point skills(example Ice Sheet)
+            // A skill placed at a point takes effect there even without creatures around it.
             if (effectedList.Count == 0)
             {
-                if (this.IsPointPointSkill())
+                if (IsPlacedAtPoint())
                 {
                     Effect effect = new Effect(this, null);
                     effect.Initialize();
@@ -723,18 +718,16 @@ public class Skill
             if (GetMultiCastCount() > 0)
                 setCooldowns = false;
 
-            // Check Chain Skill Trigger Rate, only for chain skills and only for player
-            if (chainCategory != null)
+            // Every cast whose first effect lands counts. A successful cast without a category ends the chain.
+            bool firstEffectLanded = effects.Count == 0 || effects.Any(e => e.IsInSuccessEffects(1));
+            if (skillMethod == SkillMethod.CAST && (effectedList.Count != 0 || IsPlacedAtPoint()))
             {
-                if (blockedChain)
-                    chainSuccess = false;
-                else
-                    chainSuccess = Rnd.Chance() < skillTemplate.GetChainSkillProb() || CustomConfig.SKILL_CHAIN_DISABLE_TRIGGERRATE;
-
+                chainSuccess = firstEffectLanded && (Rnd.Chance() < skillTemplate.GetChainSkillProb() || CustomConfig.SKILL_CHAIN_DISABLE_TRIGGERRATE);
                 if (chainSuccess)
-                    playerEffector.GetChainSkills().UpdateChain(chainCategory, chainUsageDuration);
-                else
-                    playerEffector.GetChainSkills().ResetChain();
+                {
+                    ChainCondition? chainCondition = skillTemplate.GetChainCondition();
+                    playerEffector.GetChainSkills().UpdateChain(chainCondition == null ? "" : chainCondition.GetCategory()!, hitTime);
+                }
             }
 
             Aion.GameServer.QuestEngine.QuestEngine.GetInstance().OnUseSkill(new Aion.GameServer.QuestEngine.Model.QuestEnv(effector.GetTarget(), (Player)effector, 0), skillTemplate.GetSkillId());
@@ -1149,14 +1142,11 @@ public class Skill
         return skillMethod == SkillMethod.CAST && skillTemplate.IsApplyCastingTimeBonus();
     }
 
-    public void SetChainCategory(string chainCategory)
-    {
-        this.chainCategory = chainCategory;
-    }
+    public bool IsChainResetOnCastStart() => chainResetOnCastStart;
 
-    public void SetChainUsageDuration(int duration)
+    public void SetChainResetOnCastStart(bool chainResetOnCastStart)
     {
-        this.chainUsageDuration = duration;
+        this.chainResetOnCastStart = chainResetOnCastStart;
     }
 
     public SkillMethod GetSkillMethod()
@@ -1164,7 +1154,7 @@ public class Skill
         return this.skillMethod;
     }
 
-    private bool IsPointPointSkill()
+    private bool IsPlacedAtPoint()
     {
         return this.GetSkillTemplate().GetProperties().GetFirstTarget() == FirstTargetAttribute.POINT
             && this.GetSkillTemplate().GetProperties().GetTargetType() == TargetRangeAttribute.POINT;
@@ -1172,7 +1162,7 @@ public class Skill
 
     public int GetMultiCastCount()
     {
-        return skillTemplate.IsMultiCast() && effector is Player p ? p.GetChainSkills().GetCurrentChainCount(chainCategory) : 0;
+        return skillTemplate.IsMultiCast() && effector is Player p ? p.GetChainSkills().GetCurrentChainCount(skillTemplate.GetChainCondition()!.GetCategory()) : 0;
     }
 
     public long GetCastStartTime()

@@ -54,11 +54,13 @@ public sealed class SystemClockTests
 		{
 			var chains = new ChainSkills();
 			chains.UpdateChain("test", 1_000);
-			Assert.Equal(nowMillis, chains.GetCurrentChainSkill().GetLastUseTime());
-			Assert.False(chains.IsChainExpired());
+			Assert.Equal(1, chains.GetCurrentChainCount("test"));
+			Assert.True(chains.CanContinue("test", 1, 3_000));
 
-			nowMillis += 1_001;
-			Assert.True(chains.IsChainExpired());
+			nowMillis += 3_999;
+			Assert.True(chains.CanContinue("test", 1, 3_000));
+			nowMillis++;
+			Assert.False(chains.CanContinue("test", 1, 3_000));
 
 			var cooldowns = new Cooldowns();
 			cooldowns.Put(7, nowMillis + 10_000);

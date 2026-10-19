@@ -2,49 +2,43 @@ using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.SkillEngine.Model;
 
-/// <summary>Tracks a creature's current/previous chain skill and expiry. Java parity: skillengine/model/ChainSkills.</summary>
+/// <summary>The last counted chain category, consecutive uses and hit time. Each follow-up checks its own window. Java parity: skillengine/model/ChainSkills.</summary>
 public class ChainSkills
 {
-    private ChainSkill _previousChainSkill = new("");
-    private ChainSkill _chainSkill = new("");
-    private long _expireTime;
+    private string _category = "";
+    private int _useCount;
+    private long _hitTimeMillis;
 
-    // Java parity: getPreviousChainSkill()
-    public ChainSkill GetPreviousChainSkill() => _previousChainSkill;
+    public int GetCurrentChainCount(string? category) => _category.Equals(category, StringComparison.Ordinal) ? _useCount : 0;
 
-    // Java parity: getCurrentChainSkill()
-    public ChainSkill GetCurrentChainSkill() => _chainSkill;
+    public bool IsCurrentCategory(string? category) => _category.Equals(category, StringComparison.Ordinal);
 
-    // Java parity: getCurrentChainCount(String)
-    public int GetCurrentChainCount(string category) =>
-        _chainSkill.GetCategory() == category ? _chainSkill.GetUseCount() : 0;
+    public bool CanRepeat(string? category, int allowedActivations, int windowMillis) =>
+        IsCurrentCategory(category) && _useCount < allowedActivations && IsWithinWindow(windowMillis);
 
-    // Java parity: updateChain(String, int)
-    public void UpdateChain(string category, int duration)
+    public bool CanContinue(string? preCategory, int preCount, int windowMillis) =>
+        IsCurrentCategory(preCategory) && _useCount >= preCount && IsWithinWindow(windowMillis);
+
+    private bool IsWithinWindow(int windowMillis) =>
+        SystemClock.CurrentMillis() < unchecked(_hitTimeMillis + windowMillis);
+
+    /// <summary>Counts a successful cast; an empty category ends the current chain. Hit time is relative to now.</summary>
+    public void UpdateChain(string category, int hitTime)
     {
-        if (_chainSkill.GetCategory().Length == 0)
-            _chainSkill.SetCategory(category);
-        else if (_chainSkill.GetCategory() != category)
+        if (IsCurrentCategory(category))
+            _useCount = unchecked(_useCount + 1);
+        else
         {
-            _previousChainSkill = _chainSkill;
-            _chainSkill = new ChainSkill(category);
+            _category = category;
+            _useCount = 1;
         }
-
-        _chainSkill.IncreaseUseCount();
-        _expireTime = duration == 0 ? 0 : SystemClock.CurrentMillis() + duration;
+        _hitTimeMillis = unchecked(SystemClock.CurrentMillis() + hitTime);
     }
 
-    // Java parity: resetChain()
     public void ResetChain()
     {
-        if (_chainSkill.GetCategory().Length != 0)
-        {
-            _expireTime = 0;
-            _previousChainSkill.Clear();
-            _chainSkill.Clear();
-        }
+        _category = "";
+        _useCount = 0;
+        _hitTimeMillis = 0;
     }
-
-    // Java parity: isChainExpired()
-    public bool IsChainExpired() => _expireTime > 0 && SystemClock.CurrentMillis() > _expireTime;
 }

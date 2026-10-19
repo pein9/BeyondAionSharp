@@ -306,12 +306,9 @@ public partial class Player
     public override bool IsSkillDisabled(SkillTemplate template)
     {
         Aion.GameServer.SkillEngine.Condition.ChainCondition cond = template.GetChainCondition();
-        if (cond != null && cond.GetAllowedActivations() > 1) // exception for multicast
-        {
-            int chainCount = GetChainSkills().GetCurrentChainCount(cond.GetCategory());
-            if (chainCount > 0 && chainCount < cond.GetAllowedActivations() && !GetChainSkills().IsChainExpired())
-                return false;
-        }
+        if (cond != null && cond.GetAllowedActivations() > 1 &&
+            GetChainSkills().CanRepeat(cond.GetCategory(), cond.GetAllowedActivations(), cond.GetActivationWindow()))
+            return false; // exception for multicast
         if (base.IsSkillDisabled(template))
         {
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(this, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_SKILL_NOT_READY());

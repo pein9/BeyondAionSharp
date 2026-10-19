@@ -1654,8 +1654,7 @@ public sealed partial class NaturalIshalgenJourney
 			// NR-110i: what the bot has of experience before this cast is sent.
 			long experienceAtCast = session.Api.World.CurrentExperience;
 			BotSkill learned = session.Api.World.Skills[skill.Id];
-			// AM-06: Java Skill.useSkill resets the player's chain when a skill without a chain category is cast, so a
-			// Light of Rejuvenation between Smite and Flashbolt breaks the chain and the server silently refuses Flashbolt.
+			// Java b55aaf32c: sending a request never consumes the chain; a successful non-chain cast ends it.
 			tableChain = tableChain.CastSent(skill);
 			await session.SendPacketAsync(session.Api.Target(target), token);
 			// NR-121b: after a refusal for distance in this fight the target is a walker that moved on.
@@ -1721,6 +1720,14 @@ public sealed partial class NaturalIshalgenJourney
 				// A rejected cast never starts on the server; release the bot's local
 				// casting gate before any legal movement or retry.
 				session.Api.Timing.RecordCastCancelled();
+				if (started.Get<object>("name") is "STR_SKILL_CANT_CAST_IN_NONE_CHAINSKILL_STATUS")
+				{
+					tableChain = NaturalChainState.None;
+					session.TraceDiagnostic("combat-chain-refused", new Dictionary<string, object?> { ["skillId"] = skill.Id, ["targetObjectId"] = target });
+					await session.AdvanceAsync(TimeSpan.FromMilliseconds(BotTimingContract.MinimumCastIntervalMillis + 1), token);
+					await session.SynchronizeAsync(token);
+					return true;
+				}
 				if (started.Get<object>("name") is "STR_SKILL_NOT_READY")
 				{
 					// Java CM_CASTSPELL can refuse the global animation gate before any cast
@@ -1867,10 +1874,8 @@ public sealed partial class NaturalIshalgenJourney
 				throw new InvalidDataException($"Cast {skill.Id} rejected: {started.Get<object>("name")}.");
 			}
 			readinessRejections = 0;
-			// AG-07: Java ChainCondition.shouldReset clears the chain when an opener starts while its own chain is used up (Smite's
-			// selfcount is 1), and only a completed cast opens it again (Skill.endCast). A Smite cut short (STR_SKILL_CANCELED)
-			// leaves no chain, and the server refuses the Flashbolt after it without a word (the Leg 6 smoke run).
-			tableChain = tableChain.CastStarted(skill);
+			// Consume an accepted follow-up or exhausted repetition at cast start, as the server does.
+			tableChain = tableChain.CastStarted(skill, runtime.Epoch.AddMilliseconds(runtime.NowMillis));
 			await session.AdvanceAsync(TimeSpan.FromMilliseconds(started.Get<ushort>("castDuration") + 1), token);
 			DecodedBotServerPacket result = await BotCastProtocol.WaitForCompletionAsync(
 				session.WaitForPacketAsync, session.CharacterId, skill.Id, token);
@@ -1884,9 +1889,9 @@ public sealed partial class NaturalIshalgenJourney
 					cooldowns[skill.CooldownId] = runtime.Epoch.AddMilliseconds(runtime.NowMillis + deciseconds * 100L);
 					cooldownCasts[skill.CooldownId] = session.PacketHistory.Count;
 				}
-				// NA-18: flag 32 is a successful chain step (Java SM_CASTSPELL_RESULT); anything else resets it.
+				// Java b55aaf32c: only flag 32 advances the state; its window starts at the advertised hit.
 				tableChain = tableChain.CastCompleted(skill, target, target == session.CharacterId, (result.Get<byte>("flags") & 32) != 0,
-					runtime.Epoch.AddMilliseconds(runtime.NowMillis));
+					runtime.Epoch.AddMilliseconds(runtime.NowMillis + result.Get<ushort>("hitTime")));
 				// NR-61a: the damage is counted when the skill's effect is applied, at its hit time, and lands that long after.
 				if (skill.DelayedHitMillis > 0 && target != session.CharacterId)
 					delayedHit = (target, skill.Id, runtime.NowMillis + result.Get<ushort>("hitTime") + skill.DelayedHitMillis);

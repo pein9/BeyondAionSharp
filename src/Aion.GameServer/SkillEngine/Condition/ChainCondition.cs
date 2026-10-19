@@ -26,57 +26,32 @@ public class ChainCondition : Condition
     [XmlAttribute("time")]
     public int time;
 
+    /// <summary>Validation observes the chain. Only a cast that actually starts consumes it.</summary>
     public override bool Validate(Skill env)
     {
         if (env.GetEffector() is Player player)
         {
             ChainSkills chain = player.GetChainSkills();
-            ChainSkill currentSkill = chain.GetCurrentChainSkill();
-
-            if (ShouldReset(chain, env))
-                chain.ResetChain();
-
+            if (IsRepeatable() && chain.CanRepeat(category, selfCount, GetActivationWindow()))
+                return true;
             if (preCategory != null)
             {
-                if (currentSkill.GetCategory().Equals(preCategory))
+                if (!chain.CanContinue(preCategory, preCount, GetActivationWindow()))
                 {
-                    if (currentSkill.GetUseCount() < preCount) // preCategory skill must have been activated x times
-                        return false;
-                }
-                else if (!chain.GetPreviousChainSkill().GetCategory().Equals(preCategory)) // previously activated skill must match
-                {
+                    PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_SKILL_CANT_CAST_IN_NONE_CHAINSKILL_STATUS());
                     return false;
                 }
+                env.SetChainResetOnCastStart(true);
+            }
+            else if (IsRepeatable() && chain.IsCurrentCategory(category))
+            {
+                env.SetChainResetOnCastStart(true);
             }
         }
-
-        env.SetChainCategory(category);
-        env.SetChainUsageDuration(time);
         return true;
     }
 
-    private bool ShouldReset(ChainSkills chain, Skill env)
-    {
-        ChainSkill currentSkill = chain.GetCurrentChainSkill();
-        if (currentSkill.GetCategory().Length != 0)
-        {
-            if (chain.IsChainExpired()) // check max allowed use time
-                return true;
-
-            if (preCategory == null && category!.Contains("_1TH")) // first skill of a chain
-            {
-                if (!currentSkill.GetCategory().Equals(category)) // other skill
-                    return true;
-                if (currentSkill.GetUseCount() == selfCount) // same skill
-                    return true;
-                int maxActiveDuration = time > 0 ? time : env.GetCooldown() * 100; // template cooldown is seconds * 10...
-                if (SystemClock.CurrentMillis() > currentSkill.GetLastUseTime() + maxActiveDuration)
-                    return true;
-            }
-        }
-
-        return false;
-    }
+    private bool IsRepeatable() => selfCount > 1;
 
     /// <summary>Number of allowed skill activations of this chain skill.</summary>
     public int GetAllowedActivations()
@@ -89,8 +64,6 @@ public class ChainCondition : Condition
         return category;
     }
 
-    public int GetTime()
-    {
-        return time;
-    }
+    /// <summary>Own window after the predecessor's hit: missing/zero time means 3000 ms, otherwise time + 1500 ms.</summary>
+    public int GetActivationWindow() => time == 0 ? 3000 : unchecked(time + 1500);
 }
