@@ -79,18 +79,29 @@ public class CraftService
     public static void StartCrafting(Player player, int recipeId, int targetObjId, int craftType, Dictionary<int, long> sendMaterialsData)
     {
         RecipeTemplate recipeTemplate = DataManager.RECIPE_DATA.GetRecipeTemplateById(recipeId);
+        if (recipeTemplate == null)
+        {
+            AuditLogger.Log(player, "tried to craft unknown recipe " + recipeId);
+            return;
+        }
+        ComponentsData? components = FindComponents(recipeTemplate, sendMaterialsData);
+        if (components == null)
+        {
+            AuditLogger.Log(player, "tried to craft recipe " + recipeTemplate.GetId() + " without sending any of its component sets [" + string.Join(", ", sendMaterialsData.Keys) + "]");
+            return;
+        }
         int skillId = recipeTemplate.GetSkillId();
         VisibleObject target = player.GetKnownList().GetObject(targetObjId);
         ItemTemplate itemTemplate = DataManager.ITEM_DATA.GetItemTemplate(recipeTemplate.GetProductId());
 
-        if (!CheckCraft(player, recipeTemplate, skillId, target, itemTemplate, craftType, sendMaterialsData))
+        if (!CheckCraft(player, recipeTemplate, skillId, target, craftType, components))
         {
             SendCancelCraft(player, skillId, targetObjId, itemTemplate);
             return;
         }
 
         player.GetRecipeList().DecreaseProductionLimit(player, recipeId);
-        ConsumeComponents(player, recipeTemplate, sendMaterialsData);
+        ConsumeComponents(player, components);
 
         // Java getDp() boxes a primitive int, so its null guard is always true.
         player.GetCommonData().AddDp(-recipeTemplate.GetDp());
@@ -112,24 +123,13 @@ public class CraftService
         if (!recipeTemplate.IsMorph())
         {
             int interval = 2500 - (skillLvlDiff * 60);
-            craftingTask.SetInterval(interval < intervalCap ? intervalCap : interval);
+            craftingTask.SetInterval(Math.Max(interval, intervalCap));
         }
         craftingTask.Start();
     }
 
-    private static bool CheckCraft(Player player, RecipeTemplate recipeTemplate, int skillId, VisibleObject target, ItemTemplate itemTemplate,
-        int craftType, Dictionary<int, long> sendMaterialsData)
+    private static bool CheckCraft(Player player, RecipeTemplate recipeTemplate, int skillId, VisibleObject target, int craftType, ComponentsData components)
     {
-        if (recipeTemplate == null)
-        {
-            return false;
-        }
-
-        if (itemTemplate == null)
-        {
-            return false;
-        }
-
         if (player.GetInteractionTask() is CraftingTask craftingTask && craftingTask.IsInProgress())
         {
             return false;
@@ -138,7 +138,7 @@ public class CraftService
         // morphing dont need static object/npc to use
         if (!recipeTemplate.IsMorph())
         {
-            if (target == null || !(target is StaticObject))
+            if (!(target is StaticObject))
             {
                 AuditLogger.Log(player, "tried to craft with incorrect target");
                 return false;
@@ -195,25 +195,18 @@ public class CraftService
             return false;
         }
 
-        foreach (ComponentsData componentsData in recipeTemplate.GetComponents())
+        foreach (Component component in components.GetComponent())
         {
-            Component firstComponent = componentsData.GetComponent()[0];
-            if (!sendMaterialsData.ContainsKey(firstComponent.GetItemId()))
-                continue;
-            foreach (Component component in componentsData.GetComponent())
+            long availableComponentCount = player.GetInventory().GetItemCountByItemId(component.GetItemId());
+            if (availableComponentCount < component.GetQuantity())
             {
-                long availableComponentCount = player.GetInventory().GetItemCountByItemId(component.GetItemId());
-                if (availableComponentCount < component.GetQuantity())
-                {
-                    string itemL10n = DataManager.ITEM_DATA.GetItemTemplate(component.GetItemId()).GetL10n();
-                    if (component.GetQuantity() == 1)
-                        PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_COMBINE_NO_COMPONENT_ITEM_SINGLE(itemL10n));
-                    else
-                        PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_COMBINE_NO_COMPONENT_ITEM_MULTIPLE(component.GetQuantity(), itemL10n));
-                    return false;
-                }
+                string itemL10n = DataManager.ITEM_DATA.GetItemTemplate(component.GetItemId()).GetL10n();
+                if (component.GetQuantity() == 1)
+                    PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_COMBINE_NO_COMPONENT_ITEM_SINGLE(itemL10n));
+                else
+                    PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_COMBINE_NO_COMPONENT_ITEM_MULTIPLE(component.GetQuantity(), itemL10n));
+                return false;
             }
-            break;
         }
 
         if (craftType == 1 && !player.GetInventory().DecreaseByItemId(GetBonusReqItem(skillId), 1))
@@ -226,18 +219,20 @@ public class CraftService
         return true;
     }
 
-    private static void ConsumeComponents(Player player, RecipeTemplate recipeTemplate, Dictionary<int, long> sendMaterialsData)
+    private static void ConsumeComponents(Player player, ComponentsData components)
+    {
+        foreach (Component component in components.GetComponent())
+            player.GetInventory().DecreaseByItemId(component.GetItemId(), component.GetQuantity());
+    }
+
+    private static ComponentsData? FindComponents(RecipeTemplate recipeTemplate, Dictionary<int, long> sendMaterialsData)
     {
         foreach (ComponentsData componentsData in recipeTemplate.GetComponents())
         {
-            Component firstComponent = componentsData.GetComponent()[0];
-            if (!sendMaterialsData.ContainsKey(firstComponent.GetItemId()))
-                continue;
-
-            foreach (Component component in componentsData.GetComponent())
-                player.GetInventory().DecreaseByItemId(component.GetItemId(), component.GetQuantity());
-            break;
+            if (sendMaterialsData.ContainsKey(componentsData.GetComponent()[0].GetItemId()))
+                return componentsData;
         }
+        return null;
     }
 
     private static void SendCancelCraft(Player player, int skillId, int targetObjId, ItemTemplate itemTemplate)
