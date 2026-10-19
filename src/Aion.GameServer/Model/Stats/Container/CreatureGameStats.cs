@@ -377,13 +377,16 @@ public abstract class CreatureGameStats
     {
         foreach (List<IStatFunction> statFunctions in stats.Values)
         {
-            foreach (IStatFunction sf in statFunctions)
+            lock (statFunctions)
             {
-                IStatFunction statFunction = sf;
-                if (statFunction is StatFunctionProxy proxy)
-                    statFunction = proxy.GetProxiedFunction();
-                if (statFunction is Aion.GameServer.Model.Stats.Calc.Functions.StatArmorMasteryFunction armorMasteryFunction)
-                    armorMasteryFunction.UpdateEquipmentFactor(equipment);
+                foreach (IStatFunction sf in statFunctions)
+                {
+                    IStatFunction statFunction = sf;
+                    if (statFunction is StatFunctionProxy proxy)
+                        statFunction = proxy.GetProxiedFunction();
+                    if (statFunction is Aion.GameServer.Model.Stats.Calc.Functions.StatArmorMasteryFunction armorMasteryFunction)
+                        armorMasteryFunction.UpdateEquipmentFactor(equipment);
+                }
             }
         }
     }
