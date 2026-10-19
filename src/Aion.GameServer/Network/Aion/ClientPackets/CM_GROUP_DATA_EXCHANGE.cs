@@ -1,88 +1,83 @@
+using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using Aion.GameServer.Commons.Utils;
+using System.Linq;
+using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
-using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Utils;
+using Aion.GameServer.Utils.Audit;
 using State = global::Aion.GameServer.Network.Aion.AionConnection.State;
 
 namespace Aion.GameServer.Network.Aion.ClientPackets;
 
-/// <summary>Java parity: network/aion/clientpackets/CM_GROUP_DATA_EXCHANGE (xTz). Relays opaque group/alliance/league UI exchange data (action 1 = broadcast-and-receive). SM_GROUP_DATA_EXCHANGE/NetworkUtils red-tolerated.</summary>
+/// <summary>Java parity: bounded client broadcasts to the requested team or the sender's house land (6dd3aa507).</summary>
 public class CM_GROUP_DATA_EXCHANGE : AionClientPacket
 {
-    /// <summary>
-    /// Maximum size of the exchange data. The size is determined by subtracting the maximum usable packet body size in bytes by the overhead bytes
-    /// required to send it via SM_GROUP_DATA_EXCHANGE
-    /// </summary>
-    private static readonly int MAX_EXCHANGE_DATA_SIZE = AionServerPacket.MAX_USABLE_PACKET_BODY_SIZE - 6;
+    private const int MAX_EXCHANGE_DATA_SIZE = 6144;
+    private ClientBroadcastType? type;
+    private Team? team;
+    private int tag;
+    private int dataSize;
+    private byte[]? data;
 
-    private int groupType;
-    private int action;
-    private int unk2;
-    private byte[] data;
-
-    public CM_GROUP_DATA_EXCHANGE(int opcode, ISet<State> validStates)
-        : base(opcode, validStates)
-    {
-    }
+    public CM_GROUP_DATA_EXCHANGE(int opcode, ISet<State> validStates) : base(opcode, validStates) { }
 
     protected override void ReadImpl()
     {
-        action = ReadUC();
-        if (action != 1)
+        type = ClientBroadcastTypeExtensions.GetById(ReadUC());
+        if (type == ClientBroadcastType.TEAM)
         {
-            groupType = ReadUC();
-            unk2 = ReadUC();
+            team = GetTeamById(ReadUC());
+            tag = ReadUC();
         }
-        int dataSize = ReadD();
-        data = ReadB(dataSize);
+        dataSize = ReadD();
+        if (dataSize >= 0 && dataSize <= MAX_EXCHANGE_DATA_SIZE && dataSize <= GetRemainingBytes())
+            data = ReadB(dataSize);
     }
 
     protected override void RunImpl()
     {
         Player player = GetConnection().GetActivePlayer();
-        if (player == null || data.Length == 0)
+        if (player == null)
             return;
-
-        if (data.Length > MAX_EXCHANGE_DATA_SIZE)
+        if (data == null)
         {
-            AionLog.For(nameof(CM_GROUP_DATA_EXCHANGE)).LogError(
-                "Player {Player} exceeded maximum exchange data size (action: {Action}, groupType: {GroupType}, unk2: {Unk2}, bytes send: {Bytes}): \n{Hex}", player, action, groupType, unk2,
-                data.Length, NetworkUtils.ToHex(global::Aion.Commons.Nio.ByteBuffer.Wrap(data)));
+            AuditLogger.Log(player, "sent client broadcast data of " + dataSize + " bytes (type " + (type?.ToString() ?? "null") + ")");
             return;
         }
-
-        if (action == 1)
+        if (data.Length == 0 || type == null)
+            return;
+        if (type != ClientBroadcastType.TEAM)
         {
-            PacketSendUtility.BroadcastPacketAndReceive(player, new SM_GROUP_DATA_EXCHANGE(data));
+            BroadcastOnHouseLand(player);
             return;
         }
-        List<Player> players = null;
-        switch (groupType)
+        List<Player>? players = team switch
         {
-            case 0:
-                if (player.IsInGroup())
-                    players = player.GetPlayerGroup().GetOnlineMembers();
-                break;
-            case 1:
-                if (player.IsInAlliance())
-                    players = player.GetPlayerAllianceGroup().GetOnlineMembers();
-                break;
-            case 2:
-                if (player.IsInLeague())
-                    players = player.GetPlayerAllianceGroup().GetOnlineMembers();
-                break;
-        }
-
+            Team.GROUP => player.IsInGroup() ? player.GetPlayerGroup().GetOnlineMembers() : null,
+            Team.ALLIANCE => player.IsInAlliance() ? player.GetPlayerAlliance().GetOnlineMembers() : null,
+            Team.LEAGUE => player.IsInLeague() ? player.GetPlayerAlliance().GetLeague().GetOnlineMembers() : null,
+            _ => null
+        };
         if (players == null || players.Count == 0)
             return;
-        SM_GROUP_DATA_EXCHANGE packet = new SM_GROUP_DATA_EXCHANGE(data, action, unk2);
+        var packet = new SM_GROUP_DATA_EXCHANGE(tag, data);
         foreach (Player member in players)
         {
             if (!member.Equals(player))
                 PacketSendUtility.SendPacket(member, packet);
         }
     }
+
+    private void BroadcastOnHouseLand(Player player)
+    {
+        // Like Java, all three house types use the first HOUSE_ zone; inside-house geometry is not separate.
+        string? land = player.GetPosition().GetMapRegion()!.FindZones(player).Select(zone => zone.GetZoneTemplate().GetName())
+            .FirstOrDefault(name => name!.StartsWith("HOUSE_", StringComparison.Ordinal));
+        if (land != null)
+            PacketSendUtility.BroadcastPacket(player, new SM_GROUP_DATA_EXCHANGE(data!), true, other => other.IsInsideZone(land));
+    }
+
+    private enum Team { GROUP = 0, ALLIANCE = 1, LEAGUE = 2 }
+    private static Team? GetTeamById(int id) => id switch { 0 or 1 or 2 => (Team)id, _ => null };
 }

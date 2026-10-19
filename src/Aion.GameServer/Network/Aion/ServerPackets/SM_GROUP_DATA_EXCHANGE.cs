@@ -1,35 +1,30 @@
-using Aion.GameServer.Network.Aion;
+using Aion.GameServer.Model;
 
 namespace Aion.GameServer.Network.Aion.ServerPackets;
 
-/// <summary>Java parity: network/aion/serverpackets/SM_GROUP_DATA_EXCHANGE (xTz). Group blob exchange (action + optional unk + length-prefixed bytes).</summary>
+/// <summary>Java 6dd3aa507: team data preserves the client's tag; house data always uses HOUSE.</summary>
 public class SM_GROUP_DATA_EXCHANGE : AionServerPacket
 {
-    private byte[] byteData;
-    private int action;
-    private int unk2;
+    private readonly ClientBroadcastType type;
+    private readonly int tag;
+    private readonly byte[] data;
 
-    public SM_GROUP_DATA_EXCHANGE(byte[] byteData, int action, int unk2)
-    {
-        this.action = action;
-        this.byteData = byteData;
-        this.unk2 = unk2;
-    }
+    public SM_GROUP_DATA_EXCHANGE(int tag, byte[] data) : this(ClientBroadcastType.TEAM, tag, data) { }
+    public SM_GROUP_DATA_EXCHANGE(byte[] data) : this(ClientBroadcastType.HOUSE, 0, data) { }
 
-    public SM_GROUP_DATA_EXCHANGE(byte[] byteData)
+    private SM_GROUP_DATA_EXCHANGE(ClientBroadcastType type, int tag, byte[] data)
     {
-        this.action = 1;
-        this.byteData = byteData;
+        this.type = type;
+        this.tag = tag;
+        this.data = data;
     }
 
     protected override void WriteImpl(AionConnection con)
     {
-        WriteC(action); // action
-
-        if (action != 1)
-            WriteC(unk2); // unk
-
-        WriteD(byteData.Length);
-        WriteB(byteData);
+        WriteC((int)type);
+        if (type == ClientBroadcastType.TEAM)
+            WriteC(tag);
+        WriteD(data.Length);
+        WriteB(data);
     }
 }

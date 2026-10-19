@@ -43,7 +43,8 @@ public sealed class GoldenPacketFixtureTests
 	[InlineData("SM_FRIEND_NOTIFY.json")]
 	[InlineData("SM_BIND_POINT_TELEPORT.json")]
 	[InlineData("SM_SKILL_CANCEL.json")]
-	[InlineData("SM_GROUP_DATA_EXCHANGE.json")]
+	// Historical action2+tag SM_GROUP_DATA_EXCHANGE bytes are retained as history.
+	// ClientBroadcastPortTests checks the current TEAM/HOUSE writers against exact Java 6dd3aa507.
 	[InlineData("SM_RECONNECT_KEY.json")]
 	[InlineData("SM_PLAYER_STATE.json")]
 	[InlineData("SM_TARGET_SELECTED_LIVE.json")]
@@ -203,7 +204,6 @@ public sealed class GoldenPacketFixtureTests
 		"SM_FRIEND_NOTIFY" => new SM_FRIEND_NOTIFY((byte)inputs.GetProperty("code").GetInt32(), inputs.GetProperty("name").GetString()!),
 		"SM_BIND_POINT_TELEPORT" => new SM_BIND_POINT_TELEPORT(inputs.GetProperty("action").GetInt32(), inputs.GetProperty("playerId").GetInt32(), inputs.GetProperty("locId").GetInt32(), inputs.GetProperty("cooldown").GetInt32()),
 		"SM_SKILL_CANCEL" => new SM_SKILL_CANCEL(new PacketHarnessCreature(inputs.GetProperty("objectId").GetInt32(), 50, new Dictionary<StatEnum, int>()), inputs.GetProperty("skillId").GetInt32()),
-		"SM_GROUP_DATA_EXCHANGE" => ReconstructGroupDataExchange(inputs),
 		"SM_PLAYER_STATE" => new SM_PLAYER_STATE(BuildHarnessCreatureForState(inputs)),
 		"SM_TARGET_SELECTED_LIVE" => new SM_TARGET_SELECTED(BuildHarnessCreatureForTarget(inputs)),
 		"SM_EMOTION" => ReconstructEmotion(inputs),
@@ -734,17 +734,6 @@ public sealed class GoldenPacketFixtureTests
 		buffer.Flip();
 		buffer.Get(payload);
 		return payload;
-	}
-
-	private static SM_GROUP_DATA_EXCHANGE ReconstructGroupDataExchange(JsonElement inputs)
-	{
-		var byteData = inputs.GetProperty("byteData").EnumerateArray().Select(e => (byte)e.GetInt32()).ToArray();
-		return inputs.GetProperty("ctor").GetString() switch
-		{
-			"byteData" => new SM_GROUP_DATA_EXCHANGE(byteData),
-			"byteData_action_unk2" => new SM_GROUP_DATA_EXCHANGE(byteData, inputs.GetProperty("action").GetInt32(), inputs.GetProperty("unk2").GetInt32()),
-			_ => throw new NotSupportedException("Unknown SM_GROUP_DATA_EXCHANGE ctor"),
-		};
 	}
 
 	// ----- Live-object packet reconstruction (deterministic HarnessCreature mirrors the Java harness) -----
