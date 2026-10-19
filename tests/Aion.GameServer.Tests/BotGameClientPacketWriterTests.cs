@@ -116,7 +116,8 @@ public sealed partial class BotGameClientPacketWriterTests
 		yield return C("emotion-sit", GameClientPackets.Emotion((byte)EmotionType.SIT), game, "emotionType", EmotionType.SIT);
 		yield return C("emotion-arbitrary", GameClientPackets.Emotion(0xff), game, "emotionType", EmotionType.NONE);
 		yield return C("move-air", GameClientPackets.MoveInAir(109, 1, 2, 3, 4, 5), game, "worldId", 109);
-		yield return C("windstream", GameClientPackets.Windstream(110, 111, 112), game, "teleportId", 110);
+		yield return C("windstream", GameClientPackets.Windstream(110, 111, 7), game,
+			new Dictionary<string, object?> { ["teleportId"] = 110, ["progress"] = 111, ["state"] = Aion.GameServer.Model.Templates.Flypath.WindstreamState.START_BOOST });
 		yield return C("channel", GameClientPackets.ChangeChannel(3), game, "channel", 3);
 		yield return C("target", GameClientPackets.TargetSelect(113, true), game, "targetObjectId", 113);
 		yield return C("attack", GameClientPackets.Attack(114, 2, 300, 1), game, "targetObjectId", 114);

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
+using Aion.GameServer.Model.Templates.Flypath;
 using Aion.GameServer.Controllers.Attack;
 using Aion.GameServer.Controllers.Observer;
 using Aion.GameServer.Dataholders;
@@ -22,7 +24,10 @@ namespace Aion.GameServer.Controllers;
 /// <summary>Java parity: controllers/PlayerController extends CreatureController&lt;Player&gt;.</summary>
 public class PlayerController : CreatureController<Player>
 {
+    private static readonly ILogger log = AionLog.For(nameof(PlayerController));
     private const int PROTECTION_TIME = 60000;
+    private const float MAX_FLIGHT_LANDING_DISTANCE = 5;
+    private const int FLIGHT_LANDING_TIME_TOLERANCE = 1000;
     private long lastAttackMillis = 0;
     private long lastAttackedMillis = 0;
     private long lastAutoAttackMillis = 0;
@@ -656,29 +661,43 @@ public class PlayerController : CreatureController<Player>
             player.GetLifeStats().TriggerFpReduce();
             player.GetGameStats().UpdateStatsAndSpeedVisually();
         }
-        else
+        else if (player.IsUsingFlightPath(FlightPath.Type.FLIGHT_TRANSPORTER))
         {
-            player.UnsetState(CreatureState.FLYING);
-            if (Aion.GameServer.Configs.Main.SecurityConfig.ENABLE_FLYPATH_VALIDATOR)
+            FlightPath flightPath = player.GetFlightPath();
+            FlyPathEntry? path = player.GetFlightPathTemplate();
+            if (path == null)
             {
-                long diff = (CurrentTimeMillis() - player.GetFlyStartTime());
-                Aion.GameServer.Model.Templates.Flypath.FlyPathEntry path = player.GetCurrentFlyPath();
-
-                if (player.GetWorldId() != path.GetEndWorldId())
-                {
-                    AuditLogger.Log(player, "tried to use flyPath #" + path.GetId() + " from not native start world " + player.GetWorldId() + " (expected "
-                        + path.GetEndWorldId() + ")");
-                }
-
-                if (diff < path.GetTimeInMs())
-                {
-                    AuditLogger.Log(player, "ended fly path too early: Fly duration " + diff + "ms instead of " + path.GetTimeInMs() + "ms");
-                }
-
-                player.SetCurrentFlypath(null);
+                log.LogWarning("Missing flypath_location in flypath_template.xml for teleport id {TeleportId}, landing of {Player} is not validated", flightPath.GetId(), player);
             }
+            else
+            {
+                if (player.GetWorldId() != path.GetEndWorldId()
+                    || !PositionUtil.IsInRange(player, path.GetEndX(), path.GetEndY(), path.GetEndZ(), MAX_FLIGHT_LANDING_DISTANCE))
+                {
+                    AuditLogger.Log(player, "tried to land from flight path #" + path.GetId() + " " + PositionUtil.GetDistance(player, path.GetEndX(),
+                        path.GetEndY(), path.GetEndZ()) + "m away from its end" + (player.GetWorldId() == path.GetEndWorldId() ? "" : " on another map"));
+                    return;
+                }
+                // Java allows 1 s tolerance; an early landing is retried only for this same spawned flight.
+                long remainingTime = path.GetTimeInMs() - flightPath.GetElapsedTime() - FLIGHT_LANDING_TIME_TOLERANCE;
+                if (remainingTime > 0)
+                {
+                    AuditLogger.Log(player, "tried to land from flight path #" + path.GetId() + " " + remainingTime + "ms early");
+                    ThreadPoolManager.GetInstance().Schedule(() =>
+                    {
+                        if (player.IsSpawned() && player.GetFlightPath() == flightPath)
+                            OnFlyTeleportEnd();
+                    }, remainingTime);
+                    return;
+                }
+            }
+            player.UnsetState(CreatureState.FLYING);
             player.SetState(CreatureState.ACTIVE);
             UpdateZone();
+        }
+        else
+        {
+            return;
         }
         player.SetFlightPath(null);
     }

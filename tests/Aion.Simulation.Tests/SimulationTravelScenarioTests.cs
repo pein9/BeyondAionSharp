@@ -95,9 +95,8 @@ public sealed partial class SimulationFastScenarioTests
 		CancellationToken token = timeout.Token;
 		GameTime clock = GameTimeService.GetInstance().GetGameTime();
 		int startedAt = clock.GetTime();
-		// gameserver.security.validation.flypath is off as shipped (security.properties), so TeleportService.teleport neither
-		// checks the fly path's start nor keeps it, and onFlyTeleportEnd skips its duration check.
-		Assert.False(Aion.GameServer.Configs.Main.SecurityConfig.ENABLE_FLYPATH_VALIDATOR);
+		// Flight transporters now validate their endpoint and elapsed duration (Java 332d54885).
+		// FlyTransporterAsync advances the shared clock through the full route before landing.
 		int auditMark = fixture.LogCapture.Entries.Count;
 
 		await using var elyos = new SimulationL0Session(fixture, policy, "b01", 108, ElyosTravel.Name, Race.ELYOS);

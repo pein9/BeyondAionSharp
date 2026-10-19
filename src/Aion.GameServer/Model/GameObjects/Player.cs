@@ -121,8 +121,6 @@ public partial class Player : Creature
 
     /// <summary>Connection of this Player.</summary>
     private Aion.GameServer.Network.Aion.AionConnection clientConnection;
-    private Aion.GameServer.Model.Templates.Flypath.FlyPathEntry flyLocationId;
-    private long flyStartTime;
 
     private Aion.GameServer.Model.GameObjects.Players.Emotion.EmotionList emotions;
     private Aion.GameServer.Model.GameObjects.Players.Motion.MotionList motions;

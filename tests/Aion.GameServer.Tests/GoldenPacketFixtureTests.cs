@@ -113,7 +113,8 @@ public sealed class GoldenPacketFixtureTests
 	[InlineData("SM_CUSTOM_SETTINGS.json")]
 	[InlineData("SM_ATTACK.json")]
 	[InlineData("SM_FLY_TIME.json")]
-	[InlineData("SM_WINDSTREAM.json")]
+	// SM_WINDSTREAM's historical state=12/success=3 cannot be constructed by Java 332d54885.
+	// Capture retained as history; WindstreamExploitsPortTests checks all16valid state/bool payloads from that exact commit.
 	[InlineData("SM_UNWRAP_ITEM.json")]
 	[InlineData("SM_CRAFT_ANIMATION.json")]
 	[InlineData("SM_GF_WEBSHOP_TOKEN_RESPONSE.json")]
@@ -272,7 +273,6 @@ public sealed class GoldenPacketFixtureTests
 		"SM_CUSTOM_SETTINGS" => new SM_CUSTOM_SETTINGS(inputs.GetProperty("objectId").GetInt32(), inputs.GetProperty("unk").GetInt32(), inputs.GetProperty("display").GetInt32(), inputs.GetProperty("deny").GetInt32()),
 		"SM_ATTACK" => ReconstructAttack(inputs),
 		"SM_FLY_TIME" => new SM_FLY_TIME(inputs.GetProperty("currentFp").GetInt32(), inputs.GetProperty("maxFp").GetInt32()),
-		"SM_WINDSTREAM" => new SM_WINDSTREAM(inputs.GetProperty("unk1").GetInt32(), inputs.GetProperty("unk2").GetInt32()),
 		"SM_UNWRAP_ITEM" => new SM_UNWRAP_ITEM(inputs.GetProperty("objectId").GetInt32(), inputs.GetProperty("count").GetInt32()),
 		"SM_CRAFT_ANIMATION" => new SM_CRAFT_ANIMATION(inputs.GetProperty("playerObjectId").GetInt32(), inputs.GetProperty("targetObjectId").GetInt32(), inputs.GetProperty("skillId").GetInt32(), inputs.GetProperty("action").GetInt32()),
 		"SM_GF_WEBSHOP_TOKEN_RESPONSE" => new SM_GF_WEBSHOP_TOKEN_RESPONSE(inputs.GetProperty("token").GetString()!),

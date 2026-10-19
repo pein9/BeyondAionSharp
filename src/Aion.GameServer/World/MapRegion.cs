@@ -192,6 +192,8 @@ public class MapRegion
 
     public void RevalidateZones(Creature creature)
     {
+        // Flight transporter positions are unvalidated; only leave zones until landing.
+        bool onFlightTransporter = creature is Player player && player.IsUsingFlightPath(Aion.GameServer.Model.Templates.Flypath.FlightPath.Type.FLIGHT_TRANSPORTER);
         ZoneClassName? zoneType = null;
         bool enteredPriorityZone = false;
         foreach (ZoneInstance zone in zonesSortedByTypeAndPriority)
@@ -203,7 +205,7 @@ public class MapRegion
                 zoneType = zone.GetZoneTemplate().GetZoneType();
                 enteredPriorityZone = false;
             }
-            if (!creature.IsSpawned() || enteredPriorityZone || !zone.Revalidate(creature))
+            if (!creature.IsSpawned() || enteredPriorityZone || onFlightTransporter || !zone.Revalidate(creature))
             {
                 zone.OnLeave(creature);
                 continue;

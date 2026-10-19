@@ -114,16 +114,6 @@ public partial class Player
         return Aion.GameServer.Model.Templates.Items.ItemAttackType.PHYSICAL;
     }
 
-    public long GetFlyStartTime()
-    {
-        return flyStartTime;
-    }
-
-    public Aion.GameServer.Model.Templates.Flypath.FlyPathEntry GetCurrentFlyPath()
-    {
-        return flyLocationId;
-    }
-
     public void ResetAbyssRankListUpdated()
     {
         this.abyssRankListUpdateMask = 0;
@@ -398,10 +388,7 @@ public partial class Player
         base.SetPosition(position);
         GetMoveController().ResetLastPositionFromClient(); // if we don't reset it, material collision handlers (such as shields) affect you on teleport
         GetCommonData().SetMapId(position.GetMapId());
-        GetCommonData().SetX(position.GetX());
-        GetCommonData().SetY(position.GetY());
-        GetCommonData().SetZ(position.GetZ());
-        GetCommonData().SetHeading(position.GetHeading());
+        GetCommonData().SetXYZH(position.GetX(), position.GetY(), position.GetZ(), position.GetHeading());
         GetCommonData().SetWorldOwnerId(position.GetMapRegion() == null ? 0 : position.GetWorldMapInstance().GetOwnerId());
     }
 

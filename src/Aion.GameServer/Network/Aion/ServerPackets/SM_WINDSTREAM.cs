@@ -1,22 +1,23 @@
 using Aion.GameServer.Network.Aion;
+using Aion.GameServer.Model.Templates.Flypath;
 
 namespace Aion.GameServer.Network.Aion.ServerPackets;
 
-/// <summary>Java parity: network/aion/serverpackets/SM_WINDSTREAM. Windstream state (two unknown fields).</summary>
+/// <summary>Java parity: network/aion/serverpackets/SM_WINDSTREAM. Windstream state acknowledgement.</summary>
 public class SM_WINDSTREAM : AionServerPacket
 {
-    private int unk1;
-    private int unk2;
+    private readonly WindstreamState state;
+    private readonly bool success;
 
-    public SM_WINDSTREAM(int unk1, int unk2)
+    public SM_WINDSTREAM(WindstreamState state, bool success)
     {
-        this.unk1 = unk1;
-        this.unk2 = unk2;
+        this.state = state;
+        this.success = success;
     }
 
     protected override void WriteImpl(AionConnection con)
     {
-        WriteD(unk1);
-        WriteC(unk2);
+        WriteD((int)state);
+        WriteC(success ? 1 : 0);
     }
 }

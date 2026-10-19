@@ -176,10 +176,7 @@ public class PlayerService
         LocationData ld = playerInitialData.GetSpawnLocation(playerCommonData.GetRace());
 
         playerCommonData.SetMapId(ld.GetMapId());
-        playerCommonData.SetX(ld.GetX());
-        playerCommonData.SetY(ld.GetY());
-        playerCommonData.SetZ(ld.GetZ());
-        playerCommonData.SetHeading((byte)ld.GetHeading());
+        playerCommonData.SetXYZH(ld.GetX(), ld.GetY(), ld.GetZ(), (byte)ld.GetHeading());
 
         Player newPlayer = new Player(playerAccountData, account);
 

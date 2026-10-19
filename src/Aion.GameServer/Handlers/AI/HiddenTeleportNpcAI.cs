@@ -1,11 +1,9 @@
 using Aion.GameServer.Ai;
-using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.Actions;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.GameObjects.State;
-using Aion.GameServer.Model.Templates.Flypath;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Utils;
 
@@ -38,8 +36,6 @@ public class HiddenTeleportNpcAI : NpcAI
         int teleId = GetTeleportId();
         if (teleId == 0)
             return;
-        FlyPathEntry flypath = DataManager.FLY_PATH.GetPathTemplate(teleId);
-        player.SetCurrentFlypath(flypath);
         player.UnsetPlayerMode(PlayerMode.RIDE);
         player.SetState(CreatureState.FLYING);
         player.UnsetState(CreatureState.ACTIVE);

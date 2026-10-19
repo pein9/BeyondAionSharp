@@ -159,10 +159,10 @@ public class PlayerLeaveWorldService
         player.GetCommonData().SetLastOnline(lastOnline);
         if (player.IsLegionMember()) // must be called after setOnline and setLastOnline
             LegionService.GetInstance().OnLogout(player);
-        player.GetCommonData().SetX(player.GetX());
-        player.GetCommonData().SetY(player.GetY());
-        player.GetCommonData().SetZ(player.GetZ());
-        player.GetCommonData().SetHeading(player.GetHeading());
+        var flightPath = player.GetFlightPathTemplate();
+        if (flightPath != null)
+            player.GetPosition().SetXYZH(flightPath.GetEndX(), flightPath.GetEndY(), flightPath.GetEndZ(), (byte)0);
+        player.GetCommonData().SetXYZH(player.GetX(), player.GetY(), player.GetZ(), player.GetHeading());
 
         ChatServer.GetInstance().SendPlayerLogout(player);
 

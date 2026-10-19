@@ -446,6 +446,14 @@ public class PlayerCommonData : Aion.GameServer.Model.GameObjects.CreatureTempla
         this.heading = heading;
     }
 
+    public void SetXYZH(float x, float y, float z, byte heading)
+    {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.heading = heading;
+    }
+
     /// <summary>Timestamp the player was last online. May be null</summary>
     public DateTime? GetLastOnline()
     {

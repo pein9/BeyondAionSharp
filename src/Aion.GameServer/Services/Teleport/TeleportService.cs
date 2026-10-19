@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.Actions;
@@ -9,7 +8,6 @@ using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.GameObjects.State;
 using Aion.GameServer.Model.Items.Storage;
-using Aion.GameServer.Model.Templates.Flypath;
 using Aion.GameServer.Model.Templates.Npc;
 using Aion.GameServer.Model.Templates.Portal;
 using Aion.GameServer.Model.Templates.Spawns;
@@ -66,39 +64,19 @@ public class TeleportService
             return;
         }
 
+        // Landing is checked against this path's endpoint; refuse missing paths before charging.
+        if (location.GetType_() == TeleportType.FLIGHT && DataManager.FLY_PATH.GetPathTemplate(location.GetTeleportId() / 1000) == null)
+        {
+            log.LogWarning("Missing flypath_location in flypath_template.xml for teleport id {TeleportId}", location.GetTeleportId());
+            PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_CANNOT_MOVE_TO_AIRPORT_NO_ROUTE());
+            return;
+        }
+
         if (!CheckKinahForTransportation(location, player))
             return;
 
         if (location.GetType_() == TeleportType.FLIGHT)
         {
-            if (SecurityConfig.ENABLE_FLYPATH_VALIDATOR)
-            {
-                FlyPathEntry flypath = DataManager.FLY_PATH.GetPathTemplate(location.GetLocId());
-                if (flypath == null)
-                {
-                    AuditLogger.Log(player, "tried to use invalid flyPath #" + location.GetLocId());
-                    PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_CANNOT_MOVE_TO_AIRPORT_NO_ROUTE());
-                    return;
-                }
-
-                double dist = PositionUtil.GetDistance(player, flypath.GetStartX(), flypath.GetStartY(), flypath.GetStartZ());
-                if (dist > 7)
-                {
-                    AuditLogger.Log(player, "tried to use flyPath #" + location.GetLocId() + " but he's too far " + dist);
-                    PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_CANNOT_MOVE_TO_AIRPORT_NO_ROUTE());
-                    return;
-                }
-
-                if (player.GetWorldId() != flypath.GetStartWorldId())
-                {
-                    AuditLogger.Log(player, "tried to use flyPath #" + location.GetLocId() + " from invalid start world " + player.GetWorldId()
-                        + ", expected " + flypath.GetStartWorldId());
-                    PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_CANNOT_MOVE_TO_AIRPORT_NO_ROUTE());
-                    return;
-                }
-
-                player.SetCurrentFlypath(flypath);
-            }
             AbortPlayerActions(player);
             player.SetState(CreatureState.FLYING);
             player.UnsetState(CreatureState.ACTIVE);

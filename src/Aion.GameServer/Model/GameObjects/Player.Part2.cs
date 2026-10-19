@@ -327,13 +327,10 @@ public partial class Player
         return flightPath;
     }
 
-    public void SetCurrentFlypath(Aion.GameServer.Model.Templates.Flypath.FlyPathEntry path)
+    /// <summary>The current flight transporter or windstream template, or null when none is known.</summary>
+    public Aion.GameServer.Model.Templates.Flypath.FlyPathEntry? GetFlightPathTemplate()
     {
-        this.flyLocationId = path;
-        if (path != null)
-            this.flyStartTime = SystemClock.CurrentMillis();
-        else
-            this.flyStartTime = 0;
+        return IsUsingFlightTransporterOrWindstream() ? DataManager.FLY_PATH.GetPathTemplate(flightPath.GetId() / 1000) : null;
     }
 
     /// <summary>True if the player has the specified access level or higher.</summary>
