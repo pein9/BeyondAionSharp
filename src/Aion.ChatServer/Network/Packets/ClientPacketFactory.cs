@@ -22,8 +22,11 @@ public static class ClientPacketFactory
 	public const byte CmChatIni = 0x30;
 	public const byte CmPing = 0xFF;
 
-	public static AbstractClientPacket? Create(PacketBuffer payload, ChatClientConnectionState state)
+	public static AbstractClientPacket? Create(PacketBuffer payload, ChatClientConnectionState state) => Create(payload, state, out _);
+
+	public static AbstractClientPacket? Create(PacketBuffer payload, ChatClientConnectionState state, out bool malformed)
 	{
+		malformed = false;
 		var opCode = payload.ReadC();
 		AbstractClientPacket? packet = null;
 
@@ -52,14 +55,9 @@ public static class ClientPacketFactory
 		if (packet == null)
 			return null;
 
-		try
-		{
-			packet.Read(payload);
-			return packet;
-		}
-		catch (Exception)
-		{
-			return null;
-		}
+        if (ChatPacketReads.TryRead(payload, opCode, packet.GetType().Name, () => packet.Read(payload)))
+            return packet;
+        malformed = true;
+        return null;
 	}
 }

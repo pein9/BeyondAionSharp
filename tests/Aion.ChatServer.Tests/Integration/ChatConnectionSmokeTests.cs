@@ -399,6 +399,41 @@ public class ChatConnectionSmokeTests
 		}
 	}
 
+    [Fact]
+    public async Task ClientHandlerFailureDoesNotCloseTheConnectionOrPreventTheNextMessage()
+    {
+        var options = new ChatServerOptions();
+        var channels = new ChatChannels(NullLogger<ChatChannels>.Instance);
+        var broadcast = new BroadcastService(NullLogger<BroadcastService>.Instance);
+        var chat = new ChatService(channels, broadcast, NullLogger<ChatService>.Instance);
+        var client = chat.RegisterPlayer(123, "account", "Daeva", Race.Elyos, 0);
+        var failing = new ThrowFirstClientHandler();
+        var handlers = new ChatHandlerRegistry([failing], NullLogger<ChatHandlerRegistry>.Instance);
+        await using var harness = await SocketHarness.ConnectAsync(serverClient =>
+            new ClientChannelHandler(NullLogger.Instance, serverClient, "client-handler-probe", chat, channels, broadcast, handlers, options));
+        var protocol = CreateProtocol(client);
+        await harness.ClientStream.WriteAsync(protocol.CreatePlayerAuthFrame(client.ClientId, client.AccountName, client.Name, ChannelIdentifier));
+        _ = await ReadPayloadAsync(harness.ClientStream);
+        await harness.ClientStream.WriteAsync(protocol.CreateChannelRequestFrame(77, ChannelIdentifier));
+        var response = await ReadPayloadAsync(harness.ClientStream);
+        int channelId = BinaryPrimitives.ReadInt32LittleEndian(response.AsSpan(8, 4));
+        await harness.ClientStream.WriteAsync(protocol.CreateChannelMessageFrame(channelId, "First"));
+        await harness.ClientStream.WriteAsync(protocol.CreateChannelMessageFrame(channelId, "Second"));
+        Assert.Equal("Second", ExtractChannelMessageText(await ReadPayloadAsync(harness.ClientStream)));
+        Assert.Equal(2, failing.Calls);
+    }
+
+    private sealed class ThrowFirstClientHandler : IChatMessageHandler
+    {
+        public int Calls;
+        public int Order => 0;
+        public Task HandleAsync(Message message, ChatClient sender, Channel channel, CancellationToken token = default)
+        {
+            if (++Calls == 1) throw new IOException("domain handler probe");
+            return Task.CompletedTask;
+        }
+    }
+
 	private sealed class ByteWriter
 	{
 		private readonly List<byte> _bytes = [];

@@ -14,6 +14,7 @@ public class ChatServerOptionsTests
 		Assert.Equal(10241, options.ClientConnectEndPoint.Port);
 		Assert.Equal(9021, options.GameServerEndPoint.Port);
 		Assert.Equal(1, options.NioReadWriteThreads);
+		Assert.Equal(60, options.ClientAuthTimeoutSeconds);
 	}
 
 	[Fact]

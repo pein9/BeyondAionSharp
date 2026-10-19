@@ -8,11 +8,9 @@ namespace Aion.GameServer.Commons.Network;
 /// </summary>
 public sealed record ServerCfg(IPEndPoint Address, string ClientDescription, ConnectionFactory ConnectionFactory)
 {
-    public bool IsAnyLocalAddress() => Address.Address.Equals(IPAddress.Any) || Address.Address.Equals(IPAddress.IPv6Any);
-
     public string GetIP() => Address.Address.ToString();
 
     public int GetPort() => Address.Port;
 
-    public string GetAddressInfo() => (IsAnyLocalAddress() ? "all addresses on port " : GetIP() + ":") + GetPort();
+    public string GetAddressInfo() => Aion.GameServer.Commons.Utils.NetworkUtils.GetAddressInfo(Address);
 }

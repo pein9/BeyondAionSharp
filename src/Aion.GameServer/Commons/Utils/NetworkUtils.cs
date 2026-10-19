@@ -60,6 +60,10 @@ public class NetworkUtils
         return true;
     }
 
+    public static string GetAddressInfo(IPEndPoint address) =>
+        (address.Address.Equals(IPAddress.Any) || address.Address.Equals(IPAddress.IPv6Any)
+            ? "all addresses on port " : address.Address + ":") + address.Port;
+
     /// <summary>The IP as a human-readable string (i.e. 127.0.0.1).</summary>
     public static string IntToIpString(int ip)
     {

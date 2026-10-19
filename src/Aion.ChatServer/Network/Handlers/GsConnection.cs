@@ -31,6 +31,8 @@ public sealed class GsConnection : BaseClientConnection
 		_gameServerService = gameServerService;
 		_chatService = chatService;
 		_options = options;
+        client.NoDelay = true;
+        client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
 	}
 
 	protected override async Task<PacketBuffer?> ReadPacketAsync()
@@ -49,7 +51,13 @@ public sealed class GsConnection : BaseClientConnection
 
 	protected override async Task ProcessPacketAsync(PacketBuffer packet)
 	{
-		var parsed = GsPacketFactory.Create(packet, _state);
+		var parsed = GsPacketFactory.Create(packet, _state, out bool malformed);
+        if (malformed)
+        {
+            _client.Close();
+            await CloseAsync();
+            return;
+        }
 		if (parsed == null)
 		{
 			_logger.LogWarning("Unknown chat gameserver packet from {ClientId} in state {State}", _clientId, _state);
@@ -89,15 +97,28 @@ public sealed class GsConnection : BaseClientConnection
 		}
 	}
 
-	public async Task SendPacketAsync(GsServerPacket packet)
-	{
-		await _sendLock.WaitAsync();
+    public async Task SendPacketAsync(GsServerPacket packet)
+    {
+        try { await SendPacketCoreAsync(packet); }
+        catch (PacketEncodingException ex)
+        {
+            _logger.LogError(ex.InnerException, "Could not encode a packet for {ClientId}, disconnecting", _clientId);
+            _client.Close(); await CloseAsync();
+        }
+    }
+
+    private sealed class PacketEncodingException(Exception cause) : Exception("Chat packet encoding failed", cause);
+
+    private async Task SendPacketCoreAsync(GsServerPacket packet)
+    {
+        await _sendLock.WaitAsync();
 		try
 		{
 			if (!_isConnected)
 				return;
 
-			var frame = packet.SerializeFrame();
+			byte[] frame;
+            try { frame = packet.SerializeFrame(); } catch (Exception ex) { throw new PacketEncodingException(ex); }
 			try
 			{
 				await WriteAsync(frame, 0, frame.Length);

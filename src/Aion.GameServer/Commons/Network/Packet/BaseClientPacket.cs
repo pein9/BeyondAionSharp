@@ -4,19 +4,18 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Aion.Commons.Lang;
 using Aion.Commons.Nio;
-using Aion.GameServer.Commons.Network;
 using Aion.GameServer.Commons.Utils;
 
 namespace Aion.GameServer.Commons.Network.Packet;
 
 /// <summary>
 /// Java parity: commons/network/packet/BaseClientPacket (-Nemesiss-). Base for every client packet.
-/// &lt;T extends AConnection&lt;?&gt;&gt; -> where T : AConnection (the non-generic erasure base). implements
+/// Connection owner T is unconstrained, supporting native transports. implements
 /// Runnable -> Runnable (Run() left abstract for AionClientPacket). Nio BufferUnderflow becomes one failed Read,
 /// with no default values or partial strings returned from helpers. ConcurrentHashMap.newKeySet
 /// -> ConcurrentDictionary used as a once-set.
 /// </summary>
-public abstract class BaseClientPacket<T> : BasePacket, Runnable where T : AConnection
+public abstract class BaseClientPacket<T> : BasePacket, Runnable
 {
     private static readonly ILogger log = AionLog.For("BaseClientPacket");
     private static readonly ConcurrentDictionary<int, bool> partiallyReadPackets = new ConcurrentDictionary<int, bool>();

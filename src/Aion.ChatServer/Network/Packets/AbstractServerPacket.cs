@@ -14,7 +14,7 @@ public abstract class AbstractServerPacket
 
 	public byte[] SerializePayload()
 	{
-		using var buffer = new PacketBuffer();
+		using var buffer = new PacketBuffer(16384 - 2);
 		buffer.WriteC(OpCode);
 		WritePayload(buffer);
 		return buffer.ToArray();

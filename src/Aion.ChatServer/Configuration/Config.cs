@@ -65,6 +65,9 @@ public static class Config
     [Property(key: "chatserver.network.nio.threads", defaultValue: "1")]
     public static int NIO_READ_WRITE_THREADS = 1;
 
+    [Property(key: "chatserver.network.client.auth_timeout_seconds", defaultValue: "60")]
+    public static int CLIENT_AUTH_TIMEOUT_SECONDS = 60;
+
     /// <summary>
     /// Java parity: Config.loadProperties() — cascade config/main/* + config/network/* defaults, then mycs.properties.
     /// </summary>

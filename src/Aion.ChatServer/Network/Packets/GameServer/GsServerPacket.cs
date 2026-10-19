@@ -7,7 +7,7 @@ public abstract class GsServerPacket
 {
 	public byte[] SerializePayload()
 	{
-		using var buffer = new PacketBuffer();
+		using var buffer = new PacketBuffer(65536 - 2);
 		WritePayload(buffer);
 		return buffer.ToArray();
 	}

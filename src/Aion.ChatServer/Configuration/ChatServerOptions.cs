@@ -15,6 +15,8 @@ public sealed class ChatServerOptions
 
 	public int NioReadWriteThreads { get; init; } = 1;
 
+	public int ClientAuthTimeoutSeconds { get; init; } = 60;
+
 	public bool LogChannelRequests { get; init; }
 
 	public bool LogInvalidChannels { get; init; }
@@ -47,6 +49,7 @@ public sealed class ChatServerOptions
 			GameServerEndPoint = ParseEndPoint(Config.GAMESERVER_SOCKET_ADDRESS),
 			GameServerPassword = Config.GAMESERVER_PASSWORD,
 			NioReadWriteThreads = Config.NIO_READ_WRITE_THREADS,
+			ClientAuthTimeoutSeconds = Config.CLIENT_AUTH_TIMEOUT_SECONDS,
 			LogChannelRequests = Config.LOG_CHANNEL_REQUEST,
 			LogInvalidChannels = Config.LOG_CHANNEL_INVALID,
 			LogChat = Config.LOG_CHAT,

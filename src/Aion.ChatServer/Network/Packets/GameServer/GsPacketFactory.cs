@@ -19,8 +19,11 @@ public static class GsPacketFactory
 	public const byte SmGameServerAuthResponse = 0x00;
 	public const byte SmPlayerAuthResponse = 0x01;
 
-	public static GsClientPacket? Create(PacketBuffer payload, GameServerConnectionState state)
+	public static GsClientPacket? Create(PacketBuffer payload, GameServerConnectionState state) => Create(payload, state, out _);
+
+	public static GsClientPacket? Create(PacketBuffer payload, GameServerConnectionState state, out bool malformed)
 	{
+		malformed = false;
 		var opCode = payload.ReadC();
 		GsClientPacket? packet = null;
 
@@ -40,14 +43,9 @@ public static class GsPacketFactory
 		if (packet == null)
 			return null;
 
-		try
-		{
-			packet.Read(payload);
-			return packet;
-		}
-		catch (Exception)
-		{
-			return null;
-		}
+        if (ChatPacketReads.TryRead(payload, opCode, packet.GetType().Name, () => packet.Read(payload)))
+            return packet;
+        malformed = true;
+        return null;
 	}
 }
