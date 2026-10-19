@@ -13,8 +13,9 @@ public class LegionEmblem : IPersistable
     private LegionEmblemType emblemType = LegionEmblemType.DEFAULT;
     private IPersistable.PersistentState persistentState;
 
+    public const int MAX_CUSTOM_EMBLEM_SIZE = 80000;
+
     private bool isUploading = false;
-    private int uploadSize = 0;
     private int uploadedSize = 0;
     private byte[] uploadData;
 
@@ -90,32 +91,18 @@ public class LegionEmblem : IPersistable
 
     public void SetUploadSize(int emblemSize)
     {
-        this.uploadSize = emblemSize;
+        this.uploadData = new byte[emblemSize];
+        this.uploadedSize = 0;
     }
 
-    public int GetUploadSize()
+    /// <summary>Returns false if the chunk exceeds the announced upload size.</summary>
+    public bool AddUploadData(byte[] data)
     {
-        return uploadSize;
-    }
-
-    public void AddUploadData(byte[] data)
-    {
-        byte[] newData = new byte[uploadedSize];
-        int i = 0;
-        if (uploadData != null && uploadData.Length > 0)
-        {
-            foreach (byte dataByte in uploadData)
-            {
-                newData[i] = dataByte;
-                i++;
-            }
-        }
-        foreach (byte dataByte in data)
-        {
-            newData[i] = dataByte;
-            i++;
-        }
-        this.uploadData = newData;
+        if (uploadData == null || data.Length > uploadData.Length - uploadedSize)
+            return false;
+        System.Array.Copy(data, 0, uploadData, uploadedSize, data.Length);
+        uploadedSize += data.Length;
+        return true;
     }
 
     public byte[] GetUploadData()
@@ -123,14 +110,9 @@ public class LegionEmblem : IPersistable
         return this.uploadData;
     }
 
-    public void AddUploadedSize(int uploadedSize)
+    public bool IsUploadComplete()
     {
-        this.uploadedSize += uploadedSize;
-    }
-
-    public int GetUploadedSize()
-    {
-        return uploadedSize;
+        return uploadData != null && uploadedSize == uploadData.Length;
     }
 
     public void SetEmblemType(LegionEmblemType emblemType)

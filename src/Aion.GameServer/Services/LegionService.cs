@@ -337,6 +337,11 @@ public class LegionService
     /// <summary>This method will handle the process when a member is demoted or promoted.</summary>
     public void AppointRank(Player player, string charName, int rankId)
     {
+        if (rankId <= Array.IndexOf(Enum.GetValues<LegionRank>(), LegionRank.BRIGADE_GENERAL) || rankId >= Enum.GetValues<LegionRank>().Length)
+        {
+            AuditLogger.Log(player, "tried to appoint legion rank " + rankId + " to " + charName);
+            return;
+        }
         LegionMember legionMember = GetLegionMember(charName);
         if (legionRestrictions.CanAppointRank(player, legionMember))
         {
@@ -545,6 +550,12 @@ public class LegionService
     public void UploadEmblemInfo(Player activePlayer, int totalSize, int color_a, int color_r, int color_g, int color_b, LegionEmblemType emblemType)
     {
         LegionEmblem legionEmblem = activePlayer.GetLegion().GetLegionEmblem();
+        if (totalSize <= 0 || totalSize > LegionEmblem.MAX_CUSTOM_EMBLEM_SIZE)
+        {
+            AuditLogger.Log(activePlayer, "tried to upload a legion emblem of " + totalSize + " bytes");
+            legionEmblem.ResetUploadSettings();
+            return;
+        }
         if (legionRestrictions.CanUploadEmblem(activePlayer, true))
         {
             legionEmblem.ResetUploadSettings();
@@ -558,21 +569,19 @@ public class LegionService
         }
     }
 
-    public void UploadEmblemData(Player activePlayer, int size, byte[] data)
+    public void UploadEmblemData(Player activePlayer, byte[] data)
     {
         LegionEmblem legionEmblem = activePlayer.GetLegion().GetLegionEmblem();
         if (legionRestrictions.CanUploadEmblem(activePlayer, false))
         {
-            legionEmblem.AddUploadedSize(size);
-            legionEmblem.AddUploadData(data);
-
-            if (legionEmblem.GetUploadedSize() >= legionEmblem.GetUploadSize())
+            if (!legionEmblem.AddUploadData(data))
             {
-                if (legionEmblem.GetUploadedSize() == 0 || legionEmblem.GetUploadedSize() > legionEmblem.GetUploadSize())
-                {
-                    PacketSendUtility.SendPacket(activePlayer, SM_SYSTEM_MESSAGE.STR_GUILD_WARN_CORRUPT_EMBLEM_FILE());
-                    return;
-                }
+                PacketSendUtility.SendPacket(activePlayer, SM_SYSTEM_MESSAGE.STR_GUILD_WARN_CORRUPT_EMBLEM_FILE());
+                legionEmblem.ResetUploadSettings();
+                return;
+            }
+            if (legionEmblem.IsUploadComplete())
+            {
                 activePlayer.GetInventory()
                     .DecreaseKinah(Aion.GameServer.Services.Trade.PricesService.GetPriceForService(LegionConfig.LEGION_EMBLEM_REQUIRED_KINAH, activePlayer.GetRace()));
                 // Finished

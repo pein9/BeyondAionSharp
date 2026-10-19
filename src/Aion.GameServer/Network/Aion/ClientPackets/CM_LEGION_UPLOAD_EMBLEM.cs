@@ -10,7 +10,6 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 public class CM_LEGION_UPLOAD_EMBLEM : AionClientPacket
 {
     /// <summary>Emblem related information</summary>
-    private int size;
     private byte[] data;
 
     public CM_LEGION_UPLOAD_EMBLEM(int opcode, ISet<State> validStates)
@@ -20,9 +19,7 @@ public class CM_LEGION_UPLOAD_EMBLEM : AionClientPacket
 
     protected override void ReadImpl()
     {
-        size = ReadD();
-        data = new byte[size];
-        data = ReadB(size);
+        data = ReadB(ReadD());
     }
 
     protected override void RunImpl()
@@ -33,7 +30,7 @@ public class CM_LEGION_UPLOAD_EMBLEM : AionClientPacket
 
         if (data != null && data.Length > 0)
         {
-            LegionService.GetInstance().UploadEmblemData(GetConnection().GetActivePlayer(), size, data);
+            LegionService.GetInstance().UploadEmblemData(activePlayer, data);
         }
     }
 }
