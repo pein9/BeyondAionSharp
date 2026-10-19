@@ -54,14 +54,20 @@ public static class EnchantmentStoneExtensions
         switch (itemId)
         {
             case 166000191:
+            case 166000197:
                 return EnchantmentStone.ALPHA;
             case 166000192:
+            case 166000198:
                 return EnchantmentStone.BETA;
             case 166000193:
+            case 166000199:
                 return EnchantmentStone.GAMMA;
             case 166000194:
+            case 166000200:
                 return EnchantmentStone.DELTA;
             case 166000195:
+            case 166000196:
+            case 166000201:
                 return EnchantmentStone.EPSILON;
             case 166020000:
             case 166020001:

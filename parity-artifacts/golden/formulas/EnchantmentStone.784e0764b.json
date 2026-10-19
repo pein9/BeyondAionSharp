@@ -1,0 +1,1265 @@
+{
+  "source": "Java",
+  "sourceJavaCommit": "784e0764b59fe310cf4103843fc9f5636ea518f3",
+  "sourceHashes": {
+    "game-server/src/com/aionemu/gameserver/model/enchants/EnchantmentStone.java": "4e2e8244f293a44313c6e1dbf9723295586a2d76aa01e2b4f3853d5b8373111e",
+    "game-server/src/com/aionemu/gameserver/model/templates/item/ItemQuality.java": "d1a9a52e8097e998cb2362ed229b006e86982eb232ced20a3f70469f2309ff70"
+  },
+  "captureBoundary": "Exact enums; only package/import/JAXB metadata removed.",
+  "cases": [
+    {
+      "id": 166000000,
+      "error": "No matching enchantment stone found for item ID 166000000"
+    },
+    {
+      "id": 166000001,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000002,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000003,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000004,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000005,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000006,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000007,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000008,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000009,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000010,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000011,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000012,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000013,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000014,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000015,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000016,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000017,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000018,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000019,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000020,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000021,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000022,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000023,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000024,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000025,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000026,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000027,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000028,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000029,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000030,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000031,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000032,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000033,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000034,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000035,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000036,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000037,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000038,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000039,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000040,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000041,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000042,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000043,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000044,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000045,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000046,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000047,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000048,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000049,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000050,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000051,
+      "grade": "GAMMA",
+      "level": 55,
+      "qualityId": 4
+    },
+    {
+      "id": 166000052,
+      "grade": "GAMMA",
+      "level": 55,
+      "qualityId": 4
+    },
+    {
+      "id": 166000053,
+      "grade": "GAMMA",
+      "level": 55,
+      "qualityId": 4
+    },
+    {
+      "id": 166000054,
+      "grade": "GAMMA",
+      "level": 55,
+      "qualityId": 4
+    },
+    {
+      "id": 166000055,
+      "grade": "GAMMA",
+      "level": 55,
+      "qualityId": 4
+    },
+    {
+      "id": 166000056,
+      "grade": "GAMMA",
+      "level": 55,
+      "qualityId": 4
+    },
+    {
+      "id": 166000057,
+      "grade": "GAMMA",
+      "level": 55,
+      "qualityId": 4
+    },
+    {
+      "id": 166000058,
+      "grade": "GAMMA",
+      "level": 55,
+      "qualityId": 4
+    },
+    {
+      "id": 166000059,
+      "grade": "GAMMA",
+      "level": 55,
+      "qualityId": 4
+    },
+    {
+      "id": 166000060,
+      "grade": "GAMMA",
+      "level": 55,
+      "qualityId": 4
+    },
+    {
+      "id": 166000061,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000062,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000063,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000064,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000065,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000066,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000067,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000068,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000069,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000070,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000071,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000072,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000073,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000074,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000075,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000076,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000077,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000078,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000079,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000080,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000081,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000082,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000083,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000084,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000085,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000086,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000087,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000088,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000089,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000090,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000091,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000092,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000093,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000094,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000095,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000096,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000097,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000098,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000099,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000100,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000101,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000102,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000103,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000104,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000105,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000106,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000107,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000108,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000109,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000110,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000111,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000112,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000113,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000114,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000115,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000116,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000117,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000118,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000119,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000120,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000121,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000122,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000123,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000124,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000125,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000126,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000127,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000128,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000129,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000130,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000131,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000132,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000133,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000134,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000135,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000136,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000137,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000138,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000139,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000140,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000141,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000142,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000143,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000144,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000145,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000146,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000147,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000148,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000149,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000150,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000151,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000152,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000153,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000154,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000155,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000156,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000157,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000158,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000159,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000160,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000161,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000162,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000163,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000164,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000165,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000166,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000167,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000168,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000169,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000170,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000171,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000172,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000173,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000174,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000175,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000176,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000177,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000178,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000179,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000180,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000181,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000182,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000183,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000184,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000185,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000186,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000187,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000188,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000189,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000190,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000191,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000192,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000193,
+      "grade": "GAMMA",
+      "level": 55,
+      "qualityId": 4
+    },
+    {
+      "id": 166000194,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000195,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000196,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000197,
+      "grade": "ALPHA",
+      "level": 20,
+      "qualityId": 2
+    },
+    {
+      "id": 166000198,
+      "grade": "BETA",
+      "level": 40,
+      "qualityId": 3
+    },
+    {
+      "id": 166000199,
+      "grade": "GAMMA",
+      "level": 55,
+      "qualityId": 4
+    },
+    {
+      "id": 166000200,
+      "grade": "DELTA",
+      "level": 60,
+      "qualityId": 5
+    },
+    {
+      "id": 166000201,
+      "grade": "EPSILON",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166000202,
+      "error": "No matching enchantment stone found for item ID 166000202"
+    },
+    {
+      "id": 166020000,
+      "grade": "OMEGA",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166020001,
+      "grade": "OMEGA",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166020002,
+      "grade": "OMEGA",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166020003,
+      "grade": "OMEGA",
+      "level": 65,
+      "qualityId": 6
+    },
+    {
+      "id": 166020004,
+      "error": "No matching enchantment stone found for item ID 166020004"
+    },
+    {
+      "id": -2147483648,
+      "error": "No matching enchantment stone found for item ID -2147483648"
+    },
+    {
+      "id": 2147483647,
+      "error": "No matching enchantment stone found for item ID 2147483647"
+    },
+    {
+      "id": 0,
+      "error": "No matching enchantment stone found for item ID 0"
+    }
+  ]
+}
