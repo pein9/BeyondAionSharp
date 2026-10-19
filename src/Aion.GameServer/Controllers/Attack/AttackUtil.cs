@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Dataholders;
+using Aion.GameServer.Controllers.Observer;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -254,6 +255,7 @@ public class AttackUtil
         int randomDamageType = template is SkillAttackInstantEffect skillAttackInstantEffect ? skillAttackInstantEffect.GetRnddmg() : 0;
         bool useTemplateDmg = template is NoReduceSpellATKInstantEffect;
         bool send = !(template is DelayedSpellAttackInstantEffect) && !(template is ProcAtkInstantEffect);
+        OneTimeBoostSkillAttack? boost = OneTimeBoostSkillAttackEffect.GetActiveBoost(effector, template);
 
         AttackStatus status = element switch
         {
@@ -343,16 +345,13 @@ public class AttackUtil
         bool isPhysical = element == SkillElement.NONE;
         if (!useTemplateDmg)
         {
-            float damageMultiplier;
             if (isPhysical)
             {
-                damageMultiplier = template.ShouldUseOneTimeBoostSkillAttack() ? effector.GetObserveController().GetBasePhysicalDamageMultiplier(true) : 1f;
                 damage += bonus;
             }
             else
             {
                 bool applyMagicalSkillBoostBonus = template.ShouldApplyMagicalSkillBoostBonus(effect);
-                damageMultiplier = template.ShouldUseOneTimeBoostSkillAttack() ? effector.GetObserveController().GetBaseMagicalDamageMultiplier() : 1f;
                 damage = StatFunctions.CalculateMagicalSkillDamage(effector, effected, damage, (int)bonus, template, applyMagicalSkillBoostBonus,
                     template.ShouldUseKnowledge(), template.ShouldUseBoostSpellAttackEffects());
             }
@@ -360,7 +359,11 @@ public class AttackUtil
             {
                 damage = StatFunctions.AdjustStatByMovementModifier(effector, isPhysical ? StatEnum.PHYSICAL_ATTACK : StatEnum.MAGICAL_ATTACK, damage);
             }
-            damage *= damageMultiplier;
+        }
+        if (boost != null)
+        {
+            damage = boost.CalculateDamage(damage);
+            boost.ConsumeCharge();
         }
 
         if (randomDamageType > 0)
@@ -500,9 +503,7 @@ public class AttackUtil
         }
         else
         {
-            float damageMultiplier = effector.GetObserveController().GetBaseMagicalDamageMultiplier();
             damage = StatFunctions.CalculateMagicalSkillDamage(effector, effected, skillDamage, 0, template, useMagicBoost, false, false);
-            damage = damage * damageMultiplier;
 
             AttackStatus status = effect.IsMagicalCritical(template.GetPosition()) ? AttackStatus.CRITICAL : AttackStatus.NORMALHIT;
             if (status == AttackStatus.CRITICAL)
@@ -526,6 +527,12 @@ public class AttackUtil
     private static AttackStatus CalculatePhysicalStatus(Creature attacker, Creature attacked, EffectTemplate template, Effect effect)
     {
         int accMod = template.GetAccMod2() + template.GetAccMod1() * effect.GetSkillLevel();
+        if (!template.IsNoResist())
+        {
+            OneTimeBoostSkillAttack? boost = OneTimeBoostSkillAttackEffect.GetActiveBoost(attacker, template);
+            if (boost != null)
+                accMod += boost.CalculatePhysicalAccuracyBonus(attacker.GetGameStats().GetMainHandPAccuracy());
+        }
         bool cannotMiss = template is SkillAttackInstantEffect skillAttackInstantEffect && skillAttackInstantEffect.IsCannotmiss();
         return CalculatePhysicalStatus(attacker, attacked, true, accMod, template.CalculateCritProbMod(effect), true, cannotMiss);
     }

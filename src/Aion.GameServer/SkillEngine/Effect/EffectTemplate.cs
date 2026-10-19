@@ -5,6 +5,7 @@ using Aion.GameServer.Ai.Poll;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Controllers.Attack;
+using Aion.GameServer.Controllers.Observer;
 using Aion.GameServer.Controllers.Effects;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
@@ -294,12 +295,18 @@ public abstract class EffectTemplate
     /// <returns>true = no dodge/resist, false = dodged/resisted</returns>
     private bool CheckDodgeOrResistRate(Aion.GameServer.SkillEngine.Model.Effect effect)
     {
+        Creature effector = effect.GetEffector();
         int accuracyModifier = AccMod2 + AccMod1 * effect.GetSkillLevel() + effect.GetAccModBoost();
         if (effect.GetSkillTemplate().GetSubType() == SkillSubType.DEBUFF)
-            accuracyModifier += effect.GetEffector().GetGameStats().GetStat(StatEnum.BOOST_RESIST_DEBUFF, 0).GetCurrent();
+            accuracyModifier += effector.GetGameStats().GetStat(StatEnum.BOOST_RESIST_DEBUFF, 0).GetCurrent();
+        OneTimeBoostSkillAttack? boost = OneTimeBoostSkillAttackEffect.GetActiveBoost(effector, this);
         if (Element == SkillElement.NONE)
-            return !StatFunctions.CheckIsDodgedHit(effect.GetEffector(), effect.GetEffected(), accuracyModifier);
-        return Rnd.Get(1, 1000) > StatFunctions.CalculateMagicalResistRate(effect.GetEffector(), effect.GetEffected(), accuracyModifier, Element);
+        {
+            if (boost != null)
+                accuracyModifier += boost.CalculatePhysicalAccuracyBonus(effector.GetGameStats().GetMainHandPAccuracy());
+            return !StatFunctions.CheckIsDodgedHit(effector, effect.GetEffected(), accuracyModifier);
+        }
+        return Rnd.Get(1, 1000) > StatFunctions.CalculateMagicalResistRate(effector, effect.GetEffected(), accuracyModifier, Element, boost);
     }
 
     private void AddSuccessEffect(Aion.GameServer.SkillEngine.Model.Effect effect, SpellStatus? spellStatus)

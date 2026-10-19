@@ -14,6 +14,7 @@ namespace Aion.GameServer.Controllers;
 public class ObserveController
 {
     private readonly List<ActionObserver> observers = new();
+    private volatile OneTimeBoostSkillAttack? oneTimeBoostSkillAttack;
 
     // Java CopyOnWriteArrayList → faithful copy-on-write via volatile array swap (lock-free reads).
     private readonly object _attackCalcLock = new();
@@ -323,30 +324,19 @@ public class ObserveController
         }
     }
 
-    public float GetBasePhysicalDamageMultiplier(bool isSkill)
+    public void SetOneTimeBoostSkillAttack(OneTimeBoostSkillAttack boost) => oneTimeBoostSkillAttack = boost;
+
+    public void RemoveOneTimeBoostSkillAttack(Effect effect)
     {
-        float multiplier = 1;
-        if (attackCalcObservers.Length > 0)
-        {
-            foreach (AttackCalcObserver observer in attackCalcObservers)
-            {
-                multiplier *= observer.GetBasePhysicalDamageMultiplier(isSkill);
-            }
-        }
-        return multiplier;
+        OneTimeBoostSkillAttack? boost = oneTimeBoostSkillAttack;
+        if (boost != null && ReferenceEquals(boost.GetEffect(), effect))
+            oneTimeBoostSkillAttack = null;
     }
 
-    public float GetBaseMagicalDamageMultiplier()
+    public OneTimeBoostSkillAttack? GetOneTimeBoostSkillAttack(SkillType attackType)
     {
-        float multiplier = 1;
-        if (attackCalcObservers.Length > 0)
-        {
-            foreach (AttackCalcObserver observer in attackCalcObservers)
-            {
-                multiplier *= observer.GetBaseMagicalDamageMultiplier();
-            }
-        }
-        return multiplier;
+        OneTimeBoostSkillAttack? boost = oneTimeBoostSkillAttack;
+        return boost != null && boost.Applies(attackType) ? boost : null;
     }
 
     public void Clear()
@@ -362,5 +352,6 @@ public class ObserveController
         {
             attackCalcObservers = Array.Empty<AttackCalcObserver>();
         }
+        oneTimeBoostSkillAttack = null;
     }
 }

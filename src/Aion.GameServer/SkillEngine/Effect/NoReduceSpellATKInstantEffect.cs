@@ -52,9 +52,4 @@ public class NoReduceSpellATKInstantEffect : DamageEffect
     {
         return false;
     }
-
-    public override bool ShouldUseOneTimeBoostSkillAttack()
-    {
-        return false;
-    }
 }

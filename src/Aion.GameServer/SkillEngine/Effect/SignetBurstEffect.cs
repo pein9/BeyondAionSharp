@@ -66,9 +66,4 @@ public class SignetBurstEffect : DamageEffect
     {
         return false;
     }
-
-    public override bool ShouldUseOneTimeBoostSkillAttack()
-    {
-        return false;
-    }
 }

@@ -617,15 +617,20 @@ public class StatFunctions
     }
 
     public static int CalculateMagicalResistRate(Creature attacker, Creature attacked, int accMod, SkillElement element)
+        => CalculateMagicalResistRate(attacker, attacked, accMod, element, null);
+
+    public static int CalculateMagicalResistRate(Creature attacker, Creature attacked, int accMod, SkillElement element, OneTimeBoostSkillAttack? boost)
     {
         if (attacked.GetObserveController().CheckAttackStatus(AttackStatus.RESIST))
             return 1000;
         if (element != SkillElement.NONE && attacked is Summon summon && element == summon.GetAlwaysResistElement())
             return 1000;
 
+        Stat2 mAccuracy = attacker.GetGameStats().GetMAccuracy();
+        int accuracy = boost == null ? mAccuracy.GetCurrent() + accMod : boost.CalculateMagicalAccuracy(mAccuracy, accMod);
         int levelDiff = attacked.GetLevel() - attacker.GetLevel();
         int mResi = attacked.GetGameStats().GetMResist().GetCurrent();
-        int resistRate = mResi - attacker.GetGameStats().GetMAccuracy().GetCurrent() - accMod;
+        int resistRate = mResi - accuracy;
 
         if (mResi > 0 && levelDiff > 4) // only apply if creature has mres > 0 (to keep effect of AI#modifyOwnerStat)
             resistRate += (levelDiff - 4) * 100;

@@ -81,9 +81,4 @@ public abstract class DamageEffect : EffectTemplate
     {
         return true;
     }
-
-    public virtual bool ShouldUseOneTimeBoostSkillAttack()
-    {
-        return true;
-    }
 }

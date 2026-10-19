@@ -32,9 +32,4 @@ public class ProcAtkInstantEffect : DamageEffect
     {
         return false;
     }
-
-    public override bool ShouldUseOneTimeBoostSkillAttack()
-    {
-        return false;
-    }
 }

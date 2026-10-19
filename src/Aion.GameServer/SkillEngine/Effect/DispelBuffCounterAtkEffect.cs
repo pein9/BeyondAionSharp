@@ -62,9 +62,4 @@ public class DispelBuffCounterAtkEffect : DamageEffect
     {
         return false;
     }
-
-    public override bool ShouldUseOneTimeBoostSkillAttack()
-    {
-        return false;
-    }
 }

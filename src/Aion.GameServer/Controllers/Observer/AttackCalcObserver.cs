@@ -30,15 +30,4 @@ public class AttackCalcObserver
         return new AttackerCriticalStatus(false);
     }
 
-    /// <returns>physical damage multiplier</returns>
-    public virtual float GetBasePhysicalDamageMultiplier(bool isSkill)
-    {
-        return 1f;
-    }
-
-    /// <returns>magic damage multiplier</returns>
-    public virtual float GetBaseMagicalDamageMultiplier()
-    {
-        return 1f;
-    }
 }
