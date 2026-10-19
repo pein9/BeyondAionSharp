@@ -22,11 +22,13 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 	private readonly SemaphoreSlim _sendLock = new(1, 1);
 	private readonly object _sendQueueGuard = new();
 	private readonly TimeProvider _timeProvider;
+	private readonly long _connectedAtMillis;
+	private readonly long _authTimeoutMillis;
 	private int _pendingServerPackets;
 	private long _lastWriteProgressMillis;
 	private volatile bool _sendQueueClosed;
 	private readonly SemaphoreSlim _closeLock = new(1, 1);
-	private LoginClientState _state = LoginClientState.Connected;
+	private volatile LoginClientState _state = LoginClientState.Connected;
 	private readonly int _sessionId;
 	private Model.Account? _account;
 	private SessionKey? _sessionKey;
@@ -40,10 +42,13 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 		ILoginAuthService authService,
 		ILoginSessionRegistry sessionRegistry,
 		IGameServerRegistry gameServerRegistry,
-		TimeProvider? timeProvider = null)
+		TimeProvider? timeProvider = null,
+		int authTimeoutSeconds = 60)
 		: base(logger, client, clientId)
 	{
 		_timeProvider = timeProvider ?? TimeProvider.System;
+		_connectedAtMillis = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds();
+		_authTimeoutMillis = authTimeoutSeconds * 1000L;
 		_authService = authService;
 		_sessionRegistry = sessionRegistry;
 		_gameServerRegistry = gameServerRegistry;
@@ -61,8 +66,65 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 
 	public override async Task RunAsync()
 	{
-		await SendPacketAsync(new SmInit(_rsaKeyPair.EncryptedModulus, _blowfishKey, _sessionId));
-		await base.RunAsync();
+		using var timeoutCancellation = new CancellationTokenSource();
+		Task monitor = WatchTimeoutsAsync(timeoutCancellation.Token);
+		try
+		{
+			await SendPacketAsync(new SmInit(_rsaKeyPair.EncryptedModulus, _blowfishKey, _sessionId));
+			await base.RunAsync();
+		}
+		finally
+		{
+			timeoutCancellation.Cancel();
+			try { await monitor; } catch (OperationCanceledException) when (timeoutCancellation.IsCancellationRequested) { }
+		}
+	}
+
+	private async Task WatchTimeoutsAsync(CancellationToken cancellationToken)
+	{
+		using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1), _timeProvider);
+		while (await timer.WaitForNextTickAsync(cancellationToken))
+			await CloseIfTimedOutAsync();
+	}
+
+	internal async Task CloseIfTimedOutAsync()
+	{
+		bool abort;
+		lock (_sendQueueGuard)
+		{
+			if (!_isConnected || _sendQueueClosed) return;
+			long now = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds();
+			abort = _authTimeoutMillis > 0 && unchecked(now - _connectedAtMillis) > _authTimeoutMillis && _state != LoginClientState.AuthedLogin;
+			if (abort)
+				_logger.LogInformation("{ClientId} didn't authenticate within {Millis} ms, disconnecting", _clientId, _authTimeoutMillis);
+			else if (_pendingServerPackets != 0)
+				abort = IsSendQueueStuck(now);
+			if (abort) _sendQueueClosed = true;
+		}
+		if (abort) await AbortSendQueueAsync();
+	}
+
+	private async Task AbortSendQueueAsync()
+	{
+		_client.Close(); // Unblock the active sender before waiting for its lock during cleanup.
+		await CloseAsync();
+	}
+
+	// Called under _sendQueueGuard for enqueue checks and periodic idle checks.
+	private bool IsSendQueueStuck(long now)
+	{
+		if (_pendingServerPackets >= 100)
+		{
+			_logger.LogWarning("{ClientId} has {Count} server packets waiting to be sent, disconnecting", _clientId, _pendingServerPackets);
+			return true;
+		}
+		if (unchecked(now - _lastWriteProgressMillis) > 60_000)
+		{
+			_logger.LogWarning("{ClientId} hasn't received any data for {Millis} ms while {Count} server packets are waiting to be sent, disconnecting",
+				_clientId, unchecked(now - _lastWriteProgressMillis), _pendingServerPackets);
+			return true;
+		}
+		return false;
 	}
 
 	protected override async Task<PacketBuffer?> ReadPacketAsync()
@@ -110,18 +172,26 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 		switch (parsed)
 		{
 			case CmUpdateSession updateSession:
-				if (_sessionRegistry.TryConsumeReconnectingAccount(updateSession.AccountId, updateSession.ReconnectKey, out var reconnectingAccount) && reconnectingAccount != null)
+				bool reconnected = false;
+				await _closeLock.WaitAsync();
+				try
 				{
-					_account = reconnectingAccount.Account;
-					_state = LoginClientState.AuthedLogin;
-					_sessionKey = new SessionKey(_account);
-					_sessionRegistry.RegisterReconnectedSession(this);
-					await SendPacketAsync(new SmUpdateSession(_sessionKey));
+					lock (_sendQueueGuard)
+					{
+						if (!_isConnected || _sendQueueClosed) break;
+						if (_sessionRegistry.TryConsumeReconnectingAccount(updateSession.AccountId, updateSession.ReconnectKey, out var reconnectingAccount) && reconnectingAccount != null)
+						{
+							_account = reconnectingAccount.Account;
+							_state = LoginClientState.AuthedLogin;
+							_sessionKey = new SessionKey(_account);
+							_sessionRegistry.RegisterReconnectedSession(this);
+							reconnected = true;
+						}
+					}
 				}
-				else
-				{
-					await CloseAsync();
-				}
+				finally { _closeLock.Release(); }
+				if (reconnected) await SendPacketAsync(new SmUpdateSession(_sessionKey!));
+				else await CloseAsync();
 				break;
 			case CmAuthGameGuard auth when auth.SessionId == _sessionId:
 				_state = LoginClientState.AuthedGameGuard;
@@ -145,6 +215,7 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 					break;
 				}
 				var authResult = await _authService.LoginAsync(credentials.Username, credentials.Password, GetRemoteIp());
+				if (!_isConnected || _sendQueueClosed) break;
 				if (authResult.SendAccountBannedPacket)
 				{
 					await SendPacketAsync(new SmAccountBanned2());
@@ -158,20 +229,10 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 						break;
 					}
 
-					_account = authResult.Account;
-					_state = LoginClientState.AuthedLogin;
-					_sessionKey = new SessionKey(authResult.Account);
-					var registerResult = await _sessionRegistry.RegisterLoginSessionAsync(this);
-					if (registerResult == LoginSessionRegisterResult.AlreadyLoggedIn)
-					{
-						await SendPacketAsync(new SmLoginFail(AionAuthResponse.STR_L2AUTH_S_ALREADY_LOGIN));
-						_account = null;
-						_sessionKey = null;
-						_state = LoginClientState.AuthedGameGuard;
-						break;
-					}
-					await _authService.CompleteSuccessfulLoginAsync(authResult.Account, GetRemoteIp());
-					await SendPacketAsync(new SmLoginOk(_sessionKey));
+					bool? registered = await CompleteLoginUnlessClosedAsync(authResult.Account);
+					if (registered == null) break;
+					if (registered.Value) await SendPacketAsync(new SmLoginOk(_sessionKey!));
+					else await SendPacketAsync(new SmLoginFail(AionAuthResponse.STR_L2AUTH_S_ALREADY_LOGIN));
 				}
 				else
 				{
@@ -243,6 +304,32 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 		}
 	}
 
+	private async Task<bool?> CompleteLoginUnlessClosedAsync(Model.Account account)
+	{
+		await _closeLock.WaitAsync();
+		try
+		{
+			lock (_sendQueueGuard)
+			{
+				if (!_isConnected || _sendQueueClosed) return null;
+				_account = account;
+				_state = LoginClientState.AuthedLogin;
+				_sessionKey = new SessionKey(account);
+			}
+			var registered = await _sessionRegistry.RegisterLoginSessionAsync(this);
+			if (registered == LoginSessionRegisterResult.AlreadyLoggedIn)
+			{
+				_account = null;
+				_sessionKey = null;
+				_state = LoginClientState.AuthedGameGuard;
+				return false;
+			}
+			await _authService.CompleteSuccessfulLoginAsync(account, GetRemoteIp());
+			return true;
+		}
+		finally { _closeLock.Release(); }
+	}
+
 	private Dictionary<string, string> CreateConnectionScope()
 	{
 		var values = new Dictionary<string, string>
@@ -270,25 +357,13 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 			long now = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds();
 			if (_pendingServerPackets == 0)
 				_lastWriteProgressMillis = now;
-			else if (_pendingServerPackets >= 100)
-			{
-				_logger.LogWarning("{ClientId} has {Count} server packets waiting to be sent, disconnecting", _clientId, _pendingServerPackets);
-				abort = true;
-			}
-			else if (unchecked(now - _lastWriteProgressMillis) > 60_000)
-			{
-				_logger.LogWarning("{ClientId} hasn't received any data for {Millis} ms while {Count} server packets are waiting to be sent, disconnecting",
-					_clientId, unchecked(now - _lastWriteProgressMillis), _pendingServerPackets);
-				abort = true;
-			}
+			else abort = IsSendQueueStuck(now);
 			if (abort) _sendQueueClosed = true;
 			else _pendingServerPackets++;
 		}
 		if (abort)
 		{
-			// Break a stalled socket write before CloseAsync waits for its send lock.
-			_client.Close();
-			await CloseAsync();
+			await AbortSendQueueAsync();
 			return;
 		}
 
@@ -356,7 +431,12 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 		var offset = 0;
 		while (offset < length)
 		{
-			var read = await ReadAsync(buffer, offset, length - offset, TimeSpan.FromSeconds(30));
+			int read;
+			try { read = await ReadAsync(buffer, offset, length - offset, TimeSpan.FromSeconds(30)); }
+			catch (Exception ex) when (_sendQueueClosed && ex is IOException or SocketException or ObjectDisposedException)
+			{
+				return null; // The timeout/send guard deliberately closed this socket.
+			}
 			if (read == 0)
 				return null;
 			offset += read;

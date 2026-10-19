@@ -16,6 +16,7 @@ public sealed class LoginClientSocketServer : BaseSocketServer
 	private readonly IGameServerRegistry _gameServerRegistry;
 	private readonly ConcurrentDictionary<string, LoginClientConnection> _connections = new();
 	private long _nextClientId;
+	private readonly int _clientAuthTimeoutSeconds;
 
 	public LoginClientSocketServer(
 		ILogger<LoginClientSocketServer> logger,
@@ -26,6 +27,7 @@ public sealed class LoginClientSocketServer : BaseSocketServer
 		IGameServerRegistry gameServerRegistry)
 		: base(logger, "Aion Login Client Server", options.ClientEndPoint.Address, options.ClientEndPoint.Port, options.MaxClientConnections)
 	{
+		_clientAuthTimeoutSeconds = options.ClientAuthTimeoutSeconds;
 		_keyGenerator = keyGenerator;
 		_authService = authService;
 		_sessionRegistry = sessionRegistry;
@@ -38,7 +40,7 @@ public sealed class LoginClientSocketServer : BaseSocketServer
 		LoginClientConnection? connection = null;
 		try
 		{
-			connection = new LoginClientConnection(_logger, client, clientId, _keyGenerator, _authService, _sessionRegistry, _gameServerRegistry);
+			connection = new LoginClientConnection(_logger, client, clientId, _keyGenerator, _authService, _sessionRegistry, _gameServerRegistry, authTimeoutSeconds: _clientAuthTimeoutSeconds);
 			_connections[clientId] = connection;
 			await connection.RunAsync();
 		}

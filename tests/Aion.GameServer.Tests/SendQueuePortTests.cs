@@ -8,7 +8,7 @@ using Aion.GameServer.Utils;
 namespace Aion.GameServer.Tests;
 
 [Collection("GoldenDataManager")]
-public sealed class SendQueuePortTests
+public sealed partial class SendQueuePortTests
 {
     [Fact]
     public void QueueAtCapacityIsAcceptedAndTheNextPacketClearsAndClosesIt()
@@ -99,12 +99,15 @@ public sealed class SendQueuePortTests
     private sealed class Packet : BaseServerPacket;
     private sealed class GameConnection() : AionConnection("127.0.0.1")
     {
+        public (bool, long) Authentication => (IsAuthenticated(), GetAuthTimeoutMillis());
         public (int, long) Limits => (GetMaxSendQueueSize(), GetMaxSendStallMillis());
     }
-    private sealed class Link(int maxPackets = int.MaxValue, long stallMillis = long.MaxValue) : AConnection<Packet>(16, 16, "127.0.0.1")
+    private sealed class Link(int maxPackets = int.MaxValue, long stallMillis = long.MaxValue, long authMillis = 0, bool authenticated = true) : AConnection<Packet>(16, 16, "127.0.0.1")
     {
         public Queue<Packet> Queue { get; } = new();
         public int Disconnects;
+        protected override bool IsAuthenticated() => authenticated;
+        protected override long GetAuthTimeoutMillis() => authMillis;
         protected override int GetMaxSendQueueSize() => maxPackets;
         protected override long GetMaxSendStallMillis() => stallMillis;
         protected override Queue<Packet> GetSendMsgQueue() => Queue;

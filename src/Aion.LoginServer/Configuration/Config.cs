@@ -42,6 +42,9 @@ public static class Config
     [Property(key: "loginserver.network.nio.threads", defaultValue: "0")]
     public static int NIO_READ_WRITE_THREADS = 0;
 
+    [Property(key: "loginserver.network.client.auth_timeout_seconds", defaultValue: "60")]
+    public static int CLIENT_AUTH_TIMEOUT_SECONDS = 60;
+
     /// <summary>Should server automatically create accounts for users or not?</summary>
     [Property(key: "loginserver.accounts.autocreate", defaultValue: "true")]
     public static bool ACCOUNT_AUTO_CREATION = true;

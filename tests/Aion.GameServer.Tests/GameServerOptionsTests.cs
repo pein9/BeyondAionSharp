@@ -75,6 +75,8 @@ public class GameServerOptionsTests
 		Assert.Equal(500, options.Network.PacketProcessorMaxPendingPacketsPerConnection);
 		Assert.Equal(20000, options.Network.MaxPendingServerPackets);
 		Assert.Equal(60, options.Network.MaxSendStallSeconds);
+		Assert.Equal(60, options.Network.ClientAuthTimeoutSeconds);
+		Assert.True(options.Network.EnableFloodConnections);
 	}
 
 	[Fact]

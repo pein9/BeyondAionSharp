@@ -15,6 +15,8 @@ public sealed class LoginServerOptions
 
 	public int NioReadWriteThreads { get; init; }
 
+	public int ClientAuthTimeoutSeconds { get; init; } = 60;
+
 	public bool AutoCreateAccounts { get; init; } = true;
 
 	public int LoginTryBeforeBan { get; init; } = 5;
@@ -48,6 +50,7 @@ public sealed class LoginServerOptions
 			LoginTryBeforeBan = Config.LOGIN_TRY_BEFORE_BAN,
 			WrongLoginBanMinutes = Config.WRONG_LOGIN_BAN_TIME,
 			NioReadWriteThreads = Config.NIO_READ_WRITE_THREADS,
+			ClientAuthTimeoutSeconds = Config.CLIENT_AUTH_TIMEOUT_SECONDS,
 			BruteForceProtectionEnabled = Config.ENABLE_BRUTEFORCE_PROTECTION,
 			LogGameServerLogins = Config.LOG_LOGINS,
 			ExternalAuthUrl = Config.EXTERNAL_AUTH_URL,

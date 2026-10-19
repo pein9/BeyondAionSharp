@@ -16,6 +16,7 @@ public class LoginServerOptionsTests
 		Assert.Equal(5, options.LoginTryBeforeBan);
 		Assert.Equal(15, options.WrongLoginBanMinutes);
 		Assert.Equal(0, options.NioReadWriteThreads);
+		Assert.Equal(60, options.ClientAuthTimeoutSeconds);
 		Assert.True(options.AutoCreateAccounts);
 		Assert.True(options.BruteForceProtectionEnabled);
 		Assert.False(options.LogGameServerLogins);

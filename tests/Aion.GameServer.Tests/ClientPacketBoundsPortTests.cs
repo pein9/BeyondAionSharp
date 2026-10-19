@@ -148,6 +148,21 @@ public sealed class ClientPacketBoundsPortTests
     }
 
     [Fact]
+    public async Task DispatcherChecksAttachedConnectionsOncePerSecondEvenWithoutTraffic()
+    {
+        long now = 1000;
+        Aion.GameServer.Utils.SystemClock.UseSource(() => now);
+        try
+        {
+            await using var fixture = await SocketFixture.CreateAsync();
+            fixture.DispatchOnce(); Assert.Equal(1, fixture.Connection.TimeoutChecks);
+            now = 1999; fixture.DispatchOnce(); Assert.Equal(1, fixture.Connection.TimeoutChecks);
+            now = 2000; fixture.DispatchOnce(); Assert.Equal(2, fixture.Connection.TimeoutChecks);
+        }
+        finally { Aion.GameServer.Utils.SystemClock.UseSystemClock(); }
+    }
+
+    [Fact]
     public void NativeServerFrameAdapterUsesStrictReadsByDefault()
     {
         using var payload = ServerPacketFrameCodec.CreatePayloadBuffer(ServerPacketFrameCodec.CreateFrame(new byte[] { 1 }));
@@ -178,6 +193,8 @@ public sealed class ClientPacketBoundsPortTests
     {
         public List<byte[]> Bodies { get; } = new();
         public int Disconnects;
+        public int TimeoutChecks;
+        internal override void CloseIfTimedOut(long nowMillis) => TimeoutChecks++;
         public Queue<byte[]> Outgoing { get; } = new();
         public override void Close() => Disconnect(new InlineExecutor());
         internal override bool IsSendQueueEmpty() => true;
@@ -226,6 +243,7 @@ public sealed class ClientPacketBoundsPortTests
             while (server.Available < available) await Task.Delay(1, timeout.Token);
             dispatcher.Read(channel.KeyFor(dispatcher.Selector())!);
         }
+        public void DispatchOnce() { dispatcher.Selector().Wakeup(); dispatcher.Dispatch(); }
         public void WriteOnce() => dispatcher.Write(channel.KeyFor(dispatcher.Selector())!);
         public ValueTask DisposeAsync()
         {

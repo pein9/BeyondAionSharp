@@ -23,6 +23,7 @@ public abstract class AConnection
 {
     private static readonly ILogger log = AionLog.For(nameof(AConnection));
     private long lastWriteProgressMillis;
+    protected readonly long connectedAtMillis = SystemClock.CurrentMillis();
     protected readonly SocketChannel socketChannel;
     protected readonly Dispatcher dispatcher;
     protected SelectionKey key = null!;
@@ -135,6 +136,10 @@ public abstract class AConnection
     public string GetIP() => ip;
 
     internal void OnDataWritten() => Interlocked.Exchange(ref lastWriteProgressMillis, SystemClock.CurrentMillis());
+    protected virtual bool IsAuthenticated() => true;
+    protected virtual long GetAuthTimeoutMillis() => 0;
+    internal virtual void CloseIfTimedOut(long nowMillis) { }
+
     protected virtual int GetMaxSendQueueSize() => int.MaxValue;
     protected virtual long GetMaxSendStallMillis() => long.MaxValue;
 
@@ -237,6 +242,26 @@ public abstract class AConnection<T> : AConnection where T : BaseServerPacket
             if (closePacket != null && IsConnected())
                 EnqueuePacket(closePacket, closing: true);
             RequestClose();
+        }
+    }
+
+    internal override void CloseIfTimedOut(long nowMillis)
+    {
+        lock (guard)
+        {
+            if (pendingCloseUntilMillis != 0 || closed) return;
+            long authTimeoutMillis = GetAuthTimeoutMillis();
+            if (authTimeoutMillis > 0 && unchecked(nowMillis - connectedAtMillis) > authTimeoutMillis && !IsAuthenticated())
+            {
+                AionLog.For(nameof(AConnection)).LogInformation("{Connection} didn't authenticate within {Millis} ms, disconnecting", this, authTimeoutMillis);
+                Close();
+                return;
+            }
+            if (GetSendMsgQueue().Count != 0 && IsSendQueueStuck(GetSendMsgQueue().Count))
+            {
+                ClearPendingPackets();
+                Close();
+            }
         }
     }
 

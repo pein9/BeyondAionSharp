@@ -895,7 +895,7 @@ public sealed class SocketServerSmokeTests
 		public MessageRecordingLogger<LoginClientConnection> Logger = new();
 		public SemaphoreSlim SendLock => (SemaphoreSlim)typeof(LoginClientConnection).GetField("_sendLock", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(Connection)!;
 		private readonly LoginKeyGenerator keys = new();
-		public static async Task<SendQueueSocket> CreateAsync(TimeProvider clock)
+		public static async Task<SendQueueSocket> CreateAsync(TimeProvider clock, int authTimeoutSeconds = 60)
 		{
 			using var listener = new TcpListener(IPAddress.Loopback, 0);
 			listener.Start();
@@ -905,13 +905,108 @@ public sealed class SocketServerSmokeTests
 			await connecting;
 			accepted.SendBufferSize = 1024;
 			fixture.Connection = new LoginClientConnection(fixture.Logger, accepted, "send-queue-probe", fixture.keys,
-				new SuccessfulLoginAuthService(), new LoginSessionRegistry(), new GameServerRegistry(), clock);
+				new SuccessfulLoginAuthService(), new LoginSessionRegistry(), new GameServerRegistry(), clock, authTimeoutSeconds);
 			return fixture;
 		}
 		public async ValueTask DisposeAsync()
 		{
 			Peer.Dispose(); await Connection.DisposeAsync(); keys.Dispose();
 		}
+	}
+
+	[Theory]
+	[InlineData(LoginClientState.Connected, 60, 60000, false)]
+	[InlineData(LoginClientState.Connected, 60, 60001, true)]
+	[InlineData(LoginClientState.AuthedGameGuard, 60, 60001, true)]
+	[InlineData(LoginClientState.AuthedLogin, 60, 60001, false)]
+	[InlineData(LoginClientState.Connected, 0, 600000, false)]
+	public async Task LoginTimeoutChecksRequireFullLoginAndRespectTheDeadline(LoginClientState state, int seconds, int elapsed, bool closes)
+	{
+		var clock = new SendQueueClock();
+		await using var fixture = await SendQueueSocket.CreateAsync(clock, seconds);
+		typeof(LoginClientConnection).GetField("_state", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(fixture.Connection, state);
+		clock.Millis += elapsed;
+		await fixture.Connection.CloseIfTimedOutAsync();
+		if (closes) await AssertClientClosedAsync(fixture.Peer.GetStream());
+		else Assert.False(fixture.Peer.Client.Poll(0, SelectMode.SelectRead));
+	}
+
+	[Theory]
+	[InlineData(1, 60001)]
+	[InlineData(100, 0)]
+	public async Task LoginPeriodicCheckClosesTheSendQueueWithoutAnotherSend(int count, int elapsed)
+	{
+		var clock = new SendQueueClock();
+		await using var fixture = await SendQueueSocket.CreateAsync(clock);
+		typeof(LoginClientConnection).GetField("_state", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(fixture.Connection, LoginClientState.AuthedLogin);
+		await fixture.SendLock.WaitAsync();
+		var sends = Enumerable.Range(0, count).Select(_ => fixture.Connection.SendPacketAsync(new SendQueuePacket(0))).ToArray();
+		clock.Millis += elapsed;
+		Task closing = fixture.Connection.CloseIfTimedOutAsync();
+		try { await AssertClientClosedAsync(fixture.Peer.GetStream()); }
+		finally { fixture.SendLock.Release(); }
+		await Task.WhenAll(sends.Append(closing)).WaitAsync(TimeSpan.FromSeconds(5));
+	}
+
+	[Fact]
+	public async Task LoginPeriodicDeadlineClosesAnIdleAuthenticatingSocketAndIgnoresItsLateResult()
+	{
+		int port = GetFreeLoopbackPort();
+		using var keys = new FixedLoginKeyGenerator();
+		var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+		var auth = new SuccessfulLoginAuthService { LoginResultGate = release.Task };
+		var registry = new LoginSessionRegistry();
+		await using var server = new LoginClientSocketServer(NullLogger<LoginClientSocketServer>.Instance,
+			new LoginServerOptions { ClientEndPoint = new IPEndPoint(IPAddress.Loopback, port), ClientAuthTimeoutSeconds = 1 },
+			keys, auth, registry, new GameServerRegistry());
+		Task running = server.StartAsync();
+		try
+		{
+			using var client = await ConnectWithRetryAsync(port);
+			var stream = client.GetStream();
+			var init = LoginClientProtocol.DecryptFirstServerPayload((await ReadFrameAsync(stream))[2..]);
+			int session = BinaryPrimitives.ReadInt32LittleEndian(init.AsSpan(1, 4));
+			var crypto = new LoginClientCrypto(keys.BlowfishKey);
+			await stream.WriteAsync(crypto.CreateAuthGameGuardFrame(session));
+			_ = await ReadEncryptedLoginPayloadAsync(stream, crypto);
+			await stream.WriteAsync(crypto.CreateLoginFrame(keys.PublicParameters, session, "player", "secret"));
+			await auth.LoginStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+			Assert.Equal(0, await stream.ReadAsync(new byte[1], timeout.Token));
+			release.TrySetResult();
+			await AssertActiveConnectionsAsync(server.GetActiveConnections, 0);
+			Assert.Null(registry.GetLoginSession(auth.Account.Id));
+			Assert.Equal(0, auth.CompletedLogins);
+			Assert.Equal(0, auth.Logouts);
+		}
+		finally
+		{
+			release.TrySetResult();
+			await server.StopAsync(TimeSpan.FromSeconds(1));
+			await AssertTaskCompletedAsync(running);
+		}
+	}
+
+	[Fact]
+	public async Task LoginIdleDeadlineClosesTheSocketWithoutLoggingATransportError()
+	{
+		int port = GetFreeLoopbackPort();
+		using var keys = new LoginKeyGenerator();
+		var logger = new MessageRecordingLogger<LoginClientSocketServer>();
+		await using var server = new LoginClientSocketServer(logger,
+			new LoginServerOptions { ClientEndPoint = new IPEndPoint(IPAddress.Loopback, port), ClientAuthTimeoutSeconds = 1 },
+			keys, new SuccessfulLoginAuthService(), new LoginSessionRegistry(), new GameServerRegistry());
+		Task running = server.StartAsync();
+		try
+		{
+			using var client = await ConnectWithRetryAsync(port);
+			_ = await ReadFrameAsync(client.GetStream());
+			using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+			Assert.Equal(0, await client.GetStream().ReadAsync(new byte[1], timeout.Token));
+			await AssertActiveConnectionsAsync(server.GetActiveConnections, 0);
+			Assert.DoesNotContain(LogLevel.Error, logger.Levels);
+		}
+		finally { await server.StopAsync(TimeSpan.FromSeconds(1)); await AssertTaskCompletedAsync(running); }
 	}
 
 	private static GameServerSocketServer CreateGameServerSocketServer(int port, GameServerRegistry registry)
@@ -1137,13 +1232,18 @@ public sealed class SocketServerSmokeTests
 
 		public int Logouts { get; private set; }
 
-		public Task<LoginAuthResult> LoginAsync(string username, string password, string remoteIp, CancellationToken cancellationToken = default)
+		public Task? LoginResultGate { get; init; }
+		public TaskCompletionSource LoginStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+		public async Task<LoginAuthResult> LoginAsync(string username, string password, string remoteIp, CancellationToken cancellationToken = default)
 		{
 			LoginAttempts++;
 			Assert.Equal("player", username);
 			Assert.Equal("secret", password);
 			Assert.Equal("127.0.0.1", remoteIp);
-			return Task.FromResult(LoginAuthResult.Success(Account));
+			LoginStarted.TrySetResult();
+			if (LoginResultGate != null) await LoginResultGate;
+			return LoginAuthResult.Success(Account);
 		}
 
 		public Task CompleteSuccessfulLoginAsync(Account account, string remoteIp, CancellationToken cancellationToken = default)
@@ -1331,6 +1431,8 @@ public sealed class SocketServerSmokeTests
 	private sealed class MessageRecordingLogger<T> : ILogger<T>
 	{
 		private readonly System.Collections.Concurrent.ConcurrentQueue<string> _messages = new();
+		private readonly System.Collections.Concurrent.ConcurrentQueue<LogLevel> _levels = new();
+		public IReadOnlyCollection<LogLevel> Levels => _levels.ToArray();
 
 		public IReadOnlyCollection<string> Messages => _messages.ToArray();
 
@@ -1346,6 +1448,7 @@ public sealed class SocketServerSmokeTests
 			Func<TState, Exception?, string> formatter)
 		{
 			_messages.Enqueue(formatter(state, exception));
+			_levels.Enqueue(logLevel);
 		}
 	}
 

@@ -102,9 +102,10 @@ public sealed class GameServerOptions
 				PacketProcessorMaxPendingPacketsPerConnection = GetIntWithEnvironment(loader, "gameserver.network.packet.processor.max_pending_per_connection", 500),
 				MaxPendingServerPackets = GetIntWithEnvironment(loader, "gameserver.network.client.max_pending_server_packets", 20000),
 				MaxSendStallSeconds = GetIntWithEnvironment(loader, "gameserver.network.client.max_send_stall_seconds", 60),
+				ClientAuthTimeoutSeconds = GetIntWithEnvironment(loader, "gameserver.network.client.auth_timeout_seconds", 60),
 				LogUnknownPackets = GetBoolWithEnvironment(loader, "gameserver.network.logging.unknown_packets", false),
 				LogIgnoredPackets = GetBoolWithEnvironment(loader, "gameserver.network.logging.ignored_packets", false),
-				EnableFloodConnections = GetBoolWithEnvironment(loader, "gameserver.network.flood.connections", false),
+				EnableFloodConnections = GetBoolWithEnvironment(loader, "gameserver.network.flood.connections", true),
 				FloodTickMillis = GetIntWithEnvironment(loader, "gameserver.network.flood.tick", 1000),
 				FloodShortWarn = GetIntWithEnvironment(loader, "gameserver.network.flood.short.warn", 10),
 				FloodShortReject = GetIntWithEnvironment(loader, "gameserver.network.flood.short.reject", 20),
@@ -889,11 +890,13 @@ public sealed class GameServerNetworkOptions
 
 	public int MaxSendStallSeconds { get; init; } = 60;
 
+	public int ClientAuthTimeoutSeconds { get; init; } = 60;
+
 	public bool LogUnknownPackets { get; init; }
 
 	public bool LogIgnoredPackets { get; init; }
 
-	public bool EnableFloodConnections { get; init; }
+	public bool EnableFloodConnections { get; init; } = true;
 
 	public int FloodTickMillis { get; init; } = 1000;
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Aion.GameServer.Utils;
 using Aion.Commons.Concurrent;
 using Aion.Commons.Nio.Channels;
 
@@ -8,6 +9,7 @@ namespace Aion.GameServer.Commons.Network;
 /// <summary>Java parity: commons/network/AcceptReadWriteDispatcherImpl (-Nemesiss-). Accepts, reads and writes.</summary>
 public class AcceptReadWriteDispatcherImpl : Dispatcher
 {
+    private long nextTimeoutCheckMillis;
     private readonly List<AConnection> pendingClose = new List<AConnection>();
 
     public AcceptReadWriteDispatcherImpl(string name, Executor dcExecutor) : base(name, dcExecutor)
@@ -48,6 +50,17 @@ public class AcceptReadWriteDispatcherImpl : Dispatcher
             }
         }
         ProcessPendingClose();
+        CloseTimedOutConnections();
+    }
+
+    private void CloseTimedOutConnections()
+    {
+        long nowMillis = SystemClock.CurrentMillis();
+        if (nowMillis < nextTimeoutCheckMillis) return;
+        nextTimeoutCheckMillis = unchecked(nowMillis + 1000);
+        foreach (SelectionKey key in selector.Keys())
+            if (key.Attachment() is AConnection connection)
+                connection.CloseIfTimedOut(nowMillis);
     }
 
     internal override void CloseConnection(AConnection con)

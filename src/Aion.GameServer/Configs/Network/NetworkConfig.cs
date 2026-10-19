@@ -84,6 +84,9 @@ public static class NetworkConfig
     [Property(key: "gameserver.network.client.max_send_stall_seconds", defaultValue: "60")]
     public static int MAX_SEND_STALL_SECONDS = 60;
 
+    [Property(key: "gameserver.network.client.auth_timeout_seconds", defaultValue: "60")]
+    public static int CLIENT_AUTH_TIMEOUT_SECONDS = 60;
+
     /// <summary>If aion client packets unknown by the server should be logged. Key: gameserver.network.logging.unknown_packets</summary>
     [Property(key: "gameserver.network.logging.unknown_packets", defaultValue: "false")]
     public static bool LOG_UNKNOWN_PACKETS;
@@ -93,8 +96,8 @@ public static class NetworkConfig
     public static bool LOG_IGNORED_PACKETS;
 
     /// <summary>Key: gameserver.network.flood.connections</summary>
-    [Property(key: "gameserver.network.flood.connections", defaultValue: "false")]
-    public static bool ENABLE_FLOOD_CONNECTIONS;
+    [Property(key: "gameserver.network.flood.connections", defaultValue: "true")]
+    public static bool ENABLE_FLOOD_CONNECTIONS = true;
 
     /// <summary>Key: gameserver.network.flood.tick</summary>
     [Property(key: "gameserver.network.flood.tick", defaultValue: "1000")]

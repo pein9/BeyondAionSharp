@@ -101,6 +101,9 @@ public class AionConnection : AConnection<AionServerPacket>
             pffRequests = new Dictionary<int, long>();
     }
 
+    protected override bool IsAuthenticated() => state != State.CONNECTED;
+    protected override long GetAuthTimeoutMillis() => NetworkConfig.CLIENT_AUTH_TIMEOUT_SECONDS * 1000L;
+
     protected override int GetMaxSendQueueSize() => NetworkConfig.MAX_PENDING_SERVER_PACKETS;
     protected override long GetMaxSendStallMillis() => NetworkConfig.MAX_SEND_STALL_SECONDS * 1000L;
 

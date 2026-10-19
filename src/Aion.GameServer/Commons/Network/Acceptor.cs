@@ -24,20 +24,28 @@ public class Acceptor
         SocketChannel? socketChannel = serverSocketChannel.Accept();
         if (socketChannel == null)
             return;
-        socketChannel.ConfigureBlocking(false);
-        socketChannel.Socket().SetSoLinger(true, 10);
-        socketChannel.Socket().SetTcpNoDelay(true);
+        try
+        {
+            socketChannel.ConfigureBlocking(false);
+            socketChannel.Socket().SetSoLinger(true, 10);
+            socketChannel.Socket().SetTcpNoDelay(true);
 
-        Dispatcher dispatcher = nioServer.GetReadWriteDispatcher();
-        AConnection con = factory.Create(socketChannel, dispatcher);
+            Dispatcher dispatcher = nioServer.GetReadWriteDispatcher();
+            AConnection con = factory.Create(socketChannel, dispatcher);
 
-        if (con == null)
+            if (con == null)
+            {
+                socketChannel.Close();
+                return;
+            }
+
+            dispatcher.Register(socketChannel, SelectionKey.OP_READ, con);
+            con.InitializedInternal();
+        }
+        catch (System.Exception)
         {
             socketChannel.Close();
-            return;
+            throw;
         }
-
-        dispatcher.Register(socketChannel, SelectionKey.OP_READ, con);
-        con.InitializedInternal();
     }
 }
