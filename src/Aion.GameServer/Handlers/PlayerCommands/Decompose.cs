@@ -9,6 +9,7 @@ using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Templates.Items.Actions;
 using Aion.GameServer.Network.Aion.ServerPackets;
+using Aion.GameServer.Restrictions;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.ChatHandlers;
 
@@ -39,7 +40,8 @@ public class Decompose : PlayerCommand
             return;
         }
         long count = paramsArr.Length == 1 ? long.MaxValue : ParseLong(paramsArr[1]);
-
+        if (!PlayerRestrictions.CanUseItem(player, item))
+            return;
         ItemActions itemActions = item.GetItemTemplate().GetActions();
         DecomposeAction decomposeAction = itemActions == null ? null
             : itemActions.GetItemActions().OfType<DecomposeAction>().FirstOrDefault();
@@ -52,6 +54,7 @@ public class Decompose : PlayerCommand
         if (!decomposeAction.CanAct(player, item, item))
             return;
 
+        player.GetObserveController().NotifyItemuseObservers(item); // cancel hide before registering the batch observer
         StartTask(player, item.GetItemId(), count, decomposeAction);
     }
 
@@ -76,8 +79,8 @@ public class Decompose : PlayerCommand
         private readonly int itemId;
         private readonly DecomposeAction decomposeAction;
 
-        private long remainingCount;
-        private long totalCount;
+        private readonly long count;
+        private long processedCount = -1; // Act finishes after the item's casting delay.
         private readonly ItemUseObserver observer;
 
         public DecomposeTask(Decompose outer, Player player, int itemId, long count, DecomposeAction decomposeAction)
@@ -86,12 +89,10 @@ public class Decompose : PlayerCommand
             this.player = player;
             this.itemId = itemId;
             this.decomposeAction = decomposeAction;
-            this.remainingCount = count;
-            this.totalCount = 0;
+            this.count = count;
 
             // use observer to abort task on move, attack, die, item use, etc.
             this.observer = new DecomposeObserver(this);
-            player.GetObserveController().AddObserver(observer);
         }
 
         public void Schedule()
@@ -103,33 +104,30 @@ public class Decompose : PlayerCommand
                         Run();
                         return ValueTask.CompletedTask;
                     }, TimeSpan.FromMilliseconds(10), TimeSpan.FromMilliseconds(Aion.GameServer.Dataholders.DataManager.ITEM_DATA.GetItemTemplate(itemId).GetCastingDelay() + 100)));
+            player.GetObserveController().AddObserver(observer);
         }
 
         public void Abort()
         {
-            outer.CancelTask(player, observer, "Decomposing aborted: Processed " + Math.Max(0, totalCount - 1) + "x " + ChatUtil.Item(itemId) + ".");
+            outer.CancelTask(player, observer, "Decomposing aborted: Processed " + Math.Max(0, Interlocked.Read(ref processedCount)) + "x " + ChatUtil.Item(itemId) + ".");
         }
 
         private void Run()
         {
             Item item = player.GetInventory().GetFirstItemByItemId(itemId);
-            remainingCount = Math.Min(player.GetInventory().GetItemCountByItemId(itemId), remainingCount);
-            if (item == null || remainingCount <= 0)
+            if (Interlocked.Increment(ref processedCount) >= count || item == null || item.GetItemCount() <= 0)
             {
-                outer.CancelTask(player, observer, "Decomposing finished: Processed " + totalCount + "x " + ChatUtil.Item(itemId) + ".");
+                outer.CancelTask(player, observer, "Decomposing finished: Processed " + Interlocked.Read(ref processedCount) + "x " + ChatUtil.Item(itemId) + ".");
                 return;
             }
 
             if (!decomposeAction.CanAct(player, item, item))
             {
-                outer.CancelTask(player, observer, "Decomposing aborted: Processed " + totalCount + "x " + ChatUtil.Item(itemId) + ".");
+                observer.Abort();
                 return;
             }
 
-            player.GetObserveController().NotifyItemuseObservers(item); // cancel hide
             decomposeAction.Act(player, item, item);
-            remainingCount--;
-            totalCount++;
         }
 
         private sealed class DecomposeObserver : ItemUseObserver
@@ -140,12 +138,6 @@ public class Decompose : PlayerCommand
                 : base(task.player)
             {
                 this.task = task;
-            }
-
-            public override void Itemused(Item item)
-            {
-                if (item.GetItemId() != task.itemId)
-                    Abort();
             }
 
             protected override void OnAbort()
