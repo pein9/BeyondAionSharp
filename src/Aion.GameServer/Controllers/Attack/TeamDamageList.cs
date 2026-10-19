@@ -29,7 +29,7 @@ public class TeamDamageList
                 // Java's unchecked cast works through type erasure; .NET generic types are invariant.
                 // DamageList is fully accumulated before this grouping, so copy the player's final damage.
                 DamageInfo<Player> memberDamage = new((Player)damageInfo.GetAttacker());
-                memberDamage.AddDamage(damageInfo.GetDamage());
+                memberDamage.AddDamage(damageInfo.GetDamage(), damageInfo.GetFirstDamageTime());
                 mostDamageByTeam.TryGetValue(team, out DamageInfo<Player> other);
                 mostDamageByTeam[team] = other == null || memberDamage.GetDamage() > other.GetDamage() ? memberDamage : other;
             }
@@ -38,7 +38,7 @@ public class TeamDamageList
                 di = new DamageInfo<AionObject>(creatureOrTeam);
                 damageByCreatureOrTeam[creatureOrTeam] = di;
             }
-            di.AddDamage(damageInfo.GetDamage());
+            di.AddDamage(damageInfo.GetDamage(), damageInfo.GetFirstDamageTime());
         }
     }
 
@@ -51,6 +51,8 @@ public class TeamDamageList
     {
         return damageByCreatureOrTeam.Values.MaxBy(d => d.GetDamage());
     }
+
+    public DamageInfo<AionObject>? GetFirstDamage() => damageByCreatureOrTeam.Values.MinBy(d => d.GetFirstDamageTime());
 
     public DamageInfo<Player> GetMostDamageByTeam(TemporaryPlayerTeam team)
     {

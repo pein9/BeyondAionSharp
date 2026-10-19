@@ -13,6 +13,7 @@ public class AggroInfo
     private readonly Creature _attacker;
     private int _hate;
     private int _damage;
+    private long _firstDamageTime;
     private long _lastInteractionTime;
     private int _hateReduceCount = 1;
 
@@ -26,11 +27,18 @@ public class AggroInfo
     public Creature GetAttacker() => _attacker;
 
     // Java parity: addDamage(int)
-    public void AddDamage(int damage)
+    public void AddDamage(int damage) => AddDamage(damage, SystemClock.CurrentMillis());
+
+    internal void AddDamage(int damage, long time)
     {
         if (damage > 0)
-            _damage += damage;
+        {
+            if (_damage == 0 || time < _firstDamageTime) _firstDamageTime = time;
+            _damage = unchecked(_damage + damage);
+        }
     }
+
+    public long GetFirstDamageTime() => _firstDamageTime;
 
     // Java parity: addHate(int)
     public void AddHate(int hate)

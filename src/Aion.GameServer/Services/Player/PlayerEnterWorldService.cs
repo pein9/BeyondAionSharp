@@ -260,6 +260,7 @@ public sealed class PlayerEnterWorldService
         client.SendPacket(new SM_CHANNEL_INFO(player.GetPosition()));
 
         KiskService.GetInstance().OnLogin(player);
+        Aion.GameServer.Services.PvpExpLimitService.GetInstance().OnEnterWorld(player);
         TeleportService.SendObeliskBindPoint(player);
         TeleportService.SendKiskBindPoint(player);
 

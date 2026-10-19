@@ -114,6 +114,7 @@ public class PlayerLeaveWorldService
         InstanceService.OnLogout(player);
         GMService.GetInstance().OnPlayerLogout(player);
         KiskService.GetInstance().OnLogout(player);
+        Aion.GameServer.Services.PvpExpLimitService.GetInstance().OnLeaveWorld(player);
 
         if (player.IsDead())
         {

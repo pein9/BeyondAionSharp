@@ -134,12 +134,12 @@ public class AggroList
             {
                 var masterAggroInfo = new AggroInfo(master);
                 masterAggroInfo.SetHate(1);
-                masterAggroInfo.AddDamage(aggroInfo.GetDamage());
+                masterAggroInfo.AddDamage(aggroInfo.GetDamage(), aggroInfo.GetFirstDamageTime());
                 return masterAggroInfo;
             },
             (_, masterAggroInfo) =>
             {
-                masterAggroInfo.AddDamage(aggroInfo.GetDamage());
+                masterAggroInfo.AddDamage(aggroInfo.GetDamage(), aggroInfo.GetFirstDamageTime());
                 return masterAggroInfo;
             });
     }

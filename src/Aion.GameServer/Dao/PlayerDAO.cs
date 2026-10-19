@@ -53,7 +53,7 @@ public class PlayerDAO
             con.Open();
             using MySqlCommand stmt = con.CreateCommand();
             stmt.CommandText =
-                "UPDATE players SET name=?, exp=?, recoverexp=?, x=?, y=?, z=?, heading=?, world_id=?, gender=?, race=?, player_class=?, quest_expands=?, npc_expands=?, item_expands=?, wh_npc_expands=?, wh_bonus_expands=?, note=?, title_id=?, bonus_title_id=?, dp=?, soul_sickness=?, mailbox_letters=?, reposte_energy=?, mentor_flag_time=?, world_owner=? WHERE id=?";
+                "UPDATE players SET name=?, exp=?, recoverexp=?, x=?, y=?, z=?, heading=?, world_id=?, gender=?, race=?, player_class=?, quest_expands=?, npc_expands=?, item_expands=?, wh_npc_expands=?, wh_bonus_expands=?, note=?, title_id=?, bonus_title_id=?, dp=?, soul_sickness=?, mailbox_letters=?, reposte_energy=?, pvp_exp=?, mentor_flag_time=?, world_owner=? WHERE id=?";
             PlayerCommonData pcd = player.GetCommonData();
             stmt.Parameters.Add(new MySqlParameter { Value = pcd.GetName() });
             stmt.Parameters.Add(new MySqlParameter { Value = pcd.GetExp() });
@@ -80,6 +80,7 @@ public class PlayerDAO
             int mails = mailBox != null ? mailBox.Size() : pcd.GetMailboxLetters();
             stmt.Parameters.Add(new MySqlParameter { Value = mails });
             stmt.Parameters.Add(new MySqlParameter { Value = pcd.GetCurrentReposeEnergy() });
+            stmt.Parameters.Add(new MySqlParameter { Value = pcd.GetPvpExp() });
             stmt.Parameters.Add(new MySqlParameter { Value = pcd.GetMentorFlagTime() });
             stmt.Parameters.Add(new MySqlParameter { Value = pcd.GetWorldOwnerId() });
             stmt.Parameters.Add(new MySqlParameter { Value = player.GetObjectId() });
@@ -195,6 +196,7 @@ public class PlayerDAO
                 cd.SetDp(resultSet.GetInt32(resultSet.GetOrdinal("dp")));
                 cd.SetDeathCount(resultSet.GetInt32(resultSet.GetOrdinal("soul_sickness")));
                 cd.SetCurrentReposeEnergy(resultSet.GetInt64(resultSet.GetOrdinal("reposte_energy")));
+                cd.SetPvpExp(resultSet.GetInt64(resultSet.GetOrdinal("pvp_exp")));
                 cd.SetX(resultSet.GetFloat(resultSet.GetOrdinal("x")));
                 cd.SetY(resultSet.GetFloat(resultSet.GetOrdinal("y")));
                 cd.SetZ(resultSet.GetFloat(resultSet.GetOrdinal("z")));

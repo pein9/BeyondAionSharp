@@ -40,6 +40,10 @@ public sealed class DataManager
 	public static SpawnsData SPAWNS_DATA => SD.SpawnsDh;
 	public static InstanceCooltimeData INSTANCE_COOLTIME_DATA => SD.InstanceCooltimeDataDh;
 	public static PlayerExperienceTable PLAYER_EXPERIENCE_TABLE => SD.PlayerExperienceTable;
+    public static PvpExpTable PVP_EXP_TABLE => SD.PvpExpTableDh;
+    public static PvpExpModTable PVP_EXP_MOD_TABLE => SD.PvpExpModTableDh;
+    public static PartyExpModTable PARTY_EXP_MOD_TABLE => SD.PartyExpModTableDh;
+    public static MenteeExpLimitTable MENTEE_EXP_LIMIT_TABLE => SD.MenteeExpLimitTableDh;
 	public static TradeListData TRADE_LIST_DATA => SD.TradeListDataDh;
 	public static NpcFactionsData NPC_FACTIONS_DATA => SD.NpcFactionsDataDh;
 	public static RecipeData RECIPE_DATA => SD.RecipeDataDh;

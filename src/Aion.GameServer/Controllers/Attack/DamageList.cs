@@ -28,7 +28,7 @@ public class DamageList
                 damageInfo = new DamageInfo<Creature>(attackerMaster);
                 _damageByCreature[attackerMaster] = damageInfo;
             }
-            damageInfo.AddDamage(aggroInfo.GetDamage());
+            damageInfo.AddDamage(aggroInfo.GetDamage(), aggroInfo.GetFirstDamageTime());
         }
     }
 

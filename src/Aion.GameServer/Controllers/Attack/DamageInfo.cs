@@ -10,6 +10,7 @@ public class DamageInfo<T> where T : AionObject
 {
     private readonly T _attacker;
     private int _damage;
+    private long _firstDamageTime;
 
     public DamageInfo(T attacker)
     {
@@ -22,6 +23,11 @@ public class DamageInfo<T> where T : AionObject
     // Java parity: getDamage()
     public int GetDamage() => _damage;
 
-    // Java parity: package-private addDamage(int)
-    internal void AddDamage(int damage) => _damage += damage;
+    public long GetFirstDamageTime() => _firstDamageTime;
+
+    internal void AddDamage(int damage, long firstDamageTime)
+    {
+        if (_damage == 0 || firstDamageTime < _firstDamageTime) _firstDamageTime = firstDamageTime;
+        _damage = unchecked(_damage + damage);
+    }
 }

@@ -39,6 +39,7 @@ public class PlayerCommonData : Aion.GameServer.Model.GameObjects.CreatureTempla
     private bool noExp = false;
     private long reposeCurrent;
     private long reposeMax;
+    private long pvpExp;
     private long salvationPoint;
     private int mentorFlagTime;
     private int worldOwnerId;
@@ -59,6 +60,9 @@ public class PlayerCommonData : Aion.GameServer.Model.GameObjects.CreatureTempla
     {
         return playerObjId;
     }
+
+    public long GetPvpExp() => pvpExp;
+    public void SetPvpExp(long value) => pvpExp = value;
 
     public long GetExp()
     {

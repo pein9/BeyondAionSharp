@@ -175,55 +175,6 @@ public class StatFunctions
         return pointsGained;
     }
 
-    /// <summary>XP points gained in PvP kill. TODO: Find the correct formula.</summary>
-    public static int CalculatePvpXpGained(Player defeated, int winnerAbyssRank, int maxLevel)
-    {
-        int pointsGained = 5000;
-
-        // Level penalty calculation
-        int difference = maxLevel - defeated.GetLevel();
-
-        if (difference > 4)
-        {
-            pointsGained = JRound(pointsGained * 0.1f);
-        }
-        else if (difference < -3)
-        {
-            pointsGained = JRound(pointsGained * 1.3f);
-        }
-        else
-        {
-            switch (difference)
-            {
-                case 3:
-                    pointsGained = JRound(pointsGained * 0.85f);
-                    break;
-                case 4:
-                    pointsGained = JRound(pointsGained * 0.65f);
-                    break;
-                case -2:
-                    pointsGained = JRound(pointsGained * 1.1f);
-                    break;
-                case -3:
-                    pointsGained = JRound(pointsGained * 1.2f);
-                    break;
-            }
-        }
-
-        // Abyss rank penalty calculation
-        int defeatedAbyssRank = defeated.GetAbyssRank().GetRank().GetId();
-        int abyssRankDifference = winnerAbyssRank - defeatedAbyssRank;
-
-        if (winnerAbyssRank <= 7 && abyssRankDifference > 0)
-        {
-            float penaltyPercent = abyssRankDifference * 0.05f;
-
-            pointsGained -= JRound(pointsGained * penaltyPercent);
-        }
-
-        return pointsGained;
-    }
-
     public static int CalculatePvpDpGained(Player defeated, int maxRank, int maxLevel)
     {
         int pointsGained;

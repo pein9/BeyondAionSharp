@@ -96,6 +96,10 @@ public sealed partial class StaticData
 	public CreaturePvpZoneTable CreaturePvpZones { get; }
 
 	public PlayerExperienceTable PlayerExperienceTable { get; }
+    public PvpExpTable PvpExpTableDh { get; private set; } = new();
+    public PvpExpModTable PvpExpModTableDh { get; private set; } = new();
+    public PartyExpModTable PartyExpModTableDh { get; private set; } = new();
+    public MenteeExpLimitTable MenteeExpLimitTableDh { get; private set; } = new();
 
 	public CosmeticItemTable CosmeticItems { get; }
 
@@ -302,6 +306,15 @@ public sealed partial class StaticData
 
 	private void LoadLeafHoldersFromFilesCore(string staticDataDirectory, Microsoft.Extensions.Logging.ILogger? logger)
 	{
+        PvpExpTableDh = TryLoadHolder(PvpExpTableDh, Path.Combine(staticDataDirectory, "exp_mod_table", "pvp_exp_table.xml"), logger);
+        PvpExpModTableDh = TryLoadHolder(PvpExpModTableDh, Path.Combine(staticDataDirectory, "exp_mod_table", "pvp_exp_mod_table.xml"), logger);
+        PartyExpModTableDh = TryLoadHolder(PartyExpModTableDh, Path.Combine(staticDataDirectory, "exp_mod_table", "party_exp_mod_table.xml"), logger);
+        MenteeExpLimitTableDh = TryLoadHolder(MenteeExpLimitTableDh, Path.Combine(staticDataDirectory, "exp_mod_table", "mentee_exp_limit_table.xml"), logger);
+        logger?.LogInformation("Loaded {Count} pvp experience table entries", PvpExpTableDh.GetMaxLevel());
+        logger?.LogInformation("Loaded {Count} pvp experience modifier entries", PvpExpModTableDh.Size());
+        logger?.LogInformation("Loaded {Count} party experience modifier entries", PartyExpModTableDh.Size());
+        logger?.LogInformation("Loaded {Count} mentee experience limit entries", MenteeExpLimitTableDh.Size());
+
 		BindPointDataDh = TryLoadHolder(BindPointDataDh, Path.Combine(staticDataDirectory, "bind_points", "bind_points.xml"), logger);
 		ChestDataDh = TryLoadHolder(ChestDataDh, Path.Combine(staticDataDirectory, "chests", "chest_templates.xml"), logger);
 		RoadDataDh = TryLoadHolder(RoadDataDh, Path.Combine(staticDataDirectory, "roads", "roads.xml"), logger);

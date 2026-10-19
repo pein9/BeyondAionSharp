@@ -13,6 +13,7 @@ using Aion.GameServer.Model.Event;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Team;
+using Aion.GameServer.Model.Stats.Container;
 using Aion.GameServer.Model.Templates.Bounty;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.QuestEngine;
@@ -33,6 +34,7 @@ namespace Aion.GameServer.Services;
 public class PvpService
 {
     private static readonly ILogger log = AionLog.For("KILL_LOG");
+    private const float FIRST_ATTACKER_XP_SHARE = 0.1f;
     private readonly List<KillBountyTemplate> killBounties;
     private readonly IDictionary<int, Headhunter> headhunters;
 
@@ -143,8 +145,12 @@ public class PvpService
         int apRelevantDamage = 0;
         int totalDamage = damageList.GetTotalDamage();
 
+        TeamDamageList teamDamages = damageList.ToTeamDamages();
+        DamageInfo<AionObject>? firstDamage = teamDamages.GetFirstDamage();
+        int victimXp = DataManager.PVP_EXP_TABLE.GetExp(victim.GetLevel());
+
         // Distribute AP to groups and players that had damage.
-        foreach (DamageInfo<AionObject> damageInfo in damageList.ToTeamDamages().GetCreatureOrTeamDamages())
+        foreach (DamageInfo<AionObject> damageInfo in teamDamages.GetCreatureOrTeamDamages())
         {
             ICollection<Player> teamMembers = new List<Player>();
             AionObject attacker = damageInfo.GetAttacker();
@@ -153,8 +159,9 @@ public class PvpService
             else if (attacker is TemporaryPlayerTeam team && team.GetLeaderObject().GetRace() != victim.GetRace())
                 teamMembers = team.GetMembers();
 
+            float xpShare = CalculateXpShare(victimXp, damageInfo.GetDamage(), totalDamage, ReferenceEquals(damageInfo, firstDamage));
             // Add damage last, so we don't include damage from same race. (Duels, Arena)
-            if (RewardPlayerTeam(teamMembers, victim, damageInfo.GetDamage(), totalDamage, apWinMulti))
+            if (RewardPlayerTeam(teamMembers, attacker is TemporaryPlayerTeam, victim, damageInfo.GetDamage(), totalDamage, apWinMulti, xpShare))
                 apRelevantDamage += damageInfo.GetDamage();
         }
 
@@ -181,6 +188,13 @@ public class PvpService
                 player => player.IsEnemy(victim));
             AbyssService.AnnounceHighRankedDeath(victim);
         }
+    }
+
+    internal static float CalculateXpShare(int victimXp, int damage, int totalDamage, bool isFirst)
+    {
+        float share = (1 - FIRST_ATTACKER_XP_SHARE) * victimXp * damage / totalDamage;
+        if (isFirst) share += JavaMath.ToInt(victimXp * FIRST_ATTACKER_XP_SHARE);
+        return share;
     }
 
     private List<Player> FindMembersToCountKillFor(Player winner, Player victim)
@@ -225,7 +239,7 @@ public class PvpService
         }
     }
 
-    private bool RewardPlayerTeam(ICollection<Player> teamMember, Player victim, int damage, int totalDamage, float apWinMulti)
+    private bool RewardPlayerTeam(ICollection<Player> teamMember, bool isTeam, Player victim, int damage, int totalDamage, float apWinMulti, float xpShare)
     {
         List<Player> players = new List<Player>();
         int maxRank = 1;
@@ -246,24 +260,20 @@ public class PvpService
             return false;
 
         float baseApReward = StatFunctions.CalculatePvpApGained(victim, maxRank, maxLevel) * apWinMulti;
-        int baseXpReward = StatFunctions.CalculatePvpXpGained(victim, maxRank, maxLevel);
         int baseDpReward = StatFunctions.CalculatePvpDpGained(victim, maxRank, maxLevel);
         float groupDamagePercentage = (float)damage / totalDamage;
         int apRewardPerMember = (int)Math.Floor(baseApReward * groupDamagePercentage / players.Count + 0.5f);
-        int xpRewardPerMember = (int)Math.Floor(baseXpReward * groupDamagePercentage / players.Count + 0.5f);
         int dpRewardPerMember = (int)Math.Floor(baseDpReward * groupDamagePercentage / players.Count + 0.5f);
+        var xpRewards = CalculateXpRewards(players, isTeam, victim, xpShare);
 
         foreach (Player member in players)
         {
             int memberApGain = 1;
-            int memberXpGain = 1;
             int memberDpGain = 1;
             if (KillCounter.AddKillFor(member.GetObjectId(), victim.GetObjectId()) < CustomConfig.MAX_DAILY_PVP_KILLS)
             {
                 if (apRewardPerMember > 0)
                     memberApGain = Rates.AP_PVP.CalcResult(member, apRewardPerMember);
-                if (xpRewardPerMember > 0)
-                    memberXpGain = xpRewardPerMember; // rates are applied in addExp()
                 if (dpRewardPerMember > 0)
                 {
                     memberDpGain = StatFunctions.AdjustPvpDpGained(dpRewardPerMember, victim.GetLevel(), member.GetLevel());
@@ -272,10 +282,41 @@ public class PvpService
 
             }
             Aion.GameServer.Services.Abyss.AbyssPointsService.AddAp(member, victim, memberApGain);
-            member.GetCommonData().AddExp(memberXpGain, Rates.XP_PVP, victim.GetName());
             member.GetCommonData().AddDp(memberDpGain);
+            int xpReward = xpRewards[member];
+            if (xpReward > 0)
+            {
+                xpReward = JavaMath.ToInt(member.GetGameStats().GetStat(StatEnum.BOOST_HUNTING_XP_RATE, 100).GetCurrent() / 100f * xpReward);
+                if (PvpExpLimitService.GetInstance().TryGainPvpExp(member, victim, xpReward))
+                    member.GetCommonData().AddExp(xpReward, Rates.XP_PVP, victim.GetName());
+            }
         }
         return true;
+    }
+
+    private Dictionary<Player, int> CalculateXpRewards(List<Player> players, bool isTeam, Player victim, float xpShare)
+    {
+        var rewards = new Dictionary<Player, int>();
+        if (!isTeam)
+        {
+            foreach (var player in players)
+                rewards[player] = JavaMath.ToInt(xpShare * DataManager.PVP_EXP_MOD_TABLE.GetMultiplier(player.GetLevel(), victim.GetLevel()));
+            return rewards;
+        }
+        int teamXp = xpShare > 0 ? Math.Max(1, JavaMath.ToInt(xpShare)) : 0;
+        int highestLevel = players.Select(p => (int)p.GetLevel()).DefaultIfEmpty(0).Max();
+        float totalWeight = 0;
+        foreach (Player member in players) totalWeight += DataManager.PARTY_EXP_MOD_TABLE.GetWeight(member.GetLevel(), highestLevel);
+        bool isMentorTeam = players.Any(p => p.IsMentor());
+        foreach (Player member in players)
+        {
+            float weight = DataManager.PARTY_EXP_MOD_TABLE.GetWeight(member.GetLevel(), highestLevel);
+            float multiplier = DataManager.PVP_EXP_MOD_TABLE.GetMultiplier(member.GetLevel(), victim.GetLevel());
+            int xp = totalWeight > 0 ? JavaMath.ToInt(weight / totalWeight * multiplier * teamXp) : 0;
+            if (isMentorTeam) xp = unchecked((int)Math.Min((long)xp, DataManager.MENTEE_EXP_LIMIT_TABLE.GetExpLimit(member.GetLevel())));
+            rewards[member] = xp;
+        }
+        return rewards;
     }
 
     private void UpdateKillQuests(List<Player> killers, Player victim)
