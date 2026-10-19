@@ -32,6 +32,8 @@ public class FollowSummonTaskAI
 
     public void Run()
     {
+        if (!summon.IsSpawned())
+            return;
         if (!IsInMasterRange())
         {
             Aion.GameServer.Services.Summons.SummonsService.Release(summon, UnsummonType.DISTANCE);

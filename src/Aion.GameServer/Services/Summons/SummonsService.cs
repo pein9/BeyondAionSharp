@@ -40,6 +40,7 @@ public class SummonsService
         if (!summon.RegisterRelease(release))
             return;
         summon.GetController().CancelCurrentSkill((Creature)null);
+        summon.GetController().OnReleaseStart();
         summon.SetMode(SummonMode.RELEASE);
         summon.GetObserveController().NotifySummonReleaseObservers();
         new ReleaseSummonTask(summon, release).ScheduleOrRun();

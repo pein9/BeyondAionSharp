@@ -1,17 +1,21 @@
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
-using Aion.GameServer.Model.Summons;
 
 namespace Aion.GameServer.Controllers;
 
 /// <summary>Java parity: controllers/SiegeWeaponController (xTz).</summary>
 public class SiegeWeaponController : SummonController
 {
-    public override void Release(UnsummonType unsummonType)
+    public override void OnReleaseStart()
     {
         GetMaster().GetController().CancelTask(TaskId.SUMMON_FOLLOW);
         GetOwner().GetMoveController().AbortMove();
-        base.Release(unsummonType);
+    }
+
+    public override void OnDespawn()
+    {
+        GetMaster().GetController().CancelTask(TaskId.SUMMON_FOLLOW);
+        base.OnDespawn();
     }
 
     public override void RestMode()
@@ -82,12 +86,6 @@ public class SiegeWeaponController : SummonController
     {
         return creature.GetRace() == Race.DRAKAN && creature is Aion.GameServer.Model.GameObjects.Siege.SiegeNpc
             && ((Aion.GameServer.Model.GameObjects.Siege.SiegeNpc)creature).GetObjectTemplate().GetRating() == Aion.GameServer.Model.Templates.Npc.NpcRating.LEGENDARY;
-    }
-
-    public override void OnDie(Creature lastAttacker)
-    {
-        GetMaster().GetController().CancelTask(TaskId.SUMMON_FOLLOW);
-        base.OnDie(lastAttacker);
     }
 
 }

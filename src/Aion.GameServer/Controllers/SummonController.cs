@@ -28,6 +28,11 @@ public class SummonController : CreatureController<Summon>
         Aion.GameServer.Services.Summons.SummonsService.Release(GetOwner(), unsummonType);
     }
 
+    /// <summary>Called after a release is registered, before the summon despawns (which can be delayed).</summary>
+    public virtual void OnReleaseStart()
+    {
+    }
+
     /// <summary>Change to rest mode.</summary>
     public virtual void RestMode()
     {
