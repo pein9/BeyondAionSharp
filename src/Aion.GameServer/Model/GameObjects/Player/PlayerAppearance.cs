@@ -35,8 +35,8 @@ public class PlayerAppearance
     private int lipSize;
     private int smile;
     private int lipShape;
-    private int jawHeigh;
-    private int chinJut;
+    private int chinHeight;
+    private int cheekBones;
     private int earShape;
     private int headSize;
     private int neck;
@@ -377,24 +377,24 @@ public class PlayerAppearance
         this.lipShape = lipShape;
     }
 
-    public int GetJawHeigh()
+    public int GetChinHeight()
     {
-        return jawHeigh;
+        return chinHeight;
     }
 
-    public void SetJawHeigh(int jawHeigh)
+    public void SetChinHeight(int chinHeight)
     {
-        this.jawHeigh = jawHeigh;
+        this.chinHeight = chinHeight;
     }
 
-    public int GetChinJut()
+    public int GetCheekBones()
     {
-        return chinJut;
+        return cheekBones;
     }
 
-    public void SetChinJut(int chinJut)
+    public void SetCheekBones(int cheekBones)
     {
-        this.chinJut = chinJut;
+        this.cheekBones = cheekBones;
     }
 
     public int GetEarShape()

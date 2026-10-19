@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "packet": "SM_PLAYER_INFO",
+  "opcode": null,
+  "source": "Java",
+  "cases": [
+    {
+      "name": "lowLevelElyosNoEquip",
+      "inputs": {
+        "objectId": 100001,
+        "level": 1,
+        "race": "ELYOS",
+        "gender": "MALE",
+        "playerClass": "WARRIOR",
+        "name": "Aionwarrior",
+        "note": "hello",
+        "dp": 0,
+        "currentHp": 1200,
+        "currentMp": 800,
+        "currentFp": 60,
+        "mapId": 220020000,
+        "x": 100.5,
+        "y": 200.25,
+        "z": 300.75,
+        "heading": 30,
+        "stats": {
+          "MAXDP": 4000,
+          "MAXHP": 1200,
+          "MAXMP": 800,
+          "FLY_TIME": 60
+        }
+      },
+      "payloadHex": "0000C9420040484300609643A1860100A086010000000000A0860100000000000026000000010000000000000000001E410069006F006E00770061007200720069006F0072000000FFFF00000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000803E000000400000C040E803E8030000000000000000000000000000000000C94200404843006096430000680065006C006C006F000000010000000000010000000000000000000000000000000000010000000100000003000000"
+    },
+    {
+      "name": "midLevelAsmoFemale",
+      "inputs": {
+        "objectId": 200002,
+        "level": 25,
+        "race": "ASMODIANS",
+        "gender": "FEMALE",
+        "playerClass": "GLADIATOR",
+        "name": "Darkgladiatrix",
+        "note": "for the daevas",
+        "dp": 2500,
+        "currentHp": 9000,
+        "currentMp": 4000,
+        "currentFp": 50,
+        "mapId": 210020000,
+        "x": 1500.0,
+        "y": 2500.5,
+        "z": 412.125,
+        "heading": 90,
+        "stats": {
+          "MAXDP": 4000,
+          "MAXHP": 12345,
+          "MAXMP": 6789,
+          "FLY_TIME": 70
+        }
+      },
+      "payloadHex": "0080BB4400481C450010CE43420D0300A386010000000000A3860100000000000026010101010000000000000000005A4400610072006B0067006C00610064006900610074007200690078000000FFFF0000000000000000000000000000000064C409000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000803E000000400000C040E803E8030000000000000000000000000000000080BB4400481C450010CE43000066006F007200200074006800650020006400610065007600610073000000190000000000010000000000000000000000000000000000010000000100000003000000"
+    }
+  ],
+  "sourceJavaCommit": "a519ffc7bcc3df94e713a72ef72349106687b0c3",
+  "sourceHashes": {
+    "game-server/src/com/aionemu/gameserver/model/gameobjects/player/PlayerAppearance.java": "632218c657a9b78a4f885c3bccc30317307a7a33ddb74583e41408ec2f7f8a9f",
+    "game-server/src/com/aionemu/gameserver/network/aion/AionServerPacket.java": "574bf823f66b9bc592cb52b6af672f15f428ab232f165b913841a18ff6f8e532",
+    "game-server/src/com/aionemu/gameserver/network/aion/clientpackets/AbstractCharacterEditPacket.java": "c9988da205258e9f96ccdc08bd253ec14e13c7836020f6f53127cb0ead3541cc",
+    "game-server/src/com/aionemu/gameserver/network/aion/serverpackets/AbstractPlayerInfoPacket.java": "a66941456199dec8b970b3e0a4b6100cc936085be181af61255db00fb1fcb282",
+    "game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_PLAYER_INFO.java": "5381330115ec14f222f900ce81973079cacbe11b69269b1e519f33666945f5e4"
+  },
+  "captureBoundary": "Exact new full SM_PLAYER_INFO/AbstractPlayerInfoPacket with historical harness/runtime. New PlayerAppearance has legacy accessor bridges solely for old fixture constructors. Baseline reproduction proved first."
+}

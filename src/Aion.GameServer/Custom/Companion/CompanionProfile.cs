@@ -90,11 +90,13 @@ public sealed class CompanionProfile
         return appearance;
     }
 
-    /// <summary>jaw_line is SetJawLine and skin_rgb is SetSkinRGB; jaw_height is SetJawHeigh, the name Java gave it.</summary>
+    /// <summary>Map database column names, including the two legacy names in played companion profiles, to appearance setters.</summary>
     private static string SetterOf(string column)
     {
         if (column == "jaw_height")
-            return "SetJawHeigh";
+            return "SetChinHeight";
+        if (column == "chin_jut")
+            return "SetCheekBones";
         if (column == "height")
             return "SetHeightScale";
         return "Set" + string.Concat(column.Split('_').Select(part => part == "rgb" ? "RGB" : char.ToUpperInvariant(part[0]) + part[1..]));

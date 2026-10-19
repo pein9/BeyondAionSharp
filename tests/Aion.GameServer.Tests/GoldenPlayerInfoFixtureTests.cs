@@ -64,7 +64,7 @@ public sealed class GoldenPlayerInfoFixtureTests
     [Fact]
     public void CsharpPlayerInfoMatchesJavaGoldenFixture()
     {
-        using var fixture = LoadFixture("SM_PLAYER_INFO.json");
+        using var fixture = LoadFixture("SM_PLAYER_INFO.a519ffc7b.json");
         var packetName = fixture.RootElement.GetProperty("packet").GetString()!;
 
         foreach (var caseElement in fixture.RootElement.GetProperty("cases").EnumerateArray())
@@ -494,6 +494,14 @@ public sealed class GoldenPlayerInfoFixtureTests
             ?? throw new MissingFieldException(nameof(AbyssRank), "rank");
         rankField.SetValue(rank, AbyssRankEnum.GRADE9_SOLDIER);
         return rank;
+    }
+
+    internal static byte[] CapturePlayerInfoWithAppearance(JsonElement inputs, PlayerAppearance appearance)
+    {
+        var player = BuildPlayer(inputs);
+        player.SetPlayerAppearance(appearance);
+        var active = BuildActivePlayer(inputs);
+        return CaptureWriteImplPayload(new SM_PLAYER_INFO(player, false), NewConnectionWithActivePlayer(active));
     }
 
     // ---- capture ------------------------------------------------------------------------------------------------

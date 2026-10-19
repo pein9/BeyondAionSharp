@@ -10,6 +10,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/AbstractCharacterEditPacket (Neon). Base for character create/edit packets; reads name/gender/race/class and the full appearance block. PlayerAppearance/PlayerClass red-tolerated.</summary>
 public abstract class AbstractCharacterEditPacket : AionClientPacket
 {
+    private const float MIN_HEIGHT_SCALE = 0.65f, MAX_HEIGHT_SCALE = 1.2f;
     protected string characterName;
     protected Gender gender;
     protected Race race;
@@ -44,7 +45,7 @@ public abstract class AbstractCharacterEditPacket : AionClientPacket
         playerAppearance.SetTattoo(ReadUC());
         playerAppearance.SetFaceContour(ReadUC());
         playerAppearance.SetExpression(ReadUC());
-        ReadC(); // always 4 o0 // 5 in 1.5.x
+        ReadC(); // always 6, unused by the client
         playerAppearance.SetJawLine(ReadUC());
         playerAppearance.SetForehead(ReadUC());
 
@@ -70,8 +71,8 @@ public abstract class AbstractCharacterEditPacket : AionClientPacket
         playerAppearance.SetLipSize(ReadUC());
         playerAppearance.SetSmile(ReadUC());
         playerAppearance.SetLipShape(ReadUC());
-        playerAppearance.SetJawHeigh(ReadUC());
-        playerAppearance.SetChinJut(ReadUC());
+        playerAppearance.SetChinHeight(ReadUC());
+        playerAppearance.SetCheekBones(ReadUC());
         playerAppearance.SetEarShape(ReadUC());
         playerAppearance.SetHeadSize(ReadUC());
 
@@ -93,14 +94,14 @@ public abstract class AbstractCharacterEditPacket : AionClientPacket
         playerAppearance.SetFootSize(ReadUC());
         playerAppearance.SetFacialRate(ReadUC());
 
-        ReadC(); // always 0
+        ReadC(); // wing size, the slider is hidden so it's always 0
         playerAppearance.SetArmLength(ReadUC());
-        playerAppearance.SetLegLength(ReadUC()); // wrong??
-        playerAppearance.SetShoulders(ReadUC()); // 1.5.x May be ShoulderSize
+        playerAppearance.SetLegLength(ReadUC());
+        playerAppearance.SetShoulders(ReadUC()); // shoulder width, unlike shoulderSize
         playerAppearance.SetFaceShape(ReadUC());
-        ReadC();
-        ReadC();
-        ReadC();
-        playerAppearance.SetHeightScale(ReadF());
+        ReadC(); // unused
+        ReadH(); // padding
+        float heightScale = ReadF();
+        playerAppearance.SetHeightScale(float.IsNaN(heightScale) ? 1f : System.Math.Clamp(heightScale, MIN_HEIGHT_SCALE, MAX_HEIGHT_SCALE));
     }
 }

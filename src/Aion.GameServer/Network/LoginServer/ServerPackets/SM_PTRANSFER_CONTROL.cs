@@ -126,8 +126,8 @@ public sealed class SM_PTRANSFER_CONTROL : LoginServerPacket
                 buffer.WriteC(playerAppearance.GetLipSize());
                 buffer.WriteC(playerAppearance.GetSmile());
                 buffer.WriteC(playerAppearance.GetLipShape());
-                buffer.WriteC(playerAppearance.GetJawHeigh());
-                buffer.WriteC(playerAppearance.GetChinJut());
+                buffer.WriteC(playerAppearance.GetChinHeight());
+                buffer.WriteC(playerAppearance.GetCheekBones());
                 buffer.WriteC(playerAppearance.GetEarShape());
                 buffer.WriteC(playerAppearance.GetHeadSize());
                 buffer.WriteC(playerAppearance.GetNeck());

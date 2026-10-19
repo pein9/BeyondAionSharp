@@ -20,7 +20,7 @@ public sealed class PlayerHeightPortTests
     [Theory]
     [InlineData(0x3f4ccccd)]
     [InlineData(0x3f800001)]
-    [InlineData(0x3fa00000)]
+    [InlineData(0x3f99999a)] // 1.2, the upper bound of the incoming slider after a519ffc7b
     public void CharacterEditRetainsTheRawHeightScaleFloat(int bits)
     {
         var body = GameClientPackets.EditCharacter(49151, new CharacterCreationData

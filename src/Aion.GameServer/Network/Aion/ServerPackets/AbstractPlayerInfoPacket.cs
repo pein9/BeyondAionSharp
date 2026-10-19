@@ -45,7 +45,7 @@ public abstract class AbstractPlayerInfoPacket : AionServerPacket
         WriteC(playerAppearance.GetTattoo());
         WriteC(playerAppearance.GetFaceContour());
         WriteC(playerAppearance.GetExpression());
-        WriteC(5);// always 5 o0
+        WriteC(6); // always 6, unused by the client
         WriteC(playerAppearance.GetJawLine());
         WriteC(playerAppearance.GetForehead());
         WriteC(playerAppearance.GetEyeHeight());
@@ -67,8 +67,8 @@ public abstract class AbstractPlayerInfoPacket : AionServerPacket
         WriteC(playerAppearance.GetLipSize());
         WriteC(playerAppearance.GetSmile());
         WriteC(playerAppearance.GetLipShape());
-        WriteC(playerAppearance.GetJawHeigh());
-        WriteC(playerAppearance.GetChinJut());
+        WriteC(playerAppearance.GetChinHeight());
+        WriteC(playerAppearance.GetCheekBones());
         WriteC(playerAppearance.GetEarShape());
         WriteC(playerAppearance.GetHeadSize());
         // 1.5.x 0x00, shoulderSize, armLength, legLength (BYTE) after HeadSize

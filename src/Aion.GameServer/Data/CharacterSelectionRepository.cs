@@ -74,8 +74,8 @@ public sealed class MySqlCharacterSelectionRepository : ICharacterSelectionRepos
 					pa.skin_rgb, pa.hair_rgb, pa.eye_rgb, pa.lip_rgb, pa.face_shape, pa.forehead, pa.eye_height,
 					pa.eye_space, pa.eye_width, pa.eye_size, pa.eye_shape, pa.eye_angle, pa.brow_height,
 					pa.brow_angle, pa.brow_shape, pa.nose, pa.nose_bridge, pa.nose_width, pa.nose_tip,
-					pa.cheek, pa.lip_height, pa.mouth_size, pa.lip_size, pa.smile, pa.lip_shape, pa.jaw_height,
-					pa.chin_jut, pa.ear_shape, pa.head_size, pa.neck, pa.neck_length, pa.shoulders,
+					pa.cheek, pa.lip_height, pa.mouth_size, pa.lip_size, pa.smile, pa.lip_shape, pa.chin_height,
+					pa.cheek_bones, pa.ear_shape, pa.head_size, pa.neck, pa.neck_length, pa.shoulders,
 					pa.shoulder_size, pa.torso, pa.chest, pa.waist, pa.hips, pa.arm_thickness, pa.arm_length,
 					pa.hand_size, pa.leg_thickness, pa.leg_length, pa.foot_size, pa.facial_rate, pa.voice, pa.height
 				FROM players p
@@ -316,8 +316,8 @@ public sealed class MySqlCharacterSelectionRepository : ICharacterSelectionRepos
 			LipSize = ReadInt(reader, "lip_size"),
 			Smile = ReadInt(reader, "smile"),
 			LipShape = ReadInt(reader, "lip_shape"),
-			JawHeight = ReadInt(reader, "jaw_height"),
-			ChinJut = ReadInt(reader, "chin_jut"),
+			JawHeight = ReadInt(reader, "chin_height"),
+			ChinJut = ReadInt(reader, "cheek_bones"),
 			EarShape = ReadInt(reader, "ear_shape"),
 			HeadSize = ReadInt(reader, "head_size"),
 			Neck = ReadInt(reader, "neck"),

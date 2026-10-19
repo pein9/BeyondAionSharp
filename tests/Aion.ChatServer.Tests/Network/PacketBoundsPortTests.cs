@@ -8,6 +8,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Aion.ChatServer.Tests.Network;
 
+[CollectionDefinition("Chat packet warning state", DisableParallelization = true)]
+public sealed class ChatPacketWarningCollection { }
+
+// The warning dictionaries are process-wide; other packet tests can consume the same opcode's first warning.
+[Collection("Chat packet warning state")]
 public sealed class PacketBoundsPortTests
 {
     [Fact]

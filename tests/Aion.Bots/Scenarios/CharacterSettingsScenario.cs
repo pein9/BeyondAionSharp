@@ -38,7 +38,7 @@ public static class CharacterSettingsScenario
 	{
 		byte[] features = Enumerable.Range(0, CharacterCreationData.AppearanceFeatureLength).Select(i => (byte)(20 + i)).ToArray();
 		features[0] = 1; features[1] = 2; features[2] = 0; features[3] = 0;
-		features[6] = 5; features[44] = 0; features[49] = 0; features[50] = 0; features[51] = 0;
+		features[6] = 6; features[44] = 0; features[49] = 0; features[50] = 0; features[51] = 0;
 		return new CharacterCreationData { CharacterName = name, Race = (int)Race.ELYOS, Gender = 0,
 			PlayerClass = (int)PlayerClass.WARRIOR, Voice = 2, SkinRgb = 0x00DECDBA, HairRgb = 0x002E1A09,
 			EyeRgb = 0x005599BB, LipRgb = 0x00996677, Height = 1.08f, AppearanceFeatures = features };

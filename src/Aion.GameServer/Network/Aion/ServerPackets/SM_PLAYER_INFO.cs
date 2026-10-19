@@ -103,7 +103,7 @@ public class SM_PLAYER_INFO : AbstractPlayerInfoPacket
         WriteC(playerAppearance.GetFaceContour());
         WriteC(playerAppearance.GetExpression());
 
-        WriteC(5); // unk 0x05 0x06
+        WriteC(6); // always 6, unused by the client
 
         WriteC(playerAppearance.GetJawLine());
         WriteC(playerAppearance.GetForehead());
@@ -130,8 +130,8 @@ public class SM_PLAYER_INFO : AbstractPlayerInfoPacket
         WriteC(playerAppearance.GetLipSize());
         WriteC(playerAppearance.GetSmile());
         WriteC(playerAppearance.GetLipShape());
-        WriteC(playerAppearance.GetJawHeigh());
-        WriteC(playerAppearance.GetChinJut());
+        WriteC(playerAppearance.GetChinHeight());
+        WriteC(playerAppearance.GetCheekBones());
         WriteC(playerAppearance.GetEarShape());
         WriteC(playerAppearance.GetHeadSize());
 

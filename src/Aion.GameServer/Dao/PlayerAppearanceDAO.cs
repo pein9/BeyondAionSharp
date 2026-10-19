@@ -9,8 +9,8 @@ namespace Aion.GameServer.Dao;
 /// <summary>
 /// Java parity: dao/PlayerAppearanceDAO (@author SoulKeeper, AEJTester, srx47). Loads/stores the 54-field player appearance. MIXED:
 /// load via DatabaseFactory, store via the commons DB callback helper (anonymous IUStH->nested StoreHandler capturing id + pa). getInt/
-/// getFloat->GetInt32/GetFloat(GetOrdinal); setInt/setFloat->Parameters.Add; execute->ExecuteNonQuery. The Java accessor typo getJawHeigh/
-/// setJawHeigh is preserved. Multi-line REPLACE SQL verbatim. On load exception returns null (as Java).
+/// getFloat->GetInt32/GetFloat(GetOrdinal); setInt/setFloat->Parameters.Add; execute->ExecuteNonQuery.
+/// Appearance field names and REPLACE SQL follow Java. On load exception returns null (as Java).
 /// </summary>
 public class PlayerAppearanceDAO
 {
@@ -61,8 +61,8 @@ public class PlayerAppearanceDAO
                 pa.SetLipSize(resultSet.GetInt32(resultSet.GetOrdinal("lip_size")));
                 pa.SetSmile(resultSet.GetInt32(resultSet.GetOrdinal("smile")));
                 pa.SetLipShape(resultSet.GetInt32(resultSet.GetOrdinal("lip_shape")));
-                pa.SetJawHeigh(resultSet.GetInt32(resultSet.GetOrdinal("jaw_height")));
-                pa.SetChinJut(resultSet.GetInt32(resultSet.GetOrdinal("chin_jut")));
+                pa.SetChinHeight(resultSet.GetInt32(resultSet.GetOrdinal("chin_height")));
+                pa.SetCheekBones(resultSet.GetInt32(resultSet.GetOrdinal("cheek_bones")));
                 pa.SetEarShape(resultSet.GetInt32(resultSet.GetOrdinal("ear_shape")));
                 pa.SetHeadSize(resultSet.GetInt32(resultSet.GetOrdinal("head_size")));
                 pa.SetNeck(resultSet.GetInt32(resultSet.GetOrdinal("neck")));
@@ -104,7 +104,7 @@ public class PlayerAppearanceDAO
             + "player_id, face, hair, deco, tattoo, face_contour, expression, jaw_line, skin_rgb, hair_rgb, lip_rgb, eye_rgb, face_shape,"
             + "forehead, eye_height, eye_space, eye_width, eye_size, eye_shape, eye_angle,"
             + "brow_height, brow_angle, brow_shape, nose, nose_bridge, nose_width, nose_tip, "
-            + "cheek, lip_height, mouth_size, lip_size, smile, lip_shape, jaw_height, chin_jut, ear_shape,"
+            + "cheek, lip_height, mouth_size, lip_size, smile, lip_shape, chin_height, cheek_bones, ear_shape,"
             + "head_size, neck, neck_length, shoulders, shoulder_size , torso, chest, waist, hips, arm_thickness, arm_length, hand_size,"
             + "leg_thickness, leg_length, foot_size, facial_rate, voice, height)" + " VALUES "
             + "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
@@ -157,8 +157,8 @@ public class PlayerAppearanceDAO
             ps.Parameters.Add(new MySqlParameter { Value = pa.GetLipSize() });
             ps.Parameters.Add(new MySqlParameter { Value = pa.GetSmile() });
             ps.Parameters.Add(new MySqlParameter { Value = pa.GetLipShape() });
-            ps.Parameters.Add(new MySqlParameter { Value = pa.GetJawHeigh() });
-            ps.Parameters.Add(new MySqlParameter { Value = pa.GetChinJut() });
+            ps.Parameters.Add(new MySqlParameter { Value = pa.GetChinHeight() });
+            ps.Parameters.Add(new MySqlParameter { Value = pa.GetCheekBones() });
             ps.Parameters.Add(new MySqlParameter { Value = pa.GetEarShape() });
             ps.Parameters.Add(new MySqlParameter { Value = pa.GetHeadSize() });
             ps.Parameters.Add(new MySqlParameter { Value = pa.GetNeck() });

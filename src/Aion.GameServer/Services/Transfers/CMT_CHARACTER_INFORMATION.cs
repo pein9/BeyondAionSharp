@@ -101,8 +101,8 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
         playerAppearance.SetLipSize(ReadUC());
         playerAppearance.SetSmile(ReadUC());
         playerAppearance.SetLipShape(ReadUC());
-        playerAppearance.SetJawHeigh(ReadUC());
-        playerAppearance.SetChinJut(ReadUC());
+        playerAppearance.SetChinHeight(ReadUC());
+        playerAppearance.SetCheekBones(ReadUC());
         playerAppearance.SetEarShape(ReadUC());
         playerAppearance.SetHeadSize(ReadUC());
         playerAppearance.SetNeck(ReadUC());
