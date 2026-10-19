@@ -88,15 +88,15 @@ public sealed class NpcDequePortTests
     [Fact]
     public void IdentifierHistoryDeduplicatesWithoutRefreshingAndEvictsOldestAfterThree()
     {
-        var type = typeof(MultiClientingService).GetNestedType("AccountSession", BindingFlags.NonPublic)!;
+        var type = typeof(MultiClientService).GetNestedType("AccountSession", BindingFlags.NonPublic)!;
         var session = Activator.CreateInstance(type, 123)!;
         object? Invoke(string method, params object[] args) => type.GetMethod(method, PrivateInstance)!.Invoke(session, args);
         void Add(string suffix) => Invoke("PutIdentifiers", new IdentifierConnection("ip-" + suffix, "mac-" + suffix));
         bool Has(string suffix) => (bool)Invoke("HasAny", "ip-" + suffix, "unknown")!;
-        var previous = SecurityConfig.MULTI_CLIENTING_IGNORED_MAC_ADDRESSES;
+        var previous = SecurityConfig.MULTI_CLIENT_IGNORED_MAC_ADDRESSES;
         try
         {
-            SecurityConfig.MULTI_CLIENTING_IGNORED_MAC_ADDRESSES = new HashSet<string> {"mac-c"};
+            SecurityConfig.MULTI_CLIENT_IGNORED_MAC_ADDRESSES = new HashSet<string> {"mac-c"};
             Assert.False((bool)Invoke("IsIgnored")!);
             Add("a"); Add("b"); Add("c"); Add("a");
             Assert.True((bool)Invoke("IsIgnored")!); // duplicate a does not become newest.
@@ -105,7 +105,7 @@ public sealed class NpcDequePortTests
             Assert.False(Has("a")); Assert.True(Has("b")); Assert.True(Has("c")); Assert.True(Has("d"));
             Assert.True((bool)Invoke("HasAny", "unknown", "mac-b")!);
         }
-        finally { SecurityConfig.MULTI_CLIENTING_IGNORED_MAC_ADDRESSES = previous; }
+        finally { SecurityConfig.MULTI_CLIENT_IGNORED_MAC_ADDRESSES = previous; }
     }
 
     private sealed class IdentifierConnection : AionConnection

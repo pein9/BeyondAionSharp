@@ -90,20 +90,19 @@ public static class SecurityConfig
     [Property(key: "gameserver.security.survey.delay.minute", defaultValue: "20")]
     public static int SURVEY_DELAY = 20;
 
-    /// <summary>
-    /// Restriction mode for multi-clienting: NONE (multiple accounts/computer), FULL (one account/computer),
-    /// SAME_FACTION (multiple accounts but same faction only). Key: gameserver.security.multi_clienting.restriction_mode
-    /// </summary>
-    [Property(key: "gameserver.security.multi_clienting.restriction_mode", defaultValue: "NONE")]
-    public static MultiClientingRestrictionMode MULTI_CLIENTING_RESTRICTION_MODE = MultiClientingRestrictionMode.NONE;
+    /// <summary>Maximum characters online from one IP and MAC address; zero means unlimited.</summary>
+    [Property(key: "gameserver.security.multi_client.max_clients_per_computer", defaultValue: "2")]
+    public static int MULTI_CLIENT_MAX_CLIENTS_PER_COMPUTER = 2;
 
-    /// <summary>Comma separated MAC addresses allowed regardless of restrictions. Key: gameserver.security.multi_clienting.ignored_mac_addresses</summary>
-    [Property(key: "gameserver.security.multi_clienting.ignored_mac_addresses", defaultValue: "")]
-    public static ISet<string> MULTI_CLIENTING_IGNORED_MAC_ADDRESSES = new HashSet<string>();
+    /// <summary>Whether the same IP or MAC may have characters of both factions online.</summary>
+    [Property(key: "gameserver.security.multi_client.allow_both_factions", defaultValue: "true")]
+    public static bool MULTI_CLIENT_ALLOW_BOTH_FACTIONS = true;
 
-    /// <summary>Key: gameserver.security.multi_clienting.faction_switch_cooldown_minutes</summary>
-    [Property(key: "gameserver.security.multi_clienting.faction_switch_cooldown_minutes", defaultValue: "20")]
-    public static int MULTI_CLIENTING_FACTION_SWITCH_COOLDOWN_MINUTES = 20;
+    [Property(key: "gameserver.security.multi_client.ignored_mac_addresses", defaultValue: "")]
+    public static ISet<string> MULTI_CLIENT_IGNORED_MAC_ADDRESSES = new HashSet<string>();
+
+    [Property(key: "gameserver.security.multi_client.faction_switch_cooldown_minutes", defaultValue: "20")]
+    public static int MULTI_CLIENT_FACTION_SWITCH_COOLDOWN_MINUTES = 20;
 
     /// <summary>Key: gameserver.security.hdd_serial_lock.enable</summary>
     [Property(key: "gameserver.security.hdd_serial_lock.enable", defaultValue: "false")]
@@ -113,8 +112,4 @@ public static class SecurityConfig
     [Property(key: "gameserver.security.hdd_serial_lock.auto_lock", defaultValue: "false")]
     public static bool HDD_SERIAL_LOCK_UNLOCKED_ACCOUNTS = false;
 
-    public enum MultiClientingRestrictionMode
-    {
-        NONE, FULL, SAME_FACTION
-    }
 }

@@ -7,36 +7,30 @@ using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion;
+using Msg = Aion.GameServer.Network.Aion.ServerPackets.SM_ENTER_WORLD_CHECK.Msg;
 using Aion.GameServer.World;
 
 namespace Aion.GameServer.Services.Players;
 
-/// <summary>Java parity: services/player/MultiClientingService. Enforces multi-clienting restriction modes: FULL (block same IP + (MAC|HDD) already online), SAME_FACTION (per-account session tracking with faction-switch cooldown). Nested AccountSession (synchronized identifier list, last-online-per-race) + Identifiers record. ConcurrentHashMap->ConcurrentDictionary; values().removeIf->ToArray()+TryRemove; computeIfAbsent->GetOrAdd; synchronized->lock; array-backed List Insert(0)/RemoveAt(last)/[0] for the bounded deque; Duration.ofMinutes(x).toMillis()->x*60000; currentTimeMillis->UtcNow; Integer->int?; stream findAny.map.orElse->LINQ FirstOrDefault. SecurityConfig nested enum / AionConnection red-tolerated.</summary>
-public class MultiClientingService
+/// <summary>Java parity: services/player/MultiClientService. Independent per-computer limit and household faction cooldown; native locking, bounded identifier history and SystemClock retained.</summary>
+public class MultiClientService
 {
-    private static readonly ILogger log = AionLog.For(nameof(MultiClientingService));
+    private static readonly ILogger log = AionLog.For(nameof(MultiClientService));
     private static readonly ConcurrentDictionary<int, AccountSession> sessionsByAccountId = new ConcurrentDictionary<int, AccountSession>();
 
-    public static bool TryEnterWorld(Player player, AionConnection con)
+    public static Msg? TryEnterWorld(Player player, AionConnection con)
     {
-        if (SecurityConfig.MULTI_CLIENTING_RESTRICTION_MODE == SecurityConfig.MultiClientingRestrictionMode.FULL && !SecurityConfig.MULTI_CLIENTING_IGNORED_MAC_ADDRESSES.Contains(con.GetMacAddress()))
+        int maxClients = SecurityConfig.MULTI_CLIENT_MAX_CLIENTS_PER_COMPUTER;
+        if (maxClients > 0 && !SecurityConfig.MULTI_CLIENT_IGNORED_MAC_ADDRESSES.Contains(con.GetMacAddress()))
         {
-            string mac = con.GetMacAddress();
-            string hdd = con.GetHddSerial();
-            string ip = con.GetIP();
-            foreach (Player onlinePlayer in Aion.GameServer.World.World.GetInstance().GetAllPlayers())
+            List<Player> playersOnSameComputer = FindPlayersOnSameComputer(con);
+            if (playersOnSameComputer.Count >= maxClients)
             {
-                bool sameIp = ip.Equals(onlinePlayer.GetClientConnection().GetIP());
-                bool sameMac = mac.Length != 0 && mac.Equals(onlinePlayer.GetClientConnection().GetMacAddress());
-                bool sameHdd = hdd.Length != 0 && hdd.Equals(onlinePlayer.GetClientConnection().GetHddSerial());
-                if (sameIp && (sameMac || sameHdd))
-                {
-                    log.LogInformation("Blocked {Player} from logging on (multi-clienting on {Match} with {OnlinePlayer})", player, sameMac ? "MAC address " + mac : "HDD " + hdd, onlinePlayer);
-                    return false;
-                }
+                log.LogInformation("Blocked {Player} from logging on (multi-client limit of {MaxClients} reached by {Players})", player, maxClients, playersOnSameComputer);
+                return Msg.CONNECTION_ERROR;
             }
         }
-        else if (SecurityConfig.MULTI_CLIENTING_RESTRICTION_MODE == SecurityConfig.MultiClientingRestrictionMode.SAME_FACTION)
+        if (!SecurityConfig.MULTI_CLIENT_ALLOW_BOTH_FACTIONS)
         {
             foreach (KeyValuePair<int, AccountSession> kv in sessionsByAccountId.ToArray())
                 if (kv.Value.IsExpired())
@@ -47,14 +41,26 @@ public class MultiClientingService
                 if (matchedAccountId != null)
                 {
                     log.LogInformation("Blocked {Player} from logging on (faction switch cooldown from account ID {AccountId})", player, matchedAccountId);
-                    return false;
+                    return Msg.BOTH_FACTIONS;
                 }
                 AccountSession accountSession = sessionsByAccountId.GetOrAdd(player.GetAccount().GetId(), k => new AccountSession(k));
                 accountSession.PutIdentifiers(con);
                 accountSession.EnterWorld(player);
             }
         }
-        return true;
+        return null;
+    }
+
+    // HDD serials are intentionally excluded: the client reads them unreliably.
+    private static List<Player> FindPlayersOnSameComputer(AionConnection con)
+    {
+        string ip = con.GetIP();
+        string mac = con.GetMacAddress();
+        return Aion.GameServer.World.World.GetInstance().GetAllPlayers().Where(onlinePlayer =>
+        {
+            AionConnection onlineCon = onlinePlayer.GetClientConnection();
+            return onlineCon != null && ip.Equals(onlineCon.GetIP()) && mac.Equals(onlineCon.GetMacAddress());
+        }).ToList();
     }
 
     public static void OnLeaveWorld(Player player)
@@ -66,10 +72,10 @@ public class MultiClientingService
 
     public static int? CheckForFactionSwitchCooldownTime(Race race, AionConnection con)
     {
-        if (SecurityConfig.MULTI_CLIENTING_IGNORED_MAC_ADDRESSES.Contains(con.GetMacAddress()))
+        if (SecurityConfig.MULTI_CLIENT_IGNORED_MAC_ADDRESSES.Contains(con.GetMacAddress()))
             return null;
         Race oppositeRace = race == Race.ELYOS ? Race.ASMODIANS : Race.ELYOS;
-        long minLastOnlineMillis = SystemClock.CurrentMillis() - SecurityConfig.MULTI_CLIENTING_FACTION_SWITCH_COOLDOWN_MINUTES * 60000L;
+        long minLastOnlineMillis = SystemClock.CurrentMillis() - SecurityConfig.MULTI_CLIENT_FACTION_SWITCH_COOLDOWN_MINUTES * 60000L;
         return sessionsByAccountId.Values
             .Where(s => !s.IsIgnored() && s.WasPlayingOnSameIpOrMac(oppositeRace, minLastOnlineMillis, con))
             .Select(s => (int?)s.accountId)
@@ -91,7 +97,7 @@ public class MultiClientingService
         {
             lock (this)
             {
-                return identifiers.Count != 0 && SecurityConfig.MULTI_CLIENTING_IGNORED_MAC_ADDRESSES.Contains(identifiers[0].mac);
+                return identifiers.Count != 0 && SecurityConfig.MULTI_CLIENT_IGNORED_MAC_ADDRESSES.Contains(identifiers[0].mac);
             }
         }
 
@@ -119,7 +125,7 @@ public class MultiClientingService
 
         internal bool IsExpired()
         {
-            long minLastOnline = SystemClock.CurrentMillis() - SecurityConfig.MULTI_CLIENTING_FACTION_SWITCH_COOLDOWN_MINUTES * 60000L;
+            long minLastOnline = SystemClock.CurrentMillis() - SecurityConfig.MULTI_CLIENT_FACTION_SWITCH_COOLDOWN_MINUTES * 60000L;
             return !lastCharOnlineTimeMillis.Values.Any(t => t > minLastOnline);
         }
 

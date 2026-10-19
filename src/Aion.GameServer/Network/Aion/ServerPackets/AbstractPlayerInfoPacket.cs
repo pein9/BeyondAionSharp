@@ -167,13 +167,17 @@ public abstract class AbstractPlayerInfoPacket : AionServerPacket
         long nowSeconds = SystemClock.CurrentMillis() / 1000;
         if (cbi != null && nowSeconds >= cbi.GetEnd())
             cbi = null;
-        if (cbi == null && SecurityConfig.MULTI_CLIENTING_RESTRICTION_MODE == SecurityConfig.MultiClientingRestrictionMode.SAME_FACTION)
+        if (cbi == null && con.GetAccount().GetAccessLevel() == 0 && !SecurityConfig.MULTI_CLIENT_ALLOW_BOTH_FACTIONS)
         {
-            int cdMinutes = SecurityConfig.MULTI_CLIENTING_FACTION_SWITCH_COOLDOWN_MINUTES;
-            if (cdMinutes > 0 && MultiClientingService.CheckForFactionSwitchCooldownTime(playerAccountData.GetPlayerCommonData().GetRace(), con) != null)
+            Race race = playerAccountData.GetPlayerCommonData().GetRace();
+            if (MultiClientService.CheckForFactionSwitchCooldownTime(race, con) != null)
             {
-                int durationSeconds = 61; // client will send CM_CHARACTER_LIST after this duration to update the ban info (<61s corrupts the ban info)
-                cbi = new CharacterBanInfo(nowSeconds, durationSeconds, "\n\n\n " + cdMinutes + " minute cooldown between switching factions\n\n\n\n\n\n\n");
+                int cdMinutes = SecurityConfig.MULTI_CLIENT_FACTION_SWITCH_COOLDOWN_MINUTES;
+                string reason = cdMinutes > 0
+                    ? "\uE026 " + cdMinutes + " minute cooldown between switching factions"
+                    : "Please log out all " + (race == Race.ELYOS ? "Asmodian" : "Elyos") + " characters in your household";
+                int durationSeconds = 61; // <61s corrupts the client's ban info; it refreshes CM_CHARACTER_LIST on expiry.
+                cbi = new CharacterBanInfo(nowSeconds, durationSeconds, "\n\n\n" + reason + "\n\n\n\n\n\n\n");
             }
         }
         return cbi;

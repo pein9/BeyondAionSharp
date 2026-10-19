@@ -110,7 +110,7 @@ public class PlayerLeaveWorldService
         if (AutoGroupConfig.AUTO_GROUP_ENABLE)
             AutoGroupService.GetInstance().OnLogout(player);
         ConquerorAndProtectorService.GetInstance().OnLeaveMap(player);
-        MultiClientingService.OnLeaveWorld(player);
+        MultiClientService.OnLeaveWorld(player);
         InstanceService.OnLogout(player);
         GMService.GetInstance().OnPlayerLogout(player);
         KiskService.GetInstance().OnLogout(player);

@@ -45,7 +45,6 @@ using Aion.GameServer.Utils.Audit;
 using Aion.GameServer.Utils.Collections;
 using Aion.GameServer.Utils.Stats;
 using Aion.GameServer.World;
-using static Aion.GameServer.Configs.Main.SecurityConfig.MultiClientingRestrictionMode;
 using Msg = Aion.GameServer.Network.Aion.ServerPackets.SM_ENTER_WORLD_CHECK.Msg;
 using Status = Aion.GameServer.Model.GameObjects.Players.FriendList.Status;
 using ConnectType = Aion.GameServer.Model.Account.CharacterPasskey.ConnectType;
@@ -147,15 +146,11 @@ public sealed class PlayerEnterWorldService
         {
             try
             {
-                if (player.IsStaff() || MultiClientingService.TryEnterWorld(player, client))
-                {
+                Msg? denialMsg = player.IsStaff() ? null : MultiClientService.TryEnterWorld(player, client);
+                if (denialMsg == null)
                     EnterWorld(client, player);
-                }
                 else
-                {
-                    Msg msg = SecurityConfig.MULTI_CLIENTING_RESTRICTION_MODE == SAME_FACTION ? Msg.BOTH_FACTIONS : Msg.CONNECTION_ERROR;
-                    client.SendPacket(new SM_ENTER_WORLD_CHECK(msg));
-                }
+                    client.SendPacket(new SM_ENTER_WORLD_CHECK(denialMsg.Value));
             }
             catch (Exception ex)
             {

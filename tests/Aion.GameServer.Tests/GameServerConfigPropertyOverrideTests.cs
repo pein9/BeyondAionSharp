@@ -190,11 +190,11 @@ public sealed class GameServerConfigPropertyOverrideTests
             ConfigurableProcessor.Process(secProps, typeof(SecurityConfig));
 
             // Set transformer parity: the shipped value is empty -> empty HashSet (never null).
-            Assert.NotNull(SecurityConfig.MULTI_CLIENTING_IGNORED_MAC_ADDRESSES);
-            Assert.Empty(SecurityConfig.MULTI_CLIENTING_IGNORED_MAC_ADDRESSES);
-            // Enum transformer parity: restriction mode NONE.
-            Assert.Equal(SecurityConfig.MultiClientingRestrictionMode.NONE,
-                SecurityConfig.MULTI_CLIENTING_RESTRICTION_MODE);
+            Assert.NotNull(SecurityConfig.MULTI_CLIENT_IGNORED_MAC_ADDRESSES);
+            Assert.Empty(SecurityConfig.MULTI_CLIENT_IGNORED_MAC_ADDRESSES);
+            // Independent client-count and faction defaults from the real properties file.
+            Assert.Equal(2, SecurityConfig.MULTI_CLIENT_MAX_CLIENTS_PER_COMPUTER);
+            Assert.True(SecurityConfig.MULTI_CLIENT_ALLOW_BOTH_FACTIONS);
         }
         finally
         {
@@ -211,7 +211,7 @@ public sealed class GameServerConfigPropertyOverrideTests
             // List<string> override with quoted token containing a comma (CSV quote semantics).
             props.SetProperty("gameserver.administration.login.execute_commands", "//see, \"//enemy a,b\", //invis");
             // Set<string> override that de-duplicates (HashSet semantics like Java HashSet).
-            props.SetProperty("gameserver.security.multi_clienting.ignored_mac_addresses", "AA, BB, AA, CC");
+            props.SetProperty("gameserver.security.multi_client.ignored_mac_addresses", "AA, BB, AA, CC");
 
             ConfigurableProcessor.Process(props, typeof(AdminConfig), typeof(SecurityConfig));
 
@@ -220,8 +220,8 @@ public sealed class GameServerConfigPropertyOverrideTests
                 AdminConfig.LOGIN_EXECUTE_COMMANDS);
             Assert.Equal(
                 new HashSet<string> { "AA", "BB", "CC" },
-                SecurityConfig.MULTI_CLIENTING_IGNORED_MAC_ADDRESSES);
-            Assert.Equal(3, SecurityConfig.MULTI_CLIENTING_IGNORED_MAC_ADDRESSES.Count);
+                SecurityConfig.MULTI_CLIENT_IGNORED_MAC_ADDRESSES);
+            Assert.Equal(3, SecurityConfig.MULTI_CLIENT_IGNORED_MAC_ADDRESSES.Count);
         }
         finally
         {

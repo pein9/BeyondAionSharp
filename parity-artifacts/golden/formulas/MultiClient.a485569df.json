@@ -1,0 +1,1838 @@
+{
+  "source": "Java",
+  "sourceJavaCommit": "a485569dfa0bd56eaf5c9e6b8ffa46bc05d1562a",
+  "sourceHashes": {
+    "game-server/src/com/aionemu/gameserver/services/player/MultiClientService.java": "d1c39024ad57215e5656d9dd681ddfea2c33ff3b74627e4dfdb4e8a621f5f15f",
+    "game-server/src/com/aionemu/gameserver/model/account/CharacterBanInfo.java": "3a2463f1156b071983f698c5b61957ffcdb7b444dcda65591f9edc8af8447ef9",
+    "game-server/src/com/aionemu/gameserver/network/aion/serverpackets/AbstractPlayerInfoPacket.java": "44675b1a3937b29728f2dc2916c7bdcf75b970d50aec05a204c64a4fd6147d84"
+  },
+  "captureBoundary": "Capture a485569df's full MultiClientService and exact character-ban method.\n\nOnly package/import declarations and the clock are substituted. Scalar world,\nconnection/account/player/config/logger doubles bound the capture; no SQL/login\npipeline or concurrent admission guarantee is claimed.",
+  "cases": [
+    {
+      "limit": 0,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 2,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 2,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 3,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": -1,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": -1,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": -1,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 2,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": -1,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 2,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 3,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 1,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 1,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "CONNECTION_ERROR"
+        }
+      ]
+    },
+    {
+      "limit": 1,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 2,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "CONNECTION_ERROR"
+        }
+      ]
+    },
+    {
+      "limit": 1,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 2,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 3,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "CONNECTION_ERROR"
+        }
+      ]
+    },
+    {
+      "limit": 2,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 2,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 2,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 2,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "CONNECTION_ERROR"
+        }
+      ]
+    },
+    {
+      "limit": 2,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 2,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 3,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "CONNECTION_ERROR"
+        }
+      ]
+    },
+    {
+      "limit": 3,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 3,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 3,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 2,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 3,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 2,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 3,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "CONNECTION_ERROR"
+        }
+      ]
+    },
+    {
+      "limit": 1,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "OTHER",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 1,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "OTHER",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 1,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "mac",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 1,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 1,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "other",
+          "access": 0,
+          "ban": 0,
+          "expected": "CONNECTION_ERROR"
+        }
+      ]
+    },
+    {
+      "limit": 1,
+      "both": true,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "X",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "O",
+          "id": 2,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "CONNECTION_ERROR"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "BOTH_FACTIONS"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 20,
+      "ignored": [
+        "MAC"
+      ],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 1,
+      "both": false,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "CONNECTION_ERROR"
+        }
+      ]
+    },
+    {
+      "limit": 1,
+      "both": false,
+      "minutes": 20,
+      "ignored": [
+        "MAC"
+      ],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 2,
+      "both": false,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "BOTH_FACTIONS"
+        }
+      ]
+    },
+    {
+      "limit": 2,
+      "both": false,
+      "minutes": 20,
+      "ignored": [
+        "MAC"
+      ],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "O",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "OTHER",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "BOTH_FACTIONS"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "OTHER",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "BOTH_FACTIONS"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "E",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "OTHER",
+          "mac": "OTHER",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 0,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "Q",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "blocked"
+        },
+        {
+          "op": "L",
+          "id": 1,
+          "expected": "-"
+        },
+        {
+          "op": "Q",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "clear"
+        },
+        {
+          "op": "T",
+          "elapsed": 0,
+          "expected": "-"
+        },
+        {
+          "op": "Q",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "clear"
+        },
+        {
+          "op": "T",
+          "elapsed": 1,
+          "expected": "-"
+        },
+        {
+          "op": "Q",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "clear"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 0,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "B",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "CgoKUGxlYXNlIGxvZyBvdXQgYWxsIEFzbW9kaWFuIGNoYXJhY3RlcnMgaW4geW91ciBob3VzZWhvbGQKCgoKCgoK:61"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 0,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "B",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 1,
+          "ban": 0,
+          "expected": "none"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 0,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "B",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "CgoKUGxlYXNlIGxvZyBvdXQgYWxsIEVseW9zIGNoYXJhY3RlcnMgaW4geW91ciBob3VzZWhvbGQKCgoKCgoK:61"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 0,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "B",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 1,
+          "ban": 0,
+          "expected": "none"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "Q",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "blocked"
+        },
+        {
+          "op": "L",
+          "id": 1,
+          "expected": "-"
+        },
+        {
+          "op": "Q",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "blocked"
+        },
+        {
+          "op": "T",
+          "elapsed": 1199999,
+          "expected": "-"
+        },
+        {
+          "op": "Q",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "blocked"
+        },
+        {
+          "op": "T",
+          "elapsed": 1,
+          "expected": "-"
+        },
+        {
+          "op": "Q",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "clear"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "B",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "CgoK7oCmIDIwIG1pbnV0ZSBjb29sZG93biBiZXR3ZWVuIHN3aXRjaGluZyBmYWN0aW9ucwoKCgoKCgo=:61"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "B",
+          "id": 99,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 1,
+          "ban": 0,
+          "expected": "none"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "B",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "CgoK7oCmIDIwIG1pbnV0ZSBjb29sZG93biBiZXR3ZWVuIHN3aXRjaGluZyBmYWN0aW9ucwoKCgoKCgo=:61"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "B",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 1,
+          "ban": 0,
+          "expected": "none"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "B",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "MAC",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 10,
+          "expected": "ZXhpc3RpbmcgcHVuaXNobWVudA==:10"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 20,
+      "ignored": [
+        "IGN"
+      ],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "IP",
+          "mac": "a",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "B",
+          "mac": "IGN",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "Q",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "IP",
+          "mac": "other",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "clear"
+        }
+      ]
+    },
+    {
+      "limit": 0,
+      "both": false,
+      "minutes": 20,
+      "ignored": [],
+      "steps": [
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "a",
+          "mac": "a",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "L",
+          "id": 1,
+          "expected": "-"
+        },
+        {
+          "op": "T",
+          "elapsed": 1,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "b",
+          "mac": "b",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "L",
+          "id": 1,
+          "expected": "-"
+        },
+        {
+          "op": "T",
+          "elapsed": 1,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "c",
+          "mac": "c",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "L",
+          "id": 1,
+          "expected": "-"
+        },
+        {
+          "op": "T",
+          "elapsed": 1,
+          "expected": "-"
+        },
+        {
+          "op": "E",
+          "id": 1,
+          "race": "ELYOS",
+          "ip": "d",
+          "mac": "d",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "allowed"
+        },
+        {
+          "op": "L",
+          "id": 1,
+          "expected": "-"
+        },
+        {
+          "op": "T",
+          "elapsed": 1,
+          "expected": "-"
+        },
+        {
+          "op": "Q",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "a",
+          "mac": "other",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "clear"
+        },
+        {
+          "op": "Q",
+          "id": 99,
+          "race": "ASMODIANS",
+          "ip": "b",
+          "mac": "other",
+          "hdd": "HDD",
+          "access": 0,
+          "ban": 0,
+          "expected": "blocked"
+        }
+      ]
+    }
+  ]
+}
