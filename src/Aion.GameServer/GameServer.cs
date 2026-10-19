@@ -72,7 +72,7 @@ public static class GameServer
         foreach (AionConnection client in staff)
         {
             if (client.GetState() == AionConnection.State.IN_GAME)
-                PacketSendUtility.SendPacket(client.GetActivePlayer(), new SM_QUIT_RESPONSE(true));
+                PacketSendUtility.SendPacket(client.GetActivePlayer(), SM_QUIT_RESPONSE.QuitToEditScreen());
             requestReconnect(client.GetAccount().GetId(), client);
         }
         return true;

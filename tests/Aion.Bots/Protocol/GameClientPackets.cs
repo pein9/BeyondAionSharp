@@ -327,6 +327,7 @@ public static partial class GameClientPackets
 	public static BotClientPacket Revive(byte reviveId) => Create<CM_REVIVE>(w => w.C(reviveId));
 	public static BotClientPacket DeleteCharacter(int playOk2, int characterObjectId) => Create<CM_DELETE_CHARACTER>(w => { w.D(playOk2); w.D(characterObjectId); });
 	public static BotClientPacket RestoreCharacter(int playOk2, int characterObjectId) => Create<CM_RESTORE_CHARACTER>(w => { w.D(playOk2); w.D(characterObjectId); });
+	public static BotClientPacket MayQuit() => Create<CM_MAY_QUIT>(_ => { });
 	public static BotClientPacket Quit(bool stayConnected) => Create<CM_QUIT>(w => w.C(stayConnected ? 1 : 0));
 	public static BotClientPacket FriendStatus(byte status) => Create<CM_FRIEND_STATUS>(w => w.C(status));
 	public static BotClientPacket ShowFriendList() => Empty<CM_SHOW_FRIENDLIST>();

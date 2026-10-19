@@ -20,7 +20,7 @@ public class AutoBan
         switch (PunishmentConfig.PUNISHMENT_TYPE)
         {
             case 1:
-                player.GetClientConnection().Close(new Aion.GameServer.Network.Aion.ServerPackets.SM_QUIT_RESPONSE());
+                player.GetClientConnection().Close(Aion.GameServer.Network.Aion.ServerPackets.SM_QUIT_RESPONSE.Quit());
                 break;
             case 2:
                 Aion.GameServer.Services.PunishmentService.BanChar(player.GetObjectId(), dayCount, reason);

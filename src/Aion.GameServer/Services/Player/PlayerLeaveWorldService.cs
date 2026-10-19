@@ -28,7 +28,7 @@ using LocationData = Aion.GameServer.Dataholders.PlayerInitialData.LocationData;
 
 namespace Aion.GameServer.Services.Players;
 
-/// <summary>Java parity: services/player/PlayerLeaveWorldService. Registers idempotent logout tasks against the last player action and drains them before shutdown saves. The full logout retains the port's SIM capture and companion cleanup.</summary>
+/// <summary>Java parity: services/player/PlayerLeaveWorldService. Registers idempotent ten-second lost-connection logout tasks and immediate explicit quits, and drains them before shutdown saves. The full logout retains the port's SIM capture and companion cleanup.</summary>
 public class PlayerLeaveWorldService
 {
     private static readonly ILogger log = AionLog.For(nameof(PlayerLeaveWorldService));
@@ -47,7 +47,7 @@ public class PlayerLeaveWorldService
     }
 
     /// <summary>
-    /// Leave ten seconds after the last movement/combat action, immediately if that interval has elapsed.
+    /// Leave ten seconds after a lost connection.
     /// Repeated registrations keep the existing task and deadline.
     /// </summary>
     public static void RegisterLeaveWorld(Player player)
@@ -57,10 +57,12 @@ public class PlayerLeaveWorldService
             capture(player, true);
             return;
         }
-        long lastActionTime = Math.Max(player.GetMoveController().GetLastMoveUpdate(), player.GetController().GetLastCombatTime());
-        long delay = Math.Max(0L, 10_000L - (SystemClock.CurrentMillis() - lastActionTime));
-        leaveWorldTaskByPlayer.GetOrAdd(player, value => new LeaveWorldTask(value)).ScheduleOrRun(delay);
+        leaveWorldTaskByPlayer.GetOrAdd(player, value => new LeaveWorldTask(value)).Schedule();
     }
+
+    /// <summary>Leave immediately, including when a lost-connection task is already pending.</summary>
+    public static void LeaveWorldNow(Player player) =>
+        leaveWorldTaskByPlayer.GetOrAdd(player, value => new LeaveWorldTask(value)).Run();
 
     public static bool IsLeavingWorld(int playerObjectId) => leaveWorldTaskByPlayer.Keys.Any(player => player.GetObjectId() == playerObjectId);
 
@@ -187,16 +189,13 @@ public class PlayerLeaveWorldService
         private ScheduledTask? future;
         private bool finished;
 
-        public void ScheduleOrRun(long delayMillis)
+        public void Schedule()
         {
             lock (this)
             {
                 if (finished || future != null)
                     return;
-                if (delayMillis <= 0)
-                    Run();
-                else
-                    future = ThreadPoolManager.GetInstance().Schedule(_ => { Run(); return ValueTask.CompletedTask; }, TimeSpan.FromMilliseconds(delayMillis));
+                future = ThreadPoolManager.GetInstance().Schedule(_ => { Run(); return ValueTask.CompletedTask; }, TimeSpan.FromSeconds(10));
             }
         }
 

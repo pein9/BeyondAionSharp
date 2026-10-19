@@ -38,10 +38,10 @@ public sealed partial class BotServerPacketDecoder
 	private static IReadOnlyDictionary<string, object?> DecodeQuitResponse(ReadOnlySpan<byte> body)
 	{
 		var r = new PacketBodyReader(body);
-		int mode = r.ReadInt32(); byte reserved = r.ReadByte(); int sentinel = r.ReadInt32();
-		if (mode is not (1 or 2) || reserved != 0 || sentinel != -1 || r.Remaining != 0)
+		int mode = r.ReadByte(); int value = r.ReadInt32(); int sentinel = r.ReadInt32();
+		if (mode is not (0 or 1 or 2) || sentinel != -1 || r.Remaining != 0)
 			throw new InvalidDataException("Invalid quit response.");
-		return Fields(("mode", mode), ("editMode", mode == 2));
+		return Fields(("mode", mode), ("value", value), ("editMode", mode == 2));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeTitleInfo(ReadOnlySpan<byte> body)

@@ -195,7 +195,7 @@ public sealed class GoldenPacketFixtureTests
 	{
 		"SM_ATTACK_STATUS" => ReconstructAttackStatus(inputs),
 		"SM_ITEM_USAGE_ANIMATION" => ReconstructItemUsageAnimation(inputs),
-		"SM_QUIT_RESPONSE" => new SM_QUIT_RESPONSE(inputs.GetProperty("editMode").GetBoolean()),
+		"SM_QUIT_RESPONSE" => inputs.GetProperty("editMode").GetBoolean() ? SM_QUIT_RESPONSE.QuitToEditScreen() : SM_QUIT_RESPONSE.Quit(),
 		"SM_DELETE_WAREHOUSE_ITEM" => new SM_DELETE_WAREHOUSE_ITEM(inputs.GetProperty("warehouseType").GetInt32(), inputs.GetProperty("itemObjectId").GetInt32(), ResolveItemDeleteType(inputs.GetProperty("deleteType").GetInt32())),
 		"SM_BLOCK_RESPONSE" => new SM_BLOCK_RESPONSE(inputs.GetProperty("code").GetInt32(), inputs.GetProperty("playerName").GetString()!),
 		"SM_FRIEND_RESPONSE" => new SM_FRIEND_RESPONSE(inputs.GetProperty("playerName").GetString()!, inputs.GetProperty("code").GetInt32()),

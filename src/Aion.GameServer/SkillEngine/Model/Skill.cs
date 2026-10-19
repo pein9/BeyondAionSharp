@@ -741,7 +741,10 @@ public class Skill
             StartPenaltySkill();
 
         if (IsHostile() && effector is Player hostileCaster)
+        {
             hostileCaster.GetController().EnterCombat(true);
+            hostileCaster.BlockQuitting();
+        }
 
         bool isItemSkill = skillMethod == SkillMethod.ITEM;
         bool sentCastSpellResultPacket = false;
@@ -827,6 +830,8 @@ public class Skill
         // Apply effects to effected objects
         foreach (Effect effect in effects)
             effect.ApplyEffect();
+        if (IsHostile() && effector is Player hostilePlayer)
+            hostilePlayer.BlockQuitting();
 
         if (IsHostile())
         {

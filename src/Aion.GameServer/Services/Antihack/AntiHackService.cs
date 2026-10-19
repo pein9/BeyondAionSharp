@@ -150,10 +150,10 @@ public class AntiHackService
             case 2:
                 MoveBack(player, normalMovePacket);
                 if (player.speedHackCounter > SecurityConfig.SPEEDHACK_COUNTER * 3 || player.abnormalHackCounter > SecurityConfig.ABNORMAL_COUNTER * 3)
-                    player.GetClientConnection().Close(new SM_QUIT_RESPONSE());
+                    player.GetClientConnection().Close(SM_QUIT_RESPONSE.Quit());
                 return false;
             case 3:
-                player.GetClientConnection().Close(new SM_QUIT_RESPONSE());
+                player.GetClientConnection().Close(SM_QUIT_RESPONSE.Quit());
                 return false;
             default:
                 return true;
@@ -182,7 +182,7 @@ public class AntiHackService
             if (size != legitSize)
             {
                 log.LogWarning("Detected modified aion.bin for account ID {ConGetAccountGetId}", con.GetAccount().GetId());
-                con.Close(new SM_QUIT_RESPONSE());
+                con.Close(SM_QUIT_RESPONSE.Quit());
             }
         }
         // con.sendPacket(new SM_GAMEGUARD(size)); // not sent on GF servers currently

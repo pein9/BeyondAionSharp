@@ -927,6 +927,11 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		quitExpected = true;
 		try
 		{
+			if (!editing)
+			{
+				await SendGameAsync(api.MayQuit(), token);
+				await Task.Delay(TimeSpan.FromSeconds(11), token);
+			}
 			await SendGameAsync(api.Quit(stayConnected: true), token);
 			var response = await WaitForGamePacketAsync(typeof(SM_QUIT_RESPONSE), token);
 			if (response.Get<int>("mode") != (editing ? 2 : 1)) throw new InvalidDataException("Unexpected quit destination.");
@@ -1244,8 +1249,11 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 	{
 		quitExpected = true;
 		await CloseChatAsync();
+		await SendGameAsync(api.MayQuit(), cancellationToken);
+		await Task.Delay(TimeSpan.FromSeconds(11), cancellationToken);
 		await SendGameAsync(api.Quit(stayConnected: false), cancellationToken);
-		await WaitForGamePacketAsync(typeof(SM_QUIT_RESPONSE), cancellationToken);
+		var response = await WaitForGamePacketAsync(typeof(SM_QUIT_RESPONSE), cancellationToken);
+		if (response.Get<int>("mode") != 1) throw new InvalidDataException("Server refused quit: " + response.Get<int>("value"));
 		lastQuitAt = DateTimeOffset.UtcNow;
 		await CloseConnectionAsync(cancellationToken);
 		quitExpected = false;

@@ -54,17 +54,18 @@ public sealed class SocketlessAionConnectionTests
 			captured.SetClientConnection(null!);
 			connection.SetActivePlayer(null!);
 		});
-		connection.SendPacket(new SM_QUIT_RESPONSE());
+		connection.SendPacket(SM_QUIT_RESPONSE.Quit());
 		var packet = new CM_QUIT(3, new HashSet<AionConnection.State> { AionConnection.State.IN_GAME });
 		packet.SetConnection(connection);
 		packet.SetBuffer(ByteBuffer.Wrap([0]));
 		Assert.True(packet.Read());
 
+		player.SetQuitCountdownStartMillis(SystemClock.CurrentMillis() - 11_000);
 		packet.Run();
 
 		var call = Assert.Single(calls);
 		Assert.Same(player, call.Player);
-		Assert.True(call.Delayed);
+		Assert.False(call.Delayed);
 		Assert.True(connection.IsClosed());
 		Assert.False(connection.IsConnected());
 		Assert.Equal(Environment.CurrentManagedThreadId, connection.DisconnectThreadId);

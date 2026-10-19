@@ -215,6 +215,7 @@ public class PlayerReviveService
 
     public static void Revive(Player player, int hpPercent, int mpPercent, bool setSoulSickness, int resurrectionSkill)
     {
+        player.UnblockQuitting();
         player.GetKnownList().ForEachPlayer(p =>
         {
             if (player.Equals(p.GetTarget()))

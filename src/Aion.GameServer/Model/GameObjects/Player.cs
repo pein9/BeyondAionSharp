@@ -116,6 +116,8 @@ public partial class Player : Creature
 
     private long prisonEndTimeMillis = 0;
     private long gatherRestrictionMillis;
+    private long quitCountdownStartMillis;
+    private long quitBlockedUntilMillis;
     private string captchaWord;
     private byte[] captchaImage;
 
@@ -315,6 +317,15 @@ public partial class Player : Creature
             gatherRestrictionMillis = durationSeconds = 0;
         return durationSeconds;
     }
+
+    /// <summary>When the client started its quit countdown; zero if never started.</summary>
+    public long GetQuitCountdownStartMillis() => quitCountdownStartMillis;
+    public void SetQuitCountdownStartMillis(long millis) => quitCountdownStartMillis = millis;
+
+    /// <summary>Prevent quitting for ten seconds after fighting or starting to craft.</summary>
+    public void BlockQuitting() => quitBlockedUntilMillis = SystemClock.CurrentMillis() + 10_000L;
+    public void UnblockQuitting() => quitBlockedUntilMillis = 0;
+    public long GetMillisUntilQuittingAllowed() => Math.Max(0L, quitBlockedUntilMillis - SystemClock.CurrentMillis());
 
     public string GetCaptchaWord()
     {

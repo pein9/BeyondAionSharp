@@ -152,6 +152,7 @@ public class TeleportService
     private static void SendLoc(Player player, int worldId, int instanceId, float x, float y, float z, byte h, Aion.GameServer.Model.Animations.TeleportAnimation animation)
     {
         AbortPlayerActions(player);
+        player.UnblockQuitting();
         // despawn from world and send animation to others (also ends flying)
         World.World.GetInstance().Despawn(player, animation.GetDefaultObjectDeleteAnimation());
 

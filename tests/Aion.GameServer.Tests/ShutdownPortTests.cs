@@ -21,7 +21,7 @@ namespace Aion.GameServer.Tests;
 public sealed class ShutdownPortTests
 {
     [Fact]
-    public void LogoutWaitsTenSecondsAfterTheLaterOfMovementAndCombatAndGatesReentryUntilSaved()
+    public void LostConnectionWaitsTenSecondsAndGatesReentryUntilSaved()
     {
         using var harness = BossAiHarness.For().WithAi(typeof(AggressiveNpcAI)).Build();
         var player = harness.SpawnPlayer();
@@ -62,7 +62,7 @@ public sealed class ShutdownPortTests
     }
 
     [Fact]
-    public void AnIdlePlayerLeavesSynchronouslyAndRemainsGatedDuringTheSave()
+    public void AnIdleLostConnectionStillWaitsTenSecondsAndRemainsGatedDuringTheSave()
     {
         using var harness = BossAiHarness.For().WithAi(typeof(AggressiveNpcAI)).Build();
         var player = harness.SpawnPlayer();
@@ -79,6 +79,10 @@ public sealed class ShutdownPortTests
             saves++;
         }, captureRegistration: false);
         PlayerLeaveWorldService.RegisterLeaveWorld(player);
+        Assert.Equal(0, saves);
+        harness.Clock.Advance(TimeSpan.FromMilliseconds(9_999));
+        Assert.Equal(0, saves);
+        harness.Clock.Advance(TimeSpan.FromMilliseconds(1));
         Assert.Equal(1, saves);
         Assert.False(PlayerLeaveWorldService.IsLeavingWorld(player));
     }
@@ -154,7 +158,7 @@ public sealed class ShutdownPortTests
     }
 
     [Fact]
-    public void QuitRegistersBeforeClosingAndDisconnectDoesNotResetAnAlreadyLeavingPlayersPosition()
+    public void QuitSavesImmediatelyBeforeClosingAndDisconnectDoesNotResetTheSavedPlayersPosition()
     {
         using var harness = BossAiHarness.For().WithAi(typeof(AggressiveNpcAI)).Build();
         var player = harness.SpawnPlayer();
@@ -165,12 +169,13 @@ public sealed class ShutdownPortTests
         quit.SetConnection(connection);
         quit.SetBuffer(ByteBuffer.Wrap([0]));
         Assert.True(quit.Read());
+        player.SetQuitCountdownStartMillis(SystemClock.CurrentMillis() - 11_000);
         quit.Run();
         Assert.True(connection.IsClosed());
         Assert.Equal(0, connection.PositionResets);
         Assert.IsType<SM_QUIT_RESPONSE>(Assert.Single(connection.Sent));
-        Assert.True(PlayerLeaveWorldService.IsLeavingWorld(player));
-        Assert.Empty(saved);
+        Assert.False(PlayerLeaveWorldService.IsLeavingWorld(player));
+        Assert.Single(saved);
         PlayerLeaveWorldService.ProcessPendingLeaveWorldTasks();
         Assert.Single(saved);
     }
@@ -228,7 +233,7 @@ public sealed class ShutdownPortTests
         Assert.True(GameServer.ForceStaffClientsToServerSelectionScreen(new[] { inGame, selecting, regular }, (_, client) => reconnects.Add(client)));
         Assert.Equal(new AionConnection[] { inGame, selecting }, reconnects);
         var quit = Assert.IsType<SM_QUIT_RESPONSE>(Assert.Single(inGame.Sent));
-        Assert.True((bool)typeof(SM_QUIT_RESPONSE).GetField("edit_mode", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(quit)!);
+        Assert.Equal(2, (int)typeof(SM_QUIT_RESPONSE).GetField("result", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(quit)!);
         Assert.Empty(selecting.Sent);
         Assert.Empty(regular.Sent);
         Assert.False(GameServer.ForceStaffClientsToServerSelectionScreen(new[] { regular }, (_, _) => throw new Exception("Not staff")));

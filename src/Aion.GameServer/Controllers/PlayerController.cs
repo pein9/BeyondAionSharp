@@ -442,6 +442,7 @@ public class PlayerController : CreatureController<Player>
         }
 
         EnterCombat(false);
+        GetOwner().BlockQuitting();
     }
 
     public void UseSkill(SkillTemplate template, int targetType, float x, float y, float z, int clientHitTime, int skillLevel)

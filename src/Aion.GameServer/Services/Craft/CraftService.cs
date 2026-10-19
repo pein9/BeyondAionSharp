@@ -125,6 +125,7 @@ public class CraftService
             int interval = 2500 - (skillLvlDiff * 60);
             craftingTask.SetInterval(Math.Max(interval, intervalCap));
         }
+        player.BlockQuitting();
         craftingTask.Start();
     }
 

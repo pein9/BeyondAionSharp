@@ -298,6 +298,11 @@ public abstract class CreatureController : VisibleObjectController
             return;
         }
 
+        if (GetOwner() is Player attackingPlayer)
+            attackingPlayer.BlockQuitting();
+        if (target is Player targetPlayer)
+            targetPlayer.BlockQuitting();
+
         // Calculate and apply damage
         Aion.GameServer.Model.Animations.AttackHandAnimation attackHandAnimation = Aion.GameServer.Model.Animations.AttackHandAnimation.MAIN_HAND;
         Aion.GameServer.Model.Animations.AttackTypeAnimation attackTypeAnimation = Aion.GameServer.Model.Animations.AttackTypeAnimation.MELEE;

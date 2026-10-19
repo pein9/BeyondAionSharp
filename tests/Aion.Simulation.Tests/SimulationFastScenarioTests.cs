@@ -1047,6 +1047,11 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 
 		public async Task ReturnToSelectionAsync(bool editing, CancellationToken token)
 		{
+			if (!editing)
+			{
+				await SendAsync(api.MayQuit(), token);
+				await AdvanceAsync(TimeSpan.FromSeconds(11), token);
+			}
 			await SendAsync(api.Quit(stayConnected: true), token);
 			var response = await WaitForAsync(typeof(SM_QUIT_RESPONSE), token);
 			if (response.Get<int>("mode") != (editing ? 2 : 1)) throw new InvalidDataException("Unexpected quit destination.");
@@ -1286,8 +1291,11 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 
 		public async Task QuitAsync(CancellationToken cancellationToken)
 		{
+			await SendAsync(api.MayQuit(), cancellationToken);
+			await AdvanceAsync(TimeSpan.FromSeconds(11), cancellationToken);
 			await SendAsync(api.Quit(stayConnected: false), cancellationToken);
-			await WaitForAsync(typeof(SM_QUIT_RESPONSE), cancellationToken);
+			var response = await WaitForAsync(typeof(SM_QUIT_RESPONSE), cancellationToken);
+			if (response.Get<int>("mode") != 1) throw new InvalidDataException("Server refused quit: " + response.Get<int>("value"));
 			await CloseAsync(cancellationToken);
 		}
 
