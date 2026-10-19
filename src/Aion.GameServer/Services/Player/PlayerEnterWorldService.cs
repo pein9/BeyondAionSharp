@@ -315,7 +315,6 @@ public sealed class PlayerEnterWorldService
         HousingBidService.GetInstance().OnPlayerLogin(player); // must ensure player mailbox is initialized first
         AtreianPassportService.GetInstance().OnLogin(player);
         PlayerService.SendMacroList(player);
-        client.SendPacket(new SM_RECIPE_LIST(player.GetRecipeList().GetRecipeList()));
         BrokerService.GetInstance().OnPlayerLogin(player);
         HousingService.GetInstance().OnPlayerLogin(player); // must ensure player mailbox is initialized first
         // ----------------------------- Retail sequence -----------------------------

@@ -67,6 +67,8 @@ public static class ChatUtil
 		return $"[item_ex:{itemId}]";
 	}
 
+	public static string Recipe(int recipeId, Aion.GameServer.Model.GameObjects.Players.Player player) => $"[recipe_ex:{recipeId};{player.GetName()}]";
+
 	// Java parity: utils/ChatUtil.recipe(int).
 	public static string Recipe(int recipeId)
 	{

@@ -1061,6 +1061,8 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			currentPosition = new BotPosition(
 				spawn.Get<float>("x"), spawn.Get<float>("y"), spawn.Get<float>("z"), spawn.Get<byte>("heading"));
 			await WaitForAsync(typeof(SM_PLAYER_INFO), cancellationToken);
+			await SendAsync(api.RequestRecipes(), cancellationToken);
+			await WaitForAsync(typeof(SM_RECIPE_LIST), cancellationToken);
 		}
 
 		public async Task<int> WaitForNpcAsync(int templateId, CancellationToken cancellationToken)

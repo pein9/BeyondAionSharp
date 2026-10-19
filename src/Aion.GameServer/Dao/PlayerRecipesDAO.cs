@@ -1,97 +1,44 @@
-using System.Collections.Generic;
 using MySqlConnector;
 using Aion.Commons.Database;
+using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects.Players;
 
 namespace Aion.GameServer.Dao;
 
-/// <summary>
-/// Java parity: dao/PlayerRecipesDAO (@author lord_rex). JDBC DAO over player_recipes via the commons DB callback helper.
-/// Anonymous ParamReadStH/IUStH -> private nested classes capturing locals via ctor. setInt->Parameters.Add; execute()->ExecuteNonQuery;
-/// rs.next()/getInt->Read()/GetInt32(GetOrdinal). RecipeList(HashSet&lt;int&gt;). SQL verbatim.
-/// </summary>
+/// <summary>Player recipes and persisted remaining productions, through the native DB callbacks.</summary>
 public class PlayerRecipesDAO
 {
-    private const string SELECT_QUERY = "SELECT `recipe_id` FROM player_recipes WHERE `player_id`=?";
-    private const string ADD_QUERY = "INSERT INTO player_recipes (`player_id`, `recipe_id`) VALUES (?, ?)";
+    private const string SELECT_QUERY = "SELECT `recipe_id`, `production_limit` FROM player_recipes WHERE `player_id`=?";
+    private const string ADD_QUERY = "INSERT INTO player_recipes (`player_id`, `recipe_id`, `production_limit`) VALUES (?, ?, ?)";
+    private const string UPDATE_QUERY = "UPDATE player_recipes SET `production_limit`=? WHERE `player_id`=? AND `recipe_id`=?";
     private const string DELETE_QUERY = "DELETE FROM player_recipes WHERE `player_id`=? AND `recipe_id`=?";
 
     public static RecipeList Load(int playerId)
     {
-        HashSet<int> recipeList = new HashSet<int>();
-        DB.Select(SELECT_QUERY, new LoadHandler(playerId, recipeList));
-        return new RecipeList(recipeList);
+        var list = new RecipeList(); DB.Select(SELECT_QUERY, new LoadHandler(playerId, list)); return list;
     }
-
-    private sealed class LoadHandler : ParamReadStH
+    private sealed class LoadHandler(int playerId, RecipeList list) : ParamReadStH
     {
-        private readonly int playerId;
-        private readonly HashSet<int> recipeList;
-
-        internal LoadHandler(int playerId, HashSet<int> recipeList)
-        {
-            this.playerId = playerId;
-            this.recipeList = recipeList;
-        }
-
-        public void SetParams(MySqlCommand ps)
-        {
-            ps.Parameters.Add(new MySqlParameter { Value = playerId });
-        }
-
+        public void SetParams(MySqlCommand ps) => ps.Parameters.Add(new MySqlParameter {Value = playerId});
         public void HandleRead(MySqlDataReader rs)
         {
             while (rs.Read())
             {
-                recipeList.Add(rs.GetInt32(rs.GetOrdinal("recipe_id")));
+                int id = rs.GetInt32(rs.GetOrdinal("recipe_id"));
+                int count = rs.GetInt32(rs.GetOrdinal("production_limit"));
+                if (count == 0) count = DataManager.RECIPE_DATA.GetMaxProductionCount(id);
+                list.AddRecipe(id, count);
             }
         }
     }
-
-    public static bool AddRecipe(int playerId, int recipeId)
+    public static bool AddRecipe(int playerId, int recipeId, int productionLimit) => DB.InsertUpdate(ADD_QUERY, new WriteHandler(playerId, recipeId, productionLimit));
+    public static bool UpdateProductionLimit(int playerId, int recipeId, int productionLimit) => DB.InsertUpdate(UPDATE_QUERY, new WriteHandler(productionLimit, playerId, recipeId));
+    public static bool DelRecipe(int playerId, int recipeId) => DB.InsertUpdate(DELETE_QUERY, new WriteHandler(playerId, recipeId));
+    private sealed class WriteHandler(params int[] values) : IUStH
     {
-        return DB.InsertUpdate(ADD_QUERY, new AddRecipeHandler(playerId, recipeId));
-    }
-
-    private sealed class AddRecipeHandler : IUStH
-    {
-        private readonly int playerId;
-        private readonly int recipeId;
-
-        internal AddRecipeHandler(int playerId, int recipeId)
-        {
-            this.playerId = playerId;
-            this.recipeId = recipeId;
-        }
-
         public void HandleInsertUpdate(MySqlCommand ps)
         {
-            ps.Parameters.Add(new MySqlParameter { Value = playerId });
-            ps.Parameters.Add(new MySqlParameter { Value = recipeId });
-            ps.ExecuteNonQuery();
-        }
-    }
-
-    public static bool DelRecipe(int playerId, int recipeId)
-    {
-        return DB.InsertUpdate(DELETE_QUERY, new DelRecipeHandler(playerId, recipeId));
-    }
-
-    private sealed class DelRecipeHandler : IUStH
-    {
-        private readonly int playerId;
-        private readonly int recipeId;
-
-        internal DelRecipeHandler(int playerId, int recipeId)
-        {
-            this.playerId = playerId;
-            this.recipeId = recipeId;
-        }
-
-        public void HandleInsertUpdate(MySqlCommand ps)
-        {
-            ps.Parameters.Add(new MySqlParameter { Value = playerId });
-            ps.Parameters.Add(new MySqlParameter { Value = recipeId });
+            foreach (int value in values) ps.Parameters.Add(new MySqlParameter {Value = value});
             ps.ExecuteNonQuery();
         }
     }

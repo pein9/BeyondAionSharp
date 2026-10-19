@@ -104,8 +104,8 @@ public sealed partial class SimulationFastScenarioTests
 			Assert.False(player.GetResponseRequester().Respond(CookingLearnScenario.QuestionCode, 0));
 			Assert.Equal(1, player.GetSkillList().GetSkillLevel(CookingLearnScenario.SkillId));
 			Assert.Equal(Api.World.Kinah, player.GetInventory().GetKinah());
-			Assert.Equal(Api.World.Recipes.Order(), player.GetRecipeList().GetRecipeList().Order());
-			Assert.Equal(Api.World.Recipes.Order(), PlayerRecipesDAO.Load(player.GetObjectId()).GetRecipeList().Order());
+			Assert.Equal(Api.World.Recipes.Order(), player.GetRecipeList().GetRecipes().Keys.Order());
+			Assert.Equal(Api.World.Recipes.Order(), PlayerRecipesDAO.Load(player.GetObjectId()).GetRecipes().Keys.Order());
 			return Task.CompletedTask;
 		}
 		public Task PrepareWorkOrderAsync(CookingWorkOrder order, CancellationToken token)
@@ -138,7 +138,7 @@ public sealed partial class SimulationFastScenarioTests
 		{
 			Assert.Null(player.GetInteractionTask());
 			Assert.Equal(QuestStatus.COMPLETE, player.GetQuestStateList().GetQuestState(order.QuestId).GetStatus());
-			Assert.Equal(Api.World.Recipes.Order(), PlayerRecipesDAO.Load(player.GetObjectId()).GetRecipeList().Order());
+			Assert.Equal(Api.World.Recipes.Order(), PlayerRecipesDAO.Load(player.GetObjectId()).GetRecipes().Keys.Order());
 			var actual = player.GetInventory().GetItemsWithKinah().Concat(player.GetEquipment().GetEquippedItems())
 				.GroupBy(item => item.GetItemId()).ToDictionary(group => group.Key, group => group.Sum(item => item.GetItemCount()));
 			var observed = Api.World.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count));

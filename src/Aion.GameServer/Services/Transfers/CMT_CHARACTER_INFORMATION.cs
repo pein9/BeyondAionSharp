@@ -378,9 +378,10 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
         for (int a = 0; a < cnt; a++)
         { // recipes
             int recipeId = ReadD();
+            int productionLimit = ReadUC();
 
             if (PlayerTransferConfig.ALLOW_RECIPES)
-                player.GetRecipeList().AddRecipe(player, recipeId);
+                player.GetRecipeList().AddRecipe(player, recipeId, productionLimit);
         }
 
         // read quest data

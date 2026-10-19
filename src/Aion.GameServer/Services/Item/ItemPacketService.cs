@@ -31,6 +31,7 @@ public class ItemPacketService
         INC_KINAH_SELL,
         INC_PLAYER_EXCHANGE_GET_BACK,
         PUT_TO_EXCHANGE,
+        INC_ITEM_CRAFT,
         INC_KINAH_QUEST,
         DEC_KINAH_LEARN, // craft skill learn
         DEC_KINAH_FLY, // teleport or fly
@@ -238,6 +239,7 @@ public static class ItemUpdateTypeExtensions
         ItemPacketService.ItemUpdateType.INC_KINAH_SELL => 0x20,
         ItemPacketService.ItemUpdateType.INC_PLAYER_EXCHANGE_GET_BACK => 0x23,
         ItemPacketService.ItemUpdateType.PUT_TO_EXCHANGE => 0x25,
+        ItemPacketService.ItemUpdateType.INC_ITEM_CRAFT => 0x2D,
         ItemPacketService.ItemUpdateType.INC_KINAH_QUEST => 0x32,
         ItemPacketService.ItemUpdateType.DEC_KINAH_LEARN => 0x49,
         ItemPacketService.ItemUpdateType.DEC_KINAH_FLY => 0x4B,

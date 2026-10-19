@@ -307,10 +307,11 @@ public sealed class SM_PTRANSFER_CONTROL : LoginServerPacket
             case RECIPE_INFORMATION:
                 buffer.WriteD(_taskId);
                 RecipeList rec = _player!.GetRecipeList();
-                buffer.WriteD(rec.GetRecipeList().Count);
-                foreach (int id in rec.GetRecipeList())
+                buffer.WriteD(rec.Size());
+                foreach (var recipe in rec.GetRecipes())
                 {
-                    buffer.WriteD(id);
+                    buffer.WriteD(recipe.Key);
+                    buffer.WriteC(recipe.Value);
                 }
                 break;
             case QUEST_INFORMATION:

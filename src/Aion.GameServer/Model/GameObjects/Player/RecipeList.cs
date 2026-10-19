@@ -1,55 +1,84 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using Aion.GameServer.Dao;
+using Aion.GameServer.Dataholders;
+using Aion.GameServer.Network.Aion.ServerPackets;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Model.GameObjects.Players;
 
 /// <summary>Java parity: model/gameobjects/player/RecipeList.</summary>
 public class RecipeList
 {
-    private ISet<int> recipeList = new HashSet<int>();
+    // Recipe id -> remaining productions. Zero means unlimited.
+    private readonly Dictionary<int, int> productionLimitByRecipeId = new();
 
-    public RecipeList(HashSet<int> recipeList)
+    public IReadOnlyDictionary<int, int> GetRecipes()
     {
-        this.recipeList = recipeList;
+        lock (this) return new ReadOnlyDictionary<int, int>(new Dictionary<int, int>(productionLimitByRecipeId));
     }
 
-    public RecipeList()
-    {
-    }
+    public bool AddRecipe(Player player, int recipeId) => AddRecipe(player, recipeId, DataManager.RECIPE_DATA.GetMaxProductionCount(recipeId));
+    public bool AddRecipe(int recipeId, int productionLimit) => AddRecipe(null, recipeId, productionLimit);
 
-    public ISet<int> GetRecipeList()
+    public bool AddRecipe(Player? player, int recipeId, int productionLimit)
     {
-        return recipeList;
-    }
-
-    public bool AddRecipe(Player player, int recipeId)
-    {
-        if (!IsRecipePresent(recipeId) && Aion.GameServer.Dao.PlayerRecipesDAO.AddRecipe(player.GetObjectId(), recipeId))
+        lock (this)
         {
-            recipeList.Add(recipeId);
-            Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_LEARN_RECIPE(recipeId));
+            if (!productionLimitByRecipeId.TryAdd(recipeId, productionLimit)) return false;
+            if (player != null)
+            {
+                if (!PlayerRecipesDAO.AddRecipe(player.GetObjectId(), recipeId, productionLimit))
+                {
+                    productionLimitByRecipeId.Remove(recipeId); return false;
+                }
+                PacketSendUtility.SendPacket(player, new SM_LEARN_RECIPE(recipeId, productionLimit));
+            }
             return true;
         }
-        return false;
     }
 
     public bool DeleteRecipe(Player player, int recipeId)
     {
-        if (recipeList.Contains(recipeId) && Aion.GameServer.Dao.PlayerRecipesDAO.DelRecipe(player.GetObjectId(), recipeId))
+        lock (this)
         {
-            recipeList.Remove(recipeId);
-            Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_RECIPE_DELETE(recipeId));
-            return true;
+            if (productionLimitByRecipeId.ContainsKey(recipeId) && PlayerRecipesDAO.DelRecipe(player.GetObjectId(), recipeId))
+            {
+                productionLimitByRecipeId.Remove(recipeId);
+                PacketSendUtility.SendPacket(player, new SM_RECIPE_DELETE(recipeId)); return true;
+            }
+            return false;
         }
-        return false;
+    }
+
+    public void DecreaseProductionLimit(Player player, int recipeId)
+    {
+        lock (this)
+        {
+            if (!productionLimitByRecipeId.TryGetValue(recipeId, out int count) || count == 0) return;
+            count = unchecked(count - 1);
+            if (count > 0)
+            {
+                productionLimitByRecipeId[recipeId] = count;
+                PlayerRecipesDAO.UpdateProductionLimit(player.GetObjectId(), recipeId, count);
+            }
+            else
+            {
+                productionLimitByRecipeId.Remove(recipeId);
+                PlayerRecipesDAO.DelRecipe(player.GetObjectId(), recipeId);
+                PacketSendUtility.SendPacket(player, new SM_RECIPE_DELETE(recipeId));
+                PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_COMBINE_USAGE_OVER(ChatUtil.Recipe(recipeId, player)));
+            }
+        }
     }
 
     public bool IsRecipePresent(int recipeId)
     {
-        return recipeList.Contains(recipeId);
+        lock (this) return productionLimitByRecipeId.ContainsKey(recipeId);
     }
 
     public int Size()
     {
-        return this.recipeList.Count;
+        lock (this) return productionLimitByRecipeId.Count;
     }
 }

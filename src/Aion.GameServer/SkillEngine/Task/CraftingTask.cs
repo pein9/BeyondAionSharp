@@ -21,6 +21,8 @@ namespace Aion.GameServer.SkillEngine.Task;
 /// </summary>
 public class CraftingTask : AbstractCraftTask
 {
+    private const int MORPH_BAR_DELAY = 3000;
+    private readonly bool isMorph;
     private readonly RecipeTemplate recipeTemplate;
     private readonly int maxCritCount;
     private readonly int bonus;
@@ -36,6 +38,12 @@ public class CraftingTask : AbstractCraftTask
         this.maxCritCount = recipeTemplate.GetComboProductSize();
         this.bonus = bonus;
         this.itemTemplate = DataManager.ITEM_DATA.GetItemTemplate(recipeTemplate.GetProductId());
+        isMorph = recipeTemplate.IsMorph();
+        if (isMorph)
+        {
+            showBarDelay = MORPH_BAR_DELAY;
+            delay = interval = MORPH_BAR_DELAY;
+        }
     }
 
     protected override void OnFailureFinish()
@@ -47,16 +55,16 @@ public class CraftingTask : AbstractCraftTask
 
     protected override bool OnSuccessFinish()
     {
-        if (CalculateCrit())
+        if (!isMorph && CalculateCrit())
         {
             OnInteractionStart();
             return false;
         }
         else
         {
-            PacketSendUtility.SendPacket(requester,
-                new SM_CRAFT_UPDATE(recipeTemplate.GetSkillId(), itemTemplate, currentSuccessValue, currentFailureValue, 5, 0, 0));
             PacketSendUtility.BroadcastPacket(requester, new SM_CRAFT_ANIMATION(requester.GetObjectId(), responder.GetObjectId(), 0, 2), true);
+            PacketSendUtility.SendPacket(requester,
+                new SM_CRAFT_UPDATE(recipeTemplate.GetSkillId(), itemTemplate, currentSuccessValue, currentFailureValue, 5, 0, isMorph ? showBarDelay : 0));
             CraftService.FinishCrafting(requester, recipeTemplate, critCount, bonus);
             return true;
         }
@@ -116,22 +124,18 @@ public class CraftingTask : AbstractCraftTask
         currentFailureValue = 0;
 
         PacketSendUtility.SendPacket(requester,
-            new SM_CRAFT_UPDATE(recipeTemplate.GetSkillId(), itemTemplate, fullBarValue, fullBarValue, critCount == 0 ? 0 : 3, 0, 0));
-        PacketSendUtility.SendPacket(requester, new SM_CRAFT_UPDATE(recipeTemplate.GetSkillId(), itemTemplate, 0, 0, 1, 0, 0));
+            new SM_CRAFT_UPDATE(recipeTemplate.GetSkillId(), itemTemplate, fullBarValue, fullBarValue, critCount == 0 ? 0 : 3, 0, isMorph ? showBarDelay : 0));
+        PacketSendUtility.SendPacket(requester, new SM_CRAFT_UPDATE(recipeTemplate.GetSkillId(), itemTemplate, 0, 0, 1, 0, isMorph ? showBarDelay : 0));
         PacketSendUtility.BroadcastPacket(requester,
             new SM_CRAFT_ANIMATION(requester.GetObjectId(), responder.GetObjectId(), recipeTemplate.GetSkillId(), 0), true);
         PacketSendUtility.BroadcastPacket(requester,
             new SM_CRAFT_ANIMATION(requester.GetObjectId(), responder.GetObjectId(), recipeTemplate.GetSkillId(), 1), true);
+        if (isMorph) currentSuccessValue = fullBarValue;
     }
 
     protected override void AnalyzeInteraction()
     {
-        if (recipeTemplate.GetSkillId() == 40009)
-        { // morph
-            currentSuccessValue = fullBarValue;
-            return;
-        }
-        else if (skillLvlDiff < 0)
+        if (skillLvlDiff < 0)
         {
             currentFailureValue = fullBarValue;
             return;

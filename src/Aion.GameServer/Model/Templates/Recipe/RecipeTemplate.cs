@@ -9,6 +9,7 @@ namespace Aion.GameServer.Model.Templates.Recipe;
 [XmlType("RecipeTemplate")]
 public class RecipeTemplate : IL10n
 {
+    public bool IsMorph() => skillid == Aion.GameServer.Model.Skill.PlayerSkillEntry.MORPH_SKILL_ID;
     [XmlElement("components_data")] public List<ComponentsData> componentsData;
     [XmlElement("comboproduct")] public List<ComboProduct> comboproduct;
 

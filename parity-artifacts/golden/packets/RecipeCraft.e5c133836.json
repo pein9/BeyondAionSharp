@@ -1,0 +1,573 @@
+{
+  "source": "Java",
+  "sourceJavaCommit": "e5c133836804f97e86b9d026c2954ffdebd0609c",
+  "sourceHashes": {
+    "game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_CRAFT_UPDATE.java": "2127590d40d4889ad8fef0ed4d0d4e8ff7d865da8240cda4e7fff08152a39907",
+    "game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_LEARN_RECIPE.java": "10d3dbeda60a50705175c1c9343450e42a8ec00537fb1720a3e178571e937695",
+    "game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_RECIPE_LIST.java": "e734209e529306682272506ed6b92d70d4d7fad3c2076294aa33791cef2aecc5",
+    "game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_SKILL_REMOVE.java": "3a4b9459a79b8c73970df1fadbdaa12eef0ead08ba3c069ab2552df1d271b12e",
+    "game-server/src/com/aionemu/gameserver/model/skill/PlayerSkillEntry.java": "ac1ac4f9a7d5122c179a632b8b7e9b8632c70037b4db4d547da4fe054b8438cb",
+    "game-server/src/com/aionemu/gameserver/model/skill/SkillEntry.java": "4cc07e3f4489513b91d5648da0450e13c06542d91697294320cc3cb5f01780f6"
+  },
+  "captureBoundary": "Exact packet bodies and extracted skill/profession methods; only packages/imports removed, scalar ItemTemplate/skill fields and LE/UTF16 writer stubs",
+  "cases": [
+    {
+      "name": "craft-40001-0-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 0,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C009DC1EB0BE803000032000000B004000000000000804B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "craft-40001-0-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 0,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C009DC1EB0BE803000032000000B0040000B80B0000804B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "craft-40001-1-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 1,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C019DC1EB0BE803000032000000B004000000000000000000000000"
+    },
+    {
+      "name": "craft-40001-1-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 1,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C019DC1EB0BE803000032000000B0040000B80B0000000000000000"
+    },
+    {
+      "name": "craft-40001-2-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 2,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C029DC1EB0BE803000032000000B004000000000000000000000000"
+    },
+    {
+      "name": "craft-40001-2-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 2,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C029DC1EB0BE803000032000000B0040000B80B0000000000000000"
+    },
+    {
+      "name": "craft-40001-3-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 3,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C039DC1EB0BE803000032000000B004000000000000804B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "craft-40001-3-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 3,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C039DC1EB0BE803000032000000B0040000B80B0000804B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "craft-40001-4-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 4,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C049DC1EB0BE803000032000000B004000000000000834B14000000"
+    },
+    {
+      "name": "craft-40001-4-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 4,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C049DC1EB0BE803000032000000B0040000B80B0000834B14000000"
+    },
+    {
+      "name": "craft-40001-5-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 5,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C059DC1EB0BE803000032000000B004000000000000000000000000"
+    },
+    {
+      "name": "craft-40001-5-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 5,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C059DC1EB0BE803000032000000B0040000B80B0000000000000000"
+    },
+    {
+      "name": "craft-40001-6-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 6,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C069DC1EB0BE803000032000000B004000000000000824B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "craft-40001-6-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 6,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C069DC1EB0BE803000032000000B0040000B80B0000824B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "craft-40001-7-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 7,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C079DC1EB0BE803000032000000B004000000000000824B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "craft-40001-7-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40001,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 7,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "419C079DC1EB0BE803000032000000B0040000B80B0000824B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "craft-40009-0-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 0,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C009DC1EB0BE803000032000000B004000000000000804B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "craft-40009-0-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 0,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C009DC1EB0BE803000032000000B0040000B80B0000804B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "craft-40009-1-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 1,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C019DC1EB0BE803000032000000B004000000000000000000000000"
+    },
+    {
+      "name": "craft-40009-1-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 1,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C019DC1EB0BE803000032000000B0040000B80B0000000000000000"
+    },
+    {
+      "name": "craft-40009-2-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 2,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C029DC1EB0BE803000032000000B004000000000000000000000000"
+    },
+    {
+      "name": "craft-40009-2-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 2,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C029DC1EB0BE803000032000000B0040000B80B0000000000000000"
+    },
+    {
+      "name": "craft-40009-3-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 3,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C039DC1EB0BE803000032000000B004000000000000804B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "craft-40009-3-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 3,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C039DC1EB0BE803000032000000B0040000B80B0000804B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "craft-40009-4-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 4,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C049DC1EB0BE803000032000000B004000000000000834B14000000"
+    },
+    {
+      "name": "craft-40009-4-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 4,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C049DC1EB0BE803000032000000B0040000B80B0000834B14000000"
+    },
+    {
+      "name": "craft-40009-5-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 5,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C059DC1EB0BE803000032000000B004000000000000000000000000"
+    },
+    {
+      "name": "craft-40009-5-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 5,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C059DC1EB0BE803000032000000B0040000B80B0000000000000000"
+    },
+    {
+      "name": "craft-40009-6-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 6,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C069DC1EB0BE803000032000000B004000000000000824B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "craft-40009-6-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 6,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C069DC1EB0BE803000032000000B0040000B80B0000824B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "craft-40009-7-0",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 7,
+        "executionSpeed": 1200,
+        "delay": 0,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C079DC1EB0BE803000032000000B004000000000000824B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "craft-40009-7-3000",
+      "kind": "craft",
+      "inputs": {
+        "skillId": 40009,
+        "itemId": 199999901,
+        "success": 1000,
+        "failure": 50,
+        "action": 7,
+        "executionSpeed": 1200,
+        "delay": 3000,
+        "l10n": "Product"
+      },
+      "payloadHex": "499C079DC1EB0BE803000032000000B0040000B80B0000824B1400500072006F0064007500630074000000"
+    },
+    {
+      "name": "learn-0",
+      "kind": "learn",
+      "inputs": {
+        "id": 9001,
+        "count": 0
+      },
+      "payloadHex": "2923000000"
+    },
+    {
+      "name": "learn-1",
+      "kind": "learn",
+      "inputs": {
+        "id": 9001,
+        "count": 1
+      },
+      "payloadHex": "2923000001"
+    },
+    {
+      "name": "learn-127",
+      "kind": "learn",
+      "inputs": {
+        "id": 9001,
+        "count": 127
+      },
+      "payloadHex": "292300007F"
+    },
+    {
+      "name": "learn-255",
+      "kind": "learn",
+      "inputs": {
+        "id": 9001,
+        "count": 255
+      },
+      "payloadHex": "29230000FF"
+    },
+    {
+      "name": "list-36",
+      "kind": "list",
+      "inputs": {
+        "pairs": []
+      },
+      "payloadHex": "0000"
+    },
+    {
+      "name": "list-37",
+      "kind": "list",
+      "inputs": {
+        "pairs": [
+          [
+            9001,
+            3
+          ],
+          [
+            9002,
+            0
+          ]
+        ]
+      },
+      "payloadHex": "020029230000032A23000000"
+    },
+    {
+      "name": "list-38",
+      "kind": "list",
+      "inputs": {
+        "pairs": [
+          [
+            2147483647,
+            127
+          ],
+          [
+            -1,
+            255
+          ]
+        ]
+      },
+      "payloadHex": "0200FFFFFF7F7FFFFFFFFFFF"
+    }
+  ]
+}

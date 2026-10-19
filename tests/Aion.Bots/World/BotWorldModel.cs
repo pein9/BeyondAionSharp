@@ -14,6 +14,7 @@ public sealed partial class BotWorldModel
 	private readonly Dictionary<int, BotInventoryItem> inventory = [];
 	private readonly Dictionary<int, BotSkill> skills = [];
 	private readonly HashSet<int> recipes = [];
+	private readonly Dictionary<int, byte> recipeProductionLimits = [];
 	private readonly Dictionary<int, BotSkillCooldown> cooldowns = [];
 	private readonly Dictionary<(int PlayerId, int CooldownId), BotInstanceEntry> instanceEntries = [];
 	public IReadOnlyDictionary<(int PlayerId, int CooldownId), BotInstanceEntry> InstanceEntries => instanceEntries;
@@ -44,6 +45,8 @@ public sealed partial class BotWorldModel
 	public IReadOnlyDictionary<int, BotInventoryItem> Inventory => inventory;
 	public IReadOnlyDictionary<int, BotSkill> Skills => skills;
 	public IReadOnlySet<int> Recipes => recipes;
+	/// <summary>Last client-observed remaining productions; zero means unlimited. Refreshed by a recipe request.</summary>
+	public IReadOnlyDictionary<int, byte> RecipeProductionLimits => recipeProductionLimits;
 	public IReadOnlyDictionary<int, BotSkillCooldown> Cooldowns => cooldowns;
 	public IReadOnlyDictionary<int, BotQuestState> Quests => quests;
 	public IReadOnlyDictionary<int, BotCompletedQuest> CompletedQuests => completedQuests;
@@ -265,11 +268,19 @@ public sealed partial class BotWorldModel
 		{
 			recipes.Clear();
 			recipes.UnionWith(packet.Get<int[]>("recipeIds"));
+			recipeProductionLimits.Clear();
+			foreach (var pair in packet.Get<IReadOnlyDictionary<int, byte>>("productionLimits")) recipeProductionLimits[pair.Key] = pair.Value;
 		}
 		else if (type == typeof(SM_LEARN_RECIPE))
+		{
 			recipes.Add(packet.Get<int>("recipeId"));
+			recipeProductionLimits[packet.Get<int>("recipeId")] = packet.Get<byte>("productionLimit");
+		}
 		else if (type == typeof(SM_RECIPE_DELETE))
+		{
 			recipes.Remove(packet.Get<int>("recipeId"));
+			recipeProductionLimits.Remove(packet.Get<int>("recipeId"));
+		}
 		else if (type == typeof(SM_SKILL_COOLDOWN))
 			ApplySkillCooldowns(packet);
 		else if (type == typeof(SM_QUEST_LIST))

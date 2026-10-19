@@ -28,6 +28,7 @@ public static partial class GameClientPackets
 
 	public static BotClientPacket CharacterList(int playOk2) => Create<CM_CHARACTER_LIST>(w => w.D(playOk2));
 	public static BotClientPacket ReconnectAuth() => Empty<CM_RECONNECT_AUTH>();
+	public static BotClientPacket RecipeList() => Empty<CM_RECIPE_LIST>();
 
 	public static BotClientPacket CreateCharacter(CharacterCreationData data) => Create<CM_CREATE_CHARACTER>(w =>
 	{

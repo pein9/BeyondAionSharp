@@ -7,6 +7,7 @@ namespace Aion.GameServer.Model.Skill;
 /// <summary>Java parity: model/skill/PlayerSkillEntry extends SkillEntry implements Persistable.</summary>
 public class PlayerSkillEntry : SkillEntry, IPersistable
 {
+    public const int MORPH_SKILL_ID = 40009;
     private int skillType; // 0 normal skill, 1 stigma skill, 3 linked stigma skill
     private volatile int currentXp; // for crafting skills
     private IPersistable.PersistentState persistentState;
@@ -74,7 +75,7 @@ public class PlayerSkillEntry : SkillEntry, IPersistable
 
     public bool IsMorphSkill()
     {
-        return skillId == 40009;
+        return skillId == MORPH_SKILL_ID;
     }
 
     public bool IsProfessionSkill()
@@ -87,8 +88,8 @@ public class PlayerSkillEntry : SkillEntry, IPersistable
     /// </summary>
     public int GetProfessionFlag()
     {
-        if (IsTappingSkill() || IsMorphSkill())
-            return 1; // not sure for morph
+        if (IsTappingSkill())
+            return 1;
         if (IsCraftingSkill())
             return GetCurrentXp(); // not implemented in DB
         return 0;

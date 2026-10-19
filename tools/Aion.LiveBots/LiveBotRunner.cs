@@ -944,6 +944,8 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		currentPosition = new BotPosition(spawn.Get<float>("x"), spawn.Get<float>("y"),
 			spawn.Get<float>("z"), spawn.Get<byte>("heading"));
 		await WaitForGamePacketAsync(typeof(SM_PLAYER_INFO), cancellationToken);
+		await SendGameAsync(api.RequestRecipes(), cancellationToken);
+		await WaitForGamePacketAsync(typeof(SM_RECIPE_LIST), cancellationToken);
 		PublishDashboard();
 	}
 

@@ -29,35 +29,11 @@ public class CraftService
 
     public static void FinishCrafting(Player player, RecipeTemplate recipetemplate, int critCount, int bonus)
     {
-        if (recipetemplate.GetMaxProductionCount() != null)
-        {
-            player.GetRecipeList().DeleteRecipe(player, recipetemplate.GetId());
-            if (critCount == 0)
-            {
-                QuestEngine.QuestEngine.GetInstance().OnFailCraft(new QuestEnv(null, player, 0),
-                    recipetemplate.GetComboProduct(1) == null ? 0 : recipetemplate.GetComboProduct(1).Value);
-            }
-        }
+        if (recipetemplate.GetMaxProductionCount() != null && critCount == 0)
+            QuestEngine.QuestEngine.GetInstance().OnFailCraft(new QuestEnv(null, player, 0),
+                recipetemplate.GetComboProduct(1) == null ? 0 : recipetemplate.GetComboProduct(1).Value);
 
-        int skillId = recipetemplate.GetSkillId();
-        int skillLvl = recipetemplate.GetSkillpoint();
-        int xpReward = (int)((0.008 * (skillLvl + 100) * (skillLvl + 100) + 60));
-        xpReward = xpReward + (xpReward * bonus / 100); // bonus
-        int gainedCraftXp = Rates.SKILL_XP_CRAFTING.CalcResult(player, xpReward);
-        StatEnum? boostStat = StatEnumExtensions.GetModifier(skillId);
-        if (boostStat != null) // there is no boost for morphing (40009)
-            gainedCraftXp = (int)(gainedCraftXp * (player.GetGameStats().GetStat(boostStat.Value, 100).GetCurrent() / 100f));
-        gainedCraftXp = Math.Max(1, gainedCraftXp);
-
-        if (player.GetSkillList().AddSkillXp(player, skillId, gainedCraftXp, skillLvl))
-        {
-            player.GetCommonData().AddExp(xpReward, Rates.XP_CRAFTING);
-        }
-        else
-        {
-            PacketSendUtility.SendPacket(player,
-                SM_SYSTEM_MESSAGE.STR_MSG_DONT_GET_PRODUCTION_EXP(DataManager.SKILL_DATA.GetSkillTemplate(skillId).GetL10n()));
-        }
+        if (!recipetemplate.IsMorph()) RewardCraftXp(player, recipetemplate, bonus);
 
         int productItemId = critCount > 0 ? recipetemplate.GetComboProduct(critCount).Value : recipetemplate.GetProductId();
 
@@ -77,6 +53,29 @@ public class CraftService
         }
     }
 
+    private static void RewardCraftXp(Player player, RecipeTemplate recipetemplate, int bonus)
+    {
+        int skillId = recipetemplate.GetSkillId();
+        int skillLvl = recipetemplate.GetSkillpoint();
+        int xpReward = (int)((0.008 * (skillLvl + 100) * (skillLvl + 100) + 60));
+        xpReward = xpReward + (xpReward * bonus / 100); // bonus
+        int gainedCraftXp = Rates.SKILL_XP_CRAFTING.CalcResult(player, xpReward);
+        StatEnum? boostStat = StatEnumExtensions.GetModifier(skillId);
+        if (boostStat != null) // there is no boost for morphing (40009)
+            gainedCraftXp = (int)(gainedCraftXp * (player.GetGameStats().GetStat(boostStat.Value, 100).GetCurrent() / 100f));
+        gainedCraftXp = Math.Max(1, gainedCraftXp);
+
+        if (player.GetSkillList().AddSkillXp(player, skillId, gainedCraftXp, skillLvl))
+        {
+            player.GetCommonData().AddExp(xpReward, Rates.XP_CRAFTING);
+        }
+        else
+        {
+            PacketSendUtility.SendPacket(player,
+                SM_SYSTEM_MESSAGE.STR_MSG_DONT_GET_PRODUCTION_EXP(DataManager.SKILL_DATA.GetSkillTemplate(skillId).GetL10n()));
+        }
+    }
+
     public static void StartCrafting(Player player, int recipeId, int targetObjId, int craftType, Dictionary<int, long> sendMaterialsData)
     {
         RecipeTemplate recipeTemplate = DataManager.RECIPE_DATA.GetRecipeTemplateById(recipeId);
@@ -89,6 +88,9 @@ public class CraftService
             SendCancelCraft(player, skillId, targetObjId, itemTemplate);
             return;
         }
+
+        player.GetRecipeList().DecreaseProductionLimit(player, recipeId);
+        ConsumeComponents(player, recipeTemplate, sendMaterialsData);
 
         // Java getDp() boxes a primitive int, so its null guard is always true.
         player.GetCommonData().AddDp(-recipeTemplate.GetDp());
@@ -107,11 +109,7 @@ public class CraftService
         int skillLvlDiff = player.GetSkillList().GetSkillLevel(skillId) - recipeTemplate.GetSkillpoint();
         CraftingTask craftingTask = new CraftingTask(player, (StaticObject)target, recipeTemplate, skillLvlDiff, craftType == 1 ? 15 : 0);
 
-        if (skillId == 40009)
-        {
-            craftingTask.SetInterval(200);
-        }
-        else
+        if (!recipeTemplate.IsMorph())
         {
             int interval = 2500 - (skillLvlDiff * 60);
             craftingTask.SetInterval(interval < intervalCap ? intervalCap : interval);
@@ -138,7 +136,7 @@ public class CraftService
         }
 
         // morphing dont need static object/npc to use
-        if ((skillId != 40009))
+        if (!recipeTemplate.IsMorph())
         {
             if (target == null || !(target is StaticObject))
             {
@@ -225,6 +223,11 @@ public class CraftService
             return false;
         }
 
+        return true;
+    }
+
+    private static void ConsumeComponents(Player player, RecipeTemplate recipeTemplate, Dictionary<int, long> sendMaterialsData)
+    {
         foreach (ComponentsData componentsData in recipeTemplate.GetComponents())
         {
             Component firstComponent = componentsData.GetComponent()[0];
@@ -235,8 +238,6 @@ public class CraftService
                 player.GetInventory().DecreaseByItemId(component.GetItemId(), component.GetQuantity());
             break;
         }
-
-        return true;
     }
 
     private static void SendCancelCraft(Player player, int skillId, int targetObjId, ItemTemplate itemTemplate)
@@ -272,7 +273,7 @@ public class CraftService
         private readonly Player player;
 
         public CraftedItemPredicate(Player player)
-            : base(ItemAddType.CRAFTED_ITEM, ItemUpdateType.INC_ITEM_COLLECT)
+            : base(ItemAddType.CRAFTED_ITEM, ItemUpdateType.INC_ITEM_CRAFT)
         {
             this.player = player;
         }

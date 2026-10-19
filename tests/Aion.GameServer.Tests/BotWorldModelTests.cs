@@ -115,15 +115,15 @@ public sealed class BotWorldModelTests
 	public void RecipesTrackSnapshotLearningAndQuestCleanup()
 	{
 		var world = new BotWorldModel();
-		world.Apply(Packet<SM_RECIPE_LIST>(("recipeIds", new[] { 155001381 })));
-		world.Apply(Packet<SM_LEARN_RECIPE>(("recipeId", 155004206)));
-		world.Apply(Packet<SM_LEARN_RECIPE>(("recipeId", 155004206)));
+		world.Apply(Packet<SM_RECIPE_LIST>(("recipeIds", new[] { 155001381 }), ("productionLimits", new Dictionary<int,byte> {{155001381,3}})));
+		world.Apply(Packet<SM_LEARN_RECIPE>(("recipeId", 155004206), ("productionLimit", (byte)2)));
+		world.Apply(Packet<SM_LEARN_RECIPE>(("recipeId", 155004206), ("productionLimit", (byte)2)));
 		Assert.Equal(new[] { 155001381, 155004206 }, world.Recipes.Order());
 		world.Apply(Packet<SM_RECIPE_DELETE>(("recipeId", 155004206)));
 		Assert.Equal(155001381, Assert.Single(world.Recipes));
 		world.BeginWorldReload();
 		Assert.Equal(155001381, Assert.Single(world.Recipes));
-		world.Apply(Packet<SM_RECIPE_LIST>(("recipeIds", Array.Empty<int>())));
+		world.Apply(Packet<SM_RECIPE_LIST>(("recipeIds", Array.Empty<int>()), ("productionLimits", new Dictionary<int,byte>())));
 		Assert.Empty(world.Recipes);
 	}
 

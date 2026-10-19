@@ -75,6 +75,7 @@ public sealed partial class BotApi
 	}
 
 	public BotClientPacket ChangeChannel(int channel) => GameClientPackets.ChangeChannel(channel);
+	public BotClientPacket RequestRecipes() => GameClientPackets.RecipeList();
 
 	public BotClientPacket Quit(bool stayConnected)
 	{

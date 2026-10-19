@@ -3,7 +3,7 @@ using Aion.GameServer.Network.Aion;
 
 namespace Aion.GameServer.Network.Aion.ServerPackets;
 
-/// <summary>Java parity: network/aion/serverpackets/SM_CRAFT_UPDATE (Mr. Poke, Yeats). Updates crafting status/progress; per-action system message. skillId 40009 forces delay 1000. ItemTemplate red-tolerated.</summary>
+/// <summary>Java parity: network/aion/serverpackets/SM_CRAFT_UPDATE (Mr. Poke, Yeats). Updates crafting status/progress; per-action system message. Explicit client bar delay. ItemTemplate red-tolerated.</summary>
 public class SM_CRAFT_UPDATE : AionServerPacket
 {
     private int skillId;
@@ -24,14 +24,7 @@ public class SM_CRAFT_UPDATE : AionServerPacket
         this.failure = failure;
         this.itemNameL10n = item.GetL10n();
         this.executionSpeed = executionSpeed;
-        if (skillId == 40009)
-        {
-            this.delay = 1000;
-        }
-        else
-        {
-            this.delay = delay;
-        }
+        this.delay = delay;
     }
 
     protected override void WriteImpl(AionConnection con)
@@ -60,9 +53,9 @@ public class SM_CRAFT_UPDATE : AionServerPacket
                 WriteD(1330051);
                 WriteS(null);
                 break;
-            case 5: // success (end)
-                WriteD(1330049);
-                WriteS(itemNameL10n); // param
+            case 5: // success is announced by the inventory update
+                WriteD(0);
+                WriteS(null!);
                 break;
             case 6: // failed (end)
             case 7: // failure (never used?)

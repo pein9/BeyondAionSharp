@@ -29,6 +29,7 @@ public sealed class PvpExpPersistencePortTests
             string players = Regex.Match(ddl, @"CREATE TABLE `players` \([\s\S]*?\n\)[^;]*;").Value;
             Assert.NotEmpty(players);
             Execute(connection, Regex.Replace(players, @"(?m)^\s*`pvp_exp`[^\r\n]*\r?\n", ""));
+            Execute(connection, "CREATE TABLE player_recipes (player_id int, recipe_id int)");
             Execute(connection, "CREATE TABLE player_skills (skill_id int, skill_level int)");
             Execute(connection, "INSERT INTO player_skills VALUES (29999,5),(30000,7)");
             Execute(connection, File.ReadAllText(Path.Combine(PvpExpPortTests.Root(), "game-server/sql/update.sql")));

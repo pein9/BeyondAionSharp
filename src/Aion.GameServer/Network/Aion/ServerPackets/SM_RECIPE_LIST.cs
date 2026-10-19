@@ -3,23 +3,23 @@ using Aion.GameServer.Network.Aion;
 
 namespace Aion.GameServer.Network.Aion.ServerPackets;
 
-/// <summary>Java parity: network/aion/serverpackets/SM_RECIPE_LIST (lord_rex). Sends the player's known recipe ids. Converges PlayerEnterWorldService. Set->ISet. AionServerPacket red-tolerated.</summary>
+/// <summary>Recipe snapshot requested by the client: recipe id and remaining production count (zero is unlimited).</summary>
 public class SM_RECIPE_LIST : AionServerPacket
 {
-    private readonly ISet<int> recipeIds;
+    private readonly IReadOnlyDictionary<int, int> recipes;
 
-    public SM_RECIPE_LIST(ISet<int> recipeIds)
+    public SM_RECIPE_LIST(IReadOnlyDictionary<int, int> recipes)
     {
-        this.recipeIds = recipeIds;
+        this.recipes = recipes;
     }
 
     protected override void WriteImpl(AionConnection con)
     {
-        WriteH(recipeIds.Count);
-        foreach (int id in recipeIds)
+        WriteH(recipes.Count);
+        foreach (var recipe in recipes)
         {
-            WriteD(id);
-            WriteC(0);
+            WriteD(recipe.Key);
+            WriteC(recipe.Value);
         }
     }
 }

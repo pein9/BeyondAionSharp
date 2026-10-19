@@ -49,6 +49,8 @@ public class RecipeData
         return recipeData.Values;
     }
 
+    public int GetMaxProductionCount(int recipeId) => GetRecipeTemplateById(recipeId)?.GetMaxProductionCount() ?? 0;
+
     public int Size()
     {
         return recipeData.Count;

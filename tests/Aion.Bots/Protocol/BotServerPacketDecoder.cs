@@ -329,20 +329,20 @@ public sealed partial class BotServerPacketDecoder
 	{
 		var r = new PacketBodyReader(body);
 		var ids = new int[r.ReadUInt16()];
+		var limits = new Dictionary<int, byte>();
 		for (int i = 0; i < ids.Length; i++)
 		{
 			ids[i] = r.ReadInt32();
-			r.Skip(1);
+			limits[ids[i]] = r.ReadByte();
 		}
-		return Fields(("recipeIds", ids));
+		return Fields(("recipeIds", ids), ("productionLimits", limits));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeLearnRecipe(ReadOnlySpan<byte> body)
 	{
 		var r = new PacketBodyReader(body);
 		int id = r.ReadInt32();
-		r.Skip(1);
-		return Fields(("recipeId", id));
+		return Fields(("recipeId", id), ("productionLimit", r.ReadByte()));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeRecipeDelete(ReadOnlySpan<byte> body)

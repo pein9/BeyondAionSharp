@@ -184,7 +184,7 @@ public static class AionClientPacketFactory
 			packets[155] = new PacketInfo(typeof(CM_LOOT_ITEM), State.IN_GAME); // [C_LOOT_ITEM (&LAB_140630080)]
 			packets[156] = new PacketInfo(typeof(CM_MOVE_ITEM), State.IN_GAME); // [C_MOVE_ITEM_TO_ANOTHER_SLOT (&LAB_140630410)]
 			packets[157] = new PacketInfo(typeof(CM_SPLIT_ITEM), State.IN_GAME); // [C_MOVE_STACKABLE_ITEM (MoveStackableItemPacket)]
-			packets[158] = new PacketInfo(typeof(CM_SHOW_BLOCKLIST), State.IN_GAME); // [C_RECIPE_LIST (RecipeListPacket)]
+			packets[158] = new PacketInfo(typeof(CM_RECIPE_LIST), State.IN_GAME); // [C_RECIPE_LIST (RecipeListPacket)]
 			packets[159] = new PacketInfo(typeof(CM_PLAYER_SEARCH), State.IN_GAME); // [C_SEARCH_USERS (SearchUserPacket)]
 			packets[160] = new PacketInfo(typeof(CM_LEGION_UPLOAD_INFO), State.IN_GAME); // [C_UPLOAD_GUILD_EMBLEM_IMG_BEGIN (UploadGuildEmblemImgBegin)]
 			packets[161] = new PacketInfo(typeof(CM_LEGION_UPLOAD_EMBLEM), State.IN_GAME); // [C_UPLOAD_GUILD_EMBLEM_IMG_DATA (&LAB_1406317e0)]
