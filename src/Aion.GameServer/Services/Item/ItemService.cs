@@ -77,7 +77,7 @@ public class ItemService
         }
 
         if (itemTemplate.IsStackable())
-            count = AddStackableItem(player, itemTemplate, count, allowInventoryOverflow, predicate);
+            count = AddStackableItem(player, itemTemplate, count, sourceItem, allowInventoryOverflow, predicate);
         else
             count = AddNonStackableItem(player, itemTemplate, count, sourceItem, allowInventoryOverflow, predicate);
 
@@ -96,11 +96,11 @@ public class ItemService
         {
             Item newItem = ItemFactory.NewItem(itemTemplate.GetTemplateId());
 
-            Aion.GameServer.Taskmanager.Tasks.ExpireTimerTask.GetInstance().RegisterExpirable(newItem, player);
             if (sourceItem != null)
             {
                 CopyItemInfo(sourceItem, newItem);
             }
+            Aion.GameServer.Taskmanager.Tasks.ExpireTimerTask.GetInstance().RegisterExpirable(newItem, player);
             predicate.ChangeItem(newItem);
             inventory.Add(newItem, predicate.GetAddType());
             count--;
@@ -108,9 +108,25 @@ public class ItemService
         return count;
     }
 
-    /// <summary>Copy some item values like item stones and enchant level, without any fusion item attributes.</summary>
+    /// <summary>Copy item values not tied to the owner, including expiration, stones, enchantment and the fused item.</summary>
     public static void CopyItemInfo(Item sourceItem, Item newItem)
     {
+        newItem.SetExpireTime(sourceItem.GetExpireTime());
+        newItem.SetActivationCount(sourceItem.GetActivationCount());
+        newItem.SetColorExpireTime(sourceItem.GetColorExpireTime());
+        newItem.SetRndPlumeBonusValue(sourceItem.GetRndPlumeBonusValue());
+        if (sourceItem.HasFusionedItem())
+        {
+            newItem.SetFusionedItem(sourceItem.GetFusionedItemTemplate(), sourceItem.GetFusionedItemBonusStatsId(),
+                sourceItem.GetFusionedItemOptionalSockets());
+            if (sourceItem.HasFusionStones())
+            {
+                foreach (ManaStone manaStone in sourceItem.GetFusionStones())
+                    newItem.GetFusionStones().Add(new ManaStone(newItem.GetObjectId(), manaStone.GetItemId(), manaStone.GetSlot(), IPersistable.PersistentState.NEW));
+            }
+        }
+        if (newItem.GetConditioningInfo() != null)
+            newItem.GetConditioningInfo().UpdateChargePoints(sourceItem.GetChargePoints());
         newItem.SetOptionalSockets(sourceItem.GetOptionalSockets());
         newItem.SetItemCreator(sourceItem.GetItemCreator());
         if (sourceItem.HasManaStones())
@@ -134,7 +150,7 @@ public class ItemService
     }
 
     /// <summary>Add stackable item to inventory.</summary>
-    private static long AddStackableItem(Aion.GameServer.Model.GameObjects.Players.Player player, ItemTemplate itemTemplate, long count, bool allowInventoryOverflow,
+    private static long AddStackableItem(Aion.GameServer.Model.GameObjects.Players.Player player, ItemTemplate itemTemplate, long count, Item sourceItem, bool allowInventoryOverflow,
         ItemUpdatePredicate predicate)
     {
         ICollection<Item> items;
@@ -167,6 +183,8 @@ public class ItemService
         while (count > 0 && (allowInventoryOverflow || !inventory.IsFull(itemTemplate.GetExtraInventoryId())))
         {
             Item newItem = ItemFactory.NewItem(itemTemplate.GetTemplateId(), count);
+            if (sourceItem != null)
+                newItem.SetExpireTime(sourceItem.GetExpireTime());
             count -= newItem.GetItemCount();
             inventory.Add(newItem, predicate.GetAddType());
         }

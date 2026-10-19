@@ -85,6 +85,12 @@ public partial class Item
         return expireTime;
     }
 
+    public void SetExpireTime(int expireTime)
+    {
+        this.expireTime = expireTime;
+        SetPersistentState(IPersistable.PersistentState.UPDATE_REQUIRED);
+    }
+
     /// <summary>Seconds since the epoch at which this item is taken off because its owner no longer has the abyss rank for it, 0 if it is not on notice.</summary>
     public int GetRankLimitExpireTime()
     {

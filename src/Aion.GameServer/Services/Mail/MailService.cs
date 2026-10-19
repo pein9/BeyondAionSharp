@@ -129,6 +129,7 @@ public class MailService
             else if (senderItem.GetItemCount() > attachedItemCount)
             {
                 attachedItem = ItemFactory.NewItem(senderItem.GetItemTemplate().GetTemplateId(), attachedItemCount);
+                attachedItem.SetExpireTime(senderItem.GetExpireTime());
                 senderInventory.DecreaseItemCount(senderItem, attachedItemCount);
             }
 

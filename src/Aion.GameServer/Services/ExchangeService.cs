@@ -143,6 +143,7 @@ public class ExchangeService
             if (itemCount < item.GetItemCount())
             {
                 newItem = ItemFactory.NewItem(item.GetItemId(), itemCount);
+                newItem.SetExpireTime(item.GetExpireTime());
             }
             else
             {

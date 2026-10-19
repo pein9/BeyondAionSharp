@@ -247,6 +247,7 @@ public class TradeService
             else if (item.GetItemCount() - count > 0)
             {
                 repurchaseItem = ItemFactory.NewItem(item.GetItemId(), count);
+                repurchaseItem.SetExpireTime(item.GetExpireTime());
                 inventory.DecreaseItemCount(item, count);
             }
             else
