@@ -82,3 +82,9 @@ fixture differences before committing regenerated output.
 dotnet test tests/Aion.GameServer.Tests/Aion.GameServer.Tests.csproj `
   --filter FullyQualifiedName~GoldenGeoFixtureTests
 ```
+
+Regenerated on 2026-10-19 for Java `93d5fa15b`'s Cute Ribbit `random_walk="5"`.
+The generator and exact reference geo sources were compiled into ignored artifacts,
+keeping the Java checkout read-only. The removed shield input came from the retained
+oracle snapshot. Only the Ishalgen NPC XML hash changed; all 4,275 points, query
+counts, and `starter-queries.jsonl` bytes remain identical.

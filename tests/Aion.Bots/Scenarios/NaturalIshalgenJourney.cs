@@ -8981,7 +8981,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					session.BeginStep("ni07-q2002-verdandi-report", "report-sprigg-kills-to-verdandi");
 					verdandi = await ApproachShippedSpawnAsync(790002);
 					await OpenQuestDialogAsync(verdandi, 2002);
-					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(verdandi, DialogAction.SETPRO3, questId: 2002), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(verdandi, DialogAction.SETPRO4, questId: 2002), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(11, session.Api.World.Quests[2002].StepAndFlags);
 				}
@@ -8998,7 +8998,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					await session.SynchronizeAsync(token);
 					Require.Equal(12, session.Api.World.Quests[2002].StepAndFlags);
 				}
-				if (QuestStatus(2002) == 3 && QuestVar(2002) is 12 or 99 && session.Api.World.MapId == contract.MapId)
+				if (QuestStatus(2002) == 3 && QuestVar(2002) == 12 && session.Api.World.MapId == contract.MapId)
 				{
 					verdandi = await ApproachShippedSpawnAsync(790002);
 					await OpenQuestDialogAsync(verdandi, 2002);
@@ -9011,6 +9011,11 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						packet => packet.Get<int>("objectId") == session.CharacterId);
 					session.AcceptTeleportPosition();
 					Require.Equal(320010000, session.Api.World.MapId);
+					// The quest now marks entry after CM_LEVEL_READY sends player info.
+					if (!AtQuestStep(2002, 99))
+						await session.WaitForPacketAsync(typeof(SM_QUEST_ACTION), token,
+							packet => packet.Get<int>("questId") == 2002 &&
+								packet.Fields.TryGetValue("stepAndFlags", out object? value) && value is int step && step == 99);
 					Require.Equal(99, session.Api.World.Quests[2002].StepAndFlags);
 					NaturalDecision inInstance = NaturalIshalgenDecisionEngine.Decide(contract,
 						ObserveNaturalJourney(session), 7);
@@ -9051,7 +9056,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					session.BeginStep("ni07-q2002-verdandi-return", "report-return-from-ataxiar");
 					verdandi = await ApproachShippedSpawnAsync(790002);
 					await OpenQuestDialogAsync(verdandi, 2002);
-					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(verdandi, DialogAction.SETPRO3, questId: 2002), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(verdandi, DialogAction.SETPRO6, questId: 2002), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(14, session.Api.World.Quests[2002].StepAndFlags);
 				}

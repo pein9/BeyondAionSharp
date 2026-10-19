@@ -32,13 +32,13 @@ public class _2002WheresRae : AbstractQuestHandler
 		qe.RegisterQuestNpc(210378).AddOnKillEvent(questId);
 		foreach (int npc_id in npc_ids)
 			qe.RegisterQuestNpc(npc_id).AddOnTalkEvent(questId);
+		qe.RegisterOnEnterWorld(questId);
 	}
 
 	public override bool OnDialogEvent(QuestEnv env)
 	{
 		Player player = env.GetPlayer();
 		QuestState qs = player.GetQuestStateList().GetQuestState(questId);
-		QuestEnv qEnv = env;
 		if (qs == null)
 			return false;
 
@@ -57,14 +57,7 @@ public class _2002WheresRae : AbstractQuestHandler
 								return SendQuestDialog(env, 1011);
 							return false;
 						case DialogAction.SETPRO1:
-							if (var == 0)
-							{
-								qs.SetQuestVarById(0, var + 1);
-								UpdateQuestStatus(env);
-								PacketSendUtility.SendPacket(player, new SM_DIALOG_WINDOW(env.GetVisibleObject().GetObjectId(), 10));
-								return true;
-							}
-							break;
+							return DefaultCloseDialog(env, 0, 1);
 					}
 					return false;
 				case 203534:
@@ -78,14 +71,7 @@ public class _2002WheresRae : AbstractQuestHandler
 							PlayQuestMovie(env, 52);
 							break;
 						case DialogAction.SETPRO2:
-							if (var == 1)
-							{
-								qs.SetQuestVarById(0, var + 1);
-								UpdateQuestStatus(env);
-								PacketSendUtility.SendPacket(player, new SM_DIALOG_WINDOW(env.GetVisibleObject().GetObjectId(), 10));
-								return true;
-							}
-							break;
+							return DefaultCloseDialog(env, 1, 2);
 					}
 					return false;
 				case 790002:
@@ -104,30 +90,15 @@ public class _2002WheresRae : AbstractQuestHandler
 								return SendQuestDialog(env, 2716);
 							return false;
 						case DialogAction.SETPRO3:
+							return DefaultCloseDialog(env, 2, 3);
 						case DialogAction.SETPRO4:
+							return DefaultCloseDialog(env, 10, 11);
 						case DialogAction.SETPRO6:
-							if (var == 2 || var == 10)
-							{
-								qs.SetQuestVarById(0, var + 1);
-								UpdateQuestStatus(env);
-								PacketSendUtility.SendPacket(player, new SM_DIALOG_WINDOW(env.GetVisibleObject().GetObjectId(), 10));
-								return true;
-							}
-							else if (var == 13)
-							{
-								qs.SetQuestVarById(0, 14);
-								UpdateQuestStatus(env);
-								PacketSendUtility.SendPacket(player, new SM_DIALOG_WINDOW(env.GetVisibleObject().GetObjectId(), 10));
-								return true;
-							}
-							break;
+							return DefaultCloseDialog(env, 13, 14);
 						case DialogAction.SETPRO5:
-							if (var == 12 || var == 99)
+							if (var == 12)
 							{
-								qs.SetQuestVar(99);
-								UpdateQuestStatus(env);
-								PacketSendUtility.SendPacket(player, new SM_DIALOG_WINDOW(env.GetVisibleObject().GetObjectId(), 0));
-								// Create instance
+								CloseDialogWindow(env);
 								WorldMapInstance newInstance = InstanceService.GetNextAvailableInstance(WorldMapType.ATAXIAR.GetId(), player);
 								TeleportService.TeleportTo(player, newInstance, 457.65f, 426.8f, 230.4f);
 								return true;
@@ -138,8 +109,7 @@ public class _2002WheresRae : AbstractQuestHandler
 							{
 								if (QuestService.CollectItemCheck(env, true))
 								{
-									qs.SetQuestVarById(0, 12);
-									UpdateQuestStatus(env);
+									ChangeQuestStep(env, 11, 12);
 									return SendQuestDialog(env, 2461);
 								}
 								else
@@ -156,15 +126,18 @@ public class _2002WheresRae : AbstractQuestHandler
 					}
 					return false;
 				case 203538:
-					if (var == 14 && env.GetDialogActionId() == DialogAction.USE_OBJECT)
+					if (env.GetDialogActionId() == DialogAction.USE_OBJECT && ChangeQuestStep(env, 14, 15))
 					{
-						qs.SetQuestVarById(0, var + 1);
-						UpdateQuestStatus(env);
 						Npc npc = (Npc)env.GetVisibleObject();
-						PacketSendUtility.SendPacket(player, new SM_DIALOG_WINDOW(npc.GetObjectId(), 10));
 						SpawnForFiveMinutes(203553, npc.GetPosition());
+						ThreadPoolManager.GetInstance().Schedule(ct =>
+						{
+							if (qs.GetStatus() == QuestStatus.START)
+								ChangeQuestStep(env, 15, 14);
+							return ValueTask.CompletedTask;
+						}, 60000 * 5 + 1000);
 						npc.GetController().DeleteAndScheduleRespawn();
-						return true;
+						return CloseDialogWindow(env);
 					}
 					break;
 				case 203553:
@@ -175,13 +148,10 @@ public class _2002WheresRae : AbstractQuestHandler
 								return SendQuestDialog(env, 3057);
 							return false;
 						case DialogAction.SETPRO7:
-							if (var == 15)
+							if (ChangeQuestStep(env, 15, 15, true))
 							{
 								env.GetVisibleObject().GetController().Delete();
-								qs.SetStatus(QuestStatus.REWARD);
-								UpdateQuestStatus(env);
-								PacketSendUtility.SendPacket(player, new SM_DIALOG_WINDOW(env.GetVisibleObject().GetObjectId(), 10));
-								return true;
+								return CloseDialogWindow(env);
 							}
 							break;
 					}
@@ -190,7 +160,7 @@ public class _2002WheresRae : AbstractQuestHandler
 					switch (dialogActionId)
 					{
 						case DialogAction.QUEST_SELECT:
-							if (var >= 12)
+							if (qs.GetQuestVars().GetQuestVars() == 99)
 							{
 								player.SetState(CreatureState.FLYING);
 								player.UnsetState(CreatureState.ACTIVE);
@@ -198,9 +168,8 @@ public class _2002WheresRae : AbstractQuestHandler
 								PacketSendUtility.SendPacket(player, new SM_EMOTION(player, EmotionType.START_FLYTELEPORT, 3001, 0));
 								ThreadPoolManager.GetInstance().Schedule(ct =>
 								{
+									ChangeQuestStep(env, 99, 13);
 									TeleportService.TeleportTo(player, 220010000, 940.15f, 2295.64f, 265.7f, (byte)43);
-									qs.SetQuestVar(13);
-									UpdateQuestStatus(qEnv);
 									return ValueTask.CompletedTask;
 								}, 40000L);
 								return true;
@@ -226,6 +195,17 @@ public class _2002WheresRae : AbstractQuestHandler
 		return false;
 	}
 
+	public override bool OnEnterWorldEvent(QuestEnv env)
+	{
+		Player player = env.GetPlayer();
+		QuestState qs = player.GetQuestStateList().GetQuestState(questId);
+		if (qs == null || qs.GetStatus() != QuestStatus.START)
+			return false;
+		if (player.GetWorldId() == WorldMapType.ATAXIAR.GetId())
+			return ChangeQuestStep(env, 12, 99);
+		return ChangeQuestStep(env, 99, 12);
+	}
+
 	public override bool OnKillEvent(QuestEnv env)
 	{
 		Player player = env.GetPlayer();
@@ -246,8 +226,7 @@ public class _2002WheresRae : AbstractQuestHandler
 			case 210378:
 				if (var >= 3 && var < 10)
 				{
-					qs.SetQuestVarById(0, qs.GetQuestVarById(0) + 1);
-					UpdateQuestStatus(env);
+					ChangeQuestStep(env, var, Math.Min(10, var + 1));
 					return true;
 				}
 				break;

@@ -1,0 +1,551 @@
+{
+  "sourceJavaCommit": "93d5fa15b126a8ccf1fba99e55b8844a7ae7fe14",
+  "sourceHashes": {
+    "game-server/data/handlers/quest/ishalgen/_2002WheresRae.java": "cfe409656c416735109d845e7396a1ca197624afa2c663ae6af75f30e09b6296",
+    "game-server/src/com/aionemu/gameserver/questEngine/handlers/AbstractQuestHandler.java": "3a747a29e5199831def9f3cb507fc244a8eadc2023a057f4c58ff3274079ef51",
+    "game-server/src/com/aionemu/gameserver/questEngine/model/QuestVars.java": "67e8ee8edda94b91d7f830d02bab77e1ae3b54299ab0a14635856a9531b5704f"
+  },
+  "boundary": "Exact Java 93d5fa15b entry/kill handlers, QuestVars and changeQuestStep.\nWorld/NPC/state/packet collaborators are scalar doubles. Dialog/spawn/teleport\nbehavior is covered by separate native C# tests, not this capture.\n",
+  "cases": [
+    {
+      "op": "entry",
+      "status": "null",
+      "value": 12,
+      "world": 220010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 0,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "null",
+      "value": 99,
+      "world": 220010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 0,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "null",
+      "value": 13,
+      "world": 220010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 0,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "null",
+      "value": 76,
+      "world": 220010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 0,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "null",
+      "value": 12,
+      "world": 320010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 0,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "null",
+      "value": 99,
+      "world": 320010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 0,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "null",
+      "value": 13,
+      "world": 320010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 0,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "null",
+      "value": 76,
+      "world": 320010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 0,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "START",
+      "value": 12,
+      "world": 220010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 12,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "START",
+      "value": 99,
+      "world": 220010000,
+      "npc": 0,
+      "accepted": true,
+      "after": 12,
+      "updates": 1
+    },
+    {
+      "op": "entry",
+      "status": "START",
+      "value": 13,
+      "world": 220010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 13,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "START",
+      "value": 76,
+      "world": 220010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 76,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "START",
+      "value": 12,
+      "world": 320010000,
+      "npc": 0,
+      "accepted": true,
+      "after": 99,
+      "updates": 1
+    },
+    {
+      "op": "entry",
+      "status": "START",
+      "value": 99,
+      "world": 320010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 99,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "START",
+      "value": 13,
+      "world": 320010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 13,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "START",
+      "value": 76,
+      "world": 320010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 76,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "REWARD",
+      "value": 12,
+      "world": 220010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 12,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "REWARD",
+      "value": 99,
+      "world": 220010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 99,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "REWARD",
+      "value": 13,
+      "world": 220010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 13,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "REWARD",
+      "value": 76,
+      "world": 220010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 76,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "REWARD",
+      "value": 12,
+      "world": 320010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 12,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "REWARD",
+      "value": 99,
+      "world": 320010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 99,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "REWARD",
+      "value": 13,
+      "world": 320010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 13,
+      "updates": 0
+    },
+    {
+      "op": "entry",
+      "status": "REWARD",
+      "value": 76,
+      "world": 320010000,
+      "npc": 0,
+      "accepted": false,
+      "after": 76,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "START",
+      "value": 2,
+      "world": 220010000,
+      "npc": 210377,
+      "accepted": false,
+      "after": 2,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "START",
+      "value": 3,
+      "world": 220010000,
+      "npc": 210377,
+      "accepted": true,
+      "after": 4,
+      "updates": 1
+    },
+    {
+      "op": "kill",
+      "status": "START",
+      "value": 9,
+      "world": 220010000,
+      "npc": 210377,
+      "accepted": true,
+      "after": 10,
+      "updates": 1
+    },
+    {
+      "op": "kill",
+      "status": "START",
+      "value": 10,
+      "world": 220010000,
+      "npc": 210377,
+      "accepted": false,
+      "after": 10,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "START",
+      "value": 67,
+      "world": 220010000,
+      "npc": 210377,
+      "accepted": true,
+      "after": 68,
+      "updates": 1
+    },
+    {
+      "op": "kill",
+      "status": "START",
+      "value": 2,
+      "world": 220010000,
+      "npc": 210378,
+      "accepted": false,
+      "after": 2,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "START",
+      "value": 3,
+      "world": 220010000,
+      "npc": 210378,
+      "accepted": true,
+      "after": 4,
+      "updates": 1
+    },
+    {
+      "op": "kill",
+      "status": "START",
+      "value": 9,
+      "world": 220010000,
+      "npc": 210378,
+      "accepted": true,
+      "after": 10,
+      "updates": 1
+    },
+    {
+      "op": "kill",
+      "status": "START",
+      "value": 10,
+      "world": 220010000,
+      "npc": 210378,
+      "accepted": false,
+      "after": 10,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "START",
+      "value": 67,
+      "world": 220010000,
+      "npc": 210378,
+      "accepted": true,
+      "after": 68,
+      "updates": 1
+    },
+    {
+      "op": "kill",
+      "status": "START",
+      "value": 2,
+      "world": 220010000,
+      "npc": 210379,
+      "accepted": false,
+      "after": 2,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "START",
+      "value": 3,
+      "world": 220010000,
+      "npc": 210379,
+      "accepted": false,
+      "after": 3,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "START",
+      "value": 9,
+      "world": 220010000,
+      "npc": 210379,
+      "accepted": false,
+      "after": 9,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "START",
+      "value": 10,
+      "world": 220010000,
+      "npc": 210379,
+      "accepted": false,
+      "after": 10,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "START",
+      "value": 67,
+      "world": 220010000,
+      "npc": 210379,
+      "accepted": false,
+      "after": 67,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "REWARD",
+      "value": 2,
+      "world": 220010000,
+      "npc": 210377,
+      "accepted": false,
+      "after": 2,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "REWARD",
+      "value": 3,
+      "world": 220010000,
+      "npc": 210377,
+      "accepted": false,
+      "after": 3,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "REWARD",
+      "value": 9,
+      "world": 220010000,
+      "npc": 210377,
+      "accepted": false,
+      "after": 9,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "REWARD",
+      "value": 10,
+      "world": 220010000,
+      "npc": 210377,
+      "accepted": false,
+      "after": 10,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "REWARD",
+      "value": 67,
+      "world": 220010000,
+      "npc": 210377,
+      "accepted": false,
+      "after": 67,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "REWARD",
+      "value": 2,
+      "world": 220010000,
+      "npc": 210378,
+      "accepted": false,
+      "after": 2,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "REWARD",
+      "value": 3,
+      "world": 220010000,
+      "npc": 210378,
+      "accepted": false,
+      "after": 3,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "REWARD",
+      "value": 9,
+      "world": 220010000,
+      "npc": 210378,
+      "accepted": false,
+      "after": 9,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "REWARD",
+      "value": 10,
+      "world": 220010000,
+      "npc": 210378,
+      "accepted": false,
+      "after": 10,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "REWARD",
+      "value": 67,
+      "world": 220010000,
+      "npc": 210378,
+      "accepted": false,
+      "after": 67,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "REWARD",
+      "value": 2,
+      "world": 220010000,
+      "npc": 210379,
+      "accepted": false,
+      "after": 2,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "REWARD",
+      "value": 3,
+      "world": 220010000,
+      "npc": 210379,
+      "accepted": false,
+      "after": 3,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "REWARD",
+      "value": 9,
+      "world": 220010000,
+      "npc": 210379,
+      "accepted": false,
+      "after": 9,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "REWARD",
+      "value": 10,
+      "world": 220010000,
+      "npc": 210379,
+      "accepted": false,
+      "after": 10,
+      "updates": 0
+    },
+    {
+      "op": "kill",
+      "status": "REWARD",
+      "value": 67,
+      "world": 220010000,
+      "npc": 210379,
+      "accepted": false,
+      "after": 67,
+      "updates": 0
+    }
+  ]
+}
