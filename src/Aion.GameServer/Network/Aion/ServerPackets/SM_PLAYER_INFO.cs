@@ -160,7 +160,7 @@ public class SM_PLAYER_INFO : AbstractPlayerInfoPacket
 
         WriteC(playerAppearance.GetVoice());
 
-        WriteF(playerAppearance.GetHeight());
+        WriteF(playerAppearance.GetHeightScale());
         WriteF(0.25f); // scale
         WriteF(2.0f); // gravity or slide surface o_O
         float movementSpeed = player.GetGameStats().GetMovementSpeedFloat();

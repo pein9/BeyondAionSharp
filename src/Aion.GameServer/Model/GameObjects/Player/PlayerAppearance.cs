@@ -55,7 +55,7 @@ public class PlayerAppearance
     private int footSize;
     private int facialRate;
     private int voice;
-    private float height;
+    private float heightScale;
 
     public int GetFace()
     {
@@ -577,20 +577,14 @@ public class PlayerAppearance
         this.voice = voice;
     }
 
-    /// <summary>character height is odd, but client needs it</summary>
-    public float GetHeight()
+    /// <summary>Scale factor for the client's gender-specific reference height.</summary>
+    public float GetHeightScale()
     {
-        return height;
+        return heightScale;
     }
 
-    /// <summary>The approximate real height of the character.</summary>
-    public float GetBoundHeight()
+    public void SetHeightScale(float heightScale)
     {
-        return height * 1.75f;
-    }
-
-    public void SetHeight(float height)
-    {
-        this.height = height;
+        this.heightScale = heightScale;
     }
 }

@@ -81,7 +81,7 @@ public sealed partial class SimulationFastScenarioTests
 			var common = PlayerDAO.LoadPlayerCommonData(CharacterId);
 			Assert.Equal(expected.DisplayTitle, common.GetTitleId()); Assert.Equal(expected.BonusTitle, common.GetBonusTitleId());
 			var appearance = PlayerAppearanceDAO.Load(CharacterId);
-			Assert.Equal(expected.Appearance.Voice, appearance.GetVoice()); Assert.Equal(expected.Appearance.Height, appearance.GetHeight());
+			Assert.Equal(expected.Appearance.Voice, appearance.GetVoice()); Assert.Equal(expected.Appearance.Height, appearance.GetHeightScale());
 			Assert.Equal(expected.Appearance.SkinRgb, appearance.GetSkinRGB()); Assert.Equal(expected.Appearance.HairRgb, appearance.GetHairRGB());
 			Assert.Equal(expected.Appearance.EyeRgb, appearance.GetEyeRGB()); Assert.Equal(expected.Appearance.LipRgb, appearance.GetLipRGB());
 			var macros = PlayerMacrosDAO.LoadMacros(CharacterId).GetAll().OrderBy(m => m.Id).Select(m => new BotMacro((byte)m.Id, m.Xml));

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Items;
-using Aion.GameServer.Model.Templates;
 
 namespace Aion.GameServer.Model.Account;
 
@@ -33,7 +32,6 @@ public class PlayerAccountData
         this.appearance = appearance;
         this.cbi = cbi;
         this.visibleItems = visibleItems;
-        UpdateBoundingRadius();
     }
 
     public CharacterBanInfo GetCharBanInfo()
@@ -85,12 +83,6 @@ public class PlayerAccountData
     public void SetAppearance(PlayerAppearance appearance)
     {
         this.appearance = appearance;
-        UpdateBoundingRadius();
-    }
-
-    public void UpdateBoundingRadius()
-    {
-        playerCommonData.SetBoundingRadius(new BoundRadius(0.25f, 0.25f, appearance.GetBoundHeight()));
     }
 
     public void SetCreationDate(DateTimeOffset? creationDate)

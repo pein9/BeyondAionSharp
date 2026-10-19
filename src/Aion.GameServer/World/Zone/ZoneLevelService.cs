@@ -33,8 +33,10 @@ public class ZoneLevelService
             return;
         }
 
-        float noseHeight = player.GetPlayerAppearance().GetBoundHeight() - 0.1f;
-        if (z + noseHeight < world.GetWorldMap(player.GetWorldId()).GetWaterLevel())
+        float defaultEyeHeight = player.GetGender() == Gender.MALE ? 1.7f : 1.58f; // eye_height from client_PCRace.xml
+        float eyeHeight = player.GetPlayerAppearance().GetHeightScale() * defaultEyeHeight;
+        float mouthHeight = eyeHeight - 0.05f;
+        if (z + mouthHeight < world.GetWorldMap(player.GetWorldId()).GetWaterLevel())
             StartDrowning(player);
         else
             StopDrowning(player);

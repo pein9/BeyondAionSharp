@@ -92,7 +92,7 @@ public abstract class AbstractPlayerInfoPacket : AionServerPacket
         WriteC(0x00); // always 0 may be acessLevel
         WriteC(0x00); // sometimes 0xC7 (199) for all chars, else 0
         WriteC(0x00); // sometimes 0x04 (4) for all chars, else 0
-        WriteF(playerAppearance.GetHeight());
+        WriteF(playerAppearance.GetHeightScale());
         WriteD(pcd.GetTemplateId());
         WriteD(pcd.GetMapId()); // mapid for preloading map
         WriteF(pcd.GetX());

@@ -11,6 +11,7 @@ public class BoundRadius
 {
     // Java parity: BoundRadius.DEFAULT = new BoundRadius(0f, 0f, 0f)
     public static readonly BoundRadius Default = new(0f, 0f, 0f);
+    public static readonly BoundRadius PLAYER = new(0.25f, 0.25f, 2f);
 
     // Java parity: @XmlAttribute private float front / side / upper (JAXB field access)
     [XmlAttribute("front")]

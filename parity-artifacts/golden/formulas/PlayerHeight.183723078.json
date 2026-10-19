@@ -1,0 +1,197 @@
+{
+  "source": "Java",
+  "sourceJavaCommit": "183723078bd11225af6e13fbf7376a0ed3a825ab",
+  "sourceHashes": {
+    "game-server/src/com/aionemu/gameserver/model/gameobjects/player/PlayerAppearance.java": "f020dfcc3e39db168201402af6314060a70f0507c1dfb24442af7e3ba5dc9cd3",
+    "game-server/src/com/aionemu/gameserver/model/templates/BoundRadius.java": "27b811cec342d25b13424b3a4641537ddf51b87c832e95e0e4172dd580b56e77",
+    "game-server/src/com/aionemu/gameserver/world/zone/ZoneLevelService.java": "e7786d99f39cfafc411217b0522c22bbb50dba0a98e5ed021380d05435cdd043"
+  },
+  "captureBoundary": "Exact checkZoneLevels method and exact PlayerAppearance/BoundRadius; world levels fixed 100/-100, scheduling/stop are observation-only stubs.",
+  "boundRadiusBits": [
+    1048576000,
+    1048576000,
+    1073741824
+  ],
+  "cases": [
+    {
+      "gender": "MALE",
+      "scaleBits": 1056964608,
+      "zBits": 1120298597,
+      "drown": true
+    },
+    {
+      "gender": "MALE",
+      "scaleBits": 1056964608,
+      "zBits": 1120298598,
+      "drown": false
+    },
+    {
+      "gender": "MALE",
+      "scaleBits": 1056964608,
+      "zBits": 1120298599,
+      "drown": false
+    },
+    {
+      "gender": "MALE",
+      "scaleBits": 1061997773,
+      "zBits": 1120231751,
+      "drown": true
+    },
+    {
+      "gender": "MALE",
+      "scaleBits": 1061997773,
+      "zBits": 1120231752,
+      "drown": false
+    },
+    {
+      "gender": "MALE",
+      "scaleBits": 1061997773,
+      "zBits": 1120231753,
+      "drown": false
+    },
+    {
+      "gender": "MALE",
+      "scaleBits": 1065353216,
+      "zBits": 1120187186,
+      "drown": true
+    },
+    {
+      "gender": "MALE",
+      "scaleBits": 1065353216,
+      "zBits": 1120187187,
+      "drown": false
+    },
+    {
+      "gender": "MALE",
+      "scaleBits": 1065353216,
+      "zBits": 1120187188,
+      "drown": false
+    },
+    {
+      "gender": "MALE",
+      "scaleBits": 1067450368,
+      "zBits": 1120131481,
+      "drown": true
+    },
+    {
+      "gender": "MALE",
+      "scaleBits": 1067450368,
+      "zBits": 1120131482,
+      "drown": false
+    },
+    {
+      "gender": "MALE",
+      "scaleBits": 1067450368,
+      "zBits": 1120131483,
+      "drown": false
+    },
+    {
+      "gender": "MALE",
+      "scaleBits": 1069547520,
+      "zBits": 1120075775,
+      "drown": true
+    },
+    {
+      "gender": "MALE",
+      "scaleBits": 1069547520,
+      "zBits": 1120075776,
+      "drown": false
+    },
+    {
+      "gender": "MALE",
+      "scaleBits": 1069547520,
+      "zBits": 1120075777,
+      "drown": false
+    },
+    {
+      "gender": "FEMALE",
+      "scaleBits": 1056964608,
+      "zBits": 1120306462,
+      "drown": true
+    },
+    {
+      "gender": "FEMALE",
+      "scaleBits": 1056964608,
+      "zBits": 1120306463,
+      "drown": false
+    },
+    {
+      "gender": "FEMALE",
+      "scaleBits": 1056964608,
+      "zBits": 1120306464,
+      "drown": false
+    },
+    {
+      "gender": "FEMALE",
+      "scaleBits": 1061997773,
+      "zBits": 1120244334,
+      "drown": true
+    },
+    {
+      "gender": "FEMALE",
+      "scaleBits": 1061997773,
+      "zBits": 1120244335,
+      "drown": false
+    },
+    {
+      "gender": "FEMALE",
+      "scaleBits": 1061997773,
+      "zBits": 1120244336,
+      "drown": false
+    },
+    {
+      "gender": "FEMALE",
+      "scaleBits": 1065353216,
+      "zBits": 1120202915,
+      "drown": true
+    },
+    {
+      "gender": "FEMALE",
+      "scaleBits": 1065353216,
+      "zBits": 1120202916,
+      "drown": false
+    },
+    {
+      "gender": "FEMALE",
+      "scaleBits": 1065353216,
+      "zBits": 1120202917,
+      "drown": false
+    },
+    {
+      "gender": "FEMALE",
+      "scaleBits": 1067450368,
+      "zBits": 1120151141,
+      "drown": true
+    },
+    {
+      "gender": "FEMALE",
+      "scaleBits": 1067450368,
+      "zBits": 1120151142,
+      "drown": false
+    },
+    {
+      "gender": "FEMALE",
+      "scaleBits": 1067450368,
+      "zBits": 1120151143,
+      "drown": false
+    },
+    {
+      "gender": "FEMALE",
+      "scaleBits": 1069547520,
+      "zBits": 1120099368,
+      "drown": true
+    },
+    {
+      "gender": "FEMALE",
+      "scaleBits": 1069547520,
+      "zBits": 1120099369,
+      "drown": false
+    },
+    {
+      "gender": "FEMALE",
+      "scaleBits": 1069547520,
+      "zBits": 1120099370,
+      "drown": false
+    }
+  ]
+}

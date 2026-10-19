@@ -68,8 +68,7 @@ public class CosmeticItemAction : AbstractItemAction
                 playerAppearance.SetSkinRGB(preset.GetEyeColor());
                 playerAppearance.SetHair(preset.GetHairType());
                 playerAppearance.SetFace(preset.GetFaceType());
-                playerAppearance.SetHeight(preset.GetScale());
-                player.GetAccountData().UpdateBoundingRadius();
+                playerAppearance.SetHeightScale(preset.GetScale());
                 break;
             }
             default:

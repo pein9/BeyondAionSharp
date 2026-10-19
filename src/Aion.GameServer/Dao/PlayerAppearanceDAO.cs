@@ -81,7 +81,7 @@ public class PlayerAppearanceDAO
                 pa.SetFootSize(resultSet.GetInt32(resultSet.GetOrdinal("foot_size")));
                 pa.SetFacialRate(resultSet.GetInt32(resultSet.GetOrdinal("facial_rate")));
                 pa.SetVoice(resultSet.GetInt32(resultSet.GetOrdinal("voice")));
-                pa.SetHeight(resultSet.GetFloat(resultSet.GetOrdinal("height")));
+                pa.SetHeightScale(resultSet.GetFloat(resultSet.GetOrdinal("height")));
             }
         }
         catch (Exception e)
@@ -177,7 +177,7 @@ public class PlayerAppearanceDAO
             ps.Parameters.Add(new MySqlParameter { Value = pa.GetFootSize() });
             ps.Parameters.Add(new MySqlParameter { Value = pa.GetFacialRate() });
             ps.Parameters.Add(new MySqlParameter { Value = pa.GetVoice() });
-            ps.Parameters.Add(new MySqlParameter { Value = pa.GetHeight() });
+            ps.Parameters.Add(new MySqlParameter { Value = pa.GetHeightScale() });
             ps.ExecuteNonQuery();
         }
     }

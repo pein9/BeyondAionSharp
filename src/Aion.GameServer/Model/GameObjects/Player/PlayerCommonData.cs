@@ -46,7 +46,6 @@ public class PlayerCommonData : Aion.GameServer.Model.GameObjects.CreatureTempla
     private bool isDaeva;
     private bool isInEditMode;
 
-    private BoundRadius boundRadius;
 
     private long lastTransferTime;
 
@@ -582,14 +581,9 @@ public class PlayerCommonData : Aion.GameServer.Model.GameObjects.CreatureTempla
         return mailboxLetters;
     }
 
-    public void SetBoundingRadius(BoundRadius boundRadius)
-    {
-        this.boundRadius = boundRadius;
-    }
-
     public override BoundRadius GetBoundRadius()
     {
-        return boundRadius;
+        return BoundRadius.PLAYER;
     }
 
     public void SetDeathCount(int count)

@@ -122,7 +122,7 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
         playerAppearance.SetShoulders(ReadUC());
         playerAppearance.SetFaceShape(ReadUC());
         playerAppearance.SetVoice(ReadUC());
-        playerAppearance.SetHeight(ReadF());
+        playerAppearance.SetHeightScale(ReadF());
 
         PlayerAccountData accPlData = new PlayerAccountData(playerCommonData, playerAppearance);
         Account account = AccountService.LoadAccount(targetAccount);

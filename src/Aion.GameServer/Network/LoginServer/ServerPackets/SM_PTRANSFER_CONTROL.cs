@@ -147,7 +147,7 @@ public sealed class SM_PTRANSFER_CONTROL : LoginServerPacket
                 buffer.WriteC(playerAppearance.GetShoulders());
                 buffer.WriteC(playerAppearance.GetFaceShape());
                 buffer.WriteC(playerAppearance.GetVoice());
-                buffer.WriteF(playerAppearance.GetHeight());
+                buffer.WriteF(playerAppearance.GetHeightScale());
 
                 buffer.WriteF(_player.GetX());
                 buffer.WriteF(_player.GetY());

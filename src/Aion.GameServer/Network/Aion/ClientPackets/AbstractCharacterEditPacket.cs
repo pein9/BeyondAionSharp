@@ -101,6 +101,6 @@ public abstract class AbstractCharacterEditPacket : AionClientPacket
         ReadC();
         ReadC();
         ReadC();
-        playerAppearance.SetHeight(ReadF());
+        playerAppearance.SetHeightScale(ReadF());
     }
 }

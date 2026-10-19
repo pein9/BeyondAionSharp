@@ -29,7 +29,7 @@ public sealed class CompanionProfileTests
             Assert.NotEmpty(profile.Inventory);
             Assert.NotEmpty(profile.Skills);
             Assert.Equal(53, profile.Appearance.Count);
-            Assert.Equal((float)profile.Appearance["height"], profile.NewAppearance().GetHeight());
+            Assert.Equal((float)profile.Appearance["height"], profile.NewAppearance().GetHeightScale());
             Assert.Equal((int)profile.Appearance["jaw_height"], profile.NewAppearance().GetJawHeigh());
             Assert.Equal((int)profile.Appearance["skin_rgb"], profile.NewAppearance().GetSkinRGB());
         });

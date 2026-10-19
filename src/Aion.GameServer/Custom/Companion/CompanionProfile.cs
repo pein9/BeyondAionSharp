@@ -95,6 +95,8 @@ public sealed class CompanionProfile
     {
         if (column == "jaw_height")
             return "SetJawHeigh";
+        if (column == "height")
+            return "SetHeightScale";
         return "Set" + string.Concat(column.Split('_').Select(part => part == "rgb" ? "RGB" : char.ToUpperInvariant(part[0]) + part[1..]));
     }
 }
