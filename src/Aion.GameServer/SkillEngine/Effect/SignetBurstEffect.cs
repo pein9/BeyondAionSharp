@@ -9,7 +9,7 @@ using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.SkillEngine.Effects;
 
-/// <summary>Java parity: skillengine/effect/SignetBurstEffect (ATracer, kecimis) : DamageEffect. @XmlAttribute signetlvl/signet; @XmlAttribute(name="add_effect_prob_multi"); calculateDamage: base value, SIGNET_DATA_TEMPLATES.getSignetData(SignetEnum.valueOf(signet)→JavaEnum.ValueOf, signetLvl=min(signetlvl, stacked skill level)); *damageMultiplier, effectProb*=multi; setSignetBurstedCount(signetLvl); AttackUtil.calculateSkillResult; setLaunchSubEffect(Rnd.chance<effectProb); endEffect. calculate: base.Calculate(effect,null,null) false→endEffect. SignetData/SignetEnum red-tolerated.</summary>
+/// <summary>Java parity: consume the capped signet stack and scale damage and sub-effect probability by its data and the casting skill level.</summary>
 [XmlType("SignetBurstEffect")]
 public class SignetBurstEffect : DamageEffect
 {
@@ -19,6 +19,8 @@ public class SignetBurstEffect : DamageEffect
     public string signet;
     [XmlAttribute("add_effect_prob_multi")]
     public int addEffectProbMultiplier = 0;
+    [XmlAttribute("add_effect_prob_multi_delta")]
+    public float addEffectProbMultiplierDelta;
 
     public override void CalculateDamage(Effect effect)
     {
@@ -31,7 +33,7 @@ public class SignetBurstEffect : DamageEffect
         if (signetData != null)
         {
             valueWithDelta = (int)(valueWithDelta * signetData.GetDamageMultiplier());
-            effectProb = signetData.GetAddEffectProb() * addEffectProbMultiplier;
+            effectProb = JavaMath.ToInt((addEffectProbMultiplier + addEffectProbMultiplierDelta * effect.GetSkillLevel()) * signetData.GetAddEffectProb());
         }
         effect.SetSignetBurstedCount(signetLvl);
         AttackUtil.CalculateSkillResult(effect, valueWithDelta, this, false);
@@ -50,11 +52,6 @@ public class SignetBurstEffect : DamageEffect
                 signetEffect.EndEffect();
             }
         }
-    }
-
-    public int GetSignetlvl()
-    {
-        return signetlvl;
     }
 
     public string GetSignet()

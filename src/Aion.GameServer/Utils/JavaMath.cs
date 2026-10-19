@@ -3,6 +3,18 @@ namespace Aion.GameServer.Utils;
 /// <summary>Java numeric helpers whose semantics differ from the .NET defaults.</summary>
 public static class JavaMath
 {
+	/// <summary>Matches Java's float-to-int cast: truncate toward zero, saturate infinities/overflow, and map NaN to zero.</summary>
+	public static int ToInt(float value)
+	{
+		if (float.IsNaN(value))
+			return 0;
+		if (value <= int.MinValue)
+			return int.MinValue;
+		if (value >= int.MaxValue)
+			return int.MaxValue;
+		return (int)value;
+	}
+
 	/// <summary>Matches Java <c>Math.round(float)</c>, including midpoint and saturation behavior.</summary>
 	public static int Round(float value)
 	{

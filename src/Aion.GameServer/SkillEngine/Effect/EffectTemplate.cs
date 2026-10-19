@@ -296,7 +296,7 @@ public abstract class EffectTemplate
     private bool CheckDodgeOrResistRate(Aion.GameServer.SkillEngine.Model.Effect effect)
     {
         Creature effector = effect.GetEffector();
-        int accuracyModifier = AccMod2 + AccMod1 * effect.GetSkillLevel() + effect.GetAccModBoost();
+        int accuracyModifier = AccMod2 + AccMod1 * effect.GetSkillLevel();
         if (effect.GetSkillTemplate().GetSubType() == SkillSubType.DEBUFF)
             accuracyModifier += effector.GetGameStats().GetStat(StatEnum.BOOST_RESIST_DEBUFF, 0).GetCurrent();
         OneTimeBoostSkillAttack? boost = OneTimeBoostSkillAttackEffect.GetActiveBoost(effector, this);
@@ -358,20 +358,17 @@ public abstract class EffectTemplate
         }
 
         // chance to trigger subeffect
-        if (Rnd.Chance() >= SubEffectField.GetChance())
+        if (Rnd.Chance() >= SubEffectField.GetChance(effect.GetSkillLevel()))
             return;
 
         SkillTemplate template = DataManager.SKILL_DATA.GetSkillTemplate(SubEffectField.GetSkillId());
         int level = 1;
-        int accBoost = effect.GetAccModBoost();
         if (SubEffectField.IsAddEffect())
         { // Only used by signet bursts
-            level = effect.GetSignetBurstedCount();
-            accBoost = short.MaxValue; // sub effects cannot be resisted by magic resist in case of signet bursts
+            level = effect.GetSignetBurstedCount() + 1;
         }
         Aion.GameServer.SkillEngine.Model.Effect newEffect = new Aion.GameServer.SkillEngine.Model.Effect(effect.GetEffector(), effect.GetOriginalEffected(), template, level, null, effect.GetForceType(), true, null);
         newEffect.SetShieldDefense(effect.GetShieldDefense());
-        newEffect.SetAccModBoost(accBoost);
         newEffect.Initialize();
         if (newEffect.GetSpellStatus() != SpellStatus.DODGE && newEffect.GetSpellStatus() != SpellStatus.RESIST)
             effect.SetSpellStatus(newEffect.GetSpellStatus());

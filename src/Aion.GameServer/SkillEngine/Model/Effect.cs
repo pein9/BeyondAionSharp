@@ -89,8 +89,6 @@ public class Effect : IStatOwner
 
     /// <summary>power of effect ( used for dispels)</summary>
     private int power;
-    /// <summary>accModBoost used for SignetBurstEffect</summary>
-    private int accModBoost = 0;
 
     private EffectResult effectResult = EffectResult.NORMAL;
 
@@ -1234,16 +1232,6 @@ public class Effect : IStatOwner
         this.power -= power;
 
         return this.power;
-    }
-
-    public void SetAccModBoost(int accModBoost)
-    {
-        this.accModBoost = accModBoost;
-    }
-
-    public int GetAccModBoost()
-    {
-        return this.accModBoost;
     }
 
     public bool IsHideEffect()
