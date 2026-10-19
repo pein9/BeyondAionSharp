@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Net.Sockets;
+using System.Net;
 using Aion.ChatServer.Configuration;
 using Aion.ChatServer.Models;
 using Aion.ChatServer.Network.Packets.GameServer;
@@ -17,7 +18,12 @@ public sealed class GsConnection : BaseClientConnection
 	private readonly ChatServerOptions _options;
 	private readonly SemaphoreSlim _sendLock = new(1, 1);
 	private readonly SemaphoreSlim _closeLock = new(1, 1);
-	private GameServerConnectionState _state = GameServerConnectionState.Connected;
+    private readonly object _authGuard = new();
+    private readonly TimeProvider _timeProvider;
+    private readonly bool _fromLoopback;
+    private bool _closing;
+    private volatile bool _authTimedOut;
+	private volatile GameServerConnectionState _state = GameServerConnectionState.Connected;
 
 	public GsConnection(
 		ILogger logger,
@@ -25,17 +31,46 @@ public sealed class GsConnection : BaseClientConnection
 		string clientId,
 		IGameServerService gameServerService,
 		IChatService chatService,
-		ChatServerOptions options)
+		ChatServerOptions options,
+        TimeProvider? timeProvider = null)
 		: base(logger, client, clientId)
 	{
 		_gameServerService = gameServerService;
 		_chatService = chatService;
 		_options = options;
+        _timeProvider = timeProvider ?? TimeProvider.System;
+        _fromLoopback = client.Client.RemoteEndPoint is IPEndPoint endpoint && IPAddress.IsLoopback(endpoint.Address);
         client.NoDelay = true;
         client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
 	}
 
-	protected override async Task<PacketBuffer?> ReadPacketAsync()
+    public override async Task RunAsync()
+    {
+        using var cancellation = new CancellationTokenSource();
+        Task deadline = EnforceAuthDeadlineAsync(cancellation.Token);
+        try { await base.RunAsync(); }
+        finally
+        {
+            cancellation.Cancel();
+            try { await deadline; } catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+        }
+    }
+
+    private async Task EnforceAuthDeadlineAsync(CancellationToken token)
+    {
+        await Task.Delay(TimeSpan.FromSeconds(30), _timeProvider, token);
+        lock (_authGuard)
+        {
+            if (!_isConnected || _state == GameServerConnectionState.Authed) return;
+            _authTimedOut = true;
+            _closing = true;
+        }
+        _logger.LogInformation("{ClientId} didn't authenticate within 30000 ms, disconnecting", _clientId);
+        _client.Close(); // Unblock a read/write before awaiting serialized cleanup.
+        await CloseAsync();
+    }
+
+    protected override async Task<PacketBuffer?> ReadPacketAsync()
 	{
 		var header = await ReadExactOrNullAsync(2);
 		if (header == null)
@@ -114,7 +149,7 @@ public sealed class GsConnection : BaseClientConnection
         await _sendLock.WaitAsync();
 		try
 		{
-			if (!_isConnected)
+			if (!_isConnected || _authTimedOut)
 				return;
 
 			byte[] frame;
@@ -125,7 +160,7 @@ public sealed class GsConnection : BaseClientConnection
 			}
 			catch (Exception ex) when (ex is IOException or SocketException or ObjectDisposedException)
 			{
-				throw new GameServerTransportException("Failed to write a chat gameserver packet.", ex);
+				if (!_authTimedOut) throw new GameServerTransportException("Failed to write a chat gameserver packet.", ex);
 			}
 		}
 		finally
@@ -141,6 +176,7 @@ public sealed class GsConnection : BaseClientConnection
 		{
 			if (!_isConnected)
 				return;
+            lock (_authGuard) _closing = true;
 
 			if (_state == GameServerConnectionState.Authed)
 				_gameServerService.SetOffline();
@@ -162,16 +198,18 @@ public sealed class GsConnection : BaseClientConnection
 		}
 	}
 
-	private async Task HandleAuthAsync(CmChatServerAuth packet)
-	{
-		var response = _gameServerService.RegisterGameServer(packet.GameServerId, packet.Password);
-		if (response == GsAuthResponse.Authed)
-			_state = GameServerConnectionState.Authed;
-
-		await SendPacketAsync(new SmGameServerAuthResponse(response, _options));
-		if (response != GsAuthResponse.Authed)
-			await CloseAsync();
-	}
+    private async Task HandleAuthAsync(CmChatServerAuth packet)
+    {
+        GsAuthResponse response;
+        lock (_authGuard)
+        {
+            if (!_isConnected || _closing || _authTimedOut) return;
+            response = _gameServerService.RegisterGameServer(packet.GameServerId, packet.Password, _fromLoopback);
+            if (response == GsAuthResponse.Authed) _state = GameServerConnectionState.Authed;
+        }
+        await SendPacketAsync(new SmGameServerAuthResponse(response, _options));
+        if (response != GsAuthResponse.Authed) await CloseAsync();
+    }
 
 	private async Task HandlePlayerAuthAsync(CmPlayerAuth packet)
 	{
@@ -199,7 +237,9 @@ public sealed class GsConnection : BaseClientConnection
 		var offset = 0;
 		while (offset < length)
 		{
-			var read = await ReadAsync(buffer, offset, length - offset);
+			int read;
+            try { read = await ReadAsync(buffer, offset, length - offset); }
+            catch (Exception ex) when (_authTimedOut && ex is IOException or SocketException or ObjectDisposedException) { return null; }
 			if (read == 0)
 				return null;
 			offset += read;

@@ -36,9 +36,14 @@ public sealed class GameServerConnection : BaseClientConnection, IGameServerSess
 	private readonly CancellationTokenSource _pingCancellationTokenSource = new();
 	private readonly SemaphoreSlim _sendLock = new(1, 1);
 	private readonly SemaphoreSlim _closeLock = new(1, 1);
-	private GameServerConnectionState _state = GameServerConnectionState.Connected;
+	private volatile GameServerConnectionState _state = GameServerConnectionState.Connected;
 	private GameServerInfo? _gameServerInfo;
 	private Task? _pingTask;
+    private readonly TimeProvider _timeProvider;
+    private readonly long _connectedAtMillis;
+    private readonly object _authGuard = new();
+    private bool _closing;
+    private volatile bool _authTimedOut;
 
 	public GameServerConnection(
 		ILogger logger,
@@ -55,7 +60,8 @@ public sealed class GameServerConnection : BaseClientConnection, IGameServerSess
 		IBannedHddService bannedHddService,
 		IPlayerTransferService playerTransferService,
 		LoginServerOptions options,
-		TimeSpan? pingInterval = null)
+		TimeSpan? pingInterval = null,
+        TimeProvider? timeProvider = null)
 		: base(logger, client, clientId)
 	{
 		_registry = registry;
@@ -70,19 +76,45 @@ public sealed class GameServerConnection : BaseClientConnection, IGameServerSess
 		_playerTransferService = playerTransferService;
 		_options = options;
 		_pingInterval = pingInterval ?? DefaultPingInterval;
+        _timeProvider = timeProvider ?? TimeProvider.System;
+        _connectedAtMillis = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds();
 	}
 
 	public override async Task RunAsync()
 	{
+        using var cancellation = new CancellationTokenSource();
+        Task deadline = WatchAuthenticationDeadlineAsync(cancellation.Token);
 		try
 		{
 			await base.RunAsync();
 		}
 		finally
 		{
+            cancellation.Cancel();
+            try { await deadline; } catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
 			await StopPingLoopAsync(waitForTask: true);
 		}
 	}
+
+    private async Task WatchAuthenticationDeadlineAsync(CancellationToken token)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1), _timeProvider);
+        while (await timer.WaitForNextTickAsync(token)) await CloseIfAuthenticationTimedOutAsync();
+    }
+
+    internal async Task CloseIfAuthenticationTimedOutAsync()
+    {
+        lock (_authGuard)
+        {
+            if (!_isConnected || _state == GameServerConnectionState.Authed || _authTimedOut) return;
+            if (unchecked(_timeProvider.GetUtcNow().ToUnixTimeMilliseconds() - _connectedAtMillis) <= 30000) return;
+            _authTimedOut = true;
+            _closing = true;
+        }
+        _logger.LogInformation("{ClientId} didn't authenticate within 30000 ms, disconnecting", _clientId);
+        _client.Close();
+        await CloseAsync();
+    }
 
 	protected override async Task<PacketBuffer?> ReadPacketAsync()
 	{
@@ -124,14 +156,19 @@ public sealed class GameServerConnection : BaseClientConnection, IGameServerSess
 		{
 			case CmGameServerAuth auth:
 				var request = new GameServerAuthRequest(auth.GameServerId, auth.Password, auth.Ip, auth.Port, auth.MinAccessLevel, auth.MaxPlayers);
-				var response = _registry.RegisterGameServer(request, _client.Client.RemoteEndPoint?.ToString() ?? string.Empty, this);
-				if (response == GsAuthResponse.AUTHED)
-				{
-					_state = GameServerConnectionState.Authed;
-					_gameServerInfo = _registry.GetGameServer(auth.GameServerId);
-					_logger.LogInformation("Gameserver #{GameServerId} is now online", auth.GameServerId);
-					StartPingLoop();
-				}
+                GsAuthResponse response;
+                lock (_authGuard)
+                {
+                    if (!_isConnected || _closing || _authTimedOut) return;
+                    response = _registry.RegisterGameServer(request, _client.Client.RemoteEndPoint?.ToString() ?? string.Empty, this);
+                    if (response == GsAuthResponse.AUTHED)
+                    {
+                        _state = GameServerConnectionState.Authed;
+                        _gameServerInfo = _registry.GetGameServer(auth.GameServerId);
+                        _logger.LogInformation("Gameserver #{GameServerId} is now online", auth.GameServerId);
+                        StartPingLoop();
+                    }
+                }
 				await SendPacketAsync(new SmGameServerAuthResponse(response, _registry.GetGameServers().Count));
 				if (response != GsAuthResponse.AUTHED)
 					await CloseAsync();
@@ -197,7 +234,7 @@ public sealed class GameServerConnection : BaseClientConnection, IGameServerSess
 			}
 			catch (Exception ex) when (ex is IOException or SocketException or ObjectDisposedException)
 			{
-				throw new GameServerTransportException("Failed to write a gameserver packet.", ex);
+				if (!_authTimedOut) throw new GameServerTransportException("Failed to write a gameserver packet.", ex);
 			}
 		}
 		finally
@@ -457,6 +494,7 @@ public sealed class GameServerConnection : BaseClientConnection, IGameServerSess
 		{
 			if (!_isConnected)
 				return;
+            lock (_authGuard) _closing = true;
 
 			await StopPingLoopAsync(waitForTask: false);
 
@@ -531,7 +569,9 @@ public sealed class GameServerConnection : BaseClientConnection, IGameServerSess
 		var offset = 0;
 		while (offset < length)
 		{
-			var read = await ReadAsync(buffer, offset, length - offset);
+			int read;
+            try { read = await ReadAsync(buffer, offset, length - offset); }
+            catch (Exception ex) when (_authTimedOut && ex is IOException or SocketException or ObjectDisposedException) { return null; }
 			if (read == 0)
 				return null;
 			offset += read;

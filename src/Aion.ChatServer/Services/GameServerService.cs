@@ -1,4 +1,5 @@
 using Aion.ChatServer.Configuration;
+using Aion.Commons.Network;
 using Microsoft.Extensions.Logging;
 
 namespace Aion.ChatServer.Services;
@@ -19,14 +20,19 @@ public sealed class GameServerService : IGameServerService
 
 	public bool IsOnline { get; private set; }
 
-	public GsAuthResponse RegisterGameServer(byte gameServerId, string password)
+	public GsAuthResponse RegisterGameServer(byte gameServerId, string password, bool fromLoopback)
 	{
 		lock (_gate)
 		{
 			if (IsOnline)
 				return GsAuthResponse.AlreadyRegistered;
 
-			if (!string.Equals(password, _options.GameServerPassword, StringComparison.Ordinal))
+            if (_options.GameServerPassword.Length == 0 && !fromLoopback)
+            {
+                _logger.LogWarning("Rejected game server #{GameServerId} from a remote address: chatserver.network.gameserver.password is not set", gameServerId);
+                return GsAuthResponse.NotAuthed;
+            }
+            if (!JavaPassword.EqualsUtf8(_options.GameServerPassword, password))
 				return GsAuthResponse.NotAuthed;
 
 			IsOnline = true;

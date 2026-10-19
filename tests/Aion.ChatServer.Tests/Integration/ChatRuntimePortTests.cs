@@ -155,12 +155,46 @@ public sealed class ChatRuntimePortTests
         Assert.False(f.Peer.Client.Poll(0, SelectMode.SelectRead));
     }
 
+    [Theory]
+    [InlineData(29999, false)]
+    [InlineData(30000, true)]
+    public async Task GameServerAuthenticationDeadlineUsesThirtySeconds(int elapsed, bool closes)
+    {
+        await using var f = await Fixture.CreateAsync(gameServer: true);
+        f.Clock.Advance(elapsed);
+        if (closes) await f.ExpectClosedAsync();
+        else Assert.False(f.Peer.Client.Poll(0, SelectMode.SelectRead));
+    }
+
+    [Fact]
+    public async Task UnauthenticatedTimeoutDoesNotMarkTheRegisteredServerOffline()
+    {
+        await using var f = await Fixture.CreateAsync(gameServer: true);
+        Assert.Equal(GsAuthResponse.Authed, f.GameService.RegisterGameServer(1, "", fromLoopback: true));
+        f.Clock.Advance(30000); await f.ExpectClosedAsync();
+        Assert.True(f.GameService.IsOnline); Assert.Equal((byte)1, f.GameService.GameServerId);
+    }
+
+    [Fact]
+    public async Task AuthenticatedGameServerIsExemptFromDeadline()
+    {
+        await using var f = await Fixture.CreateAsync(gameServer: true);
+        await f.Peer.GetStream().WriteAsync(ChatPacketFrameCodec.CreateFrame(new byte[] { 0, 1, 0, 0 }));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var header = new byte[2]; await f.Peer.GetStream().ReadExactlyAsync(header, timeout.Token);
+        var body = new byte[System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(header) - 2];
+        await f.Peer.GetStream().ReadExactlyAsync(body, timeout.Token); Assert.Equal(0, body[1]);
+        f.Clock.Advance(30000); Assert.False(f.Peer.Client.Poll(0, SelectMode.SelectRead));
+        Assert.True(f.GameService.IsOnline);
+    }
+
     private sealed class Fixture : IAsyncDisposable
     {
         public TcpClient Peer = null!, Accepted = null!;
         public BaseClientConnection Connection = null!;
         public Task Running = null!;
         public ManualClock Clock = new();
+        public GameServerService GameService = null!;
         public ClientChannelHandler ClientConnection => (ClientChannelHandler)Connection;
         public SemaphoreSlim SendLock => (SemaphoreSlim)typeof(ClientChannelHandler).GetField("_sendLock", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(Connection)!;
         public long PendingBytes => ((ChatClientWriteState)typeof(ClientChannelHandler).GetField("_writes", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(Connection)!).PendingBytes;
@@ -175,8 +209,9 @@ public sealed class ChatRuntimePortTests
             var channels = new ChatChannels(NullLogger<ChatChannels>.Instance);
             var broadcast = new BroadcastService(NullLogger<BroadcastService>.Instance);
             var chat = new ChatService(channels, broadcast, NullLogger<ChatService>.Instance);
+            f.GameService = new GameServerService(options, NullLogger<GameServerService>.Instance);
             f.Connection = gameServer
-                ? new GsConnection(NullLogger.Instance, f.Accepted, "runtime-gs", new GameServerService(options, NullLogger<GameServerService>.Instance), chat, options)
+                ? new GsConnection(NullLogger.Instance, f.Accepted, "runtime-gs", f.GameService, chat, options, f.Clock)
                 : new ClientChannelHandler(NullLogger.Instance, f.Accepted, "runtime-client", chat, channels, broadcast,
                     new ChatHandlerRegistry([], NullLogger<ChatHandlerRegistry>.Instance), options, f.Clock);
             f.Running = f.Connection.RunAsync();

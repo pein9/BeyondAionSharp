@@ -1009,6 +1009,110 @@ public sealed class SocketServerSmokeTests
 		finally { await server.StopAsync(TimeSpan.FromSeconds(1)); await AssertTaskCompletedAsync(running); }
 	}
 
+    [Theory]
+    [InlineData(30000, false)]
+    [InlineData(30001, true)]
+    public async Task GameServerDeadlineUsesStrictThirtySecondComparison(int elapsed, bool closes)
+    {
+        await using var f = await GameServerDeadlineSocket.CreateAsync(run: false);
+        f.Clock.Millis += elapsed;
+        await f.Connection.CloseIfAuthenticationTimedOutAsync();
+        if (closes) await f.ExpectClosedAsync();
+        else Assert.False(f.Peer.Client.Poll(0, SelectMode.SelectRead));
+    }
+
+    [Fact]
+    public async Task GameServerDeadlineIsCheckedWithoutFurtherIncomingPackets()
+    {
+        await using var f = await GameServerDeadlineSocket.CreateAsync();
+        f.Clock.Millis += 30001;
+        await f.ExpectClosedAsync();
+        await f.Running.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.DoesNotContain(LogLevel.Error, f.Logger.Levels);
+    }
+
+    [Fact]
+    public async Task AuthenticatedGameServerSurvivesDeadlineAndOwnedStateIsClearedOnClose()
+    {
+        await using var f = await GameServerDeadlineSocket.CreateAsync();
+        await f.Peer.GetStream().WriteAsync(CreateGameServerAuthFrame());
+        Assert.Equal(CreateGameServerAuthResponseFrame(GsAuthResponse.AUTHED, 1), await ReadFrameAsync(f.Peer.GetStream()));
+        f.Clock.Millis += 30001;
+        await f.Connection.CloseIfAuthenticationTimedOutAsync();
+        Assert.False(f.Peer.Client.Poll(0, SelectMode.SelectRead));
+        Assert.True(f.Registry.GetGameServer(1)!.IsOnline);
+        await f.Connection.CloseAsync();
+        await f.Running.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(f.Registry.GetGameServer(1)!.IsOnline);
+    }
+
+    [Fact]
+    public async Task StrangerTimeoutDoesNotMarkTheRealServerOffline()
+    {
+        await using var f = await GameServerDeadlineSocket.CreateAsync();
+        var owner = new NoopGameServerSession();
+        Assert.Equal(GsAuthResponse.AUTHED, f.Registry.RegisterGameServer(
+            new GameServerAuthRequest(1, "secret", new byte[] {127, 0, 0, 1}, 7777, 0, 100), "127.0.0.1", owner));
+        f.Clock.Millis += 30001;
+        await f.Connection.CloseIfAuthenticationTimedOutAsync();
+        await f.ExpectClosedAsync();
+        await f.Running.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.True(f.Registry.GetGameServer(1)!.IsOnline);
+    }
+
+    [Fact]
+    public async Task GameServerTimeoutAbortsSocketBeforeWaitingForSerializedWrites()
+    {
+        await using var f = await GameServerDeadlineSocket.CreateAsync();
+        var sendLock = (SemaphoreSlim)typeof(GameServerConnection).GetField("_sendLock", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(f.Connection)!;
+        await sendLock.WaitAsync();
+        Task close = Task.CompletedTask;
+        try
+        {
+            f.Clock.Millis += 30001;
+            close = f.Connection.CloseIfAuthenticationTimedOutAsync();
+            await f.ExpectClosedAsync();
+        }
+        finally { sendLock.Release(); }
+        await close.WaitAsync(TimeSpan.FromSeconds(5));
+        await f.Running.WaitAsync(TimeSpan.FromSeconds(5));
+    }
+
+    private sealed class GameServerDeadlineSocket : IAsyncDisposable
+    {
+        public readonly SendQueueClock Clock = new();
+        public readonly GameServerRegistry Registry = new();
+        public readonly MessageRecordingLogger<GameServerConnection> Logger = new();
+        public TcpClient Peer = null!;
+        public GameServerConnection Connection = null!;
+        public Task Running = Task.CompletedTask;
+        public static async Task<GameServerDeadlineSocket> CreateAsync(bool run = true)
+        {
+            using var listener = new TcpListener(IPAddress.Loopback, 0); listener.Start();
+            var f = new GameServerDeadlineSocket { Peer = new TcpClient() };
+            var connecting = f.Peer.ConnectAsync((IPEndPoint)listener.LocalEndpoint);
+            var accepted = await listener.AcceptTcpClientAsync(); await connecting;
+            f.Registry.RegisterKnownServer(new GameServerInfo(1, "127.0.0.1", "secret"));
+            f.Connection = new GameServerConnection(f.Logger, accepted, "auth-deadline-probe", f.Registry,
+                new LoginSessionRegistry(), new ThrowingAccountRepository(), new ThrowingAccountTimeRepository(),
+                new EmptyBannedIpService(), new ThrowingAccountsLogRepository(), new ThrowingLoginAuthService(),
+                new EmptyBannedMacService(), new EmptyBannedHddService(), new ThrowingPlayerTransferService(),
+                new LoginServerOptions(), timeProvider: f.Clock);
+            if (run) f.Running = f.Connection.RunAsync();
+            return f;
+        }
+        public async Task ExpectClosedAsync()
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            Assert.Equal(0, await Peer.GetStream().ReadAsync(new byte[1], timeout.Token));
+        }
+        public async ValueTask DisposeAsync()
+        {
+            Peer.Dispose(); await Connection.DisposeAsync();
+            await Running.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+    }
+
 	private static GameServerSocketServer CreateGameServerSocketServer(int port, GameServerRegistry registry)
 	{
 		return new GameServerSocketServer(

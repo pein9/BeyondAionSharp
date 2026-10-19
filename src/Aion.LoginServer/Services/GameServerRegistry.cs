@@ -62,7 +62,7 @@ public sealed class GameServerRegistry : IGameServerRegistry
 		if (server.IsOnline || _onlineSessions.ContainsKey(request.ServerId))
 			return GsAuthResponse.ALREADY_REGISTERED;
 
-		if (!string.Equals(server.Password, request.Password, StringComparison.Ordinal))
+		if (!Aion.Commons.Network.JavaPassword.EqualsUtf8(server.Password, request.Password))
 			return GsAuthResponse.NOT_AUTHED;
 
 		if (!NetworkMask.Matches(server.IpMask, ExtractIp(remoteAddress)))

@@ -13,7 +13,7 @@ public interface IGameServerService
 
 	bool IsOnline { get; }
 
-	GsAuthResponse RegisterGameServer(byte gameServerId, string password);
+	GsAuthResponse RegisterGameServer(byte gameServerId, string password, bool fromLoopback);
 
 	void SetOffline();
 }

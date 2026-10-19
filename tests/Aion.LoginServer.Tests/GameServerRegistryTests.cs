@@ -36,6 +36,18 @@ public class GameServerRegistryTests
 		Assert.False(registry.GetGameServer(1)!.IsOnline);
 	}
 
+    [Theory]
+    [InlineData("127.0.0.1", true)]
+    [InlineData("10.0.0.5", false)]
+    public void PasswordComparisonUsesJavaUtf8ReplacementAndStillChecksIp(string remote, bool accepted)
+    {
+        var registry = new GameServerRegistry();
+        registry.RegisterKnownServer(new GameServerInfo(1, "127.0.0.1", "?"));
+        var request = new GameServerAuthRequest(1, new string((char)0xD800, 1), new byte[] {127, 0, 0, 1}, 7777, 0, 100);
+        Assert.Equal(accepted ? GsAuthResponse.AUTHED : GsAuthResponse.NOT_AUTHED, registry.RegisterGameServer(request, remote));
+        Assert.Equal(accepted, registry.GetGameServer(1)!.IsOnline);
+    }
+
 	[Fact]
 	public async Task KickAccountFromGameServer_SendsJavaRequestKickPacket()
 	{
