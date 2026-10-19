@@ -294,8 +294,7 @@ public static class AionClientPacketFactory
 		if (!packetInfo.IsValid(state))
 		{
 			if (NetworkConfig.LOG_IGNORED_PACKETS)
-				log.LogWarning(client + " sent " + packetInfo.GetPacketClassName() + " but the connections current state (" + state
-					+ ") is invalid for this packet. Packet won't be instantiated.");
+				log.LogWarning("{Client} sent {PacketInfoGetPacketClassName} but the connection's current state ({State}) is invalid for this packet - packet won't be instantiated", client, packetInfo.GetPacketClassName(), state);
 			return null;
 		}
 		return packetInfo.NewPacket(opcode, data, client);

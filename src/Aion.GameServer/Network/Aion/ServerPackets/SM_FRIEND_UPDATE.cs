@@ -24,8 +24,7 @@ public class SM_FRIEND_UPDATE : AionServerPacket
     {
         Friend f = con.GetActivePlayer().GetFriendList().GetFriend(friendObjId);
         if (f == null)
-            log.LogDebug("Attempted to update friend list status of " + friendObjId + " for " + con.GetActivePlayer().GetName()
-                + " - object ID not found on friend list");
+            log.LogDebug("Attempted to update friend list status of {FriendObjId} for {ConGetActivePlayerGetName} - object ID not found on friend list", friendObjId, con.GetActivePlayer().GetName());
         else
         {
             WriteS(f.GetName());

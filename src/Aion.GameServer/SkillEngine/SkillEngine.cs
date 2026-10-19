@@ -168,7 +168,7 @@ public class SkillEngine
         SkillTemplate skillTemplate = DataManager.SKILL_DATA.GetSkillTemplate(skillId);
         if (skillTemplate == null)
         {
-            log.LogWarning(new ArgumentException(), "Could not apply effect, invalid skill id " + skillId);
+            log.LogWarning(new ArgumentException(), "Could not apply effect, invalid skill id {SkillId}", skillId);
             return null;
         }
         return skillTemplate;

@@ -72,7 +72,7 @@ public class EventService
             foreach (string eventName in EventsConfig.DISABLED_EVENTS)
             {
                 if (!eventNames.Contains(eventName))
-                    log.LogWarning("Unknown event \"" + eventName + "\" configured as disabled");
+                    log.LogWarning("Unknown event \"{EventName}\" configured as disabled", eventName);
             }
         }
     }
@@ -245,7 +245,7 @@ public class EventService
                 }
                 catch (Exception e)
                 {
-                    log.LogError(e, "Could not load config properties of event " + et.GetName());
+                    log.LogError(e, "Could not load config properties of event {EtGetName}", et.GetName());
                 }
             });
         return eventConfigProperties;

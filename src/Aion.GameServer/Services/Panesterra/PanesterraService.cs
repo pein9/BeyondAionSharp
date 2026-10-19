@@ -145,7 +145,7 @@ public class PanesterraService
     {
         if (new[] { 10111, 10211, 10311, 10411 }.Any(id => SiegeService.GetInstance().GetSiege(id) != null))
         {
-            log.LogError("Ahserion raid cannot be started while any Panesterra fortress is under siege.");
+            log.LogError("Ahserion raid cannot be started while any Panesterra fortress is under siege");
             return;
         }
         CreateTeams(-1);

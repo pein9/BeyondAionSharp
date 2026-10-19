@@ -221,9 +221,9 @@ public class SpawnEngine
         if (spawnedCounter > 0)
         {
             if (eventTemplate == null)
-                Log.LogInformation("Spawned " + spawnedCounter + " objects in " + instance);
+                Log.LogInformation("Spawned {SpawnedCounter} objects in {Instance}", spawnedCounter, instance);
             else
-                Log.LogInformation('[' + eventTemplate.GetName() + "] Spawned " + spawnedCounter + " event objects in " + instance);
+                Log.LogInformation("[{EventTemplateGetName}] Spawned {SpawnedCounter} event objects in {Instance}", eventTemplate.GetName(), spawnedCounter, instance);
         }
         if (eventTemplate == null)
             HousingService.GetInstance().SpawnHouses(instance, ownerId);
@@ -233,7 +233,7 @@ public class SpawnEngine
     {
         if (spawn.GetPool() >= spawn.GetSpawnTemplates().Count)
         {
-            Log.LogWarning("Spawn pool size must be smaller than spots to take effect, npcId: " + spawn.GetNpcId() + ", worldId: " + spawn.GetWorldId());
+            Log.LogWarning("Spawn pool size must be smaller than spots to take effect, npcId: {SpawnGetNpcId}, worldId: {SpawnGetWorldId}", spawn.GetNpcId(), spawn.GetWorldId());
             return false;
         }
         return true;
@@ -243,8 +243,8 @@ public class SpawnEngine
     {
         StatsCollector function = new StatsCollector();
         Aion.GameServer.World.World.GetInstance().ForEachObject(function.Accept);
-        Log.LogInformation("Loaded " + function.GetNpcCount() + " npc spawns");
-        Log.LogInformation("Loaded " + function.GetGatherableCount() + " gatherable spawns");
+        Log.LogInformation("Loaded {FunctionGetNpcCount} npc spawns", function.GetNpcCount());
+        Log.LogInformation("Loaded {FunctionGetGatherableCount} gatherable spawns", function.GetGatherableCount());
     }
 
     // Java parity: inner class implements Consumer<VisibleObject>; C# exposes Accept as an Action<VisibleObject> method group.

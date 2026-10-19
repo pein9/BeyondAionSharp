@@ -247,7 +247,7 @@ public sealed class SimulationBootTailTests(SimulationWorldFixture fixture)
 		Assert.Equal(0, PvpMapService.GetInstance().GetParticipantsSize());
 
 		IReadOnlyList<CapturedLogEntry> boot = BootLog();
-		int clock = SingleIndex(boot, entry => entry.Message.StartsWith("GameTime started.", StringComparison.Ordinal), "\"GameTime started\"");
+		int clock = SingleIndex(boot, entry => entry.Message.StartsWith("Game time started with an update interval of ", StringComparison.Ordinal), "\"GameTime started\"");
 		int created = SingleIndex(boot, entry => entry.Category == "InstanceService"
 			&& entry.Message.StartsWith("Created new instance: 301220000 [" + pvpMap.GetInstanceId().ToString(System.Globalization.CultureInfo.InvariantCulture) + "]", StringComparison.Ordinal),
 			"PvP map \"Created new instance: 301220000\"");

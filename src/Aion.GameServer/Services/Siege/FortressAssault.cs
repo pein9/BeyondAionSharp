@@ -139,9 +139,7 @@ public class FortressAssault : Assault<FortressSiege, FortressLocation>
             minSpawnDelay = 30;
 
         // Java parity: string concatenation prints a float as Float.toString does (1.0, not C#'s 1).
-        log.LogInformation("Initialized fortress assault on [locationID=" + locationId + "] with [difficulty=" + JavaString.ValueOf(difficulty) + "] [factionBalance="
-            + JavaString.ValueOf(factionBalance) + "] [influence=" + JavaString.ValueOf(influence) + "] [difficultyMultiplier="
-            + JavaString.ValueOf(SiegeConfig.SIEGE_DIFFICULTY_MULTIPLIER) + "]");
+        log.LogInformation("Initialized fortress assault on [locationID={LocationId}] with [difficulty={Difficulty}] [factionBalance={FactionBalance}] [influence={Influence}] [difficultyMultiplier={SiegeConfigSIEGE_DIFFICULTY_MULTIPLIER}]", locationId, JavaString.ValueOf(difficulty), JavaString.ValueOf(factionBalance), JavaString.ValueOf(influence), JavaString.ValueOf(SiegeConfig.SIEGE_DIFFICULTY_MULTIPLIER));
     }
 
     private float GetFactionBalanceMultiplier()
@@ -186,8 +184,7 @@ public class FortressAssault : Assault<FortressSiege, FortressLocation>
             });
             if (spawnTask != null)
                 spawnTask.Cancel(true);
-            log.LogInformation("Finished fortress assault on [locationID=" + locationId + "] by defeating " + possibleCommanderCount + " dredgion commanders after "
-                + waveCount + " waves.");
+            log.LogInformation("Finished fortress assault on [locationID={LocationId}] by defeating {PossibleCommanderCount} dredgion commanders after {WaveCount} waves", locationId, possibleCommanderCount, waveCount);
         }
     }
 }

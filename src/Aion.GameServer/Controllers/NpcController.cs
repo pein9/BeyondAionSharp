@@ -136,7 +136,7 @@ public class NpcController : CreatureController<Npc>
         }
         catch (Exception e)
         {
-            log.LogError(e, "onDie() exception for " + owner + ":");
+            log.LogError(e, "onDie() exception for {Owner}:", owner);
         }
 
         base.OnDie(lastAttacker);

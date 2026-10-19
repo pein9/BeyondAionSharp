@@ -20,7 +20,7 @@ public class AuditLogger
             AutoBan.Punishment(player);
 
         if (LoggingConfig.LOG_AUDIT)
-            log.LogInformation(player + " " + message);
+            log.LogInformation("{Player} {Message}", player, message);
 
         foreach (Aion.GameServer.Model.GameObjects.Players.Player gm in GMService.GetInstance().GetOnlineStaffMembers())
         {

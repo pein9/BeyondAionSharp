@@ -138,7 +138,7 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
 
         if (!PlayerService.StoreNewPlayer(player, accountName, targetAccount))
         {
-            textLog.LogInformation("failed to store new player to " + accountName);
+            textLog.LogInformation("failed to store new player to {AccountName}", accountName);
             IDFactory.GetInstance().ReleaseId(playerCommonData.GetPlayerObjId());
             return null;
         }
@@ -199,7 +199,7 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
             ItemTemplate template = DataManager.ITEM_DATA.GetItemTemplate(itemId);
             if (template == null)
             {
-                textLog.LogWarning("(accId=" + targetAccount + ") item with id " + itemId + " was not found in templates");
+                textLog.LogWarning("(accId={TargetAccount}) item with id {ItemId} was not found in templates", targetAccount, itemId);
                 continue;
             }
 
@@ -236,7 +236,7 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
 
         // read data
         cnt = ReadD();
-        textLog.LogInformation("EmotionList:" + cnt);
+        textLog.LogInformation("EmotionList:{Cnt}", cnt);
         player.SetEmotions(new EmotionList(player));
         for (int a = 0; a < cnt; a++)
         { // emotes
@@ -247,7 +247,7 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
         }
 
         cnt = ReadD();
-        textLog.LogInformation("MotionList:" + cnt);
+        textLog.LogInformation("MotionList:{Cnt}", cnt);
         player.SetMotions(new MotionList(player));
         for (int i = 0; i < cnt; i++)
         { // motions
@@ -259,7 +259,7 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
         }
 
         cnt = ReadD();
-        textLog.LogInformation("Macros:" + cnt);
+        textLog.LogInformation("Macros:{Cnt}", cnt);
         player.SetMacros(new Macros());
         for (int a = 0; a < cnt; a++)
         { // macros
@@ -271,7 +271,7 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
         }
 
         cnt = ReadD();
-        textLog.LogInformation("NpcFactions:" + cnt);
+        textLog.LogInformation("NpcFactions:{Cnt}", cnt);
         player.SetNpcFactions(new NpcFactions(player));
         for (int a = 0; a < cnt; a++)
         { // npc factions
@@ -287,7 +287,7 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
             PlayerNpcFactionsDAO.StoreNpcFactions(player);
 
         cnt = ReadD();
-        textLog.LogInformation("Pets:" + cnt);
+        textLog.LogInformation("Pets:{Cnt}", cnt);
         for (int i = 0; i < cnt; i++)
         { // pets
             int petId = ReadD();
@@ -306,7 +306,7 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
         }
 
         cnt = ReadD();
-        textLog.LogInformation("TitleList:" + cnt);
+        textLog.LogInformation("TitleList:{Cnt}", cnt);
         player.SetTitleList(new TitleList());
         for (int a = 0; a < cnt; a++)
         { // titles
@@ -344,7 +344,7 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
 
         // read skill data
         cnt = ReadD();
-        textLog.LogInformation("PlayerSkillList:" + cnt);
+        textLog.LogInformation("PlayerSkillList:{Cnt}", cnt);
         player.SetSkillList(new PlayerSkillList());
         bool rsCheck = rsList.Count > 0;
         for (int a = 0; a < cnt; a++)
@@ -373,7 +373,7 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
 
         // read recipe data
         cnt = ReadD();
-        textLog.LogInformation("RecipeList:" + cnt);
+        textLog.LogInformation("RecipeList:{Cnt}", cnt);
         player.SetRecipeList(new RecipeList());
         for (int a = 0; a < cnt; a++)
         { // recipes
@@ -385,7 +385,7 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
 
         // read quest data
         cnt = ReadD();
-        textLog.LogInformation("QuestStateList:" + cnt);
+        textLog.LogInformation("QuestStateList:{Cnt}", cnt);
         player.SetQuestStateList(new QuestStateList());
         for (int a = 0; a < cnt; a++)
         { // quests
@@ -398,7 +398,7 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
         }
 
         PlayerService.StorePlayer(player);
-        textLog.LogInformation("finished in " + stopwatch.ElapsedMilliseconds + " ms");
+        textLog.LogInformation("finished in {CurrentTimeMillisSt} ms", stopwatch.ElapsedMilliseconds);
         return player;
     }
 

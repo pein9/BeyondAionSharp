@@ -106,7 +106,7 @@ public class CM_LEGION : AionClientPacket
                 legionDominionId = ReadD();
                 break;
             default:
-                AionLog.For(nameof(CM_LEGION)).LogWarning("Unknown Legion exOpcode 0x" + exOpcode.ToString("X", CultureInfo.InvariantCulture));
+                AionLog.For(nameof(CM_LEGION)).LogWarning("Unknown Legion exOpcode 0x{IntegerToHexStringExOpcodeToUpperCase}", exOpcode.ToString("X", CultureInfo.InvariantCulture));
                 break;
         }
     }

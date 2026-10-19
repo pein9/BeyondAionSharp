@@ -62,9 +62,9 @@ public class CM_EXCHANGE_REQUEST : AionClientPacket
             return;
         }
 
-        if (!activePlayer.GetRace().Equals(targetPlayer.GetRace()))
+        if (activePlayer.GetRace() != targetPlayer.GetRace())
         {
-            log.LogInformation("[AUDIT] Player " + activePlayer.GetName() + " tried trade with player (" + targetPlayer.GetName() + ") another race.");
+            global::Aion.GameServer.Utils.Audit.AuditLogger.Log(activePlayer, "tried to trade with player of another race: " + targetPlayer);
             return;
         }
 

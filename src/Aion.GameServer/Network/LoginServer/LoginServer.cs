@@ -421,15 +421,15 @@ public sealed class LoginServer : IAsyncDisposable, ILoginServerLink
 					? _retryDelays.SocketFailure
 					: session.WasAuthed ? _retryDelays.AuthedReconnect : _retryDelays.PreAuthReconnect;
 				_logger.LogInformation(ex,
-					"Could not connect to login server at {Endpoint}; trying again in {Delay}",
-					_options.Network.LoginEndPoint, retryDelay);
+					"Could not connect to login server at {Endpoint}; trying again in {DelaySeconds} seconds",
+					_options.Network.LoginEndPoint, retryDelay.TotalSeconds);
 			}
 			catch (IOException ex)
 			{
 				retryDelay = session == null
 					? _retryDelays.IoFailure
 					: session.WasAuthed ? _retryDelays.AuthedReconnect : _retryDelays.PreAuthReconnect;
-				_logger.LogWarning(ex, "Login-server bridge I/O failed; trying again in {Delay}", retryDelay);
+				_logger.LogWarning(ex, "Login-server bridge I/O failed; trying again in {DelaySeconds} seconds", retryDelay.TotalSeconds);
 			}
 			catch (ObjectDisposedException) when (cancellationToken.IsCancellationRequested)
 			{
@@ -440,7 +440,7 @@ public sealed class LoginServer : IAsyncDisposable, ILoginServerLink
 				retryDelay = session == null
 					? _retryDelays.IoFailure
 					: session.WasAuthed ? _retryDelays.AuthedReconnect : _retryDelays.PreAuthReconnect;
-				_logger.LogError(ex, "Error on login-server bridge; trying again in {Delay}", retryDelay);
+				_logger.LogError(ex, "Error on login-server bridge; trying again in {DelaySeconds} seconds", retryDelay.TotalSeconds);
 			}
 			finally
 			{
@@ -549,7 +549,12 @@ public sealed class LoginServer : IAsyncDisposable, ILoginServerLink
 					return;
 				}
 
-				_logger.LogWarning("Login-server rejected game-server auth with response {Response}", authResponse.Response);
+				if (authResponse.Response == 1)
+                    _logger.LogWarning("Authentication failed at the login server");
+                else if (authResponse.Response == 2)
+                    _logger.LogWarning("Game server is already registered at the login server");
+                else
+                    _logger.LogWarning("Login-server rejected game-server auth with response {Response}", authResponse.Response);
 				session.Close();
 				return;
 
@@ -626,7 +631,7 @@ public sealed class LoginServer : IAsyncDisposable, ILoginServerLink
 		if (!_loggedInAccounts.TryGetValue(accountId, out var client))
 			return;
 
-		_logger.LogInformation("Kicking account ID {AccountId} by LS request.", accountId);
+		_logger.LogInformation("Kicking account ID {AccountId} by LS request", accountId);
 		client.Close(notifyDoubleLogin ? SM_SYSTEM_MESSAGE.STR_KICK_ANOTHER_USER_TRY_LOGIN() : null);
 	}
 
@@ -740,7 +745,7 @@ public sealed class LoginServer : IAsyncDisposable, ILoginServerLink
 		var service = Services.Ban.HDDBanService.GetInstance();
 		foreach (var entry in packet.Entries)
 			service.LoadBan(entry.Serial, entry.Time);
-		_logger.LogInformation("Loaded {Count} HDD ban entries.", packet.Entries.Count);
+		_logger.LogInformation("Loaded {Count} HDD ban entries", packet.Entries.Count);
 		LogHardwareBanSnapshot("hdd", FingerprintHddBans(packet.Entries));
 	}
 

@@ -46,7 +46,7 @@ public class SM_MESSAGE : AionServerPacket
     {
         if (message.Length > MESSAGE_SIZE_LIMIT)
         {
-            log.LogWarning("Exceeded maximum string size for packet SM_MESSAGE.\nSize: " + message.Length + "\nMessage: " + message);
+            log.LogWarning("Exceeded maximum string size for packet SM_MESSAGE.\nSize: {MessageLength}\nMessage: {Message}", message.Length, message);
             if (message.Length > MESSAGE_SIZE_HARDCAP)
                 message = message.Substring(0, MESSAGE_SIZE_HARDCAP); // shorten message to avoid send log error
         }

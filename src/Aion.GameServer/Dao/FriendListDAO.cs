@@ -48,7 +48,7 @@ public class FriendListDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore FriendList data for player: " + player.GetObjectId() + " from DB: " + e.Message);
+            log.LogError(e, "Could not restore FriendList data for player: {PlayerGetObjectId} from DB: {EGetMessage}", player.GetObjectId(), e.Message);
         }
 
         return new FriendList(player, friends);

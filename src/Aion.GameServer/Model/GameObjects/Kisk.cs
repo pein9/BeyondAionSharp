@@ -144,7 +144,7 @@ public class Kisk : SummonedObject<Aion.GameServer.Model.GameObjects.Players.Pla
                     return true;
                 break;
             default:
-                log.LogWarning("Unhandled UseMask " + GetUseMask() + " for Kisk " + GetNpcId());
+                log.LogWarning("Unhandled UseMask {GetUseMask} for Kisk {GetNpcId}", GetUseMask(), GetNpcId());
                 break;
         }
 

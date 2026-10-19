@@ -43,7 +43,7 @@ public class AIEngine : GameEngine
         scriptManager.SetGlobalClassListener(acl);
         scriptManager.Load(AIConfig.HANDLER_DIRECTORY);
         ValidateScripts();
-        log.LogInformation("Loaded " + aiHandlers.Count + " AI handlers.");
+        log.LogInformation("Loaded {AiHandlersSize} AI handlers", aiHandlers.Count);
     }
 
     public void Reload()

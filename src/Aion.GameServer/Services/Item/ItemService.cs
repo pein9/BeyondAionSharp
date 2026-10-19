@@ -66,8 +66,7 @@ public class ItemService
             throw new System.NullReferenceException("Predicate is not supplied");
 
         if (LoggingConfig.LOG_ITEM)
-            log.LogInformation("Item: " + itemTemplate.GetTemplateId() + " [" + itemTemplate.GetName() + "] added to player " + player.GetName() + " (count: " + count
-                + ") (type: " + predicate.GetAddType() + ")");
+            log.LogInformation("Item: {ItemTemplateGetTemplateId} [{ItemTemplateGetName}] added to player {PlayerGetName} (count: {Count}) (type: {PredicateGetAddType})", itemTemplate.GetTemplateId(), itemTemplate.GetName(), player.GetName(), count, predicate.GetAddType());
 
         Storage inventory = player.GetInventory();
         if (itemTemplate.IsKinah())

@@ -83,7 +83,7 @@ public class CM_WINDSTREAM : AionClientPacket
                     new SM_EMOTION(player, state == 7 ? EmotionType.WINDSTREAM_START_BOOST : EmotionType.WINDSTREAM_END_BOOST), true);
                 break;
             default:
-                AionLog.For(nameof(CM_WINDSTREAM)).LogWarning("Unknown Windstream state #" + state + " was sent from " + player.GetPosition());
+                AionLog.For(nameof(CM_WINDSTREAM)).LogWarning("Unknown Windstream state #{State} was sent from {PlayerGetPosition}", state, player.GetPosition());
                 return;
         }
         PacketSendUtility.SendPacket(player, new SM_WINDSTREAM(state, 1));

@@ -68,7 +68,7 @@ public class CM_READ_EXPRESS_MAIL : AionClientPacket
                 }
                 break;
             default:
-                log.LogWarning(player + " sent unknown read express mail action type: " + action);
+                log.LogWarning("{Player} sent unknown read express mail action type: {Action}", player, action);
                 break;
         }
     }

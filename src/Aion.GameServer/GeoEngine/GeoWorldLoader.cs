@@ -37,7 +37,7 @@ public static class GeoWorldLoader
         if (!missing.IsEmpty)
             log.LogWarning("{Count} meshes are missing:\n{Meshes}", missing.Count, string.Join('\n', missing.Keys.Order(StringComparer.Ordinal)));
         int loaded = selected.Count(m => m.GetChildren().Count != 0);
-        if (loaded == 0) log.LogWarning("No geo maps loaded.");
+        if (loaded == 0) log.LogWarning("No geo maps loaded");
         else log.LogInformation("Loaded {Entities} entities on {Maps} maps", selected.Sum(m => (long)m.GetEntityCount()), loaded);
         void Preload() => Parallel.ForEach(selected.SelectMany(m => m.GetGeometries()).Select(g => g.GetMesh()).Distinct(), m => m.CreateCollisionData());
         if (waitForCollisionData) Preload();

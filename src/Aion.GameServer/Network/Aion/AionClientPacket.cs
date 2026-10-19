@@ -31,7 +31,7 @@ public abstract class AionClientPacket : BaseClientPacket<AionConnection>
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error handling client packet from " + GetConnection() + ": " + this);
+            log.LogError(e, "Error handling client packet from {GetConnection}: {This}", GetConnection(), this);
         }
     }
 

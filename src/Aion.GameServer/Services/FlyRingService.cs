@@ -26,7 +26,7 @@ public class FlyRingService
         {
             FlyRing f = new FlyRing(t, 0);
             f.Spawn();
-            log.LogDebug("Added " + f.Name + " at m=" + f.GetWorldId() + ",x=" + f.GetX() + ",y=" + f.GetY() + ",z=" + f.GetZ());
+            log.LogDebug("Added {FGetName} at m={FGetWorldId},x={FGetX},y={FGetY},z={FGetZ}", f.Name, f.GetWorldId(), f.GetX(), f.GetY(), f.GetZ());
         }
     }
 }

@@ -94,7 +94,7 @@ public class InstanceCooltimeData
                 break;
             }
             default:
-                log.LogWarning("Unhandled InstanceCoolTimeType: " + clt.GetCoolTimeType());
+                log.LogWarning("Unhandled InstanceCoolTimeType: {CltGetCoolTimeType}", clt.GetCoolTimeType());
                 break;
         }
         if (instanceCooldownRate != 1)

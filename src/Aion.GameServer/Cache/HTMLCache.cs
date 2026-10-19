@@ -52,17 +52,11 @@ public sealed class HTMLCache
 
             if (deleteCacheFile && File.Exists(cacheFile))
             {
-                log.LogInformation("Cache[HTML]: Deleting cache file... OK.");
-
                 File.Delete(cacheFile);
             }
 
-            log.LogInformation("Cache[HTML]: Caching started... OK.");
-
             if (File.Exists(cacheFile))
             {
-                log.LogInformation("Cache[HTML]: Using cache file... OK.");
-
                 try
                 {
                     // Java parity: ObjectInputStream readObject() of Map<String,String> — C# internal binary round-trip (runtime cache, not Java-shared data).
@@ -76,7 +70,7 @@ public sealed class HTMLCache
                 }
                 catch (Exception e)
                 {
-                    log.LogWarning(e, "");
+                    log.LogWarning(e, "Could not load HTML cache file");
 
                     Reload(true);
                     return;
@@ -89,13 +83,9 @@ public sealed class HTMLCache
 
             log.LogInformation(ToString());
 
-            if (File.Exists(cacheFile))
+            if (!File.Exists(cacheFile))
             {
-                log.LogInformation("Cache[HTML]: Compaction skipped!");
-            }
-            else
-            {
-                log.LogInformation("Cache[HTML]: Compacting htmls... OK.");
+                log.LogInformation("Cache[HTML]: Compacting HTMLs...");
 
                 StringBuilder sb = new StringBuilder(8192);
 
@@ -113,24 +103,19 @@ public sealed class HTMLCache
                     }
                     catch (Exception e)
                     {
-                        log.LogWarning(e, "Cache[HTML]: Error during compaction of " + key);
+                        log.LogWarning(e, "Cache[HTML]: Error during compaction of {EntryGetKey}", key);
                     }
                 }
 
                 log.LogInformation(ToString());
-            }
-
-            if (!File.Exists(cacheFile))
-            {
-                log.LogInformation("Cache[HTML]: Creating cache file... OK.");
-
                 try
                 {
                     WriteCache(GetCacheFile(), cache);
+                    log.LogInformation("Created HTML cache file...");
                 }
                 catch (IOException e)
                 {
-                    log.LogWarning(e, "");
+                    log.LogWarning(e, "Could not create HTML cache file");
                 }
             }
         }
@@ -262,13 +247,6 @@ public sealed class HTMLCache
                 return i;
         }
         return -1;
-    }
-
-    public void ReloadPath(string f)
-    {
-        ParseDir(f);
-
-        log.LogInformation("Cache[HTML]: Reloaded specified path.");
     }
 
     public void ParseDir(string dir)

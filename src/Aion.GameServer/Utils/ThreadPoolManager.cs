@@ -177,15 +177,19 @@ public class ThreadPoolManager : IAsyncDisposable
 		if (Interlocked.Exchange(ref _isShutdown, 1) != 0)
 			return;
 
+		var shutdownWatch = Stopwatch.StartNew();
 		if (gracePeriod == default)
 			gracePeriod = TimeSpan.FromSeconds(2);
 
 		_shutdownTokenSource.Cancel();
 		var tasks = _scheduledTasks.Values.ToArray();
-		if (tasks.Length == 0)
-			return;
-
-		await Task.WhenAny(Task.WhenAll(tasks), Task.Delay(gracePeriod));
+		if (tasks.Length != 0)
+			await Task.WhenAny(Task.WhenAll(tasks), Task.Delay(gracePeriod));
+		int tasksLeft = tasks.Count(task => !task.IsCompleted);
+		if (tasksLeft == 0)
+			Log.LogInformation("ThreadPoolManager shutdown completed in {ElapsedMs} ms", shutdownWatch.ElapsedMilliseconds);
+		else
+			Log.LogInformation("ThreadPoolManager shutdown timed out after {ElapsedMs} ms with {Tasks} tasks left", shutdownWatch.ElapsedMilliseconds, tasksLeft);
 	}
 
 	internal int ScheduledTaskCount => _scheduledTasks.Count;

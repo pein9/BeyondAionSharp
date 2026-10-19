@@ -19,7 +19,7 @@ public abstract class AbstractPeriodicTaskManager
     public AbstractPeriodicTaskManager(int period)
     {
         this.period = period;
-        log.LogInformation(GetType().Name + " initialized.");
+        log.LogInformation("{GetClassGetSimpleName} initialized", GetType().Name);
         scheduledTask = Arm(ThreadPoolManager.GetInstance());
     }
 

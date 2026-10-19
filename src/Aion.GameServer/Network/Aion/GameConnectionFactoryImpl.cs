@@ -35,10 +35,10 @@ public class GameConnectionFactoryImpl : ConnectionFactory
             switch (isFlooding)
             {
                 case FloodManager.Result.REJECTED:
-                    log.LogWarning("Rejected connection from " + host);
+                    log.LogWarning("Rejected connection from {Host}", host);
                     return null;
                 case FloodManager.Result.WARNED:
-                    log.LogWarning("Connection over warn limit from " + host);
+                    log.LogWarning("Connection over warn limit from {Host}", host);
                     break;
             }
         }

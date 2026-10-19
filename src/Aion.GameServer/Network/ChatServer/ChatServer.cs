@@ -165,7 +165,7 @@ public sealed class ChatServer : IAsyncDisposable
 				await ReadLoopAsync(session);
 				retryDelay = session.WasAuthed ? _retryDelays.AuthedReconnect : _retryDelays.PreAuthReconnect;
 				// Java ChatServerConnection.onDisconnect emits this immediately on remote EOF before scheduling reconnect.
-				_logger.LogWarning("Lost connection with chat server; reconnecting in {Delay}", retryDelay);
+				_logger.LogWarning("Lost connection with chat server; reconnecting in {DelaySeconds} seconds", retryDelay.TotalSeconds);
 			}
 			catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
 			{
@@ -177,15 +177,15 @@ public sealed class ChatServer : IAsyncDisposable
 					? _retryDelays.SocketFailure
 					: session.WasAuthed ? _retryDelays.AuthedReconnect : _retryDelays.PreAuthReconnect;
 				_logger.LogInformation(ex,
-					"Could not connect to chat server at {Endpoint}; trying again in {Delay}",
-					_options.Network.ChatEndPoint, retryDelay);
+					"Could not connect to chat server at {Endpoint}; trying again in {DelaySeconds} seconds",
+					_options.Network.ChatEndPoint, retryDelay.TotalSeconds);
 			}
 			catch (IOException ex)
 			{
 				retryDelay = session == null
 					? _retryDelays.IoFailure
 					: session.WasAuthed ? _retryDelays.AuthedReconnect : _retryDelays.PreAuthReconnect;
-				_logger.LogWarning(ex, "Chat-server bridge I/O failed; trying again in {Delay}", retryDelay);
+				_logger.LogWarning(ex, "Chat-server bridge I/O failed; trying again in {DelaySeconds} seconds", retryDelay.TotalSeconds);
 			}
 			catch (ObjectDisposedException) when (cancellationToken.IsCancellationRequested)
 			{
@@ -196,7 +196,7 @@ public sealed class ChatServer : IAsyncDisposable
 				retryDelay = session == null
 					? _retryDelays.IoFailure
 					: session.WasAuthed ? _retryDelays.AuthedReconnect : _retryDelays.PreAuthReconnect;
-				_logger.LogError(ex, "Error on chat-server bridge; trying again in {Delay}", retryDelay);
+				_logger.LogError(ex, "Error on chat-server bridge; trying again in {DelaySeconds} seconds", retryDelay.TotalSeconds);
 			}
 			finally
 			{
@@ -381,7 +381,12 @@ public sealed class ChatServer : IAsyncDisposable
 			return;
 		}
 
-		_logger.LogWarning("Chat-server rejected game-server auth with response {Response}", response);
+		if (response == 1)
+            _logger.LogWarning("Authentication failed at the chat server");
+        else if (response == 2)
+            _logger.LogWarning("Game server is already registered at the chat server");
+        else
+            _logger.LogWarning("Chat-server rejected game-server auth with response {Response}", response);
 		session.Close();
 	}
 

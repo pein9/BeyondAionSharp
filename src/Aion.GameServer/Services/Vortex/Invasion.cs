@@ -84,8 +84,7 @@ public class Invasion : DimensionalVortex<VortexLocation>
         }
         else if (participants.Count > 1)
         { // should never happen
-            AionLog.For(nameof(Invasion)).LogWarning("Couldn't add " + player + " to " + (isInvader ? "invaders" : "defenders")
-                + " (alliance not initialized). Current participants: " + participants.Count);
+            AionLog.For(nameof(Invasion)).LogWarning("Couldn't add {Player} to {IsInvaderInvadersDefenders} (alliance not initialized). Current participants: {ParticipantsSize}", player, (isInvader ? "invaders" : "defenders"), participants.Count);
             return;
         }
         participants[player.GetObjectId()] = player;

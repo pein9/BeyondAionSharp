@@ -60,9 +60,9 @@ public class StaticDoorService
         if (!(@object is StaticDoor))
         {
             if (@object == null)
-                log.LogWarning("Door (ID: " + doorId + ") is missing near " + player.GetPosition());
+                log.LogWarning("Door (ID: {DoorId}) is missing near {PlayerGetPosition}", doorId, player.GetPosition());
             else
-                log.LogWarning("Door (ID: " + doorId + ") is not a static door but " + @object);
+                log.LogWarning("Door (ID: {DoorId}) is not a static door but {Object}", doorId, @object);
             return null;
         }
         return (StaticDoor) @object;

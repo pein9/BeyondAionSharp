@@ -49,7 +49,7 @@ public sealed class World
 			lock (_worldMaps)
 				_worldMaps[template.GetMapId()] = worldMap;
 		}
-		_logger?.LogInformation("World: {Count} world maps created.", _worldMaps.Count);
+		_logger?.LogInformation("Created {WorldMapsSize} world maps", _worldMaps.Count);
 	}
 
 	public bool IsInitialized => Volatile.Read(ref _initialized) != 0;

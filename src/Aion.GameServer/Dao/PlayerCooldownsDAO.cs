@@ -96,7 +96,7 @@ public class PlayerCooldownsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't save cooldowns for " + player);
+            log.LogError(e, "Couldn't save cooldowns for {Player}", player);
         }
     }
 

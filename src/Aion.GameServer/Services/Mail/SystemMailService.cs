@@ -34,23 +34,20 @@ public class SystemMailService
             ItemTemplate itemTemplate = DataManager.ITEM_DATA.GetItemTemplate(attachedItemId);
             if (itemTemplate == null)
             {
-                log.LogWarning("[SYSMAILSERVICE] > [SenderName: " + sender + "] [RecipientName: " + recipientName + "] RETURN ITEM ID:" + attachedItemId
-                    + " ITEM COUNT " + attachedItemCount + " KINAH COUNT " + attachedKinahCount + " ITEM TEMPLATE IS MISSING ");
+                log.LogWarning("[SYSMAILSERVICE] > [SenderName: {Sender}] [RecipientName: {RecipientName}] RETURN ITEM ID:{AttachedItemId} ITEM COUNT {AttachedItemCount} KINAH COUNT {AttachedKinahCount} ITEM TEMPLATE IS MISSING ", sender, recipientName, attachedItemId, attachedItemCount, attachedKinahCount);
                 return false;
             }
         }
 
         if (recipientName.Length > 16)
         {
-            log.LogWarning("[SYSMAILSERVICE] > [SenderName: " + sender + "] [RecipientName: " + recipientName + "] ITEM RETURN" + attachedItemId + " ITEM COUNT "
-                + attachedItemCount + " KINAH COUNT " + attachedKinahCount + " RECIPIENT NAME LENGTH > 16 ");
+            log.LogWarning("[SYSMAILSERVICE] > [SenderName: {Sender}] [RecipientName: {RecipientName}] ITEM RETURN{AttachedItemId} ITEM COUNT {AttachedItemCount} KINAH COUNT {AttachedKinahCount} RECIPIENT NAME LENGTH > 16 ", sender, recipientName, attachedItemId, attachedItemCount, attachedKinahCount);
             return false;
         }
 
         if (!sender.StartsWith("$$") && sender.Length > 16)
         {
-            log.LogWarning("[SYSMAILSERVICE] > [SenderName: " + sender + "] [RecipientName: " + recipientName + "] ITEM RETURN" + attachedItemId + " ITEM COUNT "
-                + attachedItemCount + " KINAH COUNT " + attachedKinahCount + " SENDER NAME LENGTH > 16 ");
+            log.LogWarning("[SYSMAILSERVICE] > [SenderName: {Sender}] [RecipientName: {RecipientName}] ITEM RETURN{AttachedItemId} ITEM COUNT {AttachedItemCount} KINAH COUNT {AttachedKinahCount} SENDER NAME LENGTH > 16 ", sender, recipientName, attachedItemId, attachedItemCount, attachedKinahCount);
             return false;
         }
 
@@ -64,14 +61,13 @@ public class SystemMailService
 
         if (recipientCommonData == null)
         {
-            log.LogInformation("[SYSMAILSERVICE] > [RecipientName: " + recipientName + "] NO SUCH CHARACTER NAME.");
+            log.LogInformation("[SYSMAILSERVICE] > [RecipientName: {RecipientName}] NO SUCH CHARACTER NAME", recipientName);
             return false;
         }
 
         if (recipientCommonData.GetMailboxLetters() > 199)
         {
-            log.LogInformation("[SYSMAILSERVICE] > [SenderName: " + sender + "] [RecipientName: " + recipientCommonData.GetName() + "] ITEM RETURN" + attachedItemId
-                + " ITEM COUNT " + attachedItemCount + " KINAH COUNT " + attachedKinahCount + " MAILBOX FULL ");
+            log.LogInformation("[SYSMAILSERVICE] > [SenderName: {Sender}] [RecipientName: {RecipientCommonDataGetName}] ITEM RETURN{AttachedItemId} ITEM COUNT {AttachedItemCount} KINAH COUNT {AttachedKinahCount} MAILBOX FULL ", sender, recipientCommonData.GetName(), attachedItemId, attachedItemCount, attachedKinahCount);
             return false;
         }
         Item attachedItem = null;
@@ -113,8 +109,7 @@ public class SystemMailService
         }
 
         if (LoggingConfig.LOG_SYSMAIL)
-            log.LogInformation("[SYSMAILSERVICE] > [SenderName: " + sender + "] [RecipientName: " + recipientName + "] RETURN ITEM ID:" + attachedItemId
-                + " ITEM COUNT " + attachedItemCount + " KINAH COUNT " + attachedKinahCount + " MESSAGE SUCCESSFULLY SENDED ");
+            log.LogInformation("[SYSMAILSERVICE] > [SenderName: {Sender}] [RecipientName: {RecipientName}] RETURN ITEM ID:{AttachedItemId} ITEM COUNT {AttachedItemCount} KINAH COUNT {AttachedKinahCount} MESSAGE SUCCESSFULLY SENDED ", sender, recipientName, attachedItemId, attachedItemCount, attachedKinahCount);
 
         UpdateRecipientMailbox(recipientCommonData, newLetter);
         return true;

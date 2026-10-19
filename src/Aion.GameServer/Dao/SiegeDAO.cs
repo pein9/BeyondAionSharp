@@ -80,7 +80,7 @@ public class SiegeDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not update siege location " + siegeLocation.GetLocationId() + " (race: " + siegeLocation.GetRace() + ")");
+            log.LogError(e, "Could not update siege location {SiegeLocationGetLocationId} (race: {SiegeLocationGetRace})", siegeLocation.GetLocationId(), siegeLocation.GetRace());
             return false;
         }
         return true;
@@ -103,7 +103,7 @@ public class SiegeDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not insert siege location " + siegeLocation.GetLocationId());
+            log.LogError(e, "Could not insert siege location {SiegeLocationGetLocationId}", siegeLocation.GetLocationId());
             return false;
         }
         return true;

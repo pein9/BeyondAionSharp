@@ -22,7 +22,7 @@ public class ItemMoveService
         IStorage sourceStorage = player.GetStorage(sourceStorageType);
         if (sourceStorage == null)
         {
-            log.LogError(player + " tried to move itemObjId " + itemObjId + " from unknown sourceStorageType: " + sourceStorageType);
+            log.LogError("{Player} tried to move itemObjId {ItemObjId} from unknown sourceStorageType: {SourceStorageType}", player, itemObjId, sourceStorageType);
             return;
         }
         Item item = sourceStorage.GetItemByObjId(itemObjId);
@@ -32,7 +32,7 @@ public class ItemMoveService
         IStorage targetStorage = player.GetStorage(destinationStorageType);
         if (targetStorage == null)
         {
-            log.LogError(player + " tried to move itemObjId " + itemObjId + " to unknown destinationStorageType: " + destinationStorageType);
+            log.LogError("{Player} tried to move itemObjId {ItemObjId} to unknown destinationStorageType: {DestinationStorageType}", player, itemObjId, destinationStorageType);
             return;
         }
 

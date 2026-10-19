@@ -157,7 +157,7 @@ public class Headhunting : AdminCommand
             PlayerCommonData pcd = PlayerService.GetOrLoadPlayerCommonData(hunter.GetHunterId());
             if (pcd == null)
             {
-                log.LogWarning("PlayerID: " + hunter.GetHunterId() + " did not exist anymore.");
+                SendInfo(admin, "Player with ID " + hunter.GetHunterId() + " did not exist anymore.");
                 continue;
             }
             PlayerClass pc = pcd.GetPlayerClass();
@@ -271,12 +271,10 @@ public class Headhunting : AdminCommand
                         }
                         else
                         {
-                            log.LogError("Failed to send reward mail to player " + name + " for rank " + rank + ". (ItemId: " + item.GetId() + " Count: "
-                                + item.GetCount() + ").");
+                            log.LogError("Failed to send reward mail to player {Name} for rank {Rank}. (ItemId: {ItemGetId} Count: {ItemGetCount}).", name, rank, item.GetId(), item.GetCount());
                         }
                     }
-                    log.LogInformation(
-                        "[Race: " + race + "] [PlayerClass: " + pc + "] [Rank: " + rank + "] [RewardedPlayer: " + name + "] [Kills: " + hunter.GetKills() + "]");
+                    log.LogInformation("[Race: {Race}] [PlayerClass: {Pc}] [Rank: {Rank}] [RewardedPlayer: {Name}] [Kills: {HunterGetKills}]", race, pc, rank, name, hunter.GetKills());
                     rewardedPlayers++;
                 }
             }

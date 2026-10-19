@@ -600,15 +600,15 @@ public class LegionService
             byte[] emblemData = legionEmblem.GetCustomEmblemData();
             int position = 0;
             int capacity = dataLength;
-            log.LogDebug("legionEmblem size: " + capacity + " bytes");
+            log.LogDebug("legionEmblem size: {BufCapacity} bytes", capacity);
             int maxSize = 7993;
             int currentSize;
             byte[] bytes;
             do
             {
-                log.LogDebug("legionEmblem data position: " + position);
+                log.LogDebug("legionEmblem data position: {BufPosition}", position);
                 currentSize = capacity - position;
-                log.LogDebug("legionEmblem data remaining capacity: " + currentSize + " bytes");
+                log.LogDebug("legionEmblem data remaining capacity: {CurrentSize} bytes", currentSize);
 
                 if (currentSize >= maxSize)
                 {
@@ -617,7 +617,7 @@ public class LegionService
                     {
                         bytes[i] = emblemData[position++];
                     }
-                    log.LogDebug("legionEmblem data send size: " + (bytes.Length) + " bytes");
+                    log.LogDebug("legionEmblem data send size: {BytesLength} bytes", (bytes.Length));
                     PacketSendUtility.SendPacket(player, new SM_LEGION_SEND_EMBLEM_DATA(maxSize, bytes));
                 }
                 else
@@ -627,7 +627,7 @@ public class LegionService
                     {
                         bytes[i] = emblemData[position++];
                     }
-                    log.LogDebug("legionEmblem data send size: " + (bytes.Length) + " bytes");
+                    log.LogDebug("legionEmblem data send size: {BytesLength} bytes", (bytes.Length));
                     PacketSendUtility.SendPacket(player, new SM_LEGION_SEND_EMBLEM_DATA(currentSize, bytes));
                 }
             } while (capacity != position);
@@ -648,7 +648,7 @@ public class LegionService
         {
             if (message.Length > 256)
             {
-                log.LogWarning("Truncated legion announcement sent by " + activePlayer + " (old length: " + message.Length + ")");
+                log.LogWarning("Truncated legion announcement sent by {ActivePlayer} (old length: {MessageLength})", activePlayer, message.Length);
                 message = message.Substring(0, 256);
             }
             announcement = new Legion.Announcement(message, DateTimeOffset.FromUnixTimeMilliseconds(SystemClock.CurrentMillis()).UtcDateTime);

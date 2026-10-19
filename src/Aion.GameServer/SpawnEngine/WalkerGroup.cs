@@ -57,7 +57,7 @@ public class WalkerGroup
             int[] rows = members[0].GetWalkTemplate().GetRows();
             if (rows.Sum() != members.Count)
             {
-                Log.LogWarning("Invalid row sizes for walk cluster " + members[0].GetWalkTemplate().GetRouteId());
+                Log.LogWarning("Invalid row sizes for walk cluster {MembersGetWalkTemplateGetRouteId}", members[0].GetWalkTemplate().GetRouteId());
             }
             if (rows.Length == 1)
             {
@@ -119,7 +119,7 @@ public class WalkerGroup
         }
         else if (GetWalkType() == WalkerGroupType.POINT)
         {
-            Log.LogWarning("No formation specified for walk cluster " + members[0].GetWalkTemplate().GetRouteId());
+            Log.LogWarning("No formation specified for walk cluster {MembersGetWalkTemplateGetRouteId}", members[0].GetWalkTemplate().GetRouteId());
         }
     }
 

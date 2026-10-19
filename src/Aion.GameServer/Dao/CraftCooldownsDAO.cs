@@ -41,7 +41,7 @@ public class CraftCooldownsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't load craft cooldowns for " + player);
+            log.LogError(e, "Couldn't load craft cooldowns for {Player}", player);
         }
     }
 
@@ -70,7 +70,7 @@ public class CraftCooldownsDAO
             }
             catch (Exception e)
             {
-                log.LogError(e, "Couldn't store craft cooldowns for " + player);
+                log.LogError(e, "Couldn't store craft cooldowns for {Player}", player);
             }
         }
     }
@@ -88,7 +88,7 @@ public class CraftCooldownsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't delete craft cooldowns for " + player);
+            log.LogError(e, "Couldn't delete craft cooldowns for {Player}", player);
         }
     }
 }

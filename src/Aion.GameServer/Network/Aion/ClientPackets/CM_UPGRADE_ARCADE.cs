@@ -51,7 +51,7 @@ public class CM_UPGRADE_ARCADE : AionClientPacket
                 UpgradeArcadeService.GetInstance().ShowRewardList(player);
                 break;
             default:
-                AionLog.For(nameof(CM_UPGRADE_ARCADE)).LogWarning("Unhandled arcade action " + action);
+                AionLog.For(nameof(CM_UPGRADE_ARCADE)).LogWarning("Unhandled arcade action {Action}", action);
                 break;
         }
     }

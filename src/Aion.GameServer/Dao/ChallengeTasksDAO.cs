@@ -63,7 +63,7 @@ public class ChallengeTasksDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not load " + type + " challenge tasks of owner " + ownerId);
+            log.LogError(e, "Could not load {Type} challenge tasks of owner {OwnerId}", type, ownerId);
         }
         return new Dictionary<int, ChallengeTask>(tasks);
     }
@@ -103,7 +103,7 @@ public class ChallengeTasksDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not insert challenge task " + task.GetTaskId() + " of owner " + task.GetOwnerId());
+            log.LogError(e, "Could not insert challenge task {TaskGetTaskId} of owner {TaskGetOwnerId}", task.GetTaskId(), task.GetOwnerId());
         }
     }
 
@@ -125,7 +125,7 @@ public class ChallengeTasksDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not update challenge task " + task.GetTaskId() + " of owner " + task.GetOwnerId());
+            log.LogError(e, "Could not update challenge task {TaskGetTaskId} of owner {TaskGetOwnerId}", task.GetTaskId(), task.GetOwnerId());
         }
     }
 }

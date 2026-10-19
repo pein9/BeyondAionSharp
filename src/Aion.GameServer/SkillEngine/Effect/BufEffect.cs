@@ -51,7 +51,7 @@ public abstract class BufEffect : EffectTemplate
         {
             if (changeItem.GetStat() == null)
             {
-                AionLog.For(nameof(BufEffect)).LogWarning("Skill stat has wrong name for skillid: " + skillId);
+                AionLog.For(nameof(BufEffect)).LogWarning("Skill stat has wrong name for skillid: {SkillId}", skillId);
                 continue;
             }
 

@@ -46,7 +46,7 @@ public class ChallengeTaskService
         taskAcceptTownIds = new ConcurrentDictionary<int, Dictionary<int, int>>();
         cityTasks = new ConcurrentDictionary<int, Dictionary<int, ChallengeTask>>();
         legionTasks = new ConcurrentDictionary<int, Dictionary<int, ChallengeTask>>();
-        log.LogInformation("ChallengeTaskService initialized.");
+        log.LogInformation("ChallengeTaskService initialized");
     }
 
     public void ShowTaskList(Player player, ChallengeType challengeType, int ownerId)
@@ -165,7 +165,7 @@ public class ChallengeTaskService
         ChallengeQuest quest = task.GetQuest(questId);
         if (quest == null)
         {
-            log.LogWarning(player + " finished city task " + task.GetTaskId() + " of town " + townId + " but info for quest " + questId + " is missing.");
+            log.LogWarning("{Player} finished city task {TaskGetTaskId} of town {TownId} but info for quest {QuestId} is missing", player, task.GetTaskId(), townId, questId);
             return;
         }
         if (quest.GetCompleteCount() < quest.GetMaxRepeats() && !task.IsCompleted())
@@ -207,7 +207,7 @@ public class ChallengeTaskService
             taskMap = cityTasks.TryGetValue(townId, out var tm2) ? tm2 : null;
             if (taskMap == null)
             {
-                log.LogWarning("Town " + townId + " has no CityTasks! " + player + ", town residence:" + TownService.GetInstance().GetTownResidence(player));
+                log.LogWarning("Town {TownId} has no tasks for {Player} (town residence: {TownServiceGetInstanceGetTownResidencePlayer})", townId, player, TownService.GetInstance().GetTownResidence(player));
                 return null;
             }
         }

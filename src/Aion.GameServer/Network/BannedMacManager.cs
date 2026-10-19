@@ -38,7 +38,7 @@ public class BannedMacManager
 
         bannedList[address] = entry;
 
-        log.LogInformation("banned " + address + " to " + entry.GetTime().ToString() + " for " + details);
+        log.LogInformation("banned {Address} to {EntryGetTimeToString} for {Details}", address, entry.GetTime().ToString(), details);
         global::Aion.GameServer.Network.LoginServer.LoginServer.GetInstance().SendPacket(new global::Aion.GameServer.Network.LoginServer.ServerPackets.SmMacbanControl((byte)1, address, newTime, details));
     }
 
@@ -46,7 +46,7 @@ public class BannedMacManager
     {
         if (bannedList.Remove(address, out BannedMacEntry bannedMacEntry) && bannedMacEntry != null)
         {
-            log.LogInformation("unbanned " + address + " for " + details);
+            log.LogInformation("unbanned {Address} for {Details}", address, details);
             global::Aion.GameServer.Network.LoginServer.LoginServer.GetInstance().SendPacket(new global::Aion.GameServer.Network.LoginServer.ServerPackets.SmMacbanControl((byte)0, address, 0, details));
             return true;
         }
@@ -67,6 +67,6 @@ public class BannedMacManager
 
     public void OnEnd()
     {
-        log.LogInformation("Loaded " + bannedList.Count + " banned mac addresses");
+        log.LogInformation("Loaded {BannedListSize} banned mac addresses", bannedList.Count);
     }
 }

@@ -61,8 +61,6 @@ public class SiegeService
     {
         if (SiegeConfig.SIEGE_ENABLED)
         {
-            log.LogInformation("Initializing sieges...");
-
             // initialize current siege locations
             artifacts = DataManager.SIEGE_LOCATION_DATA.GetArtifacts();
             fortresses = DataManager.SIEGE_LOCATION_DATA.GetFortress();
@@ -70,6 +68,7 @@ public class SiegeService
             locations = DataManager.SIEGE_LOCATION_DATA.GetSiegeLocations();
             agent = DataManager.SIEGE_LOCATION_DATA.GetAgentLoc();
             SiegeDAO.LoadSiegeLocations(locations);
+            log.LogInformation("SiegeService initialized with {Fortresses} fortresses, {Outposts} outposts, {Artifacts} artifacts and {AgentLocations} agent location(s)", fortresses.Count, outposts.Count, artifacts.Count, agent != null ? 1 : 0);
         }
         else
         {
@@ -77,7 +76,7 @@ public class SiegeService
             fortresses = new Dictionary<int, FortressLocation>();
             outposts = new Dictionary<int, OutpostLocation>();
             locations = new Dictionary<int, SiegeLocation>();
-            log.LogInformation("Sieges are disabled in config.");
+            log.LogInformation("Sieges are disabled in config");
         }
     }
 
@@ -145,7 +144,7 @@ public class SiegeService
         {
             if (artifact.IsStandAlone())
             {
-                log.LogDebug("Starting siege of artifact #" + artifact.GetLocationId());
+                log.LogDebug("Starting siege of artifact #{ArtifactGetLocationId}", artifact.GetLocationId());
                 StartSiege(artifact.GetLocationId());
             }
             else
@@ -208,12 +207,12 @@ public class SiegeService
     {
         lock (this)
         {
-            log.LogDebug("Starting siege of siege location: " + siegeLocationId);
+            log.LogDebug("Starting siege of siege location: {SiegeLocationId}", siegeLocationId);
 
             // Siege should not be started two times
             if (activeSieges.ContainsKey(siegeLocationId))
             {
-                log.LogError(new Exception(), "Attempt to start siege twice for siege location: " + siegeLocationId);
+                log.LogError(new Exception(), "Attempt to start siege twice for siege location: {SiegeLocationId}", siegeLocationId);
                 return;
             }
             global::Aion.GameServer.Services.Siege.Siege siege = NewSiege(siegeLocationId);

@@ -165,7 +165,7 @@ public sealed class GameServerConnection : BaseClientConnection, IGameServerSess
                     {
                         _state = GameServerConnectionState.Authed;
                         _gameServerInfo = _registry.GetGameServer(auth.GameServerId);
-                        _logger.LogInformation("Gameserver #{GameServerId} is now online", auth.GameServerId);
+                        _logger.LogInformation("Game server #{GameServerId} is now online", auth.GameServerId);
                         StartPingLoop();
                     }
                 }
@@ -554,7 +554,7 @@ public sealed class GameServerConnection : BaseClientConnection, IGameServerSess
 			await Task.Delay(_pingInterval, cancellationToken);
 			if (_pingTracker.ShouldCloseOnPingTick())
 			{
-				_logger.LogWarning("Gameserver #{GameServerId} connection died, closing it.", _gameServerInfo?.Id);
+				_logger.LogWarning("Game server #{ConnectionGetGameServerInfoGetId} connection died, closing it.", _gameServerInfo?.Id);
 				await CloseAsync();
 				return;
 			}

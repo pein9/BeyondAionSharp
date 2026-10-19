@@ -36,7 +36,7 @@ public class CustomDrop
         foreach (NpcDrop drop in npcDrop)
         {
             if (!dropById.TryAdd(drop.GetNpcId(), drop))
-                log.LogWarning("Tried to set custom drop for npc " + drop.GetNpcId() + " twice!");
+                log.LogWarning("Tried to set custom drop for npc {DropGetNpcId} twice!", drop.GetNpcId());
         }
         npcDrop = null;
     }

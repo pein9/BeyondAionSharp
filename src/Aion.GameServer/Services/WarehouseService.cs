@@ -23,7 +23,7 @@ public class WarehouseService
         StorageExpansionTemplate template = DataManager.WAREHOUSEEXPANDER_DATA.GetWarehouseExpansionTemplate(npc.GetNpcId());
         if (template == null)
         {
-            log.LogWarning("Warehouse expansion template could not be found for " + npc);
+            log.LogWarning("Warehouse expansion template could not be found for {Npc}", npc);
             return;
         }
 

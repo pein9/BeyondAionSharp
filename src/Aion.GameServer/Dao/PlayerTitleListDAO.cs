@@ -71,7 +71,7 @@ public class PlayerTitleListDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not store emotionId for player " + player.GetObjectId() + " from DB: " + e.Message);
+            log.LogError(e, "Could not store emotionId for player {PlayerGetObjectId} from DB: {EGetMessage}", player.GetObjectId(), e.Message);
             return false;
         }
         return true;
@@ -91,7 +91,7 @@ public class PlayerTitleListDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not delete title for player " + playerId + " from DB: " + e.Message);
+            log.LogError(e, "Could not delete title for player {PlayerId} from DB: {EGetMessage}", playerId, e.Message);
             return false;
         }
         return true;

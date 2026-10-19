@@ -71,7 +71,7 @@ public class InventoryDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not load " + storageType + " items of owner " + ownerId);
+            log.LogError(e, "Could not load {StorageType} items of owner {OwnerId}", storageType, ownerId);
         }
     }
 
@@ -130,7 +130,7 @@ public class InventoryDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not load equipped items of owner " + ownerId);
+            log.LogError(e, "Could not load equipped items of owner {OwnerId}", ownerId);
         }
         return items;
     }
@@ -190,7 +190,7 @@ public class InventoryDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore accountId data for player: " + playerId + " from DB: " + e.Message);
+            log.LogError(e, "Could not restore accountId data for player: {PlayerId} from DB: {EGetMessage}", playerId, e.Message);
         }
         return accountId;
     }
@@ -213,7 +213,7 @@ public class InventoryDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Failed to load legion id for player id: " + playerId);
+            log.LogError(e, "Failed to load legion id for player id: {PlayerId}", playerId);
         }
         return legionId;
     }
@@ -290,7 +290,7 @@ public class InventoryDAO
         }
         catch (MySqlException e)
         {
-            log.LogError(e, "Can't save inventory for player: " + playerId);
+            log.LogError(e, "Can't save inventory for player: {PlayerId}", playerId);
         }
 
         foreach (Item item in items)
@@ -475,7 +475,7 @@ public class InventoryDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error deleting all player or legion items. playerOrLegionId: " + playerOrLegionId);
+            log.LogError(e, "Error deleting all player or legion items. playerOrLegionId: {PlayerOrLegionId}", playerOrLegionId);
             return false;
         }
         return true;
@@ -494,7 +494,7 @@ public class InventoryDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error deleting all items from account WH. AccountId: " + accountId);
+            log.LogError(e, "Error deleting all items from account WH. AccountId: {AccountId}", accountId);
         }
     }
 

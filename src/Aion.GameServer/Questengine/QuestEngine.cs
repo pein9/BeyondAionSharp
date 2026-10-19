@@ -99,7 +99,7 @@ public class QuestEngine : GameEngine
         scriptManager.Load(GSConfig.QUEST_HANDLER_DIRECTORY);
         foreach (XMLQuest xmlQuest in DataManager.XML_QUESTS.GetAllQuests())
             xmlQuest.Register(this);
-        log.LogInformation("Loaded " + questHandlers.Count + " quest handlers.");
+        log.LogInformation("Loaded {QuestHandlersSize} quest handlers", questHandlers.Count);
         if (GSConfig.ANALYZE_QUESTHANDLERS)
             ThreadPoolManager.GetInstance().ExecuteLongRunning(() => QuestSpawnAnalyzer.Run(questHandlers.Values, questNpcs.Values, true));
         AddMessageSendingTask();
@@ -1041,7 +1041,7 @@ public class QuestEngine : GameEngine
         NpcTemplate template = DataManager.NPC_DATA.GetNpcTemplate(npcId);
         if (template == null)
         {
-            log.LogWarning("[QuestEngine] No such NPC template for " + npcId + " in Q" + questId);
+            log.LogWarning("[QuestEngine] No such NPC template for {NpcId} in Q{QuestId}", npcId, questId);
             return false;
         }
         if ("quest_use_item".Equals(template.GetAiName()))
@@ -1115,7 +1115,7 @@ public class QuestEngine : GameEngine
     {
         int questId = questHandler.GetQuestId();
         if (!questHandlers.TryAdd(questId, questHandler))
-            log.LogWarning("Duplicate handler for quest: " + questId);
+            log.LogWarning("Duplicate handler for quest: {QuestId}", questId);
         else
             questHandler.Register();
     }

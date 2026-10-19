@@ -48,7 +48,7 @@ public abstract class BaseClientPacket<T> : BasePacket, Runnable
             ReadImpl();
 
             if (GetRemainingBytes() > 0 && partiallyReadPackets.TryAdd(GetOpCode(), true))
-                log.LogWarning(this + " was not fully read! Last " + GetRemainingBytes() + " bytes were not read from buffer:\n" + NetworkUtils.ToHex(buf, startPos, buf.Limit()));
+                log.LogWarning("{This} was not fully read! Last {GetRemainingBytes} bytes were not read from buffer:\n{NetworkUtilsToHexBufStartPosBufLimit}", this, GetRemainingBytes(), NetworkUtils.ToHex(buf, startPos, buf.Limit()));
 
             return true;
         }

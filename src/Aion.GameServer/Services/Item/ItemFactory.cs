@@ -15,7 +15,7 @@ public class ItemFactory
         ItemTemplate itemTemplate = DataManager.ITEM_DATA.GetItemTemplate(itemId);
         if (itemTemplate == null)
         {
-            log.LogError("Item was not populated correctly. Item template is missing for item id: " + itemId);
+            log.LogError("Item was not populated correctly. Item template is missing for item id: {ItemId}", itemId);
             return null;
         }
         return new Item(Aion.GameServer.Utils.IdFactory.IDFactory.GetInstance().NextId(), itemTemplate);

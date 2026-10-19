@@ -97,7 +97,7 @@ public class WorldRaid
         Npc bossNpc = (Npc)Aion.GameServer.SpawnEngine.SpawnEngine.SpawnObject(bossTemplate, 1);
         if (bossNpc == null)
         {
-            log.LogWarning("Cannot initialize world raid boss with ID " + randomBossTemplate.GetNpcId() + ". No boss was spawned.");
+            log.LogWarning("Cannot initialize world raid boss with ID {RandomBossTemplateGetNpcId} - no boss was spawned", randomBossTemplate.GetNpcId());
             return;
         }
         boss = bossNpc;

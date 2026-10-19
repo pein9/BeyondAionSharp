@@ -13,7 +13,7 @@ public class AILogger
     {
         if (ai.IsLogging())
         {
-            log.LogInformation("[AI] " + ai.GetOwner().GetObjectId() + " - " + message);
+            log.LogInformation("[AI] {AiGetOwnerGetObjectId} - {Message}", ai.GetOwner().GetObjectId(), message);
         }
     }
 
@@ -21,7 +21,7 @@ public class AILogger
     {
         if (Aion.GameServer.Configs.Main.AIConfig.MOVE_DEBUG && owner.GetAi().IsLogging())
         {
-            log.LogInformation("[AI] " + owner.GetObjectId() + " - " + message);
+            log.LogInformation("[AI] {OwnerGetObjectId} - {Message}", owner.GetObjectId(), message);
         }
     }
 }

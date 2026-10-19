@@ -220,7 +220,7 @@ public class PvpInstancePlayerReward : InstancePlayerReward
                 armor = new int[] { 110551084, 111501643, 112501582, 113501661, 114501671, 125003996 };
                 break;
             default:
-                log.LogWarning("Couldn't get mythic Kunax equipment for " + player + ". Rewards for " + player.GetPlayerClass() + " are not implemented");
+                log.LogWarning("Couldn't get mythic Kunax equipment for {Player}. Rewards for {PlayerGetPlayerClass} are not implemented", player, player.GetPlayerClass());
                 return 0;
         }
         int[] possibleRewards = Rnd.Chance() < 17.5f ? weapons : armor;

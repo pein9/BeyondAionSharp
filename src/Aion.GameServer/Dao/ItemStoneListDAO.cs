@@ -60,14 +60,14 @@ public class ItemStoneListDAO
                         case 0:
                             if (item.GetSockets(false) <= item.GetItemStonesSize())
                             {
-                                log.LogWarning("Deleting manastone " + itemId + " due to slot overload from " + item);
+                                log.LogWarning("Deleting manastone {ItemId} due to slot overload from {Item}", itemId, item);
                                 DeleteItemStone(con, item.GetObjectId(), slot, stoneType);
                                 continue;
                             }
                             if (DataManager.ITEM_DATA.GetItemTemplate(itemId).GetItemGroup() == ItemGroup.SPECIAL_MANASTONE
                                 && slot >= item.GetItemTemplate().GetSpecialSlots())
                             {
-                                log.LogWarning("Deleting special manastone " + itemId + " from normal slot of " + item);
+                                log.LogWarning("Deleting special manastone {ItemId} from normal slot of {Item}", itemId, item);
                                 DeleteItemStone(con, item.GetObjectId(), slot, stoneType);
                                 continue;
                             }
@@ -82,14 +82,14 @@ public class ItemStoneListDAO
                         case 2:
                             if (item.GetSockets(true) <= item.GetFusionStonesSize())
                             {
-                                log.LogWarning("Deleting manastone " + itemId + " due to slot overload from fusioned item of " + item);
+                                log.LogWarning("Deleting manastone {ItemId} due to slot overload from fusioned item of {Item}", itemId, item);
                                 DeleteItemStone(con, item.GetObjectId(), slot, stoneType);
                                 continue;
                             }
                             if (DataManager.ITEM_DATA.GetItemTemplate(itemId).GetItemGroup() == ItemGroup.SPECIAL_MANASTONE
                                 && slot >= item.GetFusionedItemTemplate().GetSpecialSlots())
                             {
-                                log.LogWarning("Deleting special manastone " + itemId + " from normal slot of fusioned item of " + item);
+                                log.LogWarning("Deleting special manastone {ItemId} from normal slot of fusioned item of {Item}", itemId, item);
                                 DeleteItemStone(con, item.GetObjectId(), slot, stoneType);
                                 continue;
                             }
@@ -105,7 +105,7 @@ public class ItemStoneListDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore ItemStoneList data from DB: " + e.Message);
+            log.LogError(e, "Could not restore ItemStoneList data from DB: {EGetMessage}", e.Message);
         }
     }
 

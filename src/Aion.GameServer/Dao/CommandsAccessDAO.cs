@@ -43,7 +43,7 @@ public class CommandsAccessDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error while loading commands accesses.");
+            log.LogError(e, "Error while loading commands accesses");
         }
         return accesses;
     }
@@ -62,7 +62,7 @@ public class CommandsAccessDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error while adding access on command " + commandName + " to player " + playerId);
+            log.LogError(e, "Error while adding access on command {CommandName} to player {PlayerId}", commandName, playerId);
         }
     }
 
@@ -80,7 +80,7 @@ public class CommandsAccessDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error while removing access on command " + commandName + " from player " + playerId);
+            log.LogError(e, "Error while removing access on command {CommandName} from player {PlayerId}", commandName, playerId);
         }
     }
 
@@ -97,7 +97,7 @@ public class CommandsAccessDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error while removing all accesses from player " + playerId);
+            log.LogError(e, "Error while removing all accesses from player {PlayerId}", playerId);
         }
     }
 }

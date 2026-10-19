@@ -28,8 +28,7 @@ public class RoadService
             {
                 Road r = new Road(rt, instanceId);
                 r.Spawn();
-                log.LogDebug("Added " + r.Name + " at m=" + r.GetWorldId() + ",x=" + r.GetX() + ",y=" + r.GetY() + ",z=" + r.GetZ() + " [" + instanceId
-                    + "]");
+                log.LogDebug("Added {RGetName} at m={RGetWorldId},x={RGetX},y={RGetY},z={RGetZ} [{InstanceId}]", r.Name, r.GetWorldId(), r.GetX(), r.GetY(), r.GetZ(), instanceId);
             }
         }
     }

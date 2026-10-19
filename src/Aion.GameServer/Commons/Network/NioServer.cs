@@ -37,7 +37,7 @@ public class NioServer
                 serverChannel.ConfigureBlocking(false);
 
                 serverChannel.Socket().Bind(cfg.Address);
-                log.LogInformation("Listening on " + cfg.GetAddressInfo() + " for " + cfg.ClientDescription);
+                log.LogInformation("Listening on {CfgGetAddressInfo} for {CfgClientDescription}", cfg.GetAddressInfo(), cfg.ClientDescription);
 
                 SelectionKey acceptKey = GetAcceptDispatcher().Register(serverChannel, SelectionKey.OP_ACCEPT, new Acceptor(cfg.ConnectionFactory, this));
                 serverChannelKeys.Add(acceptKey);
@@ -88,13 +88,13 @@ public class NioServer
 
     public void Shutdown()
     {
-        log.LogInformation("Closing ServerChannels...");
         serverChannelKeys.ForEach(k => k.Cancel());
-        log.LogInformation("ServerChannels closed.");
-
         HashSet<AConnection> activeConnections = FindAllConnections();
-        if (activeConnections.Count != 0)
+        if (activeConnections.Count == 0)
+            log.LogInformation("Stopped accepting new connections");
+        else
         {
+            log.LogInformation("Stopped accepting new connections, now closing {Connections} connection(s)", activeConnections.Count);
             foreach (AConnection con in activeConnections)
                 con.OnServerClose();
 
@@ -106,6 +106,7 @@ public class NioServer
                 if (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() > timeout)
                 {
                     activeConnections.RemoveWhere(c => c.IsClosed());
+                    log.LogInformation("	Forcing {Connections} connection(s) to disconnect...", activeConnections.Count);
                     foreach (AConnection con in activeConnections)
                         con.Close();
                     break;
@@ -113,6 +114,8 @@ public class NioServer
             }
 #pragma warning restore RS0030
             activeConnections.RemoveWhere(c => c.IsClosed());
+            if (activeConnections.Count != 0)
+                log.LogInformation("	Active connections left: {Connections}", activeConnections.Count);
         }
     }
 

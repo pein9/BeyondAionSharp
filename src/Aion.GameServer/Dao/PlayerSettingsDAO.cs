@@ -56,7 +56,7 @@ public class PlayerSettingsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore Aion.GameServer.Model.GameObjects.Players.PlayerSettings data for player " + playerId + " from DB: " + e.Message);
+            log.LogError(e, "Could not restore PlayerSettings data for player {PlayerId} from DB: {Message}", playerId, e.Message);
         }
         playerSettings.SetPersistentState(IPersistable.PersistentState.UPDATED);
         return playerSettings;

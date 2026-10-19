@@ -35,7 +35,7 @@ public class MaintenanceTask : AbstractCronTask
     protected override void ExecuteTask()
     {
         List<House> housesToMaintain = FindHousesToMaintain();
-        log.LogInformation("Executing house maintenance for " + housesToMaintain.Count + " houses");
+        log.LogInformation("Executing house maintenance for {HousesToMaintainSize} houses", housesToMaintain.Count);
 
         DateTimeOffset now = SystemClock.UtcNow();
         foreach (House house in housesToMaintain)
@@ -93,7 +93,7 @@ public class MaintenanceTask : AbstractCronTask
     {
         HousingService.GetInstance().ChangeOwner(house, 0);
         HousingBidService.GetInstance().Auction(house, house.GetDefaultAuctionPrice());
-        log.LogInformation("Auctioned house " + house.GetAddress().GetId() + " because " + (owner == null ? "owner got deleted." : "maintenance fee was overdue."));
+        log.LogInformation("Auctioned house {HouseGetAddressGetId} because {OwnerNullOwnerGotDeletedMaintenanceFeeWasOverdue}", house.GetAddress().GetId(), (owner == null ? "owner got deleted." : "maintenance fee was overdue."));
         if (owner != null && owner.IsOnline())
             PacketSendUtility.SendPacket(owner.GetPlayer(), SM_SYSTEM_MESSAGE.STR_MSG_HOUSING_SEQUESTRATE());
     }

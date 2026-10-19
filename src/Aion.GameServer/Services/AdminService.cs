@@ -51,7 +51,7 @@ public class AdminService
         {
             Console.Error.WriteLine(e);
         }
-        log.LogInformation("AdminService loaded " + list.Count + " operational items.");
+        log.LogInformation("AdminService loaded {ListSize} operational items.", list.Count);
     }
 
     public bool CanOperate(Player player, Player target, Item item, string type)
@@ -72,7 +72,7 @@ public class AdminService
 
         if (list.Contains(itemId)) // item goes from staff member to normal player, so log it
         {
-            itemLog.LogInformation(player + " traded item " + itemId + " via " + type + (target != null ? " to player " + target : ""));
+            itemLog.LogInformation("{Player} traded item {ItemId} via {Type}{TargetNullToPlayerTarget}", player, itemId, type, (target != null ? " to player " + target : ""));
             return true;
         }
 

@@ -32,7 +32,7 @@ public class ResurrectAI : NpcAI
         Race race = player.GetRace();
         if (bindPointTemplate == null)
         {
-            log.LogInformation("There is no bind point template for npc: " + GetNpcId());
+            log.LogInformation("There is no bind point template for npc: {GetNpcId}", GetNpcId());
             return;
         }
 

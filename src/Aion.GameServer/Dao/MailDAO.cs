@@ -110,7 +110,7 @@ public class MailDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not read mail for player: " + playerId + " from DB: " + e.Message);
+            log.LogError(e, "Could not read mail for player: {PlayerId} from DB: {EGetMessage}", playerId, e.Message);
         }
         return false;
     }

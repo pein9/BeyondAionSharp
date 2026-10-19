@@ -27,7 +27,7 @@ public class DebugService
             AnalyzeWorldPlayers();
             return ValueTask.CompletedTask;
         }, TimeSpan.FromMilliseconds(ANALYZE_PLAYERS_INTERVAL), TimeSpan.FromMilliseconds(ANALYZE_PLAYERS_INTERVAL));
-        log.LogInformation("DebugService started. Analyze interval: " + ANALYZE_PLAYERS_INTERVAL);
+        log.LogInformation("DebugService started. Analyze interval: {ANALYZE_PLAYERS_INTERVAL}", ANALYZE_PLAYERS_INTERVAL);
     }
 
     private void AnalyzeWorldPlayers()

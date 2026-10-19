@@ -68,7 +68,7 @@ public class ShieldService
             }
         }
         if (attached.Count == 0 && location.GetType_() != SiegeType.OUTPOST && location.GetLocationId() != 1241) // Outposts and Miren don't have shields
-            log.LogWarning("Could not find a shield for location ID {LocationId}.", location.GetLocationId());
+            log.LogWarning("Could not find a shield for location ID {LocationGetLocationId}", location.GetLocationId());
     }
 
     private bool IsShieldInsideLocation(SiegeShield shield, SiegeLocation location)

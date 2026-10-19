@@ -41,7 +41,7 @@ public class CustomInstanceDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "[CUSTOM_INSTANCE] Error loading rank object on player id " + playerId);
+            log.LogError(e, "[CUSTOM_INSTANCE] Error loading rank object on player id {PlayerId}", playerId);
         }
         return null;
     }
@@ -64,7 +64,7 @@ public class CustomInstanceDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "[CUSTOM_INSTANCE] Error storing last entries on player id " + rankObj.GetPlayerId());
+            log.LogError(e, "[CUSTOM_INSTANCE] Error storing last entries on player id {RankObjGetPlayerId}", rankObj.GetPlayerId());
             return false;
         }
     }
@@ -94,7 +94,7 @@ public class CustomInstanceDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "[CUSTOM_INSTANCE] Error loading top 10 " + race + " players");
+            log.LogError(e, "[CUSTOM_INSTANCE] Error loading top 10 {Race} players", race);
         }
         return players;
     }

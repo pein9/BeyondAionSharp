@@ -67,7 +67,7 @@ public class CraftSkillUpdateService
         professionByNpc[798450] = Profession.CONSTRUCTION;
         professionByNpc[798454] = Profession.CONSTRUCTION;
 
-        log.LogInformation("CraftSkillUpdateService: Initialized.");
+        log.LogInformation("CraftSkillUpdateService initialized");
     }
 
     public Profession? GetProfessionByNpc(Npc npc)

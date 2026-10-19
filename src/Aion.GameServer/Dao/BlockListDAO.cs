@@ -101,7 +101,7 @@ public class BlockListDAO
                 string name = PlayerService.GetPlayerName(blockedOid);
                 if (name == null)
                 {
-                    log.LogError("Attempt to load block list for player " + playerObjId + " tried to load a player which does not exist: " + blockedOid);
+                    log.LogError("Attempt to load block list for player {PlayerObjId} tried to load a player which does not exist: {BlockedOid}", playerObjId, blockedOid);
                 }
                 else
                 {

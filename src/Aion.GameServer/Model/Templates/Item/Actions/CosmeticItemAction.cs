@@ -73,7 +73,7 @@ public class CosmeticItemAction : AbstractItemAction
             }
             default:
             {
-                log.LogWarning("Unhandled cosmetic item type: " + type);
+                log.LogWarning("Unhandled cosmetic item type: {Type}", type);
                 return;
             }
         }

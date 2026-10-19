@@ -41,9 +41,7 @@ public abstract class AdminCommand : ChatCommand
             return player.IsStaff(); // return false for regular players, so chat will send entered text (this way you can't guess commands without rights)
 
         if (LoggingConfig.LOG_GMAUDIT)
-            log.LogInformation(
-                "[Admin Command] > [Player: " + player.GetName() + "]" + (player.GetTarget() != null ? "[Target: " + player.GetTarget().GetName() + "]" : "")
-                    + ": " + GetAliasWithPrefix() + " " + string.Join(" ", paramsArr));
+            log.LogInformation("[Admin Command] > [Player: {PlayerGetName}]{PlayerGetTargetNullTargetPlayerGetTargetGetName}: {GetAliasWithPrefix} {StringJoinParams}", player.GetName(), (player.GetTarget() != null ? "[Target: " + player.GetTarget().GetName() + "]" : ""), GetAliasWithPrefix(), string.Join(" ", paramsArr));
 
         if (!Run(player, paramsArr))
             SendInfo(player, "<Error while executing command>");

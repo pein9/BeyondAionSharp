@@ -72,7 +72,7 @@ public class EventDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't load stored event buff info for event: " + eventName);
+            log.LogError(e, "Couldn't load stored event buff info for event: {EventName}", eventName);
         }
         return null;
     }
@@ -105,7 +105,7 @@ public class EventDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't store event buff info for event: " + eventName);
+            log.LogError(e, "Couldn't store event buff info for event: {EventName}", eventName);
             return false;
         }
     }

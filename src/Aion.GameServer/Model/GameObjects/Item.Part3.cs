@@ -259,7 +259,7 @@ public partial class Item
     public void SetBonusStats(int statBonusId, bool validate)
     {
         if (validate && isEquipped)
-            log.LogWarning(new InvalidOperationException(), GetItemId() + " was equipped while switching bonus stats from " + GetBonusStatsId() + " to " + statBonusId);
+            log.LogWarning(new InvalidOperationException(), "{GetItemId} was equipped while switching bonus stats from {GetBonusStatsId} to {StatBonusId}", GetItemId(), GetBonusStatsId(), statBonusId);
         if (statBonusId == 0)
             bonusStatsEffect = null;
         else
@@ -303,7 +303,7 @@ public partial class Item
     public void SetFusionedItemBonusStats(int statBonusId, bool validate)
     {
         if (validate && isEquipped)
-            log.LogWarning(new InvalidOperationException(), GetItemId() + " was equipped while switching fusioned bonus stats from " + GetFusionedItemBonusStatsId() + " to " + statBonusId);
+            log.LogWarning(new InvalidOperationException(), "{GetItemId} was equipped while switching fusioned bonus stats from {GetFusionedItemBonusStatsId} to {StatBonusId}", GetItemId(), GetFusionedItemBonusStatsId(), statBonusId);
         if (statBonusId == 0)
             fusionedItemBonusStatsEffect = null;
         else

@@ -113,7 +113,7 @@ public partial class Equipment : IPersistable
         ItemSlot[] targetSlots = ItemSlotExtensions.GetSlotsFor(slot);
         if (targetSlots.Length == 0)
         {
-            log.LogWarning("Unknown target slot " + slot + " for " + item);
+            log.LogWarning("Unknown target slot {Slot} for {Item}", slot, item);
             return null;
         }
 
@@ -175,7 +175,7 @@ public partial class Equipment : IPersistable
     {
         if (!item.IsIdentified())
         {
-            log.LogWarning(item + " can't be equipped because it's not identified yet");
+            log.LogWarning("{Item} can't be equipped because it's not identified yet", item);
             return null;
         }
 

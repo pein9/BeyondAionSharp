@@ -17,7 +17,7 @@ public class AIHandlerClassListener : ClassListener
     {
         foreach (Type c in classes)
         {
-            log.LogDebug("Load class " + c.FullName);
+            log.LogDebug("Load class {CGetName}", c.FullName);
 
             if (!IsValidClass(c))
                 continue;
@@ -30,7 +30,7 @@ public class AIHandlerClassListener : ClassListener
     public void PreUnload(Type[] classes)
     {
         foreach (Type c in classes)
-            log.LogDebug("Unload class " + c.FullName);
+            log.LogDebug("Unload class {CGetName}", c.FullName);
     }
 
     public bool IsValidClass(Type clazz)

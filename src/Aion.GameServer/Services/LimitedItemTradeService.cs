@@ -29,7 +29,7 @@ public class LimitedItemTradeService
                 GoodsList goodsList = DataManager.GOODSLIST_DATA.GetGoodsListById(list.GetId());
                 if (goodsList == null)
                 {
-                    log.LogWarning("No goodslist for tradelist of npc " + npcId);
+                    log.LogWarning("No goodslist for tradelist of npc {NpcId}", npcId);
                     continue;
                 }
                 List<LimitedItem> limitedItems = goodsList.GetLimitedItems();
@@ -53,7 +53,7 @@ public class LimitedItemTradeService
                 CronService.GetInstance().Schedule(() => item.SetToDefault(), item.GetSalesTime());
             }
         }
-        log.LogInformation("Scheduled Limited Items based on cron expression size: " + limitedTradeNpcs.Count);
+        log.LogInformation("Scheduled Limited Items based on cron expression size: {LimitedTradeNpcsSize}", limitedTradeNpcs.Count);
     }
 
     public LimitedItem? GetLimitedItem(int itemId, int npcId)

@@ -25,8 +25,7 @@ public class CM_ATREIAN_PASSPORT : AionClientPacket
             if (GetRemainingBytes() < 8)
             {
                 if (count != -1)
-                    AionLog.For(nameof(CM_ATREIAN_PASSPORT)).LogWarning("Received invalid passport count " + count + " with only data for " + i
-                        + " passports from " + GetConnection().GetActivePlayer() + "\nCurrent passport data: " + passports);
+                    AionLog.For(nameof(CM_ATREIAN_PASSPORT)).LogWarning("Received invalid passport count {Count} with only data for {I} passports from {GetConnectionGetActivePlayer}\nCurrent passport data: {Passports}", count, i, GetConnection().GetActivePlayer(), passports);
                 break;
             }
             int passportId = ReadD();

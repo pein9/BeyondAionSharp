@@ -67,7 +67,7 @@ public class DropDistributionService
         {
             if (member == null)
             {
-                log.LogWarning("member null Owner is in group? " + player.IsInGroup() + " Owner is in Alliance? " + player.IsInAlliance());
+                log.LogWarning("member null Owner is in group? {PlayerIsInGroup} Owner is in Alliance? {PlayerIsInAlliance}", player.IsInGroup(), player.IsInAlliance());
                 continue;
             }
             PacketSendUtility.SendPacket(member, new SM_GROUP_LOOT(dropNpc.GetLootingTeamId(), member.GetObjectId(), itemId, (int)requestedItem.GetCount(),

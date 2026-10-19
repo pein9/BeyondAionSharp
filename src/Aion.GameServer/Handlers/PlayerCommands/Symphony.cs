@@ -62,8 +62,7 @@ public class Symphony : PlayerCommand
             new ItemService.ItemUpdatePredicate(ItemPacketService.ItemAddType.DECOMPOSABLE, ItemPacketService.ItemUpdateType.INC_CASH_ITEM));
         if (notAddedCount > 0)
         {
-            log.LogWarning("[Legendary Symphony Event] {NotAddedCount}x {ItemId} could not be added to {PlayerName}'s inventory.",
-                notAddedCount, itemId, player.GetName());
+            log.LogWarning("[Legendary Symphony Event] {NotAddedCount}x {ItemId} could not be added to {PlayerGetName}'s inventory", notAddedCount, itemId, player.GetName());
         }
     }
 

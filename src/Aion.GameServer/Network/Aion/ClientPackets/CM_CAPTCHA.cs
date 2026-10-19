@@ -42,7 +42,7 @@ public class CM_CAPTCHA : AionClientPacket
             case 4: // /ExtractStatus
                 break;
             default:
-                log.LogWarning("Unknown CAPTCHA packet type " + type);
+                log.LogWarning("Unknown CAPTCHA packet type {Type}", type);
                 break;
         }
     }

@@ -49,7 +49,7 @@ public class PlayerNpcFactionsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore Npc faction data for playerObjId: " + player.GetObjectId() + " from DB: " + e.Message);
+            log.LogError(e, "Could not restore Npc faction data for playerObjId: {PlayerGetObjectId} from DB: {EGetMessage}", player.GetObjectId(), e.Message);
         }
     }
 
@@ -87,7 +87,7 @@ public class PlayerNpcFactionsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not insert Npc faction data for playerObjId: " + playerObjectId + " from DB: " + e.Message);
+            log.LogError(e, "Could not insert Npc faction data for playerObjId: {PlayerObjectId} from DB: {EGetMessage}", playerObjectId, e.Message);
         }
     }
 
@@ -109,7 +109,7 @@ public class PlayerNpcFactionsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not update Npc faction data for playerObjId: " + playerObjectId + " from DB: " + e.Message);
+            log.LogError(e, "Could not update Npc faction data for playerObjId: {PlayerObjectId} from DB: {EGetMessage}", playerObjectId, e.Message);
         }
     }
 }

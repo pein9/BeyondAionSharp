@@ -71,12 +71,12 @@ public class TradeListData
             .Select(npc => npc.GetTemplateId()).OrderBy(x => x)
             .ToList();
         if (missingNpcIds.Count != 0)
-            log.LogWarning("Missing trade lists for these npcs: " + string.Join(", ", missingNpcIds));
+            log.LogWarning("Missing trade lists for these npcs: {MissingNpcIds}", string.Join(", ", missingNpcIds));
         missingNpcIds = npcTemplates
             .Where(npc => npc.SupportsAction(DialogAction.TRADE_IN) && GetTradeInListTemplate(npc.GetTemplateId()) == null)
             .Select(npc => npc.GetTemplateId()).OrderBy(x => x)
             .ToList();
         if (missingNpcIds.Count != 0)
-            log.LogWarning("Missing trade-in lists for these npcs: " + string.Join(", ", missingNpcIds));
+            log.LogWarning("Missing trade-in lists for these npcs: {MissingNpcIds}", string.Join(", ", missingNpcIds));
     }
 }

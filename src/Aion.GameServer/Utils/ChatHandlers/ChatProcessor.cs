@@ -31,7 +31,7 @@ public class ChatProcessor : GameEngine
         ScriptManager scriptManager = new ScriptManager();
         scriptManager.SetGlobalClassListener(new ChatCommandsLoader(this));
         scriptManager.Load(CommandsConfig.HANDLER_DIRECTORIES);
-        log.LogInformation("Loaded " + commandHandlers.Count + " commands.");
+        log.LogInformation("Loaded {CommandHandlersSize} commands", commandHandlers.Count);
     }
 
     public void Reload()

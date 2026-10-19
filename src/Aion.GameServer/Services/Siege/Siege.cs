@@ -62,7 +62,7 @@ public abstract class Siege
 
         if (doubleStart)
         {
-            log.LogError(new InvalidOperationException(), "Attempt to start " + this + " twice");
+            log.LogError(new InvalidOperationException(), "Attempt to start {This} twice", this);
         }
         else
         {
@@ -88,7 +88,7 @@ public abstract class Siege
         }
         else
         {
-            log.LogError(new InvalidOperationException(), "Attempt to stop " + this + " twice");
+            log.LogError(new InvalidOperationException(), "Attempt to stop {This} twice", this);
         }
     }
 
@@ -240,14 +240,13 @@ public abstract class Siege
                 if (LoggingConfig.LOG_SIEGE && rewardedGpPlayers.Count != 0)
                 {
                     // Java parity: the list prints as AbstractCollection.toString, [a, b], not as its C# type name.
-                    log.LogInformation(this + ": Distributed " + gp + " " + (isWinner ? "winner" : "loser") + " GP each, to the following players (rank " + rewardLevel
-                        + "): " + JavaString.ValueOf(rewardedGpPlayers));
+                    log.LogInformation("{This}: Distributed {Gp} {IsWinnerWinnerLoser} GP each, to the following players (rank {RewardLevel}): {RewardedGpPlayers}", this, gp, (isWinner ? "winner" : "loser"), rewardLevel, JavaString.ValueOf(rewardedGpPlayers));
                 }
             }
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error while distributing rewards for " + this);
+            log.LogError(e, "Error while distributing rewards for {This}", this);
         }
     }
 

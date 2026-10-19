@@ -23,7 +23,7 @@ public class CubeExpandService
         StorageExpansionTemplate template = DataManager.CUBEEXPANDER_DATA.GetCubeExpansionTemplate(npc.GetNpcId());
         if (template == null)
         {
-            log.LogWarning("Cube expansion template could not be found for " + npc);
+            log.LogWarning("Cube expansion template could not be found for {Npc}", npc);
             return;
         }
 

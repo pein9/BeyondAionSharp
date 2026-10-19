@@ -33,7 +33,7 @@ public class UseSkillAndDieAI : NpcAI
         NpcSkillEntry skill = GetOwner().GetSkillList().GetSkillOnPosition(0);
         if (skill == null)
         {
-            log.LogWarning(GetOwner() + " has no skill list");
+            log.LogWarning("{GetOwner} has no skill list", GetOwner());
             GetOwner().GetController().Delete();
             return;
         }

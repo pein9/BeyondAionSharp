@@ -34,7 +34,7 @@ public class PlayerPasskeyDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error saving PlayerPasskey. accountId: " + accountId);
+            log.LogError(e, "Error saving PlayerPasskey. accountId: {AccountId}", accountId);
         }
     }
 
@@ -55,7 +55,7 @@ public class PlayerPasskeyDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error updating PlayerPasskey. accountId: " + accountId);
+            log.LogError(e, "Error updating PlayerPasskey. accountId: {AccountId}", accountId);
         }
         return result;
     }
@@ -76,7 +76,7 @@ public class PlayerPasskeyDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error updaing PlayerPasskey. accountId: " + accountId);
+            log.LogError(e, "Error updaing PlayerPasskey. accountId: {AccountId}", accountId);
         }
         return result;
     }
@@ -101,7 +101,7 @@ public class PlayerPasskeyDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error loading PlayerPasskey. accountId: " + accountId);
+            log.LogError(e, "Error loading PlayerPasskey. accountId: {AccountId}", accountId);
             return false;
         }
         return passkeyChecked;
@@ -126,7 +126,7 @@ public class PlayerPasskeyDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error loading PlayerPasskey. accountId: " + accountId);
+            log.LogError(e, "Error loading PlayerPasskey. accountId: {AccountId}", accountId);
             return false;
         }
         return existPasskeyChecked;

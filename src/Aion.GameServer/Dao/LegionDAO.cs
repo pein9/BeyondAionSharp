@@ -49,7 +49,7 @@ public class LegionDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Can't check if name " + name + ", is used, returning possitive result");
+            log.LogError(e, "Can't check if name {Name}, is used, returning possitive result", name);
             return true;
         }
         finally
@@ -219,7 +219,7 @@ public class LegionDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't load legion announcements for legion " + legionId);
+            log.LogError(e, "Couldn't load legion announcements for legion {LegionId}", legionId);
         }
         return announcement;
     }
@@ -248,7 +248,7 @@ public class LegionDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't save announcement for legion " + legionId + ": " + announcement);
+            log.LogError(e, "Couldn't save announcement for legion {LegionId}: {Announcement}", legionId, announcement);
         }
     }
 
@@ -292,7 +292,7 @@ public class LegionDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Can't check " + legionid + " legion emblem: ");
+            log.LogError(e, "Can't check {Legionid} legion emblem: ", legionid);
         }
         finally
         {
@@ -426,7 +426,7 @@ public class LegionDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not load history of legion " + legion);
+            log.LogError(e, "Could not load history of legion {Legion}", legion);
         }
         legion.SetHistory(history);
     }
@@ -450,7 +450,7 @@ public class LegionDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not add history entry for legion " + legionId);
+            log.LogError(e, "Could not add history entry for legion {LegionId}", legionId);
             return null;
         }
     }
@@ -472,7 +472,7 @@ public class LegionDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not delete " + entries.Count + " history entries for legion " + legionId);
+            log.LogError(e, "Could not delete {EntriesSize} history entries for legion {LegionId}", entries.Count, legionId);
         }
     }
 }

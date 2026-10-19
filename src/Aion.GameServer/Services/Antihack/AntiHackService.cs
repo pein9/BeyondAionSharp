@@ -181,7 +181,7 @@ public class AntiHackService
         {
             if (size != legitSize)
             {
-                log.LogWarning("Detected modified aion.bin for account ID " + con.GetAccount().GetId());
+                log.LogWarning("Detected modified aion.bin for account ID {ConGetAccountGetId}", con.GetAccount().GetId());
                 con.Close(new SM_QUIT_RESPONSE());
             }
         }

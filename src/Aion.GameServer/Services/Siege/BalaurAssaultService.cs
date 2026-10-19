@@ -53,18 +53,18 @@ public class BalaurAssaultService
             fortressAssaults.TryRemove(locId, out FortressAssault fa);
             fa.FinishAssault(isBossKilled);
             if (isBossKilled && siege.GetSiegeLocation().GetRace().Equals(SiegeRace.BALAUR))
-                log.LogInformation(siege + " has been captured by Balaur assault!");
+                log.LogInformation("{Siege} has been captured by Balaur assault!", siege);
             else
-                log.LogInformation(siege + " Balaur assault finished without capture!");
+                log.LogInformation("{Siege} Balaur assault finished without capture!", siege);
         }
         else if (artifactAssaults.ContainsKey(locId))
         {
             artifactAssaults.TryRemove(locId, out ArtifactAssault aa);
             aa.FinishAssault(isBossKilled);
             if (isBossKilled && siege.GetSiegeLocation().GetRace().Equals(SiegeRace.BALAUR))
-                log.LogInformation(siege + " has been captured by Balaur assault!");
+                log.LogInformation("{Siege} has been captured by Balaur assault!", siege);
             else
-                log.LogInformation(siege + " Balaur assault finished without capture!");
+                log.LogInformation("{Siege} Balaur assault finished without capture!", siege);
         }
     }
 
@@ -123,7 +123,7 @@ public class BalaurAssaultService
             throw new ArgumentException("Unsupported fortress siege type: " + siege.GetType().Name);
         }
         if (LoggingConfig.LOG_SIEGE)
-            log.LogInformation("Scheduled assault of " + siege + " in " + delay + " seconds");
+            log.LogInformation("Scheduled assault of {Siege} in {Delay} seconds", siege, delay);
     }
 
     public void SpawnDredgion(int spawnId)

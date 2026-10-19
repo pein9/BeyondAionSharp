@@ -29,7 +29,7 @@ public class DuelService
 
     private DuelService()
     {
-        log.LogInformation("DuelService started.");
+        log.LogInformation("DuelService initialized");
     }
 
     /// <summary>Send the duel request to the target.</summary>

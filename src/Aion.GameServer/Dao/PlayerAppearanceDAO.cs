@@ -86,7 +86,7 @@ public class PlayerAppearanceDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore PlayerAppearance data for player " + playerId + " from DB: " + e.Message);
+            log.LogError(e, "Could not restore PlayerAppearance data for player {PlayerId} from DB: {EGetMessage}", playerId, e.Message);
             return null;
         }
         return pa;

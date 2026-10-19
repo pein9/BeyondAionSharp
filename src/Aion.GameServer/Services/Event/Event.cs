@@ -123,7 +123,7 @@ public class Event
             OnEnterMap(player);
         });
 
-        log.LogInformation("Started event: " + eventTemplate.GetName());
+        log.LogInformation("Started event: {EventTemplateGetName}", eventTemplate.GetName());
     }
 
     public void Stop()
@@ -151,7 +151,7 @@ public class Event
             }
             count += RespawnService.CancelEventRespawns(eventTemplate);
             DataManager.SPAWNS_DATA.RemoveEventSpawnObjects(eventTemplate);
-            log.LogInformation("Removed " + count + " event spawns (" + eventTemplate.GetName() + ")");
+            log.LogInformation("Removed {Count} event spawns ({EventTemplateGetName})", count, eventTemplate.GetName());
         }
 
         lock (this)
@@ -166,7 +166,7 @@ public class Event
                     }
                     catch (Exception e)
                     {
-                        log.LogError(e, "Could not execute task on end of event " + GetEventTemplate().GetName());
+                        log.LogError(e, "Could not execute task on end of event {GetEventTemplateGetName}", GetEventTemplate().GetName());
                     }
                 }
                 onEventEndTasks = null;
@@ -195,7 +195,7 @@ public class Event
             eventBuffHandler = null;
         }
 
-        log.LogInformation("Stopped event: " + eventTemplate.GetName());
+        log.LogInformation("Stopped event: {EventTemplateGetName}", eventTemplate.GetName());
     }
 
     public ForceType GetEffectForceType()

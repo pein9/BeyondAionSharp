@@ -43,7 +43,7 @@ public class CM_UI_SETTINGS : AionClientPacket
                 player.GetPlayerSettings().SetHouseBuddies(data);
                 break;
             default:
-                log.LogWarning(player + " sent unknown type of player settings: " + settingsType);
+                log.LogWarning("{Player} sent unknown type of player settings: {SettingsType}", player, settingsType);
                 break;
         }
     }

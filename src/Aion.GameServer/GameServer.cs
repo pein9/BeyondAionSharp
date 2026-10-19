@@ -119,8 +119,7 @@ public static class GameServer
             }
         }
 
-        log.LogInformation("FACTIONS RATIO UPDATED: E " + ELYOS_RATIO.ToString("F1", CultureInfo.InvariantCulture)
-            + " % / A " + ASMOS_RATIO.ToString("F1", CultureInfo.InvariantCulture) + " %");
+        log.LogInformation("FACTIONS RATIO UPDATED: E {StringFormatFELYOS_RATIO} % / A {StringFormatFASMOS_RATIO} %", ELYOS_RATIO.ToString("F1", CultureInfo.InvariantCulture), ASMOS_RATIO.ToString("F1", CultureInfo.InvariantCulture));
     }
 
     public static float GetRatiosFor(Race race)

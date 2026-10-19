@@ -39,7 +39,7 @@ public class PortalService
         PortalLoc loc = DataManager.PORTAL_LOC_DATA.GetPortalLoc(portalPath.GetLocId());
         if (loc == null)
         {
-            log.LogWarning("No portal loc for locId " + portalPath.GetLocId());
+            log.LogWarning("No portal loc for locId {PortalPathGetLocId}", portalPath.GetLocId());
             return;
         }
 

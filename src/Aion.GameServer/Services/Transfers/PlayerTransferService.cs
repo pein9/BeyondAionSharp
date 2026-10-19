@@ -36,7 +36,7 @@ public class PlayerTransferService
             foreach (string skillId in PlayerTransferConfig.REMOVE_SKILL_LIST.Split(','))
                 rsList.Add(int.Parse(skillId));
         }
-        log.LogInformation("PlayerTransferService loaded. With " + rsList.Count + " restricted skills.");
+        log.LogInformation("PlayerTransferService loaded. With {RsListSize} restricted skills.", rsList.Count);
     }
 
     public void StartTransfer(int accountId, int targetAccountId, int playerId, sbyte targetServerId, int taskId)
@@ -51,7 +51,7 @@ public class PlayerTransferService
 
         if (!exist)
         {
-            log.LogWarning("transfer #" + taskId + " player " + playerId + " is not present on account " + accountId + ".");
+            log.LogWarning("transfer #{TaskId} player {PlayerId} is not present on account {AccountId}.", taskId, playerId, accountId);
             LoginServer.GetInstance().SendPacket(
                 new SM_PTRANSFER_CONTROL(SM_PTRANSFER_CONTROL.TASK_STOP, taskId, "player " + playerId + " is not present on account " + accountId));
             return;
@@ -59,7 +59,7 @@ public class PlayerTransferService
 
         if (LegionMemberDAO.IsIdUsed(playerId))
         {
-            log.LogWarning("cannot transfer #" + taskId + " player with existing legion " + playerId + ".");
+            log.LogWarning("cannot transfer #{TaskId} player with existing legion {PlayerId}.", taskId, playerId);
             LoginServer.GetInstance().SendPacket(
                 new SM_PTRANSFER_CONTROL(SM_PTRANSFER_CONTROL.TASK_STOP, taskId, "cannot transfer player with existing legion " + playerId));
             return;
@@ -68,7 +68,7 @@ public class PlayerTransferService
         PlayerCommonData common = PlayerService.GetOrLoadPlayerCommonData(playerId);
         if (common.IsOnline())
         {
-            log.LogWarning("cannot transfer #" + taskId + " online players " + playerId + ".");
+            log.LogWarning("cannot transfer #{TaskId} online players {PlayerId}.", taskId, playerId);
             LoginServer.GetInstance().SendPacket(
                 new SM_PTRANSFER_CONTROL(SM_PTRANSFER_CONTROL.TASK_STOP, taskId, "cannot transfer online players " + playerId));
             return;
@@ -77,7 +77,7 @@ public class PlayerTransferService
         if (PlayerTransferConfig.REUSE_HOURS > 0
             && common.GetLastTransferTime() + PlayerTransferConfig.REUSE_HOURS * 3600000 > SystemClock.CurrentMillis())
         {
-            log.LogWarning("cannot transfer #" + taskId + " that player so often " + playerId + ".");
+            log.LogWarning("cannot transfer #{TaskId} that player so often {PlayerId}.", taskId, playerId);
             LoginServer.GetInstance().SendPacket(
                 new SM_PTRANSFER_CONTROL(SM_PTRANSFER_CONTROL.TASK_STOP, taskId, "cannot transfer that player so often " + playerId));
             return;
@@ -87,7 +87,7 @@ public class PlayerTransferService
         long kinah = player.GetInventory().GetKinah() + player.GetWarehouse().GetKinah();
         if (PlayerTransferConfig.MAX_KINAH > 0 && kinah >= PlayerTransferConfig.MAX_KINAH)
         {
-            log.LogWarning("cannot transfer #" + taskId + " players with " + kinah + " kinah in inventory/wh.");
+            log.LogWarning("cannot transfer #{TaskId} players with {Kinah} kinah in inventory/wh.", taskId, kinah);
             LoginServer.GetInstance().SendPacket(
                 new SM_PTRANSFER_CONTROL(SM_PTRANSFER_CONTROL.TASK_STOP, taskId, "cannot transfer players with " + kinah + " kinah in inventory/wh."));
             return;
@@ -95,7 +95,7 @@ public class PlayerTransferService
 
         if (BrokerService.GetInstance().HasRegisteredItems(player))
         {
-            log.LogWarning("cannot transfer #" + taskId + " player while he own some items in broker.");
+            log.LogWarning("cannot transfer #{TaskId} player while he own some items in broker.", taskId);
             LoginServer.GetInstance().SendPacket(
                 new SM_PTRANSFER_CONTROL(SM_PTRANSFER_CONTROL.TASK_STOP, taskId, "cannot transfer player while he own some items in broker."));
             return;
@@ -109,7 +109,7 @@ public class PlayerTransferService
         tp.taskId = taskId;
         transfers[taskId] = tp;
 
-        textLog.LogInformation("taskId:" + taskId + "; [StartTransfer]");
+        textLog.LogInformation("taskId:{TaskId}; [StartTransfer]", taskId);
         LoginServer.GetInstance().SendPacket(new SM_PTRANSFER_CONTROL(SM_PTRANSFER_CONTROL.CHARACTER_INFORMATION, tp));
         LoginServer.GetInstance().SendPacket(new SM_PTRANSFER_CONTROL(SM_PTRANSFER_CONTROL.ITEMS_INFORMATION, tp));
         LoginServer.GetInstance().SendPacket(new SM_PTRANSFER_CONTROL(SM_PTRANSFER_CONTROL.DATA_INFORMATION, tp));
@@ -135,8 +135,8 @@ public class PlayerTransferService
                 return;
             }
 
-            log.LogInformation("Name is already in use `" + name + "`");
-            textLog.LogInformation("taskId:" + taskId + "; [CloneCharacter:!isFreeName]");
+            log.LogInformation("Name is already in use `{Name}`", name);
+            textLog.LogInformation("taskId:{TaskId}; [CloneCharacter:!isFreeName]", taskId);
             string newName = name;
 
             int i = 0;
@@ -156,7 +156,7 @@ public class PlayerTransferService
 
         if (cha == null)
         { // something went wrong!
-            log.LogError("clone failed #" + taskId + " `" + name + "`");
+            log.LogError("clone failed #{TaskId} `{Name}`", taskId, name);
             LoginServer.GetInstance().SendPacket(
                 new SM_PTRANSFER_CONTROL(SM_PTRANSFER_CONTROL.ERROR, taskId, "unexpected sql error while creating a clone"));
         }
@@ -166,8 +166,8 @@ public class PlayerTransferService
                 InventoryDAO.Store(ItemFactory.NewItem(169670001), cha); // [Event] Name Change Ticket
             PlayerDAO.SetPlayerLastTransferTime(cha.GetObjectId(), SystemClock.CurrentMillis());
             LoginServer.GetInstance().SendPacket(new SM_PTRANSFER_CONTROL(SM_PTRANSFER_CONTROL.OK, taskId));
-            log.LogInformation("clone successful #" + taskId + " `" + name + "`");
-            textLog.LogInformation("taskId:" + taskId + "; [CloneCharacter:Done]");
+            log.LogInformation("clone successful #{TaskId} `{Name}`", taskId, name);
+            textLog.LogInformation("taskId:{TaskId}; [CloneCharacter:Done]", taskId);
         }
     }
 
@@ -177,7 +177,7 @@ public class PlayerTransferService
     public void OnOk(int taskId)
     {
         this.transfers.Remove(taskId, out TransferablePlayer tplayer);
-        textLog.LogInformation("taskId:" + taskId + "; [TransferComplete]");
+        textLog.LogInformation("taskId:{TaskId}; [TransferComplete]", taskId);
         PlayerService.DeletePlayerFromDB(tplayer.playerId);
     }
 
@@ -187,7 +187,7 @@ public class PlayerTransferService
     public void OnError(int taskId, string reason)
     {
         this.transfers.Remove(taskId);
-        textLog.LogInformation("taskId:" + taskId + "; [Error. Transfer failed] " + reason);
+        textLog.LogInformation("taskId:{TaskId}; [Error. Transfer failed] {Reason}", taskId, reason);
     }
 
     public void PutTransfer(int taskId, PlayerTransfer playerTransfer)

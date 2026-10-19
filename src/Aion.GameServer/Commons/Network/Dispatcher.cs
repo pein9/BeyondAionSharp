@@ -154,7 +154,7 @@ public abstract class Dispatcher
         int size = (buf.GetShort() & 0xFFFF) - 2; // size includes the read short, subtract two bytes
         if (size <= 0)
         {
-            log.LogWarning("Received empty packet without opcode from " + con + ", content:\n" + NetworkUtils.ToHex(buf));
+            log.LogWarning("Received empty packet without opcode from {Connection}, content: {Content}", con, NetworkUtils.ToHex(buf));
             return false;
         }
         ByteBuffer b = buf.Slice().Order(buf.Order());
@@ -167,7 +167,7 @@ public abstract class Dispatcher
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error parsing input from " + con + ", packet size: " + size + ", content: " + NetworkUtils.ToHex(b));
+            log.LogError(e, "Error parsing input from {Con}, packet size: {Size}, content: {NetworkUtilsToHexB}", con, size, NetworkUtils.ToHex(b));
             return false;
         }
     }
@@ -197,7 +197,7 @@ public abstract class Dispatcher
 
             if (numWrite == 0)
             {
-                log.LogInformation("Write " + numWrite + " ip: " + con.GetIP());
+                log.LogInformation("Write {NumWrite} ip: {ConGetIP}", numWrite, con.GetIP());
                 return;
             }
 
@@ -231,7 +231,7 @@ public abstract class Dispatcher
 
             if (numWrite == 0)
             {
-                log.LogInformation("Write " + numWrite + " ip: " + con.GetIP());
+                log.LogInformation("Write {NumWrite} ip: {ConGetIP}", numWrite, con.GetIP());
                 return;
             }
 

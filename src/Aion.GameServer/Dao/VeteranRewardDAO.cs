@@ -34,7 +34,7 @@ public class VeteranRewardDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error loading received veteran reward months for player " + player);
+            log.LogError(e, "Error loading received veteran reward months for player {Player}", player);
             return -1;
         }
     }
@@ -54,7 +54,7 @@ public class VeteranRewardDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error saving received veteran reward months (" + months + ") for player " + player);
+            log.LogError(e, "Error saving received veteran reward months ({Months}) for player {Player}", months, player);
             return false;
         }
     }

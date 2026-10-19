@@ -30,7 +30,7 @@ public class InstanceEngine : GameEngine
         acl.AddClassListener(new InstanceHandlerClassListener());
         scriptManager.SetGlobalClassListener(acl);
         scriptManager.Load(InstanceConfig.HANDLER_DIRECTORY);
-        log.LogInformation("Loaded " + instanceHandlers.Count + " instance handlers.");
+        log.LogInformation("Loaded {InstanceHandlersSize} instance handlers", instanceHandlers.Count);
     }
 
     public IInstanceHandler GetNewInstanceHandler(WorldMapInstance instance)
@@ -45,7 +45,7 @@ public class InstanceEngine : GameEngine
             }
             catch (Exception ex)
             {
-                log.LogWarning(ex, "Can't instantiate instance handler for map " + instance.GetMapId() + " (instanceId: " + instance.GetInstanceId() + ')');
+                log.LogWarning(ex, "Can't instantiate instance handler for map {InstanceGetMapId} (instanceId: {InstanceGetInstanceId})", instance.GetMapId(), instance.GetInstanceId());
             }
         }
 

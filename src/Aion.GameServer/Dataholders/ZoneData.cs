@@ -52,7 +52,7 @@ public class ZoneData
     public bool ValidateZoneName(string zoneName)
     {
         if (IsValidZoneName(zoneName)) return true;
-        AionLog.For(nameof(ZoneData)).LogWarning("Missing data for zone: " + zoneName);
+        AionLog.For(nameof(ZoneData)).LogWarning("Missing data for zone: {ZoneName}", zoneName);
         return false;
     }
 

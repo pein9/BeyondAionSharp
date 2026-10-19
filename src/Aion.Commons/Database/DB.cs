@@ -39,7 +39,7 @@ namespace Aion.Commons.Database
             }
             catch (Exception e)
             {
-                log.LogError(e, "Error executing select query " + query);
+                log.LogError(e, "Error executing select query {Query}", query);
                 return false;
             }
             return true;
@@ -61,7 +61,7 @@ namespace Aion.Commons.Database
             }
             catch (Exception e)
             {
-                log.LogError(e, "Error calling stored procedure " + query);
+                log.LogError(e, "Error calling stored procedure {Query}", query);
                 return false;
             }
             return true;
@@ -92,7 +92,7 @@ namespace Aion.Commons.Database
             }
             catch (Exception e)
             {
-                log.LogError(e, "Failed to execute IU query " + query);
+                log.LogError(e, "Failed to execute IU query {Query}", query);
                 return false;
             }
             return true;
@@ -128,7 +128,7 @@ namespace Aion.Commons.Database
             }
             catch (Exception e)
             {
-                log.LogError(e, "Can't create PreparedStatement for query: " + sql);
+                log.LogError(e, "Can't create PreparedStatement for query: {Sql}", sql);
                 if (c != null)
                 {
                     try

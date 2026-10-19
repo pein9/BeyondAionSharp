@@ -57,7 +57,7 @@ public class SM_HOUSE_EDIT : AionServerPacket
                 HouseDecoration deco = house.GetRegistry().GetDecorByObjId(itemObjectId);
                 if (deco == null)
                 {
-                    AionLog.For(GetType().FullName).LogWarning("House item with object ID " + itemObjectId + " wasn't found in registry of " + house);
+                    AionLog.For(GetType().FullName).LogWarning("House item with object ID {ItemObjectId} wasn't found in registry of {House}", itemObjectId, house);
                     return;
                 }
                 templateId = deco.GetTemplateId();

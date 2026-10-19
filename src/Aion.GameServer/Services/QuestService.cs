@@ -105,12 +105,12 @@ public sealed class QuestService
             {
                 if (rewardGroups == null)
                 {
-                    log.LogWarning("Handler for quest " + questId + " has set a reward group, but there are none in quest_data.xml.");
+                    log.LogWarning("Handler for quest {QuestId} has set a reward group but there are none in quest_data.xml", questId);
                     qs.SetRewardGroup(null);
                 }
                 else if (qs.GetRewardGroup() < 0 || qs.GetRewardGroup() >= rewardGroups.Count)
                 {
-                    log.LogWarning("Handler for quest " + questId + " tried to reward a nonexistent reward group (index " + qs.GetRewardGroup() + ").");
+                    log.LogWarning("Handler for quest {QuestId} tried to reward a nonexistent reward group (index {QsGetRewardGroup}).", questId, qs.GetRewardGroup());
                     qs.SetRewardGroup(rewardGroups.Count - 1);
                 }
             }
@@ -119,7 +119,7 @@ public sealed class QuestService
                 if (rewardGroups != null && rewardGroups.Count > 0)
                 {
                     if (rewardGroups.Count > 1)
-                        log.LogWarning("Handler for quest " + questId + " possibly rewarded the wrong reward group.");
+                        log.LogWarning("Handler for quest {QuestId} possibly rewarded the wrong reward group", questId);
                     qs.SetRewardGroup(0);
                 }
             }
@@ -149,8 +149,7 @@ public sealed class QuestService
                 }
                 else
                 {
-                    log.LogWarning("The extended SelectableRewardItem list has no element on index " + (index - 8) + ". See quest id " + env.GetQuestId()
-                        + ". The size is: " + rewards.GetSelectableRewardItem().Count);
+                    log.LogWarning("The extended SelectableRewardItem list has no element on index {Index}. See quest id {EnvGetQuestId}. The size is: {RewardsGetSelectableRewardItemSize}", (index - 8), env.GetQuestId(), rewards.GetSelectableRewardItem().Count);
                 }
             }
         }
@@ -174,8 +173,7 @@ public sealed class QuestService
                         }
                         else
                         {
-                            log.LogWarning("The SelectableRewardByClass list has no element on index " + rewardIndex + ". See quest id " + env.GetQuestId()
-                                + ". The size for " + playerClass + " is: " + template.GetSelectableRewardByClass(playerClass).Count);
+                            log.LogWarning("The SelectableRewardByClass list has no element on index {RewardIndex}. See quest id {EnvGetQuestId}. The size for {PlayerClass} is: {TemplateGetSelectableRewardByClassPlayerClassSize}", rewardIndex, env.GetQuestId(), playerClass, template.GetSelectableRewardByClass(playerClass).Count);
                         }
                     }
                     else if (rewardIndex < rewards.GetSelectableRewardItem().Count)
@@ -184,7 +182,7 @@ public sealed class QuestService
                     }
                     else
                     {
-                        log.LogWarning("The SelectableRewardItem list has no element on index " + rewardIndex + ". See quest id " + env.GetQuestId());
+                        log.LogWarning("The SelectableRewardItem list has no element on index {RewardIndex}. See quest id {EnvGetQuestId}", rewardIndex, env.GetQuestId());
                     }
                 }
                 else if (dialogActionId == SELECTED_QUEST_NOREWARD)
@@ -199,7 +197,7 @@ public sealed class QuestService
                         }
                         else
                         {
-                            log.LogWarning(new Exception(), "The SelectableRewardByClass list has no element on index " + rewardIndex + ". See quest id " + env.GetQuestId());
+                            log.LogWarning(new Exception(), "The SelectableRewardByClass list has no element on index {RewardIndex}. See quest id {EnvGetQuestId}", rewardIndex, env.GetQuestId());
                         }
                     }
                 }
@@ -407,7 +405,7 @@ public sealed class QuestService
         }
         catch (Exception ex)
         {
-            log.LogError(ex, "QE: exception in checkStartCondition (" + player + ", questId " + questId + ")");
+            log.LogError(ex, "QE: exception in checkStartCondition ({Player}, questId {QuestId})", player, questId);
         }
         return false;
     }

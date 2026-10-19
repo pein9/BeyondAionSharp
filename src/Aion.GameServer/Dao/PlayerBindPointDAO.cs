@@ -46,7 +46,7 @@ public class PlayerBindPointDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore BindPointPosition data for playerObjId: " + player.GetObjectId() + " from DB: " + e.Message);
+            log.LogError(e, "Could not restore BindPointPosition data for playerObjId: {PlayerGetObjectId} from DB: {EGetMessage}", player.GetObjectId(), e.Message);
         }
     }
 
@@ -69,7 +69,7 @@ public class PlayerBindPointDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not store BindPointPosition data for player " + player.GetObjectId() + " from DB: " + e.Message);
+            log.LogError(e, "Could not store BindPointPosition data for player {PlayerGetObjectId} from DB: {EGetMessage}", player.GetObjectId(), e.Message);
             return false;
         }
         return true;
@@ -94,7 +94,7 @@ public class PlayerBindPointDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not update BindPointPosition data for player " + player.GetObjectId() + " from DB: " + e.Message);
+            log.LogError(e, "Could not update BindPointPosition data for player {PlayerGetObjectId} from DB: {EGetMessage}", player.GetObjectId(), e.Message);
             return false;
         }
         return true;

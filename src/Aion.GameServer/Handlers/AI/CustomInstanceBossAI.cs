@@ -70,8 +70,7 @@ public class CustomInstanceBossAI : GeneralNpcAI
         Player p = World.World.GetInstance().GetPlayer(playerId);
         if (p == null)
         {
-            log.LogError(new Exception(), "[CI_ROAH] No player object found for player id: " + playerId
-                + ". Either the player is offline or the central artifact was destroyed by something else.");
+            log.LogWarning(new Exception(), "[CI_ROAH] No online player found for ID {PlayerId} - either the player is offline or the central artifact was destroyed by something else", playerId);
             return;
         }
 
@@ -173,7 +172,7 @@ public class CustomInstanceBossAI : GeneralNpcAI
                 Skill skillI = SkillEngine.SkillEngine.GetInstance().GetSkill(GetOwner(), skillSet[i], 1, GetTarget());
                 if (skillI == null)
                 {
-                    log.LogWarning("Detected a skill input with not existent template [skillId=" + skillSet[i] + "].");
+                    log.LogWarning("Detected a skill input with not existent template [skillId={SkillSetI}].", skillSet[i]);
                     output[i] = -1d;
                     continue;
                 }

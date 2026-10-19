@@ -36,13 +36,11 @@ public class PeriodicSaveService
 	/// </summary>
 	public void OnShutdown()
 	{
-		Log.LogInformation("Starting data save on shutdown.");
 		foreach (PeriodicSaveTask task in _tasks)
 		{
 			task.StoreDataAndCancel();
 		}
 
-		Log.LogInformation("Data successfully saved.");
 	}
 
 	private sealed class LegionWarehouseSaveTask : PeriodicSaveTask
@@ -54,7 +52,6 @@ public class PeriodicSaveService
 
 		public override void Run()
 		{
-			Log.LogInformation("Legion WH update task started.");
 			long startTime = System.Environment.TickCount64;
 			int legionWhUpdated = 0;
 			foreach (Legion legion in LegionService.GetInstance().GetCachedLegions())
@@ -70,14 +67,14 @@ public class PeriodicSaveService
 				}
 				catch (Exception ex)
 				{
-					Log.LogError(ex, "Exception during periodic saving of legion WH");
+					Log.LogError(ex, "Could not save warehouse of legion {LegionId}", legion.GetLegionId());
 				}
 
 				legionWhUpdated++;
 			}
 
 			long workTime = System.Environment.TickCount64 - startTime;
-			Log.LogInformation("Legion WH update: " + workTime + " ms, legions: " + legionWhUpdated + ".");
+			Log.LogInformation("Saved warehouses of {Legions} legions in {ElapsedMs} ms", legionWhUpdated, workTime);
 		}
 	}
 

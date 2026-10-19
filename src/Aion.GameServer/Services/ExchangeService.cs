@@ -220,7 +220,7 @@ public class ExchangeService
                 Item realItem = player.GetInventory().GetItemByObjId(exItem.GetItemObjId());
                 if (realItem == null)
                 {
-                    log.LogWarning("Player " + player.GetName() + " is trying to return fake item on exchange cancel!");
+                    log.LogWarning("Player {PlayerGetName} is trying to return fake item on exchange cancel!", player.GetName());
                     return;
                 }
                 if (realItem.GetItemCount() == exItem.GetItemCount())
@@ -380,15 +380,14 @@ public class ExchangeService
                 itemToPut.SetPackCount(itemToPut.GetPackCount() * -1);
             partner.GetInventory().Add(itemToPut, ItemPacketService.ItemAddType.PLAYER_EXCHANGE_GET);
             if (LoggingConfig.LOG_PLAYER_EXCHANGE)
-                log.LogInformation("Player " + giver.GetName() + " exchanged item " + itemToPut.GetItemId() + " [" + itemToPut.GetItemName() + "] (count: "
-                    + itemToPut.GetItemCount() + ") with player " + partner.GetName());
+                log.LogInformation("Player {GiverGetName} exchanged item {ItemToPutGetItemId} [{ItemToPutGetItemName}] (count: {ItemToPutGetItemCount}) with player {PartnerGetName}", giver.GetName(), itemToPut.GetItemId(), itemToPut.GetItemName(), itemToPut.GetItemCount(), partner.GetName());
         }
         long kinahToExchange = exchange1.GetKinahCount();
         if (kinahToExchange > 0)
         {
             partner.GetInventory().IncreaseKinah(kinahToExchange);
             if (LoggingConfig.LOG_PLAYER_EXCHANGE)
-                log.LogInformation("Player " + giver.GetName() + " exchanged " + kinahToExchange + " Kinah with player " + partner.GetName());
+                log.LogInformation("Player {GiverGetName} exchanged {KinahToExchange} Kinah with player {PartnerGetName}", giver.GetName(), kinahToExchange, partner.GetName());
         }
     }
 

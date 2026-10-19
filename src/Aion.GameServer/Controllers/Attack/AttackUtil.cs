@@ -105,7 +105,7 @@ public class AttackUtil
 
         int maxListIndex = Math.Min(attackResultList.Count, 2);
         if (maxListIndex < attackResultList.Count) // should never happen but log just in case
-            AionLog.For(nameof(AttackUtil)).LogWarning("attackResultList has more elements than expected (" + attackResultList.Count + ")");
+            AionLog.For(nameof(AttackUtil)).LogWarning("attackResultList has more elements than expected ({AttackResultListSize})", attackResultList.Count);
         for (int i = 0; i < maxListIndex; i++)
         {
             float damageMultiplier = i == 0 ? mainMultiplier : offMultiplier;

@@ -25,8 +25,8 @@ public class SurveyService
 
     private SurveyService()
     {
-        TaskUpdate task = new TaskUpdate(this);
-        ThreadPoolManager.GetInstance().ScheduleAtFixedRateTask(ct => { task.Run(); return ValueTask.CompletedTask; }, TimeSpan.FromMilliseconds(2000), TimeSpan.FromMilliseconds(SecurityConfig.SURVEY_DELAY * 60000));
+        ThreadPoolManager.GetInstance().ScheduleAtFixedRateTask(ct => { TaskUpdateImpl(); return ValueTask.CompletedTask; }, TimeSpan.FromMilliseconds(2000), TimeSpan.FromMilliseconds(SecurityConfig.SURVEY_DELAY * 60000));
+        log.LogInformation("SurveyService initialized");
     }
 
     public bool IsActive(Player player, int survId)
@@ -55,7 +55,7 @@ public class SurveyService
         if (player.GetInventory().IsFull(template.GetExtraInventoryId()))
         {
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_FULL_INVENTORY());
-            log.LogWarning("[SurveyController] player " + player.GetName() + " tried to receive item with full inventory.");
+            log.LogWarning("[SurveyController] player {PlayerName} tried to receive item with full inventory", player.GetName());
             return;
         }
         if (SurveyControllerDAO.UseItem(item.uniqueId))
@@ -89,7 +89,7 @@ public class SurveyService
                     players.Add(survey.ownerId);
             }
         }
-        log.LogInformation("[SurveyController] found new " + cnt + " items for " + players.Count + " players.");
+        log.LogInformation("[SurveyController] found new {Items} items for {Players} players", cnt, players.Count);
         foreach (int ownerId in players)
         {
             Player player = Aion.GameServer.World.World.GetInstance().GetPlayer(ownerId);
@@ -114,22 +114,6 @@ public class SurveyService
             context = context.Replace("%radio%", item.radio);
 
             HTMLService.SendData(player, item.uniqueId, context);
-        }
-    }
-
-    public class TaskUpdate
-    {
-        private readonly SurveyService outer;
-
-        internal TaskUpdate(SurveyService outer)
-        {
-            this.outer = outer;
-        }
-
-        public void Run()
-        {
-            log.LogInformation("[SurveyController] update task start.");
-            outer.TaskUpdateImpl();
         }
     }
 

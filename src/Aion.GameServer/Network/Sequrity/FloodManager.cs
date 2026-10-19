@@ -72,7 +72,7 @@ public sealed class FloodManager
             }
             else if (_lastTick > currentTick)
             {
-                _owner.log.LogWarning(new InvalidOperationException(), "The current tick (" + currentTick + ") is smaller than the last (" + _lastTick + ")!");
+                _owner.log.LogWarning(new InvalidOperationException(), "The current tick ({CurrentTick}) is smaller than the last ({_lastTick})!", currentTick, _lastTick);
                 _lastTick = currentTick;
             }
             else

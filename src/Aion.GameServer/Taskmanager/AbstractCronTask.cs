@@ -31,7 +31,7 @@ public abstract class AbstractCronTask : Aion.Commons.Lang.Runnable
         this.cronExpression = cronExpression;
         if (this.cronExpression == null)
         {
-            log.LogInformation(GetType().Name + " is deactivated");
+            log.LogInformation("{GetClassGetSimpleName} is deactivated", GetType().Name);
             return;
         }
         this.nextRun = GetNextRunAfter(SystemClock.UtcNow());
@@ -51,7 +51,7 @@ public abstract class AbstractCronTask : Aion.Commons.Lang.Runnable
             if (ShouldRunOnStart())
                 Run();
             CronService.GetInstance().Schedule(this, cronExpression, true);
-            log.LogInformation("Scheduled " + GetType().Name + " with cron expression: " + cronExpression);
+            log.LogInformation("Scheduled {GetClassGetSimpleName} with cron expression: {CronExpression}", GetType().Name, cronExpression);
             semaphore.Release();
         });
     }

@@ -516,7 +516,7 @@ public abstract class EffectTemplate
     {
         if (Enum.TryParse(statEnum.ToString() + "_PENETRATION", out StatEnum toReturn))
             return toReturn;
-        log.LogWarning("Missing statenum penetration for " + statEnum.ToString());
+        log.LogWarning("Missing statenum penetration for {StatEnumToString}", statEnum.ToString());
         return null;
     }
 }

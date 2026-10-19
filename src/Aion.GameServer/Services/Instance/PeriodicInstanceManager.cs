@@ -51,8 +51,7 @@ public class PeriodicInstanceManager
         {
             CronService.GetInstance().Schedule(() => OpenRegistration(openingMsg, maskId, registrationPeriod), startExpression);
             log.LogInformation("Scheduled registration opening for {Type} based on cron expression: {Cron}", AutoGroupTypeExtensions.GetAGTByMaskId(maskId), startExpression);
-            log.LogInformation("Scheduled " + AutoGroupTypeExtensions.GetAGTByMaskId(maskId) + ": based on cron expression: " + startExpression + " Duration: "
-                + registrationPeriod + " in minutes");
+            log.LogInformation("Scheduled {AutoGroupTypeGetAGTByMaskIdMaskId}: based on cron expression: {StartExpression} Duration: {RegistrationPeriod} in minutes", AutoGroupTypeExtensions.GetAGTByMaskId(maskId), startExpression, registrationPeriod);
         }
     }
 

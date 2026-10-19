@@ -139,7 +139,7 @@ public class UseableItemObject : UseableHouseObject<HousingUseableItem>
 
         if ((requiredItem != null) ^ (action.GetRemoveCount() != null))
         {
-            log.LogWarning(this + " doesn't have valid usage requirements " + (requiredItem == null ? " (item missing)" : "(remove count missing)"));
+            log.LogWarning("{This} doesn't have valid usage requirements {RequiredItemNullItemMissingRemoveCountMissing}", this, (requiredItem == null ? " (item missing)" : "(remove count missing)"));
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_HOUSING_OBJECT_ALL_CANT_USE());
             return;
         }

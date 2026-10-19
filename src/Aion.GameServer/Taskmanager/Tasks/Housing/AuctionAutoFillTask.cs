@@ -58,7 +58,7 @@ public class AuctionAutoFillTask : AbstractCronTask
                 added++;
             }
         }
-        log.LogInformation("[" + race + "] Added " + added + " new houses automatically to auction.");
+        log.LogInformation("[{Race}] Added {Added} new houses automatically to auction", race, added);
     }
 
     /// <summary>Java parity: Collections.shuffle (in-place Fisher-Yates).</summary>

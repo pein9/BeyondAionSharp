@@ -67,7 +67,7 @@ public sealed class PlayerEnterWorldService
         PlayerAccountData playerAccData = account.GetPlayerAccountData(objectId);
         if (playerAccData == null)
         {
-            log.LogWarning("Player enterWorld fail: character obj ID {ObjectId} was not found on account ID {AccountId}.", objectId, account.GetId());
+            log.LogWarning("Player enterWorld fail: character ID {ObjectId} was not found on account ID {AccountGetId}", objectId, account.GetId());
             client.SendPacket(new SM_ENTER_WORLD_CHECK(Msg.CONNECTION_ERROR));
             return;
         }
@@ -75,7 +75,7 @@ public sealed class PlayerEnterWorldService
         PlayerCommonData pcd = playerAccData.GetPlayerCommonData();
         if (pcd == null)
         {
-            log.LogWarning("Player enterWorld fail: CommonData for character obj ID {ObjectId} is null.", objectId);
+            log.LogWarning("Player enterWorld fail: CommonData for character ID {ObjectId} is null", objectId);
             client.SendPacket(new SM_ENTER_WORLD_CHECK(Msg.CONNECTION_ERROR));
             return;
         }
@@ -105,7 +105,7 @@ public sealed class PlayerEnterWorldService
 
         if (Aion.GameServer.World.World.GetInstance().IsInWorld(objectId))
         {
-            log.LogWarning("Player enterWorld fail: Duplicate character obj ID {ObjectId} found in world.", objectId);
+            log.LogWarning("Player enterWorld fail: duplicate character ID {ObjectId} found in world", objectId);
             client.SendPacket(new SM_ENTER_WORLD_CHECK(Msg.CONNECTION_ERROR));
             return;
         }
@@ -165,7 +165,7 @@ public sealed class PlayerEnterWorldService
                 player.SetClientConnection(null);
                 client.SetActivePlayer(null);
                 client.SendPacket(new SM_ENTER_WORLD_CHECK(Msg.CONNECTION_ERROR));
-                log.LogError(ex, "Error during enter world of " + player);
+                log.LogError(ex, "Error during enter world of {Player}", player);
             }
             finally
             {
@@ -188,7 +188,7 @@ public sealed class PlayerEnterWorldService
         player.GetFriendList().SetStatus(Status.ONLINE, pcd);
         PlayerDAO.OnlinePlayer(player, true);
         PlayerDAO.StoreLastOnlineTime(player.GetObjectId(), SystemClock.UtcNow().UtcDateTime);
-        log.LogInformation("Player " + player.GetName() + " (" + account + ") logged on");
+        log.LogInformation("Player {PlayerGetName} ({Account}) logged on", player.GetName(), account);
         pcd.SetInEditMode(false);
 
         Aion.GameServer.World.World.GetInstance().StoreObject(player);
@@ -539,7 +539,7 @@ internal class GeneralUpdateTask : Runnable
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Exception during periodic saving of player " + player.GetName());
+                log.LogError(ex, "Exception during periodic saving of player {PlayerGetName}", player.GetName());
             }
         }
     }
@@ -568,7 +568,7 @@ internal class ItemUpdateTask : Runnable
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Exception during periodic saving of player items " + player.GetName());
+                log.LogError(ex, "Exception during periodic saving of player items {PlayerGetName}", player.GetName());
             }
         }
     }

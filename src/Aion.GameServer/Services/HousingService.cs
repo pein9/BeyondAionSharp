@@ -43,7 +43,7 @@ public class HousingService
         studios = new ConcurrentDictionary<int, House>(HousesDAO.LoadHouses(DataManager.HOUSE_DATA.GetLands(), true));
         UpdateInactiveStateForAllHouses();
         RevokeOwnershipOfDeletedPlayers();
-        log.LogInformation("Loaded " + customHouses.Count + " houses and " + studios.Count + " studios");
+        log.LogInformation("Loaded {CustomHousesSize} houses and {StudiosSize} studios", customHouses.Count, studios.Count);
     }
 
     private void RevokeOwnershipOfDeletedPlayers()
@@ -54,7 +54,7 @@ public class HousingService
             // houses table has no player_id foreign key because houses need to stay in DB even on player deletion (to keep bidding possible for example)
             if (house.GetOwnerId() > 0 && !playerIds.Contains(house.GetOwnerId()))
             {
-                log.LogWarning("Player with ID " + house.GetOwnerId() + " got deleted from DB, revoking house ownership for house " + house.GetAddress().GetId());
+                log.LogWarning("Player with ID {HouseGetOwnerId} got deleted from DB, revoking house ownership for house {HouseGetAddressGetId}", house.GetOwnerId(), house.GetAddress().GetId());
                 ChangeOwner(house, 0);
             }
         }
@@ -176,7 +176,7 @@ public class HousingService
         }
         if (spawnedCounter > 0)
         {
-            log.LogInformation("Spawned " + spawnedCounter + " houses in " + instance);
+            log.LogInformation("Spawned {SpawnedCounter} houses in {Instance}", spawnedCounter, instance);
         }
     }
 

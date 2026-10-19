@@ -82,7 +82,7 @@ public class TownDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not insert town " + town.GetId());
+            log.LogError(e, "Could not insert town {TownGetId}", town.GetId());
         }
     }
 
@@ -103,7 +103,7 @@ public class TownDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not update town " + town.GetId());
+            log.LogError(e, "Could not update town {TownGetId}", town.GetId());
         }
     }
 }

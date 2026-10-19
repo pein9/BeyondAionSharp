@@ -29,7 +29,7 @@ public class QuestStateList
         {
             if (quests.ContainsKey(questId))
             {
-                log.LogWarning("Tried to add duplicate quest to quest list: " + questId);
+                log.LogWarning("Tried to add duplicate quest to quest list: {QuestId}", questId);
                 return false;
             }
             quests[questId] = questState;

@@ -100,7 +100,7 @@ public class MercenaryLocation
         MercenarySpawn spawn = DataManager.SPAWNS_DATA.GetMercenarySpawnBySiegeId(siegeId);
         if (spawn == null)
         {
-            log.LogError("[MERC] There is no mercenaries spawns for siege " + siegeId + " and zone" + smz.GetId());
+            log.LogError("[MERC] There is no mercenaries spawns for siege {SiegeId} and zone{SmzGetId}", siegeId, smz.GetId());
             return tempZone;
         }
         MercenaryRace targetRace = null;
@@ -114,7 +114,7 @@ public class MercenaryLocation
         }
         if (targetRace == null)
         {
-            log.LogError("[MERC] There is no mercenary race for siege " + siegeId + ", zone" + smz.GetId() + ", race:" + race.ToString());
+            log.LogError("[MERC] There is no mercenary race for siege {SiegeId}, zone{SmzGetId}, race:{RaceToString}", siegeId, smz.GetId(), race.ToString());
             return tempZone;
         }
         foreach (MercenaryZone mzone in targetRace.GetMercenaryZones())
@@ -127,7 +127,7 @@ public class MercenaryLocation
         }
         if (tempZone == null)
         {
-            log.LogError("[MERC] There is no mercenary zone for siege " + siegeId + ", zone" + smz.GetId() + ", race:" + race.ToString());
+            log.LogError("[MERC] There is no mercenary zone for siege {SiegeId}, zone{SmzGetId}, race:{RaceToString}", siegeId, smz.GetId(), race.ToString());
             return tempZone;
         }
         return tempZone;

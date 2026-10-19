@@ -18,6 +18,6 @@ public class CM_DEBUG_COMMAND : AbstractGmCommandPacket
 
     protected override void RunImpl()
     {
-        AionLog.For("ADMINAUDIT_LOG").LogInformation(GetConnection().GetActivePlayer() + " sent debug command ////" + command);
+        AionLog.For("ADMINAUDIT_LOG").LogInformation("{GetConnectionGetActivePlayer} sent debug command ////{Command}", GetConnection().GetActivePlayer(), command);
     }
 }

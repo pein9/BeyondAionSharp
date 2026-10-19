@@ -43,7 +43,7 @@ public class ArtifactSiege : Siege<ArtifactLocation>
         if (IsBossKilled())
             OnCapture();
         else
-            log.LogError("Artifact siege (artifactId:" + GetSiegeLocationId() + ") ended without killing a boss.");
+            log.LogError("Artifact siege (artifactId:{GetSiegeLocationId}) ended without killing a boss", GetSiegeLocationId());
 
         // add new spawns
         SpawnNpcs(GetSiegeLocationId(), GetSiegeLocation().GetRace(), SiegeModType.PEACE);

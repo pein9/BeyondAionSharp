@@ -29,6 +29,6 @@ public class StaticDoorSpawnManager
             GeoService.GetInstance().SetDoorState(instance.GetMapId(), instance.GetInstanceId(), data.GetId(), staticDoor.IsOpen());
         }
         if (counter > 0)
-            Log.LogInformation("Spawned " + counter + " static doors in " + instance);
+            Log.LogInformation("Spawned {Counter} static doors in {Instance}", counter, instance);
     }
 }

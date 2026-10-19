@@ -54,7 +54,7 @@ public class CM_REPORT_PLAYER : AionClientPacket
                 SendPacket(SM_SYSTEM_MESSAGE.STR_MSG_ACCUSE_COUNT_INFO(INFINITY));
                 break;
             default:
-                AionLog.For(nameof(CM_REPORT_PLAYER)).LogWarning("Unhandled report type " + reportType + " (reported player: " + playerName + ")");
+                AionLog.For(nameof(CM_REPORT_PLAYER)).LogWarning("Unhandled report type {ReportType} (reported player: {PlayerName})", reportType, playerName);
                 break;
         }
     }

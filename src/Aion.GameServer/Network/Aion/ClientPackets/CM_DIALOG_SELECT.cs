@@ -60,7 +60,7 @@ public class CM_DIALOG_SELECT : AionClientPacket
         if (dialogActionName == null)
         {
             AionLog.For(nameof(CM_DIALOG_SELECT))
-                .LogWarning("Received unknown dialog action id " + dialogActionId + " (quest " + questId + ") from " + player);
+                .LogWarning("Received unknown dialog action id {DialogActionId} (quest {QuestId}) from {Player}", dialogActionId, questId, player);
             return;
         }
 

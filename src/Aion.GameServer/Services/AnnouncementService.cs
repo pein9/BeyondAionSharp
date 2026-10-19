@@ -43,7 +43,7 @@ public class AnnouncementService
         foreach (Announcement announcement in AnnouncementsDAO.LoadAnnouncements())
             Schedule(announcement);
 
-        log.LogInformation("Loaded " + announcements.Count + " announcements");
+        log.LogInformation("Loaded {AnnouncementsSize} announcements", announcements.Count);
     }
 
     private void Schedule(Announcement announce)

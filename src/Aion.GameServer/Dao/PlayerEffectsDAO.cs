@@ -100,7 +100,7 @@ public class PlayerEffectsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Exception while saving effects of player " + player.GetObjectId());
+            log.LogError(e, "Exception while saving effects of player {PlayerGetObjectId}", player.GetObjectId());
         }
     }
 

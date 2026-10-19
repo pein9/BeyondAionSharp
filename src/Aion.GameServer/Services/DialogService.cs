@@ -362,7 +362,7 @@ public class DialogService
                 }
                 if (fortZone == null)
                 {
-                    log.LogWarning("Could not find FORT zone for npc: " + npc.GetNpcId());
+                    log.LogWarning("Could not find FORT zone for npc: {NpcGetNpcId}", npc.GetNpcId());
                     return true;
                 }
                 List<int> siegeIds = fortZone.GetSiegeId();
@@ -411,7 +411,7 @@ public class DialogService
             case SubDialogType.LEVEL_HIGH:
                 return player.GetLevel() < talkInfo.GetSubDialogValue();
             default:
-                log.LogWarning("Unhandled subdialog type " + talkInfo.GetSubDialogType() + " for npc: " + npc.GetNpcId());
+                log.LogWarning("Unhandled subdialog type {TalkInfoGetSubDialogType} for npc: {NpcGetNpcId}", talkInfo.GetSubDialogType(), npc.GetNpcId());
                 return true;
         }
     }

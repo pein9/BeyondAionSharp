@@ -81,7 +81,7 @@ public class CM_EMOTION : AionClientPacket
                 heading = ReadC();
                 break;
             default:
-                log.LogError("Unknown emotion type? 0x" + et.ToString("X", CultureInfo.InvariantCulture)/* !!!!! */);
+                log.LogError("Unknown emotion type? 0x{IntegerToHexStringEtToUpperCase}", et.ToString("X", CultureInfo.InvariantCulture)/* !!!!! */);
                 break;
         }
     }

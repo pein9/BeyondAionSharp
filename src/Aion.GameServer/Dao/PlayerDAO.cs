@@ -40,7 +40,7 @@ public class PlayerDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Can't check if name " + name + " is used, returning positive result");
+            log.LogError(e, "Can't check if name {Name} is used, returning positive result", name);
             return true;
         }
     }
@@ -87,7 +87,7 @@ public class PlayerDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error saving " + player);
+            log.LogError(e, "Error saving {Player}", player);
         }
     }
 
@@ -122,7 +122,7 @@ public class PlayerDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error saving new " + player);
+            log.LogError(e, "Error saving new {Player}", player);
             return false;
         }
         return true;
@@ -145,7 +145,7 @@ public class PlayerDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore playerId data for player name: " + name + " from DB: " + e.Message);
+            log.LogError(e, "Could not restore playerId data for player name: {Name} from DB: {EGetMessage}", name, e.Message);
         }
 
         if (playerObjId == 0)
@@ -208,7 +208,7 @@ public class PlayerDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not load PlayerCommonData data for player: " + playerObjId);
+            log.LogError(e, "Could not load PlayerCommonData data for player: {PlayerObjId}", playerObjId);
         }
         return null;
     }
@@ -401,7 +401,7 @@ public class PlayerDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Can't get online state of player " + playerId);
+            log.LogError(e, "Can't get online state of player {PlayerId}", playerId);
         }
         return false;
     }
@@ -556,7 +556,7 @@ public class PlayerDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error saving playerName: " + recipientCommonData.GetPlayerObjId() + " " + recipientCommonData.GetName());
+            log.LogError(e, "Error saving playerName: {RecipientCommonDataGetPlayerObjId} {RecipientCommonDataGetName}", recipientCommonData.GetPlayerObjId(), recipientCommonData.GetName());
         }
     }
 
@@ -669,7 +669,7 @@ WHERE p.exp <= ? AND p.account_id IN (SELECT account_id FROM players GROUP BY ac
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error reading old_level for player: " + playerObjectId);
+            log.LogError(e, "Error reading old_level for player: {PlayerObjectId}", playerObjectId);
         }
         return oldLevel;
     }
@@ -688,7 +688,7 @@ WHERE p.exp <= ? AND p.account_id IN (SELECT account_id FROM players GROUP BY ac
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error storing old_level: " + level + " for player: " + playerObjectId);
+            log.LogError(e, "Error storing old_level: {Level} for player: {PlayerObjectId}", level, playerObjectId);
         }
     }
 

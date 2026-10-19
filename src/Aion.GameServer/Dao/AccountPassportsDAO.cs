@@ -76,7 +76,7 @@ public class AccountPassportsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore completed passport data for account: {AccountId} from DB.", account.GetId());
+            log.LogError(e, "Could not restore completed passport data for account: {AccountGetId} from DB", account.GetId());
         }
     }
 
@@ -122,7 +122,7 @@ public class AccountPassportsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error while adding passports for account {AccountId}.", accountId);
+            log.LogError(e, "Error while adding passports for account {AccountId}", accountId);
         }
     }
 
@@ -142,7 +142,7 @@ public class AccountPassportsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Failed to update existing passports for account {AccountId}.", accountId);
+            log.LogError(e, "Failed to update existing passports for account {AccountId}", accountId);
         }
     }
 
@@ -161,7 +161,7 @@ public class AccountPassportsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Failed to delete passports for account {AccountId}.", accountId);
+            log.LogError(e, "Failed to delete passports for account {AccountId}", accountId);
         }
     }
 
@@ -180,7 +180,7 @@ public class AccountPassportsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error while adding stamps for account {AccountId}.", accountId);
+            log.LogError(e, "Error while adding stamps for account {AccountId}", accountId);
         }
     }
 
@@ -199,7 +199,7 @@ public class AccountPassportsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Failed to update existing passports for account {AccountId}.", account.GetId());
+            log.LogError(e, "Failed to update existing passports for account {AccountGetId}", account.GetId());
         }
     }
 
@@ -215,7 +215,7 @@ public class AccountPassportsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Failed to reset all last stamps.");
+            log.LogError(e, "Failed to reset all last stamps");
         }
     }
 
@@ -231,7 +231,7 @@ public class AccountPassportsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Failed to reset all stamps.");
+            log.LogError(e, "Failed to reset all stamps");
         }
     }
 

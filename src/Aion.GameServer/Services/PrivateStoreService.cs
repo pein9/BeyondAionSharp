@@ -179,8 +179,7 @@ public class PrivateStoreService
                     PacketSendUtility.SendPacket(seller, SM_SYSTEM_MESSAGE.STR_MSG_PERSONAL_SHOP_SELL_ITEM(item.GetL10n()));
                 else
                     PacketSendUtility.SendPacket(seller, SM_SYSTEM_MESSAGE.STR_MSG_PERSONAL_SHOP_SELL_ITEM_MULTI(boughtItem.GetCount(), item.GetL10n()));
-                log.LogInformation("[PRIVATE STORE] > [Seller: " + seller.GetName() + "] sold [Item: " + item.GetItemId() + "][Amount: " + boughtItem.GetCount()
-                    + "] to [Buyer: " + buyer.GetName() + "] for [Price: " + boughtItem.GetPrice() * boughtItem.GetCount() + "]");
+                log.LogInformation("[PRIVATE STORE] > [Seller: {SellerGetName}] sold [Item: {ItemGetItemId}][Amount: {BoughtItemGetCount}] to [Buyer: {BuyerGetName}] for [Price: {BoughtItemGetPriceBoughtItemGetCount}]", seller.GetName(), item.GetItemId(), boughtItem.GetCount(), buyer.GetName(), boughtItem.GetPrice() * boughtItem.GetCount());
             }
         }
         buyer.GetInventory().DecreaseKinah(price);
@@ -214,14 +213,14 @@ public class PrivateStoreService
                 TradePSItem storeItem = storeItems[tradeItem.GetItemId()];
                 if (tradeItem.GetCount() > storeItem.GetCount())
                 {
-                    log.LogWarning("[Private Store] Attempt to buy more than for sale: " + tradeItem.GetCount() + " vs. " + storeItem.GetCount());
+                    log.LogWarning("[Private Store] Attempt to buy more than for sale: {TradeItemGetCount} vs. {StoreItemGetCount}", tradeItem.GetCount(), storeItem.GetCount());
                     return null;
                 }
                 boughtItems.Add(new TradePSItem(storeItem.GetItemObjId(), storeItem.GetItemId(), tradeItem.GetCount(), storeItem.GetPrice()));
             }
             else
             {
-                log.LogWarning("[Private Store] Attempt to buy from invalid store index: " + tradeItem.GetItemId());
+                log.LogWarning("[Private Store] Attempt to buy from invalid store index: {TradeItemGetItemId}", tradeItem.GetItemId());
                 return null;
             }
         }

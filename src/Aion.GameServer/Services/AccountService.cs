@@ -22,7 +22,7 @@ public class AccountService
     public static Account GetAccount(int accountId, string accountName, long creationDate, AccountTime accountTime, sbyte accessLevel, sbyte membership,
         string allowedHddSerial)
     {
-        log.LogDebug("[AS] request for account: " + accountId);
+        log.LogDebug("[AS] request for account: {AccountId}", accountId);
 
         Account account = LoadAccount(accountId);
         account.SetName(accountName);

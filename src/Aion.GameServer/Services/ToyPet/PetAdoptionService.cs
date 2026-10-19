@@ -54,12 +54,12 @@ public class PetAdoptionService
         }
         if (player.GetPetList().HasPet(petId))
         {
-            log.LogWarning("Duplicate pet adoption " + player + " (pet: " + petId + ")");
+            log.LogWarning("Duplicate pet adoption {Player} (pet: {PetId})", player, petId);
             return false;
         }
         if (DataManager.PET_DATA.GetPetTemplate(petId) == null)
         {
-            log.LogWarning("Trying adopt pet without template. PetId:" + petId);
+            log.LogWarning("Trying adopt pet without template. PetId:{PetId}", petId);
             return false;
         }
         return true;

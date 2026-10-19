@@ -66,7 +66,7 @@ public class GateRepairAI : NpcAI
             }
 
             if (LoggingConfig.LOG_SIEGE)
-                log.LogInformation("Gate Repair Stone with staticId: " + GetSpawnTemplate().GetStaticId() + " siege: " + GetSpawnTemplate().GetSiegeId() + " activated by " + player + " (race: " + player.GetRace() + ") to heal door with staticId: " + (door.GetSpawn().GetStaticId()) + " by " + healValue);
+                log.LogInformation("Gate Repair Stone with staticId: {GetSpawnTemplateGetStaticId} siege: {GetSpawnTemplateGetSiegeId} activated by {Player} (race: {PlayerGetRace}) to heal door with staticId: {DoorGetSpawnGetStaticId} by {HealValue}", GetSpawnTemplate().GetStaticId(), GetSpawnTemplate().GetSiegeId(), player, player.GetRace(), (door.GetSpawn().GetStaticId()), healValue);
             Interlocked.Exchange(ref nextActivationTime, SystemClock.CurrentMillis() + repairData.GetCd());
             PacketSendUtility.BroadcastPacket(GetOwner(), SM_SYSTEM_MESSAGE.STR_MSG_REPAIR_ABYSS_DOOR(player.GetName(), "" + healValue));
             PacketSendUtility.BroadcastPacket(GetOwner(), new SM_ACTION_ANIMATION(GetObjectId(), ActionAnimation.REPAIR_GATE, door.GetObjectId()));

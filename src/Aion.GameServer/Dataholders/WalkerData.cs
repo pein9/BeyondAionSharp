@@ -41,7 +41,7 @@ public class WalkerData
             // expansion, formation/rows resolution); XmlSerializer does not, so invoke it here before indexing.
             route.AfterUnmarshal();
             if (!walkerlistData.TryAdd(route.GetRouteId(), route))
-                log.LogWarning("Duplicate route ID: " + route.GetRouteId());
+                log.LogWarning("Duplicate route ID: {RouteGetRouteId}", route.GetRouteId());
         }
         walkerlist.Clear();
         walkerlist = null;
@@ -76,7 +76,7 @@ public class WalkerData
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error while saving data: " + e.Message);
+            log.LogError(e, "Error while saving data: {EGetMessage}", e.Message);
             return;
         }
         finally

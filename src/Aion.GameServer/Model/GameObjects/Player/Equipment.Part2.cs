@@ -164,7 +164,7 @@ public partial class Equipment
         {
             if (equipment.ContainsKey(slot.GetSlotIdMask()))
             {
-                log.LogWarning("Duplicate equipped item in slot " + slot + " for " + owner);
+                log.LogWarning("Duplicate equipped item in slot {Slot} for {Owner}", slot, owner);
                 PutItemBackToInventory(item);
             }
             else

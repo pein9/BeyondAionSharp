@@ -108,7 +108,7 @@ public class HouseBidsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Cannot delete or disable house bids for player " + playerObjectId);
+            log.LogError(e, "Cannot delete or disable house bids for player {PlayerObjectId}", playerObjectId);
             return false;
         }
         return true;

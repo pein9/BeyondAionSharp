@@ -35,7 +35,7 @@ public class CM_SHOW_MAP : AionClientPacket
                 // TODO unk
                 break;
             default:
-                log.LogWarning(player + " sent unknown show map action type: " + action);
+                log.LogWarning("{Player} sent unknown show map action type: {Action}", player, action);
                 break;
         }
     }

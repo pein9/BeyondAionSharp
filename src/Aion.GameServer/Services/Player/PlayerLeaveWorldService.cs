@@ -88,7 +88,7 @@ public class PlayerLeaveWorldService
         WorldPosition pos = player.GetPosition();
         if (pos == null || pos.GetMapRegion() == null)
         { // ensure safe logout
-            log.LogWarning(player + " had invalid position: " + pos + " so he was reset to bind point");
+            log.LogWarning("{Player} had invalid position: {Pos} so he was reset to bind point", player, pos);
             BindPointPosition bp = player.GetBindPoint();
             if (bp != null)
                 pos = Aion.GameServer.World.World.GetInstance().CreatePosition(bp.GetMapId(), bp.GetX(), bp.GetY(), bp.GetZ(), bp.GetHeading(), 1);
@@ -214,7 +214,7 @@ public class PlayerLeaveWorldService
                 }
                 catch (Exception exception)
                 {
-                    log.LogError(exception, "Error while processing leave world task for " + player);
+                    log.LogError(exception, "Error while processing leave world task for {Player}", player);
                 }
                 finally
                 {

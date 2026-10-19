@@ -42,7 +42,7 @@ public class RewardServiceDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't load unreceived web rewards for player " + playerId);
+            log.LogError(e, "Couldn't load unreceived web rewards for player {PlayerId}", playerId);
         }
         return list;
     }
@@ -67,8 +67,7 @@ public class RewardServiceDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error saving received web rewards, player could potentially receive rewards multiple times! Check entry_id's: "
-                + "[" + string.Join(", ", ids) + "]");
+            log.LogError(e, "Error saving received web rewards, player could potentially receive rewards multiple times! Check entry_id's: {Ids}", "[" + string.Join(", ", ids) + "]");
         }
     }
 }

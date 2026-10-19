@@ -339,7 +339,7 @@ public class TeleportService
 
         if (searchResult == null)
         {
-            log.LogWarning("No npc spawn found for : " + npcId);
+            log.LogWarning("No npc spawn found for : {NpcId}", npcId);
             return;
         }
 
@@ -443,7 +443,7 @@ public class TeleportService
         else
         {
             if (instanceExit == null)
-                log.LogWarning("No instance exit found for race: " + race + " " + worldId);
+                log.LogWarning("No instance exit found for race: {Race} {WorldId}", race, worldId);
             MoveToBindLocation(player);
         }
     }
@@ -453,7 +453,7 @@ public class TeleportService
         PortalScroll template = DataManager.PORTAL2_DATA.GetPortalScroll(portalName);
         if (template == null)
         {
-            log.LogWarning("No portal template found for: " + portalName + " " + worldId);
+            log.LogWarning("No portal template found for: {PortalName} {WorldId}", portalName, worldId);
             return;
         }
 
@@ -461,13 +461,13 @@ public class TeleportService
         PortalPath portalPath = template.GetPortalPath();
         if (portalPath == null)
         {
-            log.LogWarning("No portal scroll for " + playerRace + " on: " + portalName + " " + worldId);
+            log.LogWarning("No portal scroll for {PlayerRace} on: {PortalName} {WorldId}", playerRace, portalName, worldId);
             return;
         }
         PortalLoc loc = DataManager.PORTAL_LOC_DATA.GetPortalLoc(portalPath.GetLocId());
         if (loc == null)
         {
-            log.LogWarning("No portal loc for locId " + portalPath.GetLocId());
+            log.LogWarning("No portal loc for locId {PortalPathGetLocId}", portalPath.GetLocId());
             return;
         }
         TeleportTo(player, worldId, loc.GetX(), loc.GetY(), loc.GetZ());
@@ -487,15 +487,13 @@ public class TeleportService
         if (race == Race.ELYOS)
         {
             eventPosElyos = new double[] { pos.GetMapId(), pos.GetInstanceId(), pos.GetX(), pos.GetY(), pos.GetZ(), pos.GetHeading() };
-            log.LogInformation("elyos: mapId: " + pos.GetMapId() + ", instanceId: " + (int)eventPosElyos[1] + ", X: " + eventPosElyos[2] + ", Y: " + eventPosElyos[3]
-                + ", Z: " + eventPosElyos[4] + ", H: " + (byte)eventPosElyos[5]);
+            log.LogInformation("elyos: mapId: {PosGetMapId}, instanceId: {IntEventPosElyos}, X: {EventPosElyos}, Y: {EventPosElyos2}, Z: {EventPosElyos3}, H: {ByteEventPosElyos}", pos.GetMapId(), (int)eventPosElyos[1], eventPosElyos[2], eventPosElyos[3], eventPosElyos[4], (byte)eventPosElyos[5]);
         }
         else if (race == Race.ASMODIANS)
         {
             eventPosAsmodians = new double[] { pos.GetWorldMapInstance().GetMapId(), pos.GetInstanceId(), pos.GetX(), pos.GetY(), pos.GetZ(),
                 pos.GetHeading() };
-            log.LogInformation("asmo: mapId: " + pos.GetMapId() + ", instanceId: " + (int)eventPosAsmodians[1] + ", X: " + eventPosAsmodians[2] + ", Y: "
-                + eventPosAsmodians[3] + ", Z: " + eventPosAsmodians[4] + ", H: " + (byte)eventPosAsmodians[5]);
+            log.LogInformation("asmo: mapId: {PosGetMapId}, instanceId: {IntEventPosAsmodians}, X: {EventPosAsmodians}, Y: {EventPosAsmodians2}, Z: {EventPosAsmodians3}, H: {ByteEventPosAsmodians}", pos.GetMapId(), (int)eventPosAsmodians[1], eventPosAsmodians[2], eventPosAsmodians[3], eventPosAsmodians[4], (byte)eventPosAsmodians[5]);
         }
     }
 

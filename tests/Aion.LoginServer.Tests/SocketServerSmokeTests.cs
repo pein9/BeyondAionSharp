@@ -714,7 +714,7 @@ public sealed class SocketServerSmokeTests
 
 		Assert.Equal(new byte[] { 0x05, 0x00, 0x00, 0x00, 0x01 }, frame);
 		Assert.True(gameServer.IsOnline);
-		Assert.Contains("Gameserver #1 is now online", logger.Messages);
+		Assert.Contains("Game server #1 is now online", logger.Messages);
 
 		await server.StopAsync(TimeSpan.FromSeconds(1));
 		await AssertClientClosedAsync(client.GetStream());

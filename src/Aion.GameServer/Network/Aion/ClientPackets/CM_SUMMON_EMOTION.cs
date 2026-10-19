@@ -59,7 +59,7 @@ public class CM_SUMMON_EMOTION : AionClientPacket
                 break;
             case EmotionType.NONE:
                 if (emotionTypeId != (int)EmotionType.NONE)
-                    log.LogWarning("Unknown emotion type " + emotionTypeId + " from " + player);
+                    log.LogWarning("Unknown emotion type {EmotionTypeId} from {Player}", emotionTypeId, player);
                 break;
         }
     }

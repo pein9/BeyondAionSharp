@@ -35,7 +35,7 @@ public class PlayerPetsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error updating feed status for pet #" + petObjectId);
+            log.LogError(e, "Error updating feed status for pet #{PetObjectId}", petObjectId);
         }
     }
 
@@ -56,7 +56,7 @@ public class PlayerPetsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error update doping for pet #" + petObjectId);
+            log.LogError(e, "Error update doping for pet #{PetObjectId}", petObjectId);
         }
     }
 
@@ -74,7 +74,7 @@ public class PlayerPetsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error update pet #" + petObjectId);
+            log.LogError(e, "Error update pet #{PetObjectId}", petObjectId);
         }
     }
 
@@ -97,7 +97,7 @@ public class PlayerPetsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error inserting new pet #" + petCommonData.GetObjectId() + ", name: " + petCommonData.GetName());
+            log.LogError(e, "Error inserting new pet #{PetCommonDataGetObjectId}, name: {PetCommonDataGetName}", petCommonData.GetObjectId(), petCommonData.GetName());
         }
     }
 
@@ -114,7 +114,7 @@ public class PlayerPetsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error removing pet #" + petObjectId);
+            log.LogError(e, "Error removing pet #{PetObjectId}", petObjectId);
         }
     }
 
@@ -166,7 +166,7 @@ public class PlayerPetsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error loading pets for " + player);
+            log.LogError(e, "Error loading pets for {Player}", player);
         }
         return pets;
     }
@@ -185,7 +185,7 @@ public class PlayerPetsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error update pet #" + petCommonData.GetObjectId());
+            log.LogError(e, "Error update pet #{PetCommonDataGetObjectId}", petCommonData.GetObjectId());
         }
     }
 
@@ -207,7 +207,7 @@ public class PlayerPetsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error updating mood for pet #" + petCommonData.GetObjectId());
+            log.LogError(e, "Error updating mood for pet #{PetCommonDataGetObjectId}", petCommonData.GetObjectId());
             return false;
         }
         return true;

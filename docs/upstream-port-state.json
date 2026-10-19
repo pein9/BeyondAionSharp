@@ -2,7 +2,7 @@
   "upstreamRepository": "https://github.com/beyond-aion/aion-server.git",
   "upstreamBranch": "4.8",
   "baselineJavaCommit": "f2f77fefef00aacbef4c10614c18b339bbdaa05a",
-  "lastCompletedJavaCommit": "36bdccb4d586319cb607fa0fcd061eee4352f16d",
+  "lastCompletedJavaCommit": "7840be30d93815ea71657e8d5a2b554f94e424af",
   "lastScannedJavaCommit": "b0a597458330ea36e1de112f21a0ab5c899c869a",
-  "updatedUtc": "2026-10-19T09:13:51Z"
+  "updatedUtc": "2026-10-19T09:50:24Z"
 }

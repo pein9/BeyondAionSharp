@@ -160,7 +160,7 @@ public partial class Item
         Aion.GameServer.Model.Templates.Items.GodstoneInfo godstoneInfo = DataManager.ITEM_DATA.GetItemTemplate(itemId).GetGodstoneInfo();
         if (godstoneInfo == null)
         {
-            log.LogWarning("Item " + itemId + " has no godstone info");
+            log.LogWarning("Item {ItemId} has no godstone info", itemId);
             return;
         }
         if (godStone != null)

@@ -70,11 +70,11 @@ public class OnClassLoadUnloadListener : ClassListener
                 }
                 catch (MethodAccessException e)
                 {
-                    log.LogError(e, "Can't access method " + m.Name + " of class " + m.DeclaringType.FullName);
+                    log.LogError(e, "Can't access method {MGetName} of class {MGetDeclaringClassGetName}", m.Name, m.DeclaringType.FullName);
                 }
                 catch (TargetInvocationException e)
                 {
-                    log.LogError(e, "Can't invoke method " + m.Name + " of class " + m.DeclaringType.FullName);
+                    log.LogError(e, "Can't invoke method {MGetName} of class {MGetDeclaringClassGetName}", m.Name, m.DeclaringType.FullName);
                 }
             }
         }

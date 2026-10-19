@@ -43,7 +43,7 @@ public class CM_ABYSS_RANKING_PLAYERS : AionClientPacket
                 updateType = AbyssRankUpdateType.PLAYER_ASMODIANS;
                 break;
             default:
-                log.LogWarning("Received invalid raceId (" + raceId + ") from player " + player);
+                log.LogWarning("Received invalid raceId ({RaceId}) from player {Player}", raceId, player);
                 return;
         }
         if (player.IsAbyssRankListUpdated(updateType))

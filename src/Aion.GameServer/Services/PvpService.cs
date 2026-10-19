@@ -200,10 +200,9 @@ public class PvpService
         if (LoggingConfig.LOG_KILL)
         {
             if (assistedGroup.Count > 1 || assistedGroup.Count == 1 && !assistedGroup.Contains(winner))
-                log.LogInformation("[KILL] " + winner + " killed " + victim + " assisted by "
-                    + string.Join(",", assistedGroup.Where(p => !p.Equals(winner)).Select(p => p.ToString())));
+                log.LogInformation("[KILL] {Winner} killed {Victim} assisted by {Value3}", winner, victim, string.Join(",", assistedGroup.Where(p => !p.Equals(winner)).Select(p => p.ToString())));
             else
-                log.LogInformation("[KILL] " + winner + " killed " + victim);
+                log.LogInformation("[KILL] {Winner} killed {Victim}", winner, victim);
         }
 
         if (LoggingConfig.LOG_PL)

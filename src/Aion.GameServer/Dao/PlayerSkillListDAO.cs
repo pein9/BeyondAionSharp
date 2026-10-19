@@ -48,7 +48,7 @@ public class PlayerSkillListDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore SkillList data for player: " + playerId + " from DB: " + e.Message);
+            log.LogError(e, "Could not restore SkillList data for player: {PlayerId} from DB: {EGetMessage}", playerId, e.Message);
         }
         return new PlayerSkillList(skills);
     }
@@ -75,7 +75,7 @@ public class PlayerSkillListDAO
         }
         catch (Exception)
         {
-            log.LogError("Failed to open connection to database while saving SkillList for player " + player.GetObjectId());
+            log.LogError("Failed to open connection to database while saving SkillList for player {PlayerGetObjectId}", player.GetObjectId());
         }
 
         foreach (PlayerSkillEntry skill in skills)
@@ -108,7 +108,7 @@ public class PlayerSkillListDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Can't add skills for player: " + player.GetObjectId());
+            log.LogError(e, "Can't add skills for player: {PlayerGetObjectId}", player.GetObjectId());
         }
     }
 
@@ -136,7 +136,7 @@ public class PlayerSkillListDAO
         }
         catch (Exception)
         {
-            log.LogError("Can't update skills for player: " + player.GetObjectId());
+            log.LogError("Can't update skills for player: {PlayerGetObjectId}", player.GetObjectId());
         }
     }
 
@@ -163,7 +163,7 @@ public class PlayerSkillListDAO
         }
         catch (Exception)
         {
-            log.LogError("Can't delete skills for player: " + player.GetObjectId());
+            log.LogError("Can't delete skills for player: {PlayerGetObjectId}", player.GetObjectId());
         }
     }
 }

@@ -62,7 +62,7 @@ public class CM_PET_EMOTE : AionClientPacket
             return;
         if (emote == PetEmote.Unknown)
         {
-            AionLog.For(GetType().Name).LogWarning(player + " / " + pet + " sent pet emote " + emoteId + " (emotionId: " + emotionId + ", unk2: " + unk2 + ")");
+            AionLog.For(GetType().Name).LogWarning("{Player} / {Pet} sent pet emote {EmoteId} (emotionId: {EmotionId}, unk2: {Unk2})", player, pet, emoteId, emotionId, unk2);
             return;
         }
 
@@ -71,7 +71,7 @@ public class CM_PET_EMOTE : AionClientPacket
         // reproducible by flying randomly and falling from long height with fly resume
         if (x1 < 0 || y1 < 0 || z1 < 0)
         {
-            AionLog.For(GetType().Name).LogWarning(pet + " of " + player + " sent " + emote + " at x:" + x1 + ", y:" + y1 + ", z:" + z1 + ", h:" + h);
+            AionLog.For(GetType().Name).LogWarning("{Pet} of {Player} sent {Emote} at x:{X1}, y:{Y1}, z:{Z1}, h:{H}", pet, player, emote, x1, y1, z1, h);
             return;
         }
 
@@ -81,7 +81,7 @@ public class CM_PET_EMOTE : AionClientPacket
             case PetEmote.MovePositionUpdate:
                 if (emote == PetEmote.MovePositionUpdate)
                 { // TODO remove once we're sure "MOVE_POSITION_UPDATE" is correct and h is actually h
-                    AionLog.For(GetType().Name).LogWarning(pet + " of " + player + " sent " + emote + " at x:" + x1 + ", y:" + y1 + ", z:" + z1 + ", h:" + h);
+                    AionLog.For(GetType().Name).LogWarning("{Pet} of {Player} sent {Emote} at x:{X1}, y:{Y1}, z:{Z1}, h:{H}", pet, player, emote, x1, y1, z1, h);
                 }
                 global::Aion.GameServer.World.World.GetInstance().UpdatePosition(pet, x1, y1, z1, h);
                 BroadcastToSightedPlayers(pet, new SM_PET_EMOTE(pet, emote), false);

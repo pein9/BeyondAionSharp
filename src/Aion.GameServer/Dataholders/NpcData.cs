@@ -50,7 +50,7 @@ public class NpcData
                 foreach (int dialogActionId in npc.GetFuncDialogIds())
                 {
                     if (DialogAction.NameOf(dialogActionId) == null)
-                        log.LogWarning("Unknown dialog action " + dialogActionId + " for Npc " + npc.GetTemplateId());
+                        log.LogWarning("Unknown dialog action {DialogActionId} for Npc {NpcGetTemplateId}", dialogActionId, npc.GetTemplateId());
                 }
             }
             if (npc.GetTribe() != TribeClass.PET && npc.GetTribe() != TribeClass.PET_DARK) // summons and siege weapons have fixed stats

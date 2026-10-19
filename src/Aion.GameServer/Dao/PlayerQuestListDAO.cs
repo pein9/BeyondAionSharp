@@ -60,7 +60,7 @@ public class PlayerQuestListDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore QuestStateList data for player: " + playerObjId + " from DB: " + e.Message);
+            log.LogError(e, "Could not restore QuestStateList data for player: {PlayerObjId} from DB: {EGetMessage}", playerObjId, e.Message);
         }
         return questStateList;
     }
@@ -83,7 +83,7 @@ public class PlayerQuestListDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Can't save quests for player " + player.GetObjectId());
+            log.LogError(e, "Can't save quests for player {PlayerGetObjectId}", player.GetObjectId());
         }
 
         foreach (QuestState qs in qsList)
@@ -123,7 +123,7 @@ public class PlayerQuestListDAO
         }
         catch (Exception)
         {
-            log.LogError("Failed to insert new quests for player " + playerId);
+            log.LogError("Failed to insert new quests for player {PlayerId}", playerId);
         }
     }
 
@@ -158,7 +158,7 @@ public class PlayerQuestListDAO
         }
         catch (Exception)
         {
-            log.LogError("Failed to update existing quests for player " + playerId);
+            log.LogError("Failed to update existing quests for player {PlayerId}", playerId);
         }
     }
 
@@ -194,7 +194,7 @@ public class PlayerQuestListDAO
         }
         catch (Exception)
         {
-            log.LogError("Failed to delete existing quests for player " + playerId);
+            log.LogError("Failed to delete existing quests for player {PlayerId}", playerId);
         }
         questIds.Clear();
     }

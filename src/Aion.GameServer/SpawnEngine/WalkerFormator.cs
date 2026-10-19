@@ -26,7 +26,7 @@ public class WalkerFormator
             WalkerTemplate template = DataManager.WALKER_DATA.GetWalkerTemplate(walkerId);
             if (template == null)
             {
-                Log.LogWarning("Missing walker ID: " + walkerId);
+                Log.LogWarning("Missing walker ID: {WalkerId}", walkerId);
                 return false;
             }
             if (template.GetPool() < 2)

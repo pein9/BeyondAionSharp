@@ -116,7 +116,7 @@ public class PlayerMacrosDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not load macros for player " + playerId);
+            log.LogError(e, "Could not load macros for player {PlayerId}", playerId);
         }
         return macros;
     }

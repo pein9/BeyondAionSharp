@@ -82,7 +82,7 @@ public class AbyssRankDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't load abyss rank for player " + playerId);
+            log.LogError(e, "Couldn't load abyss rank for player {PlayerId}", playerId);
         }
         return abyssRank;
     }
@@ -139,7 +139,7 @@ public class AbyssRankDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't insert abyss rank for player " + playerId);
+            log.LogError(e, "Couldn't insert abyss rank for player {PlayerId}", playerId);
             return false;
         }
     }
@@ -173,7 +173,7 @@ public class AbyssRankDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't update abyss rank of player " + playerId);
+            log.LogError(e, "Couldn't update abyss rank of player {PlayerId}", playerId);
             return false;
         }
     }
@@ -192,7 +192,7 @@ public class AbyssRankDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't decrease daily GP for rank " + rank);
+            log.LogError(e, "Couldn't decrease daily GP for rank {Rank}", rank);
         }
     }
 
@@ -315,7 +315,7 @@ public class AbyssRankDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't load legion member count for legion " + legionId);
+            log.LogError(e, "Couldn't load legion member count for legion {LegionId}", legionId);
             return 0;
         }
     }
@@ -342,7 +342,7 @@ public class AbyssRankDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't load top ranks for race " + race);
+            log.LogError(e, "Couldn't load top ranks for race {Race}", race);
             return null;
         }
     }
@@ -365,7 +365,7 @@ public class AbyssRankDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't load ranks for race " + race + " (minRank " + minRank + ")");
+            log.LogError(e, "Couldn't load ranks for race {Race} (minRank {MinRank})", race, minRank);
             return null;
         }
     }
@@ -384,7 +384,7 @@ public class AbyssRankDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Couldn't update abyss rank of player " + playerId + " to " + rank);
+            log.LogError(e, "Couldn't update abyss rank of player {PlayerId} to {Rank}", playerId, rank);
         }
     }
 

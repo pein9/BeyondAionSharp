@@ -53,7 +53,7 @@ public class HouseController : VisibleObjectController<House>
         List<HouseSpawn> templates = DataManager.HOUSE_NPCS_DATA.GetSpawnsByAddress(address.GetId());
         if (templates == null)
         {
-            log.LogWarning("Missing npc spawns for house " + address.GetId());
+            log.LogWarning("Missing npc spawns for house {AddressGetId}", address.GetId());
             return;
         }
         foreach (HouseSpawn spawn in templates)
@@ -81,7 +81,7 @@ public class HouseController : VisibleObjectController<House>
             }
             else
             {
-                log.LogWarning("Unhandled spawn type " + spawn.GetType_());
+                log.LogWarning("Unhandled spawn type {SpawnGetType}", spawn.GetType_());
                 continue;
             }
             GetOwner().UpdateSpawn(spawn.GetType_(), npc);

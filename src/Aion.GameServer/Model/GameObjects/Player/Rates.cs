@@ -37,7 +37,7 @@ public abstract class Rates
         }
         catch (OverflowException e)
         {
-            log.LogError(e, Name() + " result is too large for " + player + ": " + result);
+            log.LogError(e, "{Name} result is too large for {Player}: {Result}", Name(), player, result);
             return value;
         }
     }

@@ -33,7 +33,7 @@ public class ChestAI : ActionItemNpcAI
 
         if (chestTemplate == null)
         {
-            log.LogWarning("Missing chest template or incorrect AI for npc " + GetNpcId());
+            log.LogWarning("Missing chest template or incorrect AI for npc {GetNpcId}", GetNpcId());
             return;
         }
         base.HandleDialogStart(player);

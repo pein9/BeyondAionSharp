@@ -64,7 +64,7 @@ public class CM_INVITE_TO_GROUP : AionClientPacket
                 LeagueService.InviteToLeague(inviter, invited);
                 break;
             default:
-                log.LogWarning("Received unknown invite type from player " + inviter.GetName() + ": " + inviteType);
+                log.LogWarning("Received unknown invite type from player {InviterGetName}: {InviteType}", inviter.GetName(), inviteType);
                 break;
         }
     }

@@ -41,7 +41,7 @@ public class ServerVariablesDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error storing " + value + " for variable " + var);
+            log.LogError(e, "Error storing {Value} for variable {Var}", value, var);
             return false;
         }
     }
@@ -59,7 +59,7 @@ public class ServerVariablesDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error loading value for " + var);
+            log.LogError(e, "Error loading value for {Var}", var);
             return false;
         }
     }
@@ -79,7 +79,7 @@ public class ServerVariablesDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error loading value for " + var);
+            log.LogError(e, "Error loading value for {Var}", var);
         }
         return null;
     }

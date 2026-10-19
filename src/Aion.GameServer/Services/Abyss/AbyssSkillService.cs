@@ -92,7 +92,7 @@ public sealed class AbyssSkills
                 return aSkills.skills;
             }
         }
-        AionLog.For(nameof(AbyssSkills)).LogWarning("No abyss skills for: " + race + " " + rank);
+        AionLog.For(nameof(AbyssSkills)).LogWarning("No abyss skills for: {Race} {Rank}", race, rank);
         return new int[0];
     }
 }

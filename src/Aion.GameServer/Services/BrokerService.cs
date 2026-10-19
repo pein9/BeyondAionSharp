@@ -52,7 +52,7 @@ public class BrokerService
 
     private void InitBrokerService()
     {
-        log.LogInformation("Loading broker...");
+        long startTime = SystemClock.CurrentMillis();
         int loadedBrokerItemsCount = 0;
         int loadedSettledItemsCount = 0;
 
@@ -88,7 +88,7 @@ public class BrokerService
             }
         }
 
-        log.LogInformation("Broker loaded with " + loadedBrokerItemsCount + " broker items, " + loadedSettledItemsCount + " settled items.");
+        log.LogInformation("BrokerService initialized with {ActiveItems} active items and {SettledItems} settled items in {ElapsedMs} ms", loadedBrokerItemsCount, loadedSettledItemsCount, SystemClock.CurrentMillis() - startTime);
     }
 
     public void ShowRequestedItems(Player player, int clientMask, byte sortType, int startPage, List<int> itemList)
@@ -323,8 +323,7 @@ public class BrokerService
             Item boughtItem = player.GetInventory().Add(item, ItemPacketService.ItemAddType.BROKER_BUY);
 
             if (LoggingConfig.LOG_BROKER_EXCHANGE)
-                log.LogInformation("Player: " + player.GetName() + " bought item " + boughtItem.GetItemId() + " [" + boughtItem.GetItemName() + "] (count: " + itemCount
-                    + ") from player: " + PlayerService.GetPlayerName(buyingItem.GetSellerId()) + " (total price: " + price + ")");
+                log.LogInformation("Player: {PlayerGetName} bought item {BoughtItemGetItemId} [{BoughtItemGetItemName}] (count: {ItemCount}) from player: {PlayerServiceGetPlayerNameBuyingItemGetSellerId} (total price: {Price})", player.GetName(), boughtItem.GetItemId(), boughtItem.GetItemName(), itemCount, PlayerService.GetPlayerName(buyingItem.GetSellerId()), price);
 
             // create save task
             BrokerOpSaveTask bost3 = new BrokerOpSaveTask(buyingItem, boughtItem, player.GetInventory().GetKinahItem(), player.GetObjectId());
@@ -526,7 +525,7 @@ public class BrokerService
         {
             if (brokerItem.GetSellerId() != player.GetObjectId())
             {
-                log.LogInformation("[AUDIT] Player: {Name} tried to get item from broker that he doesn't own", player.GetName());
+                Aion.GameServer.Utils.Audit.AuditLogger.Log(player, "tried to get item " + brokerItem.GetItemId() + " from broker that he doesn't own. Seller ID: " + brokerItem.GetSellerId());
                 return;
             }
             if (player.GetInventory().IsFull(brokerItem.GetItem().GetItemTemplate().GetExtraInventoryId()))
@@ -649,7 +648,7 @@ public class BrokerService
                         itemsLeft = true;
                 }
                 else
-                    log.LogWarning("Broker settled item missed. ObjID: " + item.GetItemUniqueId());
+                    log.LogWarning("Broker settled item missed. ObjID: {ItemGetItemUniqueId}", item.GetItemUniqueId());
             }
         }
 

@@ -103,7 +103,7 @@ public class NpcFactions
         Aion.GameServer.Model.Templates.Factions.NpcFactionTemplate npcFactionTemplate = Aion.GameServer.Dataholders.DataManager.NPC_FACTIONS_DATA.GetNpcFactionByNpcId(npc.GetNpcId());
         if (npcFactionTemplate == null)
         {
-            log.LogWarning("Missing faction for faction registrar npc " + npc.GetNpcId());
+            log.LogWarning("Missing faction for faction registrar npc {NpcGetNpcId}", npc.GetNpcId());
             return;
         }
         NpcFaction npcFaction = GetFactionById(npcFactionTemplate.GetId());

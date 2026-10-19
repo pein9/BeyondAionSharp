@@ -103,7 +103,6 @@ public sealed class GameTimeService : GameEngine
 				? null
 				: await _serverVariablesRepository.LoadIntAsync(GameTimeVariable, cancellationToken);
 			Volatile.Write(ref _gameTime, CreateGameTime(persistedTime));
-			_logger.LogInformation("Initialized GameTime");
 		}
 	}
 
@@ -126,22 +125,17 @@ public sealed class GameTimeService : GameEngine
 			_saveTask = _threadPoolManager.ScheduleAtFixedRate(
 				async cancellationToken =>
 				{
+					_logger.LogInformation("Saving current game time and sending it to all players");
+					if (!await SaveGameTimeAsync())
+						_logger.LogWarning("Error saving game time");
 					var broadcastToWorld = _broadcastToWorld;
 					if (broadcastToWorld != null)
-					{
-						_logger.LogInformation("Sending current game time to all players");
 						await broadcastToWorld(new SM_GAME_TIME(), cancellationToken);
-					}
-
-					if (await SaveGameTimeAsync())
-						_logger.LogInformation("Game time saved...");
-					else
-						_logger.LogWarning("Error saving game time");
 				},
 				_saveDelay,
 				_savePeriod);
 		}
-		_logger.LogInformation("GameTime started. Update interval: {Seconds}s", (int)_savePeriod.TotalSeconds);
+		_logger.LogInformation("Game time started with an update interval of {UpdateInterval} seconds", (int)_savePeriod.TotalSeconds);
 	}
 
 	public async Task<bool> SaveGameTimeAsync(CancellationToken cancellationToken = default)

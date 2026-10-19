@@ -84,7 +84,7 @@ public sealed class ShutdownHook
 				Volatile.Write(ref _remainingSeconds, 0);
 				break;
 			}
-			_logger.LogInformation("Runtime is shutting down in {Seconds} seconds.", RemainingSeconds);
+			_logger.LogInformation("Runtime is shutting down in {RemainingSeconds} seconds", RemainingSeconds);
 			await Task.Delay(_tickInterval);
 			Interlocked.Decrement(ref _remainingSeconds);
 		}

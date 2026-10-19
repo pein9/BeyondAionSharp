@@ -41,7 +41,7 @@ public class PlayerEmotionListDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore emotionId for playerObjId: " + player.GetObjectId() + " from DB: " + e.Message);
+            log.LogError(e, "Could not restore emotionId for playerObjId: {PlayerGetObjectId} from DB: {EGetMessage}", player.GetObjectId(), e.Message);
         }
         player.SetEmotions(emotions);
     }
@@ -61,7 +61,7 @@ public class PlayerEmotionListDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not store emotionId for player " + player.GetObjectId() + " from DB: " + e.Message);
+            log.LogError(e, "Could not store emotionId for player {PlayerGetObjectId} from DB: {EGetMessage}", player.GetObjectId(), e.Message);
         }
     }
 
@@ -79,7 +79,7 @@ public class PlayerEmotionListDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not delete title for player " + playerId + " from DB: " + e.Message);
+            log.LogError(e, "Could not delete title for player {PlayerId} from DB: {EGetMessage}", playerId, e.Message);
         }
     }
 }

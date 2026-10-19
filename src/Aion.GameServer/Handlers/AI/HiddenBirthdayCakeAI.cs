@@ -36,7 +36,7 @@ public class HiddenBirthdayCakeAI : ChestAI
         long currentTime = SystemClock.CurrentMillis();
         if (currentTime - lastLogTime >= 3600 * 1000)
         { // Only log once every hour
-            log.LogInformation("[EVENT] Total cakes collected: {Cakes}; Cakes collected during the last hour: {Deviation}.", cakes, deviation);
+            log.LogInformation("[EVENT] Total cakes collected: {Cakes}; Cakes collected during the last hour: {Deviation}", cakes, deviation);
             lastCakeCount = cakes;
             lastLogTime = currentTime;
         }

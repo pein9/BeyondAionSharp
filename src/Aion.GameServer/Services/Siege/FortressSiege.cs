@@ -44,7 +44,7 @@ public class FortressSiege : Siege<FortressLocation>
     protected override void OnSiegeStart()
     {
         if (LoggingConfig.LOG_SIEGE)
-            log.LogInformation(this + ": Siege started. Race: " + GetSiegeLocation().GetRace() + ", legion ID: " + GetSiegeLocation().GetLegionId());
+            log.LogInformation("{This}: Siege started. Race: {GetSiegeLocationGetRace}, legion ID: {GetSiegeLocationGetLegionId}", this, GetSiegeLocation().GetRace(), GetSiegeLocation().GetLegionId());
         // Mark fortress as vulnerable
         GetSiegeLocation().SetVulnerable(true);
 
@@ -122,12 +122,11 @@ public class FortressSiege : Siege<FortressLocation>
             if (IsBossKilled())
             {
                 SiegeRaceCounter winner = GetWinnerRaceCounter();
-                log.LogInformation(this + ": Siege finished. Old race: " + oldRace + ", legion ID: " + oldLegionId + " -> New race: " + winner.GetSiegeRace()
-                    + ", legion ID: " + (winner.GetWinnerLegionId() == null ? 0 : winner.GetWinnerLegionId()));
+                log.LogInformation("{This}: Siege finished. Old race: {OldRace}, legion ID: {OldLegionId} -> New race: {WinnerGetSiegeRace}, legion ID: {WinnerGetWinnerLegionIdNullWinnerGetWinnerLegionId}", this, oldRace, oldLegionId, winner.GetSiegeRace(), (winner.GetWinnerLegionId() == null ? 0 : winner.GetWinnerLegionId()));
             }
             else
             {
-                log.LogInformation(this + ": Siege finished. No winner found. Race: " + oldRace + ", legion ID: " + oldLegionId);
+                log.LogInformation("{This}: Siege finished. No winner found. Race: {OldRace}, legion ID: {OldLegionId}", this, oldRace, oldLegionId);
             }
         }
 
@@ -340,8 +339,7 @@ public class FortressSiege : Siege<FortressLocation>
         if (legion == null)
         {
             if (LoggingConfig.LOG_SIEGE)
-                log.LogInformation(this + ": Skipped sending legion rewards because the fortress is not owned by any legion (owner race: "
-                    + GetSiegeLocation().GetRace() + ").");
+                log.LogInformation("{This}: Skipped sending legion rewards because the fortress is not owned by any legion (owner race: {GetSiegeLocationGetRace}).", this, GetSiegeLocation().GetRace());
             return;
         }
         DistributeLegionGp(legion, winnerRaceCounter);
@@ -361,7 +359,7 @@ public class FortressSiege : Siege<FortressLocation>
             if (participatedLegionMembers.Count == 0)
             {
                 if (LoggingConfig.LOG_SIEGE)
-                    log.LogInformation(this + ": Distributed no GP to the members of " + legion + " because no one made AP");
+                    log.LogInformation("{This}: Distributed no GP to the members of {Legion} because no one made AP", this, legion);
             }
             else
             {
@@ -370,12 +368,12 @@ public class FortressSiege : Siege<FortressLocation>
                     Aion.GameServer.Services.Abyss.GloryPointsService.AddGp(participant, gp);
                 if (LoggingConfig.LOG_SIEGE)
                     // Java parity: the set prints as AbstractCollection.toString, [a, b], not as its C# type name.
-                    log.LogInformation(this + ": Distributed " + gp + " GP each, to the following members of " + legion + ": " + JavaString.ValueOf(participatedLegionMembers));
+                    log.LogInformation("{This}: Distributed {Gp} GP each, to the following members of {Legion}: {ParticipatedLegionMembers}", this, gp, legion, JavaString.ValueOf(participatedLegionMembers));
             }
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error while distributing legion GP for " + this);
+            log.LogError(e, "Error while distributing legion GP for {This}", this);
         }
     }
 
@@ -414,12 +412,12 @@ public class FortressSiege : Siege<FortressLocation>
                 if (nonKinahItems > 0)
                     msg += (msg.Length == 0 ? "Sent " : " and sent ") + nonKinahItems + " legion rewards to brigade general " + brigadeGeneral.GetName() + " of "
                         + legion + " (see sysmail.log)";
-                log.LogInformation(this + ": " + msg);
+                log.LogInformation("{This}: {Msg}", this, msg);
             }
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error while distributing legion rewards for " + this);
+            log.LogError(e, "Error while distributing legion rewards for {This}", this);
         }
     }
 

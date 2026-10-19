@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Xml;
 using System.Xml.Schema;
 using Microsoft.Extensions.Logging;
@@ -30,8 +31,10 @@ public static class XmlDataLoader
 			validationTask = Task.Run(
 				() =>
 				{
-					logger?.LogInformation("Validating {CacheFile} in background", mergeResult.CacheFilePath);
+					var validationWatch = Stopwatch.StartNew();
+					logger?.LogInformation("Validating {CacheFile} in background...", mergeResult.CacheFilePath);
 					ValidateCache(mergeResult.CacheFilePath, options.SchemaFilePath);
+					logger?.LogInformation("Validated {CacheFile} in {ElapsedMs} ms", mergeResult.CacheFilePath, validationWatch.ElapsedMilliseconds);
 				},
 				CancellationToken.None);
 		}

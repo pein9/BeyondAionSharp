@@ -67,8 +67,7 @@ public class CraftService
         if (LoggingConfig.LOG_CRAFT)
         {
             ItemTemplate itemTemplate = DataManager.ITEM_DATA.GetItemTemplate(productItemId);
-            log.LogInformation("Player " + player.GetName() + " crafted item " + productItemId + " [" + itemTemplate.GetName() + "] (count: "
-                + recipetemplate.GetQuantity() + ")" + (critCount > 0 ? " - critical" : ""));
+            log.LogInformation("Player {PlayerGetName} crafted item {ProductItemId} [{ItemTemplateGetName}] (count: {RecipetemplateGetQuantity}){CritCountCritical}", player.GetName(), productItemId, itemTemplate.GetName(), recipetemplate.GetQuantity(), (critCount > 0 ? " - critical" : ""));
         }
 
         if (recipetemplate.GetCraftDelayId() != null)

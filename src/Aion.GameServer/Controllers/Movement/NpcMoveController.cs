@@ -441,7 +441,7 @@ public class NpcMoveController : CreatureMoveController<Npc>
             SetWalkerTemplate(DataManager.WALKER_DATA.GetWalkerTemplate(Owner.GetSpawn().GetWalkerId()), 0);
             if (walkerTemplate == null)
             {
-                log.LogWarning("Bad Walker Id: " + Owner.GetSpawn().GetWalkerId() + " - point: " + currentStep.GetStepIndex());
+                log.LogWarning("Bad Walker Id: {OwnerGetSpawnGetWalkerId} - point: {CurrentStepGetStepIndex}", Owner.GetSpawn().GetWalkerId(), currentStep.GetStepIndex());
                 return false;
             }
         }

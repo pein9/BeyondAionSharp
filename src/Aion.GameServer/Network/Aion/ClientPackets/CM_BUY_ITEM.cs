@@ -132,7 +132,7 @@ public class CM_BUY_ITEM : AionClientPacket
                         TradeService.PerformBuyFromShop(npc, player, tradeList);
                     break;
                 default:
-                    log.LogWarning("Unknown shop action: " + tradeActionId);
+                    log.LogWarning("Unknown shop action: {TradeActionId}", tradeActionId);
                     break;
             }
         }

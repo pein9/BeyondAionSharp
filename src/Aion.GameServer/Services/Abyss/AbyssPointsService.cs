@@ -17,7 +17,7 @@ public class AbyssPointsService
     {
         if (value > 30000)
         {
-            log.LogWarning("WARN BIG COUNT AP: " + value + " for " + player + " from " + obj);
+            log.LogWarning("WARN BIG COUNT AP: {Value} for {Player} from {Obj}", value, player, obj);
         }
         AddAp(player, value);
         SiegeService.GetInstance().OnAbyssPointsAdded(player, obj, value);

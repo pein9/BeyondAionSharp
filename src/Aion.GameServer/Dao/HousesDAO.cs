@@ -81,7 +81,7 @@ public class HousesDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not insert house " + house.GetObjectId());
+            log.LogError(e, "Could not insert house {HouseGetObjectId}", house.GetObjectId());
         }
     }
 
@@ -106,7 +106,7 @@ public class HousesDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not store house " + house.GetObjectId());
+            log.LogError(e, "Could not store house {HouseGetObjectId}", house.GetObjectId());
         }
     }
 
@@ -151,12 +151,12 @@ public class HousesDAO
                 House house;
                 if (building == null)
                 {
-                    log.LogWarning("Missing building type for address " + address.GetId());
+                    log.LogWarning("Missing building type for address {AddressGetId}", address.GetId());
                     continue;
                 }
                 else if (addressHouseIds.ContainsKey(address.GetId()))
                 {
-                    log.LogWarning("Duplicate house address " + address.GetId() + "!");
+                    log.LogWarning("Duplicate house address {AddressGetId}!", address.GetId());
                     continue;
                 }
                 else

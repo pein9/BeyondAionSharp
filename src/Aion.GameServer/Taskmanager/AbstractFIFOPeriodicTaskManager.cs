@@ -52,13 +52,13 @@ public abstract class AbstractFIFOPeriodicTaskManager<T> : AbstractPeriodicTaskM
                 }
                 catch (Exception e)
                 {
-                    log.LogError(e, "Exception in " + GetType().Name + " processing " + task);
+                    log.LogError(e, "Exception in {GetClassGetSimpleName} processing {Task}", GetType().Name, task);
                 }
             }
             if (processedTasks.Count <= previouslyProcessedTasksSize)
                 counter = 0;
             else if (++counter % counterLimit == 0) // log warning if the task queue size continually increased over the last WARNING_PERIOD_SECONDS
-                log.LogWarning("Tasks for " + GetType().Name + " are added faster than they can be executed (currently " + processedTasks.Count + " tasks).");
+                log.LogWarning("Tasks for {GetClassGetSimpleName} are added faster than they can be executed (currently {ProcessedTasksSize} tasks).", GetType().Name, processedTasks.Count);
         }
     }
 

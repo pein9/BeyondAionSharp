@@ -46,7 +46,7 @@ public class MotionDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore motions for playerObjId: " + player.GetObjectId() + " from DB: " + e.Message);
+            log.LogError(e, "Could not restore motions for playerObjId: {PlayerGetObjectId} from DB: {EGetMessage}", player.GetObjectId(), e.Message);
         }
         player.SetMotions(motions);
     }
@@ -67,7 +67,7 @@ public class MotionDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not store motion for player " + objectId + " from DB: " + e.Message);
+            log.LogError(e, "Could not store motion for player {ObjectId} from DB: {EGetMessage}", objectId, e.Message);
             return false;
         }
         return true;
@@ -87,7 +87,7 @@ public class MotionDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not delete motion for player " + objectId + " from DB: " + e.Message);
+            log.LogError(e, "Could not delete motion for player {ObjectId} from DB: {EGetMessage}", objectId, e.Message);
             return false;
         }
         return true;
@@ -108,7 +108,7 @@ public class MotionDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not store motion for player " + objectId + " from DB: " + e.Message);
+            log.LogError(e, "Could not store motion for player {ObjectId} from DB: {EGetMessage}", objectId, e.Message);
             return false;
         }
         return true;

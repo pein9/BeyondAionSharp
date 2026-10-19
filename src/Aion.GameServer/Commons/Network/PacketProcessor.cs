@@ -205,8 +205,7 @@ public class PacketProcessor<T> where T : AConnection
             else if (packetsWaitingForExecution > threadSpawnThreshold)
             {
                 if (!NewThread() && packetsWaitingForExecution >= threadSpawnThreshold * 3)
-                    log.LogWarning("Lag detected! [" + packetsWaitingForExecution
-                        + " client packets are waiting for execution]. Consider increasing PacketProcessor maxThreads or a hardware upgrade.");
+                    log.LogWarning("Lag detected: {Packets} client packets are waiting for execution - consider increasing PacketProcessor maxThreads or hardware upgrade", packetsWaitingForExecution);
             }
             previousPacketCount = packetsWaitingForExecution;
         }

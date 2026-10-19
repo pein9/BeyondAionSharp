@@ -27,7 +27,7 @@ public class QuestVars
     public void SetVarById(int id, int var)
     {
         if (var > 0x3F)
-            log.LogWarning(new System.ArgumentException(), "Out of range value was passed for quest var on index " + id);
+            log.LogWarning(new System.ArgumentException(), "Out of range value was passed for quest var on index {Id}", id);
         questVars[id] = var;
     }
 

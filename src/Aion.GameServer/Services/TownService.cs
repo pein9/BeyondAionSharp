@@ -62,8 +62,8 @@ public class TownService
                 }
             }
         }
-        log.LogInformation("Loaded " + elyosTowns.Count + " elyos towns.");
-        log.LogInformation("Loaded " + asmosTowns.Count + " asmodian towns.");
+        log.LogInformation("Loaded {ElyosTownsSize} Elyos towns", elyosTowns.Count);
+        log.LogInformation("Loaded {AsmosTownsSize} Asmodian towns", asmosTowns.Count);
     }
 
     public Town GetTownById(int townId)

@@ -21,7 +21,7 @@ public class MoveTaskManager : AbstractPeriodicTaskManager
     {
         if (!creature.IsSpawned()) // log with stack trace to find the cause
         {
-            log.LogWarning(new System.NotSupportedException(), "Failed attempt to add " + creature + " to moving creatures (despawned objects cannot move)");
+            log.LogWarning(new System.NotSupportedException(), "Failed attempt to add {Creature} to moving creatures (despawned objects cannot move)", creature);
             return;
         }
         movingCreatures.TryAdd(creature.GetObjectId(), creature);
@@ -50,7 +50,7 @@ public class MoveTaskManager : AbstractPeriodicTaskManager
         if (!creature.IsSpawned()) // can despawn concurrently, while this thread is already running
         {
             if (RemoveCreature(creature)) // should have been removed via onDespawn (MoveController#abortMove())
-                log.LogWarning(creature + " was still in moving creatures list but already despawned");
+                log.LogWarning("{Creature} was still in moving creatures list but already despawned", creature);
             return;
         }
         creature.GetMoveController().MoveToDestination();

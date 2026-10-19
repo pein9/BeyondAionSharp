@@ -64,7 +64,7 @@ public class ArtifactAI : NpcAI
 
         if (skillTemplate == null)
         {
-            AionLog.For(nameof(ArtifactAI)).LogError("No skill template for artifact effect id : " + skillId);
+            AionLog.For(nameof(ArtifactAI)).LogError("No skill template for artifact effect id : {SkillId}", skillId);
             return;
         }
 
@@ -86,7 +86,7 @@ public class ArtifactAI : NpcAI
             return;
 
         if (LoggingConfig.LOG_SIEGE)
-            log.LogInformation("Artifact " + GetSpawnTemplate().GetSiegeId() + " activated by " + player.GetName() + " (race: " + player.GetRace() + ")");
+            log.LogInformation("Artifact {GetSpawnTemplateGetSiegeId} activated by {PlayerGetName} (race: {PlayerGetRace})", GetSpawnTemplate().GetSiegeId(), player.GetName(), player.GetRace());
 
         if (!loc.GetStatus().Equals(ArtifactStatus.IDLE))
             return;

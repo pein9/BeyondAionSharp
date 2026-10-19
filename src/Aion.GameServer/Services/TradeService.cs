@@ -54,7 +54,7 @@ public class TradeService
             case TradeNpcType.REWARD:
                 return PerformBuyTransaction(npc, player, tradeList, false); // trade without kinah
             default:
-                log.LogWarning("Unhandled TradeNpcType:" + npcType.ToString());
+                log.LogWarning("Unhandled TradeNpcType:{NpcTypeName}", npcType.ToString());
                 break;
         }
         return false;

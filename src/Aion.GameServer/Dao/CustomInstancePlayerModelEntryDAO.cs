@@ -44,7 +44,7 @@ public class CustomInstancePlayerModelEntryDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "[CUSTOM_INSTANCE] Error loading player model entries on player id " + playerId);
+            log.LogError(e, "[CUSTOM_INSTANCE] Error loading player model entries on player id {PlayerId}", playerId);
         }
         return entries;
     }
@@ -133,7 +133,7 @@ public class CustomInstancePlayerModelEntryDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error occured while saving player model entries.");
+            log.LogError(e, "Could not save player model entries");
         }
     }
 }

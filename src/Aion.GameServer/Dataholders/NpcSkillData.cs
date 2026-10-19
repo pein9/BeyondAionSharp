@@ -40,7 +40,7 @@ public class NpcSkillData
             foreach (int npcId in npcSkillList.GetNpcIds())
             {
                 if (!npcSkillData.TryAdd(npcId, npcSkillList))
-                    log.LogWarning("Npc " + npcId + " has multiple skill lists in npc_skills.xml");
+                    log.LogWarning("Npc {NpcId} has multiple skill lists in npc_skills.xml", npcId);
             }
         }
         npcSkills = null;

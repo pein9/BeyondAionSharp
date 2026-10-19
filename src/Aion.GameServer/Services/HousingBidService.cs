@@ -32,7 +32,7 @@ public class HousingBidService
         foreach (int id in deletedPlayerIds)
             DisableBids(id);
         SetBidInfoToHouses();
-        log.LogInformation("Loaded bids for " + bids.Count + " houses");
+        log.LogInformation("Loaded bids for {BidsSize} houses", bids.Count);
     }
 
     private void SetBidInfoToHouses()
@@ -41,7 +41,7 @@ public class HousingBidService
         {
             house.SetBids(GetBidInfo(house), true);
             if (house.GetBids() != null && house.IsInactive())
-                log.LogWarning(house + " is for auction but inactive.");
+                log.LogWarning("{House} is for auction but inactive", house);
         }
     }
 
@@ -254,8 +254,7 @@ public class HousingBidService
             }
             if (LoggingConfig.LOG_HOUSE_AUCTION)
             {
-                log.LogInformation("Address " + house.GetAddress().GetId() + " not sold for " + bids.GetInitialOffer().GetKinah() + " kinah (result: " + result
-                    + "; return: " + compensation + " kinah)");
+                log.LogInformation("Address {HouseGetAddressGetId} not sold for {BidsGetInitialOfferGetKinah} kinah (result: {Result}; return: {Compensation} kinah)", house.GetAddress().GetId(), bids.GetInitialOffer().GetKinah(), result, compensation);
             }
         }
         else
@@ -265,15 +264,15 @@ public class HousingBidService
             if (buyerPcd == null)
             {
                 if (highestBid.GetPlayerObjectId() == 0)
-                    log.LogInformation(house + " wasn't sold because the winning bidder deleted his character.");
+                    log.LogInformation("{House} wasn't sold because the winning bidder deleted their character", house);
                 else
-                    log.LogWarning(house + " could not be sold to player " + highestBid.GetPlayerObjectId() + " because the player couldn't be found");
+                    log.LogWarning("{House} could not be sold to player {HighestBidGetPlayerObjectId} because the player couldn't be found", house, highestBid.GetPlayerObjectId());
                 house.GetController().UpdateSign();
                 return true;
             }
             if (buyerPcd.GetPlayerObjId() == sellerId)
             {
-                log.LogWarning("Sold " + house + " to its own owner (" + sellerId + "), cancelling!");
+                log.LogWarning("Sold {House} to its own owner ({SellerId}), cancelling!", house, sellerId);
                 house.GetController().UpdateSign();
                 return true;
             }
@@ -317,8 +316,7 @@ public class HousingBidService
             if (LoggingConfig.LOG_HOUSE_AUCTION)
             {
                 string sellerInfo = sellerPcd == null ? "" : " by player " + sellerPcd.GetPlayerObjId();
-                log.LogInformation("Address " + house.GetAddress().GetId() + " sold" + sellerInfo + " for " + highestBid.GetKinah() + " kinah (" + bids.GetBidCount()
-                    + " bids; result: " + result + ") to player " + buyerPcd.GetPlayerObjId());
+                log.LogInformation("Address {HouseGetAddressGetId} sold{SellerInfo} for {HighestBidGetKinah} kinah ({BidsGetBidCount} bids; result: {Result}) to player {BuyerPcdGetPlayerObjId}", house.GetAddress().GetId(), sellerInfo, highestBid.GetKinah(), bids.GetBidCount(), result, buyerPcd.GetPlayerObjId());
             }
         }
         return true;

@@ -207,7 +207,7 @@ public class DecomposeAction : AbstractItemAction
                                 List<ItemTemplate> stones = DataManager.ITEM_DATA.GetManastones(itemLvl);
                                 if (stones == null)
                                 {
-                                    log.LogWarning("No lv" + itemLvl + " manastones found for decomposable random type " + randomItem.Type);
+                                    log.LogWarning("No lv{ItemLvl} manastones found for decomposable random type {RandomItemGetType}", itemLvl, randomItem.Type);
                                     break;
                                 }
                                 if (randomType != RandomType.MANASTONE)
@@ -239,7 +239,7 @@ public class DecomposeAction : AbstractItemAction
                                 List<ItemTemplate> ancientStones = DataManager.ITEM_DATA.GetAncientManastones(randomType.GetLevel());
                                 if (ancientStones == null)
                                 {
-                                    log.LogWarning("No ancient manastones found for decomposable random type " + randomItem.Type);
+                                    log.LogWarning("No ancient manastones found for decomposable random type {RandomItemGetType}", randomItem.Type);
                                     break;
                                 }
                                 ItemQuality itemQuality;
@@ -418,7 +418,7 @@ public class DecomposeAction : AbstractItemAction
                 {
                     ItemTemplate template = DataManager.ITEM_DATA.GetItemTemplate(item.GetItemId());
                     if (template == null)
-                        log.LogError("Detected invalid item id during decompose action " + item.GetItemId());
+                        log.LogError("Detected invalid item id during decompose action {ItemGetItemId}", item.GetItemId());
                     else if (template.GetExtraInventoryId() > 0)
                         return true;
                 }

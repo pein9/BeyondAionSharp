@@ -111,7 +111,7 @@ public class CM_FIND_GROUP : AionClientPacket
                 bannedPlayerId = ReadD();
                 break;
             default:
-                AionLog.For(nameof(CM_FIND_GROUP)).LogWarning("Unknown find group action " + action);
+                AionLog.For(nameof(CM_FIND_GROUP)).LogWarning("Unknown find group action {Action}", action);
                 break;
         }
     }

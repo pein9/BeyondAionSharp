@@ -39,7 +39,7 @@ public class CM_START_LOOT : AionClientPacket
                 DropService.GetInstance().CloseDropList(player, targetObjectId);
                 break;
             default:
-                log.LogWarning(player + " sent unknown loot action type " + action);
+                log.LogWarning("{Player} sent unknown loot action type {Action}", player, action);
                 break;
         }
     }

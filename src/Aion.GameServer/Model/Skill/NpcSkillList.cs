@@ -18,7 +18,7 @@ public class NpcSkillList
         {
             if (DataManager.SKILL_DATA.GetSkillTemplate(template.GetSkillId()) == null)
             {
-                log.LogWarning("Missing skill data for skill " + template.GetSkillId() + " in npc skill list");
+                log.LogWarning("Missing skill data for skill {TemplateGetSkillId} in npc skill list", template.GetSkillId());
                 continue;
             }
             entries.Add(new NpcSkillTemplateEntry(template));

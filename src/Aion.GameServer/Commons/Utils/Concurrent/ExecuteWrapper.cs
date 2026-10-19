@@ -43,7 +43,7 @@ public class ExecuteWrapper : Executor
             if (durationMillis > expectedMaxExecutionTimeMillis)
             {
                 string name = GetExecutionName(runnable.GetType());
-                log.LogWarning(name + " - execution time: " + durationMillis + "ms");
+                log.LogWarning("{Name} - execution time: {DurationMillis} ms", name, durationMillis);
             }
         }
         catch (Exception t)
@@ -73,7 +73,7 @@ public class ExecuteWrapper : Executor
 
             long durationMillis = durationNanos / 1_000_000L;
             if (durationMillis > expectedMaxExecutionTimeMillis)
-                log.LogWarning(GetExecutionName(actionType) + " - execution time: " + durationMillis + "ms");
+                log.LogWarning("{Name} - execution time: {DurationMillis} ms", GetExecutionName(actionType), durationMillis);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

@@ -38,7 +38,7 @@ public class LegionMemberDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Can't check if name " + playerObjId + ", is used, returning possitive result");
+            log.LogError(e, "Can't check if name {PlayerObjId}, is used, returning possitive result", playerObjId);
             return true;
         }
         finally
@@ -122,7 +122,7 @@ public class LegionMemberDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not load legion member " + playerObjId);
+            log.LogError(e, "Could not load legion member {PlayerObjId}", playerObjId);
             return null;
         }
     }

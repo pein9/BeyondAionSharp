@@ -323,7 +323,7 @@ public abstract class WorldMapInstance : IEnumerable<VisibleObject>
                 return;
             }
         }
-        log.LogWarning(new Exception(), "Door (ID: " + staticId + ") doesn't exist");
+        log.LogWarning(new Exception(), "Door (ID: {StaticId}) doesn't exist", staticId);
     }
 
     public IEnumerator<VisibleObject> GetEnumerator()

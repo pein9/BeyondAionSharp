@@ -49,7 +49,7 @@ public sealed class ZoneService : GameEngine
         acl.AddClassListener(new ZoneHandlerClassListener());
         scriptManager.SetGlobalClassListener(acl);
         scriptManager.Load(WorldConfig.ZONE_HANDLER_DIRECTORY);
-        log.LogInformation("Loaded " + zoneHandlers.Count + " zone handlers.");
+        log.LogInformation("Loaded {ZoneHandlersSize} zone handlers", zoneHandlers.Count);
     }
 
     public IZoneHandler? GetNewZoneHandler(string zoneName)
@@ -58,7 +58,7 @@ public sealed class ZoneService : GameEngine
         if (zoneClass != null)
         {
             try { return (IZoneHandler?)Activator.CreateInstance(zoneClass); }
-            catch (Exception ex) { log.LogWarning(ex, "Can't instantiate zone handler " + zoneName); }
+            catch (Exception ex) { log.LogWarning(ex, "Can't instantiate zone handler {ZoneName}", zoneName); }
         }
         return null;
     }

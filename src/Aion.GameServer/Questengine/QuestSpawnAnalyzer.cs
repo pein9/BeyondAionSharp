@@ -25,7 +25,7 @@ public class QuestSpawnAnalyzer
 
     internal static QuestSpawnAnalysisResult Run(ICollection<AbstractQuestHandler> questHandlers, ICollection<QuestNpc> questNpcs, bool ignoreEventQuests)
     {
-        log.LogInformation("Analyzing quest handlers (ignoreEventQuests=" + ignoreEventQuests + ")...");
+        log.LogInformation("Analyzing quest handlers (ignoreEventQuests={IgnoreEventQuests})...", ignoreEventQuests);
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         HashSet<int> unobtainableQuests = new();

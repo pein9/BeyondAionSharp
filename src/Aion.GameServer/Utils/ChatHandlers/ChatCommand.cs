@@ -69,8 +69,7 @@ public abstract class ChatCommand
         }
         catch (Exception t)
         {
-            log.LogError(t, "Exception executing chat command \"" + GetAliasWithPrefix() + " " + string.Join(" ", paramsArr) + "\" - Player: " + player.GetName()
-                + ", Target: " + player.GetTarget());
+            log.LogError(t, "Exception executing chat command \"{GetAliasWithPrefix} {StringJoinParams}\" - Player: {PlayerGetName}, Target: {PlayerGetTarget}", GetAliasWithPrefix(), string.Join(" ", paramsArr), player.GetName(), player.GetTarget());
             return false;
         }
         return true;
@@ -225,7 +224,7 @@ public abstract class ChatCommand
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Could not get enum values for " + enumName);
+                log.LogError(ex, "Could not get enum values for {EnumName}", enumName);
             }
         }
         else if (e is JavaNumberFormatException) // Java NumberFormatException covers malformed and overflowing numbers.

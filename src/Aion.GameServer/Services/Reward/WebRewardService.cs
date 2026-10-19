@@ -49,17 +49,17 @@ public class WebRewardService
             {
                 if (SendRewardItem(player, item) || ExecuteRewardAction(player, item))
                 {
-                    log.LogInformation("[WebRewardService][" + item.GetEntryId() + "] " + player + " has received " + item);
+                    log.LogInformation("[WebRewardService][{ItemGetEntryId}] {Player} has received {Item}", item.GetEntryId(), player, item);
                     rewarded.Add(item.GetEntryId());
                 }
                 else
                 {
-                    log.LogWarning("[WebRewardService][" + item.GetEntryId() + "] " + player + " could not receive " + item);
+                    log.LogWarning("[WebRewardService][{ItemGetEntryId}] {Player} could not receive {Item}", item.GetEntryId(), player, item);
                 }
             }
             catch (Exception e)
             {
-                log.LogError(e, "[WebRewardService][" + item.GetEntryId() + "] error adding " + item + " to " + player);
+                log.LogError(e, "[WebRewardService][{ItemGetEntryId}] error adding {Item} to {Player}", item.GetEntryId(), item, player);
             }
         }
 

@@ -326,7 +326,7 @@ public class GeoMap : Node
         if (!despawnableDoors.TryGetValue(doorId, out DespawnableNode[]? doors))
         {
             if (GeoDataConfig.MODE == GeoDataConfig.Mode.ON && !GetIgnorableDoorIds().Contains(doorId))
-                log.LogWarning("No geometry found for door " + doorId + " in world " + mapId);
+                log.LogWarning("No geometry found for door {DoorId} in world {MapId}", doorId, mapId);
         }
         else
         {
@@ -336,7 +336,7 @@ public class GeoMap : Node
             }
             else
             {
-                log.LogWarning("Door state 1 not available for door " + doorId + " in world " + mapId);
+                log.LogWarning("Door state 1 not available for door {DoorId} in world {MapId}", doorId, mapId);
             }
             if (doors[1] != null)
             {
@@ -344,7 +344,7 @@ public class GeoMap : Node
             }
             else
             {
-                log.LogWarning("Door state 2 not available for door " + doorId + " in world " + mapId);
+                log.LogWarning("Door state 2 not available for door {DoorId} in world {MapId}", doorId, mapId);
             }
         }
     }

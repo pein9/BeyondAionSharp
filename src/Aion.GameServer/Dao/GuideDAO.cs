@@ -37,7 +37,7 @@ public class GuideDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error delete guide_id: " + guide_id);
+            log.LogError(e, "Error delete guide_id: {Guide_id}", guide_id);
             return false;
         }
         return true;
@@ -65,7 +65,7 @@ public class GuideDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore Guide data for player: " + playerId + " from DB: " + e.Message);
+            log.LogError(e, "Could not restore Guide data for player: {PlayerId} from DB: {EGetMessage}", playerId, e.Message);
         }
         return guides;
     }
@@ -90,7 +90,7 @@ public class GuideDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore Survey data for player: " + player_id + " from DB: " + e.Message);
+            log.LogError(e, "Could not restore Survey data for player: {Player_id} from DB: {EGetMessage}", player_id, e.Message);
         }
         return guide;
     }
@@ -110,7 +110,7 @@ public class GuideDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error saving playerName: " + player);
+            log.LogError(e, "Error saving playerName: {Player}", player);
         }
     }
 

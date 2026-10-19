@@ -27,10 +27,10 @@ public class AbyssRankUpdateService
 
     public static void ScheduleUpdate()
     {
-        log.LogInformation("Scheduling ranking update task based on cron expression: " + RankingConfig.TOP_RANKING_UPDATE_RULE);
+        log.LogInformation("Scheduling ranking update task based on cron expression: {RankingConfigTOP_RANKING_UPDATE_RULE}", RankingConfig.TOP_RANKING_UPDATE_RULE);
         CronService.GetInstance().Schedule(PerformUpdate, RankingConfig.TOP_RANKING_UPDATE_RULE, true);
 
-        log.LogInformation("Scheduling daily GP loss task based on cron expression: " + RankingConfig.TOP_RANKING_DAILY_GP_LOSS_TIME);
+        log.LogInformation("Scheduling daily GP loss task based on cron expression: {RankingConfigTOP_RANKING_DAILY_GP_LOSS_TIME}", RankingConfig.TOP_RANKING_DAILY_GP_LOSS_TIME);
         CronService.GetInstance().Schedule(UpdateDailyGpLoss, RankingConfig.TOP_RANKING_DAILY_GP_LOSS_TIME, true);
     }
 
@@ -69,7 +69,7 @@ public class AbyssRankUpdateService
             // update ranking cache
             AbyssRankingCache.GetInstance().ReloadRankings();
 
-            log.LogInformation("AbyssRankUpdateService: Finished in " + (long)stopwatch.Elapsed.TotalSeconds + "s");
+            log.LogInformation("AbyssRankUpdateService: Finished in {CurrentTimeMillisStartTime} seconds", (long)stopwatch.Elapsed.TotalSeconds);
             return ValueTask.CompletedTask;
         }, TimeSpan.FromMilliseconds(1000));
     }

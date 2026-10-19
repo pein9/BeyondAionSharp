@@ -61,7 +61,7 @@ public class InstanceService
             instance.SetEmptyInstanceTask(ThreadPoolManager.GetInstance().ScheduleAtFixedRateTask(ct => { task.Run(); return ValueTask.CompletedTask; }, TimeSpan.FromMilliseconds(60000), TimeSpan.FromMilliseconds(60000)));
         }
 
-        log.LogInformation("Created new instance: " + worldId + " [" + instance.GetInstanceId() + "] owner:" + ownerId + " difficultyId:" + difficultyId);
+        log.LogInformation("Created new instance: {WorldId} [{InstanceGetInstanceId}] owner:{OwnerId} difficultyId:{DifficultyId}", worldId, instance.GetInstanceId(), ownerId, difficultyId);
         return instance;
     }
 
@@ -101,7 +101,7 @@ public class InstanceService
         // inherited by the next instance to take the same id.
         Aion.GameServer.World.Spawns.GatedSpawnService.DetachInstance(worldId, instanceId);
 
-        log.LogInformation("Destroying " + instance);
+        log.LogInformation("Destroying {Instance}", instance);
 
         TemporarySpawnEngine.OnInstanceDestroy(instance); // first unregister all temporary spawns, then despawn mobs
         foreach (VisibleObject obj in instance)

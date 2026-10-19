@@ -42,7 +42,7 @@ public class PlayerLifeStatsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not restore PlayerLifeStat data for playerObjId: " + player.GetObjectId() + " from DB: " + e.Message);
+            log.LogError(e, "Could not restore PlayerLifeStat data for playerObjId: {PlayerGetObjectId} from DB: {EGetMessage}", player.GetObjectId(), e.Message);
         }
     }
 
@@ -62,7 +62,7 @@ public class PlayerLifeStatsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not store PlayerLifeStat data for player " + player.GetObjectId() + " from DB: " + e.Message);
+            log.LogError(e, "Could not store PlayerLifeStat data for player {PlayerGetObjectId} from DB: {EGetMessage}", player.GetObjectId(), e.Message);
         }
     }
 
@@ -82,7 +82,7 @@ public class PlayerLifeStatsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not update PlayerLifeStat data for player " + player.GetObjectId() + " from DB: " + e.Message);
+            log.LogError(e, "Could not update PlayerLifeStat data for player {PlayerGetObjectId} from DB: {EGetMessage}", player.GetObjectId(), e.Message);
         }
     }
 }

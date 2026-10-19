@@ -227,7 +227,7 @@ public class ItemGroupsData
             case FoodType.MISCELLANEOUS:
                 break;
             default:
-                log.LogWarning("Unhandled food type " + foodType);
+                log.LogWarning("Unhandled food type {FoodType}", foodType);
                 break;
         }
         return null;

@@ -20,7 +20,7 @@ public class QuestHandlerLoader : ClassListener
             if (c == null)
                 continue;
             if (logger.IsEnabled(LogLevel.Debug))
-                logger.LogDebug("Load class " + c.FullName);
+                logger.LogDebug("Load class {CGetName}", c.FullName);
 
             if (!IsValidClass(c))
                 continue;
@@ -45,7 +45,7 @@ public class QuestHandlerLoader : ClassListener
         if (logger.IsEnabled(LogLevel.Debug))
             foreach (Type c in classes)
                 // debug messages
-                logger.LogDebug("Unload class " + c.FullName);
+                logger.LogDebug("Unload class {CGetName}", c.FullName);
 
         Aion.GameServer.QuestEngine.QuestEngine.GetInstance().Clear();
     }

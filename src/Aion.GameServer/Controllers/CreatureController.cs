@@ -402,7 +402,7 @@ public abstract class CreatureController : VisibleObjectController
                 oldTask.Cancel();
                 if (taskId == Aion.GameServer.Model.TaskId.DESPAWN)
                 {
-                    log.LogWarning("Despawn task for " + GetOwner() + " was cancelled and replaced with another one, possibly delaying the intended despawn time.");
+                    log.LogWarning("Despawn task for {GetOwner} was cancelled and replaced with another one, possibly delaying the intended despawn time", GetOwner());
                 }
             }
             return task;
@@ -463,7 +463,7 @@ public abstract class CreatureController : VisibleObjectController
         }
         catch (Exception ex)
         {
-            log.LogError(ex, "Exception during skill use: " + skillId);
+            log.LogError(ex, "Exception during skill use: {SkillId}", skillId);
         }
         return false;
     }
@@ -494,7 +494,7 @@ public abstract class CreatureController : VisibleObjectController
         }
         catch (Exception ex)
         {
-            log.LogError(ex, "Could not use charge skill " + startSkill.GetSkillId() + " with charge time " + chargeTimeMillis);
+            log.LogError(ex, "Could not use charge skill {StartSkillGetSkillId} with charge time {ChargeTimeMillis}", startSkill.GetSkillId(), chargeTimeMillis);
         }
         finally
         {

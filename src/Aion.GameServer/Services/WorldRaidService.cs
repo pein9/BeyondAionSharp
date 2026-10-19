@@ -28,17 +28,14 @@ public class WorldRaidService
 
     public void InitWorldRaidLocations()
     {
-        log.LogDebug("Initializing world raid locations...");
         if (EventsConfig.ENABLE_WORLDRAID)
             raidLocationsById = DataManager.WORLD_RAID_DATA.GetLocations();
         else
             raidLocationsById = new Dictionary<int, WorldRaidLocation>();
-        log.LogDebug("Finished initialization of world raid locations with size " + raidLocationsById.Count);
     }
 
     public void InitWorldRaids()
     {
-        log.LogDebug("Initializing world raid schedules...");
         if (!EventsConfig.ENABLE_WORLDRAID)
             return;
         // Initialize Raid Schedules
@@ -49,7 +46,6 @@ public class WorldRaidService
                 CronService.GetInstance().Schedule(new WorldRaidRunnable(worldRaidSchedule), cronExpr);
             }
         }
-        log.LogDebug("Finished initialization of world raid schedules.");
     }
 
     public List<WorldRaidLocation> GetActiveWorldRaidLocations()
@@ -59,10 +55,7 @@ public class WorldRaidService
 
     public bool IsValidWorldRaidLocation(int locationId)
     {
-        if (raidLocationsById.ContainsKey(locationId))
-            return true;
-        log.LogDebug("No world raid location found for id: " + locationId);
-        return false;
+        return raidLocationsById.ContainsKey(locationId);
     }
 
     public bool IsWorldRaidInProgress(int locationId)
@@ -72,18 +65,17 @@ public class WorldRaidService
 
     public void StartRaid(int locationId, bool useSpecialSpawnMsg)
     {
-        log.LogDebug("Starting world raid for location: " + locationId);
         WorldRaid worldRaid;
         lock (this)
         {
             if (!IsValidWorldRaidLocation(locationId))
             {
-                log.LogError("Attempt to start world raid for an invalid location: " + locationId);
+                log.LogError("Attempt to start world raid for an invalid location: {LocationId}", locationId);
                 return;
             }
             if (IsWorldRaidInProgress(locationId))
             {
-                log.LogError("Attempt to start world raid twice for location: " + locationId);
+                log.LogError("Attempt to start world raid twice for location: {LocationId}", locationId);
                 return;
             }
             bool sendMessages = true;
@@ -106,12 +98,10 @@ public class WorldRaidService
             activeRaids[locationId] = worldRaid;
         }
         worldRaid.StartWorldRaid();
-        log.LogDebug("Finished world raid start for location: " + locationId);
     }
 
     public void StopRaid(int locationId)
     {
-        log.LogDebug("Stopping world for location: " + locationId);
         WorldRaid raid;
         lock (this)
         {
@@ -119,11 +109,9 @@ public class WorldRaidService
         }
         if (raid == null || raid.IsFinished())
         {
-            log.LogDebug("Attempt to stop world raid twice for location: " + locationId);
             return;
         }
         raid.StopWorldRaid();
-        log.LogDebug("Succeeded to finish world raid for location: " + locationId);
     }
 
     public static WorldRaidService GetInstance()

@@ -99,7 +99,7 @@ public class ItemCooldownsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error while storing item cooldowns for " + player);
+            log.LogError(e, "Error while storing item cooldowns for {Player}", player);
         }
     }
 

@@ -233,7 +233,7 @@ public abstract class Storage : IStorage
             if (Aion.GameServer.Configs.Main.LoggingConfig.LOG_ITEM && !item.GetItemTemplate().IsKinah() && item.GetItemCount() > 0)
             {
                 string name = (item.GetEnchantLevel() > 0 ? "+" + item.GetEnchantLevel() + " " : "") + item.GetItemName();
-                log.LogInformation("Deleted " + item.GetItemId() + " " + name + " from " + actor + " (count: " + item.GetItemCount() + ") (deletion type: " + deleteType + ")");
+                log.LogInformation("Deleted {ItemGetItemId} {Name} from {Actor} (count: {ItemGetItemCount}) (deletion type: {DeleteType})", item.GetItemId(), name, actor, item.GetItemCount(), deleteType);
             }
             Aion.GameServer.QuestEngine.QuestEngine.GetInstance().OnItemRemoved(actor, item.GetItemId());
             return item;

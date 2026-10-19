@@ -64,7 +64,7 @@ public class TemperingEffect : Aion.GameServer.Model.Stats.Calc.IStatOwner
         }
         if (functions.Count == 0)
         {
-            log.LogWarning("Missing tempering effect info for item " + item);
+            log.LogWarning("Missing tempering effect info for item {Item}", item);
             return;
         }
         if (item.GetTemperingEffect() != null)

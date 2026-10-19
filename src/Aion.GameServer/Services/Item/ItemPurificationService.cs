@@ -25,7 +25,7 @@ public class ItemPurificationService
         ItemPurificationTemplate itemPurificationTemplate = DataManager.ITEM_PURIFICATION_DATA.GetItemPurificationTemplate(baseItem.GetItemId());
         if (itemPurificationTemplate == null)
         {
-            log.LogWarning("Item purification template is not available for [resultItemId=" + resultItemId + "]");
+            log.LogWarning("Item purification template is not available for [resultItemId={ResultItemId}]", resultItemId);
             return false;
         }
 

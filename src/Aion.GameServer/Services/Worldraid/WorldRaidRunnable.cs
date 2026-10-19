@@ -21,15 +21,14 @@ public class WorldRaidRunnable : Aion.Commons.Lang.Runnable
     public void Run()
     {
         // Java concatenates the lists, which prints them as AbstractCollection.toString does: [1, 2, 3].
-        log.LogDebug("Attempting to start world raid with ID: " + worldRaidSchedule.GetId() + " and location pool: " + Aion.GameServer.Utils.JavaString.ValueOf(worldRaidSchedule.GetLocations()));
+        log.LogDebug("Attempting to start world raid with ID: {WorldRaidScheduleGetId} and location pool: {WorldRaidScheduleGetLocations}", worldRaidSchedule.GetId(), Aion.GameServer.Utils.JavaString.ValueOf(worldRaidSchedule.GetLocations()));
         List<int> validRaidLocations = worldRaidSchedule.GetLocations()
             .Where(locationId => WorldRaidService.GetInstance().IsValidWorldRaidLocation(locationId)
                 && !WorldRaidService.GetInstance().IsWorldRaidInProgress(locationId))
             .ToList();
         if (validRaidLocations.Count != worldRaidSchedule.GetLocations().Count)
         {
-            log.LogWarning("Invalid world raid location count for raid with ID: " + worldRaidSchedule.GetId()
-                + ". Some locations may be invalid due to a misconfiguration or due to currently running raids!");
+            log.LogWarning("Invalid world raid location count for raid with ID: {WorldRaidScheduleGetId}. Some locations may be invalid due to a misconfiguration or due to currently running raids!", worldRaidSchedule.GetId());
             return;
         }
         // determine location count
@@ -45,6 +44,6 @@ public class WorldRaidRunnable : Aion.Commons.Lang.Runnable
         foreach (int locationId in validRaidLocations)
             WorldRaidService.GetInstance().StartRaid(locationId, worldRaidSchedule.IsSpecialRaid());
         if (validRaidLocations.Count != 0)
-            log.LogDebug("Started scheduled world raid with ID " + worldRaidSchedule.GetId() + " at the following raid locations: " + Aion.GameServer.Utils.JavaString.ValueOf(validRaidLocations));
+            log.LogDebug("Started scheduled world raid with ID {WorldRaidScheduleGetId} at the following raid locations: {ValidRaidLocations}", worldRaidSchedule.GetId(), Aion.GameServer.Utils.JavaString.ValueOf(validRaidLocations));
     }
 }

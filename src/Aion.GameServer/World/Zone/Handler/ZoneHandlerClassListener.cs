@@ -15,7 +15,7 @@ public class ZoneHandlerClassListener : ClassListener
         foreach (Type c in classes)
         {
             if (log.IsEnabled(LogLevel.Debug))
-                log.LogDebug("Load class " + c.FullName);
+                log.LogDebug("Load class {CGetName}", c.FullName);
 
             if (!IsValidClass(c))
                 continue;
@@ -32,7 +32,7 @@ public class ZoneHandlerClassListener : ClassListener
         if (log.IsEnabled(LogLevel.Debug))
         {
             foreach (Type c in classes)
-                log.LogDebug("Unload class " + c.FullName);
+                log.LogDebug("Unload class {CGetName}", c.FullName);
         }
     }
 

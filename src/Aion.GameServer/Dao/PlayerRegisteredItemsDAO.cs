@@ -86,7 +86,7 @@ public class PlayerRegisteredItemsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not load house registry data for player " + registry.GetOwner().GetOwnerId());
+            log.LogError(e, "Could not load house registry data for player {RegistryGetOwnerGetOwnerId}", registry.GetOwner().GetOwnerId());
         }
     }
 
@@ -175,7 +175,7 @@ public class PlayerRegisteredItemsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Can't save registered items for player: " + playerId);
+            log.LogError(e, "Can't save registered items for player: {PlayerId}", playerId);
         }
 
         foreach (HouseObject obj in objects)
@@ -354,7 +354,7 @@ public class PlayerRegisteredItemsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error in deleting all player registered items. PlayerObjId: " + playerId);
+            log.LogError(e, "Error in deleting all player registered items. PlayerObjId: {PlayerId}", playerId);
             return false;
         }
         return true;
@@ -373,7 +373,7 @@ public class PlayerRegisteredItemsDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error in resetting player registered items. PlayerObjId: " + playerId);
+            log.LogError(e, "Error in resetting player registered items. PlayerObjId: {PlayerId}", playerId);
         }
     }
 }

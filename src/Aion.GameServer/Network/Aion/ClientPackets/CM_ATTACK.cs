@@ -48,7 +48,7 @@ public class CM_ATTACK : AionClientPacket
         }
         else if (obj != null)
         {
-            log.LogWarning(player + " attacking unsupported target " + obj);
+            log.LogWarning("{Player} attacking unsupported target {Obj}", player, obj);
         }
     }
 }

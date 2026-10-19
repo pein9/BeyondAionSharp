@@ -33,7 +33,7 @@ public class FactionPackDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "[FACTION_PACK] Error loading received player id on account id " + accountId);
+            log.LogError(e, "[FACTION_PACK] Error loading received player id on account id {AccountId}", accountId);
             return int.MaxValue;
         }
     }
@@ -53,7 +53,7 @@ public class FactionPackDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "[FACTION_PACK] Error saving received player id " + playerId + " on account id " + accountId);
+            log.LogError(e, "[FACTION_PACK] Error saving received player id {PlayerId} on account id {AccountId}", playerId, accountId);
             return false;
         }
     }

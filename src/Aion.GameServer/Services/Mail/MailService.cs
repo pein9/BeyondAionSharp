@@ -159,8 +159,7 @@ public class MailService
             return;
 
         if (attachedItem != null && LoggingConfig.LOG_MAIL)
-            log.LogInformation("Player: " + sender.GetName() + " sent item " + attachedItem.GetItemId() + " [" + attachedItem.GetItemName() + "] (count: "
-                + attachedItem.GetItemCount() + ") to player " + recipientName);
+            log.LogInformation("Player: {SenderGetName} sent item {AttachedItemGetItemId} [{AttachedItemGetItemName}] (count: {AttachedItemGetItemCount}) to player {RecipientName}", sender.GetName(), attachedItem.GetItemId(), attachedItem.GetItemName(), attachedItem.GetItemCount(), recipientName);
 
         PacketSendUtility.SendPacket(sender, new SM_MAIL_SERVICE(status));
         SystemMailService.UpdateRecipientMailbox(recipientCommonData, newLetter);
@@ -206,7 +205,7 @@ public class MailService
         Letter letter = player.GetMailbox().GetLetterFromMailbox(letterId);
         if (letter == null)
         {
-            log.LogWarning("Cannot read mail " + player.GetObjectId() + " " + letterId);
+            log.LogWarning("Cannot read mail {PlayerGetObjectId} {LetterId}", player.GetObjectId(), letterId);
             return;
         }
 

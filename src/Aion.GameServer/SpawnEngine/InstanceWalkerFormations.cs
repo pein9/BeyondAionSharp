@@ -66,14 +66,14 @@ public class InstanceWalkerFormations
             }
             if (maxSize == 0 || npcs == null)
             {
-                Log.LogWarning("Walkers missing for route: " + candidates[0].GetWalkTemplate().GetRouteId());
+                Log.LogWarning("Walkers missing for route: {CandidatesGetWalkTemplateGetRouteId}", candidates[0].GetWalkTemplate().GetRouteId());
                 continue;
             }
             if (maxSize == 1)
             {
                 if (candidates.Count != 1)
                 {
-                    Log.LogWarning("Walkers not aligned for route: " + candidates[0].GetWalkTemplate().GetRouteId());
+                    Log.LogWarning("Walkers not aligned for route: {CandidatesGetWalkTemplateGetRouteId}", candidates[0].GetWalkTemplate().GetRouteId());
                     foreach (ClusteredNpc snpc in candidates)
                         snpc.Spawn(snpc.GetNpc().GetSpawn().GetZ());
                 }
@@ -98,7 +98,7 @@ public class InstanceWalkerFormations
             {
                 WalkerGroup wg = new WalkerGroup(npcs);
                 if (candidates[0].GetWalkTemplate().GetPool() != candidates.Count)
-                    Log.LogWarning("Incorrect pool for route: " + candidates[0].GetWalkTemplate().GetRouteId());
+                    Log.LogWarning("Incorrect pool for route: {CandidatesGetWalkTemplateGetRouteId}", candidates[0].GetWalkTemplate().GetRouteId());
                 walkFormations[candidates[0].GetWalkTemplate().GetRouteId()] = wg;
                 wg.Form();
                 if (wg.GetVersionId() == null)

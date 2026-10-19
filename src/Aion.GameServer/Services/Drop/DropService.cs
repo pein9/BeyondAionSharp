@@ -93,8 +93,7 @@ public class DropService
         {
             if (!dropNpc.GetLootingPlayer().IsOnline())
             {
-                log.LogWarning(
-                    dropNpc.GetLootingPlayer() + " is offline but was still set as drop looter for " + World.World.GetInstance().FindVisibleObject(npcObjectId));
+                log.LogWarning("{DropNpcGetLootingPlayer} is offline but was still set as drop looter for {WorldGetInstanceFindVisibleObjectNpcObjectId}", dropNpc.GetLootingPlayer(), World.World.GetInstance().FindVisibleObject(npcObjectId));
             }
             else
             {

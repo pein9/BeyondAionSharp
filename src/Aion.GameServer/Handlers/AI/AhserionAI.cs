@@ -193,7 +193,6 @@ public class AhserionAI : AggressiveNpcAI
             .OrderByDescending(di => di.GetDamage())
             .Select(ai => string.Format("{0} (ID: {1}, Dmg: {2})", ai.GetAttacker().GetName(), ai.GetAttacker().GetObjectId(), ai.GetDamage())));
 
-        log.LogInformation("[{Map}] {Name} (ID:{Id}) was killed in {Time}s. Damage List: {Damage}", GetPosition().GetWorldMapInstance().GetTemplate().GetName(), GetOwner().GetName(),
-            GetNpcId(), fullFightTime, damageDealt);
+        log.LogInformation("[{GetPositionGetWorldMapInstanceGetTemplateGetName}] {GetOwnerGetName} (ID:{GetNpcId}) was killed in {FullFightTime} seconds. Damage List: {DamageDealt}", GetPosition().GetWorldMapInstance().GetTemplate().GetName(), GetOwner().GetName(), GetNpcId(), fullFightTime, damageDealt);
     }
 }

@@ -78,7 +78,7 @@ public class BonusService
             case BonusType.NONE:
                 break;
             default:
-                AionLog.For(nameof(BonusService)).LogWarning("Bonus of type " + type + " is not implemented");
+                AionLog.For(nameof(BonusService)).LogWarning("Bonus of type {Type} is not implemented", type);
                 break;
         }
         return new List<BonusItemGroup>();

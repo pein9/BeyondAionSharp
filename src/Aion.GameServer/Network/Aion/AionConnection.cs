@@ -83,7 +83,7 @@ public class AionConnection : AConnection<AionServerPacket>
         state = State.CONNECTED;
 
         string ip = GetIP();
-        log.LogDebug("connection from: " + ip);
+        log.LogDebug("connection from: {Ip}", ip);
 
         lastClientMessageTime = SystemClock.CurrentMillis();
         connectionAliveChecker = new ConnectionAliveChecker(this);
@@ -135,16 +135,16 @@ public class AionConnection : AConnection<AionServerPacket>
         {
             if (++corruptPackets >= MAX_CORRUPT_PACKETS_BEFORE_DISCONNECT)
             {
-                log.LogWarning("Client packet decryption failed " + corruptPackets + " times, disconnecting " + this);
+                log.LogWarning("Client packet decryption failed {CorruptPackets} times, disconnecting {This}", corruptPackets, this);
                 return false;
             }
-            log.LogDebug("[" + corruptPackets + "/" + MAX_CORRUPT_PACKETS_BEFORE_DISCONNECT + "] Decrypt fail, client packet passed...");
+            log.LogDebug("[{CorruptPackets}/{MAX_CORRUPT_PACKETS_BEFORE_DISCONNECT}] Decrypt fail, client packet passed...", corruptPackets, MAX_CORRUPT_PACKETS_BEFORE_DISCONNECT);
             return true;
         }
 
         if (data.Remaining() < 5)
         {
-            log.LogWarning("Received fake packet from " + this + ", disconnecting");
+            log.LogWarning("Received fake packet from {This}, disconnecting", this);
             return false;
         }
 
@@ -174,7 +174,7 @@ public class AionConnection : AConnection<AionServerPacket>
                         long diff = lastClientMessageTime - last;
                         if (diff < msBetweenPackets)
                         {
-                            log.LogWarning(this + " is flooding " + pck.GetType().Name + " (last diff: " + diff + "ms)");
+                            log.LogWarning("{This} is flooding {PckGetClassGetSimpleName} (last diff: {Diff} ms)", this, pck.GetType().Name, diff);
                             if (PffConfig.PFF_MODE == 1) // disconnect
                             {
                                 if (recordedPayload != null)
@@ -263,7 +263,7 @@ public class AionConnection : AConnection<AionServerPacket>
                 SendPacketInfo(packet);
             packet.Write(this, data);
             if (data.Limit() > AionServerPacket.MAX_CLIENT_SUPPORTED_PACKET_SIZE)
-                log.LogWarning(packet + " contains " + (data.Limit() - AionServerPacket.MAX_CLIENT_SUPPORTED_PACKET_SIZE) + " more bytes than the game client of " + GetActivePlayer() + " can read");
+                log.LogWarning("{Packet} contains {Value2} more bytes than the game client of {GetActivePlayer} can read", packet, (data.Limit() - AionServerPacket.MAX_CLIENT_SUPPORTED_PACKET_SIZE), GetActivePlayer());
             return true;
         }
     }
@@ -305,7 +305,7 @@ public class AionConnection : AConnection<AionServerPacket>
         if (msg.Length == 0)
             msg = " " + this;
 
-        log.LogInformation("Client disconnected:" + msg);
+        log.LogInformation("Client disconnected:{Msg}", msg);
     }
 
     protected virtual void ResetPlayerPositionAfterDisconnect(Player player) =>
@@ -403,7 +403,7 @@ public class AionConnection : AConnection<AionServerPacket>
             long millisSinceLastClientPacket = SystemClock.CurrentMillis() - outer.lastClientMessageTime;
             if (millisSinceLastClientPacket - 5000 > CM_PING.CLIENT_PING_INTERVAL)
             {
-                log.LogInformation("Closing hanged up connection of " + outer + " (last sign of life was " + millisSinceLastClientPacket + "ms ago)");
+                log.LogInformation("Closing hanged up connection of {AionConnection} (last sign of life was {MillisSinceLastClientPacket} ms ago)", outer, millisSinceLastClientPacket);
                 outer.Close();
             }
         }

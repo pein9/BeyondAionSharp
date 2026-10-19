@@ -31,7 +31,7 @@ public class CM_FRIEND_STATUS : AionClientPacket
         Status? statusEnum = FriendListStatusExtensions.GetByValue(status);
         if (statusEnum == null)
         {
-            log.LogWarning("received unknown status id " + status);
+            log.LogWarning("received unknown status id {Status}", status);
             statusEnum = Status.ONLINE;
         }
         activePlayer.GetFriendList().SetStatus(statusEnum.Value, activePlayer.GetCommonData());

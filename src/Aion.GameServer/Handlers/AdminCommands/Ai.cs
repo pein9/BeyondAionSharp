@@ -57,7 +57,7 @@ public class Ai : AdminCommand
         else if (paramsArr[0].Equals("marker", StringComparison.OrdinalIgnoreCase))
         {
             if (paramsArr.Length > 1)
-                AionLog.For(typeof(AILogger).FullName).LogInformation("[AI] marker: " + Join(paramsArr, 1));
+                AionLog.For(typeof(AILogger).FullName).LogInformation("[AI] marker: {JoinParams}", Join(paramsArr, 1));
             else
                 AionLog.For(typeof(AILogger).FullName).LogInformation("[AI] marker");
         }

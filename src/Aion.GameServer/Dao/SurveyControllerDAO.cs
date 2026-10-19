@@ -64,7 +64,7 @@ public class SurveyControllerDAO
         }
         catch (Exception e)
         {
-            log.LogError(e, "Could not set used state for survey " + id);
+            log.LogError(e, "Could not set used state for survey {Id}", id);
             return false;
         }
         return true;

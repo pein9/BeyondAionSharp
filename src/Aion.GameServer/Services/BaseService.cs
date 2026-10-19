@@ -21,8 +21,6 @@ public class BaseService
     /// <summary>Initializes all base locations.</summary>
     private BaseService()
     {
-        log.LogInformation("Initializing bases...");
-
         foreach (BaseTemplate template in DataManager.BASE_DATA.GetAllBaseTemplates())
         {
             BaseLocation loc = template.GetType_() switch
@@ -35,6 +33,7 @@ public class BaseService
             };
             allBaseLocations[template.GetId()] = loc;
         }
+        log.LogInformation("BaseService initialized with {Bases} bases", allBaseLocations.Count);
     }
 
     /// <summary>Executes start of all casual and stained bases.</summary>

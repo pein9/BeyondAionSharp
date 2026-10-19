@@ -75,7 +75,7 @@ public class Easter : PlayerCommand
         long notAddedCount = ItemService.AddItem(player, reward.ItemId, reward.ItemCount, true,
             new ItemService.ItemUpdatePredicate(ItemPacketService.ItemAddType.DECOMPOSABLE, ItemPacketService.ItemUpdateType.INC_CASH_ITEM));
         if (notAddedCount > 0)
-            log.LogWarning("[Easter Event] " + notAddedCount + "/" + reward.ItemCount + " of " + reward.ItemId + " could not be added.");
+            log.LogWarning("[Easter Event] {NotAddedCount}/{RewardItemCount} of {RewardItemId} could not be added", notAddedCount, reward.ItemCount, reward.ItemId);
     }
 
     private record Reward(int RequiredEggs, int ItemId, long ItemCount);
