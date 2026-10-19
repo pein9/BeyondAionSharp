@@ -1,0 +1,541 @@
+{
+  "sourceJavaCommit": "638ed3dd4032ff01e4691a4ec3d6eb85cdf951d3",
+  "sourceHashes": {
+    "game-server/src/com/aionemu/gameserver/model/templates/tradelist/TradeListTemplate.java": "25367ea9c6c151b4097903aafd89247433a3c27172392a9e9357c5bd23042313",
+    "game-server/src/com/aionemu/gameserver/model/templates/tradelist/TradeNpcType.java": "eaad23f40472bfdc4d7b18cdc108e32a6165e65ce3046972a0c4d1c8978059d4",
+    "game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_TRADELIST.java": "ba8809af3d013ca939f9246536000c0f15cb278226fd6f2440c34766a25de963",
+    "game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_SELL_ITEM.java": "1beecb3c2ed43af66681ff9e3a2acb03f05ec33bced50ba39e2c1315e69ad0b7",
+    "game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_TRADE_IN_LIST.java": "4f5b65682e14903d8ddf1491e8969392f86a4ad5a9a96ec7dbd2486d74e015f8",
+    "game-server/src/com/aionemu/gameserver/services/TradeService.java": "5c5046df1db92ea7e7f89dc4a0d6057061c29d9340869860c94b3ce49fc20116"
+  },
+  "boundary": "Capture exact 638ed3dd4 tab filtering/validation, model and three trade packets.\nXML annotations/imports alone are stripped. NPC/player/holder/limited-stock/price\ncollaborators and the little-endian sink are scalar doubles. This does not run\nJava's DB, dialog dispatcher or transaction/persistence tail; native tests cover\nthose C# entry points and the existing purchase/sale guards.\n",
+  "filterCases": [
+    {
+      "level": -1,
+      "query": 0,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": -1,
+      "query": 1,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": -1,
+      "query": 2,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": -1,
+      "query": 3,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": -1,
+      "query": 4,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": -1,
+      "query": 5,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": -1,
+      "query": 6,
+      "tabs": [
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 0,
+      "query": 0,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 0,
+      "query": 1,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 0,
+      "query": 2,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 0,
+      "query": 3,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 0,
+      "query": 4,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 0,
+      "query": 5,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 0,
+      "query": 6,
+      "tabs": [
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 2,
+      "query": 0,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 2,
+      "query": 1,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 2,
+      "query": 2,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 2,
+      "query": 3,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 2,
+      "query": 4,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 2,
+      "query": 5,
+      "tabs": [
+        101,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 2,
+      "query": 6,
+      "tabs": [
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 3,
+      "query": 0,
+      "tabs": [
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 3,
+      "query": 1,
+      "tabs": [
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 3,
+      "query": 2,
+      "tabs": [
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 3,
+      "query": 3,
+      "tabs": [
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 3,
+      "query": 4,
+      "tabs": [
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 3,
+      "query": 5,
+      "tabs": [
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 3,
+      "query": 6,
+      "tabs": [
+        102,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 7,
+      "query": 0,
+      "tabs": [
+        103,
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 7,
+      "query": 1,
+      "tabs": [
+        103,
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 7,
+      "query": 2,
+      "tabs": [
+        103,
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 7,
+      "query": 3,
+      "tabs": [
+        103,
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 7,
+      "query": 4,
+      "tabs": [
+        103,
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 7,
+      "query": 5,
+      "tabs": [
+        103,
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 7,
+      "query": 6,
+      "tabs": [
+        103,
+        102,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 8,
+      "query": 0,
+      "tabs": [
+        103,
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 8,
+      "query": 1,
+      "tabs": [
+        103,
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 8,
+      "query": 2,
+      "tabs": [
+        103,
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 8,
+      "query": 3,
+      "tabs": [
+        103,
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 8,
+      "query": 4,
+      "tabs": [
+        103,
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": false
+    },
+    {
+      "level": 8,
+      "query": 5,
+      "tabs": [
+        103,
+        101,
+        102,
+        101,
+        104
+      ],
+      "accepted": true
+    },
+    {
+      "level": 8,
+      "query": 6,
+      "tabs": [
+        103,
+        102,
+        104
+      ],
+      "accepted": true
+    }
+  ],
+  "packetCases": [
+    {
+      "kind": "buy",
+      "npcType": "NORMAL",
+      "payloadHex": "DBAE0A00015300000064000000000003006500000066000000650000000000"
+    },
+    {
+      "kind": "sell",
+      "npcType": "NORMAL",
+      "payloadHex": "DBAE0A00017300000000000300650000006600000065000000"
+    },
+    {
+      "kind": "tradein",
+      "npcType": "NORMAL",
+      "payloadHex": "DBAE0A000153000000640000000300650000006600000065000000"
+    },
+    {
+      "kind": "buy",
+      "npcType": "ABYSS",
+      "payloadHex": "DBAE0A00025300000064000000000003006500000066000000650000000000"
+    },
+    {
+      "kind": "sell",
+      "npcType": "ABYSS",
+      "payloadHex": "DBAE0A00027300000000000300650000006600000065000000"
+    },
+    {
+      "kind": "tradein",
+      "npcType": "ABYSS",
+      "payloadHex": "DBAE0A000253000000640000000300650000006600000065000000"
+    },
+    {
+      "kind": "buy",
+      "npcType": "LEGION_COIN",
+      "payloadHex": "DBAE0A00035300000064000000000003006500000066000000650000000000"
+    },
+    {
+      "kind": "sell",
+      "npcType": "LEGION_COIN",
+      "payloadHex": "DBAE0A00037300000000000300650000006600000065000000"
+    },
+    {
+      "kind": "tradein",
+      "npcType": "LEGION_COIN",
+      "payloadHex": "DBAE0A000353000000640000000300650000006600000065000000"
+    },
+    {
+      "kind": "buy",
+      "npcType": "REWARD",
+      "payloadHex": "DBAE0A00045300000064000000000003006500000066000000650000000000"
+    },
+    {
+      "kind": "sell",
+      "npcType": "REWARD",
+      "payloadHex": "DBAE0A00047300000000000300650000006600000065000000"
+    },
+    {
+      "kind": "tradein",
+      "npcType": "REWARD",
+      "payloadHex": "DBAE0A000453000000640000000300650000006600000065000000"
+    },
+    {
+      "kind": "buy",
+      "npcType": "ABYSS_KINAH",
+      "payloadHex": "DBAE0A00055300000064000000000003006500000066000000650000000000"
+    },
+    {
+      "kind": "sell",
+      "npcType": "ABYSS_KINAH",
+      "payloadHex": "DBAE0A00057300000000000300650000006600000065000000"
+    },
+    {
+      "kind": "tradein",
+      "npcType": "ABYSS_KINAH",
+      "payloadHex": "DBAE0A000553000000640000000300650000006600000065000000"
+    }
+  ],
+  "special": {
+    "live": "DBAE0A000353000000640000000000020065000000660000000200B4ECA70902000900B5ECA70901000200",
+    "sellSnapshot": "DBAE0A00057300000000000300650000006600000065000000",
+    "tradeinSnapshot": "DBAE0A000553000000640000000300650000006600000065000000",
+    "sellMissing": "DBAE0A00014900000000000000"
+  },
+  "modelChecks": true
+}

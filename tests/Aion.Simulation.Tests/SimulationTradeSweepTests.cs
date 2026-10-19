@@ -88,7 +88,7 @@ public sealed partial class SimulationFastScenarioTests
 					"trade_in_list_template" => DataManager.TRADE_LIST_DATA.GetTradeInListTemplate(row.NpcId),
 					_ => DataManager.TRADE_LIST_DATA.GetPurchaseTemplate(row.NpcId)
 				};
-				Assert.NotNull(list); Assert.NotEmpty(list.GetTradeTablist());
+				Assert.NotNull(list); Assert.NotEmpty(list.GetTradeTabIds());
 				details["npcType"] = list.GetTradeNpcType().ToString();
 				int requiredAction = row.Kind switch { "tradelist_template" => DialogAction.BUY, "trade_in_list_template" => DialogAction.TRADE_IN, _ => DialogAction.TRADE_SELL_LIST };
 				var npcTemplate = DataManager.NPC_DATA.GetNpcTemplate(row.NpcId);
@@ -144,11 +144,11 @@ public sealed partial class SimulationFastScenarioTests
 				PacketSendUtility.SendPacket(player, new SM_PRICES());
 				await session.SynchronizeAsync(token);
 				details["mapId"] = Id(npc.GetWorldId()); details["instanceId"] = Id(npc.GetInstanceId()); details["race"] = player.GetRace().ToString();
-				var goods = list.GetTradeTablist().Select(tab => row.Kind switch
+				var goods = list.GetTradeTabIds().Select(tab => row.Kind switch
 				{
-					"tradelist_template" => DataManager.GOODSLIST_DATA.GetGoodsListById(tab.GetId()),
-					"trade_in_list_template" => DataManager.GOODSLIST_DATA.GetGoodsInListById(tab.GetId()),
-					_ => DataManager.GOODSLIST_DATA.GetGoodsPurchaseListById(tab.GetId())
+					"tradelist_template" => DataManager.GOODSLIST_DATA.GetGoodsListById(tab),
+					"trade_in_list_template" => DataManager.GOODSLIST_DATA.GetGoodsInListById(tab),
+					_ => DataManager.GOODSLIST_DATA.GetGoodsPurchaseListById(tab)
 				}).ToArray();
 				Assert.All(goods, g => Assert.NotNull(g));
 				var offered = goods.SelectMany(g => g.GetItemIdList()).Distinct().Select(id => DataManager.ITEM_DATA.GetItemTemplate(id)).ToArray();
@@ -214,7 +214,7 @@ public sealed partial class SimulationFastScenarioTests
 						Assert.Equal(goods.Select(g => g.GetId()).Order(), window.Get<int[]>("tabIds").Order());
 					}
 					var sale = purchase == null ? DataManager.ITEM_DATA.GetItemTemplate(VendorScenario.ItemId)
-						: purchase.GetTradeTablist().SelectMany(t => DataManager.GOODSLIST_DATA.GetGoodsPurchaseListById(t.GetId()).GetItemIdList())
+						: purchase.GetTradeTabIds().SelectMany(t => DataManager.GOODSLIST_DATA.GetGoodsPurchaseListById(t).GetItemIdList())
 							.Select(id => DataManager.ITEM_DATA.GetItemTemplate(id)).OrderBy(i => i.GetPrice()).ThenBy(i => i.GetTemplateId()).First();
 					Assert.True(npc.CanBuy() || npc.CanPurchase());
 					Assert.Equal(0, ItemService.AddItem(player, sale.GetTemplateId(), 1));

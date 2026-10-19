@@ -34,8 +34,8 @@ public static class NaturalCoinManifests
 
 	/// <summary>The item ids a vendor's trade tabs hold.</summary>
 	public static IReadOnlyList<int> Sold(StaticData data, int vendorNpcId) =>
-		(data.TradeListDataDh.GetTradeListTemplate(vendorNpcId)?.GetTradeTablist() ?? [])
-		.SelectMany(tab => data.GoodsListDataDh.GetGoodsListById(tab.GetId())?.GetItemIdList() ?? [])
+		(data.TradeListDataDh.GetTradeListTemplate(vendorNpcId)?.GetTradeTabIds() ?? [])
+		.SelectMany(tab => data.GoodsListDataDh.GetGoodsListById(tab)?.GetItemIdList() ?? [])
 		.Distinct().ToArray();
 
 	/// <summary>

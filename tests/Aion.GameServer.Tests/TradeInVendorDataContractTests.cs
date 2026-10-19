@@ -13,7 +13,7 @@ public sealed class TradeInVendorDataContractTests
 	{
 		var data = (await RealStaticData.LoadAsync()).StaticData;
 		var trade = data.TradeListDataDh.GetTradeInListTemplate(TradeInVendorScenario.TradeInNpcId);
-		Assert.Equal(TradeInVendorScenario.TradeInTab, Assert.Single(trade.GetTradeTablist()).GetId());
+		Assert.Equal(TradeInVendorScenario.TradeInTab, Assert.Single(trade.GetTradeTabIds()));
 		Assert.Equal(TradeInVendorScenario.ChestId, Assert.Single(data.GoodsListDataDh.GetGoodsInListById(TradeInVendorScenario.TradeInTab).GetItemIdList()));
 		var recipe = data.ItemDataDh.GetItemTemplate(TradeInVendorScenario.ChestId);
 		Assert.Equal(100, recipe.GetMaxStackCount());
@@ -25,7 +25,7 @@ public sealed class TradeInVendorDataContractTests
 		Assert.True(data.NpcDataDh.GetNpcTemplate(TradeInVendorScenario.TradeInNpcId).SupportsAction(DialogAction.TRADE_IN));
 		Assert.True(data.NpcDataDh.GetNpcTemplate(TradeInVendorScenario.LimitedNpcId).SupportsAction(DialogAction.BUY));
 		var vendor = data.TradeListDataDh.GetTradeListTemplate(TradeInVendorScenario.LimitedNpcId);
-		Assert.Contains(vendor.GetTradeTablist(), t => t.GetId() == TradeInVendorScenario.LimitedTab);
+		Assert.Contains(TradeInVendorScenario.LimitedTab, vendor.GetTradeTabIds());
 		Assert.Equal(TradeInVendorScenario.LimitedSellRate, vendor.GetSellPriceRate());
 		var limited = Assert.Single(data.GoodsListDataDh.GetGoodsListById(TradeInVendorScenario.LimitedTab).GetLimitedItems(), i => i.GetItemId() == TradeInVendorScenario.FluxId);
 		Assert.Equal(1, limited.GetBuyLimit()); Assert.Equal(2, limited.GetDefaultSellLimit());

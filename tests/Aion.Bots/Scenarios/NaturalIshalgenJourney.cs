@@ -411,11 +411,11 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					int tier = runtime.Data.ItemDataDh.GetItemTemplate(coins.Purchases[0].ItemId).GetLevel();
 					NaturalCoinManifest manifest = NaturalCoinManifests.For(runtime.Data, vendors, coins.CoinItemId, tier, rules, sold.Item);
 					int tab = manifest.Armor.Count == 0 ? coins.GoodsListId
-						: runtime.Data.TradeListDataDh.GetTradeListTemplate(manifest.VendorNpcId).GetTradeTablist().Select(entry => entry.GetId())
+						: runtime.Data.TradeListDataDh.GetTradeListTemplate(manifest.VendorNpcId).GetTradeTabIds()
 							.First(id => runtime.Data.GoodsListDataDh.GetGoodsListById(id)?.GetItemIdList().Contains(manifest.Armor[0].ItemId) == true);
 					// NR-54a: the shield's own tab.
 					int shieldTab = manifest.Shield is not { } coinShield ? 0
-						: runtime.Data.TradeListDataDh.GetTradeListTemplate(manifest.VendorNpcId).GetTradeTablist().Select(entry => entry.GetId())
+						: runtime.Data.TradeListDataDh.GetTradeListTemplate(manifest.VendorNpcId).GetTradeTabIds()
 							.First(id => runtime.Data.GoodsListDataDh.GetGoodsListById(id)?.GetItemIdList().Contains(coinShield.ItemId) == true);
 					NaturalCoinGear classGear = coins.ForClass(manifest,
 						[.. world.Inventory.Values.Select(item => new NaturalJourneyItem(item.ObjectId, item.ItemId, item.Count, item.EquipmentSlot))],

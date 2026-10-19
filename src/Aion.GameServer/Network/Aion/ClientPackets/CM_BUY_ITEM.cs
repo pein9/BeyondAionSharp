@@ -140,7 +140,7 @@ public class CM_BUY_ITEM : AionClientPacket
             case TradeAction.ABYSS_SHOP_BUY:
             case TradeAction.REWARD_SHOP_BUY:
             case TradeAction.ABYSS_KINAH_SHOP_BUY:
-                if (npc.CanSell()) TradeService.PerformBuyFromShop(npc, player, tradeList);
+                if (npc.CanSell()) TradeService.BuyFromShop(npc, player, tradeList);
                 break;
         }
     }

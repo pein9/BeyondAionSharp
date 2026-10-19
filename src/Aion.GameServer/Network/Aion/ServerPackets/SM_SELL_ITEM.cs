@@ -4,19 +4,18 @@ using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Templates.Tradelist;
 using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Services.Trade;
-using TradeTab = global::Aion.GameServer.Model.Templates.Tradelist.TradeListTemplate.TradeTab;
 
 namespace Aion.GameServer.Network.Aion.ServerPackets;
 
 /// <summary>Java parity: network/aion/serverpackets/SM_SELL_ITEM (orz, Sarynth, Artur, Neon). Opens a vendor trade window (npc type/buy rate/buy-sell tabs/trade tabs). TradeListTemplate.TradeTab nested via alias; ArrayList->new List. Npc/TradeListTemplate/TradeNpcType/PricesService red-tolerated.</summary>
 public class SM_SELL_ITEM : AionServerPacket
 {
-    private int targetObjectId;
-    private TradeNpcType tradeNpcType;
-    private int buyPriceRate;
-    private bool showBuyTab;
-    private bool showSellTab;
-    private List<TradeTab> tradeTabs;
+    private readonly int targetObjectId;
+    private readonly TradeNpcType tradeNpcType;
+    private readonly int buyPriceRate;
+    private readonly bool showBuyTab;
+    private readonly bool showSellTab;
+    private readonly IReadOnlyList<int> tradeTabIds;
 
     public SM_SELL_ITEM(Npc npc)
     {
@@ -26,7 +25,7 @@ public class SM_SELL_ITEM : AionServerPacket
         this.buyPriceRate = tradeList != null ? tradeList.GetBuyPriceRate() : PricesService.GetVendorSellModifier();
         this.showBuyTab = npc.CanSell();
         this.showSellTab = npc.CanBuy() || npc.CanPurchase();
-        this.tradeTabs = tradeList != null ? tradeList.GetTradeTablist() : new List<TradeTab>();
+        this.tradeTabIds = tradeList != null ? tradeList.GetTradeTabIds() : Array.Empty<int>();
     }
 
     protected override void WriteImpl(AionConnection con)
@@ -36,8 +35,8 @@ public class SM_SELL_ITEM : AionServerPacket
         WriteD(buyPriceRate); // price * (buyPriceRate / 100) = display price
         WriteC(showBuyTab ? 1 : 0); // npc sells
         WriteC(showSellTab ? 1 : 0); // npc buys
-        WriteH(tradeTabs.Count);
-        foreach (TradeTab tradeTab in tradeTabs)
-            WriteD(tradeTab.GetId());
+        WriteH(tradeTabIds.Count);
+        foreach (int tradeTabId in tradeTabIds)
+            WriteD(tradeTabId);
     }
 }

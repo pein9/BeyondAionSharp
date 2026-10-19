@@ -29,6 +29,20 @@ public class TradeService
     private static readonly TradeListData tradeListData = DataManager.TRADE_LIST_DATA;
     private static readonly GoodsListData goodsListData = DataManager.GOODSLIST_DATA;
 
+    public static List<int> GetTradeListTabIds(TradeListTemplate template, Player player)
+    {
+        int legionLevel = player.GetLegion() == null ? 0 : player.GetLegion().GetLegionLevel();
+        var filtered = new List<int>();
+        foreach (int tradeTabId in template.GetTradeTabIds())
+        {
+            GoodsList goods = goodsListData.GetGoodsListById(tradeTabId);
+            if (goods == null || goods.GetLegionLevel() > legionLevel)
+                continue;
+            filtered.Add(tradeTabId);
+        }
+        return filtered;
+    }
+
     private static bool CanBuyLimitItem(Npc npc, Player player, int itemId, long count)
     {
         LimitedItem item = LimitedItemTradeService.GetInstance().GetLimitedItem(itemId, npc.GetNpcId());
@@ -44,41 +58,24 @@ public class TradeService
 
     private static bool ContainsItem(TradeListTemplate template, Func<int, GoodsList> goodsListById, int itemId)
     {
-        foreach (var tab in template.GetTradeTablist())
-            if (goodsListById(tab.GetId()).GetItemIdList().Contains(itemId))
+        foreach (int tradeTabId in template.GetTradeTabIds())
+            if (goodsListById(tradeTabId).GetItemIdList().Contains(itemId))
                 return true;
         return false;
     }
 
     private readonly record struct Sale(Item Item, long Count, long SellReward);
 
-    public static bool PerformBuyFromShop(Npc npc, Player player, TradeList tradeList)
-    {
-        TradeNpcType npcType = tradeListData.GetTradeListTemplate(npc.GetNpcId()).GetTradeNpcType();
-        switch (npcType)
-        {
-            case TradeNpcType.NORMAL:
-            case TradeNpcType.ABYSS_KINAH:
-                return PerformBuyTransaction(npc, player, tradeList, true); // trade including kinah
-            case TradeNpcType.ABYSS:
-            case TradeNpcType.REWARD:
-                return PerformBuyTransaction(npc, player, tradeList, false); // trade without kinah
-            default:
-                log.LogWarning("Unhandled TradeNpcType:{NpcTypeName}", npcType.ToString());
-                break;
-        }
-        return false;
-    }
-
     /// <summary>General Trade with NPC method. Handles buy items for AP and/or tokens (coins etc.) and/or kinah.</summary>
-    public static bool PerformBuyTransaction(Npc npc, Player player, TradeList tradeList, bool useKinah)
+    public static bool BuyFromShop(Npc npc, Player player, TradeList tradeList)
     {
         if (!PlayerRestrictions.CanTrade(player))
         {
             return false;
         }
 
-        if (!ValidateBuyItems(npc, tradeList, player))
+        TradeListTemplate template = tradeListData.GetTradeListTemplate(npc.GetNpcId());
+        if (!ValidateBuyItems(template, tradeList, player))
         {
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_BUY_SELL_USER_BUY_FAILED());
             return false;
@@ -86,11 +83,12 @@ public class TradeService
 
         Storage inventory = player.GetInventory();
         int freeSlots = inventory.GetFreeSlots();
+        TradeNpcType npcType = template.GetTradeNpcType();
+        bool useKinah = npcType is not (TradeNpcType.ABYSS or TradeNpcType.REWARD);
 
         // strange new attributes for new trader type
-        TradeListTemplate template = tradeListData.GetTradeListTemplate(npc.GetNpcId());
-        int sellModifier = template.GetTradeNpcType() == TradeNpcType.ABYSS_KINAH ? template.GetSellPriceRate2() : template.GetSellPriceRate();
-        int apSellModifier = template.GetTradeNpcType() == TradeNpcType.ABYSS_KINAH ? template.GetApSellPriceRate2() : template.GetSellPriceRate();
+        int sellModifier = npcType == TradeNpcType.ABYSS_KINAH ? template.GetSellPriceRate2() : template.GetSellPriceRate();
+        int apSellModifier = npcType == TradeNpcType.ABYSS_KINAH ? template.GetApSellPriceRate2() : template.GetSellPriceRate();
 
         // 1. If useKinah, check for required Kinah
         if (useKinah && !tradeList.CalculateBuyListPrice(player, sellModifier))
@@ -179,14 +177,12 @@ public class TradeService
         return true;
     }
 
-    private static bool ValidateBuyItems(Npc npc, TradeList tradeList, Player player)
+    private static bool ValidateBuyItems(TradeListTemplate template, TradeList tradeList, Player player)
     {
-        TradeListTemplate tradeListTemplate = tradeListData.GetTradeListTemplate(npc.GetObjectTemplate().GetTemplateId());
-
         HashSet<int> allowedItems = new HashSet<int>();
-        foreach (TradeListTemplate.TradeTab tradeTab in tradeListTemplate.GetTradeTablist())
+        foreach (int tradeTabId in GetTradeListTabIds(template, player))
         {
-            GoodsList goodsList = goodsListData.GetGoodsListById(tradeTab.GetId());
+            GoodsList goodsList = goodsListData.GetGoodsListById(tradeTabId);
             if (goodsList != null && goodsList.GetItemIdList() != null)
                 allowedItems.UnionWith(goodsList.GetItemIdList());
         }

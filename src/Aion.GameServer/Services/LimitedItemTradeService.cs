@@ -4,7 +4,6 @@ using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.Limiteditems;
 using Aion.GameServer.Model.Templates.Goods;
 using Aion.GameServer.Services.Cron;
-using TradeTab = Aion.GameServer.Model.Templates.Tradelist.TradeListTemplate.TradeTab;
 
 namespace Aion.GameServer.Services;
 
@@ -23,10 +22,10 @@ public class LimitedItemTradeService
         foreach (var entry in DataManager.TRADE_LIST_DATA.GetTradeListTemplate())
         {
             int npcId = entry.Key;
-            var npc = entry.Value;
-            foreach (TradeTab list in npc.GetTradeTablist())
+            var tradeList = entry.Value;
+            foreach (int tradeTabId in tradeList.GetTradeTabIds())
             {
-                GoodsList goodsList = DataManager.GOODSLIST_DATA.GetGoodsListById(list.GetId());
+                GoodsList goodsList = DataManager.GOODSLIST_DATA.GetGoodsListById(tradeTabId);
                 if (goodsList == null)
                 {
                     log.LogWarning("No goodslist for tradelist of npc {NpcId}", npcId);

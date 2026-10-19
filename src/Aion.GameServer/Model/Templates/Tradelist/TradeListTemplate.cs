@@ -28,21 +28,13 @@ public class TradeListTemplate
 
     [XmlElement("tradelist")] public List<TradeTab> tradeTablist;
 
-    public List<TradeTab> GetTradeTablist()
-    {
-        if (tradeTablist == null)
-            tradeTablist = new List<TradeTab>();
-        return this.tradeTablist;
-    }
+    // Java Stream.toList() is an unmodifiable snapshot; a missing XML list remains null.
+    public IReadOnlyList<int> GetTradeTabIds() => tradeTablist == null
+        ? Array.Empty<int>() : tradeTablist.Select(tab => tab.GetId()).ToList().AsReadOnly();
 
     public int GetNpcId()
     {
         return npcId;
-    }
-
-    public int GetCount()
-    {
-        return tradeTablist.Count;
     }
 
     public TradeNpcType GetTradeNpcType()

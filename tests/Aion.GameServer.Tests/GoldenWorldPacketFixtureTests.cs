@@ -273,7 +273,7 @@ public sealed class GoldenWorldPacketFixtureTests
     /// AionObject._objectId pinned. Java is the oracle.
     /// </summary>
     [Theory]
-    [InlineData("SM_TRADE_IN_LIST.json")]
+    [InlineData("SM_TRADE_IN_LIST.638ed3dd4.json")]
     public void CsharpTradeInListMatchesJavaGoldenFixture(string fixtureFile)
     {
         using var fixture = LoadFixture(fixtureFile);

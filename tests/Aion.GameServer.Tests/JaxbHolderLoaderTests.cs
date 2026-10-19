@@ -1603,10 +1603,10 @@ public sealed class JaxbHolderLoaderTests
         Assert.Equal(203060, t!.GetNpcId());
         Assert.Equal(200, t.GetBuyPriceRate());
         // Nested <tradelist> goods-list refs must NOT be dropped.
-        var tabs = t.GetTradeTablist();
+        var tabs = t.GetTradeTabIds();
         Assert.Equal(4, tabs.Count);
-        Assert.Equal(129, tabs[0].GetId());
-        Assert.Contains(tabs, x => x.GetId() == 450);
+        Assert.Equal(129, tabs[0]);
+        Assert.Contains(450, tabs);
         // Default npc_type (absent) -> NORMAL; nullable save_count (absent) -> null via string proxy.
         Assert.Equal(Model.Templates.Tradelist.TradeNpcType.NORMAL, t.GetTradeNpcType());
         Assert.Null(t.IsSaveCount());

@@ -159,8 +159,7 @@ public sealed record NaturalAbyssCoinArmor(int CoinItemId, int IncomingCoins, in
 		IReadOnlyList<int> vendors = NaturalCoinManifests.VendorsBeside(data, mapId, VendorNpcId, CoinItemId);
 		Func<int, NaturalItem> item = items(vendors.SelectMany(npc => NaturalCoinManifests.Sold(data, npc)));
 		NaturalCoinManifest[] manifests = [.. Tiers.Select(tier => NaturalCoinManifests.For(data, vendors, CoinItemId, tier.Level, rules, item))];
-		int Tab(int itemId) => data.TradeListDataDh.GetTradeListTemplate(manifests[0].VendorNpcId).GetTradeTablist()
-			.Select(entry => entry.GetId()).First(id => data.GoodsListDataDh.GetGoodsListById(id)?.GetItemIdList().Contains(itemId) == true);
+		int Tab(int itemId) => data.TradeListDataDh.GetTradeListTemplate(manifests[0].VendorNpcId).GetTradeTabIds().First(id => data.GoodsListDataDh.GetGoodsListById(id)?.GetItemIdList().Contains(itemId) == true);
 		NaturalCoinPiece weapon = manifests[0].Weapon ?? throw new InvalidDataException($"No coin vendor in Morheim sells the {className} a weapon.");
 		ushort weaponSlot = ItemGroupExtensions.GetItemSubType(Enum.Parse<ItemGroup>(weapon.Group)) == ItemSubType.TWO_HAND ? (ushort)3 : (ushort)1;
 		return ForClass(manifests, Tab(manifests[0].Armor[0].ItemId), Tab(weapon.ItemId), weaponSlot,

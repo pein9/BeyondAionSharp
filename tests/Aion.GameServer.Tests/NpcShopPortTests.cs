@@ -116,9 +116,9 @@ public sealed class NpcShopPortTests
     [InlineData(2, true)]
     public void PurchaseRequiresSlotsForAllAllocatedStacks(int slots, bool accepted)
     {
-        using var s = new Scope(); s.Player.GetInventory().SetLimit(slots);
+        using var s = new Scope(); s.Purchase.tradeNpcType = TradeNpcType.ABYSS; s.Player.GetInventory().SetLimit(slots);
         var buy = new TradeList(); buy.AddItem(162000052, 11);
-        Assert.Equal(accepted, TradeService.PerformBuyTransaction(s.Npc, s.Player, buy, false));
+        Assert.Equal(accepted, TradeService.BuyFromShop(s.Npc, s.Player, buy));
         Assert.Equal(accepted ? 11 : 0, s.Player.GetInventory().GetItemCountByItemId(162000052));
         Assert.Equal(accepted ? 2 : 0, s.Player.GetInventory().GetItemsByItemId(162000052).Count);
     }
@@ -130,9 +130,9 @@ public sealed class NpcShopPortTests
     [InlineData(false, 4, true)]
     public void RepeatedItemRowsShareTheBuyOrSellLimit(bool perPlayer, int maximum, bool accepted)
     {
-        using var s = new Scope(); var limited = s.Limit(perPlayer ? 0 : maximum, perPlayer ? maximum : 0);
+        using var s = new Scope(); s.Purchase.tradeNpcType = TradeNpcType.ABYSS; var limited = s.Limit(perPlayer ? 0 : maximum, perPlayer ? maximum : 0);
         var buy = new TradeList(); buy.AddItem(162000052, 2); buy.AddItem(162000052, 2);
-        Assert.Equal(accepted, TradeService.PerformBuyTransaction(s.Npc, s.Player, buy, false));
+        Assert.Equal(accepted, TradeService.BuyFromShop(s.Npc, s.Player, buy));
         Assert.Equal(accepted ? 4 : 0, s.Player.GetInventory().GetItemCountByItemId(162000052));
         Assert.Equal(perPlayer && accepted ? 4 : 0, limited.GetBuyCount(s.Player.GetObjectId()));
         Assert.Equal(perPlayer ? 0 : maximum - (accepted ? 4 : 0), limited.GetSellLimit());
@@ -175,7 +175,7 @@ public sealed class NpcShopPortTests
         }
     }
 
-    private sealed class Scope : IDisposable
+    internal sealed class Scope : IDisposable
     {
         internal PvpExpPortTests.Scope Common { get; } = new();
         internal Player Player { get; }

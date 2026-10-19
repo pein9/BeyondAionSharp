@@ -177,7 +177,7 @@ public sealed class RealStaticDataLoadIntegrationTests
 		Assert.True(sd.TradeListDataDh.Size() > 0, "TradeListDataDh empty after boot");
 		var tl = sd.TradeListDataDh.GetTradeListTemplate(203060);
 		Assert.NotNull(tl);
-		Assert.Equal(4, tl!.GetTradeTablist().Count);
+		Assert.Equal(4, tl!.GetTradeTabIds().Count);
 
 		// PET_DATA: faithful PetData loads pets/pets.xml at boot.
 		Assert.True(sd.PetDataDh.Size() > 0, "PetDataDh empty after boot");

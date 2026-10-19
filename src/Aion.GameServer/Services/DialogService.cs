@@ -80,21 +80,12 @@ public class DialogService
                         break;
                     }
                     int tradeModifier = tradeListTemplate.GetSellPriceRate();
-                    int legionLevel = player.GetLegion() == null ? 0 : player.GetLegion().GetLegionLevel();
-                    bool hasAnythingToSell = false;
-                    foreach (TradeListTemplate.TradeTab tab in tradeListTemplate.GetTradeTablist())
-                    {
-                        GoodsList goodsList = DataManager.GOODSLIST_DATA.GetGoodsListById(tab.GetId());
-                        if (goodsList == null || goodsList.GetLegionLevel() > legionLevel)
-                            continue;
-                        hasAnythingToSell = true;
-                        break;
-                    }
-                    if (hasAnythingToSell)
-                        PacketSendUtility.SendPacket(player,
-                            new SM_TRADELIST(player, npc, tradeListTemplate, Aion.GameServer.Services.Trade.PricesService.GetVendorBuyModifier() * tradeModifier / 100));
-                    else
+                    List<int> tradeTabIds = TradeService.GetTradeListTabIds(tradeListTemplate, player);
+                    if (tradeTabIds.Count == 0)
                         PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_BUY_SELL_HE_DOES_NOT_SELL_ITEM(npc.GetObjectTemplate().GetL10n()));
+                    else
+                        PacketSendUtility.SendPacket(player, new SM_TRADELIST(player, npc, tradeListTemplate.GetTradeNpcType(), tradeTabIds,
+                            Aion.GameServer.Services.Trade.PricesService.GetVendorBuyModifier() * tradeModifier / 100));
                     break;
                 }
                 case DEPOSIT_CHAR_WAREHOUSE: // warehouse (2.5)
