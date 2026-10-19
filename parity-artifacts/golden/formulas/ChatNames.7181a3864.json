@@ -1,0 +1,72 @@
+{
+  "source": "Java",
+  "sourceJavaCommit": "7181a3864a404a4d78342bf6e84365e3af731c91",
+  "sourceSha256": "6b0a31df71fdcffb20b000e10e25e06426b729c19bfffcbe36f580a0ffa549cc",
+  "captureBoundary": "Four exact static methods, Locale.US; UTF-8/base64 transport only.",
+  "cases": [
+    {
+      "id": 100200836,
+      "playerName": "Ownername",
+      "item": "[item:100200836]",
+      "itemName": "[item_ex:100200836;Ownername]",
+      "recipe": "[recipe:100200836]",
+      "recipeName": "[recipe_ex:100200836;Ownername]"
+    },
+    {
+      "id": 155006741,
+      "playerName": "Ownername",
+      "item": "[item:155006741]",
+      "itemName": "[item_ex:155006741;Ownername]",
+      "recipe": "[recipe:155006741]",
+      "recipeName": "[recipe_ex:155006741;Ownername]"
+    },
+    {
+      "id": 0,
+      "playerName": "",
+      "item": "[item:0]",
+      "itemName": "[item_ex:0;]",
+      "recipe": "[recipe:0]",
+      "recipeName": "[recipe_ex:0;]"
+    },
+    {
+      "id": -2147483648,
+      "playerName": null,
+      "item": "[item:-2147483648]",
+      "itemName": "[item_ex:-2147483648;null]",
+      "recipe": "[recipe:-2147483648]",
+      "recipeName": "[recipe_ex:-2147483648;null]"
+    },
+    {
+      "id": 2147483647,
+      "playerName": "Raël玩家🚀",
+      "item": "[item:2147483647]",
+      "itemName": "[item_ex:2147483647;Raël玩家🚀]",
+      "recipe": "[recipe:2147483647]",
+      "recipeName": "[recipe_ex:2147483647;Raël玩家🚀]"
+    },
+    {
+      "id": 1,
+      "playerName": "a;b]c",
+      "item": "[item:1]",
+      "itemName": "[item_ex:1;a;b]c]",
+      "recipe": "[recipe:1]",
+      "recipeName": "[recipe_ex:1;a;b]c]"
+    },
+    {
+      "id": 9001,
+      "playerName": null,
+      "item": "[item:9001]",
+      "itemName": "[item_ex:9001;null]",
+      "recipe": "[recipe:9001]",
+      "recipeName": "[recipe_ex:9001;null]"
+    },
+    {
+      "id": 9001,
+      "playerName": "",
+      "item": "[item:9001]",
+      "itemName": "[item_ex:9001;]",
+      "recipe": "[recipe:9001]",
+      "recipeName": "[recipe_ex:9001;]"
+    }
+  ]
+}

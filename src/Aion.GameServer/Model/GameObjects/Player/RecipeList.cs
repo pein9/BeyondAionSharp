@@ -67,7 +67,7 @@ public class RecipeList
                 productionLimitByRecipeId.Remove(recipeId);
                 PlayerRecipesDAO.DelRecipe(player.GetObjectId(), recipeId);
                 PacketSendUtility.SendPacket(player, new SM_RECIPE_DELETE(recipeId));
-                PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_COMBINE_USAGE_OVER(ChatUtil.Recipe(recipeId, player)));
+                PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_COMBINE_USAGE_OVER(ChatUtil.RecipeName(recipeId, player.GetName())));
             }
         }
     }

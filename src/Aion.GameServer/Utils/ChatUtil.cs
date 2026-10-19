@@ -61,13 +61,14 @@ public static class ChatUtil
 		return $"[item:{itemId}]";
 	}
 
-	// Java parity: utils/ChatUtil.itemName(int).
-	public static string ItemName(int itemId)
+	/// <summary>A chat tag showing the localized item name. The player name identifies the owner of named crafted items.</summary>
+	public static string ItemName(int itemId, string? playerName)
 	{
-		return $"[item_ex:{itemId}]";
+		return $"[item_ex:{itemId};{playerName ?? "null"}]";
 	}
 
-	public static string Recipe(int recipeId, Aion.GameServer.Model.GameObjects.Players.Player player) => $"[recipe_ex:{recipeId};{player.GetName()}]";
+	/// <summary>A chat tag showing the localized recipe name. The player name identifies the owner of named recipes.</summary>
+	public static string RecipeName(int recipeId, string? playerName) => $"[recipe_ex:{recipeId};{playerName ?? "null"}]";
 
 	// Java parity: utils/ChatUtil.recipe(int).
 	public static string Recipe(int recipeId)

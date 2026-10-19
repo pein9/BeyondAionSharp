@@ -61,10 +61,10 @@ public sealed class LimitedRecipeMorphPortTests
         list.DecreaseProductionLimit(s.Player, 9001); Assert.False(list.IsRecipePresent(9001));
         Assert.Equal(2, s.Connection.Packets.Length);
         Assert.IsType<SM_RECIPE_DELETE>(s.Connection.Packets[0]);
-        Assert.Equal(Payload(SM_SYSTEM_MESSAGE.STR_COMBINE_USAGE_OVER(ChatUtil.Recipe(9001, s.Player))), Payload(s.Connection.Packets[1]));
+        Assert.Equal(Payload(SM_SYSTEM_MESSAGE.STR_COMBINE_USAGE_OVER(ChatUtil.RecipeName(9001, s.Player.GetName()))), Payload(s.Connection.Packets[1]));
         s.Connection.Clear(); list.DecreaseProductionLimit(s.Player, 9002); list.DecreaseProductionLimit(s.Player, 9999);
         Assert.Equal(0, list.GetRecipes()[9002]); Assert.Empty(s.Connection.Packets);
-        Assert.Equal($"[recipe_ex:9001;{s.Player.GetName()}]", ChatUtil.Recipe(9001, s.Player));
+        Assert.Equal($"[recipe_ex:9001;{s.Player.GetName()}]", ChatUtil.RecipeName(9001, s.Player.GetName()));
         Assert.Equal("[recipe:9001]", ChatUtil.Recipe(9001));
     }
 
