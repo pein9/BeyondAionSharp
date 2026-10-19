@@ -1,0 +1,568 @@
+{
+  "source": "Java",
+  "sourceJavaCommit": "e2b0c35e2bd364366821db65cdfa274a38aa71b8",
+  "sourceHashes": {
+    "game-server/src/com/aionemu/gameserver/model/trade/TradeList.java": "eacf2333ee4588e64bb516de8cf5b2fea99f005513d1a03d6b5c32c5fbe86f71",
+    "game-server/src/com/aionemu/gameserver/network/aion/clientpackets/CM_BUY_ITEM.java": "a63c19f2d516105c8bdd8c2ce7688a07e36ebc3d5dc59d74158ba07833cc6eb9"
+  },
+  "captureBoundary": "Exact TradeList class, CM_BUY_ITEM.readImpl and both enums. Player/price/inventory/audit boundary doubles; repurchase eligibility fixed to object401. No runImpl capture.",
+  "packetCases": [
+    {
+      "bodyHex": "3300000000000100910100000100000000000000",
+      "audit": false,
+      "action": "PRIVATE_STORE_BUY",
+      "rows": "401:1",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000000000200910100000100000000000000910100000200000000000000",
+      "audit": false,
+      "action": "PRIVATE_STORE_BUY",
+      "rows": "401:1|401:2",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000000000100910100000000000000000000",
+      "audit": true,
+      "action": "PRIVATE_STORE_BUY",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000000000100000000000100000000000000",
+      "audit": false,
+      "action": "PRIVATE_STORE_BUY",
+      "rows": "0:1",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000000000100FFFFFFFF0100000000000000",
+      "audit": false,
+      "action": "PRIVATE_STORE_BUY",
+      "rows": "-1:1",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000001000100910100000100000000000000",
+      "audit": false,
+      "action": "SHOP_SELL",
+      "rows": "401:1",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000001000200910100000100000000000000910100000200000000000000",
+      "audit": true,
+      "action": "SHOP_SELL",
+      "rows": "401:1",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000001000100910100000000000000000000",
+      "audit": true,
+      "action": "SHOP_SELL",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000001000100000000000100000000000000",
+      "audit": true,
+      "action": "SHOP_SELL",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000001000100FFFFFFFF0100000000000000",
+      "audit": true,
+      "action": "SHOP_SELL",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000002000100910100000100000000000000",
+      "audit": false,
+      "action": "SHOP_REPURCHASE",
+      "rows": "",
+      "repurchases": "[401]"
+    },
+    {
+      "bodyHex": "3300000002000200910100000100000000000000910100000200000000000000",
+      "audit": true,
+      "action": "SHOP_REPURCHASE",
+      "rows": "",
+      "repurchases": "[401]"
+    },
+    {
+      "bodyHex": "3300000002000100910100000000000000000000",
+      "audit": true,
+      "action": "SHOP_REPURCHASE",
+      "rows": "",
+      "repurchases": "[]"
+    },
+    {
+      "bodyHex": "3300000002000100000000000100000000000000",
+      "audit": true,
+      "action": "SHOP_REPURCHASE",
+      "rows": "",
+      "repurchases": "[]"
+    },
+    {
+      "bodyHex": "3300000002000100FFFFFFFF0100000000000000",
+      "audit": true,
+      "action": "SHOP_REPURCHASE",
+      "rows": "",
+      "repurchases": "[]"
+    },
+    {
+      "bodyHex": "330000000D000100910100000100000000000000",
+      "audit": false,
+      "action": "SHOP_BUY",
+      "rows": "401:1",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000D000200910100000100000000000000910100000200000000000000",
+      "audit": false,
+      "action": "SHOP_BUY",
+      "rows": "401:1|401:2",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000D000100910100000000000000000000",
+      "audit": true,
+      "action": "SHOP_BUY",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000D000100000000000100000000000000",
+      "audit": true,
+      "action": "SHOP_BUY",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000D000100FFFFFFFF0100000000000000",
+      "audit": true,
+      "action": "SHOP_BUY",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000E000100910100000100000000000000",
+      "audit": false,
+      "action": "ABYSS_SHOP_BUY",
+      "rows": "401:1",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000E000200910100000100000000000000910100000200000000000000",
+      "audit": false,
+      "action": "ABYSS_SHOP_BUY",
+      "rows": "401:1|401:2",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000E000100910100000000000000000000",
+      "audit": true,
+      "action": "ABYSS_SHOP_BUY",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000E000100000000000100000000000000",
+      "audit": true,
+      "action": "ABYSS_SHOP_BUY",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000E000100FFFFFFFF0100000000000000",
+      "audit": true,
+      "action": "ABYSS_SHOP_BUY",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000F000100910100000100000000000000",
+      "audit": false,
+      "action": "REWARD_SHOP_BUY",
+      "rows": "401:1",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000F000200910100000100000000000000910100000200000000000000",
+      "audit": false,
+      "action": "REWARD_SHOP_BUY",
+      "rows": "401:1|401:2",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000F000100910100000000000000000000",
+      "audit": true,
+      "action": "REWARD_SHOP_BUY",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000F000100000000000100000000000000",
+      "audit": true,
+      "action": "REWARD_SHOP_BUY",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000F000100FFFFFFFF0100000000000000",
+      "audit": true,
+      "action": "REWARD_SHOP_BUY",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000010000100910100000100000000000000",
+      "audit": false,
+      "action": "ABYSS_KINAH_SHOP_BUY",
+      "rows": "401:1",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000010000200910100000100000000000000910100000200000000000000",
+      "audit": false,
+      "action": "ABYSS_KINAH_SHOP_BUY",
+      "rows": "401:1|401:2",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000010000100910100000000000000000000",
+      "audit": true,
+      "action": "ABYSS_KINAH_SHOP_BUY",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000010000100000000000100000000000000",
+      "audit": true,
+      "action": "ABYSS_KINAH_SHOP_BUY",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000010000100FFFFFFFF0100000000000000",
+      "audit": true,
+      "action": "ABYSS_KINAH_SHOP_BUY",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000011000100910100000100000000000000",
+      "audit": false,
+      "action": "PET_SELL",
+      "rows": "401:1",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000011000200910100000100000000000000910100000200000000000000",
+      "audit": true,
+      "action": "PET_SELL",
+      "rows": "401:1",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000011000100910100000000000000000000",
+      "audit": true,
+      "action": "PET_SELL",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000011000100000000000100000000000000",
+      "audit": true,
+      "action": "PET_SELL",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000011000100FFFFFFFF0100000000000000",
+      "audit": true,
+      "action": "PET_SELL",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000003000100910100000100000000000000",
+      "audit": false,
+      "action": null,
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000003000200910100000100000000000000910100000200000000000000",
+      "audit": false,
+      "action": null,
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000003000100910100000000000000000000",
+      "audit": false,
+      "action": null,
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000003000100000000000100000000000000",
+      "audit": false,
+      "action": null,
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000003000100FFFFFFFF0100000000000000",
+      "audit": false,
+      "action": null,
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "33000000FF000100910100000100000000000000",
+      "audit": false,
+      "action": null,
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "33000000FF000200910100000100000000000000910100000200000000000000",
+      "audit": false,
+      "action": null,
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "33000000FF000100910100000000000000000000",
+      "audit": false,
+      "action": null,
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "33000000FF000100000000000100000000000000",
+      "audit": false,
+      "action": null,
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "33000000FF000100FFFFFFFF0100000000000000",
+      "audit": false,
+      "action": null,
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000DFF010091010000204E000000000000",
+      "audit": false,
+      "action": "SHOP_BUY",
+      "rows": "401:20000",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000D00010091010000214E000000000000",
+      "audit": true,
+      "action": "SHOP_BUY",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000100010091010000FFFFFFFFFFFFFFFF",
+      "audit": true,
+      "action": "SHOP_SELL",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000D002400910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000",
+      "audit": false,
+      "action": "SHOP_BUY",
+      "rows": "401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1|401:1",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "330000000D002500910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000",
+      "audit": true,
+      "action": "SHOP_BUY",
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "33000000FF002500910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000910100000100000000000000",
+      "audit": false,
+      "action": null,
+      "rows": "",
+      "repurchases": ""
+    },
+    {
+      "bodyHex": "3300000002000100920100000100000000000000",
+      "audit": false,
+      "action": "SHOP_REPURCHASE",
+      "rows": "",
+      "repurchases": "[]"
+    }
+  ],
+  "apCases": [
+    {
+      "price": 17,
+      "count": 2,
+      "modifier": 75,
+      "vendor": 83,
+      "available": 100,
+      "rows": 1,
+      "total": 21,
+      "accepted": true,
+      "messages": 0
+    },
+    {
+      "price": 2147483647,
+      "count": 20000,
+      "modifier": 100,
+      "vendor": 100,
+      "available": 2147483647,
+      "rows": 1,
+      "total": 42949672940000,
+      "accepted": false,
+      "messages": 1
+    },
+    {
+      "price": 2000000000,
+      "count": 1,
+      "modifier": 100,
+      "vendor": 100,
+      "available": 2147483647,
+      "rows": 2,
+      "total": 4000000000,
+      "accepted": false,
+      "messages": 1
+    },
+    {
+      "price": 2147483647,
+      "count": 1,
+      "modifier": 100,
+      "vendor": 100,
+      "available": 2147483647,
+      "rows": 1,
+      "total": 2147483647,
+      "accepted": true,
+      "messages": 0
+    },
+    {
+      "price": 1,
+      "count": 1,
+      "modifier": 1,
+      "vendor": 1,
+      "available": 0,
+      "rows": 1,
+      "total": 0,
+      "accepted": true,
+      "messages": 0
+    },
+    {
+      "price": 2147483647,
+      "count": 20000,
+      "modifier": 2147483647,
+      "vendor": 2147483647,
+      "available": 2147483647,
+      "rows": 1,
+      "total": -92233720368547758,
+      "accepted": true,
+      "messages": 0
+    },
+    {
+      "price": -2147483648,
+      "count": 20000,
+      "modifier": 2147483647,
+      "vendor": 2147483647,
+      "available": 0,
+      "rows": 1,
+      "total": 92233720368547758,
+      "accepted": false,
+      "messages": 1
+    },
+    {
+      "price": 2147483647,
+      "count": 9223372036854775807,
+      "modifier": 2,
+      "vendor": 100,
+      "available": 2147483647,
+      "rows": 2,
+      "total": -85899344,
+      "accepted": true,
+      "messages": 0
+    },
+    {
+      "price": 100,
+      "count": 1,
+      "modifier": -100,
+      "vendor": 100,
+      "available": 0,
+      "rows": 1,
+      "total": -100,
+      "accepted": true,
+      "messages": 0
+    },
+    {
+      "price": 0,
+      "count": 20000,
+      "modifier": 100,
+      "vendor": 100,
+      "available": 0,
+      "rows": 1,
+      "total": 0,
+      "accepted": true,
+      "messages": 0
+    }
+  ],
+  "castCases": [
+    {
+      "bits": 9221120237041090560,
+      "value": 0
+    },
+    {
+      "bits": 9218868437227405312,
+      "value": 9223372036854775807
+    },
+    {
+      "bits": -4503599627370496,
+      "value": -9223372036854775808
+    },
+    {
+      "bits": 0,
+      "value": 0
+    },
+    {
+      "bits": -9223372036854775808,
+      "value": 0
+    },
+    {
+      "bits": 4611235658464650854,
+      "value": 1
+    },
+    {
+      "bits": -4612136378390124954,
+      "value": -1
+    },
+    {
+      "bits": 4890909195324358656,
+      "value": 9223372036854775807
+    },
+    {
+      "bits": -4332462841530417152,
+      "value": -9223372036854775808
+    },
+    {
+      "bits": 5055640609639927018,
+      "value": 9223372036854775807
+    },
+    {
+      "bits": -4167731427214848790,
+      "value": -9223372036854775808
+    }
+  ]
+}

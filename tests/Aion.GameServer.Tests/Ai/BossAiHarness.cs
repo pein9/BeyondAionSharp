@@ -1062,6 +1062,9 @@ public sealed class BossAiHarness : IDisposable
 			SetHolder(staticData, nameof(StaticData.ZoneInfo), zoneData);
 			// Every world instance now checks configured vortex zones while creating its own zone list.
 			SetHolder(staticData, nameof(StaticData.VortexDataDh), new VortexData());
+			// StaticData is allocated without its constructor here; retain the production defaults for merchant services.
+			SetHolder(staticData, nameof(StaticData.TradeListDataDh), new TradeListData());
+			SetHolder(staticData, nameof(StaticData.GoodsListDataDh), new GoodsListData());
 
 			var worldMaps = new WorldMapsData();
 			worldMaps.SetData(new List<WorldMapTemplate>

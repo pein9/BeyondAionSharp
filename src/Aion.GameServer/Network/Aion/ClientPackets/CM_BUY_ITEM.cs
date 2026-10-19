@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -16,12 +15,8 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/CM_BUY_ITEM (orz, ATracer, Simple, xTz). Buy/sell/repurchase against private store, shop, abyss/reward shop, or merchant pet. TradeService/PrivateStoreService/RepurchaseService red-tolerated.</summary>
 public class CM_BUY_ITEM : AionClientPacket
 {
-    private static readonly ILogger log = AionLog.For(nameof(CM_BUY_ITEM));
     private int sellerObjId;
-    private short tradeActionId;
-    private int amount;
-    private int itemId;
-    private long count;
+    private TradeAction? tradeAction;
     private bool isAudit;
     private TradeList tradeList;
     private RepurchaseList repurchaseList;
@@ -35,16 +30,19 @@ public class CM_BUY_ITEM : AionClientPacket
     {
         Player player = GetConnection().GetActivePlayer();
         sellerObjId = ReadD();
-        tradeActionId = ReadH();
-        amount = ReadUH(); // total no of items
+        tradeAction = FromId(ReadUC());
+        ReadC(); // unused
+        int amount = ReadUH(); // total no of items
 
-        if (amount < 0 || amount > 36)
+        if (tradeAction == null)
+            return;
+        if (amount > 36)
         {
             isAudit = true;
             AuditLogger.Log(player, "might be abusing CM_BUY_ITEM amount: " + amount);
             return;
         }
-        if (tradeActionId == 2)
+        if (tradeAction == TradeAction.SHOP_REPURCHASE)
         {
             repurchaseList = new RepurchaseList(sellerObjId);
         }
@@ -53,34 +51,30 @@ public class CM_BUY_ITEM : AionClientPacket
             tradeList = new TradeList(sellerObjId);
         }
 
+        var itemObjectIds = new HashSet<int>();
         for (int i = 0; i < amount; i++)
         {
-            itemId = ReadD();
-            count = ReadQ();
+            int entryId = ReadD();
+            long count = ReadQ();
+            EntryType entryType = GetEntryType(tradeAction.Value);
 
             // prevent exploit packets
-            if (count < 0 || (itemId <= 0 && tradeActionId != 0) || count > 20000)
+            if (count <= 0 || (entryId <= 0 && entryType != EntryType.STORE_INDEX) || count > 20000)
             {
                 isAudit = true;
-                AuditLogger.Log(player, "might be abusing CM_BUY_ITEM item: " + itemId + " count: " + count);
+                AuditLogger.Log(player, "might be abusing CM_BUY_ITEM entry: " + entryType + " " + entryId + " was sent with count " + count + " for " + tradeAction);
                 break;
             }
-
-            switch (tradeActionId)
+            if (entryType == EntryType.ITEM_OBJECT_ID && !itemObjectIds.Add(entryId))
             {
-                case 0:// private store (in this case its not itemId/objId, but item index in sellers list...)
-                case 1:// sell to shop
-                case 13:// buy from shop
-                case 14:// buy from abyss shop
-                case 15:// buy from reward shop
-                case 16:// buy from general shop
-                case 17:// sell to pet
-                    tradeList.AddItem(itemId, count);
-                    break;
-                case 2:// repurchase
-                    repurchaseList.AddRepurchaseItem(player, itemId, count);
-                    break;
+                isAudit = true;
+                AuditLogger.Log(player, "might be abusing CM_BUY_ITEM: item object ID " + entryId + " was sent more than once for " + tradeAction);
+                break;
             }
+            if (tradeAction == TradeAction.SHOP_REPURCHASE)
+                repurchaseList.AddRepurchaseItem(player, entryId, count);
+            else
+                tradeList.AddItem(entryId, count);
         }
     }
 
@@ -88,7 +82,7 @@ public class CM_BUY_ITEM : AionClientPacket
     {
         Player player = GetConnection().GetActivePlayer();
 
-        if (isAudit || player == null)
+        if (tradeAction == null || isAudit || player == null)
             return;
 
         VisibleObject target = player.GetKnownList().GetObject(sellerObjId);
@@ -96,53 +90,66 @@ public class CM_BUY_ITEM : AionClientPacket
         if (target == null)
             return;
 
-        if (target is Player targetPlayer && tradeActionId == 0)
+        if (target is Player targetPlayer && tradeAction == TradeAction.PRIVATE_STORE_BUY)
         {
             PrivateStoreService.SellStoreItem(targetPlayer, player, tradeList);
         }
         else if (target is Npc npc)
         {
-            if (!DialogService.IsInteractionAllowed(player, npc))
-            {
-                AuditLogger.Log(player, "might be abusing CM_BUY_ITEM: no right trading with " + npc);
-                return;
-            }
-            TradeListTemplate tradeTemplate;
-            switch (tradeActionId)
-            {
-                case 1: // sell to shop
-                    if (npc.CanBuy() || npc.CanPurchase())
-                    {
-                        tradeTemplate = DataManager.TRADE_LIST_DATA.GetPurchaseTemplate(npc.GetNpcId());
-                        if (tradeTemplate != null && tradeTemplate.GetTradeNpcType() == TradeNpcType.ABYSS)
-                            TradeService.PerformSellForAPToShop(player, tradeList, tradeTemplate);
-                        else
-                            TradeService.PerformSellToShop(player, tradeList, tradeTemplate);
-                    }
-                    break;
-                case 2: // repurchase
-                    if (npc.CanBuy())
-                        RepurchaseService.GetInstance().RepurchaseFromShop(player, repurchaseList);
-                    break;
-                case 13: // buy from shop
-                case 14: // buy from abyss shop
-                case 15: // reward shop
-                case 16: // abyss_kinah shop
-                    if (npc.CanSell())
-                        TradeService.PerformBuyFromShop(npc, player, tradeList);
-                    break;
-                default:
-                    log.LogWarning("Unknown shop action: {TradeActionId}", tradeActionId);
-                    break;
-            }
+            TradeWithNpc(player, npc);
         }
-        else if (target is Pet)
+        else if (target is Pet pet && pet.GetMaster() == player && tradeAction == TradeAction.PET_SELL)
         {
-            PetFunction pf = ((Pet)target).GetObjectTemplate().GetPetFunction(PetFunctionType.MERCHANT);
-            if (pf != null && tradeActionId == 17)
+            PetFunction pf = pet.GetObjectTemplate().GetPetFunction(PetFunctionType.MERCHANT);
+            if (pf != null)
             {
                 TradeService.PerformSellToShop(player, tradeList, null, pf.GetRatePrice());
             }
         }
     }
+
+    private void TradeWithNpc(Player player, Npc npc)
+    {
+        if (!DialogService.IsInteractionAllowed(player, npc))
+        {
+            AuditLogger.Log(player, "might be abusing CM_BUY_ITEM: no right trading with " + npc);
+            return;
+        }
+        switch (tradeAction)
+        {
+            case TradeAction.SHOP_SELL:
+                if (npc.CanBuy() || npc.CanPurchase())
+                {
+                    TradeListTemplate template = DataManager.TRADE_LIST_DATA.GetPurchaseTemplate(npc.GetNpcId());
+                    if (template != null && template.GetTradeNpcType() == TradeNpcType.ABYSS)
+                        TradeService.PerformSellForAPToShop(player, tradeList, template);
+                    else
+                        TradeService.PerformSellToShop(player, tradeList, template);
+                }
+                break;
+            case TradeAction.SHOP_REPURCHASE:
+                if (npc.CanBuy()) RepurchaseService.GetInstance().RepurchaseFromShop(player, repurchaseList);
+                break;
+            case TradeAction.SHOP_BUY:
+            case TradeAction.ABYSS_SHOP_BUY:
+            case TradeAction.REWARD_SHOP_BUY:
+            case TradeAction.ABYSS_KINAH_SHOP_BUY:
+                if (npc.CanSell()) TradeService.PerformBuyFromShop(npc, player, tradeList);
+                break;
+        }
+    }
+
+    private enum TradeAction
+    {
+        PRIVATE_STORE_BUY = 0, SHOP_SELL = 1, SHOP_REPURCHASE = 2, SHOP_BUY = 13,
+        ABYSS_SHOP_BUY = 14, REWARD_SHOP_BUY = 15, ABYSS_KINAH_SHOP_BUY = 16, PET_SELL = 17
+    }
+    private enum EntryType { STORE_INDEX, ITEM_ID, ITEM_OBJECT_ID }
+    private static TradeAction? FromId(int id) => id is 0 or 1 or 2 or 13 or 14 or 15 or 16 or 17 ? (TradeAction)id : null;
+    private static EntryType GetEntryType(TradeAction action) => action switch
+    {
+        TradeAction.PRIVATE_STORE_BUY => EntryType.STORE_INDEX,
+        TradeAction.SHOP_SELL or TradeAction.SHOP_REPURCHASE or TradeAction.PET_SELL => EntryType.ITEM_OBJECT_ID,
+        _ => EntryType.ITEM_ID
+    };
 }

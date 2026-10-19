@@ -3,6 +3,15 @@ namespace Aion.GameServer.Utils;
 /// <summary>Java numeric helpers whose semantics differ from the .NET defaults.</summary>
 public static class JavaMath
 {
+	/// <summary>Matches Java's double-to-long cast: truncate, saturate overflow, and map NaN to zero.</summary>
+	public static long ToLong(double value)
+	{
+		if (double.IsNaN(value)) return 0;
+		if (value <= long.MinValue) return long.MinValue;
+		if (value >= long.MaxValue) return long.MaxValue;
+		return (long)value;
+	}
+
 	/// <summary>Matches Java's float-to-int cast: truncate toward zero, saturate infinities/overflow, and map NaN to zero.</summary>
 	public static int ToInt(float value)
 	{

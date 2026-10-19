@@ -42,6 +42,7 @@ public sealed class HarnessHolderInventoryTests
 		"AbsoluteStatsDataDh", "AiDataDh", "BattleCycleTableDh", "CustomNpcDropDh",
 		"DeathSpawnTableDh", "WakeIdleTableDh",
 		"GuardAnswerDataDh", "Materials",
+		"TradeListDataDh", "GoodsListDataDh",
 		"NpcDataDh", "NpcSkillDataDh", "SkillCategoryDataDh",
 		"PlayerExperienceTable", "SkillDataDh", "TribeRelations", "VortexDataDh", "WalkerDataDh", "WorldMaps2", "ZoneInfo",
 	];
@@ -51,6 +52,8 @@ public sealed class HarnessHolderInventoryTests
 	// the catch that only logs -- so the death event vanished. They are the reason this list grew, and
 	// this pin is what made the growth visible rather than incidental.
 	// VortexDataDh is empty for AI-only worlds; per-instance zone construction now checks it every time.
+	// Merchant services capture these two holders once. Their constructors provide usable empty lookup maps,
+	// matching production; shop tests add and restore only their own entries in those maps.
 
 	[Fact]
 	public void TheHarnessProvidesExactlyTheHoldersItIsKnownTo()

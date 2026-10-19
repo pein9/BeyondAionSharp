@@ -29,18 +29,28 @@ public class TradeService
     private static readonly TradeListData tradeListData = DataManager.TRADE_LIST_DATA;
     private static readonly GoodsListData goodsListData = DataManager.GOODSLIST_DATA;
 
-    private static bool CanBuyLimitItem(Npc npc, Player player, TradeItem tradeItem)
+    private static bool CanBuyLimitItem(Npc npc, Player player, int itemId, long count)
     {
-        LimitedItem item = LimitedItemTradeService.GetInstance().GetLimitedItem(tradeItem.GetItemId(), npc.GetNpcId());
+        LimitedItem item = LimitedItemTradeService.GetInstance().GetLimitedItem(itemId, npc.GetNpcId());
         if (item != null)
         {
-            if (item.GetDefaultSellLimit() > 0 && item.GetSellLimit() - tradeItem.GetCount() < 0)
+            if (item.GetDefaultSellLimit() > 0 && item.GetSellLimit() - count < 0)
                 return false;
-            if (item.GetBuyLimit() > 0 && item.GetBuyCount(player.GetObjectId()) + tradeItem.GetCount() > item.GetBuyLimit())
+            if (item.GetBuyLimit() > 0 && item.GetBuyCount(player.GetObjectId()) + count > item.GetBuyLimit())
                 return false;
         }
         return true;
     }
+
+    private static bool ContainsItem(TradeListTemplate template, Func<int, GoodsList> goodsListById, int itemId)
+    {
+        foreach (var tab in template.GetTradeTablist())
+            if (goodsListById(tab.GetId()).GetItemIdList().Contains(itemId))
+                return true;
+        return false;
+    }
+
+    private readonly record struct Sale(Item Item, long Count, long SellReward);
 
     public static bool PerformBuyFromShop(Npc npc, Player player, TradeList tradeList)
     {
@@ -105,16 +115,25 @@ public class TradeService
         }
 
         // 4. check free slots
-        if (freeSlots < tradeList.Size())
+        long requiredSlots = 0;
+        foreach (TradeItem tradeItem in tradeList.GetTradeItems())
+        {
+            long maxStackCount = tradeItem.GetItemTemplate().GetMaxStackCount();
+            requiredSlots += (tradeItem.GetCount() + maxStackCount - 1) / maxStackCount;
+        }
+        if (freeSlots < requiredSlots)
         {
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_FULL_INVENTORY());
             return false;
         }
 
         // 5. check sell limits
+        var countByItemId = new Dictionary<int, long>();
         foreach (TradeItem tradeItem in tradeList.GetTradeItems())
+            countByItemId[tradeItem.GetItemId()] = countByItemId.GetValueOrDefault(tradeItem.GetItemId()) + tradeItem.GetCount();
+        foreach (var entry in countByItemId)
         {
-            if (!CanBuyLimitItem(npc, player, tradeItem))
+            if (!CanBuyLimitItem(npc, player, entry.Key, entry.Value))
             {
                 PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_LIMITED_BUYING_CANT_SELECT_NO_ITEMS());
                 return false;
@@ -124,7 +143,7 @@ public class TradeService
         // 6. subtract all costs
         long tradeListPrice = tradeList.GetRequiredKinah();
         if (tradeList.GetRequiredAp() > 0)
-            AbyssPointsService.AddAp(player, -tradeList.GetRequiredAp());
+            AbyssPointsService.AddAp(player, unchecked((int)-tradeList.GetRequiredAp()));
 
         if (useKinah && tradeListPrice > 0)
             if (!inventory.TryDecreaseKinah(tradeListPrice))
@@ -190,8 +209,8 @@ public class TradeService
             return false;
 
         Storage inventory = player.GetInventory();
-        long kinahReward = 0;
-        List<Item> items = new List<Item>();
+        // Validate every row before any inventory or daily-limit changes.
+        var sales = new List<Sale>();
         foreach (TradeItem tradeItem in tradeList.GetTradeItems())
         {
             long count = tradeItem.GetCount();
@@ -203,18 +222,7 @@ public class TradeService
 
             if (purchaseTemplate != null)
             {
-                int itemId = item.GetItemId();
-                bool valid = false;
-                foreach (TradeListTemplate.TradeTab tab in purchaseTemplate.GetTradeTablist())
-                {
-                    GoodsList goodList = goodsListData.GetGoodsPurchaseListById(tab.GetId());
-                    if (goodList.GetItemIdList().Contains(itemId))
-                    {
-                        valid = true;
-                        break;
-                    }
-                }
-                if (!valid)
+                if (!ContainsItem(purchaseTemplate, goodsListData.GetGoodsPurchaseListById, item.GetItemId()))
                     return false;
                 sellReward = (long)(item.GetItemTemplate().GetPrice() * purchaseTemplate.GetBuyPriceRate() / 100D);
             }
@@ -228,30 +236,36 @@ public class TradeService
                 sellReward = PricesService.GetSellReward(item.GetItemTemplate().GetPrice(), sellModifier);
             }
 
-            count = PlayerLimitService.UpdateSellLimit(player, sellReward, count);
-            if (count == 0)
-                break;
-
-            long realReward = sellReward * count;
-            Item repurchaseItem;
-            if (item.GetItemCount() - count < 0)
+            if (count > item.GetItemCount())
             {
                 AuditLogger.Log(player, "tried to sell more items to npc than he has");
                 return false;
             }
-            else if (item.GetItemCount() - count == 0)
+            sales.Add(new Sale(item, count, sellReward));
+        }
+
+        long kinahReward = 0;
+        var items = new List<Item>();
+        foreach (var sale in sales)
+        {
+            Item item = sale.Item;
+            long count = PlayerLimitService.UpdateSellLimit(player, sale.SellReward, sale.Count);
+            if (count == 0)
+                break;
+
+            long realReward = sale.SellReward * count;
+            Item repurchaseItem;
+            if (item.GetItemCount() == count)
             {
-                inventory.Delete(item, ItemPacketService.ItemDeleteType.SELL); // need to be here to avoid exploit by sending packet with many items with same unique ids
+                inventory.Delete(item, ItemPacketService.ItemDeleteType.SELL);
                 repurchaseItem = item;
             }
-            else if (item.GetItemCount() - count > 0)
+            else
             {
                 repurchaseItem = ItemFactory.NewItem(item.GetItemId(), count);
                 repurchaseItem.SetExpireTime(item.GetExpireTime());
                 inventory.DecreaseItemCount(item, count);
             }
-            else
-                return false;
 
             kinahReward += realReward;
             repurchaseItem.SetRepurchasePrice(realReward);
@@ -283,22 +297,14 @@ public class TradeService
             if (item == null)
                 return false;
 
-            int itemId = item.GetItemId();
-            bool valid = false;
-            foreach (TradeListTemplate.TradeTab tab in purchaseTemplate.GetTradeTablist())
-            {
-                GoodsList goodList = goodsListData.GetGoodsPurchaseListById(tab.GetId());
-                if (goodList.GetItemIdList().Contains(itemId))
-                {
-                    valid = true;
-                    break;
-                }
-            }
-            if (!valid)
+            Acquisition acquisition = item.GetItemTemplate().GetAcquisition();
+            if (acquisition == null)
+                return false;
+            if (!ContainsItem(purchaseTemplate, goodsListData.GetGoodsPurchaseListById, item.GetItemId()))
                 return false;
             if (inventory.DecreaseByObjectId(itemObjectId, count))
             {
-                int requiredAp = item.GetItemTemplate().GetAcquisition().GetRequiredAp();
+                int requiredAp = acquisition.GetRequiredAp();
                 int apToAdd = (int)Math.Floor((requiredAp * purchaseTemplate.GetBuyPriceRate()) / 100F + 0.5f);
                 AbyssPointsService.AddAp(player, apToAdd * (int)count);
             }
@@ -326,17 +332,7 @@ public class TradeService
             return false;
 
         TradeListTemplate tradeInList = tradeListData.GetTradeInListTemplate(npc.GetNpcId());
-        bool valid = false;
-        foreach (TradeListTemplate.TradeTab tab in tradeInList.GetTradeTablist())
-        {
-            GoodsList goodList = goodsListData.GetGoodsInListById(tab.GetId());
-            if (goodList.GetItemIdList().Contains(itemId))
-            {
-                valid = true;
-                break;
-            }
-        }
-        if (!valid)
+        if (!ContainsItem(tradeInList, goodsListData.GetGoodsInListById, itemId))
             return false;
 
         ItemTemplate itemTemplate = DataManager.ITEM_DATA.GetItemTemplate(itemId);

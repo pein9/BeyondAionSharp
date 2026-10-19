@@ -16,7 +16,7 @@ public class TradeList
 
     private long requiredKinah;
 
-    private int requiredAp;
+    private long requiredAp;
 
     private Dictionary<int, long> requiredItems = new();
 
@@ -55,7 +55,7 @@ public class TradeList
 
     public bool CalculateAbyssRewardBuyList(Player player, int modifier)
     {
-        int ap = player.GetAbyssRank().GetAp();
+        long ap = player.GetAbyssRank().GetAp();
 
         this.requiredAp = 0;
         this.requiredItems.Clear();
@@ -67,7 +67,7 @@ public class TradeList
                 continue;
 
             if (aquisition.GetType_() == AcquisitionType.AP || aquisition.GetType_() == AcquisitionType.ABYSS)
-                requiredAp += (int)((aquisition.GetRequiredAp() * tradeItem.GetCount() * modifier / 100.0D) * PricesService.GetVendorBuyModifier()) / 100;
+                requiredAp += JavaMath.ToLong((unchecked(aquisition.GetRequiredAp() * tradeItem.GetCount() * modifier) / 100.0D) * PricesService.GetVendorBuyModifier()) / 100;
 
             int rewardItemId = aquisition.GetItemId();
             if (rewardItemId == 0) // no required item (medals, etc))
@@ -113,7 +113,7 @@ public class TradeList
         return sellerObjId;
     }
 
-    public int GetRequiredAp()
+    public long GetRequiredAp()
     {
         return requiredAp;
     }
