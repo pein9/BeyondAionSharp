@@ -38,23 +38,18 @@ public class _1354PraticalAerobatics : AbstractQuestHandler
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
         if (qs != null && qs.GetStatus() == QuestStatus.START)
         {
-            if (rings[0].Equals(flyingRing))
-                ChangeQuestStep(env, 1, 2);
-            else if (rings[1].Equals(flyingRing))
-                ChangeQuestStep(env, 2, 3);
-            else if (rings[2].Equals(flyingRing))
-                ChangeQuestStep(env, 3, 4);
-            else if (rings[3].Equals(flyingRing))
-                ChangeQuestStep(env, 4, 5);
-            else if (rings[4].Equals(flyingRing))
-                ChangeQuestStep(env, 5, 6);
-            else if (rings[5].Equals(flyingRing))
-                ChangeQuestStep(env, 6, 7);
-            else if (rings[6].Equals(flyingRing))
+            int questVar = qs.GetQuestVarById(0);
+            if (questVar > 0 && questVar <= rings.Length && rings[questVar - 1].Equals(flyingRing))
             {
-                qs.SetQuestVarById(0, 8);
-                ChangeQuestStep(env, 8, 8, true);
-                QuestService.QuestTimerEnd(env);
+                if (questVar == rings.Length)
+                {
+                    ChangeQuestStep(env, questVar, questVar + 1, true);
+                    QuestService.QuestTimerEnd(env);
+                }
+                else
+                {
+                    ChangeQuestStep(env, questVar, questVar + 1);
+                }
             }
             ApplyFlightRingEffect(env);
             return true;
