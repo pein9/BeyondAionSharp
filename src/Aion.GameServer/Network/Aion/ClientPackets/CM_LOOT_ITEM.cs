@@ -26,7 +26,7 @@ public class CM_LOOT_ITEM : AionClientPacket
     protected override void RunImpl()
     {
         Player player = GetConnection().GetActivePlayer();
-        if (player == null)
+        if (player == null || player.GetLootingNpcOid() != targetObjectId)
             return;
         DropService.GetInstance().RequestDropItem(player, targetObjectId, index);
     }

@@ -167,8 +167,8 @@ public sealed partial class BotGameClientPacketWriterTests
 		yield return C("chat-whisper", GameClientPackets.ChatMessageWhisper("Target", "hello"), game, "name", "Target");
 		yield return C("group-invite", GameClientPackets.InviteToGroup(0, "Target"), game, "playerName", "Target");
 		yield return C("distribution-settings", GameClientPackets.DistributionSettings(2, 1, 2, 0, 2, 0, 2, 3, 1), game,
-			new Dictionary<string, object?> { ["isLeague"] = 1, ["lootRule"] = 2, ["misc"] = 1, ["commonItemAbove"] = 2,
-				["superiorItemAbove"] = 0, ["heroicItemAbove"] = 2, ["fabledItemAbove"] = 0, ["ethernalItemAbove"] = 2, ["mythicItemAbove"] = 3, ["unk"] = 2 });
+			new Dictionary<string, object?> { ["lootRules"] = Aion.GameServer.Model.Team.Common.Legacy.LootRuleType.LEADER, ["autoDistributeJunk"] = true, ["commonItemAbove"] = 2,
+				["superiorItemAbove"] = 0, ["heroicItemAbove"] = 2, ["fabledItemAbove"] = 0, ["ethernalItemAbove"] = 2, ["mythicItemAbove"] = 3 });
 		yield return C("group-roll", GameClientPackets.GroupLoot(123, 4, 162000031, 456, 2, true), game,
 			new Dictionary<string, object?> { ["groupId"] = 123, ["index"] = 4, ["itemId"] = 162000031, ["npcObjId"] = 456,
 				["distributionMode"] = 2, ["roll"] = 1, ["bid"] = 0L });

@@ -18,7 +18,8 @@ public class ChangeGroupLootRulesEvent : AlwaysTrueTeamEvent
 
     public override void HandleEvent()
     {
+        int messageId = lootGroupRules.GetJunkDistributionChangeMessageId(group.GetLootGroupRules());
         group.SetLootGroupRules(lootGroupRules);
-        group.SendPackets(new SM_GROUP_INFO(group));
+        group.SendPackets(new SM_GROUP_INFO(group, messageId));
     }
 }

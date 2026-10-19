@@ -5,6 +5,7 @@ using Aion.GameServer.Model.Actions;
 using Aion.GameServer.Model.Drop;
 using Aion.GameServer.Model.Templates.Items;
 using Aion.GameServer.Utils;
+using Aion.GameServer.Network.Aion.ServerPackets;
 
 namespace Aion.GameServer.Model.Team.Common.Legacy;
 
@@ -15,20 +16,22 @@ namespace Aion.GameServer.Model.Team.Common.Legacy;
 public class LootGroupRules
 {
     private readonly LootRuleType lootRule;
-    private int misc;
+    public const int SEVENTH_GRADE_RULE = 2;
+    private readonly bool autoDistributeJunk;
     private readonly int commonItemAbove;
     private readonly int superiorItemAbove;
     private readonly int heroicItemAbove;
     private readonly int fabledItemAbove;
     private readonly int eternalItemAbove;
     private readonly int mythicItemAbove;
-    private int nrMisc;
+    private int junkRecipientIndex;
     private int nrRoundRobin;
     private readonly LinkedList<DropItem> itemsToBeDistributed = new LinkedList<DropItem>();
 
     public LootGroupRules()
     {
         lootRule = LootRuleType.ROUNDROBIN;
+        autoDistributeJunk = false;
         commonItemAbove = 0;
         superiorItemAbove = 2;
         heroicItemAbove = 2;
@@ -37,11 +40,11 @@ public class LootGroupRules
         mythicItemAbove = 2;
     }
 
-    public LootGroupRules(LootRuleType lootRule, int misc, int commonItemAbove, int superiorItemAbove, int heroicItemAbove, int fabledItemAbove,
+    public LootGroupRules(LootRuleType lootRule, bool autoDistributeJunk, int commonItemAbove, int superiorItemAbove, int heroicItemAbove, int fabledItemAbove,
         int eternalItemAbove, int mythicItemAbove)
     {
         this.lootRule = lootRule;
-        this.misc = misc;
+        this.autoDistributeJunk = autoDistributeJunk;
         this.commonItemAbove = commonItemAbove;
         this.superiorItemAbove = superiorItemAbove;
         this.heroicItemAbove = heroicItemAbove;
@@ -64,9 +67,18 @@ public class LootGroupRules
         };
     }
 
-    public bool IsMisc(ItemQuality quality)
+    public bool IsAutoDistributedJunk(ItemQuality? quality)
     {
-        return quality.Equals(ItemQuality.JUNK) && misc == 1;
+        return autoDistributeJunk && quality == ItemQuality.JUNK;
+    }
+
+    public bool IsAutoDistributeJunk() => autoDistributeJunk;
+
+    public int GetJunkDistributionChangeMessageId(LootGroupRules? previousRules)
+    {
+        if (previousRules != null && previousRules.autoDistributeJunk == autoDistributeJunk)
+            return 0;
+        return (autoDistributeJunk ? SM_SYSTEM_MESSAGE.STR_MSG_JUNK_DISTRIBUTE_ON() : SM_SYSTEM_MESSAGE.STR_MSG_JUNK_DISTRIBUTE_OF()).GetId();
     }
 
     public LootRuleType GetLootRule()
@@ -111,14 +123,14 @@ public class LootGroupRules
         return mythicItemAbove;
     }
 
-    public int GetNrMisc()
+    public int GetJunkRecipientIndex()
     {
-        return nrMisc;
+        return junkRecipientIndex;
     }
 
-    public void SetNrMisc(int nrMisc)
+    public void SetJunkRecipientIndex(int junkRecipientIndex)
     {
-        this.nrMisc = nrMisc;
+        this.junkRecipientIndex = junkRecipientIndex;
     }
 
     public void SetPlayersInRoll(ICollection<Aion.GameServer.Model.GameObjects.Players.Player> players, int time, int index, int npcId)
@@ -147,11 +159,6 @@ public class LootGroupRules
     public void SetNrRoundRobin(int nrRoundRobin)
     {
         this.nrRoundRobin = nrRoundRobin;
-    }
-
-    public int GetMisc()
-    {
-        return misc;
     }
 
     public void AddItemToBeDistributed(DropItem dropItem)

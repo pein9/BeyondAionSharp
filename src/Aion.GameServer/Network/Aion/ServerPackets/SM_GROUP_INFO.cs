@@ -13,19 +13,19 @@ public class SM_GROUP_INFO : AionServerPacket
     private readonly int groupId;
     private readonly int leaderId;
     private readonly TeamType type;
+    private readonly int messageId;
 
-    public SM_GROUP_INFO(PlayerGroup group)
+    public SM_GROUP_INFO(PlayerGroup group) : this(group, 0) { }
+
+    public SM_GROUP_INFO(PlayerGroup group, int messageId)
     {
+        this.messageId = messageId;
         groupId = group.GetObjectId();
         leaderId = group.GetLeader().GetObjectId();
         lootRules = group.GetLootGroupRules();
         type = group.GetTeamType();
     }
 
-    // Java parity (writeImpl audited 1:1 vs game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_GROUP_INFO.java): 2026-06-17.
-    // TIER-2 audit (reads con.getActivePlayer + live PlayerGroup; not unit-golden'able). Identical field set/order/encoding
-    // (writeD groupId/leaderId/mapId, loot-rule writeD x8, writeD 0x02, writeC 0x00, writeD type/subType, writeD 0 msgId, writeS "");
-    // getType()->GetType_() is the only (Object.GetType collision) rename.
     protected override void WriteImpl(AionConnection con)
     {
         Player player = con.GetActivePlayer();
@@ -33,18 +33,18 @@ public class SM_GROUP_INFO : AionServerPacket
         WriteD(leaderId);
         WriteD(player == null || player.GetPosition() == null ? 0 : player.GetWorldId());// mapId
         WriteD(lootRules.GetLootRule().GetId());
-        WriteD(lootRules.GetMisc());
+        WriteD(lootRules.IsAutoDistributeJunk() ? 1 : 0);
         WriteD(lootRules.GetCommonItemAbove());
         WriteD(lootRules.GetSuperiorItemAbove());
         WriteD(lootRules.GetHeroicItemAbove());
         WriteD(lootRules.GetFabledItemAbove());
         WriteD(lootRules.GetEternalItemAbove());
         WriteD(lootRules.GetMythicItemAbove());
-        WriteD(0x02);
-        WriteC(0x00);
+        WriteD(LootGroupRules.SEVENTH_GRADE_RULE);
+        WriteC(0);
         WriteD(type.GetType_());
         WriteD(type.GetSubType());
-        WriteD(0x00); // message id
-        WriteS(""); // name
+        WriteD(messageId);
+        WriteS(""); // message parameter
     }
 }

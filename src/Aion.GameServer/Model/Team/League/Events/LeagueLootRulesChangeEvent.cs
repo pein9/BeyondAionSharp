@@ -18,7 +18,8 @@ public class LeagueLootRulesChangeEvent : AlwaysTrueTeamEvent
 
     public override void HandleEvent()
     {
+        int messageId = lootGroupRules.GetJunkDistributionChangeMessageId(league.GetLootGroupRules());
         league.SetLootGroupRules(lootGroupRules);
-        league.ForEach(alliance => alliance.SendPackets(new SM_ALLIANCE_INFO(alliance)));
+        league.ForEach(alliance => alliance.SendPackets(new SM_ALLIANCE_INFO(alliance, messageId, "")));
     }
 }

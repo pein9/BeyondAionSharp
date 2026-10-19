@@ -418,7 +418,7 @@ public sealed class CompanionService
                 entry.State = CompanionState.Playing;
             int joinedId = player.GetObjectId();
             if (!group.GetMembers().Any(member => member.GetObjectId() != joinedId && companions.ContainsKey(member.GetObjectId())))
-                PlayerGroupService.ChangeGroupRules(group, new LootGroupRules(LootRuleType.FREEFORALL, 0, 0, 0, 0, 0, 0, 0));
+                PlayerGroupService.ChangeGroupRules(group, new LootGroupRules(LootRuleType.FREEFORALL, false, 0, 0, 0, 0, 0, 0));
         }
     }
 

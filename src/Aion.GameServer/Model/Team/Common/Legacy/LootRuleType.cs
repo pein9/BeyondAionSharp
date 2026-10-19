@@ -12,4 +12,12 @@ public static class LootRuleTypeExtensions
 {
     /// <summary>Java parity: getId() — backing value equals the Java per-constant id.</summary>
     public static int GetId(this LootRuleType type) => (int)type;
+
+    public static LootRuleType? GetById(int id)
+    {
+        foreach (LootRuleType type in Enum.GetValues<LootRuleType>())
+            if (type.GetId() == id)
+                return type;
+        return null;
+    }
 }

@@ -89,20 +89,23 @@ public class DropService
             return;
         }
 
-        if (dropNpc.IsBeingLooted())
+        lock (dropNpc)
         {
-            if (!dropNpc.GetLootingPlayer().IsOnline())
+            if (dropNpc.IsBeingLooted())
             {
-                log.LogWarning("{DropNpcGetLootingPlayer} is offline but was still set as drop looter for {WorldGetInstanceFindVisibleObjectNpcObjectId}", dropNpc.GetLootingPlayer(), World.World.GetInstance().FindVisibleObject(npcObjectId));
+                if (!dropNpc.GetLootingPlayer().IsOnline())
+                {
+                    log.LogWarning("{DropNpcGetLootingPlayer} is offline but was still set as drop looter for {WorldGetInstanceFindVisibleObjectNpcObjectId}", dropNpc.GetLootingPlayer(), World.World.GetInstance().FindVisibleObject(npcObjectId));
+                }
+                else
+                {
+                    PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_LOOT_FAIL_ONLOOTING());
+                    return;
+                }
             }
-            else
-            {
-                PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_LOOT_FAIL_ONLOOTING());
-                return;
-            }
-        }
 
-        dropNpc.SetLootingPlayer(player);
+            dropNpc.SetLootingPlayer(player);
+        }
         VisibleObject visObj = World.World.GetInstance().FindVisibleObject(npcObjectId);
         if (visObj is Npc npc)
         {
@@ -143,11 +146,14 @@ public class DropService
         if (dropNpc == null)
             return;
 
-        if (!player.Equals(dropNpc.GetLootingPlayer()))
-            return; // cheater :)
+        lock (dropNpc)
+        {
+            if (!player.Equals(dropNpc.GetLootingPlayer()))
+                return; // cheater :)
+            dropNpc.SetLootingPlayer(null);
+        }
 
         HashSet<DropItem> dropItems = DropRegistrationService.GetInstance().GetCurrentDropMap().GetValueOrDefault(npcObjectId);
-        dropNpc.SetLootingPlayer(null);
 
         Npc npc = (Npc)World.World.GetInstance().FindVisibleObject(npcObjectId);
         if (npc != null)
@@ -378,24 +384,24 @@ public class DropService
             if (lootGroupRules != null)
             {
                 ItemQuality quality = DataManager.ITEM_DATA.GetItemTemplate(itemId).GetItemQuality();
-                if (lootGroupRules.IsMisc(quality))
+                if (lootGroupRules.IsAutoDistributedJunk(quality))
                 {
                     ICollection<Player> members = dropNpc.GetInRangePlayers();
 
-                    if (members.Count > lootGroupRules.GetNrMisc())
+                    if (members.Count > lootGroupRules.GetJunkRecipientIndex())
                     {
-                        lootGroupRules.SetNrMisc(lootGroupRules.GetNrMisc() + 1);
+                        lootGroupRules.SetJunkRecipientIndex(lootGroupRules.GetJunkRecipientIndex() + 1);
                     }
                     else
                     {
-                        lootGroupRules.SetNrMisc(1);
+                        lootGroupRules.SetJunkRecipientIndex(1);
                     }
 
                     int i = 0;
                     foreach (Player p in members)
                     {
                         i++;
-                        if (i == lootGroupRules.GetNrMisc())
+                        if (i == lootGroupRules.GetJunkRecipientIndex())
                         {
                             requestedItem.SetWinningPlayer(p);
                             break;

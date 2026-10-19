@@ -1,0 +1,1308 @@
+{
+  "sourceJavaCommit": "54880a6914b4ee03d18608eeab6b3532ed9759c9",
+  "sourceHashes": {
+    "model/team/common/legacy/LootGroupRules.java": "05b0c39321b80625320ee653cd20deb37da54a5064aa6bc712b93d1f2ba600dc",
+    "model/team/common/legacy/LootRuleType.java": "948ce7f9de2f8c6bf093058cae6508b337938d48c398168d0a919b3e74a9abb8",
+    "model/team/TeamType.java": "5df234e4903499095d0a2b16f2913b12453e1c39f3090b2bf879032edec63c6c",
+    "network/aion/clientpackets/CM_START_LOOT.java": "1ec1df6e068fe00d6ec52e04e5c70cb3f171ffcbd4bcf834f42d08664ac4297a",
+    "network/aion/clientpackets/CM_DISTRIBUTION_SETTINGS.java": "5877b2899d6e7801a9f231d2af4b7edd21299e7a2544ad02a3b9d97b058cb8a4",
+    "network/aion/serverpackets/SM_GROUP_INFO.java": "023b04f3c58b7cec39c0619f6e8065268d35c339b7c9092976b24df144a26f70",
+    "network/aion/serverpackets/SM_ALLIANCE_INFO.java": "619fa6fa3cd01a07e255cc3597e4e48d4f6b2ac326a7a68f806e4d8baa87c9c9",
+    "network/aion/serverpackets/SM_SYSTEM_MESSAGE.java": "39884a66f3e2911f31a717e2070c18ee1dee372daba4eaecb5aaf21aa9b98208",
+    "world/WorldMapType.java": "46fe556c12c6b007ebd738e655add137ab03e1868e3df0913d6c79fa013e38b2"
+  },
+  "captureBoundary": "Capture 54880a691's exact Java loot model, geometry, client readers and complete server writer bodies.\nScalar graph/byte-sink collaborators are declared below; no full server boot or constructor oracle is claimed.",
+  "geometry": [
+    {
+      "name": "horizontal--1",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "410BFFFF",
+        "00000000",
+        "00000000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": true
+    },
+    {
+      "name": "above-limit--1",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "41000000",
+        "00000000",
+        "4247FFFF",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": true
+    },
+    {
+      "name": "reliquary-edge--1",
+      "map": 301110000,
+      "npcMap": 301110000,
+      "instance": 1,
+      "bits": [
+        "41EFFFFF",
+        "00000000",
+        "47C34F80",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": true
+    },
+    {
+      "name": "horizontal-0",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "410C0000",
+        "00000000",
+        "00000000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "above-limit-0",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "41000000",
+        "00000000",
+        "42480000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "reliquary-edge-0",
+      "map": 301110000,
+      "npcMap": 301110000,
+      "instance": 1,
+      "bits": [
+        "41F00000",
+        "00000000",
+        "47C34F80",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "horizontal-1",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "410C0001",
+        "00000000",
+        "00000000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "above-limit-1",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "41000000",
+        "00000000",
+        "42480001",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "reliquary-edge-1",
+      "map": 301110000,
+      "npcMap": 301110000,
+      "instance": 1,
+      "bits": [
+        "41F00001",
+        "00000000",
+        "47C34F80",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "height-0",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "3F800000",
+        "00000000",
+        "00000000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": true
+    },
+    {
+      "name": "height-1",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "3F800000",
+        "00000000",
+        "3F800000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": true
+    },
+    {
+      "name": "height--1",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "3F800000",
+        "00000000",
+        "BF800000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": true
+    },
+    {
+      "name": "height-8.75",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "3F800000",
+        "00000000",
+        "410C0000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": true
+    },
+    {
+      "name": "height--8.75",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "3F800000",
+        "00000000",
+        "C10C0000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "height-49",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "3F800000",
+        "00000000",
+        "42440000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": true
+    },
+    {
+      "name": "height-50",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "3F800000",
+        "00000000",
+        "42480000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "height-51",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "3F800000",
+        "00000000",
+        "424C0000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "height--51",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "3F800000",
+        "00000000",
+        "C24C0000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "height-1000000",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "3F800000",
+        "00000000",
+        "49742400",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "height-nan",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "3F800000",
+        "00000000",
+        "7FC00000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "height-inf",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "3F800000",
+        "00000000",
+        "7F800000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "height--inf",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "3F800000",
+        "00000000",
+        "FF800000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "special-301110000",
+      "map": 301110000,
+      "npcMap": 301110000,
+      "instance": 1,
+      "bits": [
+        "41E80000",
+        "00000000",
+        "C9742400",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": true
+    },
+    {
+      "name": "special-301330000",
+      "map": 301330000,
+      "npcMap": 301330000,
+      "instance": 1,
+      "bits": [
+        "41E80000",
+        "00000000",
+        "C9742400",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": true
+    },
+    {
+      "name": "special-301360000",
+      "map": 301360000,
+      "npcMap": 301360000,
+      "instance": 1,
+      "bits": [
+        "41E80000",
+        "00000000",
+        "C9742400",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": true
+    },
+    {
+      "name": "world-mismatch",
+      "map": 210010000,
+      "npcMap": 220010000,
+      "instance": 1,
+      "bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "instance-mismatch",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 2,
+      "bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "nan-x",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "7FC00000",
+        "00000000",
+        "00000000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "infinite-x",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "7F800000",
+        "00000000",
+        "00000000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "negative-x",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "C1000000",
+        "00000000",
+        "00000000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": true
+    },
+    {
+      "name": "bigger-front",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "41600000",
+        "00000000",
+        "00000000",
+        "41000000",
+        "3F800000"
+      ],
+      "expected": true
+    },
+    {
+      "name": "bigger-side",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "41600000",
+        "00000000",
+        "00000000",
+        "3F800000",
+        "41000000"
+      ],
+      "expected": true
+    },
+    {
+      "name": "no-bounds",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "40D80000",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "expected": false
+    },
+    {
+      "name": "diagonal",
+      "map": 210010000,
+      "npcMap": 210010000,
+      "instance": 1,
+      "bits": [
+        "40C00000",
+        "40C00000",
+        "BF800000",
+        "40000000",
+        "3F800000"
+      ],
+      "expected": true
+    }
+  ],
+  "startReads": [
+    {
+      "bodyHex": "0000008000",
+      "target": -2147483648,
+      "action": "OPEN"
+    },
+    {
+      "bodyHex": "0000008001",
+      "target": -2147483648,
+      "action": "CLOSE"
+    },
+    {
+      "bodyHex": "0000008002",
+      "target": -2147483648,
+      "action": null
+    },
+    {
+      "bodyHex": "0000008080",
+      "target": -2147483648,
+      "action": null
+    },
+    {
+      "bodyHex": "00000080FF",
+      "target": -2147483648,
+      "action": null
+    },
+    {
+      "bodyHex": "40E2010000",
+      "target": 123456,
+      "action": "OPEN"
+    },
+    {
+      "bodyHex": "40E2010001",
+      "target": 123456,
+      "action": "CLOSE"
+    },
+    {
+      "bodyHex": "40E2010002",
+      "target": 123456,
+      "action": null
+    },
+    {
+      "bodyHex": "40E2010080",
+      "target": 123456,
+      "action": null
+    },
+    {
+      "bodyHex": "40E20100FF",
+      "target": 123456,
+      "action": null
+    },
+    {
+      "bodyHex": "FFFFFF7F00",
+      "target": 2147483647,
+      "action": "OPEN"
+    },
+    {
+      "bodyHex": "FFFFFF7F01",
+      "target": 2147483647,
+      "action": "CLOSE"
+    },
+    {
+      "bodyHex": "FFFFFF7F02",
+      "target": 2147483647,
+      "action": null
+    },
+    {
+      "bodyHex": "FFFFFF7F80",
+      "target": 2147483647,
+      "action": null
+    },
+    {
+      "bodyHex": "FFFFFF7FFF",
+      "target": 2147483647,
+      "action": null
+    }
+  ],
+  "distributionReads": [
+    {
+      "bodyHex": "FFFFFF7FFFFFFFFFFFFFFFFF0A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": null,
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7FFFFFFFFF000000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": null,
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7FFFFFFFFF010000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": null,
+      "autoJunk": true,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7FFFFFFFFF020000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": null,
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7FFFFFFFFFFFFFFF7F0A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": null,
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F00000000FFFFFFFF0A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": "FREEFORALL",
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F00000000000000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": "FREEFORALL",
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F00000000010000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": "FREEFORALL",
+      "autoJunk": true,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F00000000020000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": "FREEFORALL",
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F00000000FFFFFF7F0A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": "FREEFORALL",
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F01000000FFFFFFFF0A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": "ROUNDROBIN",
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F01000000000000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": "ROUNDROBIN",
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F01000000010000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": "ROUNDROBIN",
+      "autoJunk": true,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F01000000020000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": "ROUNDROBIN",
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F01000000FFFFFF7F0A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": "ROUNDROBIN",
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F02000000FFFFFFFF0A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": "LEADER",
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F02000000000000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": "LEADER",
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F02000000010000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": "LEADER",
+      "autoJunk": true,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F02000000020000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": "LEADER",
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F02000000FFFFFF7F0A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": "LEADER",
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F03000000FFFFFFFF0A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": null,
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F03000000000000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": null,
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F03000000010000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": null,
+      "autoJunk": true,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F03000000020000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": null,
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7F03000000FFFFFF7F0A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": null,
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7FFFFFFF7FFFFFFFFF0A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": null,
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7FFFFFFF7F000000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": null,
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7FFFFFFF7F010000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": null,
+      "autoJunk": true,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7FFFFFFF7F020000000A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": null,
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "bodyHex": "FFFFFF7FFFFFFF7FFFFFFF7F0A0000000B0000000C0000000D0000000E0000000F00000000000080",
+      "rule": null,
+      "autoJunk": false,
+      "grades": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "autoJunk": false,
+      "previous": null,
+      "message": 1390211,
+      "nullAuto": false,
+      "qualities": [
+        {
+          "name": "JUNK",
+          "auto": false,
+          "qualityRule": false
+        },
+        {
+          "name": "COMMON",
+          "auto": false,
+          "qualityRule": false
+        },
+        {
+          "name": "RARE",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "LEGEND",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "UNIQUE",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "EPIC",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "MYTHIC",
+          "auto": false,
+          "qualityRule": true
+        }
+      ]
+    },
+    {
+      "autoJunk": false,
+      "previous": false,
+      "message": 0,
+      "nullAuto": false,
+      "qualities": [
+        {
+          "name": "JUNK",
+          "auto": false,
+          "qualityRule": false
+        },
+        {
+          "name": "COMMON",
+          "auto": false,
+          "qualityRule": false
+        },
+        {
+          "name": "RARE",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "LEGEND",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "UNIQUE",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "EPIC",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "MYTHIC",
+          "auto": false,
+          "qualityRule": true
+        }
+      ]
+    },
+    {
+      "autoJunk": false,
+      "previous": true,
+      "message": 1390211,
+      "nullAuto": false,
+      "qualities": [
+        {
+          "name": "JUNK",
+          "auto": false,
+          "qualityRule": false
+        },
+        {
+          "name": "COMMON",
+          "auto": false,
+          "qualityRule": false
+        },
+        {
+          "name": "RARE",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "LEGEND",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "UNIQUE",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "EPIC",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "MYTHIC",
+          "auto": false,
+          "qualityRule": true
+        }
+      ]
+    },
+    {
+      "autoJunk": true,
+      "previous": null,
+      "message": 1390210,
+      "nullAuto": false,
+      "qualities": [
+        {
+          "name": "JUNK",
+          "auto": true,
+          "qualityRule": false
+        },
+        {
+          "name": "COMMON",
+          "auto": false,
+          "qualityRule": false
+        },
+        {
+          "name": "RARE",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "LEGEND",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "UNIQUE",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "EPIC",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "MYTHIC",
+          "auto": false,
+          "qualityRule": true
+        }
+      ]
+    },
+    {
+      "autoJunk": true,
+      "previous": false,
+      "message": 1390210,
+      "nullAuto": false,
+      "qualities": [
+        {
+          "name": "JUNK",
+          "auto": true,
+          "qualityRule": false
+        },
+        {
+          "name": "COMMON",
+          "auto": false,
+          "qualityRule": false
+        },
+        {
+          "name": "RARE",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "LEGEND",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "UNIQUE",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "EPIC",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "MYTHIC",
+          "auto": false,
+          "qualityRule": true
+        }
+      ]
+    },
+    {
+      "autoJunk": true,
+      "previous": true,
+      "message": 0,
+      "nullAuto": false,
+      "qualities": [
+        {
+          "name": "JUNK",
+          "auto": true,
+          "qualityRule": false
+        },
+        {
+          "name": "COMMON",
+          "auto": false,
+          "qualityRule": false
+        },
+        {
+          "name": "RARE",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "LEGEND",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "UNIQUE",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "EPIC",
+          "auto": false,
+          "qualityRule": true
+        },
+        {
+          "name": "MYTHIC",
+          "auto": false,
+          "qualityRule": true
+        }
+      ]
+    }
+  ],
+  "packets": [
+    {
+      "kind": "group",
+      "autoJunk": false,
+      "type": "GROUP",
+      "message": 0,
+      "active": true,
+      "payloadHex": "04100000105C0C00907F840C02000000000000000A0000000B0000000C0000000D0000000E0000000F00000002000000003F00000000000000000000000000"
+    },
+    {
+      "kind": "group",
+      "autoJunk": true,
+      "type": "AUTO_GROUP",
+      "message": 1390210,
+      "active": true,
+      "payloadHex": "04100000105C0C00907F840C02000000010000000A0000000B0000000C0000000D0000000E0000000F00000002000000000200000001000000823615000000"
+    },
+    {
+      "kind": "group",
+      "autoJunk": false,
+      "type": "GROUP",
+      "message": 1390211,
+      "active": false,
+      "payloadHex": "04100000105C0C000000000002000000000000000A0000000B0000000C0000000D0000000E0000000F00000002000000003F00000000000000833615000000"
+    },
+    {
+      "kind": "group",
+      "autoJunk": true,
+      "type": "GROUP",
+      "message": 0,
+      "active": true,
+      "payloadHex": "04100000105C0C00907F840C02000000010000000A0000000B0000000C0000000D0000000E0000000F00000002000000003F00000000000000000000000000"
+    },
+    {
+      "kind": "alliance",
+      "autoJunk": false,
+      "groups": [
+        1003,
+        1001,
+        1002,
+        1000
+      ],
+      "message": 0,
+      "league": false,
+      "payloadHex": "040068100000105C0C00907F840CF95F0C00FA5F0C00000000000000000001000000000000000A0000000B0000000C0000000D0000000E0000000F00000002000000003F000000000000000000000000000000E803000001000000E903000002000000EA03000003000000EB030000000000000000"
+    },
+    {
+      "kind": "alliance",
+      "autoJunk": true,
+      "groups": [
+        7001,
+        3001,
+        11001,
+        2001
+      ],
+      "message": 1390210,
+      "league": false,
+      "payloadHex": "040068100000105C0C00907F840CF95F0C00FA5F0C00000000000000000001000000010000000A0000000B0000000C0000000D0000000E0000000F00000002000000003F000000000000000000000000000000D107000001000000B90B000002000000591B000003000000F92A0000823615004300610070007400610069006E00B2030000"
+    },
+    {
+      "kind": "alliance",
+      "autoJunk": true,
+      "groups": [
+        7001,
+        3001,
+        11001,
+        2001
+      ],
+      "message": 1390211,
+      "league": true,
+      "payloadHex": "040068100000105C0C00907F840CF95F0C00FA5F0C00000000000000000001000000010000000A0000000B0000000C0000000D0000000E0000000F00000002000000003F00000000000000CC10000000000000D107000001000000B90B000002000000591B000003000000F92A0000833615004300610070007400610069006E00B2030000020000000000000000001400000015000000160000001700000018000000190000000200000000000000681000000600000041006C007000680061000000907F840C02000000CC1000000C000000B203650074006100000010161D0D"
+    },
+    {
+      "kind": "alliance",
+      "autoJunk": false,
+      "groups": [
+        1003,
+        1001,
+        1002,
+        1000
+      ],
+      "message": 0,
+      "league": true,
+      "payloadHex": "040068100000105C0C00907F840CF95F0C00FA5F0C00000000000000000001000000000000000A0000000B0000000C0000000D0000000E0000000F00000002000000003F00000000000000CC10000000000000E803000001000000E903000002000000EA03000003000000EB030000000000000000020000000000000000001400000015000000160000001700000018000000190000000200000000000000681000000600000041006C007000680061000000907F840C02000000CC1000000C000000B203650074006100000010161D0D"
+    }
+  ]
+}

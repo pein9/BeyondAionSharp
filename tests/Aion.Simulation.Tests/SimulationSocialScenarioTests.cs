@@ -410,7 +410,7 @@ public sealed partial class SimulationFastScenarioTests
 					Assert.True(corpse.IsDead());
 			}
 			var rules = player.GetPlayerGroup().GetLootGroupRules();
-			Assert.Equal(Api.World.GroupLootRules, new[] { rules.GetLootRule().GetId(), rules.GetMisc(), rules.GetCommonItemAbove(),
+			Assert.Equal(Api.World.GroupLootRules, new[] { rules.GetLootRule().GetId(), rules.IsAutoDistributeJunk() ? 1 : 0, rules.GetCommonItemAbove(),
 				rules.GetSuperiorItemAbove(), rules.GetHeroicItemAbove(), rules.GetFabledItemAbove(), rules.GetEternalItemAbove(), rules.GetMythicItemAbove() });
 			Assert.Equal(Api.World.Inventory.Values.Where(item => item.ItemId == GroupLootScenario.ItemId).Sum(item => item.Count),
 				player.GetInventory().GetItemCountByItemId(GroupLootScenario.ItemId));

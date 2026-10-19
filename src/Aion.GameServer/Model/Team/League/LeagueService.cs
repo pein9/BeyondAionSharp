@@ -95,7 +95,7 @@ public class LeagueService
             throw new ArgumentNullException(null, "Alliance can not be null");
         LeagueMember mainAlliance = new(alliance, 0);
         League league = new(mainAlliance);
-        league.SetLootGroupRules(new LootGroupRules(LootRuleType.FREEFORALL, 0, 0, 2, 2, 2, 2, 2));
+        league.SetLootGroupRules(new LootGroupRules(LootRuleType.FREEFORALL, false, 0, 2, 2, 2, 2, 2));
         league.AddMember(mainAlliance);
         leagues[league.GetTeamId()] = league;
         league.OnEvent(new LeagueCreateEvent(league));

@@ -140,12 +140,6 @@ public class SM_ALLIANCE_INFO : AionServerPacket
         }
     }
 
-    // Java parity (writeImpl audited 1:1 vs game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_ALLIANCE_INFO.java): 2026-06-17.
-    // TIER-2 audit (reads con.getActivePlayer + live PlayerAlliance/League graph; not unit-golden'able). Identical field
-    // set/order/encoding: writeH groupSize, writeD group/leader/mapId, vice-captain ids padded to 4, loot-rule writeD x8,
-    // writeD 0x02, writeC 0x00, writeD type/subType/leagueId, fixed 4x(writeD a, writeD 1000+a), writeD msgId, conditional
-    // writeS message, then the league block (writeH size, league loot-rule x8 + 0x02, per-AllianceInfo position/objId/count/name/worldId).
-    // !isEmpty()->Count!=0 and getType()->GetType_() (ctor) are the only mechanical renames.
     protected override void WriteImpl(AionConnection con)
     {
         Player player = con.GetActivePlayer();
@@ -163,22 +157,23 @@ public class SM_ALLIANCE_INFO : AionServerPacket
             WriteD(0);
         }
         WriteD(lootRules.GetLootRule().GetId());
-        WriteD(lootRules.GetMisc());
+        WriteD(lootRules.IsAutoDistributeJunk() ? 1 : 0);
         WriteD(lootRules.GetCommonItemAbove());
         WriteD(lootRules.GetSuperiorItemAbove());
         WriteD(lootRules.GetHeroicItemAbove());
         WriteD(lootRules.GetFabledItemAbove());
         WriteD(lootRules.GetEternalItemAbove());
         WriteD(lootRules.GetMythicItemAbove());
-        WriteD(0x02);
-        WriteC(0x00);
+        WriteD(LootGroupRules.SEVENTH_GRADE_RULE);
+        WriteC(0);
         WriteD(type);
         WriteD(subType); // 3.5
         WriteD(leagueId);
-        for (int a = 0; a < 4; a++)
+        int groupNumber = 0;
+        foreach (PlayerAllianceGroup group in alliance.GetGroups().OrderBy(group => group.GetTeamId()))
         {
-            WriteD(a); // group num
-            WriteD(1000 + a); // group id
+            WriteD(groupNumber++);
+            WriteD(group.GetTeamId());
         }
         WriteD(messageId); // System message ID
         WriteS(messageId != 0 ? message : ""); // System message
@@ -186,14 +181,14 @@ public class SM_ALLIANCE_INFO : AionServerPacket
         {
             WriteH(leagueData.Count);
             WriteD(lootLeagueRules.GetLootRule().GetId());
-            WriteD(lootLeagueRules.GetMisc());
+            WriteD(lootLeagueRules.IsAutoDistributeJunk() ? 1 : 0);
             WriteD(lootLeagueRules.GetCommonItemAbove());
             WriteD(lootLeagueRules.GetSuperiorItemAbove());
             WriteD(lootLeagueRules.GetHeroicItemAbove());
             WriteD(lootLeagueRules.GetFabledItemAbove());
             WriteD(lootLeagueRules.GetEternalItemAbove());
             WriteD(lootLeagueRules.GetMythicItemAbove());
-            WriteD(0x02);
+            WriteD(LootGroupRules.SEVENTH_GRADE_RULE);
             foreach (AllianceInfo info in leagueData)
             {
                 WriteD(info.GetAlliancePosition());
