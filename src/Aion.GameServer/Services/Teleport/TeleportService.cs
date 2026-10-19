@@ -8,6 +8,7 @@ using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.GameObjects.State;
 using Aion.GameServer.Model.Items.Storage;
+using Aion.GameServer.Model.Siege;
 using Aion.GameServer.Model.Templates.Npc;
 using Aion.GameServer.Model.Templates.Portal;
 using Aion.GameServer.Model.Templates.Spawns;
@@ -51,9 +52,9 @@ public class TeleportService
             return;
         }
 
-        // TODO: remove teleportation route if it's enemy fortress (1221, 1231, 1241)
         int id = SiegeService.GetInstance().GetSiegeIdByLocId(location.GetLocId());
-        if (id > 0 && !SiegeService.GetInstance().GetSiegeLocation(id).IsCanTeleport(player))
+        SiegeLocation? fortress = id > 0 ? SiegeService.GetInstance().GetSiegeLocation(id) : null;
+        if (fortress != null && !fortress.IsCanTeleport(player))
         {
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_CANNOT_MOVE_TO_AIRPORT_NO_ROUTE());
             return;
@@ -72,7 +73,7 @@ public class TeleportService
             return;
         }
 
-        if (!CheckKinahForTransportation(location, player))
+        if (!CheckKinahForTransportation(location, player, fortress != null && fortress.IsVulnerable()))
             return;
 
         if (location.GetType_() == TeleportType.FLIGHT)
@@ -125,7 +126,7 @@ public class TeleportService
         return template;
     }
 
-    private static bool CheckKinahForTransportation(TeleportLocation location, Player player)
+    private static bool CheckKinahForTransportation(TeleportLocation location, Player player, bool fortressVulnerable)
     {
         Storage inventory = player.GetInventory();
 
@@ -136,8 +137,7 @@ public class TeleportService
             transportationPrice = 1;
         else
         {
-            int basePrice = location.GetPrice();
-            // TODO check for location.getPricePvp()
+            int basePrice = fortressVulnerable ? location.GetPricePvp() : location.GetPrice();
             transportationPrice = Aion.GameServer.Services.Trade.PricesService.GetPriceForService(basePrice, player.GetRace());
         }
 
