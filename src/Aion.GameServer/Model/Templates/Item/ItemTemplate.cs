@@ -78,6 +78,7 @@ public partial class ItemTemplate : VisibleObjectTemplate
     [XmlElement("idian")] public Idian idianAction;
     [XmlAttribute("can_exceed_enchant")] public bool canExceedEnchant;
     [XmlAttribute("exceed_enchant_skill")] public ExceedEnchantSkillSetType exceedEnchantSkill;
+    [XmlAttribute("doping_pet_usable")] public bool dopingPetUsable;
 
     private static readonly WeaponStats emptyWeaponStats = new WeaponStats();
     private static readonly ItemUseLimits emptyUseLimits = new ItemUseLimits();

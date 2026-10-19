@@ -4,24 +4,22 @@ using Aion.GameServer.Network.Aion;
 namespace Aion.GameServer.Network.Aion.ServerPackets;
 
 /// <summary>Java parity: network/aion/serverpackets/SM_PET_EMOTE (ATracer, Neon). Pet emote/movement packet. Existing C# PetEmote enum uses PascalCase members with value==emoteId, so getEmoteId()->(int)emote; Java MOVE_STOP/MOVETO -> PetEmote.MoveStop/MoveTo. Pet red-tolerated.</summary>
-// Java parity (writeImpl audited 1:1 vs game-server/.../SM_PET_EMOTE.java): 2026-06-17 — reads live Pet/MoveController graph; PetEmote enum value==Java emoteId so (int)emote==getEmoteId() (T2 audit-only).
 public class SM_PET_EMOTE : AionServerPacket
 {
     private Pet pet;
     private PetEmote emote;
-    private int emotionId, param1;
+    private int actionParam;
 
     public SM_PET_EMOTE(Pet pet, PetEmote emote)
-        : this(pet, emote, 0, 0)
+        : this(pet, emote, 0)
     {
     }
 
-    public SM_PET_EMOTE(Pet pet, PetEmote emote, int emotionId, int param1)
+    public SM_PET_EMOTE(Pet pet, PetEmote emote, int actionParam)
     {
         this.pet = pet;
         this.emote = emote;
-        this.emotionId = emotionId;
-        this.param1 = param1;
+        this.actionParam = actionParam;
     }
 
     protected override void WriteImpl(AionConnection con)
@@ -31,6 +29,7 @@ public class SM_PET_EMOTE : AionServerPacket
         switch (emote)
         {
             case PetEmote.MoveStop:
+            case PetEmote.MovePositionUpdate:
                 WriteF(pet.GetX());
                 WriteF(pet.GetY());
                 WriteF(pet.GetZ());
@@ -46,8 +45,7 @@ public class SM_PET_EMOTE : AionServerPacket
                 WriteF(pet.GetMoveController().GetTargetZ2());
                 break;
             default:
-                WriteC(emotionId);
-                WriteC(param1); // happinessAdded?
+                WriteH(actionParam);
                 break;
         }
     }

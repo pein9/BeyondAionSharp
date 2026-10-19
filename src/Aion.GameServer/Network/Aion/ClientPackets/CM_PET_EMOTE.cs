@@ -13,11 +13,13 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/CM_PET_EMOTE (ATracer). Pet movement/emotion packet. PetEmote ported PascalCase (PetEmoteResolver.GetEmoteById). SM_PET_EMOTE/World red-tolerated.</summary>
 public class CM_PET_EMOTE : AionClientPacket
 {
+    private const float MAX_DISTANCE_TO_MASTER = 50;
+    private const int ACTION_FLAG = 0x80, TARGET_FLAG = 0x04;
     private PetEmote emote;
     private float x1, y1, z1, x2, y2, z2;
     private byte h;
-    private int emoteId, emotionId;
-    private int unk2;
+    private int emoteId;
+    private int actionParam;
 
     public CM_PET_EMOTE(int opcode, ISet<State> validStates)
         : base(opcode, validStates)
@@ -28,28 +30,22 @@ public class CM_PET_EMOTE : AionClientPacket
     {
         emoteId = ReadUC();
         emote = PetEmoteResolver.GetEmoteById(emoteId);
-        switch (emote)
+        if ((emoteId & ACTION_FLAG) != 0)
         {
-            case PetEmote.MoveStop:
-            case PetEmote.MovePositionUpdate:
-                x1 = ReadF();
-                y1 = ReadF();
-                z1 = ReadF();
-                h = ReadC();
-                break;
-            case PetEmote.MoveTo:
-                x1 = ReadF();
-                y1 = ReadF();
-                z1 = ReadF();
-                h = ReadC();
+            actionParam = ReadUH();
+        }
+        else
+        {
+            x1 = ReadF();
+            y1 = ReadF();
+            z1 = ReadF();
+            h = ReadC();
+            if ((emoteId & TARGET_FLAG) != 0)
+            {
                 x2 = ReadF();
                 y2 = ReadF();
                 z2 = ReadF();
-                break;
-            default:
-                emotionId = ReadUC();
-                unk2 = ReadUC();
-                break;
+            }
         }
     }
 
@@ -62,27 +58,17 @@ public class CM_PET_EMOTE : AionClientPacket
             return;
         if (emote == PetEmote.Unknown)
         {
-            AionLog.For(GetType().Name).LogWarning("{Player} / {Pet} sent pet emote {EmoteId} (emotionId: {EmotionId}, unk2: {Unk2})", player, pet, emoteId, emotionId, unk2);
+            AionLog.For(GetType().Name).LogWarning("{Player} / {Pet} sent pet emote {EmoteId} (actionParam: {ActionParam})", player, pet, emoteId, actionParam);
             return;
         }
 
-        // sometimes client is crazy enough to send -2.4457384E7 as z coordinate
-        // TODO (check retail) either its client bug or packet problem somewhere
-        // reproducible by flying randomly and falling from long height with fly resume
-        if (x1 < 0 || y1 < 0 || z1 < 0)
-        {
-            AionLog.For(GetType().Name).LogWarning("{Pet} of {Player} sent {Emote} at x:{X1}, y:{Y1}, z:{Z1}, h:{H}", pet, player, emote, x1, y1, z1, h);
+        if ((emoteId & ACTION_FLAG) == 0 && !PositionUtil.IsInRange(player, x1, y1, z1, MAX_DISTANCE_TO_MASTER))
             return;
-        }
 
         switch (emote)
         {
             case PetEmote.MoveStop:
             case PetEmote.MovePositionUpdate:
-                if (emote == PetEmote.MovePositionUpdate)
-                { // TODO remove once we're sure "MOVE_POSITION_UPDATE" is correct and h is actually h
-                    AionLog.For(GetType().Name).LogWarning("{Pet} of {Player} sent {Emote} at x:{X1}, y:{Y1}, z:{Z1}, h:{H}", pet, player, emote, x1, y1, z1, h);
-                }
                 global::Aion.GameServer.World.World.GetInstance().UpdatePosition(pet, x1, y1, z1, h);
                 BroadcastToSightedPlayers(pet, new SM_PET_EMOTE(pet, emote), false);
                 break;
@@ -92,7 +78,7 @@ public class CM_PET_EMOTE : AionClientPacket
                 BroadcastToSightedPlayers(pet, new SM_PET_EMOTE(pet, emote), false);
                 break;
             default:
-                BroadcastToSightedPlayers(pet, new SM_PET_EMOTE(pet, emote, emotionId, unk2), emote == PetEmote.Emotion);
+                BroadcastToSightedPlayers(pet, new SM_PET_EMOTE(pet, emote, actionParam), emote == PetEmote.Emotion);
                 break;
         }
     }

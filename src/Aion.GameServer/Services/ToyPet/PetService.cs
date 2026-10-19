@@ -8,6 +8,7 @@ using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Team.Common.Legacy;
 using Aion.GameServer.Model.Templates.Items.Actions;
+using Aion.GameServer.Model.Templates.Items;
 using Aion.GameServer.Model.Templates.Pet;
 using Aion.GameServer.Model.Trade;
 using Aion.GameServer.Network.Aion.ServerPackets;
@@ -162,7 +163,15 @@ public class PetService
                 return;
             }
 
-            Item useItem = player.GetInventory().GetItemsByItemId(itemId)[0];
+            int[] dopingItems = pet.GetCommonData().GetDopingBag().GetItems();
+            if (slot < 0 || slot >= dopingItems.Length || dopingItems[slot] != itemId)
+            {
+                AuditLogger.Log(player, "tried to use item " + itemId + " through pet buffing, but it's not in slot " + slot);
+                return;
+            }
+            Item useItem = player.GetInventory().GetFirstItemByItemId(itemId);
+            if (useItem == null || !useItem.GetItemTemplate().IsDopingPetUsable())
+                return;
 
             if (!IsPetItemUseAllowed(player, useItem))
             { // pet currently is not allowed to buff, schedule re-check
@@ -205,6 +214,15 @@ public class PetService
         {
             AuditLogger.Log(pet.GetMaster(), "tried to set buff item " + itemId + " but " + pet + " doesn't support buffing");
             return false;
+        }
+        if (itemId != 0)
+        {
+            ItemTemplate itemTemplate = DataManager.ITEM_DATA.GetItemTemplate(itemId);
+            if (itemTemplate == null || !itemTemplate.IsDopingPetUsable())
+            {
+                AuditLogger.Log(pet.GetMaster(), "tried to set item " + itemId + " in pet buff slot " + slot + " but it can't be used by pets");
+                return false;
+            }
         }
         PetDopingEntry dope = DataManager.PET_DOPING_DATA.GetDopingTemplate(petFunction.GetId());
         if (slot == 0 && !dope.IsUseFood())

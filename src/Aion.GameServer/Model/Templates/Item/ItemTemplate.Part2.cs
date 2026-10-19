@@ -205,4 +205,7 @@ public partial class ItemTemplate
     {
         return exceedEnchantSkill;
     }
+
+    /// <summary>Whether a buffing pet can use this item for its master.</summary>
+    public bool IsDopingPetUsable() => dopingPetUsable;
 }
