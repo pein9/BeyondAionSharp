@@ -10,6 +10,28 @@ through Nochsana Training Camp to the General, and were gone from the server aft
 It follows [natural-group-ntc.md](natural-group-ntc.md) and [natural-group-healer.md](natural-group-healer.md):
 following F1, the Cleric's healing-only role, the class fights, gear and supplies are there and are reused.
 
+## Skill levels after the Java updates (2026-10-20)
+
+Java `267ce6033` stopped using a skill's grade as its learned level; `e5c133836` extended the migration to
+morphing. The generator applies the approved Java `update.sql` rule on export: `skill_id < 30000` or
+`skill_id == 40009` has level 1. Every other saved level, including profession ranks, is copied unchanged.
+The played source snapshots remain immutable. All 27 profiles were regenerated: 1,694 skill levels corrected,
+54 profession entries preserved, with no other profile fields or source hashes changed.
+
+`make-companion-profiles.py --check` enforces the rule even without the source snapshots. The server refuses a
+profile with a stale combat or morphing level before creating a companion. Generator regression checks and
+`CompanionProfileTests` cover both sides of the skill-ID boundary, morphing, and retained profession ranks up to
+499; the companion server test checks the actual learned levels after creation and login.
+
+Validation: all 27 profiles match fresh generation; the three generator regression tests pass; the normal suite
+passes 6,663 tests (252 skipped); both isolated companion server tests pass; the host contract passes 32 assertions;
+Fast `companion-levels-fast-20261020` passes 115 tests (98 skipped). The warning baseline remains 4,097 sites, and
+clock, logger, fidelity and custom-quest draft guards pass. The five-companion marks replay
+`run/cp/companion-levels/marks-20261020/w1` has all six clients reaching the end, no world errors, and no companions
+or characters left on the seats. It restored `ntc-group-s5` and applied the checked-in Java migration only to its
+owned temporary SIM database; the source snapshot and live databases were untouched. This checks marks and
+cleanup, not a fresh full NTC run.
+
 ## The goal
 
 The operator, 2026-10-12:

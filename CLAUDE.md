@@ -184,7 +184,8 @@ pwsh -NoProfile -File scripts/e2e/test-live-retry.ps1          # sequential sing
 pwsh -NoProfile -File scripts/sim/test-code-coverage.ps1       # collector requests, attachment/restoration failures and runner selection
 pwsh -NoProfile -File scripts/sim/test-sim-snapshot.ps1        # snapshot, Replay and neutral-gate contract (fake Docker, fake journey)
 python scripts/sim/trace/test_compare_traces.py                # trace comparer: differences, coverage counts and the baseline digest
-python scripts/sim/make-companion-profiles.py --check          # companion profiles: items exist and are wearable; identical to a fresh generation when the snapshot is here
+python scripts/sim/make-companion-profiles.py --check          # companion profiles: wearable items, Java skill levels; identical to a fresh generation when the snapshots are here
+python -m unittest discover -s scripts/sim -p test_companion_profiles.py # export migration, profession ranks and checks without source snapshots
 AION_SIM_COMPANION=1 AION_SIM_DB_INTEGRATION=1 dotnet test tests/Aion.Simulation.Tests --filter "FullyQualifiedName~Companion" # companion server tests (D41), in a process of their own (Docker)
 pwsh -NoProfile -File scripts/e2e/test-run-report.ps1            # report finalization and runner failure paths
 pwsh -NoProfile -File scripts/live/test-run-soak.ps1           # acceptance runner propagation and failure paths

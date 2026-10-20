@@ -71,6 +71,11 @@ public sealed class CompanionProfile
             Skills = root.GetProperty("skills").EnumerateArray()
                 .Select(skill => new Learned(skill.GetProperty("id").GetInt32(), skill.GetProperty("level").GetInt32())).ToArray(),
         };
+        // Java update.sql resets old skill grades, including morphing (40009), to learned level 1.
+        // Profession ranks are saved levels and must survive unchanged.
+        foreach (Learned skill in profile.Skills)
+            if ((skill.Id < 30000 || skill.Id == 40009) && skill.Level != 1)
+                throw new InvalidDataException($"Companion skill {skill.Id} has level {skill.Level}; Java requires level 1. Regenerate the profiles.");
         // A column the server's appearance does not have would be lost silently, and the face would not be the one played.
         profile.NewAppearance();
         return profile;

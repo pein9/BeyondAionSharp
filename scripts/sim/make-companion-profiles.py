@@ -17,7 +17,7 @@ the level-31 profiles come from its world. Step NL-4 of docs/natural-leg-36.md a
 world of the gear check-in at 36 (Elite Rank 5), at the levels the bots stood at there (37 and 38).
 
 A snapshot lives under run/snapshots, which is not checked in. Without it --check still reads every profile and checks
-its items; it says that it could not compare.
+its items and skill levels; it says that it could not compare.
 """
 import argparse
 import glob
@@ -110,7 +110,8 @@ def item_data():
     """Every item template's level and restrict row, by id."""
     items = {}
     for path in sorted(glob.glob(os.path.join(REPO, 'game-server/data/static_data/items/*.xml'))):
-        text = io.open(path, encoding='utf-8').read()
+        with io.open(path, encoding='utf-8') as source:
+            text = source.read()
         for match in re.finditer(r'<item_template id="(\d+)"([^>]*)>', text):
             attributes = match.group(2)
             level = re.search(r' level="(\d+)"', attributes)
@@ -128,9 +129,20 @@ def item_data():
     return items
 
 
+def migrated_skill_level(skill_id, saved_level):
+    """Java update.sql (267ce6033, extended by e5c133836): old grades are not learned levels.
+
+    The played snapshots predate this migration. Apply it on export, leaving profession ranks and the source intact.
+    """
+    return 1 if skill_id < 30000 or skill_id == 40009 else saved_level
+
+
 def problems_of(profile, items):
-    """What is wrong with a profile against the item data: an item that does not exist, or one its class cannot wear."""
+    """Invalid items or skill levels, also checked when the source snapshots are unavailable."""
     found = []
+    for skill in profile['skills']:
+        if skill['level'] != migrated_skill_level(skill['id'], skill['level']):
+            found.append('skill %d has level %d; Java requires level 1' % (skill['id'], skill['level']))
     class_id = CLASS_IDS[profile['playerClass']]
     for worn in profile['equipment']:
         item = items.get(worn['itemId'])
@@ -154,8 +166,10 @@ def problems_of(profile, items):
 
 def generate(snapshot, items, classes=None):
     folder = os.path.join(REPO, 'run', 'snapshots', snapshot + '-w1')
-    record = json.load(io.open(os.path.join(folder, 'snapshot.json'), encoding='utf-8'))
-    raw = io.open(os.path.join(folder, 'dump.sql.gz'), 'rb').read()
+    with io.open(os.path.join(folder, 'snapshot.json'), encoding='utf-8') as source:
+        record = json.load(source)
+    with io.open(os.path.join(folder, 'dump.sql.gz'), 'rb') as source:
+        raw = source.read()
     digest = hashlib.sha256(raw).hexdigest()
     if digest != record['dumpSha256']:
         raise SystemExit('The dump of %s does not have the hash its record names.' % snapshot)
@@ -190,7 +204,8 @@ def generate(snapshot, items, classes=None):
                                  and items.get(row['item_id'], {}).get('group') not in QUEST_GROUPS]
                                 + [{'itemId': item, 'count': count} for item, count in COMPANION_EXTRAS.items()],
                                 key=lambda carried: carried['itemId']),
-            'skills': sorted(({'id': row['skill_id'], 'level': row['skill_level']} for row in skills if row['player_id'] == player['id']),
+            'skills': sorted(({'id': row['skill_id'], 'level': migrated_skill_level(row['skill_id'], row['skill_level'])}
+                              for row in skills if row['player_id'] == player['id']),
                              key=lambda skill: skill['id']),
             'source': {'snapshot': record['name'], 'dumpSha256': digest, 'character': player['name']},
         }
@@ -232,7 +247,8 @@ def main():
         fresh = generate_all() if present else None
         for path in paths:
             key = os.path.splitext(os.path.basename(path))[0]
-            written = io.open(path, encoding='utf-8', newline='').read().replace('\r\n', '\n')
+            with io.open(path, encoding='utf-8', newline='') as source:
+                written = source.read().replace('\r\n', '\n')
             for problem in problems_of(json.loads(written), items):
                 print('%s: %s' % (key, problem))
                 failed = True
@@ -258,7 +274,8 @@ def main():
     for stale in glob.glob(os.path.join(options.out, '*.json')):
         os.remove(stale)
     for key, profile in sorted(profiles.items()):
-        io.open(os.path.join(options.out, key + '.json'), 'w', encoding='utf-8', newline='\n').write(text_of(profile))
+        with io.open(os.path.join(options.out, key + '.json'), 'w', encoding='utf-8', newline='\n') as target:
+            target.write(text_of(profile))
         print('%s: %d worn, %d carried, %d skills' % (key, len(profile['equipment']), len(profile['inventory']), len(profile['skills'])))
     return 0
 

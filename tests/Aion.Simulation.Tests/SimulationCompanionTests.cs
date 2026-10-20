@@ -125,6 +125,9 @@ public sealed partial class SimulationFastScenarioTests
 					companion.GetInventory().GetItems().Select(item => (item.GetItemId(), item.GetItemCount())).Order());
 				Assert.Equal(profile.Skills.Select(skill => (skill.Id, skill.Level)).Order(),
 					companion.GetSkillList().GetAllSkills().Where(skill => !skill.IsStigmaSkill()).Select(skill => (skill.GetSkillId(), skill.GetSkillLevel())).Order());
+				// Java's learned levels must survive creation, persistence and login (including the stone's skills).
+				Assert.All(companion.GetSkillList().GetAllSkills().Where(skill => skill.GetSkillId() < 30000 || skill.GetSkillId() == 40009),
+					skill => Assert.Equal(1, skill.GetSkillLevel()));
 				// Its stigma: the stone is one of the worn items above, and stays in its slot at the login only because the
 				// companion was made with the stigma quest done. The login teaches the stone's skills (Saving Grace I and II).
 				Assert.Contains(profile.Equipment, worn => worn.Slot == (long)Aion.GameServer.Model.Items.ItemSlot.STIGMA1 && worn.ItemId == 140001431);

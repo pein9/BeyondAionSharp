@@ -1,6 +1,7 @@
 using Aion.GameServer.Custom.Companion;
 using Aion.GameServer.Model;
 using Aion.GameServer.TestKit;
+using System.Text.Json.Nodes;
 
 namespace Aion.GameServer.Tests;
 
@@ -28,12 +29,44 @@ public sealed class CompanionProfileTests
             Assert.NotEmpty(profile.Equipment);
             Assert.NotEmpty(profile.Inventory);
             Assert.NotEmpty(profile.Skills);
+            Assert.All(profile.Skills.Where(skill => skill.Id < 30000 || skill.Id == 40009), skill => Assert.Equal(1, skill.Level));
             Assert.Equal(53, profile.Appearance.Count);
             Assert.Equal((float)profile.Appearance["height"], profile.NewAppearance().GetHeightScale());
             Assert.Equal((int)profile.Appearance["jaw_height"], profile.NewAppearance().GetChinHeight());
             Assert.Equal((int)profile.Appearance["chin_jut"], profile.NewAppearance().GetCheekBones());
             Assert.Equal((int)profile.Appearance["skin_rgb"], profile.NewAppearance().GetSkinRGB());
         });
+    }
+
+    [Theory]
+    [InlineData(1, 2)]
+    [InlineData(29999, 9)]
+    [InlineData(40009, 399)]
+    [InlineData(1001, 0)]
+    public void LegacySkillGradesAreRefused(int id, int level)
+    {
+        InvalidDataException error = Assert.Throws<InvalidDataException>(() => CompanionProfile.Parse(WithSkills((id, level))));
+
+        Assert.Contains($"skill {id} has level {level}", error.Message);
+    }
+
+    [Fact]
+    public void ProfessionRanksSurviveAlongsideCombatAndMorphingSkills()
+    {
+        (int Id, int Level)[] skills = [(1001, 1), (29999, 1), (30000, 49), (30001, 99), (30002, 399),
+            (30003, 499), (40001, 399), (40008, 99), (40009, 1), (40010, 199)];
+
+        CompanionProfile profile = CompanionProfile.Parse(WithSkills(skills));
+
+        Assert.Equal(skills, profile.Skills.Select(skill => (skill.Id, skill.Level)));
+    }
+
+    private static string WithSkills(params (int Id, int Level)[] skills)
+    {
+        JsonNode profile = JsonNode.Parse(File.ReadAllText(Path.Combine(Folder, "asmodians-cleric-26.json")))!;
+        profile["skills"] = new JsonArray(skills.Select(skill => (JsonNode)new JsonObject
+            { ["id"] = skill.Id, ["level"] = skill.Level }).ToArray());
+        return profile.ToJsonString();
     }
 
     [Fact]
