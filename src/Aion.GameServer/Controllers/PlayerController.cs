@@ -129,11 +129,7 @@ public class PlayerController : CreatureController<Player>
         PacketSendUtility.BroadcastToSightedPlayers(GetOwner(), new SM_TARGET_UPDATE(GetOwner()));
     }
 
-    public override void OnHide()
-    {
-        base.OnHide();
-        Aion.GameServer.Services.DuelService.GetInstance().FixTeamVisibility(GetOwner());
-    }
+
 
     public override void OnHideEnd()
     {
@@ -627,10 +623,10 @@ public class PlayerController : CreatureController<Player>
         if (!GetOwner().IsProtectionActive())
         {
             GetOwner().SetVisualState(CreatureVisualState.BLINKING);
-            AttackUtil.RemoveTargetFrom(GetOwner());
-            PacketSendUtility.BroadcastToSightedPlayers(GetOwner(), new SM_PLAYER_STATE(GetOwner()), true);
+            PacketSendUtility.BroadcastToSightedPlayers(GetOwner(), new SM_PLAYER_STATE(GetOwner()));
         }
         PacketSendUtility.SendPacket(GetOwner(), new SM_INVINCIBLE_TIME(PROTECTION_TIME));
+        PacketSendUtility.SendPacket(GetOwner(), new SM_PLAYER_STATE(GetOwner(), true));
         AddTask(Aion.GameServer.Model.TaskId.PROTECTION_ACTIVE, ThreadPoolManager.GetInstance().Schedule(_ => { StopProtectionActiveTask(); return System.Threading.Tasks.ValueTask.CompletedTask; }, TimeSpan.FromMilliseconds(PROTECTION_TIME)));
     }
 

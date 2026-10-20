@@ -39,6 +39,7 @@ public class PlayerAllianceLeavedEvent : PlayerLeavedEvent<PlayerAllianceMember,
             team.OnEvent(new ChangeAllianceLeaderEvent(team));
 
         PlayerAllianceMember leavedTeamMember = team.RemoveMember(leavedPlayer.GetObjectId());
+        leavedPlayer.UpdateKnownlist();
 
         SM_SYSTEM_MESSAGE leaveMsg = reason switch
         {
@@ -50,6 +51,8 @@ public class PlayerAllianceLeavedEvent : PlayerLeavedEvent<PlayerAllianceMember,
         team.ForEach(player =>
         {
             PacketSendUtility.SendPacket(player, leaveMsg);
+            if (player.GetKnownList().Knows(leavedPlayer))
+                player.UpdateKnownlist();
             if (reason != LeaveReson.DISBAND)
             {
                 PacketSendUtility.SendPacket(player, new SM_ALLIANCE_MEMBER_INFO(leavedTeamMember, PlayerAllianceEvent.LEAVE));

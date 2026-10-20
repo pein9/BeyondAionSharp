@@ -46,7 +46,7 @@ public sealed class GoldenPacketFixtureTests
 	// Historical action2+tag SM_GROUP_DATA_EXCHANGE bytes are retained as history.
 	// ClientBroadcastPortTests checks the current TEAM/HOUSE writers against exact Java 6dd3aa507.
 	[InlineData("SM_RECONNECT_KEY.json")]
-	[InlineData("SM_PLAYER_STATE.json")]
+	[InlineData("SM_PLAYER_STATE.b0a597458.json")]
 	[InlineData("SM_TARGET_SELECTED_LIVE.json")]
 	[InlineData("SM_EMOTION.json")]
 	[InlineData("SM_GATHER_ANIMATION.json")]

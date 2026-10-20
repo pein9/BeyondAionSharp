@@ -33,8 +33,11 @@ public class PlayerGroupEnteredEvent : PlayerEnteredEvent<PlayerGroup>
                 PacketSendUtility.SendPacket(member, new SM_GROUP_MEMBER_INFO(team, player, GroupEvent.ENTER));
                 PacketSendUtility.SendPacket(member, SM_SYSTEM_MESSAGE.STR_PARTY_HE_ENTERED_PARTY(player.GetName()));
                 PacketSendUtility.SendPacket(player, new SM_GROUP_MEMBER_INFO(team, member, GroupEvent.ENTER));
+                if (member.GetKnownList().Knows(player))
+                    member.UpdateKnownlist();
             }
         });
+        player.UpdateKnownlist();
         PacketSendUtility.BroadcastPacket(player, new SM_ABYSS_RANK_UPDATE(1, player), true);
         base.HandleEvent();
     }

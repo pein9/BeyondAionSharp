@@ -193,9 +193,9 @@ public class TeleportService
         PacketSendUtility.SendPacket(player, new SM_PLAYER_INFO(player));
         PacketSendUtility.SendPacket(player, new SM_STATS_INFO(player));
         PacketSendUtility.SendPacket(player, SM_MOTION.PlayerMotions(player));
+        player.GetController().StartProtectionActiveTask(); // Before spawn so observers never see an unprotected player.
         World.World.GetInstance().Spawn(player);
         World.World.GetInstance().Spawn(player.GetPet());
-        player.GetController().StartProtectionActiveTask();
         player.GetEffectController().UpdatePlayerEffectIcons(null);
         player.GetController().UpdateZone();
         player.SetPortAnimation(ArrivalAnimation.NONE);

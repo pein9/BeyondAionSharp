@@ -19,10 +19,10 @@ public class Visible : ConsoleCommand
 
     public override void Execute(Player player, params string[] paramsArr)
     {
-        if (player.IsInVisualState(CreatureVisualState.HIDE20))
+        if (player.IsInVisualState(CreatureVisualState.GM_INVISIBLE))
         {
             player.GetEffectController().UnsetAbnormal(AbnormalState.HIDE);
-            player.UnsetVisualState(CreatureVisualState.HIDE20);
+            player.UnsetVisualState(CreatureVisualState.GM_INVISIBLE);
             player.GetController().OnHideEnd();
             PacketSendUtility.BroadcastPacket(player, new SM_PLAYER_STATE(player), true);
         }

@@ -36,7 +36,7 @@ public class TargetRangeProperty
                 foreach (Creature creature in firstTarget.GetKnownList().Stream()
                     .Where(knownObject => knownObject.Get() is Creature)
                     .Select(knownObject => (Creature)knownObject.Get())
-                    .Where(creature => CheckCommonRequirements(creature, skillEffector, skillTemplate))
+                    .Where(creature => CheckCommonRequirements(creature, skillEffector, skillTemplate, result.GetFirstTarget()))
                     .Where(creature => Math.Abs(firstTarget.GetZ() - creature.GetZ()) <= altitude)
                     .Where(creature => !(creature is Player player && player.IsUsingFlightTransporterOrWindstream()))
                     .Where(creature => !(skillEffector is Trap trap && trap.GetCreator() == creature)) // TODO this is a temporary hack for traps
@@ -70,7 +70,7 @@ public class TargetRangeProperty
                         {
                             if (!member.IsOnline())
                                 continue;
-                            if (!CheckCommonRequirements(member, skillEffector, skillTemplate))
+                            if (!CheckCommonRequirements(member, skillEffector, skillTemplate, result.GetFirstTarget()))
                                 continue;
                             if (PositionUtil.IsInRange(effector, member, effectiveRange, false))
                             {
@@ -87,7 +87,7 @@ public class TargetRangeProperty
                 foreach (Creature creature in skillEffector.GetKnownList().Stream()
                     .Where(knownObject => knownObject.Get() is Creature)
                     .Select(knownObject => (Creature)knownObject.Get())
-                    .Where(creature => CheckCommonRequirements(creature, skillEffector, skillTemplate))
+                    .Where(creature => CheckCommonRequirements(creature, skillEffector, skillTemplate, result.GetFirstTarget()))
                     .Where(creature => !(creature is Trap trap) || trap.GetMaster().IsEnemy(skillEffector))
                     .Where(creature => PositionUtil.IsInRange(creature, x, y, z, properties.GetTargetDistance() + 1))
                     .Where(creature => CheckGeo(creature, result.GetFirstTarget(), skillTemplate)))
@@ -100,7 +100,7 @@ public class TargetRangeProperty
         return true;
     }
 
-    private static bool CheckCommonRequirements(Creature creature, Creature skillEffector, SkillTemplate skillTemplate)
+    private static bool CheckCommonRequirements(Creature creature, Creature skillEffector, SkillTemplate skillTemplate, Creature firstTarget)
     {
         if (skillTemplate.HasResurrectEffect())
         {
@@ -113,10 +113,7 @@ public class TargetRangeProperty
                 return false;
         }
 
-        if (creature.IsSpawnProtectedFrom(skillEffector))
-            return false;
-
-        return true;
+        return creature.Equals(firstTarget) ? skillEffector.CanTarget(creature) : skillEffector.CanAffect(creature);
     }
 
     private static bool CheckRange(Properties properties, Creature skillEffector, float x, float y, float z, Creature creature, int effectiveRange, Creature firstTarget)

@@ -60,7 +60,7 @@ public class DuelService
             PacketSendUtility.SendPacket(requester, SM_SYSTEM_MESSAGE.STR_MSG_REJECTED_DUEL(targetPlayer.GetName()));
             return;
         }
-        if (requester.IsDead() || targetPlayer.IsDead())
+        if (requester.IsDead() || targetPlayer.IsDead() || !requester.CanTarget(targetPlayer))
         {
             PacketSendUtility.SendPacket(requester, SM_SYSTEM_MESSAGE.STR_DUEL_PARTNER_INVALID(targetPlayer.GetName()));
             return;
@@ -133,23 +133,6 @@ public class DuelService
         PacketSendUtility.SendPacket(responder, SM_DUEL.SM_DUEL_STARTED(requester.GetObjectId()));
         RegisterDuel(requester.GetObjectId(), responder.GetObjectId());
         CreateTask(requester, responder);
-        if (requester.IsInAnyHide())
-            requester.GetController().OnHide();
-        if (responder.IsInAnyHide())
-            responder.GetController().OnHide();
-    }
-
-    /// <summary>send SM_DELETE a second time to fix client not fading out the char (only happens when dueling with a team member of a group or alliance)</summary>
-    public void FixTeamVisibility(Player hiddenDuelist)
-    {
-        int? opponentId = DuelService.GetInstance().GetOpponentId(hiddenDuelist);
-        if (opponentId != null)
-        {
-            Player opponent = Aion.GameServer.World.World.GetInstance().GetPlayer(opponentId.Value);
-            if (opponent != null && opponent.GetKnownList().Knows(hiddenDuelist) && !opponent.GetKnownList().Sees(hiddenDuelist)
-                && hiddenDuelist.IsInSameTeam(opponent))
-                PacketSendUtility.SendPacket(opponent, new SM_DELETE(hiddenDuelist));
-        }
     }
 
     /// <summary>Lets the given player lose the duel, ending it.</summary>

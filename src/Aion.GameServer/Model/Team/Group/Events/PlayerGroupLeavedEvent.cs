@@ -34,6 +34,7 @@ public class PlayerGroupLeavedEvent : PlayerLeavedEvent<PlayerGroupMember, Playe
     public override void HandleEvent()
     {
         team.RemoveMember(leavedPlayer.GetObjectId());
+        leavedPlayer.UpdateKnownlist();
 
         if (leavedPlayer.IsMentor())
         {
@@ -43,6 +44,8 @@ public class PlayerGroupLeavedEvent : PlayerLeavedEvent<PlayerGroupMember, Playe
         team.ForEach(member =>
         {
             PacketSendUtility.SendPacket(member, new SM_GROUP_MEMBER_INFO(team, leavedPlayer, GroupEvent.LEAVE));
+            if (member.GetKnownList().Knows(leavedPlayer))
+                member.UpdateKnownlist();
 
             switch (reason)
             {

@@ -19,17 +19,17 @@ public class Invis : AdminCommand
 
     public override void Execute(Player player, params string[] paramsArr)
     {
-        if (!player.IsInVisualState(CreatureVisualState.HIDE20))
+        if (!player.IsInVisualState(CreatureVisualState.GM_INVISIBLE))
         {
             player.GetEffectController().SetAbnormal(AbnormalState.HIDE);
-            player.SetVisualState(CreatureVisualState.HIDE20);
+            player.SetVisualState(CreatureVisualState.GM_INVISIBLE);
             player.GetController().OnHide();
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_SKILL_EFFECT_INVISIBLE_BEGIN());
         }
         else
         {
             player.GetEffectController().UnsetAbnormal(AbnormalState.HIDE);
-            player.UnsetVisualState(CreatureVisualState.HIDE20);
+            player.UnsetVisualState(CreatureVisualState.GM_INVISIBLE);
             player.GetController().OnHideEnd();
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_SKILL_EFFECT_INVISIBLE_END());
         }

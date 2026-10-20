@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Aion.GameServer.Model;
+using Aion.GameServer.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Aion.GameServer.Model.GameObjects;
@@ -40,17 +41,30 @@ public class Kisk : SummonedObject<Aion.GameServer.Model.GameObjects.Players.Pla
         return creature.IsEnemyFrom(this);
     }
 
-    /// <summary>Required so that the enemy race can attack the Kisk!</summary>
+    /// <summary>Enemy races may attack in PvP zones; the owner's duel opponent may attack anywhere.</summary>
     public override bool IsEnemyFrom(Aion.GameServer.Model.GameObjects.Players.Player player)
     {
-        return !player.GetRace().Equals(ownerRace) && IsInsidePvPZone() && player.IsInsidePvPZone();
+        if (IsEnemyRaceInPvPZone(player))
+            return true;
+        int? opponentId = DuelService.GetInstance().GetOpponentId(player);
+        return opponentId != null && opponentId == GetCreatorId();
     }
 
     public override CreatureType GetTypeValue(Creature creature)
     {
         if (creature is Aion.GameServer.Model.GameObjects.Players.Player player)
-            return IsEnemyFrom(player) ? CreatureType.ATTACKABLE : CreatureType.SUPPORT;
+            return IsEnemyRaceInPvPZone(player) ? CreatureType.ATTACKABLE : CreatureType.SUPPORT;
         return base.GetTypeValue(creature);
+    }
+
+    private bool IsEnemyRaceInPvPZone(Aion.GameServer.Model.GameObjects.Players.Player player)
+    {
+        return !player.GetRace().Equals(ownerRace) && IsInsidePvPZone() && player.IsInsidePvPZone();
+    }
+
+    public bool IsOwnerOrTeamMember(Aion.GameServer.Model.GameObjects.Players.Player player)
+    {
+        return player.GetObjectId() == GetCreatorId() || player.IsInTeam() && player.GetCurrentTeam().HasMember(GetCreatorId());
     }
 
     /// <returns>NpcObjectType.NORMAL</returns>
@@ -140,7 +154,7 @@ public class Kisk : SummonedObject<Aion.GameServer.Model.GameObjects.Players.Pla
                     return true;
                 break;
             case 5: // Alliance (PlayerGroup or PlayerAlliance)
-                if (player.GetObjectId() == GetCreatorId() || player.IsInTeam() && player.GetCurrentTeam().HasMember(GetCreatorId()))
+                if (IsOwnerOrTeamMember(player))
                     return true;
                 break;
             default:

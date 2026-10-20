@@ -267,7 +267,7 @@ public class PlayerRestrictions
             return false;
         }
 
-        if (!(target is Creature creature) || creature.IsDead() || creature.GetLifeStats().IsAboutToDie())
+        if (!(target is Creature creature) || creature.IsDead() || creature.GetLifeStats().IsAboutToDie() || !player.CanTarget(creature))
         {
             PacketSendUtility.SendPacket(player, SM_ATTACK_RESPONSE.STOP_INVALID_TARGET(player.GetGameStats().GetAttackCounter()));
             return false;

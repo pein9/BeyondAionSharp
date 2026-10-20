@@ -590,23 +590,6 @@ public class AttackUtil
         return AttackStatus.NORMALHIT;
     }
 
-    /// <summary>
-    /// Send a packet to everyone who is targeting creature.
-    /// </summary>
-    public static void RemoveTargetFrom(Creature obj)
-    {
-        RemoveTargetFrom(obj, false);
-    }
-
-    public static void RemoveTargetFrom(Creature obj, bool validateSee)
-    {
-        obj.GetKnownList().ForEachPlayer(player =>
-        {
-            if (player.GetTarget() == obj && (!validateSee || !player.CanSee(obj)))
-                player.SetTarget(null);
-        });
-    }
-
     private static ItemGroup? GetWeaponGroup(Creature effector, bool mainHand)
     {
         if (effector is Player)

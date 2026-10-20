@@ -19,11 +19,13 @@ public class See : AdminCommand
         if (admin.GetSeeState() < 2)
         {
             admin.SetSeeState(CreatureSeeState.Search20);
+            admin.SetSeeState(CreatureSeeState.SearchGmInvisible);
             SendInfo(admin, ChatUtil.L10n(288645)); // Can see targets in advanced hide states.
         }
         else
         {
             admin.UnsetSeeState(CreatureSeeState.Search20);
+            admin.UnsetSeeState(CreatureSeeState.SearchGmInvisible);
             SendInfo(admin, "You lost vision.");
         }
         PacketSendUtility.BroadcastPacket(admin, new SM_PLAYER_STATE(admin), true);

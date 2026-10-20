@@ -234,7 +234,7 @@ public class Skill
 
     private bool IsValidTarget(Player player, Creature target)
     {
-        if (target.IsSpawnProtectedFrom(player))
+        if (!(target.Equals(firstTarget) ? player.CanTarget(target) : player.CanAffect(target)))
             return false;
         if (target is Player targetPlayer)
         {
@@ -636,7 +636,7 @@ public class Skill
             return true;
         if (!firstTarget.IsSpawned() || firstTarget.IsDead() != skillTemplate.HasResurrectEffect())
             return false;
-        return effector.CanSee(firstTarget) && !firstTarget.IsSpawnProtectedFrom(effector);
+        return effector.CanTarget(firstTarget);
     }
 
     /// <summary>Apply effects and perform actions specified in skill template.</summary>

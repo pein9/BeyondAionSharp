@@ -381,23 +381,12 @@ public abstract class Creature : VisibleObject
         return IsInVisualState(CreatureVisualState.BLINKING);
     }
 
-    /// <summary>Spawn protection permits targeting only by the owner and its non-dueling team.</summary>
-    public bool IsSpawnProtectedFrom(Creature other)
-    {
-        if (!IsProtectionActive() || other.Equals(GetMaster()))
-            return false;
-        return !(GetMaster() is Player master && other is Player otherPlayer
-            && otherPlayer.IsInSameTeam(master) && !otherPlayer.IsDueling(master));
-    }
-
     public override bool CanSee(VisibleObject obj)
     {
         if (obj is Creature creature)
         {
-            int visualStateExcludingBlinking = creature.GetVisualState() & ~CreatureVisualState.BLINKING.GetId();
-            if (visualStateExcludingBlinking <= GetSeeState())
-                return true;
-            return Equals(creature.GetMaster()); // traps, summons, etc. should always be visible to the master
+            // Spawn protected creatures remain visible; only targeting is restricted.
+            return SeesThrough(creature.GetVisualState() & ~CreatureVisualState.BLINKING.GetId()) || IgnoresInvisibilityOf(creature);
         }
         else if (obj is Pet pet)
         {
@@ -405,6 +394,32 @@ public abstract class Creature : VisibleObject
             return Equals(pet.GetMaster()) || CanSee(pet.GetMaster()) && GetKnownList().Sees(pet.GetMaster());
         }
         return base.CanSee(obj);
+    }
+
+    /// <summary>Whether hide, spawn protection and GM invisibility permit choosing this first target.</summary>
+    public bool CanTarget(Creature target) => SeesThrough(target.GetVisualState()) || IgnoresInvisibilityOf(target);
+
+    /// <summary>Secondary skill targets ignore hide, but still respect spawn protection and GM invisibility.</summary>
+    public bool CanAffect(Creature target)
+    {
+        int protectedStates = CreatureVisualState.BLINKING.GetId() | CreatureVisualState.GM_INVISIBLE.GetId();
+        return (target.GetVisualState() & protectedStates) == 0 || IgnoresInvisibilityOf(target);
+    }
+
+    private bool SeesThrough(int visualState)
+    {
+        int gmInvisible = CreatureVisualState.GM_INVISIBLE.GetId();
+        if ((visualState & gmInvisible) != 0 && !IsInSeeState(CreatureSeeState.SearchGmInvisible))
+            return false;
+        return (visualState & ~gmInvisible) <= (GetSeeState() & ~CreatureSeeState.SearchGmInvisible.GetId());
+    }
+
+    /// <summary>Self, creatures of the same master and creatures whose masters share a team ignore all three states.</summary>
+    public virtual bool IgnoresInvisibilityOf(Creature target)
+    {
+        Creature master = GetMaster(), targetMaster = target.GetMaster();
+        return master.Equals(targetMaster)
+            || master is Player player && targetMaster is Player targetPlayer && player.IsInSameTeam(targetPlayer);
     }
 
     /// <summary>Returns NpcObjectType.NORMAL.</summary>

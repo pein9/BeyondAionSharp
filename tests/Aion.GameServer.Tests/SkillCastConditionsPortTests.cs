@@ -197,7 +197,7 @@ public sealed class SkillCastConditionsPortTests
     }
 
     [Fact]
-    public void ProtectionAllowsTheOwnerAndTeamButExcludesDuelingTeammatesAndOtherCreatures()
+    public void ProtectionAllowsTheOwnerAndTeamIncludingDuelingTeammatesButExcludesOthers()
     {
         using var harness = Harness();
         var owner = harness.SpawnPlayer();
@@ -208,12 +208,12 @@ public sealed class SkillCastConditionsPortTests
         typeof(Summon).GetField("master", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(summon, owner);
         summon.SetVisualState(CreatureVisualState.BLINKING);
         owner.SetVisualState(CreatureVisualState.BLINKING);
-        Assert.False(owner.IsSpawnProtectedFrom(owner));
-        Assert.False(owner.IsSpawnProtectedFrom(teammate));
-        Assert.False(summon.IsSpawnProtectedFrom(owner));
-        Assert.False(summon.IsSpawnProtectedFrom(teammate));
-        Assert.True(summon.IsSpawnProtectedFrom(outsider));
-        Assert.True(owner.IsSpawnProtectedFrom(outsider));
+        Assert.True(owner.CanTarget(owner));
+        Assert.True(teammate.CanTarget(owner));
+        Assert.True(owner.CanTarget(summon));
+        Assert.True(teammate.CanTarget(summon));
+        Assert.False(outsider.CanTarget(summon));
+        Assert.False(outsider.CanTarget(owner));
 
         var duels = (ConcurrentDictionary<int, int>)typeof(DuelService)
             .GetField("duels", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(DuelService.GetInstance())!;
@@ -221,8 +221,8 @@ public sealed class SkillCastConditionsPortTests
         duels[owner.ObjectId] = teammate.ObjectId;
         try
         {
-            Assert.True(owner.IsSpawnProtectedFrom(teammate));
-            Assert.True(summon.IsSpawnProtectedFrom(teammate));
+            Assert.True(teammate.CanTarget(owner));
+            Assert.True(teammate.CanTarget(summon));
         }
         finally
         {
@@ -233,8 +233,8 @@ public sealed class SkillCastConditionsPortTests
         var npc = harness.SpawnWithAi(217182, "general");
         npc.SetVisualState(CreatureVisualState.BLINKING);
         Assert.True(npc.IsProtectionActive());
-        Assert.True(npc.IsSpawnProtectedFrom(owner));
-        Assert.False(npc.IsSpawnProtectedFrom(npc));
+        Assert.False(owner.CanTarget(npc));
+        Assert.True(npc.CanTarget(npc));
     }
 
     [Fact]

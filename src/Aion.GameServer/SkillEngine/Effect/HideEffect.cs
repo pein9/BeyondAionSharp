@@ -54,13 +54,6 @@ public class HideEffect : BufEffect
         // send all to set new 'effected' visual state (remove all visual targetting from 'effected')
         PacketSendUtility.BroadcastPacketAndReceive(effected, new SM_PLAYER_STATE(effected));
 
-        ThreadPoolManager.GetInstance().Schedule(ct =>
-        {
-            // do on all who targetting on 'effected' (set target null, cancel attack skill, cancel npc pursuit)
-            AttackUtil.RemoveTargetFrom(effected, true);
-            return ValueTask.CompletedTask;
-        }, TimeSpan.FromMilliseconds(500));
-
         effected.GetController().OnHide();
         // for player adding: Remove Hide when using any item action . when requesting dialog to any npc . when being attacked . when attacking
         if (effected is Player)

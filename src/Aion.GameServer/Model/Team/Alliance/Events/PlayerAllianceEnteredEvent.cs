@@ -38,8 +38,11 @@ public class PlayerAllianceEnteredEvent : PlayerEnteredEvent<PlayerAlliance>
                 PacketSendUtility.SendPacket(p, SM_SYSTEM_MESSAGE.STR_FORCE_HE_ENTERED_FORCE(player.GetName()));
                 PacketSendUtility.SendPacket(p, allianceInfo);
                 PacketSendUtility.SendPacket(player, new SM_ALLIANCE_MEMBER_INFO(member, PlayerAllianceEvent.ENTER));
+                if (p.GetKnownList().Knows(player))
+                    p.UpdateKnownlist();
             }
         });
+        player.UpdateKnownlist();
         PacketSendUtility.BroadcastPacket(player, new SM_ABYSS_RANK_UPDATE(1, player), true);
 
         if (team.IsInLeague())

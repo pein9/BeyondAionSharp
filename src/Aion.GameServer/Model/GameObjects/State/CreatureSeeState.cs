@@ -16,6 +16,7 @@ public enum CreatureSeeState
     [XmlEnum("SEARCH5")] Search5 = 5,    // NPC stealth
     [XmlEnum("SEARCH10")] Search10 = 10, // 3.0 NPC stealth
     [XmlEnum("SEARCH20")] Search20 = 20,
+    [XmlEnum("SEARCH_GM_INVISIBLE")] SearchGmInvisible = 128,
 }
 
 public static class CreatureSeeStateExtensions

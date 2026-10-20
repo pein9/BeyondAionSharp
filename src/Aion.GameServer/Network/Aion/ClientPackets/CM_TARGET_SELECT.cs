@@ -44,7 +44,7 @@ public class CM_TARGET_SELECT : AionClientPacket
                 SendPacket(SM_SYSTEM_MESSAGE.STR_ASSISTKEY_NO_USER());
                 return;
             }
-            if (!newTarget.Equals(player) && !player.GetKnownList().Sees(newTarget))
+            if (!newTarget.Equals(player) && !CanSelect(player, newTarget))
             {
                 SendPacket(player.GetKnownList().Knows(newTarget) ? SM_SYSTEM_MESSAGE.STR_ASSISTKEY_NO_USER() : SM_SYSTEM_MESSAGE.STR_ASSISTKEY_TOO_FAR());
                 return;
@@ -63,12 +63,17 @@ public class CM_TARGET_SELECT : AionClientPacket
             newTarget = player.GetKnownList().GetObject(targetObjectId);
             if (newTarget == null && player.IsInTeam() && player.GetCurrentTeam().HasMember(targetObjectId))
                 newTarget = player.GetCurrentTeam().GetMember(targetObjectId).GetObject();
-            else if (newTarget != null && !player.Equals(newTarget) && !player.GetKnownList().Sees(newTarget))
+            else if (newTarget != null && !player.Equals(newTarget) && !CanSelect(player, newTarget))
             {
                 AuditLogger.Log(player, "possibly used radar hack: trying to target invisible " + newTarget);
                 newTarget = null;
             }
         }
         player.SetTarget(newTarget);
+    }
+
+    private static bool CanSelect(Player player, VisibleObject target)
+    {
+        return player.GetKnownList().Sees(target) && (target is not Creature creature || player.CanTarget(creature));
     }
 }

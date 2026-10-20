@@ -105,23 +105,9 @@ public partial class Player
         return teamId != 0 && teamId == player.GetCurrentTeamId();
     }
 
-    public override bool CanSee(VisibleObject obj)
+    public override bool IgnoresInvisibilityOf(Creature target)
     {
-        if (base.CanSee(obj))
-            return true;
-
-        if (obj is Creature creature)
-        {
-            if (creature.GetMaster() is Player player) // player or a summon's master
-            {
-                if (IsInSameTeam(player) && !IsDueling(player))
-                    return true;
-            }
-            // invisible kisks can be seen from players of the same race
-            return obj is Kisk kisk && kisk.GetOwnerRace() == GetRace();
-        }
-
-        return false;
+        return base.IgnoresInvisibilityOf(target) || target is Kisk kisk && kisk.IsOwnerOrTeamMember(this);
     }
 
     public override Aion.GameServer.Model.TribeClass GetTribe()
