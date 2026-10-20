@@ -1,9 +1,9 @@
 # Natural leg to 36: what was left, Brusthonin, the first Abyss quests and the check-in at 36
 
-Status: paused, 2026-10-20: NL-0 to NL-3 done; the operator's Fire Room path is recorded and reviewed (decision 15).
-NL-4 still needs the route and consumable-checkpoint fixes and the operator's word to resume. The world
-is `nl-vs-s1-w1`; the Cleric finished Q24023 and the other seven have not been replayed with the committed portal-abort
-fix. Abyss flight-ring routing is implemented separately while the loop stays paused (the operator's decisions below).
+Status: resumed by the operator, 2026-10-20: NL-0 to NL-3 done; NL-4 in progress. Start from `nl-vs-s1-w1`
+with the committed Fire Room route, recurring consumable supply and portal-abort fixes. The Cleric's completed Q24023
+state is carried forward while the seven unfinished classes replay together. The group pass, higher-level deferrals
+and NL-5 report remain open. Decisions 15 and 16 record the earlier pause; decision 17 resumes the loop.
 The plan was written on 2026-10-17. The operator, that day, after the level-31 profiles:
 
 > 1. Finish anything we were in the middle of, unless we were waiting until we leveled up a bit (like lvl 36 with better
@@ -586,6 +586,52 @@ Mine, where the operator gave none; each is his to change:
      fidelity, script contracts, profiles, baked navmeshes and companion-server checks also passed; the disposable
      allowance-boundary probe confirms the original per-race/total budgets and rejects another map or row.
 
+17. **Resume NL-4/NL-5 from `nl-vs-s1` (the operator, 2026-10-20).** Replay the seven unfinished classes with the
+   fixed recorded Fire Room travel and recurring top-ups, then play the group pass, evaluate the quests deferred for
+   higher levels, and write the per-class NL-5 report. Keep combat rotations and learned skills current as the bots
+   progress. Preserve the Cleric's completed state in the same world, with starts ten game minutes apart and NL-a.
+   Restore the original snapshot through a generated disposable image with the exact shipped schema migrations;
+   preserve its source hash and the original capture. The first round is uncaptured, and a captured round uses committed
+   runtime code. Solo-capability classifications follow the resulting evidence, not the depleted older attempts.
+   Other unanswered retail decisions remain open. The operator clarified the conflicting push instructions on
+   2026-10-20: **commit and push as work progresses**. This overrides the earlier no-push rule; commits still name
+   their paths explicitly on `main`, without a branch, worktree or attribution trailer.
+   - **First uncaptured trial (`nl4-vs-resume-t2`):** only the Templar and Sorcerer had started when the host was
+     stopped for diagnosis; the other five were not played. No snapshot was captured. The disposable schema was
+     dropped by its owner, and the original `nl-vs-s1-w1` dump retains SHA-256
+     `7351b114d7afd253c9c461880fb568eafeac0c403e2fd8b5b195f7bc144bc782`.
+   - **Water Room:** the Templar recorded 194 blocked combat approaches, often at the same horizontal point as a
+     moving Corrupt Water Spirit whose reported height was several metres above the floor. The final trace then
+     shows eight kills in the room, the key item `182215366` looted, and departure at 7:07 game time. It later died
+     outside and reached the Wind Room. The operator is unsure whether Water needs jumps/glides and permits geometry
+     inspection and a bounded attempt, with a recording available if still needed. This is evidence of a costly
+     approach problem, not a demonstrated impassable room; no Water route or NPC data was changed on that inference.
+   - **Fire launch:** the Sorcerer flew the exterior recorded route and entered Fire, but the avoidance-only walk to
+     the descent launch was hazard-rejected before any glide. The launch approach now reuses the existing defended
+     blocker-clearing walk, bounded by progress, survival and the current map. The new trial must still prove it with
+     live hostiles; the earlier motion probe cleared those hostiles.
+   - **Skills through 38:** review the original eight against Java's auto-learn tree and templates, including later
+     ranks. Extend the existing profile validator's ceiling from 31 to 38. Use ordinary single-target damage and chain
+     follow-ups, conditional finishers only on observed target states, defensive buffs and Ranger's Breath of Nature
+     toggle. Keep explicit exclusions for area pulls, unsupported trap/rear positioning, party resurrection, and
+     Sage's Wisdom's doubled mana costs that the heal reserve does not model. Spirit Absorption's Java template has
+     only a negative percent heal on the pet, so it remains excluded. No server skill data or learned skills are edited.
+   - **Bounded diagnostic (`nl4-vs-resume-t3`):** the Sorcerer killed three Fire launch blockers through the defended
+     approach; the Chanter killed its first. Neither proves a completed descent or Q24023. The Templar cleared Water
+     and Wind. This diagnostic mistakenly set every seat's stop to minute 25 of the world, giving later starts shorter
+     windows and the last four no window. Their companion seats then waited for players whose callbacks never began.
+     The exact owned test host was stopped, letting its wrapper drop the disposable schema; no snapshot was captured.
+     A corrected diagnostic must set each absolute stop to its own start plus the intended play duration. Do not count
+     these cancellations as combat failures or claim that all seven played.
+   - **Validation before this commit:** all 33 newly reviewed skill templates structurally match the Java 4.8 source.
+     All eight profiles pass their existing validator through 38. The solution suite passed 6,663 tests with 252
+     existing skips; warning/logger/clock/draft guards, fidelity, script contracts, profile generation/export,
+     baked navmeshes and companion-server checks passed. Fast SIM passed 115 tests and all eleven manifest scenarios,
+     with no failures or flakiness. All five starter journeys passed; exact comparisons still begin with the known
+     D7 object-ID difference, without re-recording. The NTC replay (`nl4-r38-ntc`) retained six verified home receipts.
+     Logs are under `run/nl/resume-20261020/`, with starter/NTC evidence under `run/nl/NL4/nl4-r38-*`.
+     These checks validate the runtime changes; they do not complete NL-4, the seven's Q24023, or NL-5.
+
 ## Loop prompt
 
 ```
@@ -597,7 +643,7 @@ while a run holds the build outputs; take the first open step; small change, bui
 captured round on committed code; the checks of CLAUDE.md before each commit (unit suite, warning baseline, neutral gate on
 the five starter scopes and one replay of run/ntc/n9.json when shared bot code changed; make-companion-profiles.py --check
 when profiles change); a dated line under the step, tick it when a round shows it, commit code then document by path with
-no attribution line. Never push, never branch, no worktree; leave the three docs/playtest-*.md files alone; no hand-edit of
+no attribution line. Push verified path-specific commits as clarified in decision 17; never branch, no worktree; leave the three docs/playtest-*.md files alone; no hand-edit of
 generated data; never raise the warning baseline; SIM env AION_SIM_DB_CONTAINER=aion-sim-mysql AION_SIM_DB_PORT=3307
 AION_BOT_DASHBOARD_PORT=17881. Look a stuck quest up online (aioncodex /48/) before recording it as a boundary. STOP when
 NL-5 is ticked, or a step has failed three iterations running without progress, or a decision is needed that the document

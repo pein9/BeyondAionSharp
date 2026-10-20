@@ -11,7 +11,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// </summary>
 public static class NaturalSorcererProfile
 {
-	private const int TopLevel = 31;
+	private const int TopLevel = 38;
 
 	/// <summary>
 	/// The Sorcerer's active skills to level 26, by role, beside the Mage's it keeps. Flame Bolt and Flame Harpoon
@@ -22,6 +22,7 @@ public static class NaturalSorcererProfile
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
+		[1204] = "magic-fist", [1270] = "vaizel", [1526] = "aether-flame", [1533] = "fusion",
 		// L3 (docs/level-31-profiles.md): the skills new at 27 to 31.
 		[1433] = "wisdom", [1250] = "shard", [1446] = "ironclad",
 		[1282] = "bolt", [1284] = "bolt", [1285] = "bolt", [1286] = "bolt", [1287] = "bolt",
@@ -54,7 +55,7 @@ public static class NaturalSorcererProfile
 	/// <summary>Every other active skill a Sorcerer learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
-		[1184] = "Aether's Hold: 379 damage for 185 MP behind a 2.8 s cast, and nothing of the Sorcerer's uses a lifted target.",
+		[1184] = "Aether's Hold costs 185 MP behind a 2.8 s cast; the table retains Root for its own control. Aerial finishers use an observed ally lift.",
 		[1476] = "Boon of Clairvoyance shows hidden creatures; no monster on the bot's way hides.",
 		[1338] = "Tranquilizing Cloud puts every monster within 5 m of its target to sleep; the bot pulls one at a time.",
 		[1238] = "Robe of Cold shares Robe of Flame's cooldown id, and the server keeps one of them (Java " +
@@ -92,9 +93,10 @@ public static class NaturalSorcererProfile
 		// MR-g: Ice Harpoon, its stigma, beside the harpoon it learns.
 		// L3: Empyrean Wisdom first (+70 magic boost, a third off every cost, 15 s in 30), Refracting Shard (free, mana back)
 		// before the flame skills, and Storm Strike (the second stone, a 4 s cast) only as the opener from range.
-		Adjacent: ["wisdom", "frost", "erosion", "ice", "shock", "empyrean", "blast", "ice-harpoon", "shard", "harpoon", "bolt", "blaze"],
-		AtRange: ["storm-strike", "wisdom", "ice", "shock", "empyrean", "blast", "ice-harpoon", "shard", "harpoon", "bolt", "blaze"],
-		Upkeep: [new("skin")],
+		// Aerial finishers use only an observed lift (including an ally's); no speculative aerial cast.
+		Adjacent: ["magic-fist", "aether-flame", "wisdom", "frost", "fusion", "erosion", "ice", "shock", "empyrean", "blast", "ice-harpoon", "shard", "harpoon", "bolt", "blaze"],
+		AtRange: ["magic-fist", "aether-flame", "storm-strike", "wisdom", "fusion", "ice", "shock", "empyrean", "blast", "ice-harpoon", "shard", "harpoon", "bolt", "blaze"],
+		Upkeep: [new("skin"), new("vaizel", DuringFight: true)],
 		// L3: Boon of Iron-Clad (5 s that absorb every physical hit) in an emergency; its 352 MP are not kept back.
 		Recovery: [new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75),
 			new(NaturalRecoveryKind.Skill, 35, "ironclad", EmergencyOnly: true, KeepsNoMana: true)],

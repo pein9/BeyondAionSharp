@@ -25,6 +25,7 @@ public static class NaturalPriestProfile
 	/// of Recovery, and the later ranks of the Priest's roles. NR-16: the ten ranks of levels 25 and 26 are the last line.</summary>
 	internal static readonly IReadOnlyDictionary<int, string> ClericRoles = new Dictionary<int, string>(PriestRoles)
 	{
+		[3889] = "focus", [4054] = "thunderbolt", [4128] = "chastise",
 		[246] = "herb", [247] = "herb", [251] = "herb", [249] = "mp-recovery", [250] = "mp-recovery", [252] = "mp-recovery",
 		[3922] = "salvation", [3939] = "rejuvenation", [3940] = "rejuvenation", [3941] = "rejuvenation",
 		[4025] = "followup", [4026] = "followup", [4027] = "followup", [4061] = "wind", [4062] = "wind", [4063] = "wind",
@@ -47,6 +48,8 @@ public static class NaturalPriestProfile
 	/// <see cref="NaturalClericSkills.Excluded"/>.</summary>
 	private static readonly IReadOnlyDictionary<int, string> ClericExcludedFromLevel25 = new Dictionary<int, string>
 	{
+		[3888] = "Sage's Wisdom doubles skill mana cost; the current heal reserve does not budget that increase.",
+		[4004] = "Resurrection Loci targets a party; the group death workflow resurrects one observed corpse at a time.",
 		[4006] = "Splendor of Flight restores flight time over 15 s; the rule table is for fights on the ground.",
 		[3880] = "Stability III: as Stability I.",
 	};
@@ -100,9 +103,10 @@ public static class NaturalPriestProfile
 	/// </summary>
 	internal static readonly NaturalRotationRules ClericRules = new("natural-cleric-v1",
 		// L3: Punishing Earth while the monster comes, and after Earth's Wrath with it on the Cleric.
-		Adjacent: ["spark", "followup", "touch", "servant", "infernal", "hallowed", "wind", "wrath", "punishing", "smite"],
-		AtRange: ["spark", "followup", "touch", "servant", "punishing", "wrath", "wind", "smite"],
-		Upkeep: [new("blessing"), new("rejuvenation", DuringFight: true, UnderAttackOnly: true)],
+		Adjacent: ["spark", "followup", "touch", "servant", "infernal", "hallowed", "wind", "wrath", "punishing", "thunderbolt", "chastise", "smite"],
+		AtRange: ["spark", "followup", "touch", "servant", "punishing", "thunderbolt", "wrath", "wind", "chastise", "smite"],
+		Upkeep: [new("blessing"), new("rejuvenation", DuringFight: true, UnderAttackOnly: true),
+			new("focus", DuringFight: true, UnderAttackOnly: true)],
 		Recovery:
 		[
 			new(NaturalRecoveryKind.ShieldScroll, 50),
@@ -125,7 +129,7 @@ public static class NaturalPriestProfile
 		Openers: ["smite"], OnlyWhileTargetAbove: new Dictionary<string, int> { ["servant"] = 50 }, RangedHoldWithin: 12);
 
 	/// <summary>The Cleric's catalog reaches this level: the level the recorded Cleric ends its Abyss-entry leg at.</summary>
-	private const int ClericCatalogTopLevel = 31;
+	private const int ClericCatalogTopLevel = 38;
 
 	/// <summary>The Priest's catalog, which a Chanter keeps as well.</summary>
 	internal static NaturalPriestSkill[] PriestCatalog(StaticData data) =>

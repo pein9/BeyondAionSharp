@@ -11,7 +11,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// </summary>
 public static class NaturalGladiatorProfile
 {
-	private const int TopLevel = 31;
+	private const int TopLevel = 38;
 
 	/// <summary>
 	/// The Gladiator's active skills to level 26, by role, beside the Warrior's it keeps. Ferocious Strike opens the first
@@ -25,6 +25,8 @@ public static class NaturalGladiatorProfile
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
+		// NL-4: new families through 38; later ranks inherit their role from the skill tree.
+		[620] = "attrition", [663] = "weakening", [2932] = "unwavering",
 		// L3 (docs/level-31-profiles.md): the skills new at 27 to 31.
 		[599] = "fury", [531] = "crushing-blow", [590] = "springing", [605] = "reckless",
 		[2864] = "strike", [2865] = "strike", [2866] = "strike", [2867] = "strike", [2868] = "strike", [2869] = "strike",
@@ -51,6 +53,7 @@ public static class NaturalGladiatorProfile
 	/// <summary>Every other active skill and toggle a Gladiator learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
+		[670] = "Pressure Wave hits five enemies within 7 m; the single-pull table leaves area attacks out.",
 		[555] = "Seismic Billow " + Area + " It follows Roiling Hack or Pressure Wave, both left out.",
 		[769] = "Absorbing Fury I " + Area, [770] = "Absorbing Fury II " + Area, [771] = "Absorbing Fury III " + Area,
 		[772] = "Absorbing Fury IV " + Area,
@@ -86,13 +89,14 @@ public static class NaturalGladiatorProfile
 		// L3: Daevic Fury first (+80% attack for 30 s, its DP before Explosion of Rage's), Crushing Blow's sure stumble early,
 		// Reckless Strike after Rupture, and Springing Slice and Draining Blow (the second stone) on a thrown-down target.
 		Adjacent: ["fury", "explosion", "crushing-blow", "strike", "robust", "rage", "wrathful", "rupture", "reckless", "smash", "aerial",
-			"crashing", "cleave", "crippling", "springing", "draining"],
+			"crashing", "cleave", "crippling", "springing", "draining", "weakening"],
 		AtRange: ["cleave", "taunt"],
-		Upkeep: [],
+		Upkeep: [new("unwavering", DuringFight: true, UnderAttackOnly: true)],
 		Recovery:
 		[
 			new(NaturalRecoveryKind.ShieldScroll, 50),
 			new(NaturalRecoveryKind.LifePotion, 75),
+			new(NaturalRecoveryKind.Skill, 60, "attrition"),
 			new(NaturalRecoveryKind.Skill, 45, "wind"),
 		],
 		SwarmAttackers: 3, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler,

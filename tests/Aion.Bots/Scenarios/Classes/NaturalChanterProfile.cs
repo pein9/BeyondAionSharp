@@ -12,7 +12,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// </summary>
 public static class NaturalChanterProfile
 {
-	private const int TopLevel = 31;
+	private const int TopLevel = 38;
 
 	/// <summary>
 	/// The Chanter's active skills to level 26, by role, beside the Priest's it keeps. Hallowed Strike opens the chain
@@ -26,6 +26,7 @@ public static class NaturalChanterProfile
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>(NaturalPriestProfile.PriestRoles)
 	{
+		[1580] = "resonance", [1758] = "quickness",
 		[1840] = "heal", [1841] = "heal", [1842] = "heal", [1843] = "heal",
 		[1616] = "hallowed", [1617] = "hallowed", [1618] = "hallowed",
 		[1562] = "booming", [1563] = "booming", [1564] = "booming", [1565] = "booming",
@@ -91,10 +92,10 @@ public static class NaturalChanterProfile
 	private static readonly NaturalRotationRules Rules = new("natural-chanter-v1",
 		// L3: Soul Crush on Infernal Blaze's stun, Pentacle Shock after Incandescent Blow; Word of Inspiration (the second
 		// stone) kept up in a fight, and Word of Wind for a group before the pull.
-		Adjacent: ["circle", "infernal", "thunderbolt", "soulcrush", "hallowed", "booming", "crashing", "meteor", "incandescent", "pentacle", "smite"],
+		Adjacent: ["resonance", "circle", "infernal", "thunderbolt", "soulcrush", "hallowed", "booming", "crashing", "meteor", "incandescent", "pentacle", "smite"],
 		AtRange: ["infernal", "thunderbolt", "smite"],
 		Upkeep: [new("blessing"), new("word-of-wind", GroupOnly: true), new("revival", DuringFight: true, UnderAttackOnly: true),
-			new("inspiration", DuringFight: true)],
+			new("inspiration", DuringFight: true), new("quickness", DuringFight: true, GroupOnly: true)],
 		Recovery:
 		[
 			new(NaturalRecoveryKind.ShieldScroll, 50),

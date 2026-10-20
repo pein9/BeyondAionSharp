@@ -11,7 +11,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// </summary>
 public static class NaturalTemplarProfile
 {
-	private const int TopLevel = 31;
+	private const int TopLevel = 38;
 
 	/// <summary>
 	/// The Templar's active skills to level 26, by role, beside the Warrior's it keeps. Ferocious Strike opens the first
@@ -23,6 +23,7 @@ public static class NaturalTemplarProfile
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
+		[3116] = "break-power", [3140] = "judgement",
 		// L3 (docs/level-31-profiles.md): the skills new at 27 to 31.
 		[2932] = "unwavering", [3161] = "hand",
 		[2864] = "strike", [2865] = "strike", [2866] = "strike", [2867] = "strike", [2868] = "strike", [2869] = "strike",
@@ -95,7 +96,7 @@ public static class NaturalTemplarProfile
 	private static readonly NaturalRotationRules Rules = new("natural-templar-v1",
 		// MR-g: Inquisitor's Blow, its stigma, is to the Templar what Cleave is to the Gladiator: the pull that hits.
 		// L3: Punishing Thrust, the second stone, its hardest hit; Unwavering Devotion kept up while it is hit.
-		Adjacent: ["chastise", "dazing", "divine", "bash", "strike", "robust", "rage", "wrath", "smash", "punishing-thrust", "inquisitor"],
+		Adjacent: ["break-power", "chastise", "dazing", "divine", "judgement", "bash", "strike", "robust", "rage", "wrath", "smash", "punishing-thrust", "inquisitor"],
 		AtRange: ["inquisitor", "taunt"],
 		Upkeep: [new("unwavering", DuringFight: true, UnderAttackOnly: true)],
 		Recovery:

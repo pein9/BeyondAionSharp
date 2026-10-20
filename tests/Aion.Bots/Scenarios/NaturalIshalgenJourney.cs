@@ -3759,8 +3759,30 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					await RestSafelyAsync(token);
 					await combat.BuffOurselfAsync(NaturalHelpTrigger.TravelLeg, token, travelMeters: fireTravel?.DescentMeters ?? 0);
 				}
-				async Task<bool> WalkFireTravelAsync(BotPosition at) => (await NaturalIshalgenNavigator.ExploreWithinRangeAsync(
-					session.Api.World.MapId!.Value, -1, at, 1, navigator, "fire-route-takeoff", token)).Arrived;
+				async Task<bool> WalkFireTravelAsync(BotPosition at)
+				{
+					int map = session.Api.World.MapId!.Value;
+					int revives = combat.ReviveCount;
+					var progress = new NaturalApproachProgress();
+					for (int clear = 0; progress.CanRetry(clear); clear++)
+					{
+						if (session.Api.World.MapId != map || session.Api.World.IsDead || combat.ReviveCount != revives) return false;
+						NaturalNavigationResult result = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(
+							map, -1, at, 1, navigator, "fire-route-takeoff", token);
+						if (result.Arrived) return true;
+						session.TraceDiagnostic("fire-launch-approach-blocked", new Dictionary<string, object?>
+						{
+							["position"] = session.CurrentPosition, ["launch"] = at, ["reason"] = result.Reason,
+							["attempt"] = clear, ["revives"] = combat.ReviveCount - revives,
+						});
+						if (session.Api.World.MapId != map || session.Api.World.IsDead || combat.ReviveCount != revives) return false;
+						BotPosition before = session.CurrentPosition;
+						int kills = navigator.UnavailableObjects.Count;
+						if (!await TryClearObservedBlockerAsync(at)) return false;
+						progress.Observe(Distance(before, session.CurrentPosition), navigator.UnavailableObjects.Count > kills);
+					}
+					return false;
+				}
 				glideDown = leg.InstanceRooms is not { } glideRooms ? null : async goal =>
 				{
 					if (session.Api.World.MapId != glideRooms.MapId || session.Api.World.IsDead || combat.InCombat) return false;

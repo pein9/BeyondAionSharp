@@ -11,7 +11,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// </summary>
 public static class NaturalSpiritMasterProfile
 {
-	private const int TopLevel = 31;
+	private const int TopLevel = 38;
 
 	/// <summary>
 	/// The Spirit Master's own spells to level 26, by role, beside the Mage's it keeps. Erosion, which it has in every
@@ -25,6 +25,7 @@ public static class NaturalSpiritMasterProfile
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
+		[3582] = "weaken-spirit", [3730] = "resistance",
 		// L3 (docs/level-31-profiles.md): the skills new at 27 to 31.
 		[3779] = "alacrity",
 		[1447] = "erosion", [1448] = "erosion", [1449] = "erosion", [1450] = "erosion", [1451] = "erosion",
@@ -60,6 +61,9 @@ public static class NaturalSpiritMasterProfile
 	/// <summary>Every other active skill a Spirit Master learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
+		[3589] = "Fear Shriek sends up to six enemies running into other packs; the table controls a retreat with Root.",
+		[3732] = "Spirit Absorption's Java template applies a negative percent heal to the pet with no MP effect; retain the tanking spirit.",
+		[3848] = "Blade of Earth snares six enemies within 15 m; the single-pull table leaves area control out.",
 		[3775] = "Fear sends its target running among other monsters, which it brings back; the table's control is Root before a retreat.",
 		[3778] = "Nightmare follows Fear, which is left out.",
 		[3781] = "Disenchant hits every monster within 25 m, and route monsters carry no buffs; its DP go to Divine Spirit Armor.",
@@ -95,11 +99,11 @@ public static class NaturalSpiritMasterProfile
 	private static readonly NaturalRotationRules Rules = new("natural-spirit-master-v1",
 		// MR-g: Cyclone of Wrath, its stigma, with the other damage that lasts.
 		// L3: Magic's Freedom (the second stone) early, and Summoning Alacrity just before the Wind Servant.
-		Adjacent: ["disturbance", "freedom", "erosion", "spirit-erosion", "earth", "stone", "cyclone", "choke", "backdraft", "alacrity", "servant",
+		Adjacent: ["disturbance", "freedom", "erosion", "spirit-erosion", "weaken-spirit", "earth", "stone", "cyclone", "choke", "backdraft", "alacrity", "servant",
 			"ice", "shock", "bolt", "blaze"],
-		AtRange: ["disturbance", "freedom", "spirit-erosion", "earth", "stone", "erosion", "cyclone", "choke", "backdraft", "alacrity", "servant",
+		AtRange: ["disturbance", "freedom", "spirit-erosion", "weaken-spirit", "earth", "stone", "erosion", "cyclone", "choke", "backdraft", "alacrity", "servant",
 			"ice", "shock", "bolt", "blaze"],
-		Upkeep: [new("skin")],
+		Upkeep: [new("skin"), new("resistance", DuringFight: true, UnderAttackOnly: true)],
 		Recovery: [new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
 		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.LastResort, ControlRole: "root",
 		SpiritLadder: [new("armor", 100), new("wrath", 60), new("replenish", 40, OwnHpAbovePercent: 70)]);

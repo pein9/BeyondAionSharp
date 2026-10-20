@@ -11,7 +11,7 @@ namespace Aion.Bots.Scenarios.Classes;
 /// </summary>
 public static class NaturalRangerProfile
 {
-	private const int TopLevel = 31;
+	private const int TopLevel = 38;
 
 	/// <summary>
 	/// The Ranger's active skills to level 26, by role. Every shot needs a bow. Swift Shot (level 10) opens the chain
@@ -23,6 +23,7 @@ public static class NaturalRangerProfile
 	/// </summary>
 	private static readonly IReadOnlyDictionary<int, string> Roles = new Dictionary<int, string>
 	{
+		[841] = "nature", [890] = "fleshcutter",
 		// L3 (docs/level-31-profiles.md): the skills new at 27 to 31.
 		[830] = "spiral", [881] = "misery",
 		[994] = "swift", [995] = "swift", [996] = "swift", [997] = "swift",
@@ -50,6 +51,8 @@ public static class NaturalRangerProfile
 	/// <summary>Every other active skill a Ranger learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
+		[803] = "Spike Bite Trap needs trap placement and a deliberate pull across it, which this table does not plan.",
+		[1148] = "Sandstorm Trap needs trap placement and a deliberate pull across it, which this table does not plan.",
 		[868] = "Tactical Retreat speeds the Ranger after each hit taken; the bot does not kite, it walks checked routes.",
 		[889] = "Bestial Fury cuts the bow's reach by 10 m, under the 18 m the table stands off at.",
 		[1099] = "Hunter's Eye shows hidden creatures; no monster on the bot's way hides.",
@@ -90,11 +93,13 @@ public static class NaturalRangerProfile
 		// MR-g: Bow of Blessing, its stigma, is cast as Devotion is: on itself, while an attack reaches the target.
 		// L3: Dilation Arrow (the second stone) early, Spiral Arrow after Arrow Strike, Misery Shot on a stunned, staggered or
 		// thrown-down target.
-		Adjacent: ["mau", "devotion", "bow-blessing", "dilation", "stun", "rupture", "swift", "arrow", "spiral", "entangle", "deadshot", "misery"],
-		AtRange: ["mau", "devotion", "bow-blessing", "dilation", "entangle", "stun", "rupture", "swift", "arrow", "spiral", "deadshot", "misery"],
+		Adjacent: ["mau", "devotion", "bow-blessing", "dilation", "stun", "rupture", "swift", "arrow", "spiral", "fleshcutter", "entangle", "deadshot", "misery"],
+		AtRange: ["mau", "devotion", "bow-blessing", "dilation", "entangle", "stun", "rupture", "swift", "arrow", "spiral", "fleshcutter", "deadshot", "misery"],
 		Upkeep: [],
 		Recovery: [new(NaturalRecoveryKind.Skill, 70, "evasion"), new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
 		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler, ControlRole: "sleep");
+
+	private static readonly NaturalKeptToggle[] KeptToggles = [new("nature", "toggle-breath-of-nature")];
 
 	// NR-Q5, NR-Q7 and NR-Q13: a bow, leather first, and the kit of a class that does not cast from mana and rests with
 	// the powder.
@@ -109,7 +114,7 @@ public static class NaturalRangerProfile
 		// A stand-off at 18 m and never a walk-in: the Engineer's, whose pistol reaches 20 m as Stunning Shot does. The
 		// bow itself reaches 25 m.
 		NaturalFightMovement movement = NaturalEngineerProfile.Movement;
-		NaturalProfileValidator.Require(data, PlayerClass.RANGER, TopLevel, skills, excluded, Rules.Lines(skills), Gear);
+		NaturalProfileValidator.Require(data, PlayerClass.RANGER, TopLevel, skills, excluded, Rules.Lines(skills), Gear, KeptToggles);
 		return new NaturalClassProfile
 		{
 			Class = PlayerClass.RANGER,
@@ -119,6 +124,7 @@ public static class NaturalRangerProfile
 			// NR-34, NR-Q13: no mana serum and no Awakening scroll; the powder; Courage in the shared scroll slot.
 			HelpItems = NaturalHelpItemRules.ForKinds(caster: false, reagent: true, sharedSlotFamily: "courage"),
 			Upkeep = [],
+			Toggles = KeptToggles,
 			// NR-36: in flight it shoots Deadshot, which is ready every 2 s from the bow's reach.
 			AirAttackRoles = ["deadshot"],
 			// NR-37: every second class holds for a patrol and assesses the fight, by its own table.
