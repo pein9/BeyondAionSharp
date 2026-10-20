@@ -249,6 +249,7 @@ public sealed partial class SimulationFastScenarioTests
 		try
 		{
 			await play();
+			AssertJavaSharedAutoEntryLogs(row, rowPolicy.SnapshotProblems());
 			rowPolicy.AssertClean();
 			Console.WriteLine($"INSTANCES-PVP {row} {stage}: passed at {SystemClock.UtcNow():O}");
 		}
@@ -262,6 +263,23 @@ public sealed partial class SimulationFastScenarioTests
 			catch (Exception logError) { Console.WriteLine("  log problems: " + logError.Message); }
 			await RecoverAutoCastAsync(row, token);
 		}
+	}
+
+	/// <summary>Keep the original per-race Kamar budgets when structured logging merges their fingerprints.</summary>
+	private static void AssertJavaSharedAutoEntryLogs(AutoInstanceRow row, IReadOnlyList<SimulationProblem> problems)
+	{
+		var exits = problems.Where(problem => problem.Fingerprint == "6ec7466b").ToArray();
+		if (exits.Length != 0)
+		{
+			Assert.Equal(301120000, row.MapId);
+			string[] messages = ["No instance exit found for race: ELYOS 301120000", "No instance exit found for race: ASMODIANS 301120000"];
+			Assert.All(exits, problem => Assert.Contains(problem.Message, messages));
+			foreach (string message in messages)
+				Assert.InRange(exits.Count(problem => problem.Message == message), 0, 24);
+		}
+		// The existing one-error allowance belongs only to the deliberately broken Iron Wall entry.
+		if (problems.Any(problem => problem.Fingerprint == "a4752dcc"))
+			Assert.True(row.EntryThrows, $"{row}: unexpected unsupported auto-group entry");
 	}
 
 	/// <summary>After a failed stage: every registration cancelled, everyone out of every instance and team, at his race's start.</summary>

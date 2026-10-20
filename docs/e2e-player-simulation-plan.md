@@ -2723,6 +2723,46 @@ GM commands force scheduled content without waiting for cron (`//siege`, `//rift
   items, a full instance) and a re-entry into a still registered instance past the limit (`reenter`); Beshmundir's dangerous
   path; every handler past its creation (bosses, timers, rewards: P11-02); the battlegrounds' group, quick and alliance
   registrations and the arenas' difficulties 2 to 4; the instance recruitment (`CM_FIND_GROUP`); `//instance close`.
+
+  **2026-10-20 regression diagnosis:** the later quiet `INSTANCES` failure was reproduced with full console output,
+  packet traces and policy evidence (`run/instances-diagnosis/original/`): 108 stages, 11 failures, no recorded server
+  log-policy problems. Ten failures compared `SM_INSTANCE_INFO`'s remaining seconds against the clock after the arrival/use-bar
+  wait instead of its serialization instant. Java `SM_INSTANCE_INFO.writeImpl` reads the clock while writing; the assertion
+  now uses the in-process transport's existing `ReceivedAt` timestamp, retaining exact counts, reset instants and wire
+  fields. Each counted entry logs both timestamps, the reset and the received seconds. When `AION_E2E_RUN_DIR` is set,
+  `instance-row-results.jsonl` retains every portal/GM row/stage verdict, virtual start/end and full exception independently of console
+  verbosity; direct diagnostic runs also retain detailed console output and TRX.
+
+  The eleventh failure was the GM-only Lucky Danuar Reliquary staging point, borrowed from the regular entry. Its physical
+  floor touches mesh `BU_RU_IDLDF5_UNDER_RUNE_DAMAGEZONE_01A_266653`, material 127 (`Poisoned Ide`, skill 8814), which kills the
+  subject during the logout wait. Java `DanuarReliquaryInstance.onPlayerLogout` sends a dead subject to bind, so expecting the
+  instance exit was wrong for that setup. The already-ported Java material fix `ea7b1c32a` (`9efcc7dec` in C#) applies material
+  skills through spawn protection; its Java postimage and `GeoMap.getTerrainMaterialAt` were checked as well as the local
+  4.8 tree. The director now uses nearby walkable ground `(255,225,245.47017)`, verified against physical geometry and both
+  terrain and mesh contacts (`geometry-safe.log`); GM logout setup explicitly fails on a death. Portal coordinates, damage
+  meshes, spawn protection, revival and instance handlers retain their existing Java behavior. Traces also show material
+  deaths at the normal and infernal Danuar entry points; this shared data/Java behavior is an observation for future client
+  review, not permission to change those portals or materials. NL remains paused.
+
+  The related PvP cross-check also exposed stale P11 log identities after concatenated messages became structured
+  templates. Java's Kamar exit warnings and unsupported Iron Wall entry are unchanged. The Iron Wall identity is re-keyed
+  from `9d5d4964` to `a4752dcc`, retaining its one-error limit. Kamar's two race-specific identities (`4f7072fd`, `66c76e9e`)
+  become `6ec7466b`: the existing 24+24 warning budget is represented as 48, with explicit matrix assertions retaining the
+  cap of 24 per race, the exact Kamar messages/map, and Iron Wall's own row. Dredgion's unchanged leftover door-timer warnings
+  are re-keyed from `0f285eb1` to `970caa54`, retaining the limit of 24. Scenario/server/expiry scopes are unchanged;
+  the compiler warning baseline is unchanged. The failed cross-check remains under `verified-instances-pvp/`; subsequent
+  evidence uses separate `rekeyed-*` and `final-*` directories. The first re-keyed run passed every row but its final policy
+  still used the old Dredgion identity; all observed identities were then audited before the final rerun.
+
+  **Validation:** `INSTANCES` passed 108 stages over 59 maps, `INSTANCES-PVP` passed 20 over 14, and the two event matrices
+  each passed their entry and reset stages. All four retained detailed console output, packet traces and TRX; no
+  unallowlisted problems remain. A disposable boundary probe retained the original aggregate allowance budget (83),
+  accepted 24 warnings per race, rejected 25 for either race even when the combined total was still 48, and rejected
+  another map/row's Kamar warning or another row's Iron Wall error (`checks/allowance-guard-probe.log`).
+  The full solution suite passed 6,663 tests with 252 existing skips. The warning/logger/clock/draft guards, fidelity,
+  required Python/PowerShell contracts, trace comparer, 27 profiles and export checks, baked navmeshes and both companion
+  server checks passed (`checks-progress.log`). No new bot unit tests or gameplay changes were introduced; NL stays paused.
+
 - [ ] **P11-02** [BOTH] L — Full clears of two low-level instances, one per race: boss kill, loot, exit.
 - [x] **P11-03** [BOTH] M — PvP arena and auto-group queue (`CM_AUTO_GROUP`) with 2–6 bots. **Done 2026-10-18 in SIM
   (scenario `ARENA`); no LIVE run is claimed.** Java 4.8's queue is `AutoGroupService` with `AutoGroupType`'s 32 masks (the

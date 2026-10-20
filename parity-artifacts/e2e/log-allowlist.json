@@ -62,7 +62,7 @@
     "expires": "2027-09-18"
   },
   {
-    "fp": "9d5d4964",
+    "fp": "a4752dcc",
     "reason": "Java-shared: IronWallWarfrontInstance has no portToStartPosition (its portToPosition(Player, WorldMapInstance) is never called), so AutoPvpInstance.onPressEnter reaches GeneralInstanceHandler.portToStartPosition, which throws, and the CM_AUTO_GROUP enter is logged as an error. INSTANCES-PVP asserts this one press; a correction awaits the maintainer.",
     "owner": "e2e-simulation",
     "tracking": "P11-01",
@@ -95,29 +95,18 @@
     "expires": "2027-10-18"
   },
   {
-    "fp": "4f7072fd",
-    "reason": "Java-shared: Kamar Battlefield (301120000) has no instance_exit row, so BasicPvpInstance.leaveInstance's TeleportService.moveToInstanceExit warns and sends the player to his bind point: one warning for each Elyos leave, 24 in a row stage (two matches of twelve).",
+    "fp": "6ec7466b",
+    "reason": "Java-shared: Kamar Battlefield (301120000) has no instance_exit row, so BasicPvpInstance.leaveInstance's TeleportService.moveToInstanceExit warns and sends the player to bind. The structured Race/WorldId template merges the former Elyos/Asmodian fingerprints (4f7072fd, 66c76e9e): the same total of 48 in a row stage (two matches of twelve per race). INSTANCES-PVP separately enforces the original cap of 24 for each race and this map only.",
     "owner": "e2e-simulation",
     "tracking": "P11-01",
     "modes": ["SIM"],
     "servers": ["gs"],
     "scenarios": ["INSTANCES-PVP"],
-    "maxCount": 24,
+    "maxCount": 48,
     "expires": "2027-10-18"
   },
   {
-    "fp": "66c76e9e",
-    "reason": "Java-shared: Kamar Battlefield (301120000) has no instance_exit row, so BasicPvpInstance.leaveInstance's TeleportService.moveToInstanceExit warns and sends the player to his bind point: one warning for each Asmodian leave, 24 in a row stage (two matches of twelve).",
-    "owner": "e2e-simulation",
-    "tracking": "P11-01",
-    "modes": ["SIM"],
-    "servers": ["gs"],
-    "scenarios": ["INSTANCES-PVP"],
-    "maxCount": 24,
-    "expires": "2027-10-18"
-  },
-  {
-    "fp": "0f285eb1",
+    "fp": "970caa54",
     "reason": "Java-shared: DredgionInstance.startInstanceTask schedules openFirstDoors 120 s after the first entry without keeping the task, so onInstanceDestroy's stopInstanceTask cannot cancel it; a match everyone leaves in its first two minutes is destroyed with its doors, and the task's WorldMapInstance.setDoorState then warns, with an exception, that each door does not exist (doors 17 and 18 of Baranath Dredgion, 4 and 173 of Chantra and Terath Dredgion): up to 24 in a run (four matches of each dredgion).",
     "owner": "e2e-simulation",
     "tracking": "P11-01",

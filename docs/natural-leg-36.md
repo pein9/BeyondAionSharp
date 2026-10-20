@@ -571,10 +571,20 @@ Mine, where the operator gave none; each is his to change:
      17881; exact trace comparison still fails first at object IDs under the standing D7 exception, with no re-recording.
      All six bots reached the NTC endpoint from the compatible disposable copy, on 17881. Logs and the detailed review
      are under `run/fire-room-fix-probe/`.
-   - **Open broader check:** the additional full `INSTANCES` matrix returned failure after 20 m 35 s. Its quiet logger
-     omitted the exception and row details (`checks/instances.log`); it is **not** counted as passed and needs a separately
-     instrumented diagnosis. That native entry/reset matrix does not call the changed natural-journey policy and has no
-     Sky Temple Interior row. No server mechanics or baselines were changed to absorb its failure.
+   - **Broader check resolved, 2026-10-20:** detailed diagnosis reproduced 11 failed stages: ten cooldown packet assertions
+     compared serialization-time values to the later clock after arrival, and the GM-only Lucky Danuar staging point
+     touched Poisoned Ide's material mesh. Java calculates the packet's seconds while writing and sends a dead Danuar
+     logout to bind. The matrix now compares against the transport's serialization timestamp, stages that GM guest on
+     verified safe ground, and retains row verdicts/full exceptions plus both cooldown timestamps. The full `INSTANCES`
+     rerun passed all 108 stages across 59 maps, with zero log-policy problems. Detailed evidence, packet traces and TRX
+     are under `run/instances-diagnosis/`; the Java sources and shared Danuar hazard observation are recorded under P11-01
+     in `docs/e2e-player-simulation-plan.md`. The related PvP rerun also passed after re-keying existing Java-shared log
+     allowances to structured message templates; the same per-race/count limits remain enforced. This fixes the matrix
+     harness; server mechanics and portal/material data retain Java behavior, and compiler warning/neutral trace baselines
+     are unchanged. NL remains paused, with NL-4/NL-5 still unticked and no NL replay or snapshot capture.
+     All four entry/reset matrices passed. The required solution suite (6,663 passing, 252 existing skips), guards,
+     fidelity, script contracts, profiles, baked navmeshes and companion-server checks also passed; the disposable
+     allowance-boundary probe confirms the original per-race/total budgets and rejects another map or row.
 
 ## Loop prompt
 

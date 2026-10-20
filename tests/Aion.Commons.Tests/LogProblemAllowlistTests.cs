@@ -11,7 +11,7 @@ public sealed class LogProblemAllowlistTests
 	{
 		var allowlist = LogProblemAllowlist.Load(RepoFile("parity-artifacts", "e2e", "log-allowlist.json"), Today);
 
-		Assert.Equal(12, allowlist.Entries.Count);
+		Assert.Equal(11, allowlist.Entries.Count);
 		// P11-01's Java-shared problems of the auto-group instance matrix, each limited to its own scenario.
 		Assert.All(allowlist.Entries.Where(entry => entry.Tracking == "P11-01"), entry =>
 		{
@@ -21,7 +21,7 @@ public sealed class LogProblemAllowlistTests
 			Assert.Equal(new DateOnly(2027, 10, 18), entry.Expires);
 		});
 		Assert.Equal(
-			[("9d5d4964", 1), ("472fc1ee", 6), ("f8e10cbc", 4), ("4f7072fd", 24), ("66c76e9e", 24), ("0f285eb1", 24)],
+			[("a4752dcc", 1), ("472fc1ee", 6), ("f8e10cbc", 4), ("6ec7466b", 48), ("970caa54", 24)],
 			allowlist.Entries.Where(entry => entry.Tracking == "P11-01").Select(entry => (entry.Fingerprint, entry.MaxCount)));
 		Assert.All(allowlist.Entries.Where(entry => entry.Fingerprint != "cf736122" && entry.Tracking == "P3-10"), entry =>
 		{

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Aion.Bots.Protocol;
 using Aion.Bots.Scenarios;
 using Aion.Bots.World;
@@ -216,9 +217,9 @@ public sealed partial class SimulationFastScenarioTests
 		[301260000] = (528, 121, 176, 0),
 		[301320000] = (750, 554, 574, 0),
 		// GoTo.java gives Lucky Danuar Reliquary Lucky Ophidan Bridge's point (750, 554, 574), outside its 512 m map, which
-		// World.createPosition refuses (Java's too); the director takes Danuar Reliquary's entry point (portal_loc 3011100), the
-		// same map geometry (IDLDF5_Under_Rune).
-		[301330000] = (255.7398f, 243.60954f, 241.90897f, 0),
+		// World.createPosition refuses (Java's too). The regular entry point touches material 127 (Poisoned Ide, 8814), so
+		// the director uses nearby walkable ground with no terrain or mesh material contact. This is GM setup, not a portal fix.
+		[301330000] = (255f, 225f, 245.47017f, 0),
 		[301400000] = (542.9366f, 299.9885f, 401f, 22),
 	};
 
@@ -376,9 +377,12 @@ public sealed partial class SimulationFastScenarioTests
 		using var rowPolicy = NewPolicy(scenario.Id, includeHistory: false, new SimulationLogPolicyOptions { FailOnWarnings = true });
 		Action? restoreSiege = null;
 		var details = new Dictionary<string, string>();
+		DateTimeOffset startedAt = SystemClock.UtcNow();
+		Exception? failure = null;
 		ClearInstanceCastHistories();
 		foreach (InstanceCast actor in instanceCast)
 			actor.Session.BeginStep(row.MapId + "-" + stage, row.Handler);
+		Console.WriteLine($"INSTANCES {row} {stage}: started at {startedAt:O}");
 		try
 		{
 			if (row.SiegeId != 0)
@@ -389,6 +393,7 @@ public sealed partial class SimulationFastScenarioTests
 		}
 		catch (Exception error)
 		{
+			failure = error;
 			failures.Add(new InstanceRowFailure(row.ToString(), stage, error));
 			Console.WriteLine($"INSTANCES {row} {stage}: FAILED at {SystemClock.UtcNow():O}: {error}");
 			Console.WriteLine("  recent packets: " + string.Join(Environment.NewLine + "  ", instanceCast.Where(actor => actor.Online).Select(actor =>
@@ -401,7 +406,26 @@ public sealed partial class SimulationFastScenarioTests
 		finally
 		{
 			restoreSiege?.Invoke();
+			WriteInstanceRowResult(scenario.Id, row, stage, startedAt, failure);
 		}
+	}
+
+	/// <summary>Keep row verdicts and full exceptions even when the test runner hides successful-test stdout.</summary>
+	private static void WriteInstanceRowResult(string scenario, InstanceRow row, string stage, DateTimeOffset startedAt, Exception? failure)
+	{
+		string? directory = Environment.GetEnvironmentVariable("AION_E2E_RUN_DIR");
+		if (string.IsNullOrWhiteSpace(directory)) return;
+		File.AppendAllText(Path.Combine(directory, "instance-row-results.jsonl"), JsonSerializer.Serialize(new
+		{
+			scenario,
+			mapId = row.MapId,
+			handler = row.Handler,
+			stage,
+			virtualStartedAt = startedAt,
+			virtualEndedAt = SystemClock.UtcNow(),
+			status = failure == null ? "passed" : "failed",
+			error = failure?.ToString(),
+		}) + Environment.NewLine);
 	}
 
 	/// <summary>After a failed stage: everyone online, out of every team, out of every instance, back in Pandaemonium.</summary>
@@ -697,7 +721,14 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.Equal((byte)2, info.Get<byte>("updateType"));
 		Assert.Equal(cooltime.GetId(), info.Get<int>("cooldownId"));
 		BotInstanceEntry item = Assert.Single(info.Get<List<BotInstanceEntry>>("entries"));
-		Assert.Equal(new BotInstanceEntry(actor.Id, cooltime.GetId(), (int)(reset - SystemClock.CurrentMillis()) / 1000, cooltime.GetMaxCount(), entry, true), item);
+		// Java SM_INSTANCE_INFO.writeImpl reads the clock at serialization, not after the arrival/use-bar wait.
+		// InProcessBotTransport stamps ReceivedAt while serializing: keep the comparison exact at that instant.
+		DateTimeOffset packetAt = info.ReceivedAt ?? throw new InvalidOperationException(
+			$"{actor.Name} {mapId}: SM_INSTANCE_INFO has no transport timestamp");
+		long packetMillis = packetAt.ToUnixTimeMilliseconds();
+		Console.WriteLine($"INSTANCES {mapId} {actor.Name} entry {entry}: reset={reset}, packetAt={packetAt:O}, " +
+			$"checkedAt={SystemClock.UtcNow():O}, reuseSeconds={item.ReuseSeconds}");
+		Assert.Equal(new BotInstanceEntry(actor.Id, cooltime.GetId(), (int)(reset - packetMillis) / 1000, cooltime.GetMaxCount(), entry, true), item);
 	}
 
 	/// <summary>
@@ -799,8 +830,12 @@ public sealed partial class SimulationFastScenarioTests
 		await LeaveInstanceTeamAsync(row.Team, party, token);
 		foreach (InstanceCast actor in party)
 		{
+			int quitMark = actor.Session.PacketHistory.Count;
 			await actor.Session.QuitAsync(token);
 			actor.Online = false;
+			if (row.Way == InstanceWay.Goto)
+				Assert.True(!actor.Session.PacketHistory.Skip(quitMark).Any(packet => packet.PacketType == typeof(SM_DIE)),
+					$"{actor.Name} died during {row}'s GM logout setup; check the staging position before asserting its exit");
 		}
 		await WaitForInstanceDestructionAsync(instance, token);
 		foreach (InstanceCast actor in party)
