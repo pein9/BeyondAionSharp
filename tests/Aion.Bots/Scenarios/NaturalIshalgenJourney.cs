@@ -561,6 +561,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			Func<BotPosition, Task<bool>>? flyAcross = null;
 			// NL-4: how a leg with instance rooms (Q24023's Sky Temple Interior) goes down to a floor no walk joins: a glide.
 			Func<BotPosition, Task<bool>>? glideDown = null;
+			Func<BotPosition, bool>? preferRecordedGlide = null;
 			// M4: the quests this bot left for the group step on a Morheim leg (no progress on one alone for an hour).
 			var deferredToGroup = new HashSet<int>();
 			Func<int, float, Func<int?>?, Task<int>>? haramelApproach = null;
@@ -680,7 +681,20 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			// mosbears (85% drop) and spent three timers, because the mosbears that died as adds or on the way were left.
 			var lootSwept = new HashSet<int>();
 			bool sweeping = false;
-			void WithQuestLoot(NaturalJourneyCombat fighter) => fighter.AfterKillAsync = SweepQuestItemsWhenSafeAsync;
+			bool maintainingInventory = false;
+			void WithQuestLoot(NaturalJourneyCombat fighter)
+			{
+				fighter.AfterKillAsync = SweepQuestItemsWhenSafeAsync;
+				var stock = new NaturalHelpStockCheck(session, fighter.ClassProfile.HelpItems,
+					() => runtime.SupplyHelpItemAsync != null,
+					() =>
+					{
+						var engaged = Engaged();
+						return !maintainingInventory && !fighter.InCombat && engaged.Attackers.Length == 0 && engaged.Pursuers.Length == 0;
+					},
+					(trigger, safe) => TopUpHelpItemsAsync(trigger, safe: safe));
+				fighter.CheckHelpStockAsync = stock.CheckAsync;
+			}
 			async Task SweepQuestItemsWhenSafeAsync(CancellationToken sweepToken)
 			{
 				if (sweeping || Engaged().Attackers.Length > 0) return;
@@ -688,8 +702,6 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				try { await LootQuestItemsAroundAsync(sweepToken); }
 				finally { sweeping = false; }
 			}
-			WithQuestLoot(combat);
-			bool maintainingInventory = false;
 			var workedTemplates = new HashSet<int>();
 			long lastReturnMillis = long.MinValue / 2;
 			long failedRestockKinah = -1;
@@ -706,6 +718,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			bool bridgeShopVisited = false; // NA-16: the Altgard shop stop is done
 			var helpSupplied = new List<NaturalHelpSupplied>(); // NA-21: every approved help item supplied
 			int helpCheckedAtLevel = -1;
+			WithQuestLoot(combat);
 			bool earlyAscensionUnderway = false;
 			NaturalJourneyCheckpoint? capitalBefore = null;
 			var capitalPayments = new Dictionary<int, CapitalPayment>();
@@ -1968,7 +1981,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			// every character below level 10, and only when the runtime may supply (SIM, or the isolated LIVE stack's
 			// director). Every supply is checked from the client's inventory, traced, and listed in help-items.json beside
 			// the run's other evidence.
-			async Task TopUpHelpItemsAsync(string trigger, bool full = false)
+			async Task TopUpHelpItemsAsync(string trigger, bool full = false, Func<bool>? safe = null)
 			{
 				BotWorldModel world = session.Api.World;
 				helpCheckedAtLevel = world.Level;
@@ -1978,6 +1991,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				IReadOnlyList<NaturalHelpTopUp> plan = NaturalHelpItemSupply.Plan(world.Level, owned, help.Kit, full);
 				foreach (NaturalHelpTopUp topUp in plan)
 				{
+					if (safe != null && !safe()) break;
 					NaturalHelpItemSupply.RequireApproved(topUp.ItemId, topUp.Count);
 					await supply(topUp.ItemId, topUp.Count, token);
 					await session.SynchronizeAsync(token);
@@ -1994,7 +2008,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				if (plan.Count > 0)
 					await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "help-items.json"),
 						NaturalHelpItemSupply.ProfileJson(helpSupplied), token);
-				await CleanBagsAsync($"restock-{trigger}", token);
+				if (safe == null || safe()) await CleanBagsAsync($"restock-{trigger}", token);
 			}
 
 			// NR-R17b: a character that logs in above the ground falls to it, as a client does (Java CM_MOVE's FALL flag and
@@ -3735,9 +3749,23 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					finally { crossingFlyZone = false; }
 				};
 				var floorGlide = new NaturalFloorGlide(session, () => geometry);
+				var fireTravel = leg.InstanceRooms?.Rooms.Any(room => room.PortalNpcId == 730045) == true
+					? new NaturalFireRoomTravel(session, runtime, () => geometry) : null;
+				preferRecordedGlide = fireTravel == null ? null : goal =>
+					fireTravel.HandlesDescent(session.Api.World.MapId ?? 0, goal);
+				async Task SettleFireTravelAsync()
+				{
+					await DefendAgainstEngagedAsync("fire-route-takeoff");
+					await RestSafelyAsync(token);
+					await combat.BuffOurselfAsync(NaturalHelpTrigger.TravelLeg, token, travelMeters: fireTravel?.DescentMeters ?? 0);
+				}
+				async Task<bool> WalkFireTravelAsync(BotPosition at) => (await NaturalIshalgenNavigator.ExploreWithinRangeAsync(
+					session.Api.World.MapId!.Value, -1, at, 1, navigator, "fire-route-takeoff", token)).Arrived;
 				glideDown = leg.InstanceRooms is not { } glideRooms ? null : async goal =>
 				{
 					if (session.Api.World.MapId != glideRooms.MapId || session.Api.World.IsDead || combat.InCombat) return false;
+					if (fireTravel?.HandlesDescent(glideRooms.MapId, goal) == true)
+						return await fireTravel.DescendAsync(WalkFireTravelAsync, SettleFireTravelAsync, token);
 					BotPosition[] monsters = [.. runtime.Data.SpawnsDh.GetSpawnsByWorldId(glideRooms.MapId)
 						.Where(group => group.GetNpcId() != glideRooms.Rooms.FirstOrDefault(room => room.Contains([goal.X, goal.Y, goal.Z]))?.SourceNpcId &&
 							runtime.IsAggressive(runtime.Data.NpcDataDh.GetNpcTemplate(group.GetNpcId())))
@@ -4132,6 +4160,17 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							NaturalAltgardInstanceRooms rooms = leg.InstanceRooms!;
 							NaturalAltgardInstanceRoom room = rooms.Rooms.Single(entry => entry.Key == next.StepKey);
 							if (options.SoloCompanion != null) await DismissSoloCompanionAsync(token);
+							if (room.PortalNpcId == 730045 && fireTravel != null)
+							{
+								// The shared pad's Wind side is reachable on foot. Fire is reached by flying up and around the structure.
+								if (NaturalFlightPolicy.Distance(session.CurrentPosition, fireTravel.EntranceLanding) >= 3)
+									await ApproachShippedSpawnAsync(730043, withinRange: TalkRange(730043));
+								if (!await fireTravel.EnterAsync(WalkFireTravelAsync, SettleFireTravelAsync, token))
+								{
+									if (session.Api.World.IsDead || session.Api.World.MapId != leg.Hub.MapId) break;
+									throw new InvalidOperationException("The recorded Fire entrance flight could not be taken safely.");
+								}
+							}
 							int portal = await ApproachShippedSpawnAsync(room.PortalNpcId, withinRange: TalkRange(room.PortalNpcId));
 							if (session.Api.World.IsDead || session.Api.World.MapId != leg.Hub.MapId) break;
 							if (!await UseInstancePortalAsync(portal, rooms.UseMillis, rooms.MapId))
@@ -7302,6 +7341,17 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						BotPosition beforeApproach = session.CurrentPosition;
 						int revivesBeforeApproach = combat.ReviveCount;
 						int killsBeforeApproach = navigator.UnavailableObjects.Count;
+						// The demonstrated Fire route bypasses the middle tier. Take it before attempting a ground route,
+						// even when the bake puts two tiers on one connected island.
+						if (floorGlides < 3 && glideDown != null && !combat.InCombat && !session.Api.World.IsDead &&
+							preferRecordedGlide?.Invoke(anchor.Position) == true)
+						{
+							floorGlides++;
+							if (await glideDown(anchor.Position) && Distance(beforeApproach, session.CurrentPosition) > 2) continue;
+							if (session.Api.World.IsDead || session.Api.World.CurrentHp <= 0 || combat.ReviveCount > revivesBeforeApproach)
+								return await RetryAfterReviveAsync(beforeApproach, "recorded-glide");
+							throw new InvalidOperationException("The preferred recorded Fire descent could not be completed safely.");
+						}
 						NaturalNavigationResult result = withinRange is float range
 							? await NaturalIshalgenNavigator.ExploreWithinRangeAsync(contract.MapId, templateId, anchor.Position, range, navigator, "NPC", token,
 								stopWhen: () => CompletedApproachSource() != null,

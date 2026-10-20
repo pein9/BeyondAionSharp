@@ -103,8 +103,9 @@ $scopeTable = [ordered]@{
 	# each hand, keeps its poison on them and plays its chains at melee.
 	assassin = @{ line = 'scout-assassin'; replay = [ordered]@{ AltgardLeg1 = $true; Leg = 'l12'; From = 'altgard-coingear-assassin'; LaterCapital = $true } }
 }
-# The environment every gate run is pinned to. Null is unset: help items on, the bot monitor at its default port.
-$pinned = [ordered]@{ AION_SIM_SEED = '1'; NA_HELP_ITEMS = $null; AION_BOT_DASHBOARD_PORT = $null; AION_SIM_PROCESS_KEY = $null }
+# Gameplay is pinned; the host's explicit monitor port is retained and recorded in the evidence.
+$pinned = [ordered]@{ AION_SIM_SEED = '1'; NA_HELP_ITEMS = $null
+	AION_BOT_DASHBOARD_PORT = [Environment]::GetEnvironmentVariable('AION_BOT_DASHBOARD_PORT'); AION_SIM_PROCESS_KEY = $null }
 
 function Invoke-Python([string[]]$Arguments) {
 	$output = & $Python @Arguments
@@ -222,7 +223,7 @@ if ($Record -and $uncommitted.Count) {
 	exit 2
 }
 
-$pinnedNames = @('NA_HELP_ITEMS', 'AION_BOT_DASHBOARD_PORT', 'AION_SIM_PROCESS_KEY')
+$pinnedNames = @('NA_HELP_ITEMS', 'AION_SIM_PROCESS_KEY')
 $prior = @{}
 foreach ($name in $pinnedNames) {
 	$prior[$name] = [Environment]::GetEnvironmentVariable($name)

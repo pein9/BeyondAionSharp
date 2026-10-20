@@ -151,7 +151,8 @@ if ($World -gt 0) {
 			ConvertTo-Json | Set-Content -LiteralPath (Join-Path $worldEvidence 'schema-provenance.json')
 
 		# The world's settings are this process's environment. Inherited switches that would change play are cleared.
-		foreach ($name in @('NA_HELP_ITEMS', 'AION_BOT_DASHBOARD_PORT', 'AION_SIM_PROCESS_KEY', 'CP_CLASS', 'NI08_RESUME_CHARACTER',
+		# The monitor port is the host's choice (17881 beside the live stack), not a gameplay switch.
+		foreach ($name in @('NA_HELP_ITEMS', 'AION_SIM_PROCESS_KEY', 'CP_CLASS', 'NI08_RESUME_CHARACTER',
 			'NI08_RESUME_ACCOUNT', 'NI08_RESUME_NAME', 'NI08_STOP_AT', 'NI08_RELOG_AT', 'AF_ALTGARD', 'NA_ASCENSION', 'PC_CAPITAL', 'RC_CAPITAL')) {
 			Remove-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue
 		}

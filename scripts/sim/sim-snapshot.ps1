@@ -149,9 +149,8 @@ function Invoke-NaturalJourney([string]$Db, [string]$RunId, [string]$Evidence, [
 		'NA_ASCENSION', 'AF_ALTGARD', 'AF_ONLY', 'AF_CG_RECEIPTS', 'AF_HM_PROGRESS', 'PC_CAPITAL', 'RC_CAPITAL',
 		'NI07_STOP_AFTER_Q2004', 'NI07_STOP_AFTER_Q2005', 'NI07_STOP_AFTER_Q2006', 'NI07_STOP_AFTER_Q2007', 'NI07_STOP_ON_DEATH', 'NI07_OPTIMIZE_HUBS',
 		'AX_ARENA_FIRST_TRY', 'AX_RING_FIRST_TRY',
-		# CP-03: an inherited NA_HELP_ITEMS=0 would turn the help supply off, and the other two would move the bot
-		# monitor or the SIM process key. Cleared, the supply is on and the monitor is at its default port.
-		'NA_HELP_ITEMS', 'AION_BOT_DASHBOARD_PORT', 'AION_SIM_PROCESS_KEY',
+		# CP-03: pin gameplay switches, while retaining the host's explicit monitor port beside the live stack.
+		'NA_HELP_ITEMS', 'AION_SIM_PROCESS_KEY',
 		# CP-15: an inherited CP_CLASS would play another class line. Cleared, the journey plays the accepted line.
 		'CP_CLASS',
 		# NR-47: the account and name of a character captured in a round. Cleared, they are the line's own.

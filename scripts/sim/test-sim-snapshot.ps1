@@ -304,7 +304,7 @@ try {
 		$replayPrior[$name] = [Environment]::GetEnvironmentVariable($name)
 	}
 	$env:NA_HELP_ITEMS = '0'
-	$env:AION_BOT_DASHBOARD_PORT = '0'
+	$env:AION_BOT_DASHBOARD_PORT = '17881'
 	$env:AION_SIM_PROCESS_KEY = 'shard-09'
 	$env:CP_CLASS = 'warrior'
 	$env:CP03_FAKE_JOURNEY_EXIT = '0'
@@ -329,8 +329,8 @@ try {
 		Assert-True ($null -eq $m.child.NA_ASCENSION -and $null -eq $m.child.PC_CAPITAL -and $null -eq $m.child.RC_CAPITAL -and
 			$null -eq $m.child.AF_ALTGARD -and $null -eq $m.child.AF_HM_PROGRESS -and $null -eq $m.child.NI08_STOP_AT -and
 			$null -eq $m.child.NI08_RESUME_CHARACTER -and $null -eq $m.child.NI07_STOP_AFTER_Q2004) 'A fresh Replay inherited a scope.'
-		Assert-True ($null -eq $m.child.NA_HELP_ITEMS -and $null -eq $m.child.AION_BOT_DASHBOARD_PORT -and $null -eq $m.child.AION_SIM_PROCESS_KEY) 'The journey inherited the help-item switch, the dashboard port or the process key.'
-		Assert-True ($env:NA_HELP_ITEMS -eq '0' -and $env:AION_BOT_DASHBOARD_PORT -eq '0' -and $env:AION_SIM_PROCESS_KEY -eq 'shard-09') 'Replay did not put the parent environment back.'
+		Assert-True ($null -eq $m.child.NA_HELP_ITEMS -and $m.child.AION_BOT_DASHBOARD_PORT -eq '17881' -and $null -eq $m.child.AION_SIM_PROCESS_KEY) 'The journey lost the host monitor port or inherited a gameplay switch.'
+		Assert-True ($env:NA_HELP_ITEMS -eq '0' -and $env:AION_BOT_DASHBOARD_PORT -eq '17881' -and $env:AION_SIM_PROCESS_KEY -eq 'shard-09') 'Replay did not put the parent environment back.'
 		Assert-True ($null -eq $m.child.CP_CLASS -and $env:CP_CLASS -eq 'warrior') 'The journey inherited a class line, or Replay did not put it back.'
 		Assert-True ($m.receipt.passed -and $m.receipt.schemaDropped -and $m.receipt.item -eq 'CP-TEST' -and $m.receipt.run -eq 'm1' -and
 			$null -eq $m.receipt.from -and $m.receipt.database -eq $mDb -and @($m.receipt.environment.PSObject.Properties).Count -eq 0) 'The fresh Replay receipt is wrong.'
@@ -462,7 +462,9 @@ exit 0
 			ConvertTo-Json | Set-Content -LiteralPath (Join-Path $mockDirectory 'snapshot.json')
 	}
 	$gatePriorHelp = [Environment]::GetEnvironmentVariable('NA_HELP_ITEMS')
+	$gatePriorDashboard = [Environment]::GetEnvironmentVariable('AION_BOT_DASHBOARD_PORT')
 	$env:NA_HELP_ITEMS = '0'
+	$env:AION_BOT_DASHBOARD_PORT = '17881'
 	try {
 		# Without a baseline nothing can be compared, and a class scope is refused by its name.
 		Assert-Throws { Invoke-Gate 'none1' @{ Set = 'mage'; NoBuild = $true } } "*'mage' has no baseline row*" 'A class scope with no baseline row was played.'
@@ -489,7 +491,7 @@ exit 0
 		Assert-True ($rowP.replay.CapitalStage -eq 'start' -and $null -eq $rowP.snapshot -and $rowC.snapshot -eq 'altgard-rc-l3' -and $rowC.replay.Leg -eq 'l4') 'A baseline row does not say what it replays.'
 		Assert-True ($document.scopes[1].replay.LaterCapital -eq $true -and $document.scopes[1].snapshot -eq 'altgard') 'Scope l1 is not the later-capital leg from altgard.'
 		Assert-True ($rowP.counts.lifePotions -eq 1 -and $rowP.counts.records -eq 3 -and $rowP.counts.deaths -eq 0) 'A baseline row lost its counts.'
-		Assert-True ($rowP.environment.AION_SIM_SEED -eq '1' -and $null -eq $rowP.environment.NA_HELP_ITEMS -and
+		Assert-True ($rowP.environment.AION_SIM_SEED -eq '1' -and $null -eq $rowP.environment.NA_HELP_ITEMS -and $rowP.environment.AION_BOT_DASHBOARD_PORT -eq '17881' -and
 			($rowP.environment.PSObject.Properties.Name -join ',') -eq 'AION_SIM_SEED,NA_HELP_ITEMS,AION_BOT_DASHBOARD_PORT,AION_SIM_PROCESS_KEY') 'A baseline row lost its pinned environment.'
 		Assert-True ($rowP.sha256 -eq $rowC.sha256) 'Two scopes with the same records hashed differently.'
 		foreach ($copy in @($gateTraces, $gateSecond)) {
@@ -558,6 +560,8 @@ exit 0
 		Remove-Variable -Name cp04Variants, cp04Journeys -Scope Global -ErrorAction SilentlyContinue
 		if ($null -eq $gatePriorHelp) { Remove-Item -LiteralPath Env:NA_HELP_ITEMS -ErrorAction SilentlyContinue }
 		else { $env:NA_HELP_ITEMS = $gatePriorHelp }
+		if ($null -eq $gatePriorDashboard) { Remove-Item -LiteralPath Env:AION_BOT_DASHBOARD_PORT -ErrorAction SilentlyContinue }
+		else { $env:AION_BOT_DASHBOARD_PORT = $gatePriorDashboard }
 	}
 
 	# CP-28: the class line. Capture and Replay take -Class and set CP_CLASS; a snapshot of another line records it and

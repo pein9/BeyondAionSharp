@@ -528,6 +528,54 @@ Mine, where the operator gave none; each is his to change:
      profile generation and export checks, navmesh checks and companion-server checks. Logs are in
      `run/recordings/fire-room-prep/checks/`. No new tests or gameplay changes were made.
 
+16. **Recurring stock and recorded Fire travel implemented; NL remains paused (the operator, 2026-10-20).**
+   The operator authorized these fixes and the existing checks, with a commit by path on `main` and no push.
+   - **Stock:** from level 10, quiet pre-pull, after-rest and after-revive buff checks now inspect the class's approved
+     kit. They call the existing supplier only below the existing per-family thresholds, retaining its delivery checks,
+     `help-item-supplied` receipts and `help-items.json`. Disabled supply, death, active casting/item activities,
+     engagement/pursuit, flight and gliding prevent recurring supply. Each row is checked again before delivery.
+     This covers retries that never reach a successful endpoint or another level. Starter supply scheduling is unchanged.
+   - **Fire approach:** go to the Wind side of the entrance pad, then follow the recorded climb, turns around the
+     structure and landing at Fire Room Entrance. Each segment clears the shipped geometry and remains within ordinary
+     FLY permissions, including the near-ceiling part. It is a finite flight with a landing reserve, not GM free flight.
+   - **Fire descent:** walk to the recorded upper brink, defend/rest, refresh the ordinary travel buffs, jump and follow
+     the turning glide to the lower floor. Preserve the recorded upwind flags and the final short FALL/ground samples.
+     Select this recorded route before trying a ground approach to the lower Fire objective; it must not depend on a
+     failed walk or on whether the navmesh labels the tiers as different islands.
+     Pace movement no faster than the bot's observed speed or the recording, budget at 2 FP/s with the existing floor
+     glide's five-FP reserve, and recover FP on the ground with defense checks. Generic floor-glide limits stay unchanged.
+     The public waypoints are generated in `parity-artifacts/e2e/natural-fire-room-route.json` by
+     `tools/recording/compile-fire-room-route.py`; the private raw recording remains under `run/recordings/`.
+   - **Targeted evidence:** an ordinary access-level-0 Gladiator at 38, wearing the generated check-in equipment and using
+     its approved Running scroll, flew the entrance route from the Wind side and landed with 53/72 FP. It then glided
+     to (221.838, 226.147, 550.494), retained full 4,678 HP and landed with 28/72 FP; the ground route onward to Bolcan
+     has 42 points. The disposable motion probe cleared nearby NPCs, so this is route/FP evidence, not an encounter pass.
+     The stock probe refilled HP potions and shields repeatedly to 30 each, skipped supply while disabled, engaged,
+     casting and airborne, then refilled after landing without duplicate delivery at full stock. Evidence is in
+     `run/fire-room-fix-probe/final-probe.log` and the corresponding ignored probe trace.
+   - **Scope:** no mob/stat data changes, no NL retry or snapshot capture, and no solo-capability classification.
+     NL-4/NL-5 stay unticked until the operator resumes the loop after reviewing the route.
+   - **SIM monitor override:** the round, snapshot and neutral wrappers were clearing `AION_BOT_DASHBOARD_PORT`,
+     defeating the standing 17881 override beside the live stack. They now preserve it; the neutral evidence records
+     the selected port. The existing snapshot/neutral contract assertions were updated accordingly; no new unit tests.
+   - **Older snapshot schema:** the first required NTC replay stopped at authentication, before gameplay: its retained
+     `ntc-group-s5` dump lacks `players.pvp_exp` and the renamed appearance columns (and predates the other shipped
+     migrations). Validation uses a generated disposable copy with the exact current `game-server/sql/update.sql`
+     appended to its restore, under `run/fire-room-fix-probe/compatible-snapshots/`. Its provenance retains the original
+     dump hash; the original snapshot and every NL snapshot remain untouched. Apply those already-shipped migrations
+     on disposable restores of older NL worlds before any future resumed run; do not silently rewrite their captures.
+   - **Validation:** the final solution suite passed (5,856 GameServer, 342 Commons, 77 ChatServer, 224 LoginServer and
+     164 non-integration Simulation tests, with existing skips), as did the warning/logger/clock/draft guards and fidelity.
+     The existing Python/PowerShell contracts, profile/export checks, baked navmesh, companion-server checks and Fast SIM
+     passed (115 tests and all 11 manifest scenarios). Five starter journeys passed, repeated with actual monitor port
+     17881; exact trace comparison still fails first at object IDs under the standing D7 exception, with no re-recording.
+     All six bots reached the NTC endpoint from the compatible disposable copy, on 17881. Logs and the detailed review
+     are under `run/fire-room-fix-probe/`.
+   - **Open broader check:** the additional full `INSTANCES` matrix returned failure after 20 m 35 s. Its quiet logger
+     omitted the exception and row details (`checks/instances.log`); it is **not** counted as passed and needs a separately
+     instrumented diagnosis. That native entry/reset matrix does not call the changed natural-journey policy and has no
+     Sky Temple Interior row. No server mechanics or baselines were changed to absorb its failure.
+
 ## Loop prompt
 
 ```

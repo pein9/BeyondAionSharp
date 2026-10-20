@@ -1175,6 +1175,8 @@ public sealed partial class NaturalIshalgenJourney
 
 		public async Task BuffOurselfAsync(NaturalHelpTrigger trigger, CancellationToken token, float travelMeters = 0, bool crossMap = false)
 		{
+			if (CheckHelpStockAsync is { } stock && trigger is NaturalHelpTrigger.PrePull or NaturalHelpTrigger.AfterRest or NaturalHelpTrigger.AfterRevive)
+				await stock(trigger, token);
 			await KeepPowerShardsAsync(trigger, token);
 			await UseBoostsAsync(trigger, token);
 			if (trigger is NaturalHelpTrigger.PrePull or NaturalHelpTrigger.AfterRest) await MaintainBuffsAsync(token);
@@ -1194,6 +1196,8 @@ public sealed partial class NaturalIshalgenJourney
 				if (choice.Item == null || !await UseHelpItemAsync(choice.Item, token)) return;
 			}
 		}
+
+		public Func<NaturalHelpTrigger, CancellationToken, Task>? CheckHelpStockAsync { get; set; }
 
 		/// <summary>Use one help scroll between casts; false when the server refused it (it stays in the bag).</summary>
 		private async Task<bool> UseHelpItemAsync(NaturalHelpItem help, CancellationToken token)
