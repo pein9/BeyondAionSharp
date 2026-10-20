@@ -12,14 +12,14 @@
   "inClient": 440,
   "javaHandlerFound": 0,
   "clientDialog": 421,
-  "worldReady": 383,
+  "worldReady": 390,
   "withServerDiffs": 50,
   "clientOnly": 327,
   "clientOnlyWithDialog": 86,
   "retailEvidence": 440,
   "classes": {
-   "A": 122,
-   "B": 57,
+   "A": 123,
+   "B": 56,
    "C": 152,
    "D": 109,
    "E": 0
@@ -11527,17 +11527,17 @@
      "npcId": 214102,
      "name": "ranx archer",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     }
    ],
    "class": "C",
    "classReasons": [
     "reviewed: the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14045. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)",
-    "rules said B: npc named in the task text 214102 (ranx archer) has no static spawn"
+    "rules said A: live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
    ],
-   "ruleClass": "B"
+   "ruleClass": "A"
   },
   {
    "id": 1076,
@@ -13424,8 +13424,8 @@
      "npcId": 214599,
      "name": "icaronix the betrayer",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     }
    ],
@@ -13435,18 +13435,12 @@
     "npcs": 1,
     "npcsWithoutClientId": [],
     "npcsWithoutTemplate": [],
-    "npcsNotSpawned": [
-     214599
-    ],
-    "sourceGroupsUnmet": 1,
-    "sourcesUnmet": [
-     [
-      "idlf3cl_testresulticaronixq_45_ah"
-     ]
-    ],
+    "npcsNotSpawned": [],
+    "sourceGroupsUnmet": 0,
+    "sourcesUnmet": [],
     "itemsWithoutTemplate": [],
     "prerequisitesWithoutHandler": [],
-    "worldReady": false
+    "worldReady": true
    },
    "retail": {
     "url": "https://aioncodex.com/48/quest/1077/?sl=1",
@@ -13604,7 +13598,7 @@
    "class": "C",
    "classReasons": [
     "reviewed: the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14047. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)",
-    "rules said B: kill/drop source with nothing spawned: idlf3cl_testresulticaronixq_45_ah=214599; npc named in the task text 205415 (boreas) has no static spawn; npc named in the task text 833030 (azoturan fortress passage) has no static spawn; npc named in the task text 284919 (betrayer icaronix) has no static spawn"
+    "rules said B: npc named in the task text 205415 (boreas) has no static spawn; npc named in the task text 833030 (azoturan fortress passage) has no static spawn; npc named in the task text 284919 (betrayer icaronix) has no static spawn"
    ],
    "ruleClass": "B"
   },
@@ -20378,8 +20372,8 @@
      "npcId": 204417,
      "name": "white brow tayga",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     },
     {
@@ -20443,18 +20437,13 @@
     ],
     "npcsWithoutTemplate": [],
     "npcsNotSpawned": [
-     204417,
      212432
     ],
-    "sourceGroupsUnmet": 1,
-    "sourcesUnmet": [
-     [
-      "df2_npc_direbeastd_q2034"
-     ]
-    ],
+    "sourceGroupsUnmet": 0,
+    "sourcesUnmet": [],
     "itemsWithoutTemplate": [],
     "prerequisitesWithoutHandler": [],
-    "worldReady": false
+    "worldReady": true
    },
    "retail": {
     "url": "https://aioncodex.com/48/quest/2034/?sl=1",
@@ -20575,8 +20564,8 @@
      "npcId": 204417,
      "name": "white brow tayga",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     },
     {
@@ -24563,8 +24552,8 @@
      "npcId": 204806,
      "name": "hoarfrost survivor",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     },
     {
@@ -27359,8 +27348,8 @@
      "npcId": 212008,
      "name": "akairun of medeus",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     },
     {
@@ -28515,8 +28504,8 @@
      "npcId": 214583,
      "name": "vampire queen ntuamu",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     },
     {
@@ -32357,7 +32346,6 @@
     "npcsWithoutTemplate": [],
     "npcsNotSpawned": [
      211906,
-     212008,
      213110,
      213112,
      213117,
@@ -32403,7 +32391,6 @@
      214494,
      214498,
      214551,
-     214583,
      214652,
      214667,
      214701,
@@ -34210,8 +34197,8 @@
      "npcId": 798346,
      "name": "brigade general hellion",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     },
     {
@@ -37622,8 +37609,8 @@
      "npcId": 217173,
      "name": "parasite slime",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     }
    ],
@@ -37639,18 +37626,12 @@
     "npcs": 1,
     "npcsWithoutClientId": [],
     "npcsWithoutTemplate": [],
-    "npcsNotSpawned": [
-     217173
-    ],
-    "sourceGroupsUnmet": 1,
-    "sourcesUnmet": [
-     [
-      "df2_dq_slime_43_an"
-     ]
-    ],
+    "npcsNotSpawned": [],
+    "sourceGroupsUnmet": 0,
+    "sourcesUnmet": [],
     "itemsWithoutTemplate": [],
     "prerequisitesWithoutHandler": [],
-    "worldReady": false
+    "worldReady": true
    },
    "retail": {
     "url": "https://aioncodex.com/48/quest/9608/?sl=1",
@@ -37742,8 +37723,8 @@
      "npcId": 217174,
      "name": "parasite slime",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     }
    ],
@@ -37759,18 +37740,12 @@
     "npcs": 1,
     "npcsWithoutClientId": [],
     "npcsWithoutTemplate": [],
-    "npcsNotSpawned": [
-     217174
-    ],
-    "sourceGroupsUnmet": 1,
-    "sourcesUnmet": [
-     [
-      "df2_dq_slime_53_an"
-     ]
-    ],
+    "npcsNotSpawned": [],
+    "sourceGroupsUnmet": 0,
+    "sourcesUnmet": [],
     "itemsWithoutTemplate": [],
     "prerequisitesWithoutHandler": [],
-    "worldReady": false
+    "worldReady": true
    },
    "retail": {
     "url": "https://aioncodex.com/48/quest/9609/?sl=1",
@@ -37862,8 +37837,8 @@
      "npcId": 217175,
      "name": "lepharist agent",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     }
    ],
@@ -37879,18 +37854,12 @@
     "npcs": 1,
     "npcsWithoutClientId": [],
     "npcsWithoutTemplate": [],
-    "npcsNotSpawned": [
-     217175
-    ],
-    "sourceGroupsUnmet": 1,
-    "sourcesUnmet": [
-     [
-      "df2_dq_lehparas_43_an"
-     ]
-    ],
+    "npcsNotSpawned": [],
+    "sourceGroupsUnmet": 0,
+    "sourcesUnmet": [],
     "itemsWithoutTemplate": [],
     "prerequisitesWithoutHandler": [],
-    "worldReady": false
+    "worldReady": true
    },
    "retail": {
     "url": "https://aioncodex.com/48/quest/9610/?sl=1",
@@ -37982,8 +37951,8 @@
      "npcId": 217176,
      "name": "lepharist agent",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     }
    ],
@@ -37999,18 +37968,12 @@
     "npcs": 1,
     "npcsWithoutClientId": [],
     "npcsWithoutTemplate": [],
-    "npcsNotSpawned": [
-     217176
-    ],
-    "sourceGroupsUnmet": 1,
-    "sourcesUnmet": [
-     [
-      "df2_dq_lehparas_53_an"
-     ]
-    ],
+    "npcsNotSpawned": [],
+    "sourceGroupsUnmet": 0,
+    "sourcesUnmet": [],
     "itemsWithoutTemplate": [],
     "prerequisitesWithoutHandler": [],
-    "worldReady": false
+    "worldReady": true
    },
    "retail": {
     "url": "https://aioncodex.com/48/quest/9611/?sl=1",
@@ -38886,8 +38849,8 @@
      "npcId": 217172,
      "name": "asmodian agent",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     }
    ],
@@ -38897,18 +38860,12 @@
     "npcs": 1,
     "npcsWithoutClientId": [],
     "npcsWithoutTemplate": [],
-    "npcsNotSpawned": [
-     217172
-    ],
-    "sourceGroupsUnmet": 1,
-    "sourcesUnmet": [
-     [
-      "lf2_dq_dassassin_53_an"
-     ]
-    ],
+    "npcsNotSpawned": [],
+    "sourceGroupsUnmet": 0,
+    "sourcesUnmet": [],
     "itemsWithoutTemplate": [],
     "prerequisitesWithoutHandler": [],
-    "worldReady": false
+    "worldReady": true
    },
    "retail": {
     "url": "https://aioncodex.com/48/quest/9621/?sl=1",
@@ -50102,8 +50059,8 @@
      "npcId": 234686,
      "name": "remodeled dynatoum",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     },
     {
@@ -50135,14 +50092,10 @@
     "npcsWithoutClientId": [],
     "npcsWithoutTemplate": [],
     "npcsNotSpawned": [
-     234686,
      234691
     ],
-    "sourceGroupsUnmet": 2,
+    "sourceGroupsUnmet": 1,
     "sourcesUnmet": [
-     [
-      "idf5_u3_hard_boss_n_65_ah"
-     ],
      [
       "ldf5_under_rune_frostnmd_2_n_ma_65_ah_ver47"
      ]
@@ -50214,7 +50167,6 @@
    ],
    "class": "B",
    "classReasons": [
-    "kill/drop source with nothing spawned: idf5_u3_hard_boss_n_65_ah=234686",
     "kill/drop source with nothing spawned: ldf5_under_rune_frostnmd_2_n_ma_65_ah_ver47=234691"
    ],
    "ruleClass": "B"
@@ -58218,8 +58170,8 @@
      "npcId": 217512,
      "name": "blaze spirit",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     },
     {
@@ -58227,17 +58179,16 @@
      "npcId": 217520,
      "name": "flame spirit",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     }
    ],
-   "class": "B",
+   "class": "A",
    "classReasons": [
-    "npc named in the task text 217512 (blaze spirit) has no static spawn",
-    "npc named in the task text 217520 (flame spirit) has no static spawn"
+    "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
    ],
-   "ruleClass": "B"
+   "ruleClass": "A"
   },
   {
    "id": 14241,
@@ -67946,8 +67897,8 @@
      "npcId": 234686,
      "name": "remodeled dynatoum",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     },
     {
@@ -67979,14 +67930,10 @@
     "npcsWithoutClientId": [],
     "npcsWithoutTemplate": [],
     "npcsNotSpawned": [
-     234686,
      234691
     ],
-    "sourceGroupsUnmet": 2,
+    "sourceGroupsUnmet": 1,
     "sourcesUnmet": [
-     [
-      "idf5_u3_hard_boss_n_65_ah"
-     ],
      [
       "ldf5_under_rune_frostnmd_2_n_ma_65_ah_ver47"
      ]
@@ -68067,7 +68014,6 @@
    ],
    "class": "B",
    "classReasons": [
-    "kill/drop source with nothing spawned: idf5_u3_hard_boss_n_65_ah=234686",
     "kill/drop source with nothing spawned: ldf5_under_rune_frostnmd_2_n_ma_65_ah_ver47=234691",
     "npc named in the task text 800802 (halia) has no static spawn"
    ],
@@ -78186,8 +78132,8 @@
      "npcId": 217588,
      "name": "kromede the corrupt",
      "template": true,
-     "spawned": false,
-     "handlerSpawned": false,
+     "spawned": true,
+     "handlerSpawned": true,
      "maps": []
     },
     {
@@ -78202,7 +78148,6 @@
    ],
    "class": "B",
    "classReasons": [
-    "npc named in the task text 217588 (kromede the corrupt) has no static spawn",
     "npc named in the task text 833029 (fire temple entrance) has no static spawn"
    ],
    "ruleClass": "B"

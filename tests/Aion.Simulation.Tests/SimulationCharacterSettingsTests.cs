@@ -18,7 +18,7 @@ public sealed partial class SimulationFastScenarioTests
 		await using var session = new SimulationL0Session(fixture, policy, "b01", 113, "Aesimsettings");
 		session.BeginStep("s00", "login-create-enter");
 		await session.LoginAndAuthenticateAsync(token); await session.CreateCharacterAsync(token); await session.EnterWorldAsync(token);
-		await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+		await session.WaitForPrologueAsync(token);
 		await CharacterSettingsScenario.RunAsync(new SimCharacterSettingsDriver(this, fixture, session), token);
 		policy.AssertClean();
 	}

@@ -26,7 +26,7 @@ public sealed partial class SimulationFastScenarioTests
 			await session.LoginAndAuthenticateAsync(token);
 			await session.CreateCharacterAsync(token);
 			await session.EnterWorldAsync(token);
-			await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+			await session.WaitForPrologueAsync(token);
 		}
 		await GatheringNegativeScenario.RunAsync(
 			new SimGatheringDriver(this, fixture, first, fixture.World.GetPlayer(first.CharacterId)),
@@ -54,7 +54,7 @@ public sealed partial class SimulationFastScenarioTests
 				await session.LoginAndAuthenticateAsync(token);
 				await session.CreateCharacterAsync(token);
 				await session.EnterWorldAsync(token);
-				await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+				await session.WaitForPrologueAsync(token);
 				Player player = fixture.World.GetPlayer(session.CharacterId);
 				Assert.Equal(0, player.GetClientConnection().GetAccount().GetAccessLevel());
 				await GatheringScenario.RunAsync(new SimGatheringDriver(this, fixture, session, player), target, token);

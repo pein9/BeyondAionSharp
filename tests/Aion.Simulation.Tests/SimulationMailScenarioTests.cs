@@ -23,7 +23,7 @@ public sealed partial class SimulationFastScenarioTests
 			await session.LoginAndAuthenticateAsync(token);
 			await session.CreateCharacterAsync(token);
 			await session.EnterWorldAsync(token);
-			await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+			await session.WaitForPrologueAsync(token);
 			Assert.Equal(0, fixture.World.GetPlayer(session.CharacterId).GetClientConnection().GetAccount().GetAccessLevel());
 		}
 		Assert.Equal(0, ItemService.AddItem(fixture.World.GetPlayer(first.CharacterId), MailScenario.ItemId, MailScenario.SetupCount));

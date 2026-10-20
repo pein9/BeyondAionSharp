@@ -16,7 +16,8 @@ public sealed class QuestDialogExplorerTests
 		QuestDialogKnowledge knowledge = all[1100];
 		QuestDialogKnowledge troubleWithTwos = all[19638];
 
-		Assert.Equal(938, all.Count);
+		Assert.Equal(942, all.Count);
+		Assert.All(new[] { 18208, 18209, 28208, 28209 }, quest => Assert.Contains(quest, all.Keys));
 		Assert.Equal(105, all.Values.Count(entry => entry.SpecialOperations is { Count: > 0 }));
 		Assert.All(all.Values.SelectMany(entry => entry.SpecialOperations ?? []), operation =>
 		{

@@ -62,7 +62,11 @@ public sealed partial class SimulationFastScenarioTests
 		var instance = probe.Server.GetWorldMapInstance();
 		var enemy = instance.GetNpcs(204263).Single(n => !n.IsDead());
 		Assert.Equal(3169, enemy.GetLifeStats().GetCurrentHp());
-		await session.QuitAsync(token); // A missed window during an interruption; no immunity or enemy edits.
+		// An interrupted connection, not a successful logout while the Hellion is attacking.
+		await session.CrashAsync(token);
+		Assert.True(PlayerDAO.IsOnline(session.CharacterId));
+		await session.AdvanceOfflineAsync(TimeSpan.FromSeconds(10), token);
+		Assert.False(PlayerDAO.IsOnline(session.CharacterId));
 		await session.AdvanceOfflineAsync(TimeSpan.FromMilliseconds(beforeSpawn + 290000 - fixture.Clock.NowMillis), token);
 		Assert.True(enemy.IsSpawned());
 		Assert.False(enemy.IsDead());

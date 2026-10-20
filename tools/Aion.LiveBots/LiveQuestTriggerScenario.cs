@@ -27,7 +27,7 @@ public static partial class LiveBotRunner
 				await actor.StepAsync("enter-world", async token =>
 				{
 					await actor.Session.EnterWorldAsync(token);
-					DecodedBotServerPacket movie = await actor.Session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+					DecodedBotServerPacket movie = await actor.Session.WaitForPrologueAsync(token);
 					if (ReferenceEquals(actor, subject))
 						prologueMovie = movie;
 				}, cancellationToken);

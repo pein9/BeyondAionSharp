@@ -25,7 +25,7 @@ public sealed partial class SimulationFastScenarioTests
 		{
 			session.BeginStep("s00", "login-create-enter-and-prepare-private-store");
 			await session.LoginAndAuthenticateAsync(token); await session.CreateCharacterAsync(token); await session.EnterWorldAsync(token);
-			await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+			await session.WaitForPrologueAsync(token);
 			var player = fixture.World.GetPlayer(session.CharacterId);
 			Assert.Equal(0, player.GetClientConnection().GetAccount().GetAccessLevel());
 			Assert.Equal(0, ItemService.AddItem(player, BotWorldModel.KinahItemId, 100_000));

@@ -37,7 +37,7 @@ public sealed partial class SimulationFastScenarioTests
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token);
 		await session.EnterWorldAsync(token);
-		await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+		await session.WaitForPrologueAsync(token);
 		var driver = new SimGearDriver(this, fixture, session, godstone, fusion, binding, upgrade, utility);
 		if (utility) await InventoryUtilityScenario.RunAsync(driver, token);
 		else if (upgrade) await GearUpgradeScenario.RunAsync(driver, token);

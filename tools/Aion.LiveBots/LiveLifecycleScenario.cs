@@ -30,7 +30,7 @@ public static partial class LiveBotRunner
 				await subject.Session.LoginAndAuthenticateAsync(ct);
 				await subject.Session.CreateCharacterAsync(ct);
 				await subject.Session.EnterWorldAsync(ct);
-				await subject.Session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), ct);
+				await subject.Session.WaitForPrologueAsync(ct);
 				await subject.Session.SynchronizeAsync(ct);
 			}, token);
 			subject.Session.Navigation = assets.StarterRoute(Race.ASMODIANS, 1);

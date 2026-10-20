@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using Aion.Bots.Navigation;
+using Aion.Bots.Movement;
 using Aion.Bots.Scenarios;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
@@ -99,6 +100,15 @@ public sealed partial class SimulationFastScenarioTests
 				victim.GetLifeStats().SetCurrentHp(1);
 				Assert.True(await NaturalAirCombat.ShootDownAsync(session, victim.GetObjectId(), 0,
 					(origin, skill, level, aim) => runtime.CreateSpellCast(session.Api.World, origin, skill, level, aim), token, maximumCasts: 10));
+				// The Java loot check is 6.5 m plus body bounds; walk in from the casting position first.
+				BotPosition ground = geometry.SnapToGround(map,
+					new BotPosition(victim.GetX(), victim.GetY(), victim.GetZ() + 2, 0))
+					?? throw new InvalidOperationException("The pollen corpse has no reachable ground.");
+				IReadOnlyList<BotPosition> route = geometry.FindLocalPath(map, session.CurrentPosition, ground);
+				Assert.NotEmpty(route);
+				await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing)
+					.CreateGroundPlan(route, session.CurrentPosition, session.Api.World.MovementSpeed!.Value), token);
+				await session.SynchronizeAsync(token);
 				bool looted = await NaturalAltgardQuestSteps.LootItemAsync(session, victim.GetObjectId(), pollen, token);
 				log.Add($"210500 {(looted ? "dropped pollen" : "no pollen")}; {Items()} held");
 			}

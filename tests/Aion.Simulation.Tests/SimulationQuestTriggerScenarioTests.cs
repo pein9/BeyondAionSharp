@@ -26,7 +26,7 @@ public sealed partial class SimulationFastScenarioTests
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token);
 		await session.EnterWorldAsync(token);
-		DecodedBotServerPacket prologueMovie = await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+		DecodedBotServerPacket prologueMovie = await session.WaitForPrologueAsync(token);
 		await WaitForQuestStatusAsync(session, 1000, 5, token);
 		Player player = fixture.World.GetPlayer(session.CharacterId);
 

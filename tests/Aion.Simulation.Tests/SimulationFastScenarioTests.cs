@@ -346,7 +346,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token);
 		await session.EnterWorldAsync(token);
-		await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+		await session.WaitForPrologueAsync(token);
 
 		Player player = fixture.World.GetPlayer(session.CharacterId);
 		int maxHp = player.GetLifeStats().GetMaxHp();
@@ -394,7 +394,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token);
 		await session.EnterWorldAsync(token);
-		await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+		await session.WaitForPrologueAsync(token);
 		Player player = fixture.World.GetPlayer(session.CharacterId);
 		player.GetCommonData().SetDaeva(true);
 
@@ -500,7 +500,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token);
 		await session.EnterWorldAsync(token);
-		await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+		await session.WaitForPrologueAsync(token);
 
 		var statueApproach = new BotPosition(855.5f, 2218.0f, 265.56f, 30);
 		session.BeginStep("s02", "walk-to-ishalgen-teleport-statue");
@@ -557,7 +557,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token);
 		await session.EnterWorldAsync(token);
-		await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+		await session.WaitForPrologueAsync(token);
 
 		Player player = fixture.World.GetPlayer(session.CharacterId);
 		const string routeId = "4D825485E3CEDF646EE35E7256D0F9F779717F8B";
@@ -626,7 +626,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token);
 		await session.EnterWorldAsync(token);
-		await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+		await session.WaitForPrologueAsync(token);
 
 		Player player = fixture.World.GetPlayer(session.CharacterId);
 		var bind = new BotPosition(player.GetX(), player.GetY(), player.GetZ(), player.GetHeading());
@@ -666,7 +666,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token);
 		await session.EnterWorldAsync(token);
-		await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+		await session.WaitForPrologueAsync(token);
 
 		Player player = fixture.World.GetPlayer(session.CharacterId);
 		var start = new BotPosition(player.GetX(), player.GetY(), player.GetZ(), player.GetHeading());
@@ -700,7 +700,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		await session.EnterWorldAsync(token);
 		try
 		{
-			await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+			await session.WaitForPrologueAsync(token);
 		}
 		catch (OperationCanceledException) when (timeout.IsCancellationRequested)
 		{
@@ -886,6 +886,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		private string currentStep = "startup";
 		private string currentAction = "startup";
 		private int characterId;
+		private int worldEntryPacketStart;
 		private PersistedPosition? expectedPosition;
 		private BotPosition? currentPosition;
 
@@ -1061,6 +1062,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 
 		public async Task CompleteWorldEntryAsync(CancellationToken cancellationToken)
 		{
+			worldEntryPacketStart = PacketHistory.Count;
 			state = AionConnection.State.IN_GAME;
 			DecodedBotServerPacket spawn = await WaitForAsync(typeof(SM_PLAYER_SPAWN), cancellationToken);
 			expectedPosition = Position(spawn);
@@ -1084,6 +1086,16 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 
 		public Task<DecodedBotServerPacket> WaitForPacketAsync(Type packetType, CancellationToken cancellationToken) =>
 			WaitForAsync(packetType, cancellationToken);
+
+		public Task<DecodedBotServerPacket> WaitForPrologueAsync(CancellationToken token) =>
+			BotPrologueProtocol.WaitAsync(PacketHistory, worldEntryPacketStart, race,
+				(predicate, waitToken) => WaitForPacketAsync(predicate, waitToken), token);
+
+		public async Task CrashAsync(CancellationToken token)
+		{
+			await transport!.CrashAsync(token);
+			await CloseAsync(token);
+		}
 
 		public Task<DecodedBotServerPacket> WaitForPacketAsync(Type packetType, CancellationToken cancellationToken,
 			Func<DecodedBotServerPacket, bool> predicate) => WaitForAsync(packetType, cancellationToken, predicate);

@@ -146,7 +146,7 @@ public sealed partial class SimulationFastScenarioTests
 				await session.CreateCharacterAsync(token, line.Starter);
 			}
 			await session.EnterWorldAsync(token);
-			if (!resuming) await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+			if (!resuming) await session.WaitForPrologueAsync(token);
 			await session.SynchronizeAsync(token);
 			var entered = fixture.World.GetPlayer(session.CharacterId);
 			NaturalJourneyIdentityRules.Classify(line, entered.GetPlayerClass(), entered.GetLevel(), entered.GetWorldId(), session.IdentityAltgardLegId);

@@ -974,7 +974,7 @@ public sealed partial class SimulationFastScenarioTests
 			await session.LoginAndAuthenticateAsync(token);
 			await session.CreateCharacterAsync(token, playerClass);
 			await session.EnterWorldAsync(token);
-			await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+			await session.WaitForPrologueAsync(token);
 			return session;
 		}
 		catch

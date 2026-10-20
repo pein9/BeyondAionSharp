@@ -13,7 +13,7 @@ A quest is on this list when all of these hold:
 4. **Real task text:** aioncodex `/48/` shows real steps, not a placeholder or a cutscene trigger.
 5. **Everything is here:** every npc and item it names exists and is spawned in this server (class A).
 
-**99** quests, **8** done. Skipped from class A by these checks: **23** (listed at the end, with the check each fails).
+**100** quests, **8** done. Skipped from class A by these checks: **23** (listed at the end, with the check each fails).
 
 | Status | Quest | Name | Zone | Race | Lvl | Batch | Retail 5.8 form | Review |
 |---|---|---|---|---|---:|---|---|---|
@@ -36,6 +36,7 @@ A quest is on this list when all of these hold:
 |  | Q24240 | Wig Out Over the Sprigg Sprout | Morheim | Asmo | 24 | 2 Asmodian path | SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/24240/?sl=1) |
 |  | Q14120 | The Bucket List | Eltnen | Elyos | 24 | 3 Elyos path | SimpleCollectItem | [aioncodex](https://aioncodex.com/48/quest/14120/?sl=1) |
 |  | Q14122 | Oasis Wasted | Eltnen | Elyos | 26 | 3 Elyos path | SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/14122/?sl=1) |
+|  | Q14240 | Desert's Encroachment | Eltnen | Elyos | 27 | 3 Elyos path | SimpleHunt | [aioncodex](https://aioncodex.com/48/quest/14240/?sl=1) |
 |  | Q14241 | A Triumph's a Triumph | Eltnen | Elyos | 27 | 3 Elyos path | SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/14241/?sl=1) |
 |  | Q14242 | Kralls Bugging Kralls | Eltnen | Elyos | 28 | 3 Elyos path | SimpleHunt | [aioncodex](https://aioncodex.com/48/quest/14242/?sl=1) |
 |  | Q14151 | Target Practice with a Queen | Heiron | Elyos | 33 | 3 Elyos path | SimpleHunt | [aioncodex](https://aioncodex.com/48/quest/14151/?sl=1) |

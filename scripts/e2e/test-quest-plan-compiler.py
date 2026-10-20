@@ -52,7 +52,7 @@ class QuestPlanCompilerTests(unittest.TestCase):
             "--check-classifier",
             "--check-runnable",
         ]
-        for quest_id in (1100, 1101, 1102, 1103, 1145, 2101):
+        for quest_id in (1100, 1101, 1102, 1103, 1145, 2101, 23800, 18033):
             command.extend(("--quest", str(quest_id)))
         subprocess.run(command, cwd=REPO_ROOT, check=True)
 
@@ -106,11 +106,11 @@ class QuestPlanCompilerTests(unittest.TestCase):
     def test_classifier_keeps_unimplemented_distinct(self) -> None:
         classifier = json.loads(CLASSIFIER.read_text(encoding="utf-8"))
         self.assertEqual(
-            {"obtainable": 4359, "disabled": 3008, "unreachable": 244, "no_handler": 432},
+            {"obtainable": 4377, "disabled": 3008, "unreachable": 226, "no_handler": 432},
             classifier["counts"],
         )
         self.assertEqual(
-            {"template": 2994, "template_incomplete": 427, "custom": 938, "none": 2816, "unavailable": 868},
+            {"template": 3008, "template_incomplete": 427, "custom": 942, "none": 2816, "unavailable": 850},
             classifier["plannerCounts"],
         )
         by_id = {quest["id"]: quest for quest in classifier["quests"]}
@@ -123,6 +123,21 @@ class QuestPlanCompilerTests(unittest.TestCase):
             self.assertEqual("obtainable", by_id[quest_id]["availability"])
             self.assertEqual("template_incomplete", by_id[quest_id]["planSupport"])
             self.assertEqual("unresolved-item-source", by_id[quest_id]["planIssues"][0]["code"])
+
+    def test_full_new_world_reports_to_the_corrected_migrak_spawn(self) -> None:
+        reports = [step for step in self.plan(23800)["steps"] if step["kind"] == "report"]
+        self.assertEqual([804753, 802433], [step["npcs"][0]["id"] for step in reports])
+        self.assertTrue(all(step["npcs"][0]["positions"] for step in reports))
+
+    def test_handler_spawned_instance_targets_remain_runnable(self) -> None:
+        kills = [step for step in self.plan(18033)["steps"] if step["kind"] == "kill"]
+        self.assertEqual([230744, 230745, 230749], [step["npcs"][0]["id"] for step in kills])
+        self.assertTrue(all(step["npcs"][0]["handlerSpawned"] for step in kills))
+        self.assertTrue(all(not step["npcs"][0]["positions"] for step in kills))
+        classifier = json.loads(CLASSIFIER.read_text(encoding="utf-8"))
+        by_id = {quest["id"]: quest for quest in classifier["quests"]}
+        self.assertEqual("obtainable", by_id[18033]["availability"])
+        self.assertEqual("template", by_id[18033]["planSupport"])
 
     def test_finished_quest_conditions_accept_one_complete_alternative(self) -> None:
         # Modern/legacy alternatives, an AND inside one alternative, and a
@@ -183,7 +198,7 @@ class QuestPlanCompilerTests(unittest.TestCase):
             self.assertEqual([], errors)
             self.assertTrue(report["baselineComparison"]["passed"])
             self.assertEqual(432, report["excluded"]["noHandler"]["total"])
-            self.assertEqual(244, report["excluded"]["unreachable"]["total"])
+            self.assertEqual(226, report["excluded"]["unreachable"]["total"])
             for mode in report["modes"]:
                 self.assertEqual(61, mode["totals"]["accepted"])
                 self.assertEqual(57, mode["totals"]["completed"])

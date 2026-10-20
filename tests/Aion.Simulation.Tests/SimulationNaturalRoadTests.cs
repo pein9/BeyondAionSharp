@@ -22,7 +22,7 @@ public sealed partial class SimulationFastScenarioTests
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token, PlayerClass.PRIEST);
 		await session.EnterWorldAsync(token);
-		await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+		await session.WaitForPrologueAsync(token);
 		await session.SynchronizeAsync(token);
 		Assert.True(session.Api.World.Skills.TryGetValue(243, out BotSkill? learned));
 		int packetStart = session.PacketHistory.Count;

@@ -22,7 +22,7 @@ public static partial class LiveBotRunner
 			await actor.StepAsync("enter-world-and-finish-prologue", async token =>
 			{
 				await actor.Session.EnterWorldAsync(token);
-				await actor.Session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+				await actor.Session.WaitForPrologueAsync(token);
 				await actor.Session.WaitForQuestStatusAsync(2000, 5, token);
 			}, cancellationToken);
 

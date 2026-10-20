@@ -3,11 +3,11 @@
   "generatedBy": "tools/Aion.QuestPlanExtractor",
   "javaCommit": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
   "counts": {
-    "customQuests": 938,
-    "withDialogActions": 928,
+    "customQuests": 942,
+    "withDialogActions": 932,
     "specialHandlers": 105,
-    "registrations": 3604,
-    "decisions": 10048
+    "registrations": 3623,
+    "decisions": 10070
   },
   "quests": [
     {
@@ -5628,11 +5628,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022QUEST_1123_210010000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022QUEST_1123_210010000\u0022, questId)",
           "line": 22
         }
       ],
@@ -9181,11 +9180,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022TURSIN_GARRISON_210030000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022TURSIN_GARRISON_210030000\u0022, questId)",
           "line": 25
         }
       ],
@@ -13113,7 +13111,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 1011)",
-          "line": 91
+          "line": 86
         },
         {
           "targetNpcIds": [
@@ -13130,7 +13128,7 @@
           ],
           "resultMethod": "SendQuestStartDialog",
           "result": "SendQuestStartDialog(env)",
-          "line": 93
+          "line": 88
         },
         {
           "targetNpcIds": [
@@ -13151,7 +13149,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 1003)",
-          "line": 105
+          "line": 100
         },
         {
           "targetNpcIds": [
@@ -13173,7 +13171,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 2717)",
-          "line": 107
+          "line": 102
         },
         {
           "targetNpcIds": [
@@ -13196,7 +13194,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 2375)",
-          "line": 109
+          "line": 104
         },
         {
           "targetNpcIds": [
@@ -13216,7 +13214,7 @@
           ],
           "resultMethod": null,
           "result": "false",
-          "line": 110
+          "line": 105
         },
         {
           "targetNpcIds": [
@@ -13237,7 +13235,7 @@
           ],
           "resultMethod": "DefaultCloseDialog",
           "result": "DefaultCloseDialog(env, 0, 1)",
-          "line": 115
+          "line": 110
         },
         {
           "targetNpcIds": [
@@ -13257,7 +13255,7 @@
           ],
           "resultMethod": null,
           "result": "false",
-          "line": 117
+          "line": 112
         },
         {
           "targetNpcIds": [
@@ -13277,7 +13275,7 @@
           ],
           "resultMethod": "SendQuestEndDialog",
           "result": "SendQuestEndDialog(env)",
-          "line": 119
+          "line": 114
         },
         {
           "targetNpcIds": [
@@ -13296,7 +13294,7 @@
           ],
           "resultMethod": "SendQuestEndDialog",
           "result": "SendQuestEndDialog(env)",
-          "line": 126
+          "line": 121
         },
         {
           "targetNpcIds": [],
@@ -13305,7 +13303,7 @@
           "conditions": [],
           "resultMethod": null,
           "result": "false",
-          "line": 128
+          "line": 123
         }
       ],
       "specialOperations": []
@@ -15140,11 +15138,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022LEPHARIST_BASTION_210020000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022LEPHARIST_BASTION_210020000\u0022, questId)",
           "line": 23
         }
       ],
@@ -24511,38 +24508,34 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022MUDTHORN_EXPERIMENT_LAB_210040000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022MUDTHORN_EXPERIMENT_LAB_210040000\u0022, questId)",
           "line": 23
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022ROTRON_EXPERIMENT_LAB_210040000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022ROTRON_EXPERIMENT_LAB_210040000\u0022, questId)",
           "line": 24
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022PRETOR_EXPERIMENT_LAB_210040000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022PRETOR_EXPERIMENT_LAB_210040000\u0022, questId)",
           "line": 25
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022POISON_EXTRACTION_LAB_210040000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022POISON_EXTRACTION_LAB_210040000\u0022, questId)",
           "line": 26
         }
       ],
@@ -49012,6 +49005,14 @@
           ],
           "expression": "qe.RegisterQuestNpc(npc_id).AddOnTalkEvent(questId)",
           "line": 34
+        },
+        {
+          "methods": [
+            "RegisterOnEnterWorld"
+          ],
+          "npcIds": [],
+          "expression": "qe.RegisterOnEnterWorld(questId)",
+          "line": 35
         }
       ],
       "dialogCandidateActions": [
@@ -49092,12 +49093,11 @@
           "conditions": [
             "qs.GetStatus() == QuestStatus.START",
             "targetId case 203519:",
-            "dialogActionId case DialogAction.SETPRO1:",
-            "var == 0"
+            "dialogActionId case DialogAction.SETPRO1:"
           ],
-          "resultMethod": null,
-          "result": "true",
-          "line": 65
+          "resultMethod": "DefaultCloseDialog",
+          "result": "DefaultCloseDialog(env, 0, 1)",
+          "line": 60
         },
         {
           "targetNpcIds": [
@@ -49113,7 +49113,7 @@
           ],
           "resultMethod": null,
           "result": "false",
-          "line": 69
+          "line": 62
         },
         {
           "targetNpcIds": [
@@ -49133,7 +49133,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 1352)",
-          "line": 75
+          "line": 68
         },
         {
           "targetNpcIds": [
@@ -49152,7 +49152,7 @@
           ],
           "resultMethod": null,
           "result": "false",
-          "line": 76
+          "line": 69
         },
         {
           "targetNpcIds": [
@@ -49167,12 +49167,11 @@
           "conditions": [
             "qs.GetStatus() == QuestStatus.START",
             "targetId case 203534:",
-            "dialogActionId case DialogAction.SETPRO2:",
-            "var == 1"
+            "dialogActionId case DialogAction.SETPRO2:"
           ],
-          "resultMethod": null,
-          "result": "true",
-          "line": 86
+          "resultMethod": "DefaultCloseDialog",
+          "result": "DefaultCloseDialog(env, 1, 2)",
+          "line": 74
         },
         {
           "targetNpcIds": [
@@ -49188,7 +49187,7 @@
           ],
           "resultMethod": null,
           "result": "false",
-          "line": 90
+          "line": 76
         },
         {
           "targetNpcIds": [
@@ -49208,7 +49207,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 1693)",
-          "line": 96
+          "line": 82
         },
         {
           "targetNpcIds": [
@@ -49229,7 +49228,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 2034)",
-          "line": 98
+          "line": 84
         },
         {
           "targetNpcIds": [
@@ -49251,7 +49250,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 2375)",
-          "line": 100
+          "line": 86
         },
         {
           "targetNpcIds": [
@@ -49274,7 +49273,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 2462)",
-          "line": 102
+          "line": 88
         },
         {
           "targetNpcIds": [
@@ -49298,7 +49297,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 2716)",
-          "line": 104
+          "line": 90
         },
         {
           "targetNpcIds": [
@@ -49317,7 +49316,7 @@
           ],
           "resultMethod": null,
           "result": "false",
-          "line": 105
+          "line": 91
         },
         {
           "targetNpcIds": [
@@ -49327,21 +49326,16 @@
             "START"
           ],
           "dialogActions": [
-            "SETPRO3",
-            "SETPRO4",
-            "SETPRO6"
+            "SETPRO3"
           ],
           "conditions": [
             "qs.GetStatus() == QuestStatus.START",
             "targetId case 790002:",
-            "dialogActionId case DialogAction.SETPRO3:",
-            "dialogActionId case DialogAction.SETPRO4:",
-            "dialogActionId case DialogAction.SETPRO6:",
-            "var == 2 || var == 10"
+            "dialogActionId case DialogAction.SETPRO3:"
           ],
-          "resultMethod": null,
-          "result": "true",
-          "line": 114
+          "resultMethod": "DefaultCloseDialog",
+          "result": "DefaultCloseDialog(env, 2, 3)",
+          "line": 93
         },
         {
           "targetNpcIds": [
@@ -49351,22 +49345,35 @@
             "START"
           ],
           "dialogActions": [
-            "SETPRO3",
-            "SETPRO4",
+            "SETPRO4"
+          ],
+          "conditions": [
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 790002:",
+            "dialogActionId case DialogAction.SETPRO4:"
+          ],
+          "resultMethod": "DefaultCloseDialog",
+          "result": "DefaultCloseDialog(env, 10, 11)",
+          "line": 95
+        },
+        {
+          "targetNpcIds": [
+            790002
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
             "SETPRO6"
           ],
           "conditions": [
             "qs.GetStatus() == QuestStatus.START",
             "targetId case 790002:",
-            "dialogActionId case DialogAction.SETPRO3:",
-            "dialogActionId case DialogAction.SETPRO4:",
-            "dialogActionId case DialogAction.SETPRO6:",
-            "else !(var == 2 || var == 10)",
-            "var == 13"
+            "dialogActionId case DialogAction.SETPRO6:"
           ],
-          "resultMethod": null,
-          "result": "true",
-          "line": 121
+          "resultMethod": "DefaultCloseDialog",
+          "result": "DefaultCloseDialog(env, 13, 14)",
+          "line": 97
         },
         {
           "targetNpcIds": [
@@ -49382,11 +49389,11 @@
             "qs.GetStatus() == QuestStatus.START",
             "targetId case 790002:",
             "dialogActionId case DialogAction.SETPRO5:",
-            "var == 12 || var == 99"
+            "var == 12"
           ],
           "resultMethod": null,
           "result": "true",
-          "line": 133
+          "line": 104
         },
         {
           "targetNpcIds": [
@@ -49405,7 +49412,7 @@
           ],
           "resultMethod": null,
           "result": "false",
-          "line": 135
+          "line": 106
         },
         {
           "targetNpcIds": [
@@ -49426,7 +49433,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 2461)",
-          "line": 143
+          "line": 113
         },
         {
           "targetNpcIds": [
@@ -49447,7 +49454,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 2376)",
-          "line": 146
+          "line": 116
         },
         {
           "targetNpcIds": [
@@ -49466,7 +49473,7 @@
           ],
           "resultMethod": null,
           "result": "true",
-          "line": 155
+          "line": 125
         },
         {
           "targetNpcIds": [
@@ -49482,7 +49489,7 @@
           ],
           "resultMethod": null,
           "result": "false",
-          "line": 157
+          "line": 127
         },
         {
           "targetNpcIds": [
@@ -49497,11 +49504,30 @@
           "conditions": [
             "qs.GetStatus() == QuestStatus.START",
             "targetId case 203538:",
-            "var == 14 \u0026\u0026 env.GetDialogActionId() == DialogAction.USE_OBJECT"
+            "env.GetDialogActionId() == DialogAction.USE_OBJECT \u0026\u0026 ChangeQuestStep(env, 14, 15)"
           ],
           "resultMethod": null,
-          "result": "true",
-          "line": 167
+          "result": "ValueTask.CompletedTask",
+          "line": 137
+        },
+        {
+          "targetNpcIds": [
+            203538
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "USE_OBJECT"
+          ],
+          "conditions": [
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 203538:",
+            "env.GetDialogActionId() == DialogAction.USE_OBJECT \u0026\u0026 ChangeQuestStep(env, 14, 15)"
+          ],
+          "resultMethod": "CloseDialogWindow",
+          "result": "CloseDialogWindow(env)",
+          "line": 140
         },
         {
           "targetNpcIds": [
@@ -49521,7 +49547,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 3057)",
-          "line": 175
+          "line": 148
         },
         {
           "targetNpcIds": [
@@ -49540,7 +49566,7 @@
           ],
           "resultMethod": null,
           "result": "false",
-          "line": 176
+          "line": 149
         },
         {
           "targetNpcIds": [
@@ -49556,11 +49582,11 @@
             "qs.GetStatus() == QuestStatus.START",
             "targetId case 203553:",
             "dialogActionId case DialogAction.SETPRO7:",
-            "var == 15"
+            "ChangeQuestStep(env, 15, 15, true)"
           ],
-          "resultMethod": null,
-          "result": "true",
-          "line": 184
+          "resultMethod": "CloseDialogWindow",
+          "result": "CloseDialogWindow(env)",
+          "line": 154
         },
         {
           "targetNpcIds": [
@@ -49576,7 +49602,7 @@
           ],
           "resultMethod": null,
           "result": "false",
-          "line": 188
+          "line": 158
         },
         {
           "targetNpcIds": [
@@ -49592,11 +49618,11 @@
             "qs.GetStatus() == QuestStatus.START",
             "targetId case 205020:",
             "dialogActionId case DialogAction.QUEST_SELECT:",
-            "var \u003E= 12"
+            "qs.GetQuestVars().GetQuestVars() == 99"
           ],
           "resultMethod": null,
           "result": "ValueTask.CompletedTask",
-          "line": 204
+          "line": 173
         },
         {
           "targetNpcIds": [
@@ -49612,11 +49638,11 @@
             "qs.GetStatus() == QuestStatus.START",
             "targetId case 205020:",
             "dialogActionId case DialogAction.QUEST_SELECT:",
-            "var \u003E= 12"
+            "qs.GetQuestVars().GetQuestVars() == 99"
           ],
           "resultMethod": null,
           "result": "true",
-          "line": 206
+          "line": 175
         },
         {
           "targetNpcIds": [
@@ -49635,7 +49661,7 @@
           ],
           "resultMethod": null,
           "result": "false",
-          "line": 208
+          "line": 177
         },
         {
           "targetNpcIds": [
@@ -49652,7 +49678,7 @@
           ],
           "resultMethod": null,
           "result": "false",
-          "line": 210
+          "line": 179
         },
         {
           "targetNpcIds": [
@@ -49674,7 +49700,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 3398)",
-          "line": 219
+          "line": 188
         },
         {
           "targetNpcIds": [
@@ -49698,7 +49724,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 5)",
-          "line": 221
+          "line": 190
         },
         {
           "targetNpcIds": [
@@ -49722,7 +49748,7 @@
           ],
           "resultMethod": "SendQuestEndDialog",
           "result": "SendQuestEndDialog(env)",
-          "line": 223
+          "line": 192
         },
         {
           "targetNpcIds": [],
@@ -49731,7 +49757,7 @@
           "conditions": [],
           "resultMethod": null,
           "result": "false",
-          "line": 226
+          "line": 195
         }
       ],
       "specialOperations": [
@@ -49739,37 +49765,37 @@
           "kind": "instance",
           "method": "GetNextAvailableInstance",
           "expression": "InstanceService.GetNextAvailableInstance(WorldMapType.ATAXIAR.GetId(), player)",
-          "line": 131
+          "line": 102
         },
         {
           "kind": "teleport",
           "method": "TeleportTo",
           "expression": "TeleportService.TeleportTo(player, newInstance, 457.65f, 426.8f, 230.4f)",
-          "line": 132
+          "line": 103
         },
         {
           "kind": "spawn",
           "method": "SpawnForFiveMinutes",
           "expression": "SpawnForFiveMinutes(203553, npc.GetPosition())",
-          "line": 165
+          "line": 132
         },
         {
           "kind": "spawn",
           "method": "DeleteAndScheduleRespawn",
           "expression": "npc.GetController().DeleteAndScheduleRespawn()",
-          "line": 166
+          "line": 139
         },
         {
           "kind": "teleport",
           "method": "SetFlightTeleportId",
           "expression": "player.SetFlightTeleportId(3001)",
-          "line": 197
+          "line": 167
         },
         {
           "kind": "teleport",
           "method": "TeleportTo",
           "expression": "TeleportService.TeleportTo(player, 220010000, 940.15f, 2295.64f, 265.7f, (byte)43)",
-          "line": 201
+          "line": 172
         }
       ]
     },
@@ -141008,11 +141034,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022ANGRIEF_GATE_210050000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022ANGRIEF_GATE_210050000\u0022, questId)",
           "line": 31
         },
         {
@@ -142242,11 +142267,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022LF5_SENSORYAREA_Q10503_206364_3_210070000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022LF5_SENSORYAREA_Q10503_206364_3_210070000\u0022, questId)",
           "line": 38
         },
         {
@@ -143111,11 +143135,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022LF5_SENSORYAREA_Q10506_206365_5_210070000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022LF5_SENSORYAREA_Q10506_206365_5_210070000\u0022, questId)",
           "line": 34
         },
         {
@@ -143440,11 +143463,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022LF5_SENSORYAREA_Q10507_206366_2_210070000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022LF5_SENSORYAREA_Q10507_206366_2_210070000\u0022, questId)",
           "line": 34
         },
         {
@@ -155304,11 +155326,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022KLAWNICKTS_CAVE_210050000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022KLAWNICKTS_CAVE_210050000\u0022, questId)",
           "line": 25
         }
       ],
@@ -158825,20 +158846,18 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022DRAGON_LORDS_SHRINE_600100000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022DRAGON_LORDS_SHRINE_600100000\u0022, questId)",
           "line": 23
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022FLAMEBERTH_DOWNS_600100000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022FLAMEBERTH_DOWNS_600100000\u0022, questId)",
           "line": 24
         },
         {
@@ -170809,11 +170828,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022DANUAR_SANCTUARY_INVESTIGATION_AREA_220080000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022DANUAR_SANCTUARY_INVESTIGATION_AREA_220080000\u0022, questId)",
           "line": 21
         }
       ],
@@ -171145,6 +171163,299 @@
           "resultMethod": null,
           "result": "false",
           "line": 58
+        }
+      ],
+      "specialOperations": []
+    },
+    {
+      "questId": 18208,
+      "zone": "Empyrean Crucible",
+      "race": "ELYOS",
+      "source": "src/Aion.GameServer/Handlers/Quest/empyrean_crucible/_18208IllusionOrInfiltration.cs",
+      "registrations": [
+        {
+          "methods": [
+            "AddOnQuestStart",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            205316
+          ],
+          "expression": "qe.RegisterQuestNpc(205316).AddOnQuestStart(questId)",
+          "line": 19
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            205316
+          ],
+          "expression": "qe.RegisterQuestNpc(205316).AddOnTalkEvent(questId)",
+          "line": 20
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            205309
+          ],
+          "expression": "qe.RegisterQuestNpc(205309).AddOnTalkEvent(questId)",
+          "line": 21
+        },
+        {
+          "methods": [
+            "AddOnKillEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            217819
+          ],
+          "expression": "qe.RegisterQuestNpc(217819).AddOnKillEvent(questId)",
+          "line": 22
+        },
+        {
+          "methods": [
+            "AddOnKillEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            218185
+          ],
+          "expression": "qe.RegisterQuestNpc(218185).AddOnKillEvent(questId)",
+          "line": 23
+        }
+      ],
+      "dialogCandidateActions": [
+        "QUEST_SELECT",
+        "USE_OBJECT"
+      ],
+      "decisions": [
+        {
+          "targetNpcIds": [
+            205316
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 205316",
+            "dialogActionId == DialogAction.QUEST_SELECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 4762)",
+          "line": 39
+        },
+        {
+          "targetNpcIds": [
+            205316
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 205316",
+            "else !(dialogActionId == DialogAction.QUEST_SELECT)"
+          ],
+          "resultMethod": "SendQuestStartDialog",
+          "result": "SendQuestStartDialog(env)",
+          "line": 43
+        },
+        {
+          "targetNpcIds": [
+            205309
+          ],
+          "questStatuses": [
+            "REWARD"
+          ],
+          "dialogActions": [
+            "USE_OBJECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 205309",
+            "dialogActionId == DialogAction.USE_OBJECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 10002)",
+          "line": 53
+        },
+        {
+          "targetNpcIds": [
+            205309
+          ],
+          "questStatuses": [
+            "REWARD"
+          ],
+          "dialogActions": [
+            "USE_OBJECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 205309",
+            "else !(dialogActionId == DialogAction.USE_OBJECT)"
+          ],
+          "resultMethod": "SendQuestEndDialog",
+          "result": "SendQuestEndDialog(env)",
+          "line": 57
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [],
+          "resultMethod": null,
+          "result": "false",
+          "line": 61
+        }
+      ],
+      "specialOperations": []
+    },
+    {
+      "questId": 18209,
+      "zone": "Empyrean Crucible",
+      "race": "ELYOS",
+      "source": "src/Aion.GameServer/Handlers/Quest/empyrean_crucible/_18209ARiftInTheSpaceTwineContinuum.cs",
+      "registrations": [
+        {
+          "methods": [
+            "AddOnQuestStart",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            205309
+          ],
+          "expression": "qe.RegisterQuestNpc(205309).AddOnQuestStart(questId)",
+          "line": 19
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            205309
+          ],
+          "expression": "qe.RegisterQuestNpc(205309).AddOnTalkEvent(questId)",
+          "line": 20
+        },
+        {
+          "methods": [
+            "AddOnKillEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            217819
+          ],
+          "expression": "qe.RegisterQuestNpc(217819).AddOnKillEvent(questId)",
+          "line": 21
+        },
+        {
+          "methods": [
+            "AddOnKillEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            218185
+          ],
+          "expression": "qe.RegisterQuestNpc(218185).AddOnKillEvent(questId)",
+          "line": 22
+        }
+      ],
+      "dialogCandidateActions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD"
+      ],
+      "decisions": [
+        {
+          "targetNpcIds": [
+            205309
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 205309",
+            "dialogActionId == DialogAction.QUEST_SELECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 4762)",
+          "line": 37
+        },
+        {
+          "targetNpcIds": [
+            205309
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 205309",
+            "else !(dialogActionId == DialogAction.QUEST_SELECT)"
+          ],
+          "resultMethod": "SendQuestStartDialog",
+          "result": "SendQuestStartDialog(env)",
+          "line": 39
+        },
+        {
+          "targetNpcIds": [
+            205309
+          ],
+          "questStatuses": [
+            "REWARD"
+          ],
+          "dialogActions": [
+            "SELECT_QUEST_REWARD"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 205309",
+            "env.GetDialogActionId() case DialogAction.SELECT_QUEST_REWARD:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 5)",
+          "line": 49
+        },
+        {
+          "targetNpcIds": [
+            205309
+          ],
+          "questStatuses": [
+            "REWARD"
+          ],
+          "dialogActions": [],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 205309",
+            "env.GetDialogActionId() default:"
+          ],
+          "resultMethod": "SendQuestEndDialog",
+          "result": "SendQuestEndDialog(env)",
+          "line": 51
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [],
+          "resultMethod": null,
+          "result": "false",
+          "line": 55
         }
       ],
       "specialOperations": []
@@ -173958,11 +174269,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022DRANA_PRODUCTION_LAB_300250000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022DRANA_PRODUCTION_LAB_300250000\u0022, questId)",
           "line": 26
         }
       ],
@@ -174251,11 +174561,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022LF1A_SENSORYAREA_Q18500_206150_3_210030000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022LF1A_SENSORYAREA_Q18500_206150_3_210030000\u0022, questId)",
           "line": 22
         },
         {
@@ -175829,11 +176138,10 @@
       "registrations": [
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022GRAND_CAVERN_300230000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022GRAND_CAVERN_300230000\u0022, questId)",
           "line": 23
         },
         {
@@ -186781,11 +187089,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022DF5_SENSORYAREA_Q20501A_206375_1_220080000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022DF5_SENSORYAREA_Q20501A_206375_1_220080000\u0022, questId)",
           "line": 31
         },
         {
@@ -187494,11 +187801,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022DF5_SENSORYAREA_Q20503A_206394_8_220080000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022DF5_SENSORYAREA_Q20503A_206394_8_220080000\u0022, questId)",
           "line": 25
         },
         {
@@ -188362,11 +188668,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022DF5_SENSORYAREA_Q20506A_206376_2_220080000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022DF5_SENSORYAREA_Q20506A_206376_2_220080000\u0022, questId)",
           "line": 40
         },
         {
@@ -188662,11 +188967,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022DF5_SENSORYAREA_Q20507A_206377_9_220080000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022DF5_SENSORYAREA_Q20507A_206377_9_220080000\u0022, questId)",
           "line": 27
         },
         {
@@ -192865,20 +193169,18 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022ANTAGOR_CANYON_220070000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022ANTAGOR_CANYON_220070000\u0022, questId)",
           "line": 23
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022GELKMAROS_FORTRESS_220070000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022GELKMAROS_FORTRESS_220070000\u0022, questId)",
           "line": 24
         }
       ],
@@ -197625,20 +197927,18 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022DRAGON_LORDS_SHRINE_600100000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022DRAGON_LORDS_SHRINE_600100000\u0022, questId)",
           "line": 23
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022FLAMEBERTH_DOWNS_600100000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022FLAMEBERTH_DOWNS_600100000\u0022, questId)",
           "line": 24
         },
         {
@@ -198465,11 +198765,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022MUMU_FARMLAND_220030000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022MUMU_FARMLAND_220030000\u0022, questId)",
           "line": 24
         }
       ],
@@ -199213,11 +199512,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022DF1A_SENSORYAREA_Q2021_206013_2_220030000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022DF1A_SENSORYAREA_Q2021_206013_2_220030000\u0022, questId)",
           "line": 26
         }
       ],
@@ -201137,11 +201435,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022ALTAR_OF_THE_BLACK_DRAGON_220020000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022ALTAR_OF_THE_BLACK_DRAGON_220020000\u0022, questId)",
           "line": 24
         },
         {
@@ -206031,11 +206328,10 @@
         },
         {
           "methods": [
-            "RegisterOnLeaveZone",
-            "Get"
+            "RegisterOnLeaveZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnLeaveZone(ZoneName.Get(\u0022BALTASAR_HILL_VILLAGE_220050000\u0022), questId)",
+          "expression": "qe.RegisterOnLeaveZone(\u0022BALTASAR_HILL_VILLAGE_220050000\u0022, questId)",
           "line": 32
         },
         {
@@ -206488,11 +206784,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022MINE_PORT_220040000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022MINE_PORT_220040000\u0022, questId)",
           "line": 28
         },
         {
@@ -211337,11 +211632,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022LF5_SENSORYAREA_Q26987_206410_1_210070000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022LF5_SENSORYAREA_Q26987_206410_1_210070000\u0022, questId)",
           "line": 21
         }
       ],
@@ -211673,6 +211967,299 @@
           "resultMethod": null,
           "result": "false",
           "line": 59
+        }
+      ],
+      "specialOperations": []
+    },
+    {
+      "questId": 28208,
+      "zone": "Empyrean Crucible",
+      "race": "ASMODIANS",
+      "source": "src/Aion.GameServer/Handlers/Quest/empyrean_crucible/_28208ARiftAdrift.cs",
+      "registrations": [
+        {
+          "methods": [
+            "AddOnQuestStart",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            205320
+          ],
+          "expression": "qe.RegisterQuestNpc(205320).AddOnQuestStart(questId)",
+          "line": 19
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            205320
+          ],
+          "expression": "qe.RegisterQuestNpc(205320).AddOnTalkEvent(questId)",
+          "line": 20
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            205321
+          ],
+          "expression": "qe.RegisterQuestNpc(205321).AddOnTalkEvent(questId)",
+          "line": 21
+        },
+        {
+          "methods": [
+            "AddOnKillEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            217819
+          ],
+          "expression": "qe.RegisterQuestNpc(217819).AddOnKillEvent(questId)",
+          "line": 22
+        },
+        {
+          "methods": [
+            "AddOnKillEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            218185
+          ],
+          "expression": "qe.RegisterQuestNpc(218185).AddOnKillEvent(questId)",
+          "line": 23
+        }
+      ],
+      "dialogCandidateActions": [
+        "QUEST_SELECT",
+        "USE_OBJECT"
+      ],
+      "decisions": [
+        {
+          "targetNpcIds": [
+            205320
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 205320",
+            "dialogActionId == DialogAction.QUEST_SELECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 4762)",
+          "line": 39
+        },
+        {
+          "targetNpcIds": [
+            205320
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 205320",
+            "else !(dialogActionId == DialogAction.QUEST_SELECT)"
+          ],
+          "resultMethod": "SendQuestStartDialog",
+          "result": "SendQuestStartDialog(env)",
+          "line": 43
+        },
+        {
+          "targetNpcIds": [
+            205321
+          ],
+          "questStatuses": [
+            "REWARD"
+          ],
+          "dialogActions": [
+            "USE_OBJECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 205321",
+            "dialogActionId == DialogAction.USE_OBJECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 10002)",
+          "line": 53
+        },
+        {
+          "targetNpcIds": [
+            205321
+          ],
+          "questStatuses": [
+            "REWARD"
+          ],
+          "dialogActions": [
+            "USE_OBJECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 205321",
+            "else !(dialogActionId == DialogAction.USE_OBJECT)"
+          ],
+          "resultMethod": "SendQuestEndDialog",
+          "result": "SendQuestEndDialog(env)",
+          "line": 57
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [],
+          "resultMethod": null,
+          "result": "false",
+          "line": 61
+        }
+      ],
+      "specialOperations": []
+    },
+    {
+      "questId": 28209,
+      "zone": "Empyrean Crucible",
+      "race": "ASMODIANS",
+      "source": "src/Aion.GameServer/Handlers/Quest/empyrean_crucible/_28209CatchingTheRift.cs",
+      "registrations": [
+        {
+          "methods": [
+            "AddOnQuestStart",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            205321
+          ],
+          "expression": "qe.RegisterQuestNpc(205321).AddOnQuestStart(questId)",
+          "line": 19
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            205321
+          ],
+          "expression": "qe.RegisterQuestNpc(205321).AddOnTalkEvent(questId)",
+          "line": 20
+        },
+        {
+          "methods": [
+            "AddOnKillEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            217819
+          ],
+          "expression": "qe.RegisterQuestNpc(217819).AddOnKillEvent(questId)",
+          "line": 21
+        },
+        {
+          "methods": [
+            "AddOnKillEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            218185
+          ],
+          "expression": "qe.RegisterQuestNpc(218185).AddOnKillEvent(questId)",
+          "line": 22
+        }
+      ],
+      "dialogCandidateActions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD"
+      ],
+      "decisions": [
+        {
+          "targetNpcIds": [
+            205321
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 205321",
+            "dialogActionId == DialogAction.QUEST_SELECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 4762)",
+          "line": 37
+        },
+        {
+          "targetNpcIds": [
+            205321
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 205321",
+            "else !(dialogActionId == DialogAction.QUEST_SELECT)"
+          ],
+          "resultMethod": "SendQuestStartDialog",
+          "result": "SendQuestStartDialog(env)",
+          "line": 39
+        },
+        {
+          "targetNpcIds": [
+            205321
+          ],
+          "questStatuses": [
+            "REWARD"
+          ],
+          "dialogActions": [
+            "SELECT_QUEST_REWARD"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 205321",
+            "env.GetDialogActionId() case DialogAction.SELECT_QUEST_REWARD:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 5)",
+          "line": 49
+        },
+        {
+          "targetNpcIds": [
+            205321
+          ],
+          "questStatuses": [
+            "REWARD"
+          ],
+          "dialogActions": [],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 205321",
+            "env.GetDialogActionId() default:"
+          ],
+          "resultMethod": "SendQuestEndDialog",
+          "result": "SendQuestEndDialog(env)",
+          "line": 51
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [],
+          "resultMethod": null,
+          "result": "false",
+          "line": 55
         }
       ],
       "specialOperations": []
@@ -214569,11 +215156,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022DRANA_PRODUCTION_LAB_300250000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022DRANA_PRODUCTION_LAB_300250000\u0022, questId)",
           "line": 24
         }
       ],
@@ -214789,11 +215375,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022DF1A_SENSORYAREA_Q28500_206151_3_220030000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022DF1A_SENSORYAREA_Q28500_206151_3_220030000\u0022, questId)",
           "line": 22
         },
         {
@@ -216361,11 +216946,10 @@
       "registrations": [
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022GRAND_CAVERN_300230000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022GRAND_CAVERN_300230000\u0022, questId)",
           "line": 23
         },
         {
@@ -225169,11 +225753,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022IDTEMPLE_SENSORYAREA_Q30011_206105_1_300160000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022IDTEMPLE_SENSORYAREA_Q30011_206105_1_300160000\u0022, questId)",
           "line": 19
         },
         {
@@ -226306,11 +226889,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022SILENTERA_WESTGATE_600010000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022SILENTERA_WESTGATE_600010000\u0022, questId)",
           "line": 19
         }
       ],
@@ -226610,11 +227192,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022IDTEMPLE_SENSORYAREA_Q30011_206105_1_300160000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022IDTEMPLE_SENSORYAREA_Q30011_206105_1_300160000\u0022, questId)",
           "line": 19
         },
         {
@@ -228228,11 +228809,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(\u0022UNKNOWN_LANDS_600010000\u0022), questId)",
+          "expression": "qe.RegisterOnEnterZone(\u0022UNKNOWN_LANDS_600010000\u0022, questId)",
           "line": 19
         }
       ],
@@ -241295,11 +241875,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(ZONE_NAME), questId)",
+          "expression": "qe.RegisterOnEnterZone(ZONE_NAME, questId)",
           "line": 25
         }
       ],
@@ -241838,11 +242417,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(ZONE_NAME), questId)",
+          "expression": "qe.RegisterOnEnterZone(ZONE_NAME, questId)",
           "line": 26
         }
       ],
@@ -242560,11 +243138,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(ZONE_NAME), questId)",
+          "expression": "qe.RegisterOnEnterZone(ZONE_NAME, questId)",
           "line": 25
         }
       ],
@@ -243103,11 +243680,10 @@
         },
         {
           "methods": [
-            "RegisterOnEnterZone",
-            "Get"
+            "RegisterOnEnterZone"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterOnEnterZone(ZoneName.Get(ZONE_NAME), questId)",
+          "expression": "qe.RegisterOnEnterZone(ZONE_NAME, questId)",
           "line": 26
         }
       ],

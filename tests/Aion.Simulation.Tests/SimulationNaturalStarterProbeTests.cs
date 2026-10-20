@@ -251,7 +251,7 @@ public sealed partial class SimulationFastScenarioTests
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token, row.Line.Starter);
 		await session.EnterWorldAsync(token);
-		await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+		await session.WaitForPrologueAsync(token);
 		Player player = fixture.World.GetPlayer(session.CharacterId);
 		Assert.Equal(0, player.GetClientConnection().GetAccount().GetAccessLevel());
 		Assert.Equal(row.Line.Starter, player.GetPlayerClass());

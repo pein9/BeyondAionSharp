@@ -122,7 +122,7 @@ public sealed partial class SimulationFastScenarioTests
 			await session.LoginAndAuthenticateAsync(enterToken);
 			await session.CreateCharacterAsync(enterToken, PlayerClass.PRIEST);
 			await session.EnterWorldAsync(enterToken);
-			await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), enterToken);
+			await session.WaitForPrologueAsync(enterToken);
 			await session.SynchronizeAsync(enterToken);
 			return false;
 		}

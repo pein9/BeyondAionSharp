@@ -2,17 +2,17 @@
   "schemaVersion": 1,
   "generatedBy": "scripts/e2e/compile-quest-plans.py",
   "counts": {
-    "obtainable": 4359,
+    "obtainable": 4377,
     "disabled": 3008,
-    "unreachable": 244,
+    "unreachable": 226,
     "no_handler": 432
   },
   "plannerCounts": {
-    "template": 2994,
+    "template": 3008,
     "template_incomplete": 427,
-    "custom": 938,
+    "custom": 942,
     "none": 2816,
-    "unavailable": 868
+    "unavailable": 850
   },
   "quests": [
     {
@@ -53577,33 +53577,9 @@
       "race": "ELYOS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "missing-spawn",
-          "groups": [
-            {
-              "role": "kill",
-              "npcIds": [
-                230744
-              ]
-            },
-            {
-              "role": "kill",
-              "npcIds": [
-                230745
-              ]
-            },
-            {
-              "role": "kill",
-              "npcIds": [
-                230749
-              ]
-            }
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -53671,27 +53647,9 @@
       "race": "ELYOS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "missing-spawn",
-          "groups": [
-            {
-              "role": "kill",
-              "npcIds": [
-                217527
-              ]
-            },
-            {
-              "role": "kill",
-              "npcIds": [
-                217528
-              ]
-            }
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -53700,22 +53658,9 @@
       "race": "ELYOS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "missing-spawn",
-          "groups": [
-            {
-              "role": "kill",
-              "npcIds": [
-                217544,
-                217556
-              ]
-            }
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -53724,21 +53669,9 @@
       "race": "ELYOS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "missing-spawn",
-          "groups": [
-            {
-              "role": "kill",
-              "npcIds": [
-                217586
-              ]
-            }
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -53794,21 +53727,9 @@
       "race": "ELYOS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "missing-spawn",
-          "groups": [
-            {
-              "role": "kill",
-              "npcIds": [
-                217819
-              ]
-            }
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -53817,16 +53738,9 @@
       "race": "ELYOS",
       "handlerKind": "template",
       "template": "report_to",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            18206
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -53835,16 +53749,9 @@
       "race": "ELYOS",
       "handlerKind": "custom",
       "template": null,
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            18207
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "custom",
       "planIssues": []
     },
     {
@@ -53853,16 +53760,9 @@
       "race": "ELYOS",
       "handlerKind": "custom",
       "template": null,
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            18208
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "custom",
       "planIssues": []
     },
     {
@@ -57221,12 +57121,6 @@
               "npcIds": [
                 236231,
                 236234
-              ]
-            },
-            {
-              "role": "kill",
-              "npcIds": [
-                236243
               ]
             }
           ]
@@ -70105,21 +69999,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "report_to_many",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "missing-spawn",
-          "groups": [
-            {
-              "role": "report",
-              "npcIds": [
-                800980
-              ]
-            }
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -74392,33 +74274,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "missing-spawn",
-          "groups": [
-            {
-              "role": "kill",
-              "npcIds": [
-                230744
-              ]
-            },
-            {
-              "role": "kill",
-              "npcIds": [
-                230745
-              ]
-            },
-            {
-              "role": "kill",
-              "npcIds": [
-                230749
-              ]
-            }
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -74486,27 +74344,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "missing-spawn",
-          "groups": [
-            {
-              "role": "kill",
-              "npcIds": [
-                217527
-              ]
-            },
-            {
-              "role": "kill",
-              "npcIds": [
-                217528
-              ]
-            }
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -74515,22 +74355,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "missing-spawn",
-          "groups": [
-            {
-              "role": "kill",
-              "npcIds": [
-                217544,
-                217556
-              ]
-            }
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -74609,21 +74436,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "missing-spawn",
-          "groups": [
-            {
-              "role": "kill",
-              "npcIds": [
-                217819
-              ]
-            }
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -74632,16 +74447,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "report_to",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            28206
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -74650,16 +74458,9 @@
       "race": "ASMODIANS",
       "handlerKind": "custom",
       "template": null,
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            28207
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "custom",
       "planIssues": []
     },
     {
@@ -74668,16 +74469,9 @@
       "race": "ASMODIANS",
       "handlerKind": "custom",
       "template": null,
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            28208
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "custom",
       "planIssues": []
     },
     {
@@ -78077,12 +77871,6 @@
               "npcIds": [
                 236231,
                 236234
-              ]
-            },
-            {
-              "role": "kill",
-              "npcIds": [
-                236243
               ]
             }
           ]
@@ -81827,22 +81615,9 @@
       "race": "ELYOS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "missing-spawn",
-          "groups": [
-            {
-              "role": "kill",
-              "npcIds": [
-                219555,
-                219563
-              ]
-            }
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -82755,22 +82530,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "missing-spawn",
-          "groups": [
-            {
-              "role": "kill",
-              "npcIds": [
-                219555,
-                219563
-              ]
-            }
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {

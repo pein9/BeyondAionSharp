@@ -42,7 +42,7 @@ public sealed partial class SimulationFastScenarioTests
 				await session.LoginAndAuthenticateAsync(token);
 				await session.CreateCharacterAsync(token);
 				await session.EnterWorldAsync(token);
-				await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+				await session.WaitForPrologueAsync(token);
 				var player = fixture.World.GetPlayer(session.CharacterId);
 				Assert.Equal(0, player.GetClientConnection().GetAccount().GetAccessLevel());
 				var driver = new SimCookingDriver(this, fixture, session, player);

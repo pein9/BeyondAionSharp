@@ -148,3 +148,43 @@ transports, virtual-scheduler faults, or collection-cleanup failures in this rer
 The bot quit contract needs a separate follow-up; preserve the server's refusal.
 The pre-existing clock-read and generated quest-draft drift remain separately
 recorded above. Evidence: ignored `artifacts/upstream/simulator-packet-draining/`.
+
+### Bot contract review after the Java queue (2026-10-19)
+
+Reviewed the client-facing changes in all 71 port records from `206f9b5db` through
+`b0a597458`, including the bot adaptations already made during those ports. The
+audit inputs and cumulative protocol/bot diffs are saved under ignored
+`artifacts/upstream/bot-port-followup/`. The reference for the completed queue is
+Java `b0a597458`, rather than the older working-tree HEAD of the Java checkout.
+
+| Area | Bot consequence |
+|---|---|
+| Recipe limits (`e5c133836`) and entry | Preserve the recipe request/response handshake and observed limits. That handshake can consume the prologue movie, so SIM and LIVE startup callers now accept the matching race/quest movie from the current entry's history. Previous entries and other movies cannot satisfy this wait. Ordinary packet waits retain their existing behavior. |
+| Quit/lost connection (`6f5feaceb`) | Preserve `CM_MAY_QUIT`, the countdown, combat refusals, immediate successful quit and lost-connection grace. The Destiny missed-window probe now interrupts its connection and verifies the ten-second grace; it no longer asks for a successful normal quit while Hellion is attacking. LIVE quit bookkeeping is reset even on refusal/cancellation. |
+| Loot validation (`54880a691`) | The pollen probe now walks from its ranged attack position to the corpse before looting. Natural journey looting already approaches corpses. The server's range checks and Java's drop probability remain unchanged. |
+| Quest discovery (`cabd580f3`, `616cb3c04`) | Regenerate the classifier from the expanded handler-spawn inventory and corrected Q23800 recipient (Migrak, 804753). Eighteen quests become obtainable: 18033, 18201–18203, 18206–18209, 23800, 28033, 28201–28202, 28206–28209, 30279 and 30379. Four are custom handlers (18208/18209/28208/28209); refresh their dialog drafts and the other changed registrations. |
+| Quest routes (`44c8d4387`, `4617c9fd2`, `93d5fa15b`) | Keep the ported ring data, zone identifiers and Rae dialog/state adaptations. Regenerated handler drafts reflect the current handlers; template plans read the corrected server data. |
+| Chains, flight zones, trade and macros | Keep the existing bot changes for hit-based chain deadlines/success flags, zone attributes, trade-tab lookup and signed macro chunks. These do not need a second rewrite. |
+| Login and character/service packets | Keep the updated login framing. Review the game-auth passport field, appearance layout, and manastone selected-NPC requirement against the current builders. The bot's existing default values/field widths and selected-target behavior remain compatible. |
+| Guarding, commerce, housing, pets, doors/chairs, broadcasts and visibility | Keep server validation and observe its results/known-object updates. Do not bypass guards or alter bot identity allocation. No additional packet changes were needed by the existing scenarios. Learned motion/emotion and pet-emote packets are not modeled as gameplay features by the current bots; this review does not claim new feature coverage for them. |
+| Combat, AI, scheduling, logging and build-only changes | Preserve the ported behavior and existing native/retail fixes. These changes do not introduce new bot requests. |
+
+The classifier now has 4,377 obtainable quests, 226 unreachable quests, 3,008
+template plans and 942 custom handlers. Only the classifier population fields of
+the coverage baseline changed; accepted/completed quest evidence is unchanged.
+The retail inventory and its generated worklists now use the updated spawn
+knowledge, with every existing nonempty maintainer status preserved. Dashboard
+spawn metadata was regenerated; map artwork and calibrations are unchanged.
+
+Validation: **6,629 normal-suite tests pass** (252 gated skips), and the complete
+Fast run `post-port-bots-20261019` has **115 passes, 98 gated skips and zero
+failures**. All nineteen failures from the immediate post-port rerun now pass,
+including both pollen cases, fresh-priest Return, Destiny interruption/recovery,
+the fixed-order manifest and the shared-history uphill probe. The compiler's
+fourteen checks, retail inventory/worklist's twenty-nine checks, custom-draft,
+dashboard, fidelity and logger checks pass. Warning inventory stays at 4,097.
+LIVE helpers compile; a LIVE server playthrough and the Full tier were not run.
+The unrelated clock-read ratchet still reports 22 reads against 20; its baseline
+and production clock code are unchanged. Detailed results are in ignored
+`artifacts/upstream/bot-port-followup/validation.json` and
+`run/post-port-bots-20261019/report.md`.

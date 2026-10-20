@@ -231,9 +231,10 @@ public static partial class LiveBotRunner
 			await actor.StepAsync("enter-world-and-finish-prologue", async token =>
 			{
 				await actor.Session.EnterWorldAsync(token);
-				await actor.Session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
-				await actor.Session.WaitForPacketAsync(typeof(SM_STATUPDATE_EXP), token,
-					packet => packet.Get<long>("currentExp") == 1);
+				await actor.Session.WaitForPrologueAsync(token);
+				if (actor.Session.Api.World.CurrentExperience != 1)
+					await actor.Session.WaitForPacketAsync(typeof(SM_STATUPDATE_EXP), token,
+						packet => packet.Get<long>("currentExp") == 1);
 			}, cancellationToken);
 			if (actor.Session.Api.World.Level != 1 || actor.Session.Api.World.CurrentExperience != 1)
 				throw new InvalidDataException(
@@ -307,7 +308,7 @@ public static partial class LiveBotRunner
 			await actor.StepAsync("enter-world-and-finish-prologue", async token =>
 			{
 				await actor.Session.EnterWorldAsync(token);
-				await actor.Session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+				await actor.Session.WaitForPrologueAsync(token);
 			}, cancellationToken);
 			int? channel = PlannedChannel(options, "M1");
 			if (channel != null)
@@ -733,6 +734,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 	private readonly string account;
 	private string characterName;
 	private readonly Race race;
+	private int worldEntryPacketStart;
 	private readonly string macAddress;
 	private readonly byte[] macBytes;
 	private readonly SemaphoreSlim sendLock = new(1, 1);
@@ -942,6 +944,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 
 	public async Task CompleteWorldEntryAsync(CancellationToken cancellationToken)
 	{
+		worldEntryPacketStart = packetHistory.Count;
 		state = AionConnection.State.IN_GAME;
 		var spawn = await WaitForGamePacketAsync(typeof(SM_PLAYER_SPAWN), cancellationToken);
 		expectedPosition = new PersistedPosition(spawn.Get<int>("worldId"), spawn.Get<float>("x"),
@@ -1248,16 +1251,23 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 	public async Task QuitAsync(CancellationToken cancellationToken)
 	{
 		quitExpected = true;
-		await CloseChatAsync();
-		await SendGameAsync(api.MayQuit(), cancellationToken);
-		await Task.Delay(TimeSpan.FromSeconds(11), cancellationToken);
-		await SendGameAsync(api.Quit(stayConnected: false), cancellationToken);
-		var response = await WaitForGamePacketAsync(typeof(SM_QUIT_RESPONSE), cancellationToken);
-		if (response.Get<int>("mode") != 1) throw new InvalidDataException("Server refused quit: " + response.Get<int>("value"));
-		lastQuitAt = DateTimeOffset.UtcNow;
-		await CloseConnectionAsync(cancellationToken);
-		quitExpected = false;
+		try
+		{
+			await CloseChatAsync();
+			await SendGameAsync(api.MayQuit(), cancellationToken);
+			await Task.Delay(TimeSpan.FromSeconds(11), cancellationToken);
+			await SendGameAsync(api.Quit(stayConnected: false), cancellationToken);
+			var response = await WaitForGamePacketAsync(typeof(SM_QUIT_RESPONSE), cancellationToken);
+			if (response.Get<int>("mode") != 1) throw new InvalidDataException("Server refused quit: " + response.Get<int>("value"));
+			lastQuitAt = DateTimeOffset.UtcNow;
+			await CloseConnectionAsync(cancellationToken);
+		}
+		finally { quitExpected = false; }
 	}
+
+	public Task<DecodedBotServerPacket> WaitForPrologueAsync(CancellationToken token) =>
+		BotPrologueProtocol.WaitAsync(packetHistory, worldEntryPacketStart, race,
+			(predicate, waitToken) => WaitForPacketAsync(predicate, waitToken), token);
 
 	public async Task VerifyOfflineAsync(CancellationToken cancellationToken)
 	{

@@ -28,7 +28,7 @@ public sealed partial class SimulationFastScenarioTests
 			{
 				session.BeginStep("s00", "login-create-enter-and-prepare-extended-social");
 				await session.LoginAndAuthenticateAsync(token); await session.CreateCharacterAsync(token, PlayerClass.MAGE);
-				await session.EnterWorldAsync(token); await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+				await session.EnterWorldAsync(token); await session.WaitForPrologueAsync(token);
 				var player = fixture.World.GetPlayer(session.CharacterId);
 				Assert.Equal(0, player.GetClientConnection().GetAccount().GetAccessLevel());
 				Assert.True(ClassChangeService.SetClass(player, PlayerClass.SPIRIT_MASTER, validate: true, updateDaevaStatus: true));
@@ -69,7 +69,7 @@ public sealed partial class SimulationFastScenarioTests
 			{
 				session.BeginStep("s00", "login-create-enter-and-prepare-group-quest");
 				await session.LoginAndAuthenticateAsync(token); await session.CreateCharacterAsync(token);
-				await session.EnterWorldAsync(token); await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+				await session.EnterWorldAsync(token); await session.WaitForPrologueAsync(token);
 				var player = fixture.World.GetPlayer(session.CharacterId);
 				Assert.Equal(0, player.GetClientConnection().GetAccount().GetAccessLevel());
 				player.GetCommonData().SetLevel(9);
@@ -102,7 +102,7 @@ public sealed partial class SimulationFastScenarioTests
 			{
 				session.BeginStep("s00", "login-create-enter-and-prepare-group-loot");
 				await session.LoginAndAuthenticateAsync(token); await session.CreateCharacterAsync(token);
-				await session.EnterWorldAsync(token); await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+				await session.EnterWorldAsync(token); await session.WaitForPrologueAsync(token);
 				var player = fixture.World.GetPlayer(session.CharacterId);
 				Assert.Equal(0, player.GetClientConnection().GetAccount().GetAccessLevel());
 				player.GetCommonData().SetLevel(2);
@@ -139,7 +139,7 @@ public sealed partial class SimulationFastScenarioTests
 				await session.LoginAndAuthenticateAsync(token);
 				await session.CreateCharacterAsync(token);
 				await session.EnterWorldAsync(token);
-				await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+				await session.WaitForPrologueAsync(token);
 				Assert.Equal(0, fixture.World.GetPlayer(session.CharacterId).GetClientConnection().GetAccount().GetAccessLevel());
 			}
 			await AllianceLeagueScenario.RunAsync(sessions.Select(session => (IAllianceLeagueDriver)new SimSocialDriver(
@@ -162,7 +162,7 @@ public sealed partial class SimulationFastScenarioTests
 			await session.LoginAndAuthenticateAsync(token);
 			await session.CreateCharacterAsync(token);
 			await session.EnterWorldAsync(token);
-			await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+			await session.WaitForPrologueAsync(token);
 			Assert.Equal(0, fixture.World.GetPlayer(session.CharacterId).GetClientConnection().GetAccount().GetAccessLevel());
 		}
 		await FriendsAndBlocksScenario.RunAsync(new SimSocialDriver(fixture, first, fixture.World.GetPlayer(first.CharacterId)),
@@ -183,7 +183,7 @@ public sealed partial class SimulationFastScenarioTests
 			await session.LoginAndAuthenticateAsync(token);
 			await session.CreateCharacterAsync(token, PlayerClass.MAGE);
 			await session.EnterWorldAsync(token);
-			await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+			await session.WaitForPrologueAsync(token);
 			var player = fixture.World.GetPlayer(session.CharacterId);
 			Assert.Equal(0, player.GetClientConnection().GetAccount().GetAccessLevel());
 			Assert.True(ClassChangeService.SetClass(player, PlayerClass.SORCERER, validate: true, updateDaevaStatus: true));
@@ -211,7 +211,7 @@ public sealed partial class SimulationFastScenarioTests
 			await session.LoginAndAuthenticateAsync(token);
 			await session.CreateCharacterAsync(token, PlayerClass.MAGE);
 			await session.EnterWorldAsync(token);
-			await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+			await session.WaitForPrologueAsync(token);
 			var player = fixture.World.GetPlayer(session.CharacterId);
 			Assert.Equal(0, player.GetClientConnection().GetAccount().GetAccessLevel());
 			Assert.True(ClassChangeService.SetClass(player, PlayerClass.SORCERER, validate: true, updateDaevaStatus: true));
