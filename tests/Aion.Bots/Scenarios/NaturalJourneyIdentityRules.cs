@@ -59,6 +59,8 @@ public static class NaturalJourneyIdentityRules
 			level >= 10 && worldId == 120020000 || // PC-06: ordinary Convent visit after the ceremony.
 			altgardLeg == "l11" && level >= 20 && worldId == 320070000 ||
 			altgardLeg == "l12" && level >= 16 && worldId == 300200000 ||
+			// NL-4: Q24023's retained characters may log back in inside the Sky Temple Interior (Java's enter-world hook).
+			altgardLeg == "vs" && level >= 29 && worldId == 320050000 ||
 			altgardLeg == NaturalAbyssEntry.Leg && level >= 25 && worldId is NaturalAbyssEntry.Morheim or NaturalAbyssEntry.ArenaMap ||
 			// NL-2: the group stages (scoped as the Abyss entry) play Brusthonin's group quests with mustered characters.
 			altgardLeg == NaturalAbyssEntry.Leg && level >= 26 && worldId == NaturalAltgardContract.Brusthonin ||

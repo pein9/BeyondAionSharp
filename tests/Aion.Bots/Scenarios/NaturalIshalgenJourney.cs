@@ -3753,11 +3753,17 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					? new NaturalFireRoomTravel(session, runtime, () => geometry) : null;
 				preferRecordedGlide = fireTravel == null ? null : goal =>
 					fireTravel.HandlesDescent(session.Api.World.MapId ?? 0, goal);
-				async Task SettleFireTravelAsync()
+				async Task<bool> SettleFireTravelAsync()
 				{
-					await DefendAgainstEngagedAsync("fire-route-takeoff");
+					int? map = session.Api.World.MapId;
+					int revives = combat.ReviveCount;
+					bool Survived() => session.Api.World.MapId == map && !session.Api.World.IsDead &&
+						session.Api.World.CurrentHp > 0 && combat.ReviveCount == revives;
+					if (!await DefendAgainstEngagedAsync("fire-route-takeoff") || !Survived()) return false;
 					await RestSafelyAsync(token);
+					if (!Survived()) return false;
 					await combat.BuffOurselfAsync(NaturalHelpTrigger.TravelLeg, token, travelMeters: fireTravel?.DescentMeters ?? 0);
+					return Survived();
 				}
 				async Task<bool> WalkFireTravelAsync(BotPosition at)
 				{
@@ -3768,7 +3774,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					{
 						if (session.Api.World.MapId != map || session.Api.World.IsDead || combat.ReviveCount != revives) return false;
 						NaturalNavigationResult result = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(
-							map, -1, at, 1, navigator, "fire-route-takeoff", token);
+							map, -1, at, NaturalFireRoomTravel.LaunchRadius, navigator, "fire-route-takeoff", token);
 						if (result.Arrived) return true;
 						session.TraceDiagnostic("fire-launch-approach-blocked", new Dictionary<string, object?>
 						{
@@ -4187,9 +4193,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								// The shared pad's Wind side is reachable on foot. Fire is reached by flying up and around the structure.
 								if (NaturalFlightPolicy.Distance(session.CurrentPosition, fireTravel.EntranceLanding) >= 3)
 									await ApproachShippedSpawnAsync(730043, withinRange: TalkRange(730043));
+								int revivesBeforeFlight = combat.ReviveCount;
 								if (!await fireTravel.EnterAsync(WalkFireTravelAsync, SettleFireTravelAsync, token))
 								{
-									if (session.Api.World.IsDead || session.Api.World.MapId != leg.Hub.MapId) break;
+									if (session.Api.World.IsDead || session.Api.World.MapId != leg.Hub.MapId || combat.ReviveCount != revivesBeforeFlight) break;
 									throw new InvalidOperationException("The recorded Fire entrance flight could not be taken safely.");
 								}
 							}

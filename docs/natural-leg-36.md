@@ -631,6 +631,44 @@ Mine, where the operator gave none; each is his to change:
      D7 object-ID difference, without re-recording. The NTC replay (`nl4-r38-ntc`) retained six verified home receipts.
      Logs are under `run/nl/resume-20261020/`, with starter/NTC evidence under `run/nl/NL4/nl4-r38-*`.
      These checks validate the runtime changes; they do not complete NL-4, the seven's Q24023, or NL-5.
+   - **Corrected-window trial (`nl4-vs-resume-t4`, 2026-10-20):** every seat had its own start plus 45 game minutes.
+     The Chanter cleared the live guards and completed the recorded descent, landing at full 4,122 HP with 20 FP.
+     None of the seven completed Q24023. The completed round's wrapper dropped its own disposable schema; no snapshot
+     was captured. Its per-bot outcomes, not the wrapper's successful exit, define that result.
+     - The Templar's entrance approach stopped 1.98 m from the launch: the walk required 1 m, although the flight's
+       checked start already permitted 2 m. The walk and flight now share the same two-metre tolerance.
+     - The Sorcerer reached the brink, then the mandatory post-rest loot sweep walked back to its earlier kills.
+       Preparation now finishes defense, rest, loot and buffs and returns to the launch before flight, with bounded
+       retries and the original clearance/zone/FP checks. It retains every required loot sweep.
+     - A preparation callback now reports a death/revival or map change. A same-map revival during entrance preparation
+       restarts ordinary quest travel instead of being mislabeled as an unsafe route.
+     - The Gladiator was rejected before login because its retained state was inside Sky Temple. Only leg `vs`, from
+       Q24023's minimum level 29, now accepts map 320050000. Java's `_24023ABlazingRescue.onEnterWorldEvent` explicitly
+       handles that map. Other legs retain their map restrictions; this grants no teleport or quest progress.
+     - The Ranger hit its intended world-minute-95 deadline while resting. Sending the cleanup stand packet on its
+       closed transport masked cancellation as `ObjectDisposedException`. Rest cleanup now preserves an existing
+       cancellation in that case; a genuine transport failure still propagates.
+   - **Focused follow-up probe:** the existing scratch SIM console was copied under `run/fire-room-followup-probe/`.
+     An ordinary level-38 Gladiator started at the Templar's near-launch point, flew the entrance, then deliberately
+     walked away during descent preparation. It returned to the brink and glided to the lower floor at full 4,678 HP,
+     with 28/72 FP. The probe also checked interrupted preparation, leg-scoped retained identity, cancellation
+     preservation and propagation of genuine transport failure. Nearby NPCs were cleared for this motion diagnostic;
+     live encounter evidence remains the Chanter's t4 descent. Logs: `run/fire-room-followup-probe/probe.log`.
+     Trial `nl4-vs-resume-t5` tests the candidate with all seven, Gladiator first and ten game minutes between starts;
+     each has a 45-minute play window. It is uncaptured. All seven played and reached their intentional deadlines as
+     `OperationCanceledException`, with no route-refusal or disposed-transport exception ending a run. Gladiator,
+     Chanter, Sorcerer and Assassin completed the live recorded descent (one, two, one and two times respectively),
+     landing at full HP with 28, 20, 16 and 16 FP on their last descent. Loot/settlement relocation recovery occurred
+     in the live Gladiator, Chanter and Assassin runs. The Gladiator's retained login succeeded. Nobody completed
+     Q24023 in this window; a deadline is not a solo-capability classification. Per-class evidence is indexed in
+     `run/nl/resume-20261020/t5-summary.json`. Its owner dropped its disposable schema.
+   - **Follow-up validation:** the solution suite again passed 6,663 tests with 252 existing skips, along with all CI
+     guards, fidelity, script contracts, profile generation/export, baked navmeshes and companion-server checks.
+     Fast again passed 115 tests and all eleven manifest scenarios with no failure or flakiness. All five starter
+     journeys passed; their exact comparisons retain D7's first object-ID difference, with no re-recording. NTC
+     (`nl4-r38-followup-ntc`) retained six verified home receipts. Logs are kept separately under
+     `run/nl/resume-20261020/followup/`. No compiler warning or trace baseline was raised, no generated data or mob
+     statistics were edited, and no new bot unit test was written. NL-4/NL-5 remain open.
 
 ## Loop prompt
 

@@ -18,6 +18,7 @@ public static class NaturalRestCadence
 		ArgumentNullException.ThrowIfNull(defend);
 		await setRest(true, token);
 		bool sitting = true;
+		bool cancelled = false;
 		try
 		{
 			for (int tick = 0; tick < 5; tick++)
@@ -34,9 +35,18 @@ public static class NaturalRestCadence
 			}
 			return NaturalRestOutcome.Completed;
 		}
+		catch (OperationCanceledException)
+		{
+			cancelled = true;
+			throw;
+		}
 		finally
 		{
-			if (sitting) await setRest(false, CancellationToken.None);
+			if (sitting)
+			{
+				try { await setRest(false, CancellationToken.None); }
+				catch (ObjectDisposedException) when (cancelled) { } // Preserve the round's cancellation after its transport closes.
+			}
 		}
 	}
 }

@@ -11,6 +11,8 @@ namespace Aion.Bots.Scenarios;
 /// The recording used a GM account; clearance, ordinary flight zones and a finite FP budget are checked afresh.</summary>
 public sealed class NaturalFireRoomTravel
 {
+	public const float LaunchRadius = 2;
+	private const int MaximumLaunchSettles = 8;
 	public sealed record Point(int Sequence, long Milliseconds, float X, float Y, float Z, byte Heading, byte Mask, byte GlideFlag)
 	{
 		public BotPosition At => new(X, Y, Z, Heading);
@@ -46,15 +48,13 @@ public sealed class NaturalFireRoomTravel
 		session.CurrentPosition.X < 140 && session.CurrentPosition.Y < 130 && session.CurrentPosition.Z > 605 &&
 		goal.X > 170 && goal.X < 300 && goal.Y > 150 && goal.Y < 310 && goal.Z is > 540 and < 565;
 
-	public async Task<bool> EnterAsync(Func<BotPosition, Task<bool>> walk, Func<Task> settle, CancellationToken token)
+	public async Task<bool> EnterAsync(Func<BotPosition, Task<bool>> walk, Func<Task<bool>> settle, CancellationToken token)
 	{
 		Route route = routes.Entrance;
 		if (session.Api.World.MapId != route.MapId || session.Api.World.IsDead) return false;
 		// The bot may already be on the Fire portal's side after an earlier attempt.
 		if (NaturalFlightPolicy.Distance(session.CurrentPosition, route.Points[^1].At) < 3) return true;
-		if (!await walk(EntranceStart)) return false;
-		await settle();
-		if (!AtStart(route)) return false;
+		if (!await PrepareAtStartAsync(route, walk, settle)) return false;
 		BotNavigationGeometry geo = geometry();
 		IReadOnlyList<NaturalFlyZone> zones = NaturalFlyZone.ForMap(runtime.RepoRoot, runtime.Data.WorldMaps2.GetTemplate(route.MapId), route.MapId);
 		CheckClear(route, geo);
@@ -72,7 +72,7 @@ public sealed class NaturalFireRoomTravel
 		}
 		// Budget conservatively at ground speed before takeoff; replan at the announced flight speed afterward.
 		float speed = session.Api.World.MovementSpeed ?? 0;
-		if (speed <= 0 || !await ReadyAsync(route, Needed(route, speed, false), settle, token)) return false;
+		if (speed <= 0 || !await ReadyAsync(route, Needed(route, speed, false), () => PrepareAtStartAsync(route, walk, settle), token)) return false;
 		speed = await NaturalFlightProtocol.TakeOffAsync(session, token);
 		if (session.Api.World.CurrentFlightTime < Needed(route, speed, false))
 		{
@@ -85,15 +85,13 @@ public sealed class NaturalFireRoomTravel
 		return Finish(route, "fire-entrance-flight");
 	}
 
-	public async Task<bool> DescendAsync(Func<BotPosition, Task<bool>> walk, Func<Task> settle, CancellationToken token)
+	public async Task<bool> DescendAsync(Func<BotPosition, Task<bool>> walk, Func<Task<bool>> settle, CancellationToken token)
 	{
 		Route route = routes.Descent;
-		if (session.Api.World.MapId != route.MapId || session.Api.World.IsDead || !await walk(DescentStart)) return false;
-		await settle();
-		if (!AtStart(route)) return false;
+		if (!await PrepareAtStartAsync(route, walk, settle)) return false;
 		CheckClear(route, geometry());
 		float speed = session.Api.World.MovementSpeed ?? 0;
-		if (speed <= 0 || !await ReadyAsync(route, Needed(route, speed, true), settle, token)) return false;
+		if (speed <= 0 || !await ReadyAsync(route, Needed(route, speed, true), () => PrepareAtStartAsync(route, walk, settle), token)) return false;
 		speed = session.Api.World.MovementSpeed ?? 0;
 		if (speed <= 0 || session.Api.World.CurrentFlightTime < Needed(route, speed, true)) return false;
 		int firstGlide = Array.FindIndex(route.Points, point => (point.Mask & MovementMask.GLIDE) != 0);
@@ -108,8 +106,26 @@ public sealed class NaturalFireRoomTravel
 		return Finish(route, "fire-recorded-descent");
 	}
 
-	private bool AtStart(Route route) => !session.Api.World.IsDead && session.Api.World.MapId == route.MapId &&
-		NaturalFlightPolicy.Distance(session.CurrentPosition, route.Points[0].At) <= 2;
+	private bool AtStart(Route route) => !session.Api.World.IsDead && session.Api.World.CurrentHp > 0 && session.Api.World.MapId == route.MapId &&
+		NaturalFlightPolicy.Distance(session.CurrentPosition, route.Points[0].At) <= LaunchRadius;
+
+	private async Task<bool> PrepareAtStartAsync(Route route, Func<BotPosition, Task<bool>> walk, Func<Task<bool>> settle)
+	{
+		for (int attempt = 0; attempt < MaximumLaunchSettles; attempt++)
+		{
+			if (session.Api.World.MapId != route.MapId || session.Api.World.IsDead || !await walk(route.Points[0].At)) return false;
+			if (!await settle()) return false;
+			if (AtStart(route)) return true;
+			// Defense, rest and the required corpse-loot sweep can move away from the brink. Finish that work,
+			// then walk back; never glide from the last corpse's position or skip its loot to keep the launch fixed.
+			if (session.Api.World.MapId != route.MapId || session.Api.World.IsDead || session.Api.World.CurrentHp <= 0) return false;
+			session.TraceDiagnostic("fire-launch-moved-during-settle", new Dictionary<string, object?>
+			{
+				["map"] = route.MapId, ["position"] = session.CurrentPosition, ["launch"] = route.Points[0].At, ["attempt"] = attempt,
+			});
+		}
+		return false;
+	}
 
 	private void CheckClear(Route route, BotNavigationGeometry geo)
 	{
@@ -127,7 +143,7 @@ public sealed class NaturalFireRoomTravel
 		checked((int)Math.Ceiling(Plan(route, speed, glide).Duration.TotalSeconds) * (glide ? 2 : 1) +
 			(glide ? 5 : NaturalFlightPolicy.LandingReserveFp)); // The same five-FP reserve as NaturalFloorGlide.
 
-	private async Task<bool> ReadyAsync(Route route, int need, Func<Task> settle, CancellationToken token)
+	private async Task<bool> ReadyAsync(Route route, int need, Func<Task<bool>> prepare, CancellationToken token)
 	{
 		if (need > session.Api.World.MaxFlightTime)
 		{
@@ -139,13 +155,11 @@ public sealed class NaturalFireRoomTravel
 		{
 			await session.AdvanceAsync(TimeSpan.FromSeconds(3), token);
 			await session.SynchronizeAsync(token);
-			await settle();
-			if (!AtStart(route)) return false;
+			if (!await prepare()) return false;
 		}
 		// Java rejects a second glide inside the ten-second flight reuse window.
 		await session.AdvanceAsync(TimeSpan.FromSeconds(10), token);
-		await settle();
-		return AtStart(route) && session.Api.World.CurrentFlightTime >= need;
+		return await prepare() && AtStart(route) && session.Api.World.CurrentFlightTime >= need;
 	}
 
 	private bool Finish(Route route, string diagnostic)
