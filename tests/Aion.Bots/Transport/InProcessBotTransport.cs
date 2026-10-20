@@ -29,13 +29,15 @@ public sealed class InProcessBotTransport : IBotTransport
 	// NR-46b: the server packets serialized and not yet handed to the receive loop.
 	private int queuedServerPackets;
 	private int receiveStarted;
+	private IDisposable? clockPumpRegistration;
 
 	public InProcessBotTransport(
 		Action<TimeSpan>? advanceClock = null,
 		GamePacketCodec? codec = null,
 		BotServerPacketDecoder? decoder = null,
 		string ip = "127.0.0.1",
-		Func<TimeSpan, CancellationToken, ValueTask>? waitForTurn = null)
+		Func<TimeSpan, CancellationToken, ValueTask>? waitForTurn = null,
+		Func<Action, IDisposable>? registerClockPump = null)
 	{
 		if (advanceClock != null && waitForTurn != null)
 			throw new ArgumentException("A transport either moves the clock itself or waits for its turn, not both.");
@@ -46,6 +48,7 @@ public sealed class InProcessBotTransport : IBotTransport
 		connection = new InProcessAionConnection(ip);
 		connection.Initialize();
 		DrainServerPackets();
+		clockPumpRegistration = registerClockPump?.Invoke(PumpFromClock);
 	}
 
 	public GamePacketCodec Codec { get; }
@@ -99,8 +102,8 @@ public sealed class InProcessBotTransport : IBotTransport
 	}
 
 	/// <summary>
-	/// NR-44: the same wait in a world of several bots. The turn table moves the clock while this bot is parked; what the
-	/// world queued for it meanwhile is serialized when its turn comes back, as after a wait of its own.
+	/// NR-44: the turn table moves the shared clock while this bot is parked. Registered pumps serialize its packets
+	/// during that wait; drain again when its turn returns.
 	/// </summary>
 	private async ValueTask WaitForTurnAsync(TimeSpan elapsed, CancellationToken cancellationToken)
 	{
@@ -164,9 +167,9 @@ public sealed class InProcessBotTransport : IBotTransport
 	}
 
 	/// <summary>
-	/// NR-46b: how many server packets wait for the receive loop. Packets are queued only inside
-	/// <see cref="SendAsync"/>, <see cref="AdvanceAsync"/> and <see cref="DrainAsync"/>, so while the caller does none
-	/// of those, zero stays zero.
+	/// NR-46b: how many serialized server packets wait for the receive loop. Writers are
+	/// <see cref="SendAsync"/>, <see cref="AdvanceAsync"/>, <see cref="DrainAsync"/> and registered shared-clock pumps.
+	/// With no send, drain or clock advance, zero stays zero.
 	/// </summary>
 	public int QueuedServerPackets => Volatile.Read(ref queuedServerPackets);
 
@@ -178,6 +181,7 @@ public sealed class InProcessBotTransport : IBotTransport
 			if (closeMode != 0)
 				return ValueTask.CompletedTask;
 			closeMode = 1;
+			UnregisterClockPump();
 			try
 			{
 				DrainServerPackets();
@@ -199,6 +203,7 @@ public sealed class InProcessBotTransport : IBotTransport
 			if (closeMode != 0)
 				return ValueTask.CompletedTask;
 			closeMode = 2;
+			UnregisterClockPump();
 			try
 			{
 				connection.Crash();
@@ -253,6 +258,8 @@ public sealed class InProcessBotTransport : IBotTransport
 			if (!received.Writer.TryWrite(packet))
 				throw new InvalidOperationException("The in-process receive stream is already closed.");
 			Interlocked.Increment(ref queuedServerPackets);
+			// The socket Dispatcher acknowledges a successful write; publishing the complete frame is our write.
+			connection.OnDataWritten();
 		}
 	}
 
@@ -261,12 +268,14 @@ public sealed class InProcessBotTransport : IBotTransport
 		if (!connection.IsClosed())
 			return;
 		closeMode = 1;
+		UnregisterClockPump();
 		received.Writer.TryComplete();
 	}
 
 	private void Fail(Exception exception)
 	{
 		closeMode = 3;
+		UnregisterClockPump();
 		try
 		{
 			connection.Crash();
@@ -279,6 +288,26 @@ public sealed class InProcessBotTransport : IBotTransport
 	}
 
 	private void ThrowIfClosed() => ObjectDisposedException.ThrowIf(closeMode != 0, this);
+
+	private void UnregisterClockPump() => Interlocked.Exchange(ref clockPumpRegistration, null)?.Dispose();
+
+	private void PumpFromClock()
+	{
+		lock (gate)
+		{
+			if (closeMode != 0) return;
+			try
+			{
+				DrainServerPackets();
+				CompleteIfDisconnected();
+			}
+			catch (Exception ex)
+			{
+				Fail(ex);
+				throw;
+			}
+		}
+	}
 
 	private sealed class InProcessAionConnection(string ip) : AionConnection(ip)
 	{

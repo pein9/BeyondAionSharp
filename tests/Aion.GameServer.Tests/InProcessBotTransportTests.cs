@@ -6,11 +6,91 @@ using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ServerPackets;
+using Aion.GameServer.TestKit;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Tests;
 
 public sealed class InProcessBotTransportTests
 {
+	[Fact]
+	public async Task LongAdvancePumpsBothTheActiveAndParkedClientsAtTheirPacketTimes()
+	{
+		await using var clock = new VirtualThreadPool(strict: true);
+		SystemClock.UseSource(() => clock.NowMillis);
+		try
+		{
+			await using var active = new InProcessBotTransport(clock.Advance, registerClockPump: clock.RegisterAdvancePump);
+			await using var parked = new InProcessBotTransport(
+				waitForTurn: (_, _) => throw new InvalidOperationException("The parked client must not need a turn to receive."),
+				registerClockPump: clock.RegisterAdvancePump);
+			active.ServerConnection.SetState(AionConnection.State.AUTHED);
+			parked.ServerConnection.SetState(AionConnection.State.AUTHED);
+			await using var activePackets = active.ReceiveAsync().GetAsyncEnumerator();
+			await using var parkedPackets = parked.ReceiveAsync().GetAsyncEnumerator();
+			Assert.True(await activePackets.MoveNextAsync()); // SM_KEY
+			Assert.True(await parkedPackets.MoveNextAsync());
+			clock.ScheduleAtFixedRateTask(_ =>
+			{
+				active.ServerConnection.SendPacket(new SM_PONG());
+				parked.ServerConnection.SendPacket(new SM_PONG());
+				return ValueTask.CompletedTask;
+			}, TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(20));
+
+			await active.AdvanceAsync(TimeSpan.FromMinutes(3));
+
+			Assert.False(active.ServerConnection.IsClosed());
+			Assert.False(parked.ServerConnection.IsClosed());
+			Assert.Equal(9, active.QueuedServerPackets);
+			Assert.Equal(9, parked.QueuedServerPackets);
+			for (int index = 1; index <= 9; index++)
+			{
+				Assert.True(await activePackets.MoveNextAsync());
+				Assert.True(await parkedPackets.MoveNextAsync());
+				Assert.Equal(typeof(SM_PONG), activePackets.Current.PacketType);
+				Assert.Equal(typeof(SM_PONG), parkedPackets.Current.PacketType);
+				Assert.Equal(DateTimeOffset.UnixEpoch.AddSeconds(index * 20), activePackets.Current.ReceivedAt);
+				Assert.Equal(activePackets.Current.ReceivedAt, parkedPackets.Current.ReceivedAt);
+			}
+		}
+		finally { SystemClock.UseSystemClock(); }
+	}
+
+	[Fact]
+	public async Task AnUndrainedClientStillTriggersTheUnmodifiedSendStallGuard()
+	{
+		await using var clock = new VirtualThreadPool(strict: true);
+		SystemClock.UseSource(() => clock.NowMillis);
+		try
+		{
+			await using var transport = new InProcessBotTransport();
+			transport.ServerConnection.SetState(AionConnection.State.AUTHED);
+			clock.Schedule(() => transport.ServerConnection.SendPacket(new SM_PONG()), 1_000);
+			clock.Schedule(() => transport.ServerConnection.SendPacket(new SM_PONG()), 62_000);
+
+			clock.Advance(TimeSpan.FromSeconds(62));
+
+			Assert.True(transport.ServerConnection.IsClosed());
+		}
+		finally { SystemClock.UseSystemClock(); }
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task ClosingOrCrashingUnregistersTheClockPump(bool crash)
+	{
+		await using var clock = new VirtualThreadPool(strict: true);
+		await using var transport = new InProcessBotTransport(registerClockPump: clock.RegisterAdvancePump);
+		if (crash) await transport.CrashAsync();
+		else await transport.CloseAsync();
+
+		clock.Advance(TimeSpan.FromMinutes(2));
+
+		Assert.True(transport.ServerConnection.IsClosed());
+		Assert.Empty(clock.Faults);
+	}
+
 	[Fact]
 	public async Task InitializationSerializesSmKeyAndEncryptedCmPingReturnsDecodedPong()
 	{

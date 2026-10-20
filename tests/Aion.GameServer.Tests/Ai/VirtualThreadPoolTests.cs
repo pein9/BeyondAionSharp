@@ -9,6 +9,32 @@ namespace Aion.GameServer.Tests.Ai;
 public sealed class VirtualThreadPoolTests
 {
 	[Fact]
+	public async Task AdvancePumpsQueuedIoBeforeTimeMovesAndAfterEveryDueBody()
+	{
+		await using var pool = new VirtualThreadPool(strict: true);
+		var pending = new Queue<string>();
+		var delivered = new List<(long At, string Packet)>();
+		pending.Enqueue("already queued");
+		var registration = pool.RegisterAdvancePump(() =>
+		{
+			while (pending.TryDequeue(out string? packet)) delivered.Add((pool.NowMillis, packet));
+		});
+		pool.Schedule(() => pending.Enqueue("first"), 10);
+		pool.Schedule(() => pending.Enqueue("same deadline"), 10);
+		pool.Schedule(() => pending.Enqueue("last"), 20);
+
+		pool.Advance(TimeSpan.FromMilliseconds(100));
+
+		Assert.Equal([(0L, "already queued"), (10L, "first"), (10L, "same deadline"), (20L, "last")], delivered);
+		Assert.Equal(100, pool.NowMillis);
+		registration.Dispose();
+		registration.Dispose();
+		pending.Enqueue("unregistered");
+		pool.Advance(TimeSpan.Zero);
+		Assert.Equal("unregistered", Assert.Single(pending));
+	}
+
+	[Fact]
 	public async Task RecordsAndLogsOneShotAndFixedRateFaultsWithoutAbortingAdvance()
 	{
 		using var provider = new RecordingProvider();

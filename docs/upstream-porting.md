@@ -130,3 +130,21 @@ and `diagnostic-{flight,reentry,pollen}.json`. The original Fast run is
 
 After the queue is complete, rerun Fast, compare the remaining failures with this
 record, and investigate each unresolved cause before claiming full validation.
+
+### Simulator packet-draining follow-up (2026-10-19)
+
+The socketless transport now registers with the shared virtual clock, serializes
+queued packets before time moves and between timer bodies, and acknowledges each
+completed frame through the existing write-progress callback. Parked clients are
+pumped too; closing a client removes its registration. Production connection
+guards and their queue/stall limits are unchanged.
+
+Validation: 34 focused clock/transport/guard tests and 6,625 normal-suite tests pass
+(252 gated skips); warning inventory remains 4,097 and fidelity/logger checks pass.
+Replaying the fifteen transport failures plus the uphill shared-history probe gives
+15 passes and one later failure: Destiny recovery now reaches Java's valid
+`SM_QUIT_RESPONSE` refusal with a ten-second combat block. There are no disposed
+transports, virtual-scheduler faults, or collection-cleanup failures in this rerun.
+The bot quit contract needs a separate follow-up; preserve the server's refusal.
+The pre-existing clock-read and generated quest-draft drift remain separately
+recorded above. Evidence: ignored `artifacts/upstream/simulator-packet-draining/`.

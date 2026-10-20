@@ -33,6 +33,7 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 	private long _nowMillis;
 	private long _sequence;
 	private int _advanceOwnerThreadId;
+	private event Action? advancePumps;
 
 	public VirtualThreadPool(bool strict = false)
 		: base(NullLogger<ThreadPoolManager>.Instance)
@@ -49,6 +50,17 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 	public bool Strict { get; set; }
 
 	public IReadOnlyList<VirtualThreadPoolFault> Faults => _faults;
+
+	/// <summary>
+	/// Pumps external I/O at the current virtual instant before advancing, after each timer body, and before
+	/// parking at the requested time. Socketless clients use this to receive packets while the world runs.
+	/// </summary>
+	public IDisposable RegisterAdvancePump(Action pump)
+	{
+		ArgumentNullException.ThrowIfNull(pump);
+		advancePumps += pump;
+		return new AdvancePumpRegistration(this, pump);
+	}
 
 	/// <summary>The next live timer deadline, or <see langword="null"/> when no timer is armed.</summary>
 	public long? NextDueMillis
@@ -184,12 +196,14 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 		try
 		{
 			long target = checked(_nowMillis + advanceMillis);
+			advancePumps?.Invoke();
 			int ticks = 0;
 			while (true)
 			{
 				Entry? next = DequeueDue(target);
 				if (next == null)
 				{
+					advancePumps?.Invoke();
 					_nowMillis = target;
 					return;
 				}
@@ -225,6 +239,7 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 					}
 				}
 				RecordTiming(next, Stopwatch.GetElapsedTime(wallStart));
+				advancePumps?.Invoke();
 			}
 		}
 		finally
@@ -368,6 +383,17 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 	}
 
 	private static long ToMillis(TimeSpan span) => (long)span.TotalMilliseconds;
+
+	private sealed class AdvancePumpRegistration(VirtualThreadPool owner, Action pump) : IDisposable
+	{
+		private Action? registered = pump;
+
+		public void Dispose()
+		{
+			if (Interlocked.Exchange(ref registered, null) is { } callback)
+				owner.advancePumps -= callback;
+		}
+	}
 
 	private DateTimeOffset ToVirtualTime(long millis) =>
 		SystemClock.UtcNow().AddMilliseconds(millis - _nowMillis);

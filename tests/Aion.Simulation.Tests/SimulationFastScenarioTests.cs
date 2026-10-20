@@ -749,7 +749,8 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 	{
 		Rnd.SetProcessSeed(fixture.Seed);
 		policy.ObserveAction(probe, "unauthenticated-probe", "s01", "open-and-observe-key");
-		await using var transport = new InProcessBotTransport(elapsed => fixture.Clock.Advance(elapsed));
+		await using var transport = new InProcessBotTransport(elapsed => fixture.Clock.Advance(elapsed),
+			registerClockPump: fixture.Clock.RegisterAdvancePump);
 		await using var packets = transport.ReceiveAsync().GetAsyncEnumerator();
 		Assert.True(await packets.MoveNextAsync());
 		policy.ObservePacket(probe, "s01", packets.Current, "unauthenticated-probe");
@@ -1374,8 +1375,10 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			currentPosition = null;
 			// NR-44: a bot alone moves the clock itself. In a world of several bots it waits for its turn.
 			transport = Turns is { } turns
-				? new InProcessBotTransport(ip: $"127.0.0.{accountId}", waitForTurn: (elapsed, token) => turns.WaitAsync(bot, elapsed, token))
-				: new InProcessBotTransport(elapsed => fixture.Clock.Advance(elapsed), ip: $"127.0.0.{accountId}");
+				? new InProcessBotTransport(ip: $"127.0.0.{accountId}", waitForTurn: (elapsed, token) => turns.WaitAsync(bot, elapsed, token),
+					registerClockPump: fixture.Clock.RegisterAdvancePump)
+				: new InProcessBotTransport(elapsed => fixture.Clock.Advance(elapsed), ip: $"127.0.0.{accountId}",
+					registerClockPump: fixture.Clock.RegisterAdvancePump);
 			ConnectionGeneration++;
 			packets = transport.ReceiveAsync(cancellationToken).GetAsyncEnumerator(cancellationToken);
 			state = AionConnection.State.CONNECTED;
