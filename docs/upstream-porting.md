@@ -188,3 +188,33 @@ The unrelated clock-read ratchet still reports 22 reads against 20; its baseline
 and production clock code are unchanged. Detailed results are in ignored
 `artifacts/upstream/bot-port-followup/validation.json` and
 `run/post-port-bots-20261019/report.md`.
+
+### Clock guard follow-up (2026-10-19)
+
+The 22-versus-20 count failure was caused by the XML validation and thread-pool
+shutdown duration logs added by Java `7840be30d`. They correctly measure real
+elapsed time. The old count-only baseline is retired rather than raised.
+`scripts/ci/check-clock-reads.ps1` now invokes `tools/Aion.ClockReadGuard`, using
+Roslyn symbol binding and a reviewed exact-site allowlist. File, containing member,
+clock API, statement and occurrence count must all match; exceptions require a
+reason, and stale/duplicate entries fail. Comments, strings and `nameof` do not
+count; aliases, static imports, fully qualified calls and both Debug/Release
+branches are inspected. No automatic approval mode exists. The existing RS0030
+compiler ban on wall-clock reads remains in place.
+
+The allowlist contains 29 existing infrastructure reads: the previous 22 plus
+seven instance `Stopwatch.Start()` calls the regex missed. The stronger check
+also guards `TimeProvider.System` and found two housing helper defaults outside
+the old inventory. Those defaults now use shared `ServerTime.Now()`, matching
+Java's server-time calculations; explicitly injected providers still take
+precedence. Real network shutdown/stall protection, process uptime, operational
+measurements and packet-log timestamps are unchanged.
+
+Validation completed on 2026-10-20: the new clock guard passes with no unapproved
+or stale entries; all 6,658 normal tests pass (252 gated skips), including 27 guard
+regression cases and two new virtual housing-clock cases. Six CLI/wrapper probes
+verify successful checks and nonzero failure propagation. Fast
+`clock-guard-20261019` passes all 115 active cases (98 gated skips). Warning
+inventory remains 4,097; fidelity, null-logger and custom-draft checks pass.
+Evidence is under ignored `artifacts/upstream/clock-read-guard/` and
+`run/clock-guard-20261019/`. Full-tier and LIVE playthroughs were not run.

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Aion.GameServer.Configuration;
+using Aion.GameServer.Utils.Time;
 
 namespace Aion.GameServer.Services;
 
@@ -8,13 +9,13 @@ public sealed class HouseAuctionTimingService
 	private static readonly TimeSpan ProlongationTime = TimeSpan.FromMinutes(5);
 	private static readonly TimeSpan MaxProlongationTime = TimeSpan.FromMinutes(30);
 	private readonly JavaCronSchedule _auctionEndSchedule;
-	private readonly TimeProvider _timeProvider;
+	private readonly TimeProvider? _timeProvider;
 	private readonly ConcurrentDictionary<int, DateTimeOffset> _prolongedAuctionEnds = new();
 
 	public HouseAuctionTimingService(GameServerOptions? options = null, TimeProvider? timeProvider = null)
 	{
 		_auctionEndSchedule = JavaCronSchedule.WeeklyOrDefault(options?.Housing.AuctionEndTime, DayOfWeek.Sunday, 12);
-		_timeProvider = timeProvider ?? TimeProvider.System;
+		_timeProvider = timeProvider;
 	}
 
 	public JavaCronSchedule AuctionEndSchedule => _auctionEndSchedule;
@@ -103,7 +104,7 @@ public sealed class HouseAuctionTimingService
 
 	private DateTimeOffset GetNow()
 	{
-		return _timeProvider.GetLocalNow();
+		return _timeProvider?.GetLocalNow() ?? ServerTime.Now();
 	}
 
 	private static TimeSpan Min(TimeSpan left, TimeSpan right)

@@ -742,6 +742,12 @@ Production-neutral: `SystemClock`'s default is the same call Java makes (`System
 
   Leave genuine infrastructure on real time and allowlist it: the NIO shutdown loop, `Stopwatch` durations,
   `PeriodicSaveService` `TickCount64`, logging timestamps. Depends on P4-03.
+  **2026-10-19 guard follow-up:** the count ratchet is retired in favor of the Roslyn-backed
+  `scripts/ci/clock-read-allowlist.json`. Entries approve exact file/member/API/statement sites with a reason and
+  occurrence count, not room for replacement reads. Both Debug and Release are inspected. The reviewed inventory
+  includes the 22 formerly counted infrastructure reads plus seven existing instance `Stopwatch.Start()` calls
+  that regex matching missed. `TimeProvider.System` is also guarded; two housing helper defaults now use
+  `ServerTime.Now()` instead, preserving explicit provider injection. Existing RS0030 compiler enforcement remains.
 - [x] **P4-05** [BOTH] S — `Rnd` seed seam (AsyncLocal or process-wide; print the seed on failure; production
     default unchanged). Replace `Random.Shared` in `SpawnGroup.cs:157` with `Rnd` so the seed reaches it (Java
     uses `Rnd.get(list)`); review the other `new Random`/`Random.Shared` sites.

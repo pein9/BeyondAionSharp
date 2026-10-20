@@ -164,7 +164,7 @@ dotnet build AionServer.slnx
 dotnet test  AionServer.slnx        # golden/parity suite + unit tests
 pwsh -NoProfile -File scripts/ci/check-warning-baseline.ps1   # run before every commit
 pwsh -NoProfile -File scripts/ci/check-null-loggers.ps1       # prevent silent source loggers
-pwsh -NoProfile -File scripts/ci/check-clock-reads.ps1        # direct game clock reads may only shrink
+pwsh -NoProfile -File scripts/ci/check-clock-reads.ps1        # only reviewed infrastructure may read real clocks
 pwsh -NoProfile -File scripts/ci/check-custom-quest-drafts.ps1 # Roslyn custom-quest draft drift
 python scripts/parity/check_fidelity.py                        # structural-fidelity check
 python scripts/e2e/test-quest-plan-compiler.py                 # quest plan/classifier drift; checked-in D32/Altgard plans recompile identically
@@ -204,8 +204,14 @@ pwsh -NoProfile -File scripts/e2e/run-fast.ps1                 # additionally, b
 There is no hosted CI: these checks run locally. The baseline script rebuilds everything and **fails if
 the compiler warning count rises above `scripts/ci/warning-baseline.json`**. `dotnet build` and
 `dotnet test` succeed with new warnings, so only the baseline script catches them. Fix new warnings
-rather than raising the baseline (`-UpdateBaseline` is only for recording reviewed reductions). The clock-read
-ratchet follows the same rule while gameplay time is migrated to `SystemClock`.
+rather than raising the baseline (`-UpdateBaseline` is only for recording reviewed reductions).
+The clock guard uses Roslyn and `scripts/ci/clock-read-allowlist.json`, not a numeric baseline. Every real-clock
+exception identifies its exact file, member, API and statement, expected occurrence count, and review reason.
+Gameplay uses `SystemClock`/`ServerTime`; do not add a gameplay exception or move a read to evade the guard.
+Review genuine infrastructure additions explicitly and remove stale entries when their reads disappear.
+There is no automatic allowlist update mode. Inspect candidate sites with
+`dotnet run --project tools/Aion.ClockReadGuard -- --inventory`; the existing RS0030 wall-clock ban remains active.
+The guard tests are `ClockReadGuardTests` in `Aion.GameServer.Tests`.
 
 For upstream fixes, port one Java commit at a time and include an
 `Upstream-Java-SHA` trailer. Never merge or cherry-pick Java history into `main`.

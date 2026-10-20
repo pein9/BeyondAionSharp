@@ -1,4 +1,5 @@
 using Aion.GameServer.Configuration;
+using Aion.GameServer.Utils.Time;
 
 namespace Aion.GameServer.Services;
 
@@ -8,12 +9,12 @@ public sealed class HouseMaintenanceTimingService
 	public const string SecondOverdueMailSender = "$$HS_OVERDUE_2ND";
 	public const string FinalOverdueMailSender = "$$HS_OVERDUE_3RD";
 	private readonly JavaCronSchedule _maintenanceSchedule;
-	private readonly TimeProvider _timeProvider;
+	private readonly TimeProvider? _timeProvider;
 
 	public HouseMaintenanceTimingService(GameServerOptions? options = null, TimeProvider? timeProvider = null)
 	{
 		_maintenanceSchedule = JavaCronSchedule.WeeklyOrDefault(options?.Housing.MaintenanceTime, DayOfWeek.Monday, 0);
-		_timeProvider = timeProvider ?? TimeProvider.System;
+		_timeProvider = timeProvider;
 	}
 
 	public DateTime GetNextRun()
@@ -59,6 +60,6 @@ public sealed class HouseMaintenanceTimingService
 
 	private DateTimeOffset GetNow()
 	{
-		return _timeProvider.GetLocalNow();
+		return _timeProvider?.GetLocalNow() ?? ServerTime.Now();
 	}
 }

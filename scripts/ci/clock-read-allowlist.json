@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 1,
+  "sourceRoot": "src/Aion.GameServer",
+  "sites": [
+    {
+      "path": "src/Aion.GameServer/Commons/Network/AConnection.cs",
+      "member": "Aion.GameServer.Commons.Network.AConnection<T>.Close(T?)",
+      "api": "System.DateTimeOffset.UtcNow",
+      "context": "pendingCloseUntilMillis = DateTimeOffset . UtcNow . ToUnixTimeMilliseconds ( ) + 2000 ;",
+      "count": 1,
+      "reason": "Real socket close grace must expire even while gameplay time is paused."
+    },
+    {
+      "path": "src/Aion.GameServer/Commons/Network/AcceptReadWriteDispatcherImpl.cs",
+      "member": "Aion.GameServer.Commons.Network.AcceptReadWriteDispatcherImpl.ProcessPendingClose()",
+      "api": "System.DateTimeOffset.UtcNow",
+      "context": "nowMillis = DateTimeOffset . UtcNow . ToUnixTimeMilliseconds ( )",
+      "count": 1,
+      "reason": "Compare pending socket closes against the same real clock as their close deadlines."
+    },
+    {
+      "path": "src/Aion.GameServer/Commons/Network/NioServer.cs",
+      "member": "Aion.GameServer.Commons.Network.NioServer.Shutdown()",
+      "api": "System.DateTimeOffset.UtcNow",
+      "context": "timeout = DateTimeOffset . UtcNow . ToUnixTimeMilliseconds ( ) + 5000",
+      "count": 1,
+      "reason": "Real network shutdown timeout prevents a stopped simulator clock from hanging teardown."
+    },
+    {
+      "path": "src/Aion.GameServer/Commons/Network/NioServer.cs",
+      "member": "Aion.GameServer.Commons.Network.NioServer.Shutdown()",
+      "api": "System.DateTimeOffset.UtcNow",
+      "context": "DateTimeOffset . UtcNow . ToUnixTimeMilliseconds ( ) > timeout",
+      "count": 1,
+      "reason": "Real network shutdown timeout prevents a stopped simulator clock from hanging teardown."
+    },
+    {
+      "path": "src/Aion.GameServer/Commons/Utils/Concurrent/ExecuteWrapper.cs",
+      "member": "Aion.GameServer.Commons.Utils.Concurrent.ExecuteWrapper.Execute(Aion.Commons.Lang.Runnable, long, bool)",
+      "api": "System.Diagnostics.Stopwatch.GetTimestamp",
+      "context": "beginTicks = Stopwatch . GetTimestamp ( )",
+      "count": 1,
+      "reason": "Measure actual synchronous/asynchronous task execution cost for runtime statistics and slow-task logs."
+    },
+    {
+      "path": "src/Aion.GameServer/Commons/Utils/Concurrent/ExecuteWrapper.cs",
+      "member": "Aion.GameServer.Commons.Utils.Concurrent.ExecuteWrapper.Execute(Aion.Commons.Lang.Runnable, long, bool)",
+      "api": "System.Diagnostics.Stopwatch.GetTimestamp",
+      "context": "durationNanos = ( long ) ( ( Stopwatch . GetTimestamp ( ) - beginTicks ) * ( 1_000_000_000.0 / Stopwatch . Frequency ) )",
+      "count": 1,
+      "reason": "Measure actual synchronous/asynchronous task execution cost for runtime statistics and slow-task logs."
+    },
+    {
+      "path": "src/Aion.GameServer/Commons/Utils/Concurrent/ExecuteWrapper.cs",
+      "member": "Aion.GameServer.Commons.Utils.Concurrent.ExecuteWrapper.ExecuteAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>, System.Threading.CancellationToken, long, bool)",
+      "api": "System.Diagnostics.Stopwatch.GetTimestamp",
+      "context": "beginTicks = Stopwatch . GetTimestamp ( )",
+      "count": 1,
+      "reason": "Measure actual synchronous/asynchronous task execution cost for runtime statistics and slow-task logs."
+    },
+    {
+      "path": "src/Aion.GameServer/Commons/Utils/Concurrent/ExecuteWrapper.cs",
+      "member": "Aion.GameServer.Commons.Utils.Concurrent.ExecuteWrapper.ExecuteAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>, System.Threading.CancellationToken, long, bool)",
+      "api": "System.Diagnostics.Stopwatch.GetTimestamp",
+      "context": "durationNanos = ( long ) ( ( Stopwatch . GetTimestamp ( ) - beginTicks ) * ( 1_000_000_000.0 / Stopwatch . Frequency ) )",
+      "count": 1,
+      "reason": "Measure actual synchronous/asynchronous task execution cost for runtime statistics and slow-task logs."
+    },
+    {
+      "path": "src/Aion.GameServer/Custom/Instance/Neuralnetwork/PlayerModel.cs",
+      "member": "Aion.GameServer.Custom.Instance.Neuralnetwork.PlayerModel.Train(System.Collections.Generic.List<Aion.GameServer.Custom.Instance.Neuralnetwork.DataSet>, int)",
+      "api": "System.Diagnostics.Stopwatch.Start",
+      "context": "stopwatch . Start ( ) ;",
+      "count": 1,
+      "reason": "Bound actual neural-network training CPU work; a paused game clock must not permit unbounded training."
+    },
+    {
+      "path": "src/Aion.GameServer/Dataholders/LoadingUtils/XmlDataLoader.cs",
+      "member": "Aion.GameServer.Dataholders.LoadingUtils.XmlDataLoader.LoadStaticDataAsync(Aion.GameServer.Dataholders.LoadingUtils.XmlDataLoaderOptions, ILogger?, System.Threading.CancellationToken)",
+      "api": "System.Diagnostics.Stopwatch.StartNew",
+      "context": "validationWatch = Stopwatch . StartNew ( )",
+      "count": 1,
+      "reason": "Log actual background XML validation duration, matching Java 7840be30d."
+    },
+    {
+      "path": "src/Aion.GameServer/Handlers/AdminCommands/Sys.cs",
+      "member": "Aion.GameServer.Handlers.AdminCommands.Sys.Execute(Aion.GameServer.Model.GameObjects.Players.Player, params string[])",
+      "api": "System.Diagnostics.Stopwatch.Start",
+      "context": "stopwatch . Start ( ) ;",
+      "count": 1,
+      "reason": "Report actual duration of an administrator-requested garbage collection."
+    },
+    {
+      "path": "src/Aion.GameServer/Network/Aion/Capture/JsonLinesServerPacketCaptureObserver.cs",
+      "member": "Aion.GameServer.Network.Aion.Capture.JsonLinesServerPacketCaptureObserver.RealUtcNow()",
+      "api": "System.DateTimeOffset.UtcNow",
+      "context": "return DateTimeOffset . UtcNow ;",
+      "count": 1,
+      "reason": "Packet-capture log timestamps describe real emission time."
+    },
+    {
+      "path": "src/Aion.GameServer/Network/Aion/ServerPackets/SM_TIME_CHECK.cs",
+      "member": "Aion.GameServer.Network.Aion.ServerPackets.SM_TIME_CHECK.SM_TIME_CHECK(int)",
+      "api": "System.DateTime.UtcNow",
+      "context": "this . serverUpTime = ( int ) ( DateTime . UtcNow - Process . GetCurrentProcess ( ) . StartTime . ToUniversalTime ( ) ) . TotalMilliseconds ;",
+      "count": 1,
+      "reason": "Java sends real process uptime, independent of the shared gameplay clock."
+    },
+    {
+      "path": "src/Aion.GameServer/Questengine/QuestSpawnAnalyzer.cs",
+      "member": "Aion.GameServer.QuestEngine.QuestSpawnAnalyzer.Run(System.Collections.Generic.ICollection<Aion.GameServer.QuestEngine.Handlers.AbstractQuestHandler>, System.Collections.Generic.ICollection<Aion.GameServer.Model.Templates.Quest.QuestNpc>, bool)",
+      "api": "System.Diagnostics.Stopwatch.Start",
+      "context": "stopwatch . Start ( ) ;",
+      "count": 1,
+      "reason": "Report actual duration of the startup quest/spawn analysis."
+    },
+    {
+      "path": "src/Aion.GameServer/Services/Abyss/AbyssRankUpdateService.cs",
+      "member": "Aion.GameServer.Services.Abyss.AbyssRankUpdateService.PerformUpdate()",
+      "api": "System.Diagnostics.Stopwatch.Start",
+      "context": "stopwatch . Start ( ) ;",
+      "count": 1,
+      "reason": "Log actual rank-update processing duration; rank decisions use the shared game clock separately."
+    },
+    {
+      "path": "src/Aion.GameServer/Services/Cron/CronService.cs",
+      "member": "Aion.GameServer.Services.Cron.CronService.Schedule(Aion.Commons.Lang.Runnable, System.Type, CronExpression, bool)",
+      "api": "System.Diagnostics.Stopwatch.GetTimestamp",
+      "context": "jobId = deterministic ? \"VirtualJob:\" + Interlocked . Increment ( ref nextVirtualJobId ) : \"Started at ms\" + SystemClock . CurrentMillis ( ) + \"; ns\" + System . Diagnostics . Stopwatch . GetTimestamp ( )",
+      "count": 1,
+      "reason": "Production-only job identifier suffix; deterministic mode uses a sequence instead."
+    },
+    {
+      "path": "src/Aion.GameServer/Services/DatabaseCleaningService.cs",
+      "member": "Aion.GameServer.Services.DatabaseCleaningService.DeletePlayers(System.Collections.Generic.List<Aion.GameServer.Dao.PlayerDAO.PlayerAndLegionInfo>)",
+      "api": "System.Diagnostics.Stopwatch.Start",
+      "context": "stopwatch . Start ( ) ;",
+      "count": 1,
+      "reason": "Log actual database maintenance/deletion duration, independent of gameplay deadlines."
+    },
+    {
+      "path": "src/Aion.GameServer/Services/DatabaseCleaningService.cs",
+      "member": "Aion.GameServer.Services.DatabaseCleaningService.OptimizeDatabaseTables(System.Collections.Generic.List<string>)",
+      "api": "System.Diagnostics.Stopwatch.Start",
+      "context": "stopwatch . Start ( ) ;",
+      "count": 1,
+      "reason": "Log actual database maintenance/deletion duration, independent of gameplay deadlines."
+    },
+    {
+      "path": "src/Aion.GameServer/Services/GameServerBootstrapService.cs",
+      "member": "Aion.GameServer.Services.GameServerBootstrapService.StartAsync(System.Threading.CancellationToken)",
+      "api": "System.Diagnostics.Stopwatch.StartNew",
+      "context": "stopwatch = Stopwatch . StartNew ( )",
+      "count": 1,
+      "reason": "Log actual game-server bootstrap duration."
+    },
+    {
+      "path": "src/Aion.GameServer/Services/GameServerHostedService.cs",
+      "member": "Aion.GameServer.Services.GameServerHostedService.StartAsync(System.Threading.CancellationToken)",
+      "api": "System.DateTimeOffset.UtcNow",
+      "context": "elapsedSeconds = Math . Max ( 0 , DateTimeOffset . UtcNow . ToUnixTimeSeconds ( ) - processStartSeconds )",
+      "count": 1,
+      "reason": "Report elapsed real process startup time for the operational startup log."
+    },
+    {
+      "path": "src/Aion.GameServer/Services/PeriodicSaveService.cs",
+      "member": "Aion.GameServer.Services.PeriodicSaveService.LegionWarehouseSaveTask.Run()",
+      "api": "System.Environment.TickCount64",
+      "context": "startTime = System . Environment . TickCount64",
+      "count": 1,
+      "reason": "Measure actual legion warehouse database-save duration for logging."
+    },
+    {
+      "path": "src/Aion.GameServer/Services/PeriodicSaveService.cs",
+      "member": "Aion.GameServer.Services.PeriodicSaveService.LegionWarehouseSaveTask.Run()",
+      "api": "System.Environment.TickCount64",
+      "context": "workTime = System . Environment . TickCount64 - startTime",
+      "count": 1,
+      "reason": "Measure actual legion warehouse database-save duration for logging."
+    },
+    {
+      "path": "src/Aion.GameServer/Services/Transfers/CMT_CHARACTER_INFORMATION.cs",
+      "member": "Aion.GameServer.Services.Transfers.CMT_CHARACTER_INFORMATION.ReadInfo(string, int, string, System.Collections.Generic.List<int>, ILogger)",
+      "api": "System.Diagnostics.Stopwatch.Start",
+      "context": "stopwatch . Start ( ) ;",
+      "count": 1,
+      "reason": "Log actual duration of the dormant character import operation; no transfer gameplay change."
+    },
+    {
+      "path": "src/Aion.GameServer/Taskmanager/AbstractFIFOPeriodicTaskManager.cs",
+      "member": "Aion.GameServer.Taskmanager.AbstractFIFOPeriodicTaskManager<T>.Run()",
+      "api": "System.Diagnostics.Stopwatch.GetTimestamp",
+      "context": "begin = System . Diagnostics . Stopwatch . GetTimestamp ( )",
+      "count": 1,
+      "reason": "Measure actual task processing duration for runnable statistics."
+    },
+    {
+      "path": "src/Aion.GameServer/Taskmanager/AbstractFIFOPeriodicTaskManager.cs",
+      "member": "Aion.GameServer.Taskmanager.AbstractFIFOPeriodicTaskManager<T>.Run()",
+      "api": "System.Diagnostics.Stopwatch.GetTimestamp",
+      "context": "duration = ( System . Diagnostics . Stopwatch . GetTimestamp ( ) - begin ) * 1_000_000_000L / System . Diagnostics . Stopwatch . Frequency",
+      "count": 1,
+      "reason": "Measure actual task processing duration for runnable statistics."
+    },
+    {
+      "path": "src/Aion.GameServer/Utils/SystemClock.cs",
+      "member": "Aion.GameServer.Utils.SystemClock.CurrentMillis()",
+      "api": "System.DateTimeOffset.UtcNow",
+      "context": "=> Source . Value ? . Invoke ( ) ?? Volatile . Read ( ref _processSource ) ? . Invoke ( ) ?? DateTimeOffset . UtcNow . ToUnixTimeMilliseconds ( )",
+      "count": 1,
+      "reason": "The shared clock seam owns the real production fallback beneath scoped and process simulation overrides."
+    },
+    {
+      "path": "src/Aion.GameServer/Utils/ThreadPoolManager.cs",
+      "member": "Aion.GameServer.Utils.ThreadPoolManager.ShutdownAsync(System.TimeSpan)",
+      "api": "System.Diagnostics.Stopwatch.StartNew",
+      "context": "shutdownWatch = Stopwatch . StartNew ( )",
+      "count": 1,
+      "reason": "Log actual thread-pool shutdown duration, matching Java 7840be30d."
+    },
+    {
+      "path": "src/Aion.GameServer/Utils/ThreadPoolManager.cs",
+      "member": "Aion.GameServer.Utils.ThreadPoolManager.RunFixedRateAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>, System.TimeSpan, System.TimeSpan, long, System.DateTimeOffset, System.Threading.CancellationTokenSource)",
+      "api": "System.Diagnostics.Stopwatch.GetTimestamp",
+      "context": "nextRunTimestamp = Stopwatch . GetTimestamp ( )",
+      "count": 1,
+      "reason": "Production fixed-rate scheduler uses monotonic elapsed time; SIM substitutes VirtualThreadPool."
+    },
+    {
+      "path": "src/Aion.GameServer/Utils/ThreadPoolManager.cs",
+      "member": "Aion.GameServer.Utils.ThreadPoolManager.RunFixedRateAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>, System.TimeSpan, System.TimeSpan, long, System.DateTimeOffset, System.Threading.CancellationTokenSource)",
+      "api": "System.Diagnostics.Stopwatch.GetTimestamp",
+      "context": "remainingTimestampTicks = nextRunTimestamp - Stopwatch . GetTimestamp ( )",
+      "count": 1,
+      "reason": "Production fixed-rate scheduler uses monotonic elapsed time; SIM substitutes VirtualThreadPool."
+    }
+  ]
+}
