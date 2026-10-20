@@ -47,6 +47,9 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 	public float AggroRadius(NpcTemplate? template) => NaturalHostility.AggroRadius(template, Data.TribeRelations, TribeClass.PC_DARK);
 	public bool IsHostileSkill(int skillId) => Data.SkillDataDh.GetSkillTemplate(skillId)?.GetHostileType() is
 		Aion.GameServer.SkillEngine.Model.HostileType.DIRECT or Aion.GameServer.SkillEngine.Model.HostileType.INDIRECT;
+	/// <summary>Use the skill's shipped type and evade effect, and the caster's observed state, never the server's player.</summary>
+	public string? CastingRestriction(BotWorldModel world, ushort skillId) => BotCastProtocol.AbnormalStateRefusal(world.SelfAbnormals,
+		Data.SkillDataDh.GetSkillTemplate(skillId) ?? throw new InvalidDataException($"Missing client skill template {skillId}."));
 	/// <param name="spirit">NR-110e: the bot's own spirit, when a strike at it is to count as one at the bot.</param>
 	public int? IncomingAttacker(DecodedBotServerPacket packet, int characterId, int? spirit = null) =>
 		NaturalCombatRetreatPolicy.IncomingAttacker(packet, characterId, IsHostileSkill, spirit);

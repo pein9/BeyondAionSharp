@@ -58,12 +58,22 @@ public sealed class NaturalGroupHealDriver(INaturalJourneySession session, Natur
 		Member[] byNeed = members.OrderBy(member => member.Id == session.CharacterId ? 0 : 1).ThenBy(member => member.HpPercent).ThenBy(member => member.Id).ToArray();
 		NaturalPriestSkill? Best(string role) => NaturalPriestSkills.Best(role, world.Level, world.Skills, profile.SupportSkills);
 		int Mana(NaturalPriestSkill skill) => skill.ManaCostPercent > 0 ? world.MaxMp * skill.ManaCostPercent / 100 : skill.ManaCost;
+		bool reportedRestriction = false;
+		bool CanCast(NaturalPriestSkill skill)
+		{
+			if (runtime.CastingRestriction(world, skill.Id) is not { } reason) return true;
+			if (!reportedRestriction)
+				session.TraceDiagnostic("group-support-wait-disabled", new Dictionary<string, object?>
+				{ ["skillId"] = skill.Id, ["abnormals"] = world.SelfAbnormals, ["reason"] = reason });
+			reportedRestriction = true;
+			return false;
+		}
 		bool Ready(NaturalPriestSkill? skill, Member member) => skill != null && world.CurrentMp >= Mana(skill) &&
 			world.CurrentDp >= skill.DpCost && session.Api.Timing.TimeUntilCast(skill.Id) <= TimeSpan.Zero &&
 			cooldowns.GetValueOrDefault(skill.CooldownId) <= now &&
 			(skill.ReagentCount == 0 || world.Inventory.Values.Where(item => item.ItemId == skill.ReagentItemId).Sum(item => item.Count) >= skill.ReagentCount) &&
 			(member.Id == session.CharacterId || Distance(member.Position, session.CurrentPosition) <= skill.Range &&
-				runtime.CreateGeometry().HasLineOfSight(world.MapId!.Value, session.CurrentPosition, member.Position));
+				runtime.CreateGeometry().HasLineOfSight(world.MapId!.Value, session.CurrentPosition, member.Position)) && CanCast(skill);
 		IReadOnlyList<BotVisibleEffect> Effects(Member member) => member.Id == session.CharacterId ? world.VisibleEffects ?? [] : world.EffectsOf(member.Id);
 		bool Covered(Member member, HashSet<ushort> ids)
 		{
@@ -203,6 +213,13 @@ public sealed class NaturalGroupHealDriver(INaturalJourneySession session, Natur
 			["mp"] = session.Api.World.CurrentMp, ["groupMembers"] = session.Api.World.GroupMembers.Count,
 		});
 		await session.SendPacketAsync(session.Api.Target(target), token);
+		// Targeting can drain a newer effect snapshot. Recheck before opening the local casting gate.
+		if (runtime.CastingRestriction(session.Api.World, skill.Id) is { } reason)
+		{
+			session.TraceDiagnostic("group-support-wait-disabled", new Dictionary<string, object?>
+			{ ["skillId"] = skill.Id, ["abnormals"] = session.Api.World.SelfAbnormals, ["reason"] = reason });
+			return false;
+		}
 		var cast = runtime.CreateSpellCast(session.Api.World, session.CurrentPosition, skill.Id,
 			checked((byte)session.Api.World.Skills[skill.Id].Level), target);
 		await session.SendPacketAsync(session.Api.Cast(cast), token);

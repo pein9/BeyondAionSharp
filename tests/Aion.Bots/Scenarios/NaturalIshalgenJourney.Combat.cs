@@ -1654,9 +1654,16 @@ public sealed partial class NaturalIshalgenJourney
 			// NR-110i: what the bot has of experience before this cast is sent.
 			long experienceAtCast = session.Api.World.CurrentExperience;
 			BotSkill learned = session.Api.World.Skills[skill.Id];
+			await session.SendPacketAsync(session.Api.Target(target), token);
+			if (runtime.CastingRestriction(session.Api.World, skill.Id) is { } restriction)
+			{
+				session.TraceDiagnostic("combat-wait-disabled", new Dictionary<string, object?>
+				{ ["skillId"] = skill.Id, ["abnormals"] = session.Api.World.SelfAbnormals, ["reason"] = restriction });
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+				return true; // Re-evaluate observed effects, health and the target; no cast or chain was consumed.
+			}
 			// Java b55aaf32c: sending a request never consumes the chain; a successful non-chain cast ends it.
 			tableChain = tableChain.CastSent(skill);
-			await session.SendPacketAsync(session.Api.Target(target), token);
 			// NR-121b: after a refusal for distance in this fight the target is a walker that moved on.
 			await session.SendPacketAsync(session.Api.Cast(runtime.CreateSpellCast(session.Api.World,
 				session.CurrentPosition, skill.Id, checked((byte)learned.Level), target, walkedOn: rangeRejections > 0)), token);

@@ -12,7 +12,7 @@ public sealed class BotEffectRewardObservationTests
 	private static readonly byte[] BoostBody = Convert.FromHexString("000000000000000000000000200100970C02003529010580EE3600");
 	private static DecodedBotServerPacket Boost() => new BotServerPacketDecoder().Decode(typeof(SM_ABNORMAL_STATE), BoostBody);
 	private static DecodedBotServerPacket Empty(byte slot = 32) => new(typeof(SM_ABNORMAL_STATE),
-		new Dictionary<string, object?> { ["slot"] = slot, ["effectCount"] = (ushort)0,
+		new Dictionary<string, object?> { ["abnormals"] = 0, ["slot"] = slot, ["effectCount"] = (ushort)0,
 			["effects"] = new List<IReadOnlyDictionary<string, object?>>() });
 	private static DecodedBotServerPacket Rank(long ap, int kills, long earned, int position = 0) => new(typeof(SM_ABYSS_RANK),
 		new Dictionary<string, object?>
@@ -51,13 +51,20 @@ public sealed class BotEffectRewardObservationTests
 	{
 		var world = new BotWorldModel();
 		Assert.Null(world.VisibleEffects);
+		byte[] stunned = (byte[])BoostBody.Clone();
+		System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(stunned, 1 << 12);
+		world.Apply(new BotServerPacketDecoder().Decode(typeof(SM_ABNORMAL_STATE), stunned));
+		Assert.Equal(1 << 12, world.SelfAbnormals);
 		world.Apply(Boost());
+		Assert.Equal(0, world.SelfAbnormals); // A fresh self snapshot clears the state, even when the icon remains.
 		Assert.Single(world.VisibleEffects!);
 		world.Apply(Empty(slot: 1)); // BUFF change, complete list empty: do not retain a stale BOOST.
 		Assert.Empty(world.VisibleEffects!);
 		Assert.Equal(100, PvpApBoostCatalog.Percent(world.VisibleEffects));
 		world.Apply(Boost());
+		world.Apply(new BotServerPacketDecoder().Decode(typeof(SM_ABNORMAL_STATE), stunned));
 		world.BeginWorldReload();
+		Assert.Equal(0, world.SelfAbnormals);
 		Assert.Null(world.VisibleEffects);
 		Assert.Null(world.LastAbyssReward);
 		Assert.Throws<InvalidDataException>(() => PvpApBoostCatalog.Percent(world.VisibleEffects));

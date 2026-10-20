@@ -1,5 +1,7 @@
 using Aion.Bots.Protocol;
 using Aion.GameServer.Network.Aion.ServerPackets;
+using Aion.GameServer.SkillEngine.Effects;
+using Aion.GameServer.SkillEngine.Model;
 
 namespace Aion.Bots.Scenarios;
 
@@ -11,6 +13,20 @@ namespace Aion.Bots.Scenarios;
 public static class BotCastProtocol
 {
 	public static readonly TimeSpan PacketTimeout = TimeSpan.FromSeconds(10);
+
+	/// <summary>Client-observed abnormal restrictions from Java PlayerRestrictions.canUseSkill / Creature.canAttack.
+	/// Evade effects bypass can't-attack and magical silence, but never the physical-skill bind check.</summary>
+	public static string? AbnormalStateRefusal(int abnormals, SkillTemplate skill)
+	{
+		bool evade = skill.HasEvadeEffect();
+		if ((abnormals & (int)AbnormalState.CANT_ATTACK_STATE) != 0 && !evade)
+			return "STR_SKILL_CAN_NOT_ATTACK_WHILE_IN_ABNORMAL_STATE";
+		if (skill.GetType_() == SkillType.MAGICAL && (abnormals & (int)AbnormalState.SILENCE) != 0 && !evade)
+			return "STR_SKILL_CANT_CAST_MAGIC_SKILL_WHILE_SILENCED";
+		if (skill.GetType_() == SkillType.PHYSICAL && (abnormals & (int)AbnormalState.BIND) != 0)
+			return "STR_SKILL_CANT_CAST_PHYSICAL_SKILL_IN_FEAR";
+		return null;
+	}
 
 	public static Task<DecodedBotServerPacket> WaitForStartAsync(
 		Func<Func<DecodedBotServerPacket, bool>, CancellationToken, Task<DecodedBotServerPacket>> wait,

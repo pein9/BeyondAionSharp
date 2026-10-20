@@ -9,6 +9,8 @@ public sealed partial class BotWorldModel
 {
 	/// <summary>Latest complete visible-icon snapshot; null until observed for this world entry.</summary>
 	public IReadOnlyList<BotVisibleEffect>? VisibleEffects { get; private set; }
+	/// <summary>The caster's latest SM_ABNORMAL_STATE mask; only a new server snapshot clears it.</summary>
+	public int SelfAbnormals { get; private set; }
 	/// <summary>One immutable effect snapshot at the last AP/counter-changing rank packet, not leaderboard refreshes.</summary>
 	public BotAbyssRewardObservation? LastAbyssReward { get; private set; }
 
@@ -99,6 +101,7 @@ public sealed partial class BotWorldModel
 		effectsObservedAt.Clear();
 		effectSeenAt.Clear();
 		VisibleEffects = null;
+		SelfAbnormals = 0;
 		LastAbyssReward = null;
 	}
 
@@ -115,6 +118,7 @@ public sealed partial class BotWorldModel
 		// Duration is display evidence, not authority to remove an effect locally. Java
 		// uses -1 for permanent effects and may serialize an expiry before its timer runs.
 		VisibleEffects = Array.AsReadOnly(effects);
+		SelfAbnormals = packet.Get<int>("abnormals");
 		if (SelfObjectId is int self)
 		{
 			effectsObservedAt[self] = ObservationTime;

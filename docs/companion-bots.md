@@ -32,6 +32,36 @@ or characters left on the seats. It restored `ntc-group-s5` and applied the chec
 owned temporary SIM database; the source snapshot and live databases were untouched. This checks marks and
 cleanup, not a fresh full NTC run.
 
+## Observed casting readiness (2026-10-20)
+
+The full corrected-profile run `general-20261020` killed the General with no deaths, but the Cleric attempted
+eight casts after its client had already received a disabling state: four during stun, two during fear and two
+during a pull. Java correctly refused them. The bot decoded its own `SM_ABNORMAL_STATE` mask but discarded it,
+and the healer checked resources, timing, range and line of sight without checking those restrictions.
+
+The bot now retains that mask until a new server snapshot replaces it (or world reload forgets it). Support
+readiness and the shared combat cast path apply Java `PlayerRestrictions.canUseSkill`'s abnormal-state rules:
+the can't-attack mask blocks ordinary skills, silence blocks magical skills, and bind blocks physical skills.
+Evade effects bypass the first two checks, including Remove Shock while silenced; a physical evade skill is
+still refused during bind. Root, snare and slow alone do not block casting. The final check precedes opening the
+local cast gate; blocked combat attempts consume no chain. Existing server-refusal handling remains for races.
+
+Verification: the original eight captured Cleric states are blocked by a 97-assertion diagnostic covering all
+Java can't-attack bits, magical silence, physical bind, evade exceptions, movement-only states and observed
+clearing/reload. The existing effect-snapshot check now also verifies retention and clearing of the self mask.
+The normal suite passes 6,663 tests (252 skipped); the warning baseline remains 4,097 sites and all four guards pass.
+
+Full NTC companion replay `run/cp/companion-levels/readiness-general-20261020/w1`: all six reached the end,
+35 pulls, 32 kills including the General, no deaths or world errors, no client sent a cast while its known state
+forbade that skill, and no disabled-state refusal. The Ranger waited through stun and the leader through fear.
+The Cleric did not receive a disabling state this replay; its eight original cases are covered by the captured
+diagnostic above. Two blessings on the moving leader were refused for range and recovered normally. All four
+damage companions struck the General in the packet trace (the receipt's `generalStruckBy` list was empty).
+Dismissal removed every companion in 12 seconds; every seat was empty and the owned SIM schema was dropped.
+All 27 corrected profile hashes and the original snapshot dump and record hashes are unchanged.
+Fast `companion-readiness-fast-20261020` passes 115 tests (98 skipped). Only the SIM MySQL container was needed;
+the server and bots used the rebuilt local solution, and the SIM container was stopped after validation.
+
 ## The goal
 
 The operator, 2026-10-12:
