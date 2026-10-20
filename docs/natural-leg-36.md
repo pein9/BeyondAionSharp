@@ -1,6 +1,7 @@
 # Natural leg to 36: what was left, Brusthonin, the first Abyss quests and the check-in at 36
 
-Status: paused, 2026-10-18: NL-0 to NL-3 done; NL-4 waits for the operator's manually recorded Fire Room path. The world
+Status: paused, 2026-10-20: NL-0 to NL-3 done; the operator's Fire Room path is recorded and reviewed (decision 15).
+NL-4 still needs the route and consumable-checkpoint fixes and the operator's word to resume. The world
 is `nl-vs-s1-w1`; the Cleric finished Q24023 and the other seven have not been replayed with the committed portal-abort
 fix. Abyss flight-ring routing is implemented separately while the loop stays paused (the operator's decisions below).
 The plan was written on 2026-10-17. The operator, that day, after the level-31 profiles:
@@ -491,6 +492,41 @@ Mine, where the operator gave none; each is his to change:
    - So a player at 36 still has the level-31 companions; a player at 37 has five new ones and the level-31 Cleric,
      Chanter and Gladiator; a player at 38 has all eight new ones.
    - Profiles at exactly 36 would need characters held at 36, which the leg's quests do not allow.
+15. **Fire Room recording reviewed; the NL loop stays paused (the operator, 2026-10-20).** The operator demonstrated
+   Q24023 on `rrfarmer`'s `Asimgladiator`, then asked for a recording review, a Java 4.8 mob-profile comparison and an
+   audit of the missing HP potions and shield scrolls. Evidence is under `run/recordings/fire-room-prep/`; the closed
+   session has 32,382 entries and passes the recording reader's structural check.
+   - **Entrance:** the operator says to fly up and around to reach Fire Room Entrance. The recorded flight, landing
+     and portal use must be retained; the portals' short straight-line separation does not show a walkable route.
+   - **Descent:** one 16.840-second glide from approximately (100.665, 89.770, 611.551) to
+     (220.145, 226.602, 554.217), followed by a small drop to (225.809, 227.640, 551.155), reaches the lower tier at
+     full HP. It bypasses the middle-tier walk. `NaturalFloorGlide.MaximumDrop` is 45 m, and its horizontal/drop
+     limit is 3:1; both exclude this recorded pair. The path also includes upwind flags and turns, so merely increasing
+     the limits is not a validated fix.
+     The accidental Wind Room visit supplies additional evidence of an intermediate ledge at z390.407.
+   - **Conditions:** this account has GM access, unlimited flight time and the GM in-place revive. A normal-account
+     replay has not been shown. The main glide estimates 34 FP at Java's 2 FP/s before reserve; the recording proves
+     the movement, not that budget. One upper-tier death was followed by the in-place revive. Bolcan was killed and
+     his key handed to Bulagan (REWARD); the final reward from Gangleri was not collected in this session.
+   - **Mob profiles:** all 28 templates spawned in Sky Temple Interior match Java's stats, levels, ranks and ratings;
+     its spawn file is byte-identical. The running image's instance templates also match the checkout, and recorded
+     target HP agrees with Java. Most Fire trash has 21,557–32,358 HP versus Wind's 3,637–5,141, and Bolcan has 57,376.
+     The default attack/defense calculations match Java. The `battle_cycle` AI replacements are the approved retail-AI
+     layer, not a reason to revert them or reduce HP. No mob data or behavior was changed by this review.
+   - **Supply audit:** every original class had 30 Major Life Potions (162000006) and 30 Major Anti-Shock Scrolls
+     (164000070) in `nl-g36-s2-w1`; the generated Gladiator-38 profile still has both stacks. In `nl4-vs-c1` the
+     Gladiator used all 30 potions (27 in combat, 3 during rest) and all 30 scrolls, with no further supplied items.
+     Nineteen of its 20 deaths followed potion exhaustion; nine followed shield-scroll exhaustion. The long failure
+     retries did not reach another effective run-start, level-up, town or successful endpoint stock check. This is
+     a restock scheduling gap, not evidence of a broken item manifest or the cleanup deleting those supplies.
+   - **Manual character preparation:** the recording character was copied from the depleted `nl-vs-s1-w1` failure
+     snapshot rather than supplied from the full check-in kit. Its missing potions and scrolls were therefore real;
+     copying a retained journal/gear state must also check and refill the approved kit before handing it to a player.
+   - **Still open:** how to classify the other classes' solo capability. Neither depleted failed attempts nor the
+     GM-assisted recording settle it. This review neither replays the seven nor ticks NL-4/NL-5.
+   - **Validation:** the existing `CLAUDE.md` checks passed, including the solution suite, warning/clock guards,
+     profile generation and export checks, navmesh checks and companion-server checks. Logs are in
+     `run/recordings/fire-room-prep/checks/`. No new tests or gameplay changes were made.
 
 ## Loop prompt
 
