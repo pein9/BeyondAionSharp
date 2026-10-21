@@ -1,7 +1,7 @@
 # Natural leg to 36: what was left, Brusthonin, the first Abyss quests and the check-in at 36
 
 Status: resumed by the operator, 2026-10-20: NL-0 to NL-3 done; NL-4 in progress. The retained shared world is now
-`nl-vs-s3-w1`, after the Fire recovery capture from `nl-gm-s2-w1`. All eight have completed Q2355 and Q2369 in groups.
+`nl-rw-s2-w1`, after ordinary Abyss transit from `nl-vs-s3-w1`. All eight have completed Q2355 and Q2369 in groups.
 Cleric, Gladiator, Chanter, Templar, Sorcerer and Ranger have persistent Q24023 completions; Assassin and Spirit Master remain open. Remaining group
 quests, higher-level quests and the NL-5 report remain open. Decisions 15 and 16 record
 the earlier pause; decision 17 resumes the loop.
@@ -380,6 +380,18 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
     original-character traces, all with observed entry and HP and no unclassified deaths; diagnostics and companions
     remain excluded. Only Assassin and Spirit Master lack a verified solo clear. Their long-term handling remains
     open; work on the independent remaining group quests proceeds without declaring a class soloability limit.
+  - 2026-10-21, Abyss arrival capture (`484c734f5`): `nl4-rw-transit-c1` from `nl-vs-s3`, captured
+    **`nl-rw-s2-w1`**. All eight reached Reshanta by the two ordinary Morheim hub flights and the floating Abyss
+    Gate, verified before and after relogging. Own game times were 2.29–5.68 minutes; Assassin had one native death
+    and recovered, the other seven had none. All companion seats ended as reached or unused. All eight actual
+    runtime identities match the committed build; snapshot and outcome hashes verify. All eleven originals are
+    preserved, the frozen three retain their experience, position, quests, skills and inventory, and every original
+    quest completion persists. The six Q24023 completions and all eight Q2355/Q2369 completions remain saved;
+    Assassin and Spirit Master's Q24023 remains START. This travel round claims no new quest completion. Its owner
+    dropped the disposable schema and the marker is clear. Evidence: `run/nl/NL4/nl4-rw-transit-c1/` and
+    `run/nl/resume-20261020/nl-rw-s2-w1-audit.json`. The refreshed provisional report covers 29 retained captures and
+    205 original-character traces, all with observed entry and HP and no unclassified deaths; companions and
+    uncaptured diagnostics remain excluded.
 - [ ] **NL-5 The report.** Per class its level, quests, deaths and time; what was not played and why.
 
 ## Decisions
@@ -1076,6 +1088,55 @@ Mine, where the operator gave none; each is his to change:
      A fresh saved-SQL audit, `abyss-group-s3-scope.json`, also corrects the remaining Abyss scope: all eight already
      have Q2753 COMPLETE, and only Ranger still needs Q2754. Assassin, Sorcerer, Chanter and Ranger need Q2762–63;
      all eight need Q2728. These are existing completions, not progress claimed for the transit trial.
+   - **Abyss field-group travel (2026-10-21):** the field stage now accepts a retained Reshanta arrival
+     and loads the Abyss group plans made by the existing quest compiler. First uncaptured Ladacus trial
+     `nl4-group-abyss-ladacus-t1`, from `nl-rw-s2`, formed and bound the six at Primum, then spent CPU on full-route
+     height searches toward Peroniad, 2.7 km away, without advancing game time. Only its verified testhost was
+     stopped; its owner dropped its disposable schema. The candidate bounds those searches by one flight bar,
+     tries rings, and uses the solo leg's checked island stones when a direct flight cannot fit. F1 names each
+     landing and gathers the group there. T2 ended normally with all six stopped after finding no first stone;
+     its owner also dropped its schema. The offline geometry explains that refusal: the obelisk has a roof,
+     and the nearest open same-island point is 61.77 m away, reached by an 88-point checked ground path. The earlier
+     retained Primum trace also walked down from the obelisk before flying. The next candidate walks this island's
+     checked ground to open sky before planning the crossing. New native proof and commit checks remain pending;
+     no group quest completion, new retained world, server change or bot unit test is claimed by these trials.
+     Evidence: `group-abyss-ladacus-t1-build-identity.json`, `group-abyss-ladacus-t2-build-identity.json` and
+     `group-abyss-primum-offline-island.log` in the audit folder.
+     T3 verified the 88-point walk-out and the first hop in the native run, then refused the next crossing. Its
+     six bots stopped normally and the owner dropped its schema. The candidate's six-metres-per-second planning
+     bound was still used after takeoff, although the first planned 240.14 m flight completed in about 19.16 s.
+     As the solo leg does, the next candidate uses the last speed announced at takeoff and logs that speed with
+     the observed FP and planned distance. This changes the bot's reach estimate, not the server's flight rules.
+     T4 verified takeoff speed 12.51 m/s and several further hops, then refused Peroniad's final approach: 62 FP
+     from an observed 70 would leave eight, below the unchanged ten-FP reserve. The six stopped normally and the
+     owner dropped its schema. Saved SQL shows no Greater Wind Serum on any of the eight; that supply had only
+     been scoped to the solo `rt`/`ro` legs. The group candidate now reuses the approved wind supplies on Abyss field
+     crossings, within the same per-leg limits (20 serums and ten scrolls). It stocks four serums when needed and
+     reads the greater flight-speed scroll on the ground. If a checked flight still needs a serum, it drinks while
+     airborne only when the whole 36 FP restore fits and the 54-second reuse has passed, checking consumption and
+     observed FP afterwards. Java's item 162000026 uses skill 9911 at level three, with the 12-per-level restore
+     and 54-second item reuse; no server rule or item data changed. T5's native proof and fresh commit checks are pending.
+     T5 verified all six accepting Q2728 from Peroniad, and native wind stock plus the scroll raising takeoff speed
+     from 12.51 to 15.21 m/s. It did not exercise a serum drink. The next trip, toward Ladacus, found no ordinary
+     stone; the group wrapper was still missing the solo leg's serum-extended fallback when that search returned
+     none. Only its verified testhost was stopped, and the owner dropped the schema. T6 adds that fallback with
+     owned-serum FP budgets and the same checked routes and ten-FP landing reserve. Native quest completion and
+     fresh commit checks remain pending; the retained world is still `nl-rw-s2-w1`.
+     T6 completed Q2728 for all six, verified after relogging at Primum, in 30.50–30.53 own game minutes and with
+     zero native deaths. All levels remain 37–38. The native trace verifies the walk-out, intermediate hops,
+     takeoff speeds, scoped wind stock and scroll, serum-extended route planning, and a return route through ring
+     `RESHANTA_400010000_4`. No serum-drink event occurred, so the new consumption branch remains unexercised.
+     All source and runtime identity hashes verify; the owner dropped its schema and the marker is clear.
+     Evidence is `group-abyss-ladacus-t6-audit.json` and `group-abyss-ladacus-t6-build-identity.json` in the audit
+     folder. This is an uncaptured trial; a retained group completion still needs the fresh checks, committed
+     runtime rebuild and captured round.
+     Final verification passed for this runtime: 6,663 solution tests with 252 existing skips, the unchanged
+     4,097-site warning inventory and all guards/contracts, 28 generated profiles, baked navmeshes and both companion
+     server tests; Fast's 115 tests with 98 existing skips and all eleven scenario rows; all five functional starter
+     journeys with the existing D7 first-object-ID difference; and n9 with six individually verified home receipts,
+     gate/General native death evidence for all five fighters and zero player deaths. Its owner dropped the schema
+     and the marker is clear. Logs are under `group-abyss-final/checks/`; n9 is `nl4-r38-group-abyss-final-ntc`.
+     All four bot source files and five compiled plan hashes still match T6. No bot unit test or baseline was added.
 
 ## Loop prompt
 

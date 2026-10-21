@@ -1,0 +1,240 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2728,
+    "name": "[Group] Killing Ladacus",
+    "nameId": 1104828,
+    "zone": "Reshanta",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 27,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/reshanta.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2728,
+        "start_npc_ids": 278000
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 278000,
+        "name": "peroniad",
+        "positions": [
+          {
+            "mapId": 400010000,
+            "x": 2100.54,
+            "y": 593.388,
+            "z": 1567.14,
+            "heading": 0,
+            "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 278000,
+      "name": "peroniad",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 2100.54,
+          "y": 593.388,
+          "z": 1567.14,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 278000,
+      "name": "peroniad",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 2100.54,
+          "y": 593.388,
+          "z": 1567.14,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182205605,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182205605,
+          "npc_id": 278593,
+          "npc": {
+            "id": 278593,
+            "name": "ladacus",
+            "positions": [
+              {
+                "mapId": 400010000,
+                "x": 3200.77,
+                "y": 1454.54,
+                "z": 1393.37,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 278000,
+          "name": "peroniad",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 2100.54,
+              "y": 593.388,
+              "z": 1567.14,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "ap": 500,
+        "exp": 220500,
+        "rewardItems": [],
+        "selectableItems": [
+          {
+            "item_id": 113101148
+          },
+          {
+            "item_id": 113301150
+          },
+          {
+            "item_id": 113501131
+          },
+          {
+            "item_id": 113601089
+          },
+          {
+            "item_id": 113301614
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2728,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 27,
+      "name": "[Group] Killing Ladacus",
+      "nameId": 1104828,
+      "quest_zone": "Reshanta",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182205605
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "ap": 500,
+          "exp": 220500
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 113101148
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 113301150
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 113501131
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 113601089
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "item_id": 113301614
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182205605,
+          "npc_id": 278593
+        }
+      }
+    ]
+  }
+}

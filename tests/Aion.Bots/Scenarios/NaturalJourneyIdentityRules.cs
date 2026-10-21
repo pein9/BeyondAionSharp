@@ -65,8 +65,8 @@ public static class NaturalJourneyIdentityRules
 			// NL-4: the pure Abyss transit leg can log in from an expired Sky Temple copy.
 			// Java InstanceService.onPlayerLogin returns it to Morheim before ordinary gate travel.
 			altgardLeg == "rw" && level >= 29 && worldId == 320050000 ||
-			// NL-4: field members may return from a retained Sky Temple attempt before forming their group.
-			altgardLeg == FieldGroupLeg && (level >= 26 && worldId is NaturalAbyssEntry.Morheim or NaturalAltgardContract.Brusthonin ||
+			// NL-4: field groups also play the remaining Abyss quests, or return from a retained Sky Temple attempt.
+			altgardLeg == FieldGroupLeg && (level >= 26 && worldId is NaturalAbyssEntry.Morheim or NaturalAltgardContract.Brusthonin or NaturalAltgardContract.Reshanta ||
 				level >= 29 && worldId == 320050000) ||
 			altgardLeg == NaturalAbyssEntry.Leg && level >= 25 && worldId is NaturalAbyssEntry.Morheim or NaturalAbyssEntry.ArenaMap ||
 			// NL-2: the group stages (scoped as the Abyss entry) play Brusthonin's group quests with mustered characters.

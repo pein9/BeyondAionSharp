@@ -75,9 +75,9 @@ public sealed partial class NaturalIshalgenJourney
 			throw new InvalidDataException("The group needs two to six distinct existing characters, including self and its leader.");
 		bool leads = name == leaderName;
 		if (leads && options.Role == "healer") throw new InvalidDataException("This quest's bot leader must be a fighter.");
-		// NL-2: a field group plays Brusthonin's group quests too, from the Settlers Campsite.
-		if (world.MapId != NaturalAbyssEntry.Morheim && !(field && world.MapId == NaturalAltgardContract.Brusthonin))
-			throw new InvalidDataException("The group starts in Morheim.");
+		// NL-2/NL-4: field groups also play Brusthonin and the Abyss from their ordinary arrival worlds.
+		if (world.MapId != NaturalAbyssEntry.Morheim && !(field && world.MapId is NaturalAltgardContract.Brusthonin or NaturalAltgardContract.Reshanta))
+			throw new InvalidDataException("The group starts in Morheim, or a field group in Brusthonin or Reshanta.");
 		var geometry = runtime.CreateGeometry();
 		// M6: a campaign quest of the field list has its own handler and no plan (Q24021, Q24022). The group does its kills
 		// and collections for the members that have it, and each member's own leg does its talks: its collections come
@@ -167,6 +167,10 @@ public sealed partial class NaturalIshalgenJourney
 		IReadOnlyList<NaturalFlyZone> flyZones = [];
 		int? flyZonesMap = null;
 		long? lastTakeoff = null;
+		float lastFlightSpeed = 9f;
+		var flightHostiles = new Dictionary<int, BotPosition[]>();
+		var flightItemsSupplied = new Dictionary<int, long>();
+		long lastWindDrink = long.MinValue / 2;
 		(int X, int Y, int Z)? flownTo = null;
 		int flyTries = 0;
 		long portalAgainAt = 0, offLavaAgainAt = 0;
@@ -739,7 +743,6 @@ public sealed partial class NaturalIshalgenJourney
 				// left at Slag Bulwark, never reached Padinerk to hand in Q2376.
 				catch (IOException) when (field && !crossing && (NearFlyZone(destination) || InFlyZone(session.CurrentPosition)))
 				{
-					if (leads) await SayAsync($"command:fly:{(int)MathF.Round(destination.X)}:{(int)MathF.Round(destination.Y)}:{(int)MathF.Round(destination.Z)}");
 					if (!await CrossFlyZoneAsync(destination)) throw new IOException($"No walk nor flight reaches {destination}.");
 				}
 				await WalkOnAsync(destination, within);
@@ -886,11 +889,130 @@ public sealed partial class NaturalIshalgenJourney
 			session.TraceDiagnostic("group-field-portal-used", new Dictionary<string, object?> { ["npc"] = npc, ["through"] = through, ["position"] = session.CurrentPosition });
 			return through;
 		}
+		async Task PrepareGroupWindAsync()
+		{
+			if (!field || world.MapId != NaturalFlightRings.AbyssMap || runtime.SupplyHelpItemAsync is not { } supply) return;
+			async Task StockAsync(string family, long wanted)
+			{
+				NaturalHelpLegSupply approval = NaturalHelpItemAllowlist.LegApproved.Single(row =>
+					row.Leg == NaturalJourneyIdentityRules.FieldGroupLeg && row.Family == family);
+				long before = ItemCount(world, approval.ItemId);
+				if (before >= wanted) return;
+				long already = flightItemsSupplied.GetValueOrDefault(approval.ItemId);
+				NaturalHelpItemSupply.RequireApproved(approval.ItemId, wanted - before, approval.Leg, already);
+				await supply(approval.ItemId, wanted - before, token);
+				await session.SynchronizeAsync(token);
+				flightItemsSupplied[approval.ItemId] = already + wanted - before;
+				session.TraceDiagnostic("help-item-supplied", new Dictionary<string, object?>
+				{ ["trigger"] = "group-serum-crossing", ["itemId"] = approval.ItemId, ["family"] = family,
+					["count"] = wanted - before, ["before"] = before, ["after"] = ItemCount(world, approval.ItemId), ["decision"] = approval.Decision });
+			}
+			await StockAsync("wind-serum", 4);
+			if (world.VisibleEffects is { } effects && !effects.Any(effect => effect.SkillId == 9961 && effect.RemainingMillis > 30_000))
+			{
+				await StockAsync("flight-speed", 1);
+				var scroll = world.Inventory.Values.FirstOrDefault(item => item.ItemId == 164000079);
+				var template = runtime.Data.ItemDataDh.GetItemTemplate(164000079);
+				if (scroll != null && template != null)
+				{
+					await session.SendPacketAsync(session.Api.UseItem(scroll.ObjectId, template), token);
+					await session.AdvanceAsync(TimeSpan.FromMilliseconds(template.GetCastingDelay() + 500), token);
+					await session.SynchronizeAsync(token);
+				}
+			}
+		}
 		async Task<bool> CrossFlyZoneAsync(BotPosition goal)
+		{
+			async Task<bool> FlyTogetherAsync(BotPosition landing, int extraFp = 0)
+			{
+				if (leads) await SayAsync($"command:fly:{(int)MathF.Round(landing.X)}:{(int)MathF.Round(landing.Y)}:{(int)MathF.Round(landing.Z)}");
+				if (!await FlyOneZoneAsync(landing, extraFp)) return false;
+				if (leads) await WaitForFollowersAsync(token);
+				return true;
+			}
+			if (world.MapId != NaturalFlightRings.AbyssMap) return await FlyTogetherAsync(goal);
+			if (crossing || world.IsDead || world.MapId is not int map) return false;
+			IReadOnlyList<NaturalFlyZone> zones = FlyZones();
+			bool Inside(BotPosition at) => zones.Any(zone => !zone.Forbids && zone.Contains(at.X, at.Y, at.Z + 2) && at.Z + 12 < zone.Top) &&
+				!zones.Any(zone => zone.Forbids && zone.Contains(at.X, at.Y, at.Z + 2)) && !OnLava(at);
+			bool SkyAbove(BotPosition at) => NaturalFlightProtocol.IsClear(geometry, map, at, at with { Z = at.Z + 30 });
+			// Primum's obelisk stands under a roof. Its checked exit is just over 60 m away;
+			// as in the solo leg, walk this island's ground to open sky before choosing distant stones.
+			if (!SkyAbove(session.CurrentPosition))
+			{
+				BotPosition underRoof = session.CurrentPosition;
+				foreach (BotPosition open in geometry.IslandGround(map, underRoof, at => Inside(at) && SkyAbove(at))
+					.OrderBy(at => Distance(at, underRoof)).Take(6))
+				{
+					var path = await navigator.FindRouteAsync(session.CurrentPosition, open, token);
+					if (path.Count == 0) continue;
+					await navigator.MoveAsync(path, token);
+					session.TraceDiagnostic("group-field-fly-walk-out", new Dictionary<string, object?>
+					{ ["from"] = underRoof, ["goal"] = open, ["position"] = session.CurrentPosition, ["points"] = path.Count });
+					if (world.IsDead || world.MapId != map) return false;
+					if (SkyAbove(session.CurrentPosition)) break;
+				}
+				if (!SkyAbove(session.CurrentPosition)) return false;
+			}
+			if (!flightHostiles.TryGetValue(map, out BotPosition[]? hostile))
+				flightHostiles[map] = hostile = [.. runtime.Data.SpawnsDh.GetSpawnsByWorldId(map)
+					.Where(group => runtime.IsAggressive(runtime.Data.NpcDataDh.GetNpcTemplate(group.GetNpcId())))
+					.SelectMany(group => group.GetSpawnTemplates()).Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0))];
+			// As in the solo Abyss leg, try the ring chain, then checked island stones within one flight bar.
+			// F1 names each landing and gathers there; followers may use shorter hops of their own to reach it.
+			for (int hop = 0; hop <= 12; hop++)
+			{
+				if (world.IsDead || world.MapId != map) return false;
+				BotPosition from = session.CurrentPosition;
+				if (Distance(from, goal) <= 8) return true;
+				if (hop > 0 && geometry.IslandGround(map, from, at => Distance(at, goal) <= 8).Count > 0) return true;
+				float range = MathF.Max(60, (world.MaxFlightTime - NaturalFlightPolicy.LandingReserveFp - 5) * lastFlightSpeed);
+				bool direct = Distance(from, goal) <= range;
+				bool rings = !direct && flightRings.Plan(geometry, map, from, goal, lastFlightSpeed,
+					world.MaxFlightTime, world.MaxFlightTime, zones) != null;
+				if ((direct || rings) && await FlyTogetherAsync(goal)) return true;
+				if (hop == 12 || world.IsDead || world.MapId != map) return false;
+				from = session.CurrentPosition;
+				range = MathF.Max(60, (world.MaxFlightTime - NaturalFlightPolicy.LandingReserveFp - 5) * lastFlightSpeed);
+				float Across(BotPosition a, BotPosition b) => MathF.Sqrt(MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2));
+				float Height(BotPosition at, float rise) => MathF.Max(from.Z, at.Z) + rise;
+				(BotPosition At, float Meters)? FindStone(float reach)
+				{
+					foreach ((bool calm, float rise) in new[] { (true, 15f), (true, 60f), (false, 15f), (false, 60f) })
+						foreach (BotPosition at in geometry.GroundNear(map, from, reach, Inside)
+							.Where(at => Across(at, goal) + 30 < Across(from, goal) && Across(from, at) + 2 * Height(at, rise) - from.Z - at.Z <= reach * .95f)
+							.OrderBy(at => Across(at, goal)).Take(400)
+							.Where(at => (!calm || !hostile.Any(spot => Distance(spot, at) < 30)) && SkyAbove(at) &&
+								NaturalFlightProtocol.DirectlyClear(geometry, map, from, at, Height(at, rise))).Take(4))
+						{
+							NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, map, from, at, Height(at, rise));
+							if (route.IsUsable && route.Meters <= reach) return (at, route.Meters);
+						}
+					return null;
+				}
+				(BotPosition At, float Meters)? stone = FindStone(range);
+				session.TraceDiagnostic("group-field-fly-hop", new Dictionary<string, object?>
+				{ ["hop"] = hop, ["from"] = from, ["goal"] = goal, ["range"] = range, ["stone"] = stone?.At, ["meters"] = stone?.Meters });
+				if (stone is { } next)
+				{
+					if (!await FlyTogetherAsync(next.At)) return false;
+					continue;
+				}
+				// The solo leg's final fallback: an island gap can need the approved serums even when every ordinary stone is out of reach.
+				await PrepareGroupWindAsync();
+				int extraFp = 36 * (int)Math.Min(2, ItemCount(world, 162000026));
+				if (extraFp == 0) return false;
+				float extendedRange = range + extraFp * lastFlightSpeed;
+				if (Distance(from, goal) <= extendedRange) return await FlyTogetherAsync(goal, extraFp);
+				if (FindStone(extendedRange) is not { } far || !await FlyTogetherAsync(far.At, extraFp)) return false;
+			}
+			return false;
+		}
+		async Task<bool> FlyOneZoneAsync(BotPosition goal, int extraFp = 0)
 		{
 			if (crossing || world.MapId is not int map || world.IsDead) return false;
 			// Ground this member can walk to lies within a few metres of the goal: no flight.
-			if (geometry.IslandGround(map, session.CurrentPosition, at =>
+			if (map != NaturalFlightRings.AbyssMap && geometry.IslandGround(map, session.CurrentPosition, at =>
 				MathF.Abs(at.X - goal.X) <= 8 && MathF.Abs(at.Y - goal.Y) <= 8 && MathF.Abs(at.Z - goal.Z) <= 6).Count > 0) return false;
 			IReadOnlyList<NaturalFlyZone> zones = FlyZones();
 			bool Open(NaturalFlyZone zone, BotPosition at) => zone.Contains(at.X, at.Y, at.Z + 2) &&
@@ -932,9 +1054,15 @@ public sealed partial class NaturalIshalgenJourney
 				// shut the leg at 159 m, three times.
 				NaturalFlightRoute PlanFrom(BotPosition start)
 				{
+					float range = MathF.Max(60, (world.MaxFlightTime + extraFp - NaturalFlightPolicy.LandingReserveFp - 5) * lastFlightSpeed);
+					if (map == NaturalFlightRings.AbyssMap && Distance(start, land) > range)
+						return new([], 0, "Past one flight bar; use a ring chain or island hops.");
 					float height = MathF.Min(zone.Top - 6, MathF.Max(start.Z, land.Z) + 15);
+					float ceiling = map == NaturalFlightRings.AbyssMap ? MathF.Min(zone.Top - 6, height + range / 2) : zone.Top - 6;
+					session.TraceDiagnostic("group-field-flight-plan", new Dictionary<string, object?>
+					{ ["from"] = start, ["landing"] = land, ["range"] = range, ["height"] = height, ["ceiling"] = ceiling });
 					NaturalFlightRoute planned = NaturalFlightProtocol.Plan(geometry, map, start, land, height);
-					for (float higher = height + 20; !planned.IsUsable && higher <= zone.Top - 6; higher += 20)
+					for (float higher = height + 20; !planned.IsUsable && higher <= ceiling; higher += 20)
 						planned = NaturalFlightProtocol.Plan(geometry, map, start, land, higher);
 					return planned;
 				}
@@ -986,6 +1114,9 @@ public sealed partial class NaturalIshalgenJourney
 					refusedFlights.Add((here, land, runtime.NowMillis + 60_000));
 					return false;
 				}
+				if (map == NaturalFlightRings.AbyssMap && route.IsUsable &&
+					route.Meters > (world.MaxFlightTime - NaturalFlightPolicy.LandingReserveFp - 5) * lastFlightSpeed)
+					await PrepareGroupWindAsync();
 				// The flight time this flight needs, not a full bar: after four flights in the crater the members waited for theirs
 				// to fill while their leader flew on, and the group did not gather. Six metres a second is slower than any flight.
 				int needed = ringPreview != null ? world.MaxFlightTime : Math.Min(world.MaxFlightTime,
@@ -1002,25 +1133,62 @@ public sealed partial class NaturalIshalgenJourney
 				BotPosition from = session.CurrentPosition;
 				lastTakeoff = runtime.NowMillis;
 				float speed;
-				try { speed = await NaturalFlightProtocol.TakeOffAsync(session, token); }
+				try { speed = await NaturalFlightProtocol.TakeOffAsync(session, token); lastFlightSpeed = speed; }
 				catch (IOException refused)
 				{
 					session.TraceDiagnostic("group-field-fly-refused", new Dictionary<string, object?> { ["reason"] = refused.Message });
 					return false;
 				}
+				session.TraceDiagnostic("group-field-flight-takeoff", new Dictionary<string, object?>
+				{ ["speed"] = speed, ["fp"] = world.CurrentFlightTime, ["maxFp"] = world.MaxFlightTime,
+					["routeMeters"] = route.IsUsable ? route.Meters : null, ["landing"] = land });
 				NaturalFlightDecision go = route.IsUsable
 					? NaturalFlightPolicy.CanFly(NaturalFlightProtocol.ToPlan(route, from, speed), world.CurrentFlightTime, zones)
 					: new(false, route.Refusal ?? "No direct flight.");
 				if (!go.Allowed)
 				{
-					if (flightRings.Plan(geometry, map, from, land, speed, world.CurrentFlightTime, world.MaxFlightTime, zones) is not { } ringRoute)
+					if (flightRings.Plan(geometry, map, from, land, speed, world.CurrentFlightTime, world.MaxFlightTime, zones) is { } ringRoute)
 					{
-						session.TraceDiagnostic("group-field-fly-short", new Dictionary<string, object?> { ["reason"] = go.Reason });
-						await NaturalFlightProtocol.LandAsync(session, token);
-						await session.SynchronizeAsync(token);
-						return false;
+						if (!await NaturalFlightRings.FlyAsync(session, geometry, zones, ringRoute, token)) return false;
 					}
-					if (!await NaturalFlightRings.FlyAsync(session, geometry, zones, ringRoute, token)) return false;
+					else
+					{
+						const int restore = 36;
+						int serums = field && map == NaturalFlightRings.AbyssMap ? (int)Math.Min(2, ItemCount(world, 162000026)) : 0;
+						NaturalFlightDecision extra = route.IsUsable && serums > 0
+							? NaturalFlightPolicy.CanFly(NaturalFlightProtocol.ToPlan(route, from, speed), world.CurrentFlightTime + restore * serums, zones)
+							: new(false, "No approved owned serum covers this crossing.");
+						if (!extra.Allowed)
+						{
+							session.TraceDiagnostic("group-field-fly-short", new Dictionary<string, object?> { ["reason"] = go.Reason });
+							await NaturalFlightProtocol.LandAsync(session, token);
+							await session.SynchronizeAsync(token);
+							return false;
+						}
+						int drunk = 0;
+						async Task DrinkWhenDueAsync()
+						{
+							if (drunk >= serums || world.CurrentFlightTime > world.MaxFlightTime - restore || runtime.NowMillis - lastWindDrink < 54_000) return;
+							var serum = world.Inventory.Values.FirstOrDefault(item => item.ItemId == 162000026)
+								?? throw new IOException("The planned group flight serum is no longer owned.");
+							var template = runtime.Data.ItemDataDh.GetItemTemplate(162000026)!;
+							int before = world.CurrentFlightTime;
+							long owned = ItemCount(world, 162000026);
+							await session.SendPacketAsync(session.Api.UseItem(serum.ObjectId, template), token);
+							await session.AdvanceAsync(TimeSpan.FromMilliseconds(100), token);
+							await session.SynchronizeAsync(token);
+							if (ItemCount(world, 162000026) >= owned || world.CurrentFlightTime <= before)
+								throw new IOException("The planned group flight serum did not restore observed FP.");
+							lastWindDrink = runtime.NowMillis;
+							drunk++;
+							session.TraceDiagnostic("group-wind-serum-drunk", new Dictionary<string, object?>
+							{ ["fpBefore"] = before, ["fpAfter"] = world.CurrentFlightTime, ["position"] = session.CurrentPosition, ["left"] = ItemCount(world, 162000026) });
+						}
+						session.TraceDiagnostic("group-serum-crossing", new Dictionary<string, object?>
+						{ ["from"] = from, ["landing"] = land, ["serums"] = serums, ["extraFp"] = restore * serums });
+						await DrinkWhenDueAsync();
+						await NaturalFlightProtocol.FlyAsync(session, map, session.CurrentPosition, route.Waypoints, speed, token, DrinkWhenDueAsync);
+					}
 				}
 				else await NaturalFlightProtocol.FlyAsync(session, map, from, route.Waypoints, speed, token);
 				await NaturalFlightProtocol.LandAsync(session, token);

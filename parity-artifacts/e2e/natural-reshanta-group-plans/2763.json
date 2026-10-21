@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2763,
+    "name": "Minonerk's Heart",
+    "nameId": 1104863,
+    "zone": "Reshanta",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 30,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2762
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/reshanta.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 279018,
+        "id": 2763,
+        "start_npc_ids": 279017
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 279017,
+        "name": "minonerk",
+        "positions": [
+          {
+            "mapId": 400010000,
+            "x": 1234.0,
+            "y": 2954.0,
+            "z": 2915.04,
+            "heading": 0,
+            "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 279017,
+      "name": "minonerk",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 1234.0,
+          "y": 2954.0,
+          "z": 2915.04,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 279018,
+      "name": "junjunbinerk",
+      "positions": [
+        {
+          "mapId": 400010000,
+          "x": 786.182,
+          "y": 2293.67,
+          "z": 2849.03,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 279018,
+          "name": "junjunbinerk",
+          "positions": [
+            {
+              "mapId": 400010000,
+              "x": 786.182,
+              "y": 2293.67,
+              "z": 2849.03,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/400010000_Reshanta.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "ap": 100,
+        "exp": 340413,
+        "gold": 23350,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2763,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 30,
+      "name": "Minonerk's Heart",
+      "nameId": 1104863,
+      "quest_zone": "Reshanta",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "ap": 100,
+          "exp": 340413,
+          "gold": 23350
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2762
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "item_id": 182205603
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

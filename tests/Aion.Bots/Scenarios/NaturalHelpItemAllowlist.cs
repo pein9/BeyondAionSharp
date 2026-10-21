@@ -109,6 +109,9 @@ public static class NaturalHelpItemAllowlist
 		new("ro", 188020000, "temporal-stone", 1, "the operator, 2026-10-17: a Temporal Stone when a quest needs one (Q24044's Artifact)"),
 		new("ro", 162000026, "wind-serum", 20, "the operator, 2026-10-17: Greater Wind Serums for the crossing past one flight"),
 		new("ro", 164000079, "flight-speed", 10, "the operator, 2026-10-17: a greater flight speed scroll before such a crossing"),
+		// NL-4's Abyss group pass reuses the operator's approved crossing supplies.
+		new(NaturalJourneyIdentityRules.FieldGroupLeg, 162000026, "wind-serum", 20, "NL-4 decision 13: approved Greater Wind Serums for group crossings"),
+		new(NaturalJourneyIdentityRules.FieldGroupLeg, 164000079, "flight-speed", 10, "NL-4 decision 13: approved greater flight speed scroll for group crossings"),
 	];
 }
 

@@ -149,11 +149,12 @@ public sealed record NaturalAltgardContract(
 	/// quests, given in Morheim Ice Fortress.</summary>
 	public const string GroupNtcPlans = "natural-group-ntc-plans";
 	/// <summary>M6: the compiled plans of the Morheim quests played by a group in the field (docs/natural-morheim-leveling.md);
-	/// NL-2: and Brusthonin's two (Q4014, Q4017, docs/natural-leg-36.md).</summary>
+	/// NL-2: and Brusthonin's two (Q4014, Q4017, docs/natural-leg-36.md). NL-4 adds the Abyss group pass.</summary>
 	public const string GroupFieldPlans = "natural-morheim-group-plans";
 
 	public static IReadOnlyDictionary<int, QuestRunPlan> LoadGroupFieldPlans() =>
-		QuestRunPlan.LoadDirectory(Path.Combine(RepoRoot(), "parity-artifacts/e2e", GroupFieldPlans)).ToDictionary(plan => plan.Id);
+		new[] { GroupFieldPlans, "natural-reshanta-group-plans" }
+			.SelectMany(folder => QuestRunPlan.LoadDirectory(Path.Combine(RepoRoot(), "parity-artifacts/e2e", folder))).ToDictionary(plan => plan.Id);
 
 	public static IReadOnlyDictionary<int, QuestRunPlan> LoadGroupNtcPlans() =>
 		QuestRunPlan.LoadDirectory(Path.Combine(RepoRoot(), "parity-artifacts/e2e", GroupNtcPlans)).ToDictionary(plan => plan.Id);
