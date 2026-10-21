@@ -1,8 +1,8 @@
 # Natural leg to 36: what was left, Brusthonin, the first Abyss quests and the check-in at 36
 
 Status: resumed by the operator, 2026-10-20: NL-0 to NL-3 done; NL-4 in progress. The retained shared world is now
-`nl-gm-s2-w1`, after two Morheim group captures from `nl-vs-s2-w1`. All eight have now completed Q2355 and Q2369 in groups.
-Cleric and Gladiator have persistent Q24023 completions; the other six remain open in this world. Remaining group
+`nl-vs-s3-w1`, after the Fire recovery capture from `nl-gm-s2-w1`. All eight have completed Q2355 and Q2369 in groups.
+Cleric, Gladiator, Chanter, Templar, Sorcerer and Ranger have persistent Q24023 completions; Assassin and Spirit Master remain open. Remaining group
 quests, higher-level quests and the NL-5 report remain open. Decisions 15 and 16 record
 the earlier pause; decision 17 resumes the loop.
 The plan was written on 2026-10-17. The operator, that day, after the level-31 profiles:
@@ -367,6 +367,19 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
     all eleven originals, the Cleric/Gladiator Q24023 completions and the other six characters' Temple keys are
     preserved. The capture owner dropped its schema. Evidence is under `run/nl/NL4/nl4-group-morheim-second-c1/`
     and `run/nl/resume-20261020/nl-gm-s2-w1-audit.json`. Both quests are now saved for all eight. NL-4 and NL-5 remain open.
+  - 2026-10-21, Fire recovery capture (`5dc5056de`): `nl4-vs-recovery-c1` from `nl-gm-s2`, captured
+    **`nl-vs-s3-w1`**. Sorcerer 37, Chanter 38, Templar 38 and Ranger 37 completed Q24023, verified before and after
+    relogging and COMPLETE in the saved SQL. Their own game times were 85.94, 32.38, 26.62 and 46.64 minutes, with
+    twelve, zero, zero and four native deaths. This is Ranger's first verified solo clear. Assassin and Spirit Master,
+    both 37, reached their 90-minute limits with nine and thirteen deaths and remain START in saved SQL. All six
+    actual runtime identities match the committed build. Snapshot and outcome hashes verify, all eleven originals
+    are preserved, and the unplayed Cleric, Gladiator and frozen three retain their experience, position, quests,
+    skills and inventory. Cleric and Gladiator's Q24023 completions persist. The owner dropped its schema and the
+    marker is clear. Evidence is `run/nl/NL4/nl4-vs-recovery-c1/` and
+    `run/nl/resume-20261020/nl-vs-s3-w1-audit.json`. The provisional report now covers 28 retained captures and 197
+    original-character traces, all with observed entry and HP and no unclassified deaths; diagnostics and companions
+    remain excluded. Only Assassin and Spirit Master lack a verified solo clear. Their long-term handling remains
+    open; work on the independent remaining group quests proceeds without declaring a class soloability limit.
 - [ ] **NL-5 The report.** Per class its level, quests, deaths and time; what was not played and why.
 
 ## Decisions
@@ -1007,7 +1020,7 @@ Mine, where the operator gave none; each is his to change:
      successful native Ranger retry at that position. Evidence is `fire-recovery-t3-audit.json`, tied to the
      candidate source and DLL hashes in `fire-recovery-final/candidate-t3-build-identity.json`. T3's owner dropped
      its schema and the run marker is clear. Only Assassin, Spirit Master and Ranger still lack any verified solo
-     Q24023 clear; this is not a finding that those classes cannot solo it. The operator was asked whether the
+     Q24023 clear at that point; this was not a finding that those classes cannot solo it. The operator was asked whether the
      first two should play the remaining group quests before another solo attempt; that choice remains open.
      Final verification passed for these runtime sources: 6,663 solution tests with 252 existing skips; the unchanged
      4,097-site warning inventory and all guards/contracts; 27 generated profiles, baked navmeshes and both companion
@@ -1017,6 +1030,52 @@ Mine, where the operator gave none; each is his to change:
      schema was dropped and the marker was clear. Logs are under `fire-recovery-final/checks/` in the audit folder;
      the n9 round is `nl4-r38-fire-recovery-final-ntc`. Runtime sources still match T3's recorded hashes. No baseline
      changed and no bot unit test was added. The next capture must rebuild the committed runtime first.
+   - **Abyss group arrival preparation (2026-10-21):** use the existing empty `rw` travel contract from
+     `nl-vs-s3`, with all eight, ten-minute starts and Cleric companions. Java's native login sends the two expired
+     Sky Temple attempts to Morheim; the identity permission is scoped to this transit leg. T1 exposed the empty
+     travel leg returning to its old Brusthonin hub instead of its Reshanta endpoint. T2 selected the right map but
+     attempted the long approach to the floating gate on foot. The candidate continues a travel-only leg from its
+     current trip map and uses that map's hub flights before selecting takeoff ground. T3 took both normal flights
+     to Morheim Fortress, then received `STR_FLYING_FORBIDDEN_HERE` at the airline landing point. That point is inside
+     Java's FLY polygon; `onFlyTeleportEnd` queues zone revalidation on `ZoneUpdateService`'s 500 ms cadence. The next
+     candidate allows one second for landing to settle before further travel. T3 was stopped for diagnosis by
+     terminating only its owned testhost; the runner dropped its schema and cleared its marker. T4 is an uncaptured
+     trial of the combined candidate. No transit capture, group quest progress, server change or new bot unit test
+     is claimed by these preparation runs. The retained world remains `nl-vs-s3-w1`.
+     T4 verified seven originals in Reshanta before and after relogging, including Spirit Master's native return from
+     the expired Temple copy. Assassin died during an approach, then the flight wait continued from its revival
+     position outside the selected flight zone. The candidate now stops a flight when its defended wait fails,
+     changes map or revives, and returns a refused optional flight for replanning. Three companion seats also stopped
+     on the existing generic quit-destination error. The existing SIM and live session helpers now record the actual
+     quit mode/value and retry a normal logout's mode-0 refusal with a fresh countdown, bounded to six requests;
+     unexpected destinations still fail. T5 verified all eight originals at the Reshanta endpoint before and after
+     relogging. Its trace confirms normal logout refusals of ten, then seven seconds, followed by accepted mode 1
+     after fresh countdowns. Two seats later reached `CompanionService`'s existing 30-second dismissal cutoff and
+     lost their connections. The candidate SIM round now reconnects a seat after completed play when that connection
+     ends, using the live host's existing 15-second recovery interval; unrelated play failures remain failures.
+     T6 is an uncaptured trial of the complete player-and-seat lifecycle. T4 and T5's owners dropped their schemas;
+     none of these diagnostics replaces the retained world or adds bot unit tests.
+     T6 has now finished: all eight verified Reshanta arrival and relogging, with two ordinary hub flights each.
+     Assassin had one native death and completed after recovery; the other seven had none. All companion seats
+     ended as reached or unused. One seat recovered four post-play disconnects and observed eleven normal logout
+     refusals before subsequent successful quits or reconnections. The owner dropped its schema and cleared the
+     marker. Evidence is `rw-transit-t6-audit.json` and `rw-transit-t6-build-identity.json` in the audit folder.
+     The existing generator now adds Templar's level-38 companion tier from `nl-vs-s3-w1`, retaining its level-37
+     tier. All 27 existing profile hashes are unchanged; the fresh-generation check validates 28 profiles. The
+     existing profile-count assertion is updated; no test method was added. Its appearance assertions now accept
+     both the old `jaw_height`/`chin_jut` columns and the current `chin_height`/`cheek_bones` columns, checking the
+     same semantic getters that the existing profile loader maps them to. All class rotations remain reviewed
+     through the actual levels, 37–38.
+     Fresh verification passed: 6,663 solution tests with 252 existing skips; the unchanged 4,097-site warning
+     inventory and all guards/contracts; 28 generated profiles, baked navmeshes and both companion server tests;
+     Fast's 115 tests with 98 existing skips and all eleven scenario rows; all five functional starter journeys,
+     each with the existing D7 first-object-ID difference; and n9 with six individually verified home receipts,
+     native gate/General death evidence for all five fighters and zero player deaths. The n9 owner dropped its
+     schema and the marker is clear. Logs are under `abyss-transit-final/checks/`; n9 is
+     `nl4-r38-abyss-transit-final-ntc`. All seven transit runtime source hashes still match the passed T6 trial.
+     A fresh saved-SQL audit, `abyss-group-s3-scope.json`, also corrects the remaining Abyss scope: all eight already
+     have Q2753 COMPLETE, and only Ranger still needs Q2754. Assassin, Sorcerer, Chanter and Ranger need Q2762–63;
+     all eight need Q2728. These are existing completions, not progress claimed for the transit trial.
 
 ## Loop prompt
 

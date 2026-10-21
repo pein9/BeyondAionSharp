@@ -1049,15 +1049,26 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 
 		public async Task ReturnToSelectionAsync(bool editing, CancellationToken token)
 		{
-			if (!editing)
+			for (int attempt = 0; attempt < 6; attempt++)
 			{
-				await SendAsync(api.MayQuit(), token);
-				await AdvanceAsync(TimeSpan.FromSeconds(11), token);
+				if (!editing)
+				{
+					await SendAsync(api.MayQuit(), token);
+					await AdvanceAsync(TimeSpan.FromSeconds(11), token);
+				}
+				await SendAsync(api.Quit(stayConnected: true), token);
+				var response = await WaitForAsync(typeof(SM_QUIT_RESPONSE), token);
+				int mode = response.Get<int>("mode"), value = response.Get<int>("value");
+				TraceDiagnostic("quit-response", new Dictionary<string, object?>
+				{ ["attempt"] = attempt + 1, ["mode"] = mode, ["value"] = value, ["editing"] = editing });
+				// A normal quit may be refused while combat or its countdown is still active.
+				// Retry the client's countdown; only modes 1/2 are destinations.
+				if (mode == 0 && !editing && attempt < 5) continue;
+				if (mode != (editing ? 2 : 1))
+					throw new InvalidDataException($"Unexpected quit destination {mode} (value {value}) after {attempt + 1} requests.");
+				state = AionConnection.State.AUTHED;
+				return;
 			}
-			await SendAsync(api.Quit(stayConnected: true), token);
-			var response = await WaitForAsync(typeof(SM_QUIT_RESPONSE), token);
-			if (response.Get<int>("mode") != (editing ? 2 : 1)) throw new InvalidDataException("Unexpected quit destination.");
-			state = AionConnection.State.AUTHED;
 		}
 
 		public async Task CompleteWorldEntryAsync(CancellationToken cancellationToken)

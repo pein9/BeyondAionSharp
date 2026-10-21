@@ -356,6 +356,10 @@ public static class NaturalAltgardDecisionEngine
 
 		// AK-08: nothing else to do before a carrier's window opens: wait for it (the runner rests at the hub meanwhile).
 		// NL-2: a leg that ends on another map than its hub's (mb, at Brusthonin's Settlers Campsite, where it hands in) ends there.
+		// A travel-only leg may resume on an intermediate trip map. Its departure hub
+		// has no quest work left; returning there can even cast Return to the current bind.
+		if (offHub && contract.Quests.Length == 0 && contract.Endpoint.Anchor != null && state.MapId != contract.Endpoint.MapId)
+			return Plan("return-to-endpoint", null, "Continue the travel-only leg from this trip map to its endpoint.");
 		if (offHub && (open.Length > 0 || state.MapId != contract.Endpoint.MapId))
 			return Plan("return-to-hub", null, "The work on this map is done; Return to the hub bind.");
 		if (carrierWait != null)

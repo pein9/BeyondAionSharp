@@ -62,6 +62,9 @@ public static class NaturalJourneyIdentityRules
 			altgardLeg == "l12" && level >= 16 && worldId == 300200000 ||
 			// NL-4: Q24023's retained characters may log back in inside the Sky Temple Interior (Java's enter-world hook).
 			altgardLeg == "vs" && level >= 29 && worldId == 320050000 ||
+			// NL-4: the pure Abyss transit leg can log in from an expired Sky Temple copy.
+			// Java InstanceService.onPlayerLogin returns it to Morheim before ordinary gate travel.
+			altgardLeg == "rw" && level >= 29 && worldId == 320050000 ||
 			// NL-4: field members may return from a retained Sky Temple attempt before forming their group.
 			altgardLeg == FieldGroupLeg && (level >= 26 && worldId is NaturalAbyssEntry.Morheim or NaturalAltgardContract.Brusthonin ||
 				level >= 29 && worldId == 320050000) ||

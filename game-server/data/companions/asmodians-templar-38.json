@@ -1,0 +1,793 @@
+{
+  "schemaVersion": 1,
+  "race": "ASMODIANS",
+  "playerClass": "TEMPLAR",
+  "level": 38,
+  "gender": "MALE",
+  "appearance": {
+    "face": 0,
+    "hair": 0,
+    "deco": 0,
+    "tattoo": 0,
+    "face_contour": 0,
+    "expression": 0,
+    "jaw_line": 0,
+    "skin_rgb": 0,
+    "hair_rgb": 0,
+    "lip_rgb": 0,
+    "eye_rgb": 0,
+    "face_shape": 0,
+    "forehead": 0,
+    "eye_height": 0,
+    "eye_space": 0,
+    "eye_width": 0,
+    "eye_size": 0,
+    "eye_shape": 0,
+    "eye_angle": 0,
+    "brow_height": 0,
+    "brow_angle": 0,
+    "brow_shape": 0,
+    "nose": 0,
+    "nose_bridge": 0,
+    "nose_width": 0,
+    "nose_tip": 0,
+    "cheek": 0,
+    "lip_height": 0,
+    "mouth_size": 0,
+    "lip_size": 0,
+    "smile": 0,
+    "lip_shape": 0,
+    "chin_height": 0,
+    "cheek_bones": 0,
+    "ear_shape": 0,
+    "head_size": 0,
+    "neck": 0,
+    "neck_length": 0,
+    "shoulders": 0,
+    "shoulder_size": 0,
+    "torso": 0,
+    "chest": 0,
+    "waist": 0,
+    "hips": 0,
+    "arm_thickness": 0,
+    "arm_length": 0,
+    "hand_size": 0,
+    "leg_thickness": 0,
+    "leg_length": 0,
+    "foot_size": 0,
+    "facial_rate": 0,
+    "voice": 0,
+    "height": 1
+  },
+  "equipment": [
+    {
+      "slot": 1,
+      "itemId": 100001054,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 2,
+      "itemId": 115001088,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 4,
+      "itemId": 125004138,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 8,
+      "itemId": 110601092,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 16,
+      "itemId": 111601069,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 32,
+      "itemId": 114601049,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 64,
+      "itemId": 120000833,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 128,
+      "itemId": 120001115,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 256,
+      "itemId": 122000871,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 512,
+      "itemId": 122001664,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 1024,
+      "itemId": 121000751,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 2048,
+      "itemId": 112601043,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 4096,
+      "itemId": 113601053,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 8192,
+      "itemId": 169000011,
+      "count": 7750,
+      "enchant": 0
+    },
+    {
+      "slot": 16384,
+      "itemId": 169000011,
+      "count": 10000,
+      "enchant": 0
+    },
+    {
+      "slot": 65536,
+      "itemId": 123001439,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 1073741824,
+      "itemId": 140001328,
+      "count": 1,
+      "enchant": 0
+    },
+    {
+      "slot": 2147483648,
+      "itemId": 140001325,
+      "count": 1,
+      "enchant": 0
+    }
+  ],
+  "inventory": [
+    {
+      "itemId": 160002274,
+      "count": 5
+    },
+    {
+      "itemId": 162000006,
+      "count": 26
+    },
+    {
+      "itemId": 162000007,
+      "count": 112
+    },
+    {
+      "itemId": 162000011,
+      "count": 30
+    },
+    {
+      "itemId": 162000018,
+      "count": 3
+    },
+    {
+      "itemId": 162001057,
+      "count": 19
+    },
+    {
+      "itemId": 164000070,
+      "count": 20
+    },
+    {
+      "itemId": 164000073,
+      "count": 60
+    },
+    {
+      "itemId": 164000076,
+      "count": 16
+    },
+    {
+      "itemId": 169300004,
+      "count": 200
+    },
+    {
+      "itemId": 169620005,
+      "count": 2
+    }
+  ],
+  "skills": [
+    {
+      "id": 37,
+      "level": 1
+    },
+    {
+      "id": 39,
+      "level": 1
+    },
+    {
+      "id": 40,
+      "level": 1
+    },
+    {
+      "id": 41,
+      "level": 1
+    },
+    {
+      "id": 42,
+      "level": 1
+    },
+    {
+      "id": 43,
+      "level": 1
+    },
+    {
+      "id": 44,
+      "level": 1
+    },
+    {
+      "id": 46,
+      "level": 1
+    },
+    {
+      "id": 48,
+      "level": 1
+    },
+    {
+      "id": 49,
+      "level": 1
+    },
+    {
+      "id": 50,
+      "level": 1
+    },
+    {
+      "id": 51,
+      "level": 1
+    },
+    {
+      "id": 54,
+      "level": 1
+    },
+    {
+      "id": 103,
+      "level": 1
+    },
+    {
+      "id": 129,
+      "level": 1
+    },
+    {
+      "id": 138,
+      "level": 1
+    },
+    {
+      "id": 139,
+      "level": 1
+    },
+    {
+      "id": 140,
+      "level": 1
+    },
+    {
+      "id": 141,
+      "level": 1
+    },
+    {
+      "id": 157,
+      "level": 1
+    },
+    {
+      "id": 159,
+      "level": 1
+    },
+    {
+      "id": 160,
+      "level": 1
+    },
+    {
+      "id": 169,
+      "level": 1
+    },
+    {
+      "id": 170,
+      "level": 1
+    },
+    {
+      "id": 186,
+      "level": 1
+    },
+    {
+      "id": 187,
+      "level": 1
+    },
+    {
+      "id": 191,
+      "level": 1
+    },
+    {
+      "id": 243,
+      "level": 1
+    },
+    {
+      "id": 245,
+      "level": 1
+    },
+    {
+      "id": 246,
+      "level": 1
+    },
+    {
+      "id": 247,
+      "level": 1
+    },
+    {
+      "id": 249,
+      "level": 1
+    },
+    {
+      "id": 250,
+      "level": 1
+    },
+    {
+      "id": 251,
+      "level": 1
+    },
+    {
+      "id": 252,
+      "level": 1
+    },
+    {
+      "id": 253,
+      "level": 1
+    },
+    {
+      "id": 254,
+      "level": 1
+    },
+    {
+      "id": 297,
+      "level": 1
+    },
+    {
+      "id": 298,
+      "level": 1
+    },
+    {
+      "id": 302,
+      "level": 1
+    },
+    {
+      "id": 308,
+      "level": 1
+    },
+    {
+      "id": 315,
+      "level": 1
+    },
+    {
+      "id": 349,
+      "level": 1
+    },
+    {
+      "id": 370,
+      "level": 1
+    },
+    {
+      "id": 371,
+      "level": 1
+    },
+    {
+      "id": 2864,
+      "level": 1
+    },
+    {
+      "id": 2865,
+      "level": 1
+    },
+    {
+      "id": 2866,
+      "level": 1
+    },
+    {
+      "id": 2867,
+      "level": 1
+    },
+    {
+      "id": 2868,
+      "level": 1
+    },
+    {
+      "id": 2869,
+      "level": 1
+    },
+    {
+      "id": 2870,
+      "level": 1
+    },
+    {
+      "id": 2871,
+      "level": 1
+    },
+    {
+      "id": 2877,
+      "level": 1
+    },
+    {
+      "id": 2878,
+      "level": 1
+    },
+    {
+      "id": 2879,
+      "level": 1
+    },
+    {
+      "id": 2880,
+      "level": 1
+    },
+    {
+      "id": 2881,
+      "level": 1
+    },
+    {
+      "id": 2882,
+      "level": 1
+    },
+    {
+      "id": 2883,
+      "level": 1
+    },
+    {
+      "id": 2884,
+      "level": 1
+    },
+    {
+      "id": 2890,
+      "level": 1
+    },
+    {
+      "id": 2891,
+      "level": 1
+    },
+    {
+      "id": 2892,
+      "level": 1
+    },
+    {
+      "id": 2893,
+      "level": 1
+    },
+    {
+      "id": 2894,
+      "level": 1
+    },
+    {
+      "id": 2895,
+      "level": 1
+    },
+    {
+      "id": 2896,
+      "level": 1
+    },
+    {
+      "id": 2903,
+      "level": 1
+    },
+    {
+      "id": 2904,
+      "level": 1
+    },
+    {
+      "id": 2905,
+      "level": 1
+    },
+    {
+      "id": 2906,
+      "level": 1
+    },
+    {
+      "id": 2907,
+      "level": 1
+    },
+    {
+      "id": 2908,
+      "level": 1
+    },
+    {
+      "id": 2909,
+      "level": 1
+    },
+    {
+      "id": 2932,
+      "level": 1
+    },
+    {
+      "id": 2975,
+      "level": 1
+    },
+    {
+      "id": 2981,
+      "level": 1
+    },
+    {
+      "id": 2982,
+      "level": 1
+    },
+    {
+      "id": 2983,
+      "level": 1
+    },
+    {
+      "id": 2984,
+      "level": 1
+    },
+    {
+      "id": 2985,
+      "level": 1
+    },
+    {
+      "id": 2986,
+      "level": 1
+    },
+    {
+      "id": 3000,
+      "level": 1
+    },
+    {
+      "id": 3001,
+      "level": 1
+    },
+    {
+      "id": 3002,
+      "level": 1
+    },
+    {
+      "id": 3003,
+      "level": 1
+    },
+    {
+      "id": 3004,
+      "level": 1
+    },
+    {
+      "id": 3005,
+      "level": 1
+    },
+    {
+      "id": 3010,
+      "level": 1
+    },
+    {
+      "id": 3011,
+      "level": 1
+    },
+    {
+      "id": 3012,
+      "level": 1
+    },
+    {
+      "id": 3019,
+      "level": 1
+    },
+    {
+      "id": 3020,
+      "level": 1
+    },
+    {
+      "id": 3021,
+      "level": 1
+    },
+    {
+      "id": 3022,
+      "level": 1
+    },
+    {
+      "id": 3023,
+      "level": 1
+    },
+    {
+      "id": 3024,
+      "level": 1
+    },
+    {
+      "id": 3038,
+      "level": 1
+    },
+    {
+      "id": 3039,
+      "level": 1
+    },
+    {
+      "id": 3040,
+      "level": 1
+    },
+    {
+      "id": 3041,
+      "level": 1
+    },
+    {
+      "id": 3048,
+      "level": 1
+    },
+    {
+      "id": 3055,
+      "level": 1
+    },
+    {
+      "id": 3056,
+      "level": 1
+    },
+    {
+      "id": 3057,
+      "level": 1
+    },
+    {
+      "id": 3058,
+      "level": 1
+    },
+    {
+      "id": 3059,
+      "level": 1
+    },
+    {
+      "id": 3060,
+      "level": 1
+    },
+    {
+      "id": 3072,
+      "level": 1
+    },
+    {
+      "id": 3073,
+      "level": 1
+    },
+    {
+      "id": 3074,
+      "level": 1
+    },
+    {
+      "id": 3075,
+      "level": 1
+    },
+    {
+      "id": 3076,
+      "level": 1
+    },
+    {
+      "id": 3077,
+      "level": 1
+    },
+    {
+      "id": 3085,
+      "level": 1
+    },
+    {
+      "id": 3086,
+      "level": 1
+    },
+    {
+      "id": 3087,
+      "level": 1
+    },
+    {
+      "id": 3088,
+      "level": 1
+    },
+    {
+      "id": 3094,
+      "level": 1
+    },
+    {
+      "id": 3095,
+      "level": 1
+    },
+    {
+      "id": 3096,
+      "level": 1
+    },
+    {
+      "id": 3097,
+      "level": 1
+    },
+    {
+      "id": 3098,
+      "level": 1
+    },
+    {
+      "id": 3099,
+      "level": 1
+    },
+    {
+      "id": 3106,
+      "level": 1
+    },
+    {
+      "id": 3107,
+      "level": 1
+    },
+    {
+      "id": 3116,
+      "level": 1
+    },
+    {
+      "id": 3123,
+      "level": 1
+    },
+    {
+      "id": 3124,
+      "level": 1
+    },
+    {
+      "id": 3129,
+      "level": 1
+    },
+    {
+      "id": 3131,
+      "level": 1
+    },
+    {
+      "id": 3132,
+      "level": 1
+    },
+    {
+      "id": 3133,
+      "level": 1
+    },
+    {
+      "id": 3134,
+      "level": 1
+    },
+    {
+      "id": 3135,
+      "level": 1
+    },
+    {
+      "id": 3136,
+      "level": 1
+    },
+    {
+      "id": 3140,
+      "level": 1
+    },
+    {
+      "id": 3161,
+      "level": 1
+    },
+    {
+      "id": 30002,
+      "level": 16
+    },
+    {
+      "id": 30003,
+      "level": 1
+    },
+    {
+      "id": 40009,
+      "level": 1
+    }
+  ],
+  "source": {
+    "snapshot": "nl-vs-s3-w1",
+    "dumpSha256": "426c328dcb6a9adfb1c50e8b7bb87ddece0ecb28af605c8675ce64a9e20add7e",
+    "character": "Asimtemplar"
+  }
+}

@@ -929,15 +929,24 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		quitExpected = true;
 		try
 		{
-			if (!editing)
+			for (int attempt = 0; attempt < 6; attempt++)
 			{
-				await SendGameAsync(api.MayQuit(), token);
-				await Task.Delay(TimeSpan.FromSeconds(11), token);
+				if (!editing)
+				{
+					await SendGameAsync(api.MayQuit(), token);
+					await Task.Delay(TimeSpan.FromSeconds(11), token);
+				}
+				await SendGameAsync(api.Quit(stayConnected: true), token);
+				var response = await WaitForGamePacketAsync(typeof(SM_QUIT_RESPONSE), token);
+				int mode = response.Get<int>("mode"), value = response.Get<int>("value");
+				trace.WriteAction(currentStep, "quit-response", new Dictionary<string, object?>
+				{ ["attempt"] = attempt + 1, ["mode"] = mode, ["value"] = value, ["editing"] = editing });
+				if (mode == 0 && !editing && attempt < 5) continue;
+				if (mode != (editing ? 2 : 1))
+					throw new InvalidDataException($"Unexpected quit destination {mode} (value {value}) after {attempt + 1} requests.");
+				state = AionConnection.State.AUTHED;
+				return;
 			}
-			await SendGameAsync(api.Quit(stayConnected: true), token);
-			var response = await WaitForGamePacketAsync(typeof(SM_QUIT_RESPONSE), token);
-			if (response.Get<int>("mode") != (editing ? 2 : 1)) throw new InvalidDataException("Unexpected quit destination.");
-			state = AionConnection.State.AUTHED;
 		}
 		finally { quitExpected = false; }
 	}

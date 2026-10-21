@@ -336,9 +336,21 @@ public sealed partial class SimulationFastScenarioTests
 					CompanionTest: entry.CompanionTest, CompanionStockMinutes: entry.CompanionStockMinutes)).RunAsync(token);
 				level = seat.Api.World.Level;
 				seat.BeginStep("companion-seat", "back-to-character-selection");
-				await seat.ReturnToSelectionAsync(editing: false, token);
+				try
+				{
+					await seat.ReturnToSelectionAsync(editing: false, token);
+					list = await seat.ReadCharacterListAsync(token);
+				}
+				catch (Exception disconnected) when (disconnected is ObjectDisposedException or EndOfStreamException)
+				{
+					// CompanionService disconnects a dismissed companion after its 30-second linger.
+					// Like the live host, a seat reconnects after completed play instead of stopping forever.
+					seat.TraceDiagnostic("companion-seat-reconnect-after-play", new Dictionary<string, object?>
+					{ ["character"] = characterId, ["reason"] = disconnected.Message });
+					await turns.WaitAsync(bot, TimeSpan.FromSeconds(15), token);
+					list = await seat.LoginCharacterListAsync(token);
+				}
 				outcome = "reached";
-				list = await seat.ReadCharacterListAsync(token);
 			}
 			// NL-0: each companion was checked as it left; the seat's policy is completed once, here.
 			policy.AssertClean();

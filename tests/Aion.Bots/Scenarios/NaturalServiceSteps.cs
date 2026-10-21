@@ -195,11 +195,15 @@ public sealed class NaturalServiceSteps(INaturalJourneySession session)
 		await session.ExecuteMovementAsync(NaturalAirlineRoutes.Plan(route), token);
 		await session.SendPacketAsync(GameClientPackets.Emotion((byte)EmotionType.LAND_FLYTELEPORT), token);
 		await session.SynchronizeAsync(token);
+		// Java's onFlyTeleportEnd queues zone revalidation on the 500 ms ZoneUpdateService.
+		// Let landing settle before an immediate free-flight takeoff reads the new zone membership.
+		await session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+		await session.SynchronizeAsync(token);
 		float landed = NaturalServicePolicy.Distance(session.CurrentPosition, route.Landing);
 		NaturalServiceOutcome result = landed < 8 && before - World.Kinah == fare
 			? new("done", $"Flew {route.Route} for {fare} Kinah.")
 			: new("refused", $"Flight not observed (landed {landed:F1} m from {route.Landing}, Kinah {before} -> {World.Kinah}, fare {fare}).");
-		Trace("service-flight-result", result, new() { ["kinahBefore"] = before, ["kinahAfter"] = World.Kinah });
+		Trace("service-flight-result", result, new() { ["kinahBefore"] = before, ["kinahAfter"] = World.Kinah, ["landingSettleMillis"] = 1000 });
 		return result;
 	}
 

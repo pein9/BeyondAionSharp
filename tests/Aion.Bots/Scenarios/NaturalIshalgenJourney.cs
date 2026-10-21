@@ -3692,6 +3692,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						if (map == NaturalFlightRings.AbyssMap && await FlyToAsync(land, HeightFrom(session.CurrentPosition), mayRefuse: true)) return true;
 						for (int hop = 0; ; hop++)
 						{
+							if (session.Api.World.MapId != map || session.Api.World.IsDead || !Inside(session.CurrentPosition)) return false;
 							// On a stone the bot waits for its flight time as a player does, answering what attacks it: the Cleric sat
 							// out the wait beside Sinjah's tower while ashikar assaulters killed it.
 							long refill = NaturalFlightPolicy.RestoreMillis(session.Api.World.CurrentFlightTime, session.Api.World.MaxFlightTime,
@@ -5229,12 +5230,20 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					if (lastTakeoff is { } last) wait = Math.Max(wait, last + NaturalFlightPolicy.TakeoffReuseMillis - runtime.NowMillis);
 					// NL-3: the wait for flight time answers what attacks the bot (the Ranger died waiting on Mokkurkalfi's ledge and
 					// then waited for a takeoff while dead), and the flight leaves from where the fight left it.
-					if (wait > 0) await WaitBeforePullDefendingAsync((int)wait + 100, "flight-wait");
+					int waitingRevives = combat.ReviveCount;
+					int? waitingMap = world.MapId;
+					if (wait > 0 && !await WaitBeforePullDefendingAsync((int)wait + 100, "flight-wait")) return false;
 					await session.SynchronizeAsync(token);
-					if (session.Api.World.IsDead) return false;
+					if (world.IsDead || world.MapId != waitingMap || combat.ReviveCount != waitingRevives)
+					{
+						session.TraceDiagnostic("flight-wait-replan", new Dictionary<string, object?>
+						{ ["from"] = from, ["position"] = session.CurrentPosition, ["revives"] = combat.ReviveCount - waitingRevives });
+						return false;
+					}
 					from = session.CurrentPosition;
 					NaturalFlightDecision ready = NaturalFlightPolicy.CanTakeOff(new NaturalTakeoffObservation(true, from, false,
 						(flightRules ?? leg.RequiredFlight).WaterLevel, runtime.NowMillis, lastTakeoff, false, false, false), zones);
+					if (!ready.Allowed && mayRefuse) return false;
 					Require.True(ready.Allowed, $"Cannot take off: {ready.Reason}");
 					int flightMap = session.Api.World.MapId ?? leg.Hub.MapId;
 					NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, flightMap, from, destination, cruiseHeight ?? cruise);
@@ -5278,6 +5287,15 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				async Task<bool> FlyBesideAsync(BotPosition goal, float within)
 				{
 					int map = session.Api.World.MapId!.Value;
+					// A retained trip can start at another hub. Take its normal flight transporter
+					// before choosing nearby takeoff ground, as the hub-to-hub approaches do.
+					if (!approachingAirline)
+					{
+						approachingAirline = true;
+						try { await FlyTowardAsync(goal); }
+						finally { approachingAirline = false; }
+						if (session.Api.World.IsDead || session.Api.World.MapId != map) return false;
+					}
 					NaturalFlyZone? zone = zones.FirstOrDefault(entry => !entry.Forbids && entry.Contains(goal.X, goal.Y, goal.Z));
 					if (zone == null) return false;
 					bool Inside(BotPosition at) => zone.Contains(at.X, at.Y, at.Z + 2) && at.Z + 12 < zone.Top &&
@@ -5347,10 +5365,11 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				// Basfelt to Trader's Berth is two flights. False when walking is better from the start.
 				async Task<bool> FlyTowardAsync(BotPosition destination)
 				{
+					int map = session.Api.World.MapId!.Value;
 					int flown = 0;
-					for (NaturalAirlineJourney? journey = NaturalAirlineRoutes.Journey(airlines, leg.Hub.MapId, session.CurrentPosition, destination);
+					for (NaturalAirlineJourney? journey = NaturalAirlineRoutes.Journey(airlines, map, session.CurrentPosition, destination);
 						journey != null && flown < 4;
-						journey = NaturalAirlineRoutes.Journey(airlines, leg.Hub.MapId, session.CurrentPosition, destination))
+						journey = NaturalAirlineRoutes.Journey(airlines, map, session.CurrentPosition, destination))
 					{
 						NaturalAirlineRoute route = journey.Flights.First();
 						session.TraceDiagnostic("airline-chosen", new Dictionary<string, object?>

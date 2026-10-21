@@ -17,7 +17,8 @@ public sealed class CompanionProfileTests
 
         // Every class at 26, and the eight original classes at 31 too (step M8 of docs/natural-morheim-leveling.md), and again
         // from the gear check-in at 36, where the quests had carried them to 37 and 38 (NL-4 of docs/natural-leg-36.md).
-        Assert.Equal(27, profiles.Count);
+        // The Templar reached 38 during NL-4; keep its earlier 37 tier beside the new one.
+        Assert.Equal(28, profiles.Count);
         Assert.Equal(11, profiles.Where(profile => profile.Level == CompanionService.Level).Select(profile => profile.PlayerClass).Distinct().Count());
         Assert.Equal(8, profiles.Where(profile => profile.Level == 31).Select(profile => profile.PlayerClass).Distinct().Count());
         Assert.Equal(8, profiles.Where(profile => profile.Level is 37 or 38).Select(profile => profile.PlayerClass).Distinct().Count());
@@ -32,8 +33,10 @@ public sealed class CompanionProfileTests
             Assert.All(profile.Skills.Where(skill => skill.Id < 30000 || skill.Id == 40009), skill => Assert.Equal(1, skill.Level));
             Assert.Equal(53, profile.Appearance.Count);
             Assert.Equal((float)profile.Appearance["height"], profile.NewAppearance().GetHeightScale());
-            Assert.Equal((int)profile.Appearance["jaw_height"], profile.NewAppearance().GetChinHeight());
-            Assert.Equal((int)profile.Appearance["chin_jut"], profile.NewAppearance().GetCheekBones());
+            Assert.Equal((int)(profile.Appearance.TryGetValue("jaw_height", out double chinHeight)
+                ? chinHeight : profile.Appearance["chin_height"]), profile.NewAppearance().GetChinHeight());
+            Assert.Equal((int)(profile.Appearance.TryGetValue("chin_jut", out double cheekBones)
+                ? cheekBones : profile.Appearance["cheek_bones"]), profile.NewAppearance().GetCheekBones());
             Assert.Equal((int)profile.Appearance["skin_rgb"], profile.NewAppearance().GetSkinRGB());
         });
     }
