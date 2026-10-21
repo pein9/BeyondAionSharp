@@ -669,6 +669,58 @@ Mine, where the operator gave none; each is his to change:
      (`nl4-r38-followup-ntc`) retained six verified home receipts. Logs are kept separately under
      `run/nl/resume-20261020/followup/`. No compiler warning or trace baseline was raised, no generated data or mob
      statistics were edited, and no new bot unit test was written. NL-4/NL-5 remain open.
+   - **DP jelly upkeep (2026-10-20):** the approved kit already supplied Cippo Aether Jelly to all classes, but the
+     use policy only recognized the Cleric's Salvation. The original eight now refill DP for a mapped skill actually
+     present in the client-learned list, using that skill's positive cost. Salvation keeps its existing 2,000-DP reserve;
+     combat priorities and reserves do not change. Starter defaults and the frozen three retain their behavior.
+     Java's item 160002274 permits every class from level 10, uses skill 10164 at level 4 (4,000 DP), and shares
+     use-delay group 23 for 1,800 seconds. No manifest, learning, server skill data or DP balance was changed.
+     The scratch console under `run/dp-kit-probe/` exercised the actual buff controller on ordinary accounts: all eight
+     consumed one jelly, observed DP rise from zero to 4,000 and the real 30-minute delay, then withheld another use.
+     The Gladiator spent 2,000 of that DP on an ordinary learned Daevic Fury cast. The frozen three left their jelly
+     untouched. Controlled class/level/stock setup makes this item-use evidence, not a natural quest completion.
+   - **NTC regressions exposed by the DP replay:** `nl4-r38-dp-ntc` stopped gathering because the Gladiator could not
+     route from (306.074, 592.501, 373.024). The two-metre-high ground ray hit a steep surface above its supporting
+     floor; Java's `GeoMap.getZ` rejects that nearest surface too. Bot ground queries now retry near the feet only
+     after that ray fails on a low lip below the existing body collision ray, requiring support within 10 cm of the
+     feet and retaining slope rejection, step limits and body-height collision checks. The exact failed
+     point changes from zero paths to ten-point checked paths; unsupported higher points still have no route.
+     Server geometry and generated meshes are unchanged. The next replay reached the gate but lost its death:
+     F1's final cast was rejected, a teammate's delayed hit reported zero HP one second later, then the gate vanished.
+     The group now retains the Gate/General's explicit zero-HP evidence after a fight returns, scoped to the instance
+     and guarded against object-ID reuse. Disappearance alone does not satisfy this new observer. Java's HP percentage
+     is zero only at zero HP. Trial `nl4-r38-dp-ground-ntc-t3` then retained six verified home receipts, including the
+     gate's delayed death diagnostic. The first fallback was too broad: the existing Fast Q2006 Mau-return negative
+     caught a route across its obstacle. It remains a failure in `dp-ground/checks/fast.log`; the narrowed fallback
+     distinguishes NTC's 23 cm lip from the Mau obstacle 1.56 m above the feet. The offline check retains no Mau
+     approach or journey, and still finds NTC's checked route. Evidence is under `run/ntc-dp-diagnosis/` and the NTC
+     replay directories. The narrowed candidate passed all required checks: 6,663 solution tests (252 existing skips),
+     warning baseline, source guards, fidelity, script contracts, profiles, baked navmeshes and the two companion-server
+     tests. Fast passed 115 tests (98 existing opt-in skips) and all 11 scenarios. All five starter journeys passed
+     functionally; their exact comparisons retain only the allowed first object-ID difference under D7. Final replay
+     `nl4-r38-dp-lip-ntc` retained six verified home receipts. Logs are under `run/nl/resume-20261020/dp-lip/` and
+     `run/nl/NL4/nl4-r38-dp-lip-*`. No new bot unit tests, raised baseline or generated-data edits were needed.
+   - **Capture provenance:** the unchanged schema-compatible source image is also available at
+     `run/snapshots/nl-vs-s1-compatible-w1/`, with both source and derived dump hashes verified. The report audit
+     follows its `compatibility.sourceSnapshot` edge and excludes the generated layer from gameplay totals. It still
+     finds exactly 24 retained NL captures and their evidence folders back to `morheim-ft-s1-w1`.
+   - **Partial longer trial (`nl4-vs-resume-t6`):** all seven started ten game minutes apart and consumed jelly during
+     ordinary questing. The trial was stopped for diagnosis after the Assassin began, rather than exhausting its
+     planned 120-minute windows. No endpoint or snapshot is claimed. Its verified owner dropped only its disposable
+     schema. `run/nl/resume-20261020/t6-live-audit.json` indexes the partial traces; deaths and interrupted windows
+     are not a solo-capability classification. Sky Temple's PvE attack/defense map bonuses and their stat functions
+     also match Java; no missing map multiplier was found.
+   - **Use the existing recorded fights (operator clarification, 2026-10-20):** the operator already demonstrated
+     which monsters to pull, as well as the descent. No further recording is needed to learn that sequence. After
+     landing he cleared the nearby Guardian Kalgolem, two Destroyer Obscuras, then the Corrupt Fire/Flame Spirits,
+     rested and pulled Bolcan alone. A t5 Gladiator trace instead engaged Bolcan with another attacker present;
+     its pull planner had already named a Flame Spirit add. Compare those approaches before another long retry.
+     The recording also uses Absorbing Fury and Pressure Wave, which the current single-pull table excludes to avoid
+     waking extra enemies; assess conditional use against already engaged enemies using Java's actual area rules.
+     Skill 240, GM's Armor, was used in the recording (+2,000 maximum HP/MP and movement/attack/flight benefits), so
+     its survivability/timing is not an ordinary-account baseline. Its pull order remains useful evidence. The
+     private sanitized comparison is `run/nl/resume-20261020/human-fire-fights.json`; the original recording is
+     unchanged. These findings do not authorize copying GM skills or nerfing the mobs.
 
 ## Loop prompt
 

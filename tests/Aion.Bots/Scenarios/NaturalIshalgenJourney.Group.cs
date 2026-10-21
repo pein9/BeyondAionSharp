@@ -131,6 +131,9 @@ public sealed partial class NaturalIshalgenJourney
 		// The kinds of monster this member saw fall in a fight of its own, for a target no quest of the leg counts
 		// (the gate, the General).
 		var killedKinds = new HashSet<int>();
+		// A teammate's delayed hit can arrive after F1's rejected final cast returns.
+		// Retain these two named objectives until their explicit zero-HP packet is observed.
+		var pendingNtcKills = new Dictionary<int, (int Kind, int? Instance, int Cursor)>();
 		// This member has been inside the camp: outside it again, it goes back in to its leader.
 		bool beenInside = false;
 		// Where each member says it stands: its map and the instance of it.
@@ -211,6 +214,32 @@ public sealed partial class NaturalIshalgenJourney
 		async Task ObserveAsync()
 		{
 			await session.SynchronizeAsync(token);
+			foreach (var pending in pendingNtcKills.ToArray())
+			{
+				if (world.MapId != GroupNtcMap || world.InstanceId != pending.Value.Instance)
+				{
+					pendingNtcKills.Remove(pending.Key);
+					continue;
+				}
+				foreach (var packet in session.PacketHistory.Skip(pending.Value.Cursor))
+				{
+					// A deleted object's id may be reused; another template is not this objective.
+					if (packet.PacketType == typeof(SM_NPC_INFO) && packet.Get<int>("objectId") == pending.Key &&
+						packet.Get<int>("npcId") != pending.Value.Kind)
+					{
+						pendingNtcKills.Remove(pending.Key);
+						break;
+					}
+					if (!BotAttackStatus.CarriesHp(packet) || packet.Get<int>("objectId") != pending.Key || packet.Get<byte>("hpOrMp") != 0) continue;
+					if (killedKinds.Add(pending.Value.Kind))
+						session.TraceDiagnostic("group-ntc-observed-named-death", new Dictionary<string, object?>
+						{ ["target"] = pending.Key, ["template"] = pending.Value.Kind, ["instance"] = pending.Value.Instance, ["hpPercent"] = 0 });
+					pendingNtcKills.Remove(pending.Key);
+					break;
+				}
+				if (pendingNtcKills.ContainsKey(pending.Key))
+					pendingNtcKills[pending.Key] = (pending.Value.Kind, pending.Value.Instance, session.PacketHistory.Count);
+			}
 			foreach (var packet in session.PacketHistory.Skip(chatCursor).Where(packet => packet.PacketType == typeof(SM_MESSAGE) && packet.Get<byte>("chatType") == 5))
 			{
 				int sender = packet.Get<int>("senderObjectId");
@@ -1769,6 +1798,8 @@ public sealed partial class NaturalIshalgenJourney
 					named = target; namedAt = runtime.NowMillis;
 				}
 				int? template = world.Objects.GetValueOrDefault(target)?.TemplateId;
+				if (ntc && template is int namedKind && (namedKind == GroupNtcGate || namedKind == GroupNtcGeneral))
+					pendingNtcKills.TryAdd(target, (namedKind, world.InstanceId, session.PacketHistory.Count));
 				session.TraceDiagnostic("group-ntc-pull", new Dictionary<string, object?>
 				{ ["target"] = target, ["template"] = template, ["position"] = session.CurrentPosition });
 				bool dead = false;
@@ -1825,6 +1856,7 @@ public sealed partial class NaturalIshalgenJourney
 				while (!done())
 				{
 					await ObserveAsync();
+					if (done()) break;
 					if (world.IsDead) { await combat.RestAsync(token); continue; }
 					if (world.MapId != GroupNtcMap)
 					{

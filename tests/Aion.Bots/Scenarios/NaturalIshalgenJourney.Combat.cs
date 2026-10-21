@@ -1087,11 +1087,18 @@ public sealed partial class NaturalIshalgenJourney
 				if (runtime.Data.ItemDataDh.GetItemTemplate(help.ItemId) is { } template)
 					delays[help.UseDelayId] = now + session.Api.Timing.TimeUntilItemUse(template);
 			IReadOnlySet<BotBlockingActivity> blocking = session.Api.Timing.BlockingActivities;
+			// The kit already supplies DP jelly to every class. Only the original eight gain this upkeep rule;
+			// the frozen three and starter profiles retain their behavior. Catalog roles never grant learning.
+			int dpSkillCost = ClassProfile.Class is PlayerClass.GLADIATOR or PlayerClass.TEMPLAR or PlayerClass.ASSASSIN or
+				PlayerClass.RANGER or PlayerClass.SORCERER or PlayerClass.SPIRIT_MASTER or PlayerClass.CLERIC or PlayerClass.CHANTER
+				? Catalog.Where(skill => skill.DpCost > 0 && skill.MinimumLevel <= world.Level && world.Skills.ContainsKey(skill.Id))
+					.Select(skill => skill.DpCost).DefaultIfEmpty(0).Min()
+				: 0;
 			return new(world.Level, world.CurrentHp, world.MaxHp, world.IsDead || world.CurrentHp <= 0,
 				blocking.Contains(BotBlockingActivity.Casting), blocking.Contains(BotBlockingActivity.Cutscene),
 				Flying: false, Disabled: false, world.VisibleEffects, runtime.NowMillis - effectsSeenAtMillis, counts, delays,
 				travelMeters, crossMap, world.CurrentDp,
-				Catalog.Any(skill => skill.Role == "salvation" && world.Skills.ContainsKey(skill.Id)));
+				Catalog.Any(skill => skill.Role == "salvation" && world.Skills.ContainsKey(skill.Id)), DpSkillCost: dpSkillCost);
 		}
 
 		/// <summary>NA-19: the buff-ourself check. Class buffs as before (pre-pull, after rest); then, for the Cleric and

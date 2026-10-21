@@ -27,10 +27,11 @@ public enum NaturalHelpTrigger { PrePull, AfterRest, AfterRevive, AfterRelog, Tr
 /// <param name="Casting">A cast is in progress: any item use would cancel it (Java CM_USE_ITEM).</param>
 /// <param name="Disabled">Stunned or otherwise unable to act (Java PlayerRestrictions.canUseItem).</param>
 /// <param name="PlannedTravelMeters">The planned length of the travel leg about to start, for the Running scroll.</param>
+/// <param name="DpSkillCost">A positive cost of a mapped, client-learned DP skill for a maintained class; zero keeps the legacy Salvation-only rule.</param>
 public sealed record NaturalHelpItemObservation(int Level, int Hp, int MaxHp, bool Dead, bool Casting, bool Cutscene,
 	bool Flying, bool Disabled, IReadOnlyList<BotVisibleEffect>? Effects, long EffectsAgeMillis,
 	IReadOnlyDictionary<int, long> ItemCounts, IReadOnlyDictionary<int, DateTimeOffset> UseDelays,
-	float PlannedTravelMeters = 0, bool CrossMapTravel = false, int Dp = 0, bool SalvationLearned = false);
+	float PlannedTravelMeters = 0, bool CrossMapTravel = false, int Dp = 0, bool SalvationLearned = false, int DpSkillCost = 0);
 
 public sealed record NaturalHelpItemChoice(NaturalHelpItem? Item, string Reason, NaturalDecisionCheck[] Checks);
 
@@ -141,16 +142,19 @@ public static class NaturalHelpItemPolicy
 			return new(running, $"Long journey: Running scroll {running.ItemId}.", [.. checks]);
 		}
 
-		// NA-20a: a Zeller Aether Jelly when Salvation is learned and observed DP cannot pay for it.
+		// NL-4: the approved jelly pays for mapped DP skills of the original eight as well as Salvation.
+		// Preserve the Cleric's existing reserve and the old callers' defaults.
 		NaturalHelpItem? jelly = Best(state, "dp-jelly");
-		if (!state.SalvationLearned) checks.Add(new("dp-jelly", "skip", "Salvation is not learned."));
-		else if (state.Dp >= SalvationDp) checks.Add(new("dp-jelly", "pass", $"Observed DP {state.Dp} pays for Salvation."));
+		int dpNeeded = state.SalvationLearned ? SalvationDp : Math.Max(0, state.DpSkillCost);
+		string purpose = state.SalvationLearned ? "Salvation" : "a learned DP skill";
+		if (dpNeeded == 0) checks.Add(new("dp-jelly", "skip", "Salvation is not learned."));
+		else if (state.Dp >= dpNeeded) checks.Add(new("dp-jelly", "pass", $"Observed DP {state.Dp} pays for {purpose}."));
 		else if (jelly == null) checks.Add(new("dp-jelly", "skip", "No DP jelly is owned."));
 		else if (!Ready(state, jelly, now)) checks.Add(new("dp-jelly", "skip", $"Use-delay group {jelly.UseDelayId} is running."));
 		else
 		{
-			checks.Add(new("dp-jelly", "use", $"Observed DP {state.Dp} is below Salvation's {SalvationDp}."));
-			return new(jelly, $"DP for Salvation: {jelly.ItemId}.", [.. checks]);
+			checks.Add(new("dp-jelly", "use", $"Observed DP {state.Dp} is below {purpose}'s {dpNeeded}."));
+			return new(jelly, $"DP for {purpose}: {jelly.ItemId}.", [.. checks]);
 		}
 		return new(null, "Nothing to apply.", [.. checks]);
 	}

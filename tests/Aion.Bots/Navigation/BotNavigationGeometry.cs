@@ -119,7 +119,7 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
 
     public BotPosition? StaticGroundAt(int mapId, BotPosition point)
     {
-        float z = maps(mapId).GetZ(point.X, point.Y, point.Z + HeightWindow, point.Z - HeightWindow, instanceId, true);
+        float z = GroundAt(maps(mapId), point);
         return float.IsFinite(z) ? point with { Z = z } : null;
     }
 
@@ -535,12 +535,28 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
     private float GroundUnder(GeoMap map, int mapId, BotPosition point)
     {
         if (rememberedGround == null)
-            return map.GetZ(point.X, point.Y, point.Z + HeightWindow, point.Z - HeightWindow, instanceId, true);
+            return GroundAt(map, point);
         var key = new GroundKey(mapId, BitConverter.SingleToInt32Bits(point.X), BitConverter.SingleToInt32Bits(point.Y),
             BitConverter.SingleToInt32Bits(point.Z));
         if (!rememberedGround.TryGetValue(key, out float z))
-            rememberedGround[key] = z = map.GetZ(point.X, point.Y, point.Z + HeightWindow, point.Z - HeightWindow, instanceId, true);
+            rememberedGround[key] = z = GroundAt(map, point);
         return z;
+    }
+
+    // Java GeoMap.getZ invalidates the nearest steep surface instead of selecting a lower one.
+    // A low sloping lip can therefore hide the supporting floor from the ordinary +2 m ray
+    // (NTC, 306.074/592.501). Only look under a lip below the existing body collision ray;
+    // a tall obstacle such as Q2006's Mau return barrier must keep the start invalid.
+    // The fallback still needs support at the feet, with edge slope/collision checks active.
+    private float GroundAt(GeoMap map, BotPosition point)
+    {
+        float z = map.GetZ(point.X, point.Y, point.Z + HeightWindow, point.Z - HeightWindow, instanceId, true);
+        if (float.IsFinite(z)) return z;
+        float obstruction = map.GetZ(point.X, point.Y, point.Z + HeightWindow, point.Z - HeightWindow, instanceId, false);
+        if (!float.IsFinite(obstruction) || obstruction < point.Z || obstruction > point.Z + GeoMap.COLLISION_CHECK_Z_OFFSET)
+            return float.NaN;
+        float support = map.GetZ(point.X, point.Y, point.Z + 0.05f, point.Z - HeightWindow, instanceId, true);
+        return float.IsFinite(support) && MathF.Abs(support - point.Z) <= 0.1f ? support : float.NaN;
     }
 
     private IReadOnlyList<BotPosition>? TraceEdgeNow(int mapId, BotPosition start, BotPosition destination)
@@ -559,7 +575,7 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
             float t = (float)step / steps;
             float x = start.X + dx * t, y = start.Y + dy * t;
             float approximateZ = start.Z + (destination.Z - start.Z) * t;
-            float z = map.GetZ(x, y, approximateZ + HeightWindow, approximateZ - HeightWindow, instanceId, true);
+            float z = GroundAt(map, new BotPosition(x, y, approximateZ, destination.Heading));
             if (!float.IsFinite(z)) return null;
             float horizontalStep = MathF.Sqrt(MathF.Pow(x - previous.X, 2) + MathF.Pow(y - previous.Y, 2));
             // Do not connect different floors or climb a cliff between otherwise valid endpoint samples.
