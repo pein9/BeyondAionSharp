@@ -123,6 +123,8 @@ public enum NaturalAutoAttack
 /// that costs DP). Null for a class that casts nothing on a spirit.</param>
 /// <param name="CloseForWeaponFiller">When solo, close to weapon range between ranged attack cooldowns even when the
 /// target's template has a melee attack range. Group fights retain their existing approach and formation.</param>
+/// <param name="FinishPairTargetHpPercent">When solo against exactly two attackers, continue finishing a target at or
+/// below this HP while own HP is at least 75% and a legal attack is ready. Null preserves the ordinary swarm retreat.</param>
 public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjacent, IReadOnlyList<string> AtRange,
 	IReadOnlyList<NaturalRotationUpkeep> Upkeep, IReadOnlyList<NaturalRecoveryStep> Recovery, int SwarmAttackers, int FleeHpPercent,
 	NaturalAutoAttack AutoAttack, string? ControlRole = null, int EmergencyPercent = 35, int EmergencyClearPercent = 45,
@@ -130,7 +132,8 @@ public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjac
 	NaturalFinisher? Finisher = null, string? ReserveRole = null, int? ManaPotionReserveMargin = null,
 	IReadOnlyList<string>? Openers = null, IReadOnlyDictionary<string, int>? OnlyWhileTargetAbove = null, float? RangedHoldWithin = null,
 	IReadOnlyList<string>? PullRoles = null, NaturalManaStep? ManaSkill = null, IReadOnlyDictionary<string, int>? OnlyWithRunes = null,
-	IReadOnlyList<NaturalSpiritStep>? SpiritLadder = null, string? DpReserveRole = null, bool CloseForWeaponFiller = false)
+	IReadOnlyList<NaturalSpiritStep>? SpiritLadder = null, string? DpReserveRole = null, bool CloseForWeaponFiller = false,
+	int? FinishPairTargetHpPercent = null)
 {
 	/// <summary>The table's two attack lists as lines of skill ids, every rank of a role in level order, for
 	/// <see cref="NaturalProfileValidator"/>.</summary>
@@ -254,7 +257,14 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			return Choice("blocked", null, "Client life statistics are incomplete.");
 		bool fighting = Fighting(state);
 		bool HpAtOrBelow(int percent) => state.Hp * 100 <= state.MaxHp * percent;
-		if (!state.Cornered && state.NearbyAggressors >= rules.SwarmAttackers)
+		bool finishPair = !state.Grouped && state.NearbyAggressors == 2 && state.Hp * 100 >= state.MaxHp * 75 &&
+			rules.FinishPairTargetHpPercent is int finishAt && state.TargetHpPercent is > 0 and int targetHp && targetHp <= finishAt &&
+			(rules.Adjacent.Concat(rules.AtRange).Distinct().Select(role => Best(role, state)).OfType<NaturalPriestSkill>()
+				.Any(skill => !Self(skill) && skill.RequiresChainCategory == null && Refusals(skill, state, now, parameters).Length == 0) ||
+			 rules.AutoAttack == NaturalAutoAttack.Filler && state.TargetDistance is float weaponDistance &&
+				InWeaponReach(state, weaponDistance, Adjacent(state)));
+		if (finishPair) checks.Add(new("finish-wounded-pair", "pass", "Healthy, solo, two attackers and a legal attack on the wounded target."));
+		if (!state.Cornered && state.NearbyAggressors >= rules.SwarmAttackers && !finishPair)
 			return Retreat($"{state.NearbyAggressors} client-observed attackers; disengage from the whole pack.");
 		if (fighting)
 		{

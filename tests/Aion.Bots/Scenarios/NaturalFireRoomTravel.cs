@@ -423,6 +423,13 @@ public sealed class NaturalFireRoomTravel
 	public async Task<bool> DescendAsync(Func<BotPosition, Task<bool>> walk, Func<Task<bool>> settle, CancellationToken token)
 	{
 		Route route = routes.Descent;
+		// A retained character can log back into this room wounded. Recover with
+		// ordinary consumables/rest before walking through its upper guards.
+		int beforeHp = session.Api.World.CurrentHp;
+		if (session.Api.World.MapId != route.MapId || session.Api.World.IsDead || !await settle()) return false;
+		session.TraceDiagnostic("fire-upper-prepared", new Dictionary<string, object?>
+		{ ["hpBefore"] = beforeHp, ["hpAfter"] = session.Api.World.CurrentHp, ["maxHp"] = session.Api.World.MaxHp,
+			["mp"] = session.Api.World.CurrentMp, ["position"] = session.CurrentPosition });
 		if (!await PrepareAtStartAsync(route, walk, settle)) return false;
 		CheckClear(route, geometry());
 		float speed = session.Api.World.MovementSpeed ?? 0;

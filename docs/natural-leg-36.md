@@ -870,6 +870,37 @@ Mine, where the operator gave none; each is his to change:
      from the original recording. No warning/trace baseline was changed and no bot unit test was added.
      NL-4/NL-5 remain open.
 
+   - **2026-10-21, recovery and pair-fight follow-up:** the upper/return routing was committed and pushed
+     as `4ac7ba6aa`. The next candidate settles with ordinary consumables, powder and rest before the upper approach,
+     as well as at the launch. T21's first `fire-upper-prepared` observation records the Assassin at 1,511 HP before
+     preparation and its full 3,920 afterward, before its first upper walk. This is native recovery, not a setup heal.
+     A working tactics choice for Sorcerer, Spirit Master and Ranger allows finishing a target at 25% HP or below
+     against exactly two attackers while own HP is at least 75% and a legal attack is ready. It applies outside a
+     group; the ordinary recovery ladder still runs, and lower health, three attackers or no ready attack retain
+     the usual retreat. Other classes keep their table. This is an implementation choice under the resumed goal,
+     not an answer from the operator on deferring classes for levels.
+     T21 finished as an uncaptured seven-class round in the same S1-derived world, with ten-minute starts and each
+     deadline set to its start plus 90 minutes. Gladiator has a verified Q24023 receipt at 38 with 335 completed
+     quests and no deaths; Templar has one at 38 with 336 quests and one death. Sorcerer killed the first lower
+     Guardian and Obscura, then stopped on a blocked approach to the second Obscura after retreating. Spirit Master
+     also killed a lower Guardian and Obscura before its time limit. Assassin descended seven times, killed both
+     kinds of spirit as well as Guardians and Obscuras across its attempts, and reached its time limit with 12
+     deaths. Ranger killed Guardians and Obscuras but stopped on safe clearing; Chanter stopped after a retreat,
+     despite its prior complete runs. Those outcomes do not establish class soloability limits.
+     The finish decision ran outside a corner twice for Sorcerer, four times for Spirit Master and five times for
+     Ranger; Sorcerer's two casts finished its Obscura at 11% then 5% while own HP remained above 98%. The original
+     human recording's lower-floor death packets confirm the five planned guards and Bolcan; no extra recorded
+     Guardian death was omitted from that clearing sequence. Evidence audits are in
+     `run/nl/resume-20261020/t21-final-audit.json`, `t21-finishing-audit.json` and `human-all-lower-deaths.json`.
+     The round has no world problems; its owner dropped the disposable schema. Final verification passed: 6,663
+     solution tests with 252 existing skips, the unchanged 4,097-site warning inventory and all guards/contracts,
+     profiles, navmeshes and both companion server tests; Fast's 115 tests with 98 existing opt-in skips and all
+     11 scenario rows; all five functional starter journeys with only the existing D7 first-object-ID difference;
+     and n9 with six individually verified home receipts and no deaths. Evidence is under
+     `run/nl/resume-20261020/recovery-pair-final/`, with n9 at `nl4-r38-recovery-pair-final-ntc`. No baseline was
+     changed or bot unit test added. No retained capture or NL-4/NL-5 completion is claimed. The operator asked
+     which classes remain unfinished, without choosing to defer them for levels.
+
 ## Loop prompt
 
 ```

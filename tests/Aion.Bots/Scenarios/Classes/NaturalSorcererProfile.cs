@@ -101,7 +101,7 @@ public static class NaturalSorcererProfile
 		Recovery: [new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75),
 			new(NaturalRecoveryKind.Skill, 35, "ironclad", EmergencyOnly: true, KeepsNoMana: true)],
 		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.LastResort, ControlRole: "root",
-		ManaSkill: new("gainmana", 50));
+		ManaSkill: new("gainmana", 50), FinishPairTargetHpPercent: 25);
 
 	// NR-Q5, NR-Q7 and NR-Q8: the spellbook, cloth, and the kit of a class that casts from mana and rests with the powder.
 	private static readonly NaturalGearRules Gear = NaturalClassGearTable.Sorcerer.Rules(NaturalClassLineContract.LoadDefault(),

@@ -97,7 +97,7 @@ public static class NaturalRangerProfile
 		AtRange: ["mau", "devotion", "bow-blessing", "dilation", "entangle", "stun", "rupture", "swift", "arrow", "spiral", "fleshcutter", "deadshot", "misery"],
 		Upkeep: [],
 		Recovery: [new(NaturalRecoveryKind.Skill, 70, "evasion"), new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
-		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler, ControlRole: "sleep");
+		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler, ControlRole: "sleep", FinishPairTargetHpPercent: 25);
 
 	private static readonly NaturalKeptToggle[] KeptToggles = [new("nature", "toggle-breath-of-nature")];
 

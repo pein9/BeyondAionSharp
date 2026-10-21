@@ -106,7 +106,7 @@ public static class NaturalSpiritMasterProfile
 		Upkeep: [new("skin"), new("resistance", DuringFight: true, UnderAttackOnly: true)],
 		Recovery: [new(NaturalRecoveryKind.ShieldScroll, 50), new(NaturalRecoveryKind.LifePotion, 75)],
 		SwarmAttackers: 2, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.LastResort, ControlRole: "root",
-		SpiritLadder: [new("armor", 100), new("wrath", 60), new("replenish", 40, OwnHpAbovePercent: 70)]);
+		SpiritLadder: [new("armor", 100), new("wrath", 60), new("replenish", 40, OwnHpAbovePercent: 70)], FinishPairTargetHpPercent: 25);
 
 	/// <summary>NR-110a: the spirits kept, best first: the Earth Spirit, which takes the hits, from level 16, and the Fire
 	/// Spirit, its first, before. A cast takes 4.5 s and 145 MP or more.</summary>
