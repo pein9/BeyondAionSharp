@@ -1,9 +1,9 @@
 # Natural leg to 36: what was left, Brusthonin, the first Abyss quests and the check-in at 36
 
 Status: resumed by the operator, 2026-10-20: NL-0 to NL-3 done; NL-4 in progress. The retained shared world is now
-`nl-vs-s2-w1`, replayed from the S1 world with the committed Fire Room route, recurring consumable supply and
-portal-abort fixes. Cleric and Gladiator have persistent Q24023 completions; the other six remain open in this world.
-The group pass is being tried, and the higher-level quests and NL-5 report remain open. Decisions 15 and 16 record
+`nl-gm-s2-w1`, after two Morheim group captures from `nl-vs-s2-w1`. All eight have now completed Q2355 and Q2369 in groups.
+Cleric and Gladiator have persistent Q24023 completions; the other six remain open in this world. Remaining group
+quests, higher-level quests and the NL-5 report remain open. Decisions 15 and 16 record
 the earlier pause; decision 17 resumes the loop.
 The plan was written on 2026-10-17. The operator, that day, after the level-31 profiles:
 
@@ -348,6 +348,25 @@ One step per iteration. A step is ticked when its round shows it, with a dated l
       them while keeping this loop paused. Solo and field-group flights now share ring routing and repeated crossings
       to replenish FP. A separate, uncaptured SIM diagnostic shows the routing and failed-ring landing; it does not
       complete any NL quest or the Abyss group pass. See the decision and evidence below.
+  - 2026-10-21, first retained Morheim group wave (`a0f45af9e`): `nl4-group-morheim-c1` from `nl-vs-s2`, captured
+    **`nl-gm-s1-w1`**. Templar, Cleric, Sorcerer, Chanter, Gladiator and Ranger completed Q2355 and Q2369 together,
+    returned to Slag Bulwark and relogged. All six receipts are verified, both quests are COMPLETE in the saved SQL,
+    and all six native traces have zero deaths. Each played about 2 h 15 min; levels remain 37–38. Snapshot and
+    outcome hashes verify, and each trace's runtime build matches the committed source. All eleven original characters are
+    preserved; the unplayed Spirit Master, Assassin, Bard, Rider and Gunner retain their experience, position,
+    quests, skills and inventory. Cleric and Gladiator retain Q24023. The run's owner dropped its disposable schema.
+    Evidence: `run/nl/NL4/nl4-group-morheim-c1/` and
+    `run/nl/resume-20261020/nl-gm-s1-w1-audit.json`. The second wave starts from this retained world, with Spirit
+    Master and Assassin plus four helpers who have already completed these quests. Its uncaptured trial,
+    `nl4-group-morheim-second-t1`, verified all six after relogging, with no deaths or world errors. Spirit Master
+    now has 334 completed quests in the trial and Assassin 332, both still level 37; each member played about
+    1 h 46 min. The four completed helpers accompanied both quests normally. The trial's owner dropped its schema;
+    captured round `nl4-group-morheim-second-c1` then retained the same results in **`nl-gm-s2-w1`**, from `nl-gm-s1`.
+    All six receipts verify, both quests are COMPLETE in saved SQL, and the runtime build and snapshot hashes verify.
+    The unplayed Sorcerer, Ranger and frozen three retain their experience, location, quests, skills and inventory;
+    all eleven originals, the Cleric/Gladiator Q24023 completions and the other six characters' Temple keys are
+    preserved. The capture owner dropped its schema. Evidence is under `run/nl/NL4/nl4-group-morheim-second-c1/`
+    and `run/nl/resume-20261020/nl-gm-s2-w1-audit.json`. Both quests are now saved for all eight. NL-4 and NL-5 remain open.
 - [ ] **NL-5 The report.** Per class its level, quests, deaths and time; what was not played and why.
 
 ## Decisions
@@ -932,8 +951,8 @@ Mine, where the operator gave none; each is his to change:
      rows; all five functional starter journeys with only the existing D7 first-object-ID difference; and n9 with
      six individually verified home receipts and no deaths. Evidence is under
      `run/nl/resume-20261020/morheim-group-final/`, with n9 at `nl4-r38-morheim-group-final-ntc`. The final owned
-     schema was dropped and the marker is clear. No baseline changed and no bot unit test was added. Retaining
-     the two group waves on committed runtime remains the next step.
+     schema was dropped and the marker was clear before capture. No baseline changed and no bot unit test was added.
+     Both captured group waves are recorded under NL-4 above.
      The frozen Bard, Rider and Gunner have the same experience, equipment, inventory and quests. The normal Java
      database update adds their zero PvP-exp field and normalizes 135 old skill-level entries to one; it adds no
      skills. The source snapshot remains immutable. Audits are in `run/nl/resume-20261020/c2-persisted-audit.json`
@@ -945,7 +964,7 @@ Mine, where the operator gave none; each is his to change:
      played Fire Temple. M10 specified playing it once for that phase; whether NL-4 should complete the remaining
      prerequisite repeats or record Q2378 as locked was asked of the operator and remains open. The nine group quests' quest data and handler rows
      match Java 4.8. Evidence is `group-java-data-audit.json` and `nl-vs-s2-w1-group-prerequisites.json` in the same
-     audit folder. The provisional NL-5 audit now covers 25 retained captures and 179 character-round traces, all
+     audit folder. Refreshed through `nl-gm-s2-w1`, the provisional NL-5 audit covers 27 retained captures and 191 character-round traces, all
      with observed world entry and HP. Deaths are counted from native self-death packets after an observed alive
      state; completion receipts count revival attempts separately. There are no unclassified death packets. The
      audit excludes uncaptured diagnostics and uses each bot's own end minus start time. Its hashes and events are
@@ -954,6 +973,50 @@ Mine, where the operator gave none; each is his to change:
      This also corrects two handoff-era counts: the retained original `nl4-vs-c1` trace has 14 Chanter death events,
      rather than the handoff's six, and 21 Gladiator deaths, rather than its twenty completed revivals. The report
      uses the native events and preserves the earlier prose as historical evidence.
+
+   - **Fire recovery diagnostic (2026-10-21, uncommitted candidate):** upper pulls now check the NPC's current
+     position before fighting an obstruction identified from its announced movement destination. Lower-floor
+     retreats must keep their destinations and every route point on the Fire fighting floor. A blocked recorded
+     guard pull returns to ordinary defense and a bounded retry instead of ending the whole quest.
+     Trial `nl4-vs-recovery-t1`, from `nl-gm-s2`, completed Q24023 with Sorcerer 37 (nine deaths), Chanter 38 (one)
+     and Templar 38 (zero), with verified hand-ins before and after relogging. This is the Sorcerer's first verified
+     solo clear. Sorcerer exercised a positive-duration patrol wait and a guard retry; Templar also exercised the
+     guard retry. Assassin and Spirit Master reached their 90-minute diagnostic caps with 14 and 12 native deaths.
+     Ranger stopped after one death because recovery exhausted its bounded sits. None of these trial outcomes is
+     retained yet. Evidence is `run/nl/resume-20261020/fire-recovery-t1-audit.json`; its owned schema was dropped.
+     Ranger still owned HP potions and had full MP, but NPC 62376 (212677) kept attacking during the supposedly
+     quiet sits. Rest's packet window restarted before every wait, leaving gaps between observations. The next
+     candidate keeps a continuous cursor, ignores dead/returned attackers, and logs incoming, accepted and ignored
+     attackers. Trial `nl4-vs-recovery-t2` again verified Sorcerer, Chanter and Templar's hand-ins before and after
+     relogging (11, zero and zero native deaths). Assassin and Spirit Master reached their diagnostic caps with
+     nine and fourteen deaths. Spirit Master's continuous rest window included a hostile cast received before the
+     wait and a later hit, exercising the continuous cursor; Ranger's former recovery failure did not recur, but it had no rest-attack
+     diagnostic, so that specific failure was not reproduced in isolation. Ranger instead stopped after four
+     deaths when an alive retreat returned it behind the cleared guards. The next approach skipped their connecting
+     walks and attempted to cross the raised deck. The offline geometry probe reproduces thirteen rejected points
+     on that direct path and verifies the recorded connecting corridor from the exact failure position, without
+     relaxing the ground checks. The T3 candidate keeps earlier approach points available when rejoining a later
+     fight, while preserving the recorded kill evidence. T3 is an uncaptured six-class trial from `nl-gm-s2`.
+     Evidence is `fire-recovery-t2-audit.json` and `ranger-t2-ground-probe.log` in the same audit folder; T2's owner
+     dropped its schema. No NPC statistics or server behavior was changed,
+     and no bot unit test was added. The retained world remains `nl-gm-s2-w1`; NL-4 and NL-5 remain open.
+     T3 has now finished: Sorcerer, Chanter and Templar verified Q24023 before and after relogging, with eleven,
+     zero and zero native deaths. Assassin and Spirit Master reached their 90-minute caps with nine and fifteen
+     deaths. Ranger died during its lower-floor retreat before rejoining the corridor, then stopped during a later
+     descent preparation with three deaths. The offline rejoin proof stands; this trial does not demonstrate a
+     successful native Ranger retry at that position. Evidence is `fire-recovery-t3-audit.json`, tied to the
+     candidate source and DLL hashes in `fire-recovery-final/candidate-t3-build-identity.json`. T3's owner dropped
+     its schema and the run marker is clear. Only Assassin, Spirit Master and Ranger still lack any verified solo
+     Q24023 clear; this is not a finding that those classes cannot solo it. The operator was asked whether the
+     first two should play the remaining group quests before another solo attempt; that choice remains open.
+     Final verification passed for these runtime sources: 6,663 solution tests with 252 existing skips; the unchanged
+     4,097-site warning inventory and all guards/contracts; 27 generated profiles, baked navmeshes and both companion
+     server tests; Fast's 115 tests with 98 existing skips and all eleven scenario rows; all five functional starter
+     journeys, each with only the existing D7 first-object-ID difference; and n9 with six individually verified
+     home receipts, native gate/General death evidence for all five fighters and no player deaths. The final n9
+     schema was dropped and the marker was clear. Logs are under `fire-recovery-final/checks/` in the audit folder;
+     the n9 round is `nl4-r38-fire-recovery-final-ntc`. Runtime sources still match T3's recorded hashes. No baseline
+     changed and no bot unit test was added. The next capture must rebuild the committed runtime first.
 
 ## Loop prompt
 

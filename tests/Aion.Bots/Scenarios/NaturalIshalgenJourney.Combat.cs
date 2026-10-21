@@ -248,6 +248,8 @@ public sealed partial class NaturalIshalgenJourney
 		public Func<CancellationToken, Task>? AfterKillAsync { get; set; }
 		// Recorded guards can join an ordinary loot/rest defense as well as a planned pull.
 		public Func<int, Func<BotPosition, BotPosition, float, IReadOnlyList<BotPosition>>?>? RecordedFightRecovery { get; set; }
+		/// <summary>A demonstrated fighting area may restrict escape ground, relative to the retreat's origin.</summary>
+		public Func<BotPosition, BotPosition, bool>? IsRetreatGround { get; set; }
 
 		public async Task<bool> TryKillAsync(int target, CancellationToken token,
 			BotPosition? retreatAnchor = null, int? attackHistoryStart = null, bool preferPull = false,
@@ -817,6 +819,7 @@ public sealed partial class NaturalIshalgenJourney
 			IReadOnlySet<int> observedAttackers, CancellationToken token)
 		{
 			BotPosition origin = session.CurrentPosition;
+			bool AllowedGround(BotPosition at) => IsRetreatGround?.Invoke(origin, at) ?? true;
 			int map = session.Api.World.MapId ?? throw new InvalidDataException("Retreat map unobserved.");
 			var activeAttackers = observedAttackers.ToHashSet();
 			activeAttackers.RemoveWhere(id => !session.Api.World.Objects.ContainsKey(id));
@@ -841,7 +844,7 @@ public sealed partial class NaturalIshalgenJourney
 					.Where(item => item.Action == "segment-progress" && item.Position != null)
 					.Select(item => item.Position!.Value).Append(refuge)
 					.Concat(geometry.GroundAround(map, session.CurrentPosition, [45f, 75f, 110f, 150f]))
-					.Where(p => !tried.Any(t => Distance(t, p) < 10) && geometry.OnSameIsland(map, session.CurrentPosition, p));
+					.Where(p => AllowedGround(p) && !tried.Any(t => Distance(t, p) < 10) && geometry.OnSameIsland(map, session.CurrentPosition, p));
 				BotPosition[] escapes = NaturalCombatRetreatPolicy.SelectEscape(session.CurrentPosition,
 					attackerPositions, homes, candidates, otherHazards);
 				IReadOnlyList<BotPosition> route = [];
@@ -859,6 +862,7 @@ public sealed partial class NaturalIshalgenJourney
 					// A sideways turn around terrain is fine; reject only a departure that actually
 					// takes the bot deeper into the pack before heading for the outward destination.
 					string? why = candidate.Count == 0 ? $"no route ({BotNavMeshRouter.LastOutcome})"
+						: candidate.Any(point => !AllowedGround(point)) ? "route leaves the fighting floor"
 						: Distance(session.CurrentPosition, candidate[^1]) < 10 ? "too short"
 						: !NaturalCombatRetreatPolicy.ClearsPackOnDeparture(session.CurrentPosition, candidate, attackerPositions)
 							? "route enters the pack" : null;
@@ -1316,6 +1320,9 @@ public sealed partial class NaturalIshalgenJourney
 			bool locatedForManaRest = false;
 			bool recoveringMana = false;
 			int quietIntervals = 0;
+			// Keep hits received between sits, stand-up synchronization and potion uses.
+			// Starting a fresh window immediately before each wait silently discarded them.
+			int observedRestPackets = session.PacketHistory.Count;
 			for (int interval = 0; interval < MaximumCombatActions; interval++)
 			{
 				BotWorldModel world = session.Api.World;
@@ -1428,7 +1435,7 @@ public sealed partial class NaturalIshalgenJourney
 						["lifePotionReadyInMillis"] = lifePotionTemplate == null ? null
 							: (long)session.Api.Timing.TimeUntilItemUse(lifePotionTemplate).TotalMilliseconds,
 					});
-				int attackHistoryStart = 0;
+				int attackHistoryStart = observedRestPackets;
 				NaturalRestOutcome outcome = await NaturalRestCadence.RunAsync(
 					async (resting, waitToken) =>
 					{
@@ -1439,12 +1446,29 @@ public sealed partial class NaturalIshalgenJourney
 					},
 					async (duration, waitToken) =>
 					{
-						attackHistoryStart = session.PacketHistory.Count;
+						int beforeWaitPackets = session.PacketHistory.Count, beforeHp = world.CurrentHp;
 						await session.AdvanceAsync(duration, waitToken);
 						await session.SynchronizeAsync(waitToken);
-						int[] attackers = session.PacketHistory.Skip(attackHistoryStart)
+						attackHistoryStart = observedRestPackets;
+						DecodedBotServerPacket[] received = session.PacketHistory.Skip(observedRestPackets).ToArray();
+						observedRestPackets = session.PacketHistory.Count;
+						int[] incoming = received
 							.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId, session.Api.World.Summon?.ObjectId))
-							.OfType<int>().Where(RestFoe).ToArray();
+							.OfType<int>().Distinct().ToArray();
+						var engaged = new HashSet<int>();
+						NaturalCombatRetreatPolicy.ObserveEngagement(engaged, received, session.CharacterId,
+							hostileSkill: runtime.IsHostileSkill, spirit: session.Api.World.Summon?.ObjectId);
+						int[] attackers = engaged.Where(RestFoe).ToArray();
+						if (incoming.Length > 0 || world.CurrentHp < beforeHp)
+							session.TraceDiagnostic("rest-tick-attacks", new Dictionary<string, object?>
+							{
+								["packetStart"] = attackHistoryStart, ["packetEnd"] = observedRestPackets,
+								["receivedBeforeWait"] = beforeWaitPackets - attackHistoryStart,
+								["hpBefore"] = beforeHp, ["hp"] = world.CurrentHp, ["incoming"] = incoming, ["attackers"] = attackers,
+								["ignored"] = incoming.Except(attackers).Select(id => new { objectId = id,
+									inGroup = world.GroupMembers.ContainsKey(id), kind = world.Objects.GetValueOrDefault(id)?.Kind.ToString(),
+									template = world.Objects.GetValueOrDefault(id)?.TemplateId, corpse = world.Objects.GetValueOrDefault(id)?.IsCorpse }).ToArray(),
+							});
 						return new NaturalRestTick(world.IsDead || world.CurrentHp <= 0, attackers);
 					},
 					async (attackers, defendToken) =>
@@ -1469,7 +1493,8 @@ public sealed partial class NaturalIshalgenJourney
 		/// resting Chanter, and on a resting Assassin, made them turn on the Cleric; the Assassin then struck at nothing with a
 		/// template).</summary>
 		private bool RestFoe(int attacker) => !session.Api.World.GroupMembers.ContainsKey(attacker) &&
-			session.Api.World.Objects.TryGetValue(attacker, out BotKnownObject? known) && known.Kind == BotKnownObjectKind.Npc && known.TemplateId != null;
+			session.Api.World.Objects.TryGetValue(attacker, out BotKnownObject? known) && known.Kind == BotKnownObjectKind.Npc &&
+			!known.IsCorpse && known.TemplateId != null;
 
 		private async Task DefendDuringRestAsync(IReadOnlyList<int> attackers, int attackHistoryStart, CancellationToken defendToken)
 		{

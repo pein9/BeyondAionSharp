@@ -89,8 +89,12 @@ public sealed class NaturalFireRoomTravel
 		(a, b) => NaturalFlightPolicy.Distance(a.At, b.At)).Sum();
 	public BotPosition BossPull => routes.Boss.Pull;
 	public Fight BossFight => routes.Boss;
-	public bool OnLowerFloor => session.Api.World.MapId == routes.Descent.MapId &&
-		session.CurrentPosition.Z is > 540 and < 565 && NaturalFlightPolicy.Distance(session.CurrentPosition, routes.Boss.Spawn) < 160;
+	public bool OnLowerFloor => OnLowerFloorAt(session.CurrentPosition);
+	private bool OnLowerFloorAt(BotPosition at) => session.Api.World.MapId == routes.Descent.MapId &&
+		at.Z is > 540 and < 565 && NaturalFlightPolicy.Distance(at, routes.Boss.Spawn) < 160;
+	// An escape from these fights must stay on their floor. The Chanter and Ranger ran onto
+	// ground twelve metres below it, where the recorded guard approach could not bring them back.
+	public bool IsRetreatGround(BotPosition origin, BotPosition at) => !OnLowerFloorAt(origin) || OnLowerFloorAt(at);
 	public Func<BotPosition, BotPosition, float, IReadOnlyList<BotPosition>>? RecoveryForObservedTarget(int target)
 	{
 		if (!OnLowerFloor || clearingInstance != session.Api.World.InstanceId) return null;
@@ -136,7 +140,10 @@ public sealed class NaturalFireRoomTravel
 	}
 
 	private Task<bool> WalkApproachAsync(Fight fight, Func<BotPosition, Task<bool>> walk, Func<bool> survived, CancellationToken token) =>
-		WalkRecordedGroundAsync(fight.Approach, fight.NpcId, walk, survived, token);
+		// An alive retreat can return behind guards already cleared in this copy. Keep their
+		// connecting walks available when joining this fight; its own approach may start beyond the deck.
+		WalkRecordedGroundAsync([.. routes.Clearing.TakeWhile(prior => prior.SourceSequence != fight.SourceSequence)
+			.SelectMany(prior => prior.Approach), .. fight.Approach], fight.NpcId, walk, survived, token);
 
 	public async Task<bool> ApproachDescentAsync(Func<BotPosition, Task<bool>> walk, Func<bool> survived, CancellationToken token)
 	{

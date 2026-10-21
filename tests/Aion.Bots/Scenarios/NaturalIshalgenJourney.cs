@@ -3757,6 +3757,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				var fireTravel = leg.InstanceRooms?.Rooms.Any(room => room.PortalNpcId == 730045) == true
 					? new NaturalFireRoomTravel(session, runtime, () => geometry) : null;
 				combat.RecordedFightRecovery = fireTravel == null ? null : fireTravel.RecoveryForObservedTarget;
+				combat.IsRetreatGround = fireTravel == null ? null : fireTravel.IsRetreatGround;
 				approachRecordedBulagan = fireTravel == null ? null : async () =>
 				{
 					if (session.Api.World.MapId != 220020000 ||
@@ -3797,10 +3798,21 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						!session.Api.World.IsDead && session.Api.World.CurrentHp > 0 && combat.ReviveCount == revives;
 					return await fireTravel.ClearBeforeBossAsync(WalkFireGroundAsync, SettleFireTravelAsync, async (target, fight) =>
 					{
-						bool killed = await combat.TryKillAsync(target, token, session.CurrentPosition,
-							rangeRecovery: (start, at, reach) => fireTravel.FindFightRecoveryRoute(fight, start, at, reach));
-						if (killed) navigator.UnavailableObjects.Add(target);
-						return killed;
+						try
+						{
+							bool killed = await combat.TryKillAsync(target, token, session.CurrentPosition,
+								rangeRecovery: (start, at, reach) => fireTravel.FindFightRecoveryRoute(fight, start, at, reach));
+							if (killed) navigator.UnavailableObjects.Add(target);
+							return killed;
+						}
+						catch (NaturalCombatApproachBlockedException blocked)
+						{
+							// A partial escape can leave the original target out of reach while a helper
+							// still attacks nearby. End this pull so ordinary defense can answer that helper.
+							session.TraceDiagnostic("fire-recorded-guard-approach-blocked", new Dictionary<string, object?>
+							{ ["target"] = target, ["position"] = session.CurrentPosition, ["reason"] = blocked.Message });
+							return false;
+						}
 					}, Survived, token);
 				};
 				async Task<bool> SettleFireTravelAsync()
@@ -3864,6 +3876,27 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								.ThenBy(entry => Distance(before, entry.Monster.Npc.Position)).Select(entry => entry.Monster).FirstOrDefault();
 							if (blocker != null)
 							{
+								// SM_MOVE carries the current point and an announced destination separately.
+								// The destination identifies an obstruction; combat needs the current point in reach.
+								bool PullReady() => session.Api.World.Objects.TryGetValue(blocker.Npc.ObjectId, out var seen) &&
+									!seen.IsCorpse && Distance(session.CurrentPosition, seen.Position) <= combat.ClassProfile.Ranges.SpellRange &&
+									geometry.HasLineOfSight(map, session.CurrentPosition, seen.Position);
+								long waited = runtime.NowMillis;
+								while (!PullReady() && runtime.NowMillis - waited < 30_000 &&
+									session.Api.World.Objects.TryGetValue(blocker.Npc.ObjectId, out var walking) && !walking.IsCorpse &&
+									!navigator.UnavailableObjects.Contains(blocker.Npc.ObjectId))
+								{
+									await session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+									await session.SynchronizeAsync(token);
+									if (!Survived() || !await DefendAgainstEngagedAsync("fire-upper-patrol-wait") || !Survived()) return false;
+									if (Distance(before, session.CurrentPosition) > 2) break; // Replan after defense moved us.
+								}
+								if (Distance(before, session.CurrentPosition) > 2 || navigator.UnavailableObjects.Contains(blocker.Npc.ObjectId) ||
+									!session.Api.World.Objects.TryGetValue(blocker.Npc.ObjectId, out var current) || current.IsCorpse) continue;
+								session.TraceDiagnostic("fire-upper-route-pull-wait", new Dictionary<string, object?>
+								{ ["target"] = blocker.Npc.ObjectId, ["position"] = session.CurrentPosition, ["currentTarget"] = current.Position,
+									["announcedTarget"] = blocker.Npc.Position, ["elapsedMillis"] = runtime.NowMillis - waited, ["ready"] = PullReady() });
+								if (!PullReady()) return false;
 								session.TraceDiagnostic("fire-upper-route-pull", new Dictionary<string, object?>
 								{ ["target"] = blocker.Npc.ObjectId, ["template"] = blocker.Npc.TemplateId, ["position"] = before, ["goal"] = at });
 								bool killed;
@@ -7538,6 +7571,20 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						{
 							if (session.Api.World.IsDead || session.Api.World.CurrentHp <= 0 || combat.ReviveCount > revivesBeforeApproach)
 								return await RetryAfterReviveAsync(beforeApproach, "recorded-fire-clearing");
+							if (session.Api.World.MapId == 320050000 && session.CurrentPosition.Z is > 540 and < 565)
+							{
+								await DefendAgainstEngagedAsync("fire-recorded-guard-retry");
+								if (session.Api.World.IsDead || session.Api.World.CurrentHp <= 0 || combat.ReviveCount > revivesBeforeApproach)
+									return await RetryAfterReviveAsync(beforeApproach, "recorded-fire-defense");
+								progress.Observe(Distance(beforeApproach, session.CurrentPosition), navigator.UnavailableObjects.Count > killsBeforeApproach);
+								session.TraceDiagnostic("fire-recorded-guard-retry", new Dictionary<string, object?>
+								{ ["attempt"] = guardClears, ["stalledAttempts"] = progress.StalledAttempts, ["position"] = session.CurrentPosition });
+								if (session.Api.World.MapId == 320050000 && session.CurrentPosition.Z is > 540 and < 565 && progress.CanRetry(guardClears + 1))
+								{
+									await session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+									continue;
+								}
+							}
 							throw new InvalidOperationException("The recorded Fire guards were not cleared safely before approaching Bolcan.");
 						}
 						if (templateId == 212876 && prepareRecordedFireFight != null && session.Api.World.MapId == 320050000 &&
