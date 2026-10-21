@@ -809,6 +809,66 @@ Mine, where the operator gave none; each is his to change:
      Earlier green results and the NTC regression remain under `fire-fights-final/`. No warning or trace baseline
      was raised, no bot unit test was added, and the final owned SIM schema was dropped with the run marker clear.
      NL-4/NL-5 are open.
+   - **2026-10-21, continuing from the existing recording:** T15 (`nl4-vs-resume-t15`) gives the Chanter an ordinary
+     Fire clear: all five recorded guards and Bolcan killed, no deaths or retreats in those fights, and the exit used.
+     Its Bulagan hand-in remained unfinished when the diagnostic stopped. The Gladiator again completed Q24023,
+     verified at zero deaths at receipt world time 2,668,282 game milliseconds. These are uncaptured diagnostics; the retained world is
+     still S1, and the other five classes have no soloability classification. The operator asked which classes remained
+     unfinished; that clarification is not a decision to declare them incapable at 37–38 or defer them for levels.
+     The Chanter's earlier recovery detour exposed an identity gap: an Obscura first announced between patrol legs can
+     miss the spawn matcher, while later ordinary WALK packets prove its native route. Matching now accepts that
+     observed route evidence, preserving the one-metre tolerance and excluding RUN/chase movement as identity evidence.
+     An experimental quiet-patrol movement exception never fired in T15 and was removed; ordinary defense remains.
+     The recording also covers the full upper Fire approach before the descent. The compiler now preserves its western
+     ground corridor, four explicit jumps and two short falls as separate segments (99 retained movement points).
+     A read-only geometry audit checked every ground point and edge, airborne clearance, and supported takeoff/landing:
+     zero unsupported points and zero blocked segments (`run/fire-upper-probe/probe-segmented.log`).
+     T16 showed that blindly walking a ranged class into the recorded player's first pair is unsafe, and that combat
+     can leave a stale waypoint after retreating. T17 showed that checking only the ground approach misses the pair
+     across the first jump. The executor now also checks that next airborne segment for client-observed obstructions,
+     pulls from ordinary spell range before entering their aggro circles, and makes at most three same-copy rejoins
+     after a failed approach. All travel remains collision checked and speed paced, with actual combat, loot and rest.
+     T18 reached the descent with ordinary Sorcerer, Chanter and Gladiator characters. The Chanter and Gladiator
+     cleared the lower guards and Bolcan without a death; the Sorcerer killed the Guardian, then its first Obscura
+     fight drew another Guardian after a refused Freezing Wind cast caused a twelve-metre pursuit. The caster policy
+     had treated a recent incoming hit as proof that its short spell still reached a moving target. Java's
+     `FirstTargetRangeProperty` checks each cast; casters now honor observed skill reach and use an available longer
+     spell instead. The melee fighters' contact inference is unchanged.
+     The recording continues after Fire's exit: FLY at source 31623, a climb from the exit to Bulagan's platform,
+     LAND at 31728, and his dialog at 31747. A compiled return flight now handles that three-key hand-in before a
+     generic walk can detour below the platform. Its 23 points cover 71.1 metres, with zero blocked segments, zero
+     forbidden-zone samples and a supported landing (`run/fire-upper-probe/probe-return.log`). It uses the same
+     ordinary-zone and finite-FP executor as the entrance; the recording's GM flight allowance is not inherited.
+     T15–T18 were stopped for these diagnoses; each owner dropped its disposable schema. T19 played to its end,
+     with verified Q24023 receipts for Chanter (38, 333 quests, one death, receipt world time 2,586,282 game milliseconds),
+     Gladiator (38, 335 quests, zero deaths, 2,913,712 ms) and Templar (38, 336 quests, zero deaths, 5,347,282 ms).
+     Chanter's ordinary return flight landed at 41:20.674 world game time with 49 FP, followed by Bulagan's key check
+     and Gangleri's reward. Templar and Ranger both cleared Water and Wind; their earlier room obstructions are not
+     evidence of an unsolved player-route mechanic in this round. T19 captured no world, and its owner dropped its schema.
+     The Sorcerer's corrected rotation avoided the erroneous short-spell chase, but another Guardian still joined:
+     its hard two-attacker retreat rule abandoned an Obscura at 20% while the Sorcerer had full HP. The remaining
+     Sorcerer, Spirit Master and Ranger outcomes stopped on Fire clearing; their tactics remain open, not classified
+     as class soloability limits. The Assassin exposed a mistake in the new anticipatory pulls: its table has no
+     ranged attack, so the first ranged pull failed its approach three times without moving. That step now applies
+     only to profiles whose pull style is not WalkIn; the Assassin follows the demonstrated walk/jumps and normal defense.
+     The pre-final required checks passed (6,663 tests, 252 existing skips, unchanged warning baseline, contracts,
+     profiles, navmeshes and both companion tests). T20 puts the Assassin first to validate that correction, then
+     plays the other six with ten-minute starts in the same world. T20 finished normally, with another Chanter and
+     Gladiator completion. The Assassin no longer attempted any ranged pull: it completed the upper approach and
+     descent four times, killed the first Guardian and both Obscuras, then died during later Fire combat. Its initial
+     login had 1,471/3,920 HP, despite correct level-36 Shadedrenched armor and two daggers; startup supplied 30 life
+     potions and later refills are recorded. Initial recovery needs attention before any soloability verdict.
+     T20's other unfinished bots hit its common world-minute-90 deadline or stopped on Fire clearing; that deadline
+     gave the later starters less play time. The owner dropped the disposable schema. Receipt `ElapsedMillis` is
+     world time, not individual play time; NL-5 must use each bot's `EndedAtMillis - StartedAtMillis`.
+     Final verification passed on the WalkIn correction: 6,663 solution tests with 252 existing skips; the unchanged
+     warning baseline and all guards/contracts; profiles, navmeshes and both companion tests; Fast's 115 tests with
+     98 existing opt-in skips and all 11 scenario rows; all five functional starter journeys under the existing D7
+     first-object-ID allowance; and n9 with six verified home receipts. Evidence is under
+     `run/nl/resume-20261020/upper-fire-final/`, with n9 at `nl4-r38-upper-fire-final-ntc`.
+     The final owned schema was dropped, the run marker is clear, and the compiler check reproduces the artifact
+     from the original recording. No warning/trace baseline was changed and no bot unit test was added.
+     NL-4/NL-5 remain open.
 
 ## Loop prompt
 

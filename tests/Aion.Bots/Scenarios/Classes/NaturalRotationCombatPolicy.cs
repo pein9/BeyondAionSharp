@@ -529,9 +529,11 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		if (!self)
 		{
 			if (target == null || state.TargetDistance is not float distance) reasons.Add("No client-observed target position.");
-			// A melee skill's reach is measured by the server from bound radius to bound radius; a monster that is on the
-			// bot is in reach whatever the client's lagging distance says.
+			// A melee fighter can use recent contact when the client's position lags behind a hit.
+			// A caster also has longer-ranged attacks: do not infer that its short spell still reaches
+			// a moving enemy from an earlier hit (Java FirstTargetRangeProperty checks each cast).
 			else if (!(distance <= NaturalSkillCatalog.Reach(skill, state) ||
+				rules.AutoAttack != NaturalAutoAttack.LastResort &&
 				NaturalSkillCatalog.Reach(skill, state) <= movement.MeleeReach && Adjacent(state)))
 				reasons.Add("Target is outside the skill's reach.");
 		}

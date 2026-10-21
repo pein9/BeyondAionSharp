@@ -30,7 +30,8 @@ public sealed class NaturalFireRoomTravel
 		public BotPosition Pull => new(PullPosition[0], PullPosition[1], PullPosition[2], 0);
 	}
 	private sealed record ExitRoute(int PortalNpcId, int SourceUseSequence, GroundPoint[] Points);
-	private sealed record Routes(int Schema, Route Entrance, Route Descent, Fight[] Clearing, Fight Boss, ExitRoute ExitRoute);
+	private sealed record UpperLeg(string Mode, GroundPoint[] Points);
+	private sealed record Routes(int Schema, Route Entrance, Route ReturnFlight, UpperLeg[] UpperApproach, Route Descent, Fight[] Clearing, Fight Boss, ExitRoute ExitRoute);
 	private readonly INaturalJourneySession session;
 	private readonly NaturalJourneyRuntime runtime;
 	private readonly Func<BotNavigationGeometry> geometry;
@@ -48,8 +49,12 @@ public sealed class NaturalFireRoomTravel
 		routes = JsonSerializer.Deserialize<Routes>(File.ReadAllText(Path.Combine(runtime.RepoRoot,
 			"parity-artifacts/e2e/natural-fire-room-route.json")), new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
 			?? throw new InvalidDataException("Missing recorded Fire Room routes.");
-		if (routes.Schema != 4 || routes.Entrance.MapId != 220020000 || routes.Descent.MapId != 320050000 ||
-			routes.Entrance.Points.Length < 2 || routes.Descent.Points.Length < 2 ||
+		if (routes.Schema != 6 || routes.Entrance.MapId != 220020000 || routes.ReturnFlight.MapId != 220020000 || routes.Descent.MapId != 320050000 ||
+			routes.Entrance.Points.Length < 2 || routes.ReturnFlight.Points.Length < 2 || routes.Descent.Points.Length < 2 ||
+			routes.UpperApproach.Length < 2 || routes.UpperApproach.Any(leg => leg.Mode is not ("ground" or "jump" or "fall") ||
+				leg.Points.Length < 2 || leg.Points.Any(point => point.Sequence <= 0 ||
+					point.Sequence > routes.Descent.Points[0].Sequence || !float.IsFinite(point.X) || !float.IsFinite(point.Y) || point.Z is not (> 605 and < 625))) ||
+			NaturalFlightPolicy.Distance(routes.UpperApproach[^1].Points[^1].At, routes.Descent.Points[0].At) > 0.1f ||
 			routes.ExitRoute.PortalNpcId != 730046 || routes.ExitRoute.Points.Length < 2 ||
 			routes.ExitRoute.Points.Any(point => point.Sequence <= routes.Boss.DeathSequence || point.Sequence >= routes.ExitRoute.SourceUseSequence ||
 				!float.IsFinite(point.X) || !float.IsFinite(point.Y) || point.Z is not (> 540 and < 565)) ||
@@ -77,6 +82,9 @@ public sealed class NaturalFireRoomTravel
 	public BotPosition EntranceLanding => routes.Entrance.Points[^1].At;
 	public BotPosition DescentStart => routes.Descent.Points[0].At;
 	public BotPosition DescentLanding => routes.Descent.Points[^1].At;
+	public IReadOnlyList<BotPosition> UpperAirAfter(BotPosition at) => routes.UpperApproach
+		.FirstOrDefault(leg => leg.Mode != "ground" && NaturalFlightPolicy.Distance(leg.Points[0].At, at) < 0.1f)
+		?.Points.Select(point => point.At).ToArray() ?? [];
 	public float DescentMeters => routes.Descent.Points.Zip(routes.Descent.Points.Skip(1),
 		(a, b) => NaturalFlightPolicy.Distance(a.At, b.At)).Sum();
 	public BotPosition BossPull => routes.Boss.Pull;
@@ -86,10 +94,30 @@ public sealed class NaturalFireRoomTravel
 	public Func<BotPosition, BotPosition, float, IReadOnlyList<BotPosition>>? RecoveryForObservedTarget(int target)
 	{
 		if (!OnLowerFloor || clearingInstance != session.Api.World.InstanceId) return null;
-		Fight? fight = routes.Clearing.FirstOrDefault(candidate => clearingTargets.GetValueOrDefault(candidate.SourceSequence) == target);
-		if (fight == null && session.Api.World.Objects.TryGetValue(target, out BotKnownObject? npc) && npc.TemplateId == routes.Boss.NpcId)
+		if (!session.Api.World.Objects.TryGetValue(target, out BotKnownObject? npc)) return null;
+		Fight? fight = routes.Clearing.FirstOrDefault(candidate => Matches(candidate, npc));
+		if (fight != null) clearingTargets[fight.SourceSequence] = target;
+		if (fight == null && npc.TemplateId == routes.Boss.NpcId)
 			fight = routes.Boss;
 		return fight == null ? null : (start, at, reach) => FindFightRecoveryRoute(fight, start, at, reach);
+	}
+
+	private bool Matches(Fight fight, BotKnownObject npc)
+	{
+		if (npc.Kind != BotKnownObjectKind.Npc || npc.TemplateId != fight.NpcId) return false;
+		if (clearingTargets.GetValueOrDefault(fight.SourceSequence) == npc.ObjectId) return true;
+		bool AtSource(BotPosition at) => clearingPatrols.TryGetValue(fight.SourceSequence, out BotPosition[]? path)
+			? path.Zip(path.Skip(1)).Any(pair => DistanceToSegment(at, pair.First, pair.Second) < 1)
+			: NaturalFlightPolicy.Distance(at, fight.Spawn) < 1;
+		// An NPC may be announced between route legs, after an earlier chase. Its observed WALK
+		// legs identify the native patrol too; RUN legs do not establish a patrol identity.
+		if (fight.PatrolRouteId != null && (npc.PatrolPath?.Any(AtSource) == true ||
+			session.PacketHistory.Skip(clearingPacketStart).Any(packet => packet.PacketType == typeof(SM_MOVE) &&
+				packet.Get<int>("objectId") == npc.ObjectId && packet.Get<byte>("movementMask") is 0xEA or 0xE8 or 0xEE or 0xEC &&
+				AtSource(new BotPosition(packet.Get<float>("x"), packet.Get<float>("y"), packet.Get<float>("z"), 0))))) return true;
+		return session.PacketHistory.Any(packet => packet.PacketType == typeof(SM_NPC_INFO) &&
+			packet.Get<int>("objectId") == npc.ObjectId && packet.Get<int>("npcId") == fight.NpcId &&
+			AtSource(new BotPosition(packet.Get<float>("x"), packet.Get<float>("y"), packet.Get<float>("z"), 0)));
 	}
 
 	private void ResetClearing()
@@ -109,6 +137,44 @@ public sealed class NaturalFireRoomTravel
 
 	private Task<bool> WalkApproachAsync(Fight fight, Func<BotPosition, Task<bool>> walk, Func<bool> survived, CancellationToken token) =>
 		WalkRecordedGroundAsync(fight.Approach, fight.NpcId, walk, survived, token);
+
+	public async Task<bool> ApproachDescentAsync(Func<BotPosition, Task<bool>> walk, Func<bool> survived, CancellationToken token)
+	{
+		if (!survived()) return false;
+		if (NaturalFlightPolicy.Distance(session.CurrentPosition, DescentStart) <= LaunchRadius) return true;
+		// A fight or loot sweep may have moved along the demonstrated approach. Join
+		// its nearest supported segment; never join the middle of a jump or fall.
+		int first = Enumerable.Range(0, routes.UpperApproach.Length).Where(index => routes.UpperApproach[index].Mode == "ground")
+			.MinBy(index => routes.UpperApproach[index].Points.Min(point => NaturalFlightPolicy.Distance(session.CurrentPosition, point.At)));
+		foreach (UpperLeg leg in routes.UpperApproach.Skip(first))
+		{
+			if (leg.Mode == "ground")
+			{
+				if (!await WalkRecordedGroundAsync(leg.Points, -1, walk, survived, token)) return false;
+				continue;
+			}
+			if (!await walk(leg.Points[0].At) || !survived()) return false;
+			BotNavigationGeometry geo = geometry();
+			foreach (GroundPoint point in new[] { leg.Points[0], leg.Points[^1] })
+				if (geo.StaticGroundAt(routes.Descent.MapId, point.At) is not { } ground || MathF.Abs(ground.Z - point.Z) > 0.5f)
+					throw new InvalidDataException($"Recorded Fire {leg.Mode} endpoint is unsupported at source sequence {point.Sequence}.");
+			BotPosition[] points = [session.CurrentPosition, .. leg.Points.Select(point => point.At)];
+			if (points.Zip(points.Skip(1)).Any(pair => !NaturalFlightProtocol.IsClear(geo, routes.Descent.MapId, pair.First, pair.Second)))
+				throw new InvalidDataException($"Recorded Fire {leg.Mode} is blocked at source sequence {leg.Points[0].Sequence}.");
+			float speed = session.Api.World.MovementSpeed ?? 0;
+			if (!float.IsFinite(speed) || speed <= 0) return false;
+			session.TraceDiagnostic("fire-recorded-upper-air-step", new Dictionary<string, object?>
+			{ ["mode"] = leg.Mode, ["sourceStart"] = leg.Points[0].Sequence, ["sourceEnd"] = leg.Points[^1].Sequence });
+			var mover = new BotMover(session.Api.World, session.Api.Timing);
+			BotMovementPlan plan = leg.Mode == "jump"
+				? mover.CreateJumpPlan(points[1..], session.CurrentPosition, speed)
+				: mover.CreateFallPlan(points[1..], session.CurrentPosition, speed);
+			await session.ExecuteMovementAsync(plan, token);
+			await session.SynchronizeAsync(token);
+			if (!survived() || NaturalFlightPolicy.Distance(session.CurrentPosition, points[^1]) > 2) return false;
+		}
+		return true;
+	}
 
 	public async Task<bool> ApproachExitAsync(Func<BotPosition, Task<bool>> walk, Func<Task<bool>> settle,
 		Func<bool> survived, CancellationToken token) => OnLowerFloor && survived() && await settle() && survived() &&
@@ -144,16 +210,6 @@ public sealed class NaturalFireRoomTravel
 	{
 		if (!OnLowerFloor || !survived()) return false;
 		if (clearingInstance != session.Api.World.InstanceId) ResetClearing();
-		bool Matches(Fight fight, BotKnownObject npc)
-		{
-			if (clearingTargets.GetValueOrDefault(fight.SourceSequence) == npc.ObjectId) return true;
-			bool AtSource(BotPosition at) => clearingPatrols.TryGetValue(fight.SourceSequence, out BotPosition[]? path)
-				? path.Zip(path.Skip(1)).Any(pair => DistanceToSegment(at, pair.First, pair.Second) < 1)
-				: NaturalFlightPolicy.Distance(at, fight.Spawn) < 1;
-			return session.PacketHistory.Any(packet => packet.PacketType == typeof(SM_NPC_INFO) &&
-				packet.Get<int>("objectId") == npc.ObjectId && packet.Get<int>("npcId") == fight.NpcId &&
-				AtSource(new BotPosition(packet.Get<float>("x"), packet.Get<float>("y"), packet.Get<float>("z"), 0)));
-		}
 		BotKnownObject? Find(Fight fight) => session.Api.World.Objects.Values
 			.Where(npc => npc.Kind == BotKnownObjectKind.Npc && npc.TemplateId == fight.NpcId && npc.Position.Z is > 540 and < 565 && Matches(fight, npc))
 			.OrderBy(npc => npc.IsCorpse).ThenBy(npc => NaturalFlightPolicy.Distance(npc.Position, fight.Spawn)).FirstOrDefault();
@@ -321,9 +377,15 @@ public sealed class NaturalFireRoomTravel
 		session.CurrentPosition.X < 140 && session.CurrentPosition.Y < 130 && session.CurrentPosition.Z > 605 &&
 		goal.X > 170 && goal.X < 300 && goal.Y > 150 && goal.Y < 310 && goal.Z is > 540 and < 565;
 
-	public async Task<bool> EnterAsync(Func<BotPosition, Task<bool>> walk, Func<Task<bool>> settle, CancellationToken token)
+	public Task<bool> EnterAsync(Func<BotPosition, Task<bool>> walk, Func<Task<bool>> settle, CancellationToken token) =>
+		FlyRecordedAsync(routes.Entrance, walk, settle, "fire-entrance-flight", token);
+
+	public Task<bool> ReturnToBulaganAsync(Func<BotPosition, Task<bool>> walk, Func<Task<bool>> settle, CancellationToken token) =>
+		FlyRecordedAsync(routes.ReturnFlight, walk, settle, "fire-return-flight", token);
+
+	private async Task<bool> FlyRecordedAsync(Route route, Func<BotPosition, Task<bool>> walk, Func<Task<bool>> settle,
+		string diagnostic, CancellationToken token)
 	{
-		Route route = routes.Entrance;
 		if (session.Api.World.MapId != route.MapId || session.Api.World.IsDead) return false;
 		// The bot may already be on the Fire portal's side after an earlier attempt.
 		if (NaturalFlightPolicy.Distance(session.CurrentPosition, route.Points[^1].At) < 3) return true;
@@ -355,7 +417,7 @@ public sealed class NaturalFireRoomTravel
 		await session.ExecuteMovementAsync(Plan(route, speed, false), token);
 		await NaturalFlightProtocol.LandAsync(session, token);
 		await session.SynchronizeAsync(token);
-		return Finish(route, "fire-entrance-flight");
+		return Finish(route, diagnostic);
 	}
 
 	public async Task<bool> DescendAsync(Func<BotPosition, Task<bool>> walk, Func<Task<bool>> settle, CancellationToken token)

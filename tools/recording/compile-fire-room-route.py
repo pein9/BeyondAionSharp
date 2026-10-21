@@ -107,6 +107,46 @@ def main():
                               for index, entry in enumerate(moves[1:-1], 1))
         return simplify(moves[:index + 1])[:-1] + simplify(moves[index:]) if distance > 0.5 else [moves[0], moves[-1]]
 
+    # The recording also demonstrates the western ground approach before the
+    # descent, including its jumps and short falls. A generic launch search
+    # instead crossed the crowded upper deck.
+    upper_moves = [entry for entry in ground_moves if 9955 <= entry["seq"] <= 24762]
+    if (not upper_moves or upper_moves[0]["seq"] != 9955 or upper_moves[-1]["seq"] != 24762 or
+            any(entry.get("outcome") != "executed" or entry["fields"]["type"] & 4 or
+                not 605 < entry["fields"]["z"] < 625 for entry in upper_moves)):
+        raise SystemExit("Recorded upper Fire approach is not an executed ground walk")
+    jumps = [entry for entry in entries if 9955 < entry["seq"] < 24762 and
+             entry.get("packet") == "CM_EMOTION" and entry.get("outcome") == "executed" and
+             entry.get("fields", {}).get("emotionType") == "JUMP"]
+    if [entry["seq"] for entry in jumps] != [10370, 14067, 14668, 24593]:
+        raise SystemExit("Recorded upper Fire jumps do not match the reviewed sequence")
+    air_windows = []
+    for jump in jumps:
+        first = max(entry["seq"] for entry in upper_moves if entry["seq"] < jump["seq"])
+        last = next(entry["seq"] for entry in upper_moves if entry["seq"] > jump["seq"] and entry["fields"]["type"] == 0)
+        air_windows.append((first, last, "jump"))
+    # The short step off the western ramp is a FALL, not a glide or free flight.
+    falls = [entry for entry in upper_moves if entry["fields"]["type"] & 8]
+    if [entry["seq"] for entry in falls] != [13978, 24373]:
+        raise SystemExit("Recorded upper Fire falls do not match the reviewed drops")
+    air_windows.extend([(13969, 13987, "fall"), (24368, 24389, "fall")])
+    upper_route = []
+
+    def upper_leg(first, last, mode):
+        moves = [entry for entry in upper_moves if first <= entry["seq"] <= last]
+        if len(moves) < 2:
+            return
+        upper_route.append(dict(mode=mode, points=[dict(sequence=entry["seq"],
+                               **{key: entry["fields"][key] for key in ("x", "y", "z", "heading")})
+                               for entry in simplify(moves)]))
+
+    first = upper_moves[0]["seq"]
+    for start, end, mode in sorted(air_windows):
+        upper_leg(first, start, "ground")
+        upper_leg(start, end, mode)
+        first = end
+    upper_leg(first, upper_moves[-1]["seq"], "ground")
+
     prior = 25426
     for fight in fights:
         first = max(entry["seq"] for entry in ground_moves if entry["seq"] <= prior)
@@ -155,9 +195,11 @@ def main():
     exit_route = dict(portalNpcId=730046, sourceUseSequence=exit_use["seq"],
                       points=[dict(sequence=entry["seq"], **{key: entry["fields"][key] for key in ("x", "y", "z", "heading")})
                               for entry in simplify(exit_moves)])
-    document = {"schema": 4, "sourceSha256": hashlib.sha256(raw).hexdigest(),
+    document = {"schema": 6, "sourceSha256": hashlib.sha256(raw).hexdigest(),
                 "recordedUtc": "2026-10-20", "recordedAccessLevel": 9,
                 "entrance": extract(entrance[0]["seq"], entrance[-1]["seq"], 220020000),
+                "returnFlight": extract(31619, 31738, 220020000),
+                "upperApproach": upper_route,
                 "descent": extract(24762, 25426, 320050000),
                 "clearing": fights[:-1], "boss": fights[-1], "exitRoute": exit_route}
     output = Path(__file__).resolve().parents[2] / "parity-artifacts/e2e/natural-fire-room-route.json"
