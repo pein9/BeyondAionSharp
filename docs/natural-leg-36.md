@@ -713,14 +713,102 @@ Mine, where the operator gave none; each is his to change:
    - **Use the existing recorded fights (operator clarification, 2026-10-20):** the operator already demonstrated
      which monsters to pull, as well as the descent. No further recording is needed to learn that sequence. After
      landing he cleared the nearby Guardian Kalgolem, two Destroyer Obscuras, then the Corrupt Fire/Flame Spirits,
-     rested and pulled Bolcan alone. A t5 Gladiator trace instead engaged Bolcan with another attacker present;
-     its pull planner had already named a Flame Spirit add. Compare those approaches before another long retry.
+     rested and pulled Bolcan alone. The t5 Gladiator instead followed its helper prediction north to
+     (217.246, 302.170), first casting Cleave on the western Flame Spirit at (212.520, 290.760). Bolcan and another
+     spirit joined that fight. The recording leaves that western spirit alive and pulls Bolcan from the east at
+     (232.474, 281.307), opening with Taunt. This was a different pull, not proof that the player fought the same pack.
      The recording also uses Absorbing Fury and Pressure Wave, which the current single-pull table excludes to avoid
      waking extra enemies; assess conditional use against already engaged enemies using Java's actual area rules.
      Skill 240, GM's Armor, was used in the recording (+2,000 maximum HP/MP and movement/attack/flight benefits), so
      its survivability/timing is not an ordinary-account baseline. Its pull order remains useful evidence. The
      private sanitized comparison is `run/nl/resume-20261020/human-fire-fights.json`; the original recording is
      unchanged. These findings do not authorize copying GM skills or nerfing the mobs.
+   - **Recorded combat candidate (2026-10-20, validation in progress):** the existing route compiler also extracts the
+     five guard targets and the boss pull origin. It identifies the Guardian and the second Obscura by their native
+     patrol routes, because the recorded NPC positions are not stationary spawn hints. The lower-floor routine uses
+     current observed identities and normal combat, looting and rest. It does not treat an unseen guard as dead;
+     corpse/zero-HP evidence is scoped to the instance, retained when returning to the same copy after a revival, and
+     invalidated by a later live spawn. Before Bolcan it returns to the demonstrated eastern origin and prefers a
+     learned non-damaging pull when the class has one, rather than making the generic helper planner draw the western pack.
+     Gladiator's Absorbing Fury, Pressure Wave, Roiling Hack and Seismic Billow are conditional area attacks: actual
+     Java radius/altitude and body bounds are checked, with a conservative position margin; uninvolved, unknown and
+     controlled creatures withhold them. Other profile catalogs have no existing self-centred enemy-area attack to
+     change. Callers without an area-safety observation withhold these new attacks. Recovery reserves and the
+     three-attacker retreat threshold remain as before.
+     The controlled ordinary-account probe `run/fire-fight-probe/probe-t4.log` passed: an unengaged nearby NPC blocked
+     the area IDs; actual learned Absorbing Fury/Pressure Wave casts dealt damage and six absorbed-HP events restored
+     1,756 HP, with no GM's Armor. Seismic Billow completed after the sixth real proc roll. Java gives Pressure Wave
+     and Roiling Hack a 10% follow-up chance, not a guaranteed Billow; that probability and all cooldowns remain intact.
+     Controlled class/gear/NPC placement and starting HP make this effect/chain evidence, not a survival or quest claim.
+     Uncaptured diagnostic `nl4-vs-resume-t7` exposed two route-control defects before a completion: the Gladiator
+     tried to cross the Guardian's guarded platform while its patrol was far away, and the Chanter's second descent
+     forgot the Guardian it had killed in the same instance. Raw movement packets in the existing recording show the
+     Guardian coming west to the landing before the first melee hit. The candidate now waits there, bounded at two
+     game minutes with ordinary defense, and retains the same-instance kill evidence. The stopped trial's verified
+     owner dropped only its disposable schema; it gives no solo-capability classification.
+     `nl4-vs-resume-t8` then reached the Guardian correctly but exposed an omitted ground corridor: the player goes
+     west along x219–222 before curving toward the first Obscura; a direct destination hint instead took the raised
+     platform and the broad blocker fallback fought unrelated lower-floor mobs. The compiler now includes those
+     connecting walks, simplified within 0.5 m from actual reported positions, with short geometry-checked steps at
+     observed speed and ordinary defense. The offline check accepts all 36 points and 30 connecting segments on the
+     correct floor; no further geometry or navmesh change is justified. T8 was stopped and its disposable schema
+     dropped. `nl4-vs-resume-t9` followed that western corridor correctly, then stopped fighting the first Obscura
+     at 47% NPC HP while the Gladiator remained healthy: the NPC moved east and four distance refusals exhausted
+     recovery, whose generic planner rejected the guarded route. The existing human footage already shows this
+     fight and chase: actual movement from (233.215, 252.787) to (254.561, 252.027) precedes that target's explicit
+     zero-HP packet, source sequence 26609. No additional recording is needed for this diagnosis.
+     The compiler now bounds each fight's ground pursuit by its own explicit death packet. Only those prepared
+     Fire fights can use the corresponding corridor for range recovery, at most 12 m per recovery with fresh
+     ground/collision checks, observed movement speed and normal combat observations between recoveries. It never
+     extrapolates beyond the demonstrated path. T9 was stopped and its owner dropped its disposable schema.
+     T10 proved the first 12 m of pursuit but exposed a second decision: at ranged Cleave distance the Gladiator
+     waited for its cooldown while Obscura cast Hide Shape (16677), then abandoned the live target when it disappeared.
+     Java's skill and `HideEffect` confirm a brief hide, not a death. A prepared melee Fire fight now continues along
+     its corridor during that ranged-skill wait, and a completed observed self-hide permits a bounded visibility
+     wait from the native effect duration; neither absence nor elapsed time supplies kill evidence. T10's owner
+     dropped its disposable schema. T11 then caught and killed that first Obscura, waiting through its hide, with
+     no revival or retreat. The next Obscura joined during the mandatory loot sweep, whose ordinary defense call
+     bypassed the prepared pull's recovery callback. Recovery is now resolved for every currently bound recorded
+     guard in that native instance, including loot/rest defenses; other targets retain their ordinary planner.
+     T11 was stopped and its owner dropped its disposable schema. T12 killed both Obscura guards, then exposed a
+     rotation stall: the Gladiator stood at Cleave range waiting between its 18-second cooldowns instead of closing
+     for its weapon and melee chains. The Fire Spirit reached 4% HP before the existing 1,000-action stall guard
+     stopped the fight. When solo, the Gladiator now requests weapon range between ranged cooldowns even when the enemy's
+     template lists a melee attack range; other classes retain their existing rule. Recovery and retreat priorities
+     and the action bound are unchanged. T12's owner dropped its disposable schema.
+     **T13 ordinary-account result:** the Gladiator killed all five recorded guards and Bolcan (18:13.929–19:37.911
+     world game time), then advanced to leaving the Fire Room with its key. Those six fights had no revival or
+     retreat; the boss fight observed up to two attackers, so this is not a claim of an isolated one-target fight.
+     The full Q24023 endpoint was not reached before the diagnostic stopped. Chanter also killed both Obscuras but
+     its next walk rejected a valid ramp from a ledge reached during loot/rest. The ground executor now permits
+     collision-checked supported steps between its current and destination elevations; a same-floor walk still
+     rejects the raised deck. The offline audit proves all eight steps of that ramp.
+     The footage already includes the exit: after the boss, source sequences 31338–31456 walk north along the
+     upper floor to (233.134, 299.851, 550.494), then use portal 730046 at sequence 31467. Java's native six-metre
+     talk range and three-second use permit that position. The compiler now emits this exit walk, and the bot uses
+     the observed portal from that lip instead of routing toward its lower spawn coordinate through extra elites.
+     T13's owner dropped its disposable schema.
+     **T14 verified endpoint:** Gladiator completed Q24023, returned to Morheim through the recorded exit and took
+     Gangleri's reward: `altgard-vs-completion.json` verifies Q24023 complete count 1, level 38 and zero deaths in
+     1,574,645 elapsed game milliseconds. The receipt is under
+     `run/nl/NL4/nl4-vs-resume-t14/w1/warrior-gladiator/`. All seven started. Chanter still left the intended corridor
+     during later defense/recovery and stopped at (118.200, 226.200, 538.469); the nearby-ramp correction does not
+     resolve that separate detour. The other five retained partial traces, including repeated failures before the
+     Fire descent. The diagnostic was stopped for that follow-up, and its owner dropped its disposable schema.
+     It captured no world and supplies no soloability classification for the unfinished classes. The original
+     `nl-vs-s1` world and Cleric completion remain unchanged; a retained replay must use committed runtime code.
+     The shared NTC gate exposed why that new closing rule must remain solo: in its first version the Gladiator
+     died and revived away from the Aetheric Field Guard (256692), missing Q4733 credit while the other five members'
+     native counters advanced from 65 to 4161. Java's `PlayerTeamDistributionService` awards quest kills only to
+     online members within range. Group positioning now retains its existing rule; no quest counter or NPC state
+     is bypassed. The focused `nl4-r38-fire-fights-ntc-solo-fill` replay produced six verified home receipts.
+     The final candidate passed the required repository checks (6,663 tests, 252 existing skips), both companion
+     tests, Fast (115 tests, 98 existing opt-in skips; all 11 scenario rows), all five functional starter journeys
+     under the existing D7 first-object-ID trace allowance, and n9 with six verified home receipts. Logs are under
+     `run/nl/resume-20261020/fire-fights-verified/`; the final NTC run is `nl4-r38-fire-fights-verified-ntc`.
+     Earlier green results and the NTC regression remain under `fire-fights-final/`. No warning or trace baseline
+     was raised, no bot unit test was added, and the final owned SIM schema was dropped with the run marker clear.
+     NL-4/NL-5 are open.
 
 ## Loop prompt
 

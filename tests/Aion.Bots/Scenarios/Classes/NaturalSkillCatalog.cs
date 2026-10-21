@@ -147,6 +147,8 @@ public static class NaturalSkillCatalog
 		ItemUseAction? reagent = actions.OfType<ItemUseAction>().FirstOrDefault();
 		List<ItemGroup>? weapons = conditions.OfType<WeaponCondition>().FirstOrDefault()?.itemGroups;
 		MpCondition? mana = conditions.OfType<MpCondition>().FirstOrDefault();
+		bool enemyArea = properties?.GetFirstTarget() == FirstTargetAttribute.ME &&
+			properties.GetTargetRelation() == TargetRelationAttribute.ENEMY && properties.GetTargetType() == TargetRangeAttribute.AREA;
 		return new NaturalPriestSkill(checked((ushort)skillId), minimumLevel, role,
 			ManaCost: mana is { ratio: true } ? 0 : mana?.value ?? actions.OfType<MpUseAction>().FirstOrDefault()?.value ?? 0,
 			Range: properties?.GetFirstTargetRange() ?? 0,
@@ -190,7 +192,9 @@ public static class NaturalSkillCatalog
 			IsMech: template.GetEffects()?.GetEffects().OfType<RideRobotEffect>().Any() == true,
 			// Java MpCondition.getCost 48-51: with ratio the value is hundredths of the caster's whole mana, not mana.
 			ManaCostPercent: mana is { ratio: true } ? mana.value : 0,
-			DelayedHitMillis: template.GetEffects()?.GetEffects().OfType<DelayedSpellAttackInstantEffect>().FirstOrDefault()?.delay ?? 0);
+			DelayedHitMillis: template.GetEffects()?.GetEffects().OfType<DelayedSpellAttackInstantEffect>().FirstOrDefault()?.delay ?? 0,
+			EnemyAreaRadius: enemyArea ? properties!.GetEffectiveRange() : 0,
+			EnemyAreaAltitude: enemyArea ? Math.Max(1, properties!.GetEffectiveAltitude()) : 0);
 	}
 
 	/// <summary>

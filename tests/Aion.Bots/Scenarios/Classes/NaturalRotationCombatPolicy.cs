@@ -121,6 +121,8 @@ public enum NaturalAutoAttack
 /// <param name="SpiritLadder">NR-110d: what the class casts on its spirit in a fight, in the order the steps are tried,
 /// after an open follow-up and before its attacks. A step at 100% is cast whenever its skill can be paid for (a buff
 /// that costs DP). Null for a class that casts nothing on a spirit.</param>
+/// <param name="CloseForWeaponFiller">When solo, close to weapon range between ranged attack cooldowns even when the
+/// target's template has a melee attack range. Group fights retain their existing approach and formation.</param>
 public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjacent, IReadOnlyList<string> AtRange,
 	IReadOnlyList<NaturalRotationUpkeep> Upkeep, IReadOnlyList<NaturalRecoveryStep> Recovery, int SwarmAttackers, int FleeHpPercent,
 	NaturalAutoAttack AutoAttack, string? ControlRole = null, int EmergencyPercent = 35, int EmergencyClearPercent = 45,
@@ -128,7 +130,7 @@ public sealed record NaturalRotationRules(string Id, IReadOnlyList<string> Adjac
 	NaturalFinisher? Finisher = null, string? ReserveRole = null, int? ManaPotionReserveMargin = null,
 	IReadOnlyList<string>? Openers = null, IReadOnlyDictionary<string, int>? OnlyWhileTargetAbove = null, float? RangedHoldWithin = null,
 	IReadOnlyList<string>? PullRoles = null, NaturalManaStep? ManaSkill = null, IReadOnlyDictionary<string, int>? OnlyWithRunes = null,
-	IReadOnlyList<NaturalSpiritStep>? SpiritLadder = null, string? DpReserveRole = null)
+	IReadOnlyList<NaturalSpiritStep>? SpiritLadder = null, string? DpReserveRole = null, bool CloseForWeaponFiller = false)
 {
 	/// <summary>The table's two attack lists as lines of skill ids, every rank of a role in level order, for
 	/// <see cref="NaturalProfileValidator"/>.</summary>
@@ -319,6 +321,16 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 			.Where(role => rules.OnlyWhileTargetAbove == null || !rules.OnlyWhileTargetAbove.TryGetValue(role, out int least) ||
 				state.TargetHpPercent is not int targetHp || targetHp > least)
 			.Select(role => Best(role, state)).OfType<NaturalPriestSkill>().ToArray();
+		// A demonstrated isolated pull may draw the target away before any damaging attack. Only this
+		// encounter requests it; the ordinary tables retain their order. A ranged target that does not come
+		// is held only for the pull's real cooldown, then the existing pull-spent rule resumes ordinary combat.
+		if (state.PreferPull && !fightIsOn && !adjacent && rules.PullRoles is { Count: > 0 })
+		{
+			line = [.. line.OrderBy(skill => rules.PullRoles.Contains(skill.Role) ? 0 : 1)];
+			if (line.Any(skill => rules.PullRoles.Contains(skill.Role) && state.CastThisFight?.Contains(skill.Id) == true &&
+				state.Cooldowns.TryGetValue(skill.CooldownId, out DateTimeOffset pullUntil) && pullUntil > now))
+				return Choice("wait", null, "The isolated pull was sent; let the target come before dealing damage.");
+		}
 		// NR-131a: a fight found the class out of its mech: a death ends the mech, and the buff check that boards it runs
 		// before a pull and never inside a fight. Every skill of the line that needs the mech is refused until the bot
 		// rides, so the toggle that boards goes first. It is decided only while the server has not said the bot rides: a
@@ -375,7 +387,8 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		// Artist's Pulse, 2 s). Going to the target is for an attack that cannot be cast from here at all.
 		// NR-14: a class that fills with its weapon is not kept out of the weapon's reach by a cooldown when the target
 		// attacks from range. That target does not come, and the swing is what the class does between its skills.
-		bool weaponWanted = rules.AutoAttack == NaturalAutoAttack.Filler && state.TargetRanged && !swingLegal;
+		bool weaponWanted = rules.AutoAttack == NaturalAutoAttack.Filler && !swingLegal &&
+			(state.TargetRanged || rules.CloseForWeaponFiller && !state.Grouped);
 		if (!weaponWanted && line.Any(skill => skill.RequiresChainCategory == null && !Self(skill) &&
 			Refusals(skill, state, now, parameters) is [CoolingDown]))
 			return Choice("wait", null, "A listed attack is in reach and only cools down; hold position.");
@@ -477,6 +490,8 @@ public sealed class NaturalRotationCombatPolicy : INaturalCombatPolicy
 		bool self = Self(skill);
 		int? target = self ? null : state.TargetObjectId;
 		if (state.Dead) reasons.Add("Client reported death.");
+		if (skill.EnemyAreaRadius > 0 && state.SafeAreaSkillIds?.Contains(skill.Id) != true)
+			reasons.Add("The observed area contains an unengaged or controlled creature, or its safety is unknown.");
 		if (state.Level < skill.MinimumLevel || !state.Learned.ContainsKey(skill.Id))
 			reasons.Add("Skill is not in the client-observed learned list at this level.");
 		if (skill.CounterStatus != null) reasons.Add($"Counter skill: it needs a {skill.CounterStatus} the bot does not observe.");

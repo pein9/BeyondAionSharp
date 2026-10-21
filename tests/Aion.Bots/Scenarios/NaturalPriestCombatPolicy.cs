@@ -44,6 +44,8 @@ namespace Aion.Bots.Scenarios;
 /// ratio; Java MpCondition.getCost 48-51); 0 for a plain cost, which is <paramref name="ManaCost"/>.</param>
 /// <param name="DelayedHitMillis">NR-61a: how long after it is applied the skill's damage lands (effects/delaydamage; Java
 /// DelayedSpellAttackInstantEffect.applyEffect 25-35); 0 for a skill whose damage lands with its hit.</param>
+/// <param name="EnemyAreaRadius">A self-centred enemy AREA skill's effective radius; zero for every other target shape.</param>
+/// <param name="EnemyAreaAltitude">The enemy AREA skill's altitude limit (Java TargetRangeProperty).</param>
 public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role, int ManaCost,
 	float Range, int CooldownId, int CooldownDeciseconds, string? ChainCategory = null,
 	string? RequiresChainCategory = null, int ChainWindowMillis = 0, int DpCost = 0,
@@ -53,7 +55,8 @@ public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role
 	bool OutOfCombatOnly = false, bool GroundOnly = false, string? TargetFlight = null, string? RequiredOffHand = null,
 	IReadOnlyList<string>? TargetStates = null, string? CarvesRune = null, string? BurstsRune = null, int SummonsNpcId = 0,
 	bool OrdersSpirit = false, int HpCost = 0, int PreCount = 0, IReadOnlyList<int>? EndsCooldownIds = null,
-	bool NeedsMech = false, bool IsMech = false, int ManaCostPercent = 0, int DelayedHitMillis = 0);
+	bool NeedsMech = false, bool IsMech = false, int ManaCostPercent = 0, int DelayedHitMillis = 0,
+	int EnemyAreaRadius = 0, int EnemyAreaAltitude = 0);
 
 /// <summary>
 /// NR-18: every class's catalog is generated from the shipped skill data (<see cref="Classes.NaturalSkillCatalog"/>); the
@@ -114,7 +117,7 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	IReadOnlySet<int>? ActiveEffectSkillIds = null, string? OffHand = null, IReadOnlySet<ushort>? CastThisFight = null,
 	int TargetAbnormals = 0, IReadOnlyDictionary<string, int>? TargetRunes = null,
 	bool SpiritOut = false, bool SpiritAtTarget = false, int? SpiritHpPercent = null, float? SpiritDistance = null,
-	bool Rides = false, bool Grouped = false);
+	bool Rides = false, bool Grouped = false, IReadOnlySet<ushort>? SafeAreaSkillIds = null, bool PreferPull = false);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);

@@ -562,6 +562,9 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			// NL-4: how a leg with instance rooms (Q24023's Sky Temple Interior) goes down to a floor no walk joins: a glide.
 			Func<BotPosition, Task<bool>>? glideDown = null;
 			Func<BotPosition, bool>? preferRecordedGlide = null;
+			Func<Task<bool>>? prepareRecordedFireFight = null;
+			Func<Task<int?>>? approachRecordedFireExit = null;
+			Func<BotPosition, BotPosition, float, IReadOnlyList<BotPosition>>? recordedFireBossRecovery = null;
 			// M4: the quests this bot left for the group step on a Morheim leg (no progress on one alone for an hour).
 			var deferredToGroup = new HashSet<int>();
 			Func<int, float, Func<int?>?, Task<int>>? haramelApproach = null;
@@ -3751,8 +3754,39 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				var floorGlide = new NaturalFloorGlide(session, () => geometry);
 				var fireTravel = leg.InstanceRooms?.Rooms.Any(room => room.PortalNpcId == 730045) == true
 					? new NaturalFireRoomTravel(session, runtime, () => geometry) : null;
+				combat.RecordedFightRecovery = fireTravel == null ? null : fireTravel.RecoveryForObservedTarget;
+				approachRecordedFireExit = fireTravel == null ? null : async () =>
+				{
+					if (!fireTravel.OnLowerFloor) return null;
+					int? instance = session.Api.World.InstanceId;
+					int revives = combat.ReviveCount;
+					bool Survived() => fireTravel.OnLowerFloor && session.Api.World.InstanceId == instance &&
+						!session.Api.World.IsDead && session.Api.World.CurrentHp > 0 && combat.ReviveCount == revives;
+					if (!await fireTravel.ApproachExitAsync(WalkFireGroundAsync, SettleFireTravelAsync, Survived, token))
+						throw new InvalidOperationException("The recorded Fire exit walk was not completed safely.");
+					return session.Api.World.Objects.Values.Where(npc => npc.Kind == BotKnownObjectKind.Npc && npc.TemplateId == 730046 &&
+						Distance(session.CurrentPosition, npc.Position) <= TalkRange(730046)).Select(npc => (int?)npc.ObjectId).FirstOrDefault()
+						?? throw new InvalidOperationException("The recorded Fire exit was not observed within its native talk range.");
+				};
+				recordedFireBossRecovery = fireTravel == null ? null : (start, target, reach) =>
+					fireTravel.FindFightRecoveryRoute(fireTravel.BossFight, start, target, reach);
 				preferRecordedGlide = fireTravel == null ? null : goal =>
 					fireTravel.HandlesDescent(session.Api.World.MapId ?? 0, goal);
+				prepareRecordedFireFight = fireTravel == null ? null : async () =>
+				{
+					if (!fireTravel.OnLowerFloor) return true; // The recorded descent is still ahead.
+					int? instance = session.Api.World.InstanceId;
+					int revives = combat.ReviveCount;
+					bool Survived() => fireTravel.OnLowerFloor && session.Api.World.InstanceId == instance &&
+						!session.Api.World.IsDead && session.Api.World.CurrentHp > 0 && combat.ReviveCount == revives;
+					return await fireTravel.ClearBeforeBossAsync(WalkFireGroundAsync, SettleFireTravelAsync, async (target, fight) =>
+					{
+						bool killed = await combat.TryKillAsync(target, token, session.CurrentPosition,
+							rangeRecovery: (start, at, reach) => fireTravel.FindFightRecoveryRoute(fight, start, at, reach));
+						if (killed) navigator.UnavailableObjects.Add(target);
+						return killed;
+					}, Survived, token);
+				};
 				async Task<bool> SettleFireTravelAsync()
 				{
 					int? map = session.Api.World.MapId;
@@ -3764,6 +3798,52 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					if (!Survived()) return false;
 					await combat.BuffOurselfAsync(NaturalHelpTrigger.TravelLeg, token, travelMeters: fireTravel?.DescentMeters ?? 0);
 					return Survived();
+				}
+				async Task<bool> WalkFireGroundAsync(BotPosition at)
+				{
+					int map = session.Api.World.MapId!.Value;
+					int? instance = session.Api.World.InstanceId;
+					int revives = combat.ReviveCount, stalled = 0;
+					bool Survived() => session.Api.World.MapId == map && session.Api.World.InstanceId == instance &&
+						!session.Api.World.IsDead && session.Api.World.CurrentHp > 0 && combat.ReviveCount == revives;
+					for (int step = 0; step < 80; step++)
+					{
+						if (!Survived() || !await DefendAgainstEngagedAsync("fire-recorded-ground") || !Survived()) return false;
+						BotPosition before = session.CurrentPosition;
+						if (Distance(before, at) <= 0.75f) return true;
+						// Loot or rest can leave a nearby ledge. Permit a checked ramp back between the
+						// current and destination elevations, while a same-floor walk still rejects the raised deck.
+						float lowest = MathF.Min(before.Z, at.Z) - 0.75f, highest = MathF.Max(before.Z, at.Z) + 0.75f;
+						bool Supported(BotPosition point) => point.Z >= lowest && point.Z <= highest &&
+							geometry.StaticGroundAt(map, point) is { } ground && MathF.Abs(ground.Z - point.Z) <= 0.5f;
+						// These are demonstrated ground segments through the guards being cleared. Follow them at
+						// ordinary speed, fighting actual engagement; a global hazard detour picks the raised deck.
+						IReadOnlyList<BotPosition>? path = geometry.TraceEdge(map, before, at);
+						if (path == null || path.Any(point => !Supported(point)))
+							path = geometry.FindLocalPath(map, before, at);
+						path = [.. path.Where(point => Distance(before, point) > 0.05f)];
+						if (path.Count == 0 || path.Any(point => !Supported(point)) ||
+							Distance(before, path[0]) > 3 || geometry.TraceEdge(map, before, path[0]) == null)
+						{
+							session.TraceDiagnostic("fire-ground-edge-blocked", new Dictionary<string, object?>
+							{ ["position"] = before, ["goal"] = at, ["pathCount"] = path.Count });
+							return false;
+						}
+						float speed = session.Api.World.MovementSpeed ?? 0;
+						if (!float.IsFinite(speed) || speed <= 0)
+						{
+							await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
+							await session.SynchronizeAsync(token);
+							continue;
+						}
+						await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing)
+							.CreateGroundPlan([path[0]], before, speed), token);
+						await session.SynchronizeAsync(token);
+						if (!Survived()) return false;
+						stalled = Distance(before, session.CurrentPosition) < 0.05f ? stalled + 1 : 0;
+						if (stalled >= 3) return false;
+					}
+					return false;
 				}
 				async Task<bool> WalkFireTravelAsync(BotPosition at)
 				{
@@ -4226,7 +4306,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 								break;
 							}
 							int exit;
-							try { exit = await ApproachShippedSpawnAsync(room.ExitNpcId, withinRange: TalkRange(room.ExitNpcId)); }
+							try { exit = room.ExitNpcId == 730046 && approachRecordedFireExit != null && await approachRecordedFireExit() is int recordedExit
+								? recordedExit : await ApproachShippedSpawnAsync(room.ExitNpcId, withinRange: TalkRange(room.ExitNpcId)); }
 							catch (NaturalLeftInstanceRoomException) { break; }
 							if (session.Api.World.IsDead || session.Api.World.MapId != rooms.MapId) break;
 							if (!await UseInstancePortalAsync(exit, rooms.UseMillis, leg.Hub.MapId))
@@ -7380,6 +7461,20 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							if (session.Api.World.IsDead || session.Api.World.CurrentHp <= 0 || combat.ReviveCount > revivesBeforeApproach)
 								return await RetryAfterReviveAsync(beforeApproach, "recorded-glide");
 							throw new InvalidOperationException("The preferred recorded Fire descent could not be completed safely.");
+						}
+						if (templateId == 212876 && prepareRecordedFireFight != null && !await prepareRecordedFireFight())
+						{
+							if (session.Api.World.IsDead || session.Api.World.CurrentHp <= 0 || combat.ReviveCount > revivesBeforeApproach)
+								return await RetryAfterReviveAsync(beforeApproach, "recorded-fire-clearing");
+							throw new InvalidOperationException("The recorded Fire guards were not cleared safely before approaching Bolcan.");
+						}
+						if (templateId == 212876 && prepareRecordedFireFight != null && session.Api.World.MapId == 320050000 &&
+							session.CurrentPosition.Z is > 540 and < 565 && session.Api.World.Objects.Values.FirstOrDefault(known =>
+								known.Kind == BotKnownObjectKind.Npc && known.TemplateId == templateId && !known.IsCorpse) is { } recordedBoss)
+						{
+							// Let the class fight from the recorded origin; a generic arm's-reach approach would undo the pull.
+							emptySpawnWaits = 0;
+							return recordedBoss.ObjectId;
 						}
 						NaturalNavigationResult result = withinRange is float range
 							? await NaturalIshalgenNavigator.ExploreWithinRangeAsync(contract.MapId, templateId, anchor.Position, range, navigator, "NPC", token,
@@ -10731,7 +10826,15 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					bool killed;
 					try
 					{
-						killed = await PullAndKillAsync(target, $"kill-{templateId}");
+						if (templateId == 212876 && prepareRecordedFireFight != null && session.Api.World.MapId == 320050000)
+						{
+							// The recorded eastern pull draws Bolcan away from the western spirits. The generic
+							// static helper prediction instead walked north to pull a spirit and drew Bolcan into it.
+							try { killed = await combat.TryKillAsync(target, token, session.CurrentPosition, preferPull: true,
+								rangeRecovery: recordedFireBossRecovery); }
+							catch (NaturalCombatApproachBlockedException) { killed = false; }
+						}
+						else killed = await PullAndKillAsync(target, $"kill-{templateId}");
 					}
 					catch (NaturalCombatApproachBlockedException gone) when (!session.Api.World.Objects.ContainsKey(target))
 					{

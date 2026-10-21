@@ -60,6 +60,7 @@ public sealed partial class NaturalIshalgenJourney
 		private string[] lastCombatTrace = [];
 		private int obstacleRepositions;
 		private int rangeRejections;
+		private Func<BotPosition, BotPosition, float, IReadOnlyList<BotPosition>>? recordedRangeRecovery;
 		private int readinessRejections;
 		public int ReviveCount => revives;
 		/// <summary>The map a far target is approached on (NA-23 fights in Altgard); Ishalgen for the journey.</summary>
@@ -245,23 +246,29 @@ public sealed partial class NaturalIshalgenJourney
 
 		/// <summary>Runs after every fight that ends in a kill, outside the fight (the general quest-loot sweep).</summary>
 		public Func<CancellationToken, Task>? AfterKillAsync { get; set; }
+		// Recorded guards can join an ordinary loot/rest defense as well as a planned pull.
+		public Func<int, Func<BotPosition, BotPosition, float, IReadOnlyList<BotPosition>>?>? RecordedFightRecovery { get; set; }
 
 		public async Task<bool> TryKillAsync(int target, CancellationToken token,
-			BotPosition? retreatAnchor = null, int? attackHistoryStart = null)
+			BotPosition? retreatAnchor = null, int? attackHistoryStart = null, bool preferPull = false,
+			Func<BotPosition, BotPosition, float, IReadOnlyList<BotPosition>>? rangeRecovery = null)
 		{
 			int? fightMap = session.Api.World.MapId;
-			bool killed = await FightAsync(target, token, retreatAnchor, attackHistoryStart);
+			rangeRecovery ??= RecordedFightRecovery?.Invoke(target);
+			bool killed = await FightAsync(target, token, retreatAnchor, attackHistoryStart, preferPull, rangeRecovery);
 			if (killed && session.Api.World.MapId == fightMap && AfterKillAsync is { } afterKill && !session.Api.World.IsDead)
 				await afterKill(token);
 			return killed;
 		}
 
-		private async Task<bool> FightAsync(int target, CancellationToken token, BotPosition? retreatAnchor, int? attackHistoryStart)
+		private async Task<bool> FightAsync(int target, CancellationToken token, BotPosition? retreatAnchor, int? attackHistoryStart, bool preferPull,
+			Func<BotPosition, BotPosition, float, IReadOnlyList<BotPosition>>? rangeRecovery)
 		{
 			if (InCombat) throw new InvalidOperationException($"Natural {classLine.StarterName} combat cannot nest another fight.");
 			int attemptId = ++combatAttemptId;
 			int revivesBefore = revives;
 			InCombat = true;
+			recordedRangeRecovery = rangeRecovery;
 			navigator.InCombat = true;
 			session.TraceDiagnostic("combat-encounter-start", new Dictionary<string, object?>
 			{
@@ -269,7 +276,7 @@ public sealed partial class NaturalIshalgenJourney
 			});
 			try
 			{
-				bool killed = await TryKillCoreAsync(target, token, retreatAnchor, attackHistoryStart);
+				bool killed = await TryKillCoreAsync(target, token, retreatAnchor, attackHistoryStart, preferPull);
 				await spiritDriver.StandDownAsync(token);
 				session.TraceDiagnostic("combat-encounter-end", new Dictionary<string, object?>
 				{
@@ -293,6 +300,7 @@ public sealed partial class NaturalIshalgenJourney
 			}
 			finally
 			{
+				recordedRangeRecovery = null;
 				InCombat = false;
 				navigator.InCombat = false;
 				cornered = false;
@@ -300,7 +308,7 @@ public sealed partial class NaturalIshalgenJourney
 		}
 
 		private async Task<bool> TryKillCoreAsync(int target, CancellationToken token,
-			BotPosition? retreatAnchor, int? attackHistoryStart)
+			BotPosition? retreatAnchor, int? attackHistoryStart, bool preferPull)
 		{
 			engagedTarget = target;
 			obstacleRepositions = 0;
@@ -326,6 +334,7 @@ public sealed partial class NaturalIshalgenJourney
 			// A monster that attacks from range (the thorned ampha, 37 m) hits without being anywhere near.
 			bool targetRanged = targetTemplate != null && targetTemplate.GetAttackRange() > Navigation.NaturalCombatGeometry.MeleeReach + 1;
 			long? lastHitByTargetMillis = null;
+			long observedHideUntil = 0;
 			var incomingAttackers = new HashSet<int>();
 			// NL-2: the nearest the walk-ins of this fight have brought the bot to its target, and the walk-ins since that got
 			// it no nearer.
@@ -340,6 +349,19 @@ public sealed partial class NaturalIshalgenJourney
 					$"dead={world.IsDead} pos={session.CurrentPosition}");
 				await session.SynchronizeAsync(token);
 				DecodedBotServerPacket[] recentPackets = session.PacketHistory.Skip(observedPacketCount).ToArray();
+				if (recordedRangeRecovery != null)
+					foreach (DecodedBotServerPacket hidden in recentPackets.Where(packet => packet.PacketType == typeof(SM_CASTSPELL_RESULT) &&
+						packet.Get<int>("effectorId") == target && packet.Fields.TryGetValue("targetId", out object? hiddenTarget) &&
+						hiddenTarget is int hiddenId && hiddenId == target))
+					{
+						// Java HideEffect removes the creature from an ordinary client's known list, then restores
+						// visibility when the effect ends. A completed self-hide is not a death or a vanished pull.
+						var hide = runtime.Data.SkillDataDh.GetSkillTemplate(hidden.Get<ushort>("skillId"))?.GetEffects()?.GetEffects().OfType<HideEffect>().FirstOrDefault();
+						if (hide == null) continue;
+						long duration = hide.GetDuration2() + (long)hide.GetDuration1() * hidden.Get<byte>("skillLevel");
+						if (duration is > 0 and <= 30_000)
+							observedHideUntil = runtime.NowMillis + hidden.Get<ushort>("hitTime") + duration + 1000;
+					}
 				int[] recentAttacks = recentPackets
 					.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId)).OfType<int>().ToArray();
 				// NR-110e: a creature that strikes the bot's spirit is in the fight as one that strikes the bot is. Only a
@@ -406,7 +428,16 @@ public sealed partial class NaturalIshalgenJourney
 					return false; // Ordinary give-up, not a corpse: let the caller resume/re-plan.
 				}
 				if (!world.Objects.TryGetValue(target, out BotKnownObject? npc))
+				{
+					if (runtime.NowMillis < observedHideUntil)
+					{
+						session.TraceDiagnostic("combat-waits-observed-hide", new Dictionary<string, object?>
+						{ ["targetObjectId"] = target, ["untilMillis"] = observedHideUntil, ["hp"] = world.CurrentHp });
+						await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
+						continue;
+					}
 					return false; // Reacquire a new client-observed mob; do not count this as a kill.
+				}
 				// NR-110c: the spirit's beat: its walk to the target and its swings, between two acts of the bot. NR-110f: a
 				// spirit that is held back has its beat once the target is near its master, and from then on.
 				if (opened)
@@ -484,7 +515,7 @@ public sealed partial class NaturalIshalgenJourney
 					// NR-130a: the mech, for the skills that need one.
 					Rides: world.RobotId != 0,
 					// L3: in a group, for the words cast only for a group.
-					Grouped: world.GroupId != null);
+					Grouped: world.GroupId != null, SafeAreaSkillIds: ObserveSafeEnemyAreas(target, incomingAttackers), PreferPull: preferPull);
 				NaturalCombatChoice choice = policy.Decide(observation, now, mauPolicy);
 				// NR-110c: before the bot's first attack its spirit goes first. Time passes while the bot holds for the
 				// spirit's first hit, so the fight looks again.
@@ -639,6 +670,7 @@ public sealed partial class NaturalIshalgenJourney
 						await session.AdvanceAsync(TimeSpan.FromMilliseconds(interval + 100), token);
 						break;
 					case "approach":
+						if (await TryRecordedRangeRecoveryAsync(npc.SettledPosition, profile.Movement.MeleeReach, token)) break;
 						if (EnterObservedMap != null && world.MapId is int observedMap && observedMap != ApproachMapId)
 						{
 							int madeFor = ApproachMapId;
@@ -734,6 +766,10 @@ public sealed partial class NaturalIshalgenJourney
 							await session.AdvanceAsync(TimeSpan.FromMilliseconds(350), token);
 						break;
 					case "wait":
+						// A walk-in fighter pursues a fleeing guard along the demonstrated corridor instead of
+						// standing at ranged Cleave distance for its cooldown while the guard casts Hide Shape.
+						if (profile.Movement.GoesToItsTarget && !targetAdjacent &&
+							await TryRecordedRangeRecoveryAsync(npc.SettledPosition, profile.Movement.MeleeReach, token)) break;
 						await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
 						break;
 				case "retreat":
@@ -1070,6 +1106,49 @@ public sealed partial class NaturalIshalgenJourney
 		/// <summary>The character as a class gate names it when it refuses.</summary>
 		public string ObservedCharacter => $"level {session.Api.World.Level} " +
 			NaturalJourneyIdentityRules.ClassName(session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass);
+
+		// Java TargetRangeProperty and PositionUtil include both creatures' bound radii and an altitude limit.
+		// An extra two metres covers position age. Conservatively refuse uninvolved NPCs (including unknown
+		// factions), unknown/enemy players, and breakable control; only the target and its engaged pack may be hit.
+		private IReadOnlySet<ushort> ObserveSafeEnemyAreas(int target, IReadOnlySet<int> engaged)
+		{
+			var safe = new HashSet<ushort>();
+			BotWorldModel world = session.Api.World;
+			if (!world.Objects.TryGetValue(target, out BotKnownObject? victim) || victim.Kind != BotKnownObjectKind.Npc ||
+				victim.TemplateId is not int victimKind || runtime.Data.NpcDataDh.GetNpcTemplate(victimKind) is not { } victimTemplate) return safe;
+			BotPosition here = session.CurrentPosition;
+			const float margin = 2;
+			float playerBound = Aion.GameServer.Model.Templates.BoundRadius.PLAYER.GetMaxOfFrontAndSide();
+			foreach (NaturalPriestSkill skill in Catalog.Where(skill => skill.EnemyAreaRadius > 0))
+			{
+				if (MathF.Abs(here.Z - victim.Position.Z) > skill.EnemyAreaAltitude ||
+					Distance(here, victim.Position) > skill.EnemyAreaRadius + playerBound + victimTemplate.GetBoundRadius().GetMaxOfFrontAndSide()) continue;
+				bool allowed = true;
+				foreach (BotKnownObject creature in world.Objects.Values.Where(known => known.ObjectId != session.CharacterId &&
+					!known.IsCorpse && known.Kind is BotKnownObjectKind.Npc or BotKnownObjectKind.Player))
+				{
+					bool npc = creature.Kind == BotKnownObjectKind.Npc;
+					var template = npc && creature.TemplateId is int kind ? runtime.Data.NpcDataDh.GetNpcTemplate(kind) : null;
+					if (npc && template == null) { allowed = false; break; }
+					float reach = skill.EnemyAreaRadius + playerBound + (template?.GetBoundRadius().GetMaxOfFrontAndSide() ?? playerBound) + margin;
+					BotPosition end = creature.SettledPosition;
+					if (here.Z < MathF.Min(creature.Position.Z, end.Z) - skill.EnemyAreaAltitude - margin ||
+						here.Z > MathF.Max(creature.Position.Z, end.Z) + skill.EnemyAreaAltitude + margin) continue;
+					float dx = end.X - creature.Position.X, dy = end.Y - creature.Position.Y, dz = end.Z - creature.Position.Z;
+					float square = dx * dx + dy * dy + dz * dz;
+					float t = square > 0 ? Math.Clamp(((here.X - creature.Position.X) * dx + (here.Y - creature.Position.Y) * dy +
+						(here.Z - creature.Position.Z) * dz) / square, 0, 1) : 0;
+					BotPosition closest = new(creature.Position.X + t * dx, creature.Position.Y + t * dy, creature.Position.Z + t * dz, 0);
+					if (Distance(here, closest) > reach) continue;
+					if (!npc && (creature.Race == (byte)Race.ASMODIANS || world.GroupMembers.ContainsKey(creature.ObjectId))) continue;
+					int control = (int)(AbnormalState.SLEEP | AbnormalState.ROOT | AbnormalState.FEAR | AbnormalState.CONFUSE);
+					if (!npc || creature.ObjectId != target && !engaged.Contains(creature.ObjectId) || (world.AbnormalsOf(creature.ObjectId) & control) != 0)
+					{ allowed = false; break; }
+				}
+				if (allowed) safe.Add(skill.Id);
+			}
+			return safe;
+		}
 
 		/// <summary>NA-19: the client-observed state the help-item policy reads.</summary>
 		private NaturalHelpItemObservation ObserveHelpItems(float travelMeters = 0, bool crossMap = false)
@@ -1590,6 +1669,15 @@ public sealed partial class NaturalIshalgenJourney
 			finally { InCombat = fighting; navigator.InCombat = fighting; }
 		}
 
+		private async Task<bool> TryRecordedRangeRecoveryAsync(BotPosition target, float reach, CancellationToken token)
+		{
+			if (recordedRangeRecovery?.Invoke(session.CurrentPosition, target, reach) is not { Count: > 0 } route) return false;
+			BotPosition before = session.CurrentPosition;
+			await navigator.MoveAsync(route, token);
+			await navigator.SynchronizeAsync(token);
+			return Distance(before, session.CurrentPosition) >= 0.25f;
+		}
+
 		/// <summary>Walk up to 8 m toward the target's last-known position (never nearer than 10 m), on a
 		/// checked route that stays out of other observed circles.</summary>
 		/// <param name="reach">How close to get: melee reach for a melee skill, spell range otherwise.</param>
@@ -1602,6 +1690,7 @@ public sealed partial class NaturalIshalgenJourney
 			BotPosition settled = observed.SettledPosition;
 			float distance = Distance(start, settled);
 			if (distance <= reach) return;
+			if (await TryRecordedRangeRecoveryAsync(settled, reach, token)) return;
 			float t = MathF.Min(12, distance - reach) / distance;
 			BotPosition? goal = geometry.SnapToGround(map, start with
 			{
@@ -1901,6 +1990,7 @@ public sealed partial class NaturalIshalgenJourney
 			if (result.PacketType == typeof(SM_CASTSPELL_RESULT))
 			{
 				lastCastCompleted = true;
+				if (recordedRangeRecovery != null && target != session.CharacterId) rangeRejections = 0;
 				int deciseconds = result.Get<int>("cooldown");
 				if (deciseconds > 0)
 				{

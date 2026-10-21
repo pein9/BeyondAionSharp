@@ -27,6 +27,8 @@ public static class NaturalGladiatorProfile
 	{
 		// NL-4: new families through 38; later ranks inherit their role from the skill tree.
 		[620] = "attrition", [663] = "weakening", [2932] = "unwavering",
+		// The demonstrated drain chain is allowed only when the observed area is safe.
+		[769] = "absorbing", [670] = "pressure", [758] = "roiling", [555] = "seismic",
 		// L3 (docs/level-31-profiles.md): the skills new at 27 to 31.
 		[599] = "fury", [531] = "crushing-blow", [590] = "springing", [605] = "reckless",
 		[2864] = "strike", [2865] = "strike", [2866] = "strike", [2867] = "strike", [2868] = "strike", [2869] = "strike",
@@ -47,17 +49,9 @@ public static class NaturalGladiatorProfile
 		[249] = "mp-recovery", [250] = "mp-recovery", [252] = "mp-recovery", [254] = "mp-recovery",
 	};
 
-	private const string Area = "hits up to three monsters within 7 m of the Gladiator. The bot pulls one at a time, and an area skill wakes " +
-		"every other one in reach.";
-
 	/// <summary>Every other active skill and toggle a Gladiator learns by itself to level 26, and why it is not cast.</summary>
 	private static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
-		[670] = "Pressure Wave hits five enemies within 7 m; the single-pull table leaves area attacks out.",
-		[555] = "Seismic Billow " + Area + " It follows Roiling Hack or Pressure Wave, both left out.",
-		[769] = "Absorbing Fury I " + Area, [770] = "Absorbing Fury II " + Area, [771] = "Absorbing Fury III " + Area,
-		[772] = "Absorbing Fury IV " + Area,
-		[758] = "Roiling Hack follows Absorbing Fury and " + Area,
 		[3124] = "Charge raises run speed for 13 s; the journey's travel casts no skill, and the kit's running scroll is its speed.",
 		[619] = "Defense Preparation is a toggle of Slaughter's kind, and the server keeps one of them on (Java EffectController.addEffect " +
 			"76-86). It raises parry, block and enmity; Slaughter's 15% of attack is kept.",
@@ -85,10 +79,10 @@ public static class NaturalGladiatorProfile
 	/// fights it rests as the Templar (NR-50a) and keeps Slaughter on (NR-70a).
 	/// </para>
 	/// </summary>
-	private static readonly NaturalRotationRules Rules = new("natural-gladiator-v1",
+	private static readonly NaturalRotationRules Rules = new("natural-gladiator-v2",
 		// L3: Daevic Fury first (+80% attack for 30 s, its DP before Explosion of Rage's), Crushing Blow's sure stumble early,
 		// Reckless Strike after Rupture, and Springing Slice and Draining Blow (the second stone) on a thrown-down target.
-		Adjacent: ["fury", "explosion", "crushing-blow", "strike", "robust", "rage", "wrathful", "rupture", "reckless", "smash", "aerial",
+		Adjacent: ["fury", "explosion", "crushing-blow", "absorbing", "pressure", "roiling", "seismic", "strike", "robust", "rage", "wrathful", "rupture", "reckless", "smash", "aerial",
 			"crashing", "cleave", "crippling", "springing", "draining", "weakening"],
 		AtRange: ["cleave", "taunt"],
 		Upkeep: [new("unwavering", DuringFight: true, UnderAttackOnly: true)],
@@ -98,9 +92,10 @@ public static class NaturalGladiatorProfile
 			new(NaturalRecoveryKind.LifePotion, 75),
 			new(NaturalRecoveryKind.Skill, 60, "attrition"),
 			new(NaturalRecoveryKind.Skill, 45, "wind"),
+			new(NaturalRecoveryKind.Skill, 85, "absorbing", KeepsNoMana: true),
 		],
 		SwarmAttackers: 3, FleeHpPercent: 25, AutoAttack: NaturalAutoAttack.Filler,
-		OnlyWhenHurt: new Dictionary<string, int> { ["rage"] = 80 }, PullRoles: ["taunt"]);
+		OnlyWhenHurt: new Dictionary<string, int> { ["rage"] = 80, ["absorbing"] = 90 }, PullRoles: ["taunt"], CloseForWeaponFiller: true);
 
 	/// <summary>NR-70a: the one toggle kept on. The server keeps one of its kind.</summary>
 	private static readonly NaturalKeptToggle[] KeptToggles = [new("slaughter", "toggle-slaughter")];
