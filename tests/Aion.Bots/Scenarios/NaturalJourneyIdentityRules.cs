@@ -22,6 +22,7 @@ public enum NaturalJourneyStage
 public static class NaturalJourneyIdentityRules
 {
 	public const int AscensionQuestId = 2008;
+	public const string FieldGroupLeg = "group-field";
 
 	/// <summary>Maps a Priest can stand on: Ishalgen, Q2002's instance, and Q2008's instance before SETPRO14.</summary>
 	public static readonly int[] PriestMaps = [220010000, 320010000, 320020000];
@@ -61,6 +62,9 @@ public static class NaturalJourneyIdentityRules
 			altgardLeg == "l12" && level >= 16 && worldId == 300200000 ||
 			// NL-4: Q24023's retained characters may log back in inside the Sky Temple Interior (Java's enter-world hook).
 			altgardLeg == "vs" && level >= 29 && worldId == 320050000 ||
+			// NL-4: field members may return from a retained Sky Temple attempt before forming their group.
+			altgardLeg == FieldGroupLeg && (level >= 26 && worldId is NaturalAbyssEntry.Morheim or NaturalAltgardContract.Brusthonin ||
+				level >= 29 && worldId == 320050000) ||
 			altgardLeg == NaturalAbyssEntry.Leg && level >= 25 && worldId is NaturalAbyssEntry.Morheim or NaturalAbyssEntry.ArenaMap ||
 			// NL-2: the group stages (scoped as the Abyss entry) play Brusthonin's group quests with mustered characters.
 			altgardLeg == NaturalAbyssEntry.Leg && level >= 26 && worldId == NaturalAltgardContract.Brusthonin ||

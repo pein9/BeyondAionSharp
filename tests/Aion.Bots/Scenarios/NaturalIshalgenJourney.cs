@@ -214,7 +214,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			options.StopAfterQuest != null || options.StopAt != null || options.RelogAt != null || options.AltgardOnlyQuests != null ||
 			options.Course != null || options.ClericEncounter || options.CoinGearReceiptPath != null || options.HaramelProgressPath != null))
 			throw new InvalidOperationException("The complete SIM journey requires creation, Ascension and every approved leg without diagnostic shortcuts or saved receipts.");
-		session.IdentityAltgardLegId = options.AltgardLegId;
+		session.IdentityAltgardLegId = options.GroupRoster != null && options.GroupStage == "field"
+			? NaturalJourneyIdentityRules.FieldGroupLeg : options.AltgardLegId;
 		if (options.MauPolicy != null && options.Course == null)
 			throw new InvalidOperationException("A tuned Mau policy is restricted to the focused SIM course.");
 		NaturalMauPolicyParameters mauPolicy = options.MauPolicy ?? NaturalMauPolicyParameters.Baseline;
